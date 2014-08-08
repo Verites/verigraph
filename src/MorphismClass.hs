@@ -1,4 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses, FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies, MultiParamTypeClasses, FlexibleContexts #-}
 
 module MorphismClass where
 
@@ -6,21 +6,22 @@ import Data.List
 import Graph (Graph)
 import GraphClass
 
-class GraphClass g => MorphismClass m g where
+class (GraphClass (G m)) => MorphismClass m where
+    type G m :: *
 
     -- Extract essencial contents of a morphism
-    domain             :: m g -> g                                -- required
-    codomain           :: m g -> g                                -- required
-    mapping            :: m g -> ([(Nd g, Nd g)], [(Ed g, Ed g)]) -- required
+    domain    :: m -> (G m)                            -- required
+    codomain  :: m -> (G m)                            -- required
+    mapping   :: m -> ([(Nd (G m), Nd (G m))], [(Ed (G m), Ed (G m))]) -- required
 
     -- Create and manipulate morphisms
-    empty              :: g -> g -> m g                           -- required
-    updateNodeMapping  :: (Nd g) -> (Nd g) -> m g -> m g          -- required
-    updateEdgeMapping  :: (Ed g) -> (Ed g) -> m g -> m g          -- required
+    empty              :: (G m) -> (G m) -> m                     -- required
+    updateNodeMapping  :: (Nd (G m)) -> (Nd (G m)) -> m -> m      -- required
+    updateEdgeMapping  :: (Ed (G m)) -> (Ed (G m)) -> m -> m      -- required
 
     -- Query functions
-    hasNodeMapping     :: (Eq (Nd g)) => Nd g -> Nd g -> m g -> Bool
-    hasEdgeMapping     :: (Eq (Ed g)) => Ed g -> Ed g -> m g -> Bool
+    hasNodeMapping     :: (Eq (Nd (G m))) => Nd (G m) -> Nd (G m) -> m -> Bool
+    hasEdgeMapping     :: (Eq (Ed (G m))) => Ed (G m) -> Ed (G m) -> m -> Bool
 
     -- Query functions: default implementation
     hasNodeMapping lNode rNode m =
