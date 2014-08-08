@@ -1,6 +1,5 @@
 {-# LANGUAGE TypeFamilies #-}
-module Graph 
-    ( Graph ) where
+module Graph (Graph) where
 
 import GraphClass
 import Data.List
@@ -11,8 +10,8 @@ data Node a = Node { nodePayload :: Maybe a
                    , nodeType    :: Maybe Int
               } deriving (Eq, Show, Read)
 
-data Edge a = Edge { sourceOf    :: Int
-                   , targetOf    :: Int
+data Edge a = Edge { getSource   :: Int
+                   , getTarget   :: Int
                    , edgePayload :: Maybe a
                    , edgeType    :: Maybe Int
               } deriving (Eq, Show, Read)
@@ -48,6 +47,14 @@ instance GraphClass (Graph a b) where
         in case ed of
             Just (Edge src tgt _ _) -> Just (src, tgt)
             otherwise -> Nothing
+
+    sourceOf e (Graph _ es) =
+        fmap getSource ed
+          where ed = lookup e es
+
+    targetOf e (Graph _ es) =
+        fmap getTarget ed
+          where ed = lookup e es
 
 instance TypedGraphClass (Graph a b) where
     getTypeOfNode n (Graph ns _) =
