@@ -9,7 +9,7 @@ import GraphClass
 class (GraphClass (G m)) => MorphismClass m where
     type G m :: *
 
-    -- Extract essencial contents of a morphism
+    -- Extract essential contents of a morphism
     domain    :: m -> (G m)                            -- required
     codomain  :: m -> (G m)                            -- required
     mapping   :: m -> ([(Nd (G m), Nd (G m))], [(Ed (G m), Ed (G m))]) -- required
