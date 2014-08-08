@@ -20,7 +20,7 @@ instance MorphismClass (Morphism a b) where
     domain m   = getDomain m
     codomain m = getCodomain m
     mapping m = (Map.toList nm, Map.toList em)
-                    where (nm, em) = getMapping m
+        where (nm, em) = getMapping m
 
     empty gA gB = Morphism gA gB (Map.empty, Map.empty)
     updateNodeMapping ln rn morphism@(Morphism lg rg (nm, em))

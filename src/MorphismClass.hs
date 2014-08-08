@@ -26,10 +26,8 @@ class (GraphClass (G m)) => MorphismClass m where
     -- Query functions: default implementation
     hasNodeMapping lNode rNode m =
         (lNode, rNode) `elem` nodeMappings
-      where
-        (nodeMappings, _) = mapping m
+        where (nodeMappings, _) = mapping m
 
     hasEdgeMapping lEdge rEdge m =
         (lEdge, rEdge) `elem` edgeMappings
-      where
-        (_, edgeMappings) = mapping m
+        where (_, edgeMappings) = mapping m

@@ -50,11 +50,11 @@ instance GraphClass (Graph a b) where
 
     sourceOf e (Graph _ es) =
         fmap getSource ed
-          where ed = lookup e es
+        where ed = lookup e es
 
     targetOf e (Graph _ es) =
         fmap getTarget ed
-          where ed = lookup e es
+        where ed = lookup e es
 
 instance TypedGraphClass (Graph a b) where
     getTypeOfNode n (Graph ns _) =
