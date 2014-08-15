@@ -1,4 +1,4 @@
-module Graph.Match
+module Match
     (
     Mapping
     , findMatches
@@ -234,6 +234,7 @@ mapGraphs ::
     -> Graph a b        -- ^ @l@, the "left side" graph
     -> (Mapping, Graph a b, [Int], [Int]) -- ^ @m@, what already got mapped
     -> [(Mapping, Graph a b, [Int], [Int])]
+-- When everything got mapped.
 mapGraphs _ mt _ ml@((nmap, emap), g, [], []) =
     case mt of
     Epi ->
@@ -246,28 +247,32 @@ mapGraphs _ mt _ ml@((nmap, emap), g, [], []) =
               then [ml]
               else []
     otherwise -> [ml]
-mapGraphs r mt l (m@(nmatch, ematch), g, (le:les), lns) =
+mapGraphs r mt l (m@(nmap, emap), g, (le:les), lns) =
     let conds = generateEdgeConds l le g m
         edgeList = G.edges g
         candidates = filter (processEdge conds g) $ edgeList
-        newMapSets = fmap (processEdgeCandidate g) candidates
-    in newMapSets >>= mapGraphs r mt l
+        newMappings = fmap (processEdgeCandidate g) candidates
+    in newMappings >>= mapGraphs r mt l
       where
+        -- adds edge candidate to a mapping
         processEdgeCandidate g ge =
-            let sid = fromJust $ G.sourceOf ge g --FIX: should avoid fromJust
-                tid = fromJust $ G.targetOf ge g
-                newLNodeList = filter (\nid ->
-                    (Just nid /= G.sourceOf le l) && (Just nid /= G.targetOf le l)
-                    ) lns
-            in (((\nm -> addToAL nm (fromJust $ G.sourceOf le l) sid) $
-                 (\nm -> addToAL nm (fromJust $ G.targetOf le l) tid) $
-                 nmatch,
-                 addToAL ematch le ge),
-                if mt == Normal || mt == Epi
-                    then g
-                    else G.removeNode sid $ G.removeNode tid $ G.removeEdge ge g,
-                les,
-                newLNodeList)
+            let res = do
+                gs <- G.sourceOf ge g
+                gt <- G.targetOf ge g
+                ls <- G.sourceOf le l
+                lt <- G.targetOf le l
+                let newLNodeList = filter (\nid -> (Just nid /= G.sourceOf le l) && (Just nid /= G.targetOf le l)) lns
+                return (
+                    ((\nm -> addToAL nm ls gs) $
+                     (\nm -> addToAL nm lt gt) $
+                     nmap,
+                     addToAL emap le ge),
+                    if mt == Normal || mt == Epi
+                       then g
+                       else G.removeNode gs $ G.removeNode gt $ G.removeEdge ge g,
+                    les,
+                    newLNodeList)
+            in fromJust res
 mapGraphs r mt l (m@(nmatch, ematch), g, [], (ln:lns)) =
     let conds = (generateConds r l ln g m)
         candidates = filter (processNode conds) $ G.nodes g
