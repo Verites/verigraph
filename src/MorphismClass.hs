@@ -2,8 +2,7 @@
 
 module MorphismClass where
 
-import Data.List
-import Graph (Graph)
+import Helper (Valid)
 import GraphClass
 
 class (GraphClass (G m), Valid m) => MorphismClass m where
