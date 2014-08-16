@@ -4,14 +4,17 @@ module Morphism (Morphism) where
 
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as Map
+import qualified Data.MultiMap as MM
+import Helper (Valid)
 import MorphismClass
 import Graph (Graph)
 import qualified GraphClass as G
 
 data Morphism a b = Morphism {
-                          getDomain   :: Graph a b
-                        , getCodomain :: Graph a b
-                        , getMapping  :: (IntMap Int, IntMap Int)
+                          getDomain     :: Graph a b
+                        , getCodomain   :: Graph a b
+                        , getMapping    :: (IntMap Int, IntMap Int)
+                        , getInvMapping :: (MM.MultiMap Int Int, MM.MultiMap Int Int)
                     }
 
 instance MorphismClass (Morphism a b) where
@@ -19,16 +22,33 @@ instance MorphismClass (Morphism a b) where
 
     domain m   = getDomain m
     codomain m = getCodomain m
-    mapping m = (Map.toList nm, Map.toList em)
-        where (nm, em) = getMapping m
 
-    empty gA gB = Morphism gA gB (Map.empty, Map.empty)
-    updateNodeMapping ln rn morphism@(Morphism lg rg (nm, em))
-        | G.isNodeOf ln lg && G.isNodeOf rn rg =
-            Morphism lg rg (Map.insert ln rn nm, em)
+    applyToNode ln m =
+        let found = Map.lookup ln $ (fst . getMapping) m
+        in case found of
+            Just gn   -> [gn]
+            otherwise -> []
+    applyInvToNode gn m =
+        MM.lookup gn $ (fst . getInvMapping) m
+
+    applyToEdge le m =
+        let found = Map.lookup le $ (snd . getMapping) m
+        in case found of
+            Just ge   -> [ge]
+            otherwise -> []
+    applyInvToEdge ge m =
+        MM.lookup ge $ (snd . getInvMapping) m
+        
+    empty gA gB = Morphism gA gB (Map.empty, Map.empty) (MM.empty, MM.empty)
+    insertNodes ln gn morphism@(Morphism l g (nm, em) (nInv, eInv))
+        | G.isNodeOf ln l && G.isNodeOf gn g =
+            Morphism l g (Map.insert ln gn nm, em)
+                         (MM.insert  gn ln nInv, eInv) 
         | otherwise = morphism
 
-    updateEdgeMapping le re morphism@(Morphism lg rg (nm, em))
-        | G.isEdgeOf le lg && G.isEdgeOf re rg =
-            Morphism lg rg (nm, Map.insert le re em)
+    insertEdges le ge morphism@(Morphism l g (nm, em) (nInv, eInv))
+        | G.isEdgeOf le l && G.isEdgeOf ge g =
+            Morphism l g (nm, Map.insert le ge em)
+                         (nInv, MM.insert ge le eInv)
         | otherwise = morphism
+
