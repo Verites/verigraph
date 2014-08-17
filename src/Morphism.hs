@@ -17,6 +17,17 @@ data Morphism a b = Morphism {
                         , getInvMapping :: (MM.MultiMap Int Int, MM.MultiMap Int Int)
                     }
 
+instance Show (Morphism a b) where
+    show m =
+--        "Domain: " ++ (show $ getDomain m) ++
+--        "\nCodomain: " ++ (show $ getCodomain m) ++
+        "\nNode mappings: \n" ++
+        concatMap (\n -> (show n) ++ " --> " ++ (show (applyToNode n m)) ++ "\n")
+                  (G.nodes $ domain m) ++
+        "\nEdge mappings: \n" ++
+        concatMap (\e -> (show e) ++ " --> " ++ (show (applyToEdge e m)) ++ "\n")
+                  (G.edges $ domain m)
+
 instance MorphismClass (Morphism a b) where
     type G (Morphism a b) = Graph a b
 
