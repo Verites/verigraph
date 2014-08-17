@@ -83,9 +83,6 @@ class GraphClass (G m) => MorphismClass m where
                     [re]      -> mapEdges le re m
                     otherwise -> m
 
-
-
-
     total m =
         ((length . nodes . domain) m == (length . nodes . defDomain) m) &&
         ((length . edges . domain) m == (length . edges . defDomain) m)
@@ -98,5 +95,3 @@ class GraphClass (G m) => MorphismClass m where
             img = image m
             mappings = (map (length . (flip applyInvToNode m)) (nodes img)) ++
                        (map (length . (flip applyInvToEdge m)) (edges img))
-
-
