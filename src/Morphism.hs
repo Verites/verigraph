@@ -51,13 +51,13 @@ instance MorphismClass (Morphism a b) where
         MM.lookup ge $ (snd . getInvMapping) m
         
     empty gA gB = Morphism gA gB (Map.empty, Map.empty) (MM.empty, MM.empty)
-    insertNodes ln gn morphism@(Morphism l g (nm, em) (nInv, eInv))
+    mapNodes ln gn morphism@(Morphism l g (nm, em) (nInv, eInv))
         | G.isNodeOf ln l && G.isNodeOf gn g =
             Morphism l g (Map.insert ln gn nm, em)
                          (MM.insert  gn ln nInv, eInv) 
         | otherwise = morphism
 
-    insertEdges le ge morphism@(Morphism l g (nm, em) (nInv, eInv))
+    mapEdges le ge morphism@(Morphism l g (nm, em) (nInv, eInv))
         | G.isEdgeOf le l && G.isEdgeOf ge g =
             Morphism l g (nm, Map.insert le ge em)
                          (nInv, MM.insert ge le eInv)
