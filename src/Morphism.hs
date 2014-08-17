@@ -1,6 +1,9 @@
 {-# LANGUAGE TypeFamilies #-}
 
-module Morphism (Morphism) where
+module Morphism
+    ( Morphism
+    , TypedGraph
+    ) where
 
 import Data.IntMap (IntMap)
 import qualified Data.IntMap as Map
@@ -16,6 +19,8 @@ data Morphism a b = Morphism {
                         , getMapping    :: (IntMap Int, IntMap Int)
                         , getInvMapping :: (MM.MultiMap Int Int, MM.MultiMap Int Int)
                     }
+
+type TypedGraph a b = Morphism a b
 
 instance Show (Morphism a b) where
     show m =

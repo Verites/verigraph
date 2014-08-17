@@ -56,6 +56,7 @@ instance GraphClass (Graph a b) where
         fmap getTarget ed
         where ed = lookup e es
 
+{-
 instance TypedGraphClass (Graph a b) where
     getTypeOfNode n (Graph ns _) =
         let found = lookup n ns
@@ -78,3 +79,4 @@ instance TypedGraphClass (Graph a b) where
         in case found of
             Just (Edge s t p _) -> Graph ns (addToAL es e (Edge s t p (Just te)))
             otherwise -> Graph ns es
+-}
