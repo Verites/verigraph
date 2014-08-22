@@ -35,8 +35,8 @@ class GraphClass (G m) => MorphismClass m where
     image m =
         let cod  = codomain m
             invm = inverse m
-            nodesNotMapped = filter (\n -> null $ applyToNode n invm) cod
-            edgesNotMapped = filter (\n -> null $ applyToNode n invm) cod
+            nodesNotMapped = filter (\n -> null $ applyToNode n invm) $ nodes cod
+            edgesNotMapped = filter (\e -> null $ applyToEdge e invm) $ edges cod
         in flip (foldr removeNode) nodesNotMapped $
            foldr removeEdge cod edgesNotMapped
 
