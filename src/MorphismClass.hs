@@ -42,26 +42,26 @@ class GraphClass (G m) => MorphismClass m where
 
     defDomain m =
         image $ inverse m
-        
+
     compose m1 m2 =
         let dom = domain m1
-            cod = codomain m2 
-            domNodes = nodes dom
-            domEdges = edges dom
-        in  flip (foldr (\e m -> insEdges m1 m2 e m))
-                 domEdges $
-                 foldr (insNodes m1 m2) (MorphismClass.empty dom cod) domNodes
+            cod = codomain m2
+        in 
+            flip
+                (foldr (\e m -> doubleApplyToEdge e m1 m2 m))
+                (edges dom) $
+                foldr (\n m -> doubleApplyToNode n m1 m2 m)
+                      (MorphismClass.empty dom cod)
+                      (nodes dom)
         where
-            insNodes m1 m2 ln m =
-                let ns = applyToNode ln m1 >>= (\mn -> applyToNode mn m2)
-                in case ns of
-                    [rn]      -> updateNodes ln rn m
-                    otherwise -> m
-            insEdges m1 m2 le m =
-                let es = applyToEdge le m1 >>= (\me -> applyToEdge me m2)
-                in case es of
-                    [re]      -> updateEdges le re m
-                    otherwise -> m
+            doubleApplyToNode ln m1 m2 m =
+                foldr (\rn acc -> updateNodes ln rn acc)
+                      m
+                      (applyToNode ln m1 >>= (flip applyToNode m2))
+            doubleApplyToEdge le m1 m2 m =
+                foldr (\re acc -> updateEdges le re acc)
+                      m
+                      (applyToEdge le m1 >>= flip applyToEdge m2)
 
     total m =
         ((length . nodes . domain) m == (length . nodes . defDomain) m) &&
