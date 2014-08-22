@@ -16,7 +16,7 @@ import qualified GraphClass as G
 data Morphism a b = Morphism {
                           getDomain     :: Graph a b
                         , getCodomain   :: Graph a b
-                        , getMapping    :: (IntMap Int, IntMap Int)
+                        , getMapping    :: (MM.MultiMap Int Int, MM.MultiMap Int Int)
                         , getInvMapping :: (MM.MultiMap Int Int, MM.MultiMap Int Int)
                     }
 
@@ -39,21 +39,20 @@ instance MorphismClass (Morphism a b) where
     domain m   = getDomain m
     codomain m = getCodomain m
 
+    inverse (Morphism dom cod mapping invmapping) =
+        Morphism cod dom invmapping mapping
+
     applyToNode ln m =
         let found = Map.lookup ln $ (fst . getMapping) m
         in case found of
-            Just gn   -> [gn]
+            Just gn   -> gn
             otherwise -> []
-    applyInvToNode gn m =
-        MM.lookup gn $ (fst . getInvMapping) m
 
     applyToEdge le m =
         let found = Map.lookup le $ (snd . getMapping) m
         in case found of
-            Just ge   -> [ge]
+            Just ge   -> ge
             otherwise -> []
-    applyInvToEdge ge m =
-        MM.lookup ge $ (snd . getInvMapping) m
         
     empty gA gB = Morphism gA gB (Map.empty, Map.empty) (MM.empty, MM.empty)
     mapNodes ln gn morphism@(Morphism l g (nm, em) (nInv, eInv))
