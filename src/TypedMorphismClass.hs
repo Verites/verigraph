@@ -2,7 +2,9 @@
 
 module TypedMorphismClass where
 
-class MorphismClass (M t) => TypedMorphism t 
+import MorphismClass
+
+class MorphismClass (M t) => TypedMorphismClass t where
     type M t :: *
 
     typedDomain   :: t -> (M t)

@@ -7,6 +7,7 @@ module TypedMorphism
 
 import TypedMorphismClass
 import MorphismClass
+import Morphism
 
 data TypedMorphism a b = TypedMorphism {
                               getDomain   :: Morphism a b
