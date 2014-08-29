@@ -8,7 +8,7 @@ module Morphism
 import Data.IntMap (IntMap)
 --import qualified Data.IntMap as Map
 import qualified Data.MultiMap as Map
-import Helper (Valid)
+import Helper
 import MorphismClass
 import Graph (Graph)
 import qualified GraphClass as G
@@ -61,3 +61,18 @@ instance MorphismClass (Morphism a b) where
                          (nInv, Map.insert ge le eInv)
         | otherwise = morphism
 
+instance Valid (Morphism a b) where
+    valid m =
+        let dom = domain m
+            cod = codomain m
+        in
+        total m &&
+        functional m &&
+        valid dom &&
+        valid cod &&
+        all (\e -> ((flip G.sourceOf cod) $ head $ applyToEdge e m) ==
+                    (fmap (head . (flip applyToNode m)) $ G.sourceOf e dom)
+                   &&
+                   ((flip G.targetOf cod) $ head $ applyToEdge e m) ==
+                    (fmap (head . (flip applyToEdge m)) $ G.targetOf e dom))
+            (G.edges dom)

@@ -2,7 +2,6 @@
 
 module MorphismClass where
 
-import Helper (Valid)
 import GraphClass
 
 class GraphClass (G m) => MorphismClass m where
@@ -27,9 +26,10 @@ class GraphClass (G m) => MorphismClass m where
     compose     :: m -> m -> m
 
     -- Properties
-    total      :: m -> Bool
+    functional :: m -> Bool
     injective  :: m -> Bool
     surjective :: m -> Bool
+    total      :: m -> Bool
   ---------- Default implementations -------------
 
     image m =
@@ -63,9 +63,8 @@ class GraphClass (G m) => MorphismClass m where
                       m
                       (applyToEdge le m1 >>= flip applyToEdge m2)
 
-    total m =
-        ((length . nodes . domain) m == (length . nodes . defDomain) m) &&
-        ((length . edges . domain) m == (length . edges . defDomain) m)
+    functional m =
+        injective $ inverse m
 
     -- checks if each element from the image is mapped to a single 
     -- element from the Domain
@@ -79,3 +78,8 @@ class GraphClass (G m) => MorphismClass m where
 
     surjective m =
         total $ inverse m
+
+    total m =
+        ((length . nodes . domain) m == (length . nodes . defDomain) m) &&
+        ((length . edges . domain) m == (length . edges . defDomain) m)
+

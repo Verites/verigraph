@@ -2,7 +2,7 @@
 module Graph (Graph) where
 
 import GraphClass
-import Valid
+import Helper
 import Data.List
 import Data.List.Utils
 import Data.Maybe
