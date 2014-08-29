@@ -73,6 +73,6 @@ instance Valid (Morphism a b) where
         all (\e -> (G.sourceOf cod e >>= applyEdge m) ==
                    (applyNode m e >>= G.sourceOf dom) &&
                    (G.targetOf cod e >>= applyEdge m) ==
-                   (applyEdge m e >>= G.targetOf e dom))
+                   (applyEdge m e >>= G.targetOf dom))
             (G.edges dom)
 
