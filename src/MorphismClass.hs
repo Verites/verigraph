@@ -16,8 +16,8 @@ class GraphClass (G m) => MorphismClass m where
     inverse   :: m -> m                                    -- required
 
     -- Apply morphism
-    applyToNode     :: (Nd (G m)) -> m -> [(Nd (G m))]     -- required
-    applyToEdge     :: (Ed (G m)) -> m -> [(Ed (G m))]     -- required
+    applyNode :: m -> (Nd (G m)) -> [(Nd (G m))]     -- required
+    applyEdge :: m -> (Ed (G m)) -> [(Ed (G m))]     -- required
 
     -- Create and manipulate morphisms
     empty       :: (G m) -> (G m) -> m                     -- required
@@ -35,8 +35,8 @@ class GraphClass (G m) => MorphismClass m where
     image m =
         let cod  = codomain m
             invm = inverse m
-            nodesNotMapped = filter (\n -> null $ applyToNode n invm) $ nodes cod
-            edgesNotMapped = filter (\e -> null $ applyToEdge e invm) $ edges cod
+            nodesNotMapped = filter (\n -> null $ applyNode invm n) $ nodes cod
+            edgesNotMapped = filter (\e -> null $ applyEdge invm e) $ edges cod
         in flip (foldr removeNode) nodesNotMapped $
            foldr removeEdge cod edgesNotMapped
 
@@ -48,20 +48,20 @@ class GraphClass (G m) => MorphismClass m where
             cod = codomain m2
         in 
             flip
-                (foldr (\e m -> doubleApplyToEdge e m1 m2 m))
+                (foldr (\e m -> doubleApplyToEdge m1 m2 m e))
                 (edges dom) $
-                foldr (\n m -> doubleApplyToNode n m1 m2 m)
+                foldr (\n m -> doubleApplyToNode m1 m2 m n)
                       (MorphismClass.empty dom cod)
                       (nodes dom)
         where
-            doubleApplyToNode ln m1 m2 m =
-                foldr (\rn acc -> updateNodes ln rn acc)
+            doubleApplyToNode m1 m2 m ln =
+                foldr (updateNodes ln)
                       m
-                      (applyToNode ln m1 >>= (flip applyToNode m2))
-            doubleApplyToEdge le m1 m2 m =
-                foldr (\re acc -> updateEdges le re acc)
+                      (applyNode m1 ln >>= applyNode m2)
+            doubleApplyToEdge m1 m2 m le =
+                foldr (updateEdges le)
                       m
-                      (applyToEdge le m1 >>= flip applyToEdge m2)
+                      (applyEdge m1 le >>= applyEdge m2)
 
     functional m =
         injective $ inverse m
@@ -73,8 +73,8 @@ class GraphClass (G m) => MorphismClass m where
         where                        
             invm     = inverse m
             dom      = defDomain invm
-            mappings = (map (length . (flip applyToNode invm)) (nodes dom)) ++
-                       (map (length . (flip applyToEdge invm)) (edges dom))
+            mappings = (map (length . (applyNode invm)) (nodes dom)) ++
+                       (map (length . (applyEdge invm)) (edges dom))
 
     surjective m =
         total $ inverse m

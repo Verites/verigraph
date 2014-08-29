@@ -27,10 +27,10 @@ instance Show (Morphism a b) where
 --        "Domain: " ++ (show $ getDomain m) ++
 --        "\nCodomain: " ++ (show $ getCodomain m) ++
         "\nNode mappings: \n" ++
-        concatMap (\n -> (show n) ++ " --> " ++ (show (applyToNode n m)) ++ "\n")
+        concatMap (\n -> (show n) ++ " --> " ++ (show (applyNode m n)) ++ "\n")
                   (G.nodes $ domain m) ++
         "\nEdge mappings: \n" ++
-        concatMap (\e -> (show e) ++ " --> " ++ (show (applyToEdge e m)) ++ "\n")
+        concatMap (\e -> (show e) ++ " --> " ++ (show (applyEdge m e)) ++ "\n")
                   (G.edges $ domain m)
 
 instance MorphismClass (Morphism a b) where
@@ -42,21 +42,21 @@ instance MorphismClass (Morphism a b) where
     inverse (Morphism dom cod mapping invmapping) =
         Morphism cod dom invmapping mapping
 
-    applyToNode ln m =
+    applyNode m ln =
         Map.lookup ln $ (fst . getMapping) m
 
-    applyToEdge le m =
+    applyEdge m le =
         Map.lookup le $ (snd . getMapping) m
         
     empty gA gB = Morphism gA gB (Map.empty, Map.empty) (Map.empty, Map.empty)
     updateNodes ln gn morphism@(Morphism l g (nm, em) (nInv, eInv))
-        | G.isNodeOf ln l && G.isNodeOf gn g =
+        | G.isNodeOf l ln && G.isNodeOf g gn =
             Morphism l g (Map.insert ln gn nm, em)
                          (Map.insert  gn ln nInv, eInv) 
         | otherwise = morphism
 
     updateEdges le ge morphism@(Morphism l g (nm, em) (nInv, eInv))
-        | G.isEdgeOf le l && G.isEdgeOf ge g =
+        | G.isEdgeOf l le && G.isEdgeOf g ge =
             Morphism l g (nm, Map.insert le ge em)
                          (nInv, Map.insert ge le eInv)
         | otherwise = morphism
@@ -70,9 +70,9 @@ instance Valid (Morphism a b) where
         functional m &&
         valid dom &&
         valid cod &&
-        all (\e -> ((flip G.sourceOf cod) $ head $ applyToEdge e m) ==
-                    (fmap (head . (flip applyToNode m)) $ G.sourceOf e dom)
-                   &&
-                   ((flip G.targetOf cod) $ head $ applyToEdge e m) ==
-                    (fmap (head . (flip applyToEdge m)) $ G.targetOf e dom))
+        all (\e -> (G.sourceOf cod e >>= applyEdge m) ==
+                   (applyNode m e >>= G.sourceOf dom) &&
+                   (G.targetOf cod e >>= applyEdge m) ==
+                   (applyEdge m e >>= G.targetOf e dom))
             (G.edges dom)
+
