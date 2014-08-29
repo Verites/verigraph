@@ -2,6 +2,7 @@
 module Graph (Graph) where
 
 import GraphClass
+import Valid
 import Data.List
 import Data.List.Utils
 import Data.Maybe
@@ -55,6 +56,16 @@ instance GraphClass (Graph a b) where
     targetOf e (Graph _ es) =
         fmap getTarget ed
         where ed = lookup e es
+
+instance Valid (Graph a b) where
+    valid g =
+        all (\e ->
+                let src = sourceOf e g
+                    tgt = targetOf e g
+                in case (src, tgt) of
+                    (Just s, Just t) -> isNodeOf s g && isNodeOf t g
+                    otherwise -> False)
+            (edges g)
 
 {-
 instance TypedGraphClass (Graph a b) where
