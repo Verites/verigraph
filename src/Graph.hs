@@ -36,35 +36,39 @@ instance GraphClass (Graph a b) where
         | otherwise = g
 
     removeNode n g@(Graph ns es)
-        | null $ incidentEdges n g = Graph (delFromAL ns n) es
+        | null $ incidentEdges g n = Graph (delFromAL ns n) es
         | otherwise = g
 
     removeEdge e (Graph ns es) = Graph ns (delFromAL es e)
         
     nodes (Graph ns _) = keysAL ns        
     edges (Graph _ es) = keysAL es        
-    nodesConnectedTo e g@(Graph _ es) =
+    nodesConnectedTo g@(Graph _ es) e =
         let ed = lookup e es
         in case ed of
-            Just (Edge src tgt _ _) -> Just (src, tgt)
-            otherwise -> Nothing
+            Just (Edge src tgt _ _) -> [(src, tgt)]
+            otherwise -> []
 
-    sourceOf e (Graph _ es) =
-        fmap getSource ed
-        where ed = lookup e es
+    sourceOf (Graph _ es) e =
+        let res = lookup e es
+        in case res of
+            (Just ed) -> [getSource ed]
+            otherwise -> []
 
-    targetOf e (Graph _ es) =
-        fmap getTarget ed
-        where ed = lookup e es
+    targetOf (Graph _ es) e =
+        let res = lookup e es
+        in case res of
+            (Just ed) -> [getTarget ed]
+            otherwise -> []
 
 instance Valid (Graph a b) where
     valid g =
         all (\e ->
-                let src = sourceOf e g
-                    tgt = targetOf e g
+                let src = sourceOf g e
+                    tgt = targetOf g e
                 in case (src, tgt) of
-                    (Just s, Just t) -> isNodeOf s g && isNodeOf t g
-                    otherwise -> False)
+                    ((s:_), (t:_)) -> isNodeOf g s && isNodeOf g t
+                    otherwise      -> False)
             (edges g)
 
 {-

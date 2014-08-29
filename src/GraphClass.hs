@@ -22,40 +22,43 @@ class GraphClass g where
   -- Test the presence and access nodes and edges
   nodes            :: g -> [Nd g]                          -- required
   edges            :: g -> [Ed g]                          -- required
-  nodesConnectedTo :: (Ed g) -> g -> Maybe (Nd g, Nd g)    -- required
-  isNodeOf         :: Eq (Nd g) => (Nd g) -> g -> Bool
-  isEdgeOf         :: Eq (Ed g) => (Ed g) -> g -> Bool
-  sourceOf         :: Ed g -> g -> Maybe (Nd g)
-  targetOf         :: Ed g -> g -> Maybe (Nd g)  
+  nodesConnectedTo :: g -> (Ed g) -> [(Nd g, Nd g)]        -- required
+  isNodeOf         :: Eq (Nd g) => g -> Nd g -> Bool
+  isEdgeOf         :: Eq (Ed g) => g -> Ed g -> Bool
+  sourceOf         :: g -> Ed g -> [Nd g]
+  targetOf         :: g -> Ed g -> [Nd g]
 
   -- Navigate within graph
-  edgesFromNode  :: (Eq (Nd g)) => Nd g -> g -> [Ed g]
-  edgesIntoNode  :: (Eq (Nd g)) => Nd g -> g -> [Ed g]
-  nodesFromNode  :: (Eq (Nd g)) => Nd g -> g -> [Nd g]
-  nodesIntoNode  :: (Eq (Nd g)) => Nd g -> g -> [Nd g]
-  isAdjacentTo   :: (Eq (Nd g)) => Nd g -> Nd g -> g -> Bool
-  isIncidentTo   :: (Eq (Nd g)) => Ed g -> Nd g -> g -> Bool
-  incidentEdges  :: (Eq (Nd g), (Eq (Ed g))) => Nd g -> g -> [Ed g]
-  neighbourNodes :: (Eq (Nd g)) => Nd g -> g -> [Nd g]
+  edgesFromNode  :: (Eq (Nd g)) => g -> Nd g -> [Ed g]
+  edgesIntoNode  :: (Eq (Nd g)) => g -> Nd g -> [Ed g]
+  nodesFromNode  :: (Eq (Nd g)) => g -> Nd g -> [Nd g]
+  nodesIntoNode  :: (Eq (Nd g)) => g -> Nd g -> [Nd g]
+  isAdjacentTo   :: (Eq (Nd g)) => g -> Nd g -> Nd g -> Bool
+  isIncidentTo   :: (Eq (Nd g)) => g -> Ed g -> Nd g -> Bool
+  incidentEdges  :: (Eq (Nd g), (Eq (Ed g))) => g -> Nd g -> [Ed g]
+  neighbourNodes :: (Eq (Nd g)) => g -> Nd g -> [Nd g]
 
   ---------- Default implementations -------------
 
   -- Test the presence and access nodes and edges: default implementation
-  isNodeOf n g  = n `elem` (nodes g)
-  isEdgeOf e g  = e `elem` (edges g)
-  nodesConnectedTo e g = do { s <- sourceOf e g; t <- targetOf e g; return (s,t) }
-  sourceOf e g  = fmap fst $ nodesConnectedTo e g
-  targetOf e g  = fmap snd $ nodesConnectedTo e g
+  isNodeOf g n  = n `elem` (nodes g)
+  isEdgeOf g e  = e `elem` (edges g)
+  nodesConnectedTo g e = do { s <- sourceOf g e; t <- targetOf g e; return (s,t) }
+  sourceOf g e  = fmap fst $ nodesConnectedTo g e
+  targetOf g e  = fmap snd $ nodesConnectedTo g e
 
   -- Navigate within graph: default implementation
-  edgesFromNode n g    = filter (\e -> sourceOf e g == Just n)    (edges g)
-  edgesIntoNode n g    = filter (\e -> targetOf e g == Just n)    (edges g)
-  nodesFromNode n g    = filter (\v -> isAdjacentTo n v g)   (nodes g)
-  nodesIntoNode n g    = filter (\v -> isAdjacentTo v n g)   (nodes g)
-  isAdjacentTo n1 n2 g = any (\e-> nodesConnectedTo e g == Just (n1,n2)) (edges g)
-  isIncidentTo e n g   = fromMaybe False $ do { (s,t) <- nodesConnectedTo e g; return $ n==s || n==t }
-  incidentEdges n g    = nub $ edgesIntoNode n g ++ edgesFromNode n g
-  neighbourNodes n g   = nub $ nodesIntoNode n g ++ nodesFromNode n g 
+  edgesFromNode g n    = filter (\e -> sourceOf g e == [n]) (edges g)
+  edgesIntoNode g n    = filter (\e -> targetOf g e == [n]) (edges g)
+  nodesFromNode g n    = filter (\v -> isAdjacentTo g n v) (nodes g)
+  nodesIntoNode g n    = filter (\v -> isAdjacentTo g v n) (nodes g)
+  isAdjacentTo g n1 n2 = any (\e -> nodesConnectedTo g e == [(n1,n2)]) (edges g)
+  isIncidentTo g e n   = let res = nodesConnectedTo g e
+                         in case res of
+                            ((s, t):_) -> n == s || n == t
+                            otherwise   -> False
+  incidentEdges g n    = nub $ edgesIntoNode g n ++ edgesFromNode g n
+  neighbourNodes g n   = nub $ nodesIntoNode g n ++ nodesFromNode g n 
 
 
 -------------------------------------------------------------------------------------------
