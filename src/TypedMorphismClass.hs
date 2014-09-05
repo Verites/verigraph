@@ -7,6 +7,6 @@ import MorphismClass
 class MorphismClass (M t) => TypedMorphismClass t where
     type M t :: *
 
-    typedDomain   :: t -> (M t)
-    typedCodomain :: t -> (M t)
-    typedMapping  :: t -> (M t)
+    domain   :: t -> (M t)
+    codomain :: t -> (M t)
+    mapping  :: t -> (M t)

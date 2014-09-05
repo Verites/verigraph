@@ -1,13 +1,15 @@
+{-# LANGUAGE TypeFamilies #-}
 module Match
     (
-    Morphism a b
-    , findMatches
+{-
+    findMatches
     , findMatchesR
     , isSurjective
     --, isInjective
     , findIsoMorphisms
     , isIsomorphic
     , MorphismType (..)
+-}
     )
     where
 
@@ -17,9 +19,12 @@ import Data.List.Utils
 import Data.Maybe
 import qualified GraphClass as G
 import Graph (Graph)
-import qualified MorphismClass as Morph
-import Morphism (Morphism)
 import qualified Data.Set as Set
+
+import Morphism (Morphism, TypedGraph)
+import qualified MorphismClass as M
+import TypedMorphism (TypedMorphism)
+import qualified TypedMorphismClass as TM
 
 -- | Is a tuple of two relations regarding two graphs (possibly equal):
 -- the first among their respective G.nodes, the other among their G.edges. Each
@@ -30,43 +35,52 @@ data MorphismType = Normal | Mono | Epi | Iso
 
 -- | Given two typed graphs, return a list of mappings, each representing a
 -- possible homomorphism between the graphs.
-findMatches :: MorphismType -> TypedGraph a b -> TypedGraph a b -> [TypedMorphism a b]
-findMatches mt l g = 
-    findMatchesR (Morph.empty l g) mt l g
+--findMatches :: MorphismType -> TypedGraph a b -> TypedGraph a b -> [TypedMorphism a b]
+--findMatches mt l g = 
+--    findMatchesR (Morph.empty l g) mt l g
 
 -- | Given two typed graphs, return a list of mappings, each representing a
 -- possible homomorphism between the graphs.
+{-
 findMatchesR :: Morphism a b
              -> MorphismType
              -> TypedGraph a b
              -> TypedGraph a b
              -> [TypedMorphism a b]
 findMatchesR r mt l g = matchGraphs r mt l g
+-}
+
+type Edge a b = G.Ed (M.G (TypedGraph a b))
 
 ----------------------------------------------------------------------------
 -- Edge related condition functions
 
 -- An EdgeCondition checks if a node satisfies it's internal requirements.
-type EdgeCondition b = Int -> Bool
+type EdgeCondition a b = Edge a b -> Bool
 
 -- | Generate an edge condition that checks if both G.edges are from same type.
-edgeTypeCondGen :: Int -> TypedGraph a b -> TypedGraph a b -> EdgeCondition b
-edgeTypeCondGen le lg rg = (\ge -> sameEdgeType le lg re rg)
+-- edgeTypeCondGen :: Int -> TypedGraph a b -> TypedGraph a b -> EdgeCondition b
+-- edgeTypeCondGen le lg rg = (\ge -> sameEdgeType le lg re rg)
 
 -- | Generate a condition that tests if @le@'s source already occurs in @m@.
 -- If that's the case, check if @ge@'s source is the same node to which @le@'s
 -- source got mapped.  If so, @ge@ is a matching Edge. If @le@'s source doesn't
 -- occur in @m@, any @ge@ will satisfy this condition.
-srcIDCondGen :: Morphism a b -> Int -> TypedGraph a b -> TypedGraph a b -> EdgeCondition b
-srcIDCondGen m le lg rg =
-    (\ge ->
-        let lsrc    = G.sourceOf le (Morph.domain lg)
-            gsrc    = G.sourceOf ge (Morph.domain rg)
-            mapped  = Morph.applyToNode lsrc m
-        in case mapped of        
-            [rnode] -> gsrc == [rnode]
-            otherwise -> True)
 
+srcIDCondGen :: TypedMorphism a b -> TypedGraph a b -> Edge a b -> TypedGraph a b -> EdgeCondition a b
+srcIDCondGen m lg le rg =
+    (\ge ->
+        let res :: [Bool]
+            res =
+             do lsrc   <- G.sourceOf (M.domain lg) le
+                gsrc   <- G.sourceOf (M.domain rg) ge
+                rnode  <- M.applyNode m lsrc
+                return $ gsrc == rnode
+        in null res || head res)
+          
+         
+
+{-
 {-
                         matched = Set.toList $ Set.filter (\(s, t) -> s == lsrc) Set.toList nmatches
                 in case matched of
@@ -370,3 +384,4 @@ numEdges g = length $ G.edges $ Morph.domain g
 
 nullG :: TypedGraph a b -> Bool
 nullG g = (null $ G.nodes $ Morph.domain g) && (null $ G.edges $ Morph.domain g)
+-}

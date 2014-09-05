@@ -2,7 +2,6 @@
 
 module TypedMorphism
     ( TypedMorphism
-    , TypedGraph
     ) where
 
 import TypedMorphismClass
@@ -18,6 +17,6 @@ data TypedMorphism a b = TypedMorphism {
 instance TypedMorphismClass (TypedMorphism a b) where
     type M (TypedMorphism a b) = Morphism a b
 
-    typedDomain m   = getDomain m
-    typedCodomain m = getCodomain m
-    typedMapping m  = getMapping m
+    domain m   = getDomain m
+    codomain m = getCodomain m
+    mapping m  = getMapping m
