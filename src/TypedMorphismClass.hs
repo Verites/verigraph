@@ -10,3 +10,5 @@ class MorphismClass (M t) => TypedMorphismClass t where
     domain   :: t -> (M t)
     codomain :: t -> (M t)
     mapping  :: t -> (M t)
+
+    typedMorphism :: M t -> M t -> M t -> t

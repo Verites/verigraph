@@ -20,3 +20,5 @@ instance TypedMorphismClass (TypedMorphism a b) where
     domain m   = getDomain m
     codomain m = getCodomain m
     mapping m  = getMapping m
+
+    typedMorphism d c m = TypedMorphism d c m
