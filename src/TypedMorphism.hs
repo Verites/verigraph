@@ -1,8 +1,6 @@
 {-# LANGUAGE TypeFamilies #-}
 
-module TypedMorphism
-    ( TypedMorphism
-    ) where
+module TypedMorphism (TypedMorphism) where
 
 import TypedMorphismClass
 import MorphismClass
@@ -21,4 +19,4 @@ instance TypedMorphismClass (TypedMorphism a b) where
     codomain m = getCodomain m
     mapping m  = getMapping m
 
-    typedMorphism d c m = TypedMorphism d c m
+    typedMorphism = TypedMorphism
