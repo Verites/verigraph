@@ -9,5 +9,6 @@ class TypedMorphismClass (T r) => GraphRuleClass r where
 
     left     :: r -> (T r)
     right    :: r -> (T r)
+    nacs     :: r -> [T r]
 
-    graphRule :: T r -> T r -> r
+    graphRule :: T r -> T r -> [T r] -> r

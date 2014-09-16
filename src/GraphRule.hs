@@ -11,6 +11,7 @@ import Morphism
 data GraphRule a b = GraphRule {
                           leftSide  :: TypedMorphism a b
                         , rightSide :: TypedMorphism a b
+                        , getNacs   :: [TypedMorphism a b]
                      }
 
 instance GraphRuleClass (GraphRule a b) where
@@ -18,5 +19,6 @@ instance GraphRuleClass (GraphRule a b) where
 
     left  = leftSide
     right = rightSide
+    nacs  = getNacs
 
     graphRule = GraphRule
