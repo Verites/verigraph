@@ -2,9 +2,11 @@
 
 module TypedMorphism (TypedMorphism) where
 
+import Graph (Graph)
 import TypedMorphismClass
-import MorphismClass
+import qualified MorphismClass as M
 import Morphism
+import Valid
 
 data TypedMorphism a b = TypedMorphism {
                               getDomain   :: Morphism a b
@@ -15,8 +17,16 @@ data TypedMorphism a b = TypedMorphism {
 instance TypedMorphismClass (TypedMorphism a b) where
     type M (TypedMorphism a b) = Morphism a b
 
-    domain m   = getDomain m
-    codomain m = getCodomain m
-    mapping m  = getMapping m
+    domain t   = getDomain t
+    codomain t = getCodomain t
+    mapping t  = getMapping t
 
     typedMorphism = TypedMorphism
+
+instance (Eq a, Eq b) => Valid (TypedMorphism a b) where
+    valid t = let dom = domain t
+                  cod = codomain t
+              in valid dom &&
+                 valid cod &&
+                 M.image dom == (M.image $ (M.compose (mapping t) cod))
+        
