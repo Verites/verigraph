@@ -11,8 +11,8 @@ class GraphRuleClass (R gg) => GraphGrammarClass gg where
     type R gg :: *
     type K gg :: *
 
-    typeGraph    :: gg -> (T gg)
-    rules        :: gg -> [(K gg, R gg)]
+    typeGraph    :: gg -> (M (T (R gg)))
     initialGraph :: gg -> G (M (T (R gg)))
+    rules        :: gg -> [(K gg, R gg)]
     
-    graphGrammar :: T gg -> G (M (T (R gg))) -> [(K gg, R gg)] -> gg
+    graphGrammar :: (M (T (R gg))) -> G (M (T (R gg))) -> [(K gg, R gg)] -> gg

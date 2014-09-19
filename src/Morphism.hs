@@ -8,7 +8,7 @@ module Morphism
 import Data.IntMap (IntMap)
 --import qualified Data.IntMap as Map
 import qualified Data.MultiMap as Map
-import Helper
+import Valid
 import MorphismClass
 import Graph (Graph)
 import qualified GraphClass as G
