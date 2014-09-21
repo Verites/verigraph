@@ -13,7 +13,6 @@ class (Eq a) => Relation r a where
     empty    :: [a] -> [a] -> r a
     update   :: a -> [a] -> r a -> r a
 
-
     apply   :: r a -> a -> [a]
     compose :: r a -> r a -> r a
     inverse :: r a -> r a
@@ -54,4 +53,5 @@ class (Eq a) => Relation r a where
     total r =
         domain r == defDomain r &&
         codomain r == image r
+
 
