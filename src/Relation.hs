@@ -51,7 +51,6 @@ class (Eq a) => Relation r a where
         total $ inverse r
 
     total r =
-        domain r == defDomain r &&
-        codomain r == image r
+        domain r == defDomain r
 
 
