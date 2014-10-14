@@ -1,6 +1,6 @@
 {-# LANGUAGE TypeFamilies, MultiParamTypeClasses, FlexibleContexts #-}
 
-module Relation  where {- (
+module NewRelation  where {- (
     domain    :: Relation a -> [a],
     defDomain :: Relation a -> [a],
     image     :: Relation a -> [a],
@@ -53,7 +53,7 @@ inverse (Relation dom cod m) =
     Relation cod dom m'
   where
     m' = Map.foldWithKey
-        (\x ys m -> foldr (\y mp -> Map.insertWith (++) y [x] mp) Map.empty ys)
+        (\x ys m -> foldr (\y mp -> Map.insertWith (++) y [x] mp) m ys)
         Map.empty
         m        
 
