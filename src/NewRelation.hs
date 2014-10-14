@@ -38,45 +38,45 @@ empty :: (Eq a, Ord a) => [a] -> [a] -> Relation a
 --empty = Relation [] [] Map.empty
 empty c d = Relation (sort $ nub c) (sort $ nub d) Map.empty
 
-updateRelation :: a -> a -> Relation a -> Relation a 
+updateRelation :: (Eq a, Ord a) => a -> a -> Relation a -> Relation a 
 updateRelation x y (Relation dom cod m) = 
   Relation ([x] `union` dom) ([y] `union` cod) (Map.insertWith (++) x [y] m)  
 
 
-update :: a -> a -> Relation a -> Relation a
+update :: (Eq a, Ord a) => a -> a -> Relation a -> Relation a
 update x y (Relation dom cod m) = 
   Relation ([x] `union` dom) ([y] `union` cod) (Map.insert x [y] m)  
   
 
-inverse :: Relation a -> Relation a
+inverse :: (Ord a) => Relation a -> Relation a
 inverse (Relation dom cod m) =
     Relation cod dom m'
   where
     m' = Map.foldWithKey
-        (\x ys m -> foldr (\y mp -> Map.insert y x mp) ys)
+        (\x ys m -> foldr (\y mp -> Map.insertWith (++) y [x] mp) Map.empty ys)
         Map.empty
         m        
 
-apply :: Relation a -> a -> [a]
-apply x (Relation dom cod m) =
+apply :: (Ord a) => Relation a -> a -> [a]
+apply (Relation dom cod m) x =
     case Map.lookup x m of
         Just l    -> l
         otherwise -> []
                           
 
-compose :: Relation a -> Relation a -> Relation a
+compose :: (Ord a) => Relation a -> Relation a -> Relation a
 compose r1@(Relation dom cod m) r2@(Relation dom' cod' m') =
     Relation dom cod' m''
   where
     m'' =
         foldr
             (\a m -> let im = do
-                              b <- apply a r1
-                              c <- apply b r2
+                              b <- apply r1 a
+                              c <- apply r2 b
                               return c
                      in Map.insert a im m)
-            (Map.empty dom cod')
-            $ defDomain m
+            Map.empty
+            $ defDomain r1
                               
 {-
 class (Eq t) => Morphism t where
