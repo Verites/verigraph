@@ -1,59 +1,84 @@
 {-# LANGUAGE TypeFamilies, MultiParamTypeClasses, FlexibleContexts #-}
 
-module Relation where
+module Relation  where {- (
+    domain    :: Relation a -> [a],
+    defDomain :: Relation a -> [a],
+    image     :: Relation a -> [a],
+    inverse   :: Relation a -> Relation [a],
+    apply     :: Relation a -> a -> [a],
+    compose   :: Relation a -> Relation a -> Relation a
+)
+-}
 
 import Data.List
 import qualified Data.Map as Map 
 
 -- datatype for endorelações em a
 data Relation a = 
-   Relation 
-   { 
-     domain   :: [a],     -- domain 
-     codomain :: [a],     -- codomain
-     mapping  :: Map.Map a [a]  -- mapping
-   } 
-   deriving (Eq,Ord,Show,Read)                
+   Relation { 
+       domain   :: [a],     -- domain 
+       codomain :: [a],     -- codomain
+       mapping  :: Map.Map a [a]  -- mapping
+   } deriving (Ord,Show,Read)                
 
-defDomain :: Rel a -> [a]
-defDomain (Rel dom cod m) = 
-   (Map.keys m)  
+instance (Eq a) => Eq (Relation a) where
+    r1 == r2 = domain r1 == domain r2     &&
+               codomain r1 == codomain r2 &&
+               mapping r1 == mapping r2
+               
+defDomain :: Relation a -> [a]
+defDomain (Relation dom cod m) = 
+   (Map.keys m)
 
-
-image :: Rel a -> [a]
-image (Rel dom cod m) = 
+image :: (Eq a) => Relation a -> [a]
+image (Relation dom cod m) = 
    nub (concat $ Map.elems m)
 
+empty :: (Eq a, Ord a) => [a] -> [a] -> Relation a
+--empty = Relation [] [] Map.empty
+empty c d = Relation (sort $ nub c) (sort $ nub d) Map.empty
 
-empty :: Rel a
-empty = Rel [] [] Map.empty
+updateRelation :: a -> a -> Relation a -> Relation a 
+updateRelation x y (Relation dom cod m) = 
+  Relation ([x] `union` dom) ([y] `union` cod) (Map.insertWith (++) x [y] m)  
 
 
-updateRel :: a -> a -> Rel a -> Rel a 
-updateRel x y (Rel dom cod m) = 
-  Rel ([x] `union` dom) ([y] `union` cod) (Map.insertWith (++) x [y] m)  
-
-
-update :: a -> a -> Rel a -> Rel a
-update x y (Rel dom cod m) = 
-  Rel ([x] `union` dom) ([y] `union` cod) (Map.insert x [y] m)  
+update :: a -> a -> Relation a -> Relation a
+update x y (Relation dom cod m) = 
+  Relation ([x] `union` dom) ([y] `union` cod) (Map.insert x [y] m)  
   
 
-inverse :: Rel a -> Rel a
-inverse (Rel dom cod m) = Rel cod dom m'
-  where m' = Map.foldWithKey (\x ys m -> foldr (\y mp -> M.insert y x mp) ys) Map.empty m        
+inverse :: Relation a -> Relation a
+inverse (Relation dom cod m) =
+    Relation cod dom m'
+  where
+    m' = Map.foldWithKey
+        (\x ys m -> foldr (\y mp -> Map.insert y x mp) ys)
+        Map.empty
+        m        
 
-
-apply :: Rel a -> a -> [a]
-apply x (Rel dom cod m) = concat $ Map.lookup x m
+apply :: Relation a -> a -> [a]
+apply x (Relation dom cod m) =
+    case Map.lookup x m of
+        Just l    -> l
+        otherwise -> []
                           
 
-compose :: Rel a -> Rel a -> Rel a
-compose (Rel dom cod m) (Rel dom' cod' m') = Rel dom cod' m''
+compose :: Relation a -> Relation a -> Relation a
+compose r1@(Relation dom cod m) r2@(Relation dom' cod' m') =
+    Relation dom cod' m''
   where
-    x <- dom 
+    m'' =
+        foldr
+            (\a m -> let im = do
+                              b <- apply a r1
+                              c <- apply b r2
+                              return c
+                     in Map.insert a im m)
+            (Map.empty dom cod')
+            $ defDomain m
                               
-
+{-
 class (Eq t) => Morphism t where
   dom
   cod 
@@ -120,4 +145,4 @@ class (Eq a) => Relation r a where
         domain r == defDomain r &&
         codomain r == image r
 
-
+-}
