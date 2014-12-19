@@ -1,27 +1,27 @@
 {-# LANGUAGE TypeFamilies #-}
-module Graph
-    ( Graph
-    , empty
-    , insertNode
-    , insertEdge
-    , removeNode
-    , removeEdge
-    , nodes
+module Graph (
+      Graph
     , edges
-    , nodesConnectedTo
-    , isNodeOf
-    , isEdgeOf
-    , sourceOf
-    , targetOf
     , edgesFromNode
     , edgesIntoNode
+    , empty
+    , incidentEdges
+    , insertNode
+    , insertEdge
+    , isAdjacentTo
+    , isEdgeOf
+    , isIncidentTo
+    , isNodeOf
+    , neighbourNodes
+    , nodes
+    , nodesConnectedTo
     , nodesFromNode
     , nodesIntoNode
-    , isAdjacentTo
-    , isIncidentTo
-    , incidentEdges
-    , neighbourNodes
-    ) where
+    , removeEdge
+    , removeNode
+    , sourceOf
+    , targetOf
+) where
 
 import Valid
 import Data.List
