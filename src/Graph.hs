@@ -1,7 +1,28 @@
 {-# LANGUAGE TypeFamilies #-}
-module Graph (Graph) where
+module Graph
+    ( Graph
+    , empty
+    , insertNode
+    , insertEdge
+    , removeNode
+    , removeEdge
+    , nodes
+    , edges
+    , nodesConnectedTo
+    , isNodeOf
+    , isEdgeOf
+    , sourceOf
+    , targetOf
+    , edgesFromNode
+    , edgesIntoNode
+    , nodesFromNode
+    , nodesIntoNode
+    , isAdjacentTo
+    , isIncidentTo
+    , incidentEdges
+    , neighbourNodes
+    ) where
 
-import GraphClass
 import Valid
 import Data.List
 import Data.List.Utils
@@ -17,49 +38,95 @@ data Edge a = Edge { getSource   :: Int
                    , edgeType    :: Maybe Int
               } deriving (Eq, Show, Read)
 
+type NodeID = Int
+type EdgeID = Int
+
 data Graph a b = Graph [(Int, Node a)] [(Int, Edge b)]
     deriving (Show, Read, Eq)
 
-instance GraphClass (Graph a b) where
-    type Nd (Graph a b) = Int
-    type Ed (Graph a b) = Int
+empty :: Graph a b
+empty = Graph [] []
 
-  -- Build and modify graphs
-    empty = Graph [] []
+-- Build and modify graphs
+insertNode :: NodeID -> Graph a b -> Graph a b
+insertNode n g@(Graph ns es) =
+    Graph (addToAL ns n (Node Nothing Nothing)) es
 
-    insertNode n g@(Graph ns es) =
-        Graph (addToAL ns n (Node Nothing Nothing)) es
+insertEdge :: EdgeID -> NodeID -> NodeID -> Graph a b -> Graph a b
+insertEdge e src tgt g@(Graph ns es)
+    | src `elem` (keysAL ns) && tgt `elem` (keysAL ns) =
+        Graph ns (addToAL es e (Edge src tgt Nothing Nothing))
+    | otherwise = g
 
-    insertEdge e src tgt g@(Graph ns es)
-        | src `elem` (keysAL ns) && tgt `elem` (keysAL ns) =
-            Graph ns (addToAL es e (Edge src tgt Nothing Nothing))
-        | otherwise = g
+removeNode :: NodeID -> Graph a b -> Graph a b
+removeNode n g@(Graph ns es)
+    | null $ incidentEdges g n = Graph (delFromAL ns n) es
+    | otherwise = g
 
-    removeNode n g@(Graph ns es)
-        | null $ incidentEdges g n = Graph (delFromAL ns n) es
-        | otherwise = g
-
-    removeEdge e (Graph ns es) = Graph ns (delFromAL es e)
+removeEdge :: EdgeID -> Graph a b -> Graph a b
+removeEdge e (Graph ns es) = Graph ns (delFromAL es e)
         
-    nodes (Graph ns _) = keysAL ns        
-    edges (Graph _ es) = keysAL es        
-    nodesConnectedTo g@(Graph _ es) e =
-        let ed = lookup e es
-        in case ed of
-            Just (Edge src tgt _ _) -> [(src, tgt)]
-            otherwise -> []
+-- Test the presence and access nodes and edges
+nodes :: Graph a b -> [NodeID]
+nodes (Graph ns _) = keysAL ns        
 
-    sourceOf (Graph _ es) e =
-        let res = lookup e es
-        in case res of
-            (Just ed) -> [getSource ed]
-            otherwise -> []
+edges :: Graph a b -> [EdgeID]
+edges (Graph _ es) = keysAL es        
 
-    targetOf (Graph _ es) e =
-        let res = lookup e es
-        in case res of
-            (Just ed) -> [getTarget ed]
-            otherwise -> []
+nodesConnectedTo :: Graph a b -> EdgeID -> [(NodeID, NodeID)]
+nodesConnectedTo g@(Graph _ es) e =
+    let ed = lookup e es
+    in case ed of
+        Just (Edge src tgt _ _) -> [(src, tgt)]
+        otherwise -> []
+
+sourceOf :: Graph a b -> EdgeID -> [NodeID]
+sourceOf (Graph _ es) e =
+    let res = lookup e es
+    in case res of
+        (Just ed) -> [getSource ed]
+        otherwise -> []
+
+targetOf :: Graph a b -> EdgeID -> [NodeID]
+targetOf (Graph _ es) e =
+    let res = lookup e es
+    in case res of
+        (Just ed) -> [getTarget ed]
+        otherwise -> []
+
+isNodeOf :: Graph a b -> NodeID -> Bool
+isNodeOf g n  = n `elem` (nodes g)
+
+isEdgeOf :: Graph a b -> EdgeID -> Bool
+isEdgeOf g e  = e `elem` (edges g)
+
+-- Navigate within graph
+edgesFromNode :: Graph a b -> NodeID -> [EdgeID]
+edgesFromNode g n = filter (\e -> sourceOf g e == [n]) (edges g)
+
+edgesIntoNode :: Graph a b -> NodeID -> [EdgeID]
+edgesIntoNode g n = filter (\e -> targetOf g e == [n]) (edges g)
+
+nodesFromNode :: Graph a b -> NodeID -> [NodeID]
+nodesFromNode g n = filter (\v -> isAdjacentTo g n v) (nodes g)
+
+nodesIntoNode :: Graph a b -> NodeID -> [NodeID]
+nodesIntoNode g n = filter (\v -> isAdjacentTo g v n) (nodes g)
+
+isAdjacentTo :: Graph a b -> NodeID -> NodeID -> Bool
+isAdjacentTo g n1 n2 = any (\e -> nodesConnectedTo g e == [(n1,n2)]) (edges g)
+
+isIncidentTo :: Graph a b -> NodeID -> NodeID -> Bool
+isIncidentTo g e n = let res = nodesConnectedTo g e
+                   in case res of
+                      ((s, t):_) -> n == s || n == t
+                      otherwise   -> False
+
+incidentEdges :: Graph a b -> NodeID -> [EdgeID]
+incidentEdges g n = nub $ edgesIntoNode g n ++ edgesFromNode g n
+
+neighbourNodes :: Graph a b -> NodeID -> [NodeID]
+neighbourNodes g n = nub $ nodesIntoNode g n ++ nodesFromNode g n 
 
 instance Valid (Graph a b) where
     valid g =
