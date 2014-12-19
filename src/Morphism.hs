@@ -1,13 +1,17 @@
 module Morphism where
 
-import Relation
+import qualified Relation as R
 
 class Morphism m where
-  data obj :: *
-  compose  :: m -> m -> m 
-  (==)     :: m -> m -> Bool
-  domain   :: m -> m -> obj 
-  codomain :: m -> a -> obj
+    data obj :: *
+    compose  :: m -> m -> m 
+    (==)     :: m -> m -> Bool
+    domain   :: m -> [obj]
+    codomain :: m -> [obj]
+    id       :: obj -> m
+    monomorphism :: m -> Bool
+    epimorphism :: m -> Bool
+    isomorphism :: m -> Bool
 
 
 
