@@ -101,25 +101,3 @@ surjective r =
 total r =
     domain r == defDomain r
                               
-{-
-class (Eq t) => Morphism t where
-  dom
-  cod 
-  compose
-  equal
-  id 
-  
-  monomorphism 
-  epimorphism
-  isomorphism
--}
-
-  
-
-{-
-update :: (Eq a, Ord a) => a -> a -> Relation a -> Relation a
-update x y (Relation dom cod m) = 
-  Relation ([x] `union` dom) ([y] `union` cod) (Map.insert x [y] m)  
--}
-
-

@@ -20,8 +20,6 @@ data GraphMorphism a b = GraphMorphism {
                         , getCodomain  :: Graph a b
                         , nodeRelation :: R.Relation G.NodeID
                         , edgeRelation :: R.Relation G.EdgeID
---                        , getMapping    :: (Map.MultiMap Int Int, Map.MultiMap Int Int)
---                        , getInvMapping :: (Map.MultiMap Int Int, Map.MultiMap Int Int)
                     }
 
 type TypedGraph a b = GraphMorphism a b
