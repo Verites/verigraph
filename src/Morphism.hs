@@ -1,14 +1,13 @@
+{-# LANGUAGE TypeFamilies, MultiParamTypeClasses, FlexibleContexts #-}
+
 module Morphism where
 
-import qualified Relation as R
-
-class Morphism m where
-    data obj :: *
+class (Eq m) => Morphism m where
+    type Obj m :: *
     compose  :: m -> m -> m 
-    (==)     :: m -> m -> Bool
-    domain   :: m -> [obj]
-    codomain :: m -> [obj]
-    id       :: obj -> m
+    domain   :: m -> Obj m
+    codomain :: m -> Obj m
+    id       :: Obj m -> m
     monomorphism :: m -> Bool
     epimorphism :: m -> Bool
     isomorphism :: m -> Bool

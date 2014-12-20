@@ -1,6 +1,7 @@
 {-# LANGUAGE TypeFamilies #-}
 module Graph (
       Graph
+    , EdgeID
     , edges
     , edgesFromNode
     , edgesIntoNode
@@ -13,6 +14,7 @@ module Graph (
     , isIncidentTo
     , isNodeOf
     , neighbourNodes
+    , NodeID
     , nodes
     , nodesConnectedTo
     , nodesFromNode

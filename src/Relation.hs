@@ -7,6 +7,7 @@ module Relation (
     , domain
     , empty
     , functional
+    , Relation.id
     , image
     , injective
     , inverse
@@ -42,7 +43,13 @@ image (Relation dom cod m) =
    nub (concat $ Map.elems m)
 
 empty :: (Eq a, Ord a) => [a] -> [a] -> Relation a
-empty c d = Relation (sort $ nub c) (sort $ nub d) Map.empty
+empty dom cod = Relation (sort $ nub dom) (sort $ nub cod) Map.empty
+
+id :: (Eq a, Ord a) => [a] -> Relation a
+id dom = Relation d d idMap
+    where
+    d = sort $ nub dom
+    idMap = foldr (\x acc -> Map.insert x [x] acc) Map.empty dom
 
 update :: (Eq a, Ord a) => a -> a -> Relation a -> Relation a 
 update x y (Relation dom cod m) = 
