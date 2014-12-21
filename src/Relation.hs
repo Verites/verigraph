@@ -87,13 +87,18 @@ compose r1@(Relation dom cod m) r2@(Relation dom' cod' m') =
 
 functional :: (Ord a) => Relation a -> Bool
 functional r =
-    all (\x -> length x == 1) $ map (apply r) (domain r)
+    all containsOne $ map (apply r) (domain r)
+  where
+    containsOne [x] = True
+    containsOne _ = False
 
 injective :: (Ord a) => Relation a -> Bool
 injective r =
-    all (\x -> length x == 1) $ map (apply invr) (domain invr)
-    where
-        invr = inverse r
+    all containsOne $ map (apply invr) (domain invr)
+  where
+    invr = inverse r
+    containsOne [x] = True
+    containsOne _ = False
 
 surjective r =
     total $ inverse r
