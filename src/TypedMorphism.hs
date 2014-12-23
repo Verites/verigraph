@@ -1,32 +1,50 @@
 {-# LANGUAGE TypeFamilies #-}
 
-module TypedMorphism (TypedMorphism) where
+module TypedMorphism (
+      mapping
+    , typedMorphism
+    , TypedMorphism
+) where
 
 import Graph (Graph)
-import TypedMorphismClass
-import qualified MorphismClass as M
+import GraphMorphism
 import Morphism
 import Valid
 
 data TypedMorphism a b = TypedMorphism {
-                              getDomain   :: Morphism a b
-                            , getCodomain :: Morphism a b
-                            , getMapping  :: Morphism a b
+                              getDomain   :: GraphMorphism a b
+                            , getCodomain :: GraphMorphism a b
+                            , getMapping  :: GraphMorphism a b
                          }
 
-instance TypedMorphismClass (TypedMorphism a b) where
-    type M (TypedMorphism a b) = Morphism a b
+typedMorphism = TypedMorphism
+mapping = getMapping
 
-    domain t   = getDomain t
-    codomain t = getCodomain t
-    mapping t  = getMapping t
+instance (Eq a, Eq b) => Eq (TypedMorphism a b) where
+    (TypedMorphism dom1 cod1 m1) == (TypedMorphism dom2 cod2 m2) =
+        dom1 == dom2 &&
+        cod1 == cod2 &&
+        m1 == m2
 
-    typedMorphism = TypedMorphism
+instance (Eq a, Eq b) => Morphism (TypedMorphism a b) where
+    type Obj (TypedMorphism a b) = GraphMorphism a b
+
+    domain = getDomain
+    codomain = getCodomain
+    compose t1 t2 =
+        TypedMorphism (domain t1)
+                      (codomain t2)
+                      $ compose (getMapping t1)
+                                (getMapping t2)
+    id t = TypedMorphism t t (Morphism.id $ domain t)
+    monomorphism = monomorphism . mapping
+    epimorphism = epimorphism . mapping
+    isomorphism = isomorphism . mapping
+
 
 instance (Eq a, Eq b) => Valid (TypedMorphism a b) where
-    valid t = let dom = domain t
-                  cod = codomain t
-              in valid dom &&
-                 valid cod &&
-                 M.image dom == (M.image $ (M.compose (mapping t) cod))
+    valid (TypedMorphism dom cod m) =
+        valid dom &&
+        valid cod &&
+        dom == compose m cod
         

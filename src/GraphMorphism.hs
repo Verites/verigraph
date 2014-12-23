@@ -71,8 +71,8 @@ instance (Eq a, Eq b) => Eq (GraphMorphism a b) where
 instance (Eq a, Eq b) => Morphism (GraphMorphism a b) where
     type Obj (GraphMorphism a b) = Graph a b
 
-    domain m = getDomain m
-    codomain m = getCodomain m
+    domain = getDomain
+    codomain = getCodomain
     compose m1 m2 =
         GraphMorphism (domain m1)
                       (codomain m2)
