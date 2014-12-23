@@ -1,33 +1,31 @@
 {-# LANGUAGE TypeFamilies #-}
 
-module GraphRule (GraphRule) where
+module GraphRule (
+      graphRule
+    , GraphRule
+    , left
+    , right
+    , nacs
+) where
 
-import GraphRuleClass
-import TypedMorphism (TypedMorphism)
-import qualified TypedMorphismClass as T
-import qualified MorphismClass as M
+import TypedGraphMorphism (TypedGraphMorphism)
 import Morphism
 import Valid
 
 data GraphRule a b = GraphRule {
-                          leftSide  :: TypedMorphism a b
-                        , rightSide :: TypedMorphism a b
-                        , getNacs   :: [TypedMorphism a b]
+                          leftSide  :: TypedGraphMorphism a b
+                        , rightSide :: TypedGraphMorphism a b
+                        , getNacs   :: [TypedGraphMorphism a b]
                      }
 
-instance GraphRuleClass (GraphRule a b) where
-    type T (GraphRule a b) = TypedMorphism a b
-
-    left  = leftSide
-    right = rightSide
-    nacs  = getNacs
-
-    graphRule = GraphRule
+left  = leftSide
+right = rightSide
+nacs  = getNacs
+graphRule = GraphRule
 
 instance (Eq a, Eq b) => Valid (GraphRule a b) where
-    valid r = let lside = left r
-                  rside = right r
-              in valid lside &&
-                 valid rside &&
-                 (M.domain $ T.domain lside) ==
-                 (M.domain $ T.domain rside)
+    valid (GraphRule lside rside nacs) =
+        valid lside &&
+        valid rside &&
+        all valid nacs &&
+        (domain lside) == (domain rside)
