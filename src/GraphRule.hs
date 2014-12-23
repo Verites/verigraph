@@ -1,5 +1,3 @@
-{-# LANGUAGE TypeFamilies #-}
-
 module GraphRule (
       graphRule
     , GraphRule
