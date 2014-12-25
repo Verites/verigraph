@@ -43,8 +43,8 @@ type EdgeCondition b = Int -> Bool
 -- If that's the case, check if @ge@'s source is the same node to which @le@'s
 -- source got mapped.  If so, @ge@ is a matching Edge. If @le@'s source doesn't
 -- occur in @m@, any @ge@ will satisfy this condition.
-srcIDCondGen :: Graph a b -> Int -> Mapping -> Graph a b -> EdgeCondition b
-srcIDCondGen lg le m@(nmatches, _) rg =
+srcIdCondGen :: Graph a b -> Int -> Mapping -> Graph a b -> EdgeCondition b
+srcIdCondGen lg le m@(nmatches, _) rg =
     (\re ->
         let lsrc    = G.sourceOf le lg
             rsrc    = G.sourceOf re rg
@@ -57,8 +57,8 @@ srcIDCondGen lg le m@(nmatches, _) rg =
 -- @m@. If that's the case, check if @ge@'s target is the same node to which
 -- @le@'s target got mapped.  If so, @ge@ is a matching Edge. If @le@'s target
 -- doesn't occur in @m@, any @ge@ will satisfy this condition.
-tarIDCondGen :: Graph a b -> Int -> Mapping -> Graph a b -> EdgeCondition b
-tarIDCondGen lg le m@(nmatches, _) rg =
+tarIdCondGen :: Graph a b -> Int -> Mapping -> Graph a b -> EdgeCondition b
+tarIdCondGen lg le m@(nmatches, _) rg =
     (\re -> let ltar    = G.targetOf le lg
                 rtar    = G.targetOf re rg
                 matched = find (\(s, t) -> Just s == ltar) nmatches
@@ -70,10 +70,10 @@ tarIDCondGen lg le m@(nmatches, _) rg =
 -- @ge@ is also a loop in @g@.
 
 -- This condition is due to the sequential nature of processEdges. Conditions 
--- that check node coincidence (like @srcIDCond@) rely on previously mappings,
+-- that check node coincidence (like @srcIdCond@) rely on previously mappings,
 -- so they aren't able to detect a mapping node in the current step. 
 -- Without @loopCond@, a loop edge that, e.g., happens to be the first to be
--- mapped passes srcIDCond and tarIDCond.
+-- mapped passes srcIdCond and tarIdCond.
 loopCondGen :: Graph a b -> Int -> Graph a b -> EdgeCondition b
 loopCondGen lg le rg =
     (\re -> let lsrc = G.sourceOf le lg
@@ -93,8 +93,8 @@ generateEdgeConds
         -> Mapping
         -> [EdgeCondition b]
 generateEdgeConds lg le rg m =
-    srcIDCondGen lg le m rg :
-    tarIDCondGen lg le m rg :
+    srcIdCondGen lg le m rg :
+    tarIdCondGen lg le m rg :
     loopCondGen lg le rg  :
     []
 

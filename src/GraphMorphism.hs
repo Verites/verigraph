@@ -18,8 +18,8 @@ import Valid
 data GraphMorphism a b = GraphMorphism {
                           getDomain    :: Graph a b
                         , getCodomain  :: Graph a b
-                        , nodeRelation :: R.Relation G.NodeID
-                        , edgeRelation :: R.Relation G.EdgeID
+                        , nodeRelation :: R.Relation G.NodeId
+                        , edgeRelation :: R.Relation G.EdgeId
                     }
 
 type TypedGraph a b = GraphMorphism a b
@@ -37,11 +37,11 @@ instance Show (GraphMorphism a b) where
 
 
 
-applyNode :: GraphMorphism a b -> G.NodeID -> [G.NodeID]
+applyNode :: GraphMorphism a b -> G.NodeId -> [G.NodeId]
 applyNode m ln =
     R.apply (nodeRelation m) ln
 
-applyEdge :: GraphMorphism a b -> G.EdgeID -> [G.EdgeID]
+applyEdge :: GraphMorphism a b -> G.EdgeId -> [G.EdgeId]
 applyEdge m le =
     R.apply (edgeRelation m) le
     

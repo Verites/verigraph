@@ -17,14 +17,12 @@ import Control.Monad (foldM)
 import Data.List
 import Data.List.Utils
 import Data.Maybe
-import qualified GraphClass as G
-import Graph (Graph)
+import Graph (Graph, Edge, EdgeId, Node, NodeId)
+import GraphRule
 import qualified Data.Set as Set
-
-import Morphism (Morphism, TypedGraph)
-import qualified MorphismClass as M
-import TypedMorphism (TypedMorphism)
-import qualified TypedMorphismClass as TM
+import Morphism 
+import GraphMorphism
+import TypedGraphMorphism
 
 -- | Is a tuple of two relations regarding two graphs (possibly equal):
 -- the first among their respective G.nodes, the other among their G.edges. Each
@@ -33,31 +31,48 @@ import qualified TypedMorphismClass as TM
 data MorphismType = Normal | Mono | Epi | Iso 
     deriving (Eq)
 
--- | Given two typed graphs, return a list of mappings, each representing a
--- possible homomorphism between the graphs.
---findMatches :: MorphismType -> TypedGraph a b -> TypedGraph a b -> [TypedMorphism a b]
+-- | Given two typed graphs, return a list of typed graph morphisms, each 
+-- representing a possible homomorphism between the graphs.
+findMatches :: MorphismType
+            -> TypedGraph a b -- left graph
+            -> TypedGraph a b -- right graph
+            -> [TypedGraphMorphism a b]
+findMatches = undefined
 --findMatches mt l g = 
 --    findMatchesR (Morph.empty l g) mt l g
 
--- | Given two typed graphs, return a list of mappings, each representing a
--- possible homomorphism between the graphs.
-{-
-findMatchesR :: Morphism a b
+-- | Given two typed graphs and a rule, return a list of mappings, each
+-- representing a possible homomorphism between the graphs. The matches
+-- generated respect the given rule according to the DPO approach.
+
+findMatchesR :: GraphRule a b
              -> MorphismType
              -> TypedGraph a b
              -> TypedGraph a b
-             -> [TypedMorphism a b]
-findMatchesR r mt l g = matchGraphs r mt l g
--}
+             -> [TypedGraphMorphism a b]
+findMatchesR = undefined
+--findMatchesR rule mt l r = matchGraphs r mt l g
 
-type Edge a b = G.Ed (M.G (TypedGraph a b))
 
 ----------------------------------------------------------------------------
 -- Edge related condition functions
 
 -- An EdgeCondition checks if a node satisfies it's internal requirements.
-type EdgeCondition a b = Edge a b -> Bool
+type EdgeCondition b = Edge b -> Bool
 
+edgeSameType :: TypedGraph a b
+             -> EdgeId
+             -> TypedGraph a b
+             -> EdgeId
+             -> Bool
+edgeSameType l le r re =
+    lType == rType
+  where
+    lType = applyEdge l le
+    rType = applyEdge r re
+
+
+{-
 -- | Generate an edge condition that checks if both G.edges are from same type.
 -- edgeTypeCondGen :: Int -> TypedGraph a b -> TypedGraph a b -> EdgeCondition b
 -- edgeTypeCondGen le lg rg = (\ge -> sameEdgeType le lg re rg)
@@ -67,8 +82,8 @@ type EdgeCondition a b = Edge a b -> Bool
 -- source got mapped.  If so, @ge@ is a matching Edge. If @le@'s source doesn't
 -- occur in @m@, any @ge@ will satisfy this condition.
 
-srcIDCondGen :: TypedMorphism a b -> TypedGraph a b -> Edge a b -> TypedGraph a b -> EdgeCondition a b
-srcIDCondGen m lg le rg =
+srcIdCondGen :: TypedMorphism a b -> TypedGraph a b -> Edge a b -> TypedGraph a b -> EdgeCondition a b
+srcIdCondGen m lg le rg =
     (\ge ->
         let res :: [Bool]
             res =
@@ -92,8 +107,8 @@ srcIDCondGen m lg le rg =
 -- @m@. If that's the case, check if @ge@'s target is the same node to which
 -- @le@'s target got mapped.  If so, @ge@ is a matching Edge. If @le@'s target
 -- doesn't occur in @m@, any @ge@ will satisfy this condition.
-tarIDCondGen :: Morphism a b -> TypedGraph a b -> Int -> TypedGraph a b -> EdgeCondition b
-tarIDCondGen m l le g =
+tarIdCondGen :: Morphism a b -> TypedGraph a b -> Int -> TypedGraph a b -> EdgeCondition b
+tarIdCondGen m l le g =
     (\ge -> let ltar   = G.targetOf le l
                 gtar   = G.targetOf ge g
                 mapped = Morph.applyToNode ltar m
@@ -111,10 +126,10 @@ tarIDCondGen m l le g =
 -- @ge@ is also a loop in @g@.
 
 -- This condition is due to the sequential nature of processEdges. Conditions 
--- that check node coincidence (like @srcIDCond@) rely on previously mappings,
+-- that check node coincidence (like @srcIdCond@) rely on previously mappings,
 -- so they aren't able to detect a mapping node in the current step. 
 -- Without @loopCond@, a loop edge that, e.g., happens to be the first to be
--- mapped passes srcIDCond and tarIDCond.
+-- mapped passes srcIdCond and tarIdCond.
 loopCondGen :: TypedGraph a b -> Int -> TypedGraph a b -> EdgeCondition b
 loopCondGen l le g =
     (\ge -> let lsrc = G.sourceOf le l
@@ -137,8 +152,8 @@ generateEdgeConds le lg rg m =
     edgeTypeCondGen le l g :
     --srcTypeCondGen l le g :
     --tarTypeCondGen l le g :
-    srcIDCondGen m le lg rg :
-    tarIDCondGen m le lg rg :
+    srcIdCondGen m le lg rg :
+    tarIdCondGen m le lg rg :
     loopCondGen le lg rg  :
     []
 
@@ -384,4 +399,5 @@ numEdges g = length $ G.edges $ Morph.domain g
 
 nullG :: TypedGraph a b -> Bool
 nullG g = (null $ G.nodes $ Morph.domain g) && (null $ G.edges $ Morph.domain g)
+-}
 -}
