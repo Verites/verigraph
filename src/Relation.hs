@@ -35,12 +35,10 @@ instance (Eq a) => Eq (Relation a) where
                mapping r1 == mapping r2
                
 defDomain :: Relation a -> [a]
-defDomain (Relation dom cod m) = 
-   (Map.keys m)
+defDomain = Map.keys . mapping
 
 image :: (Eq a) => Relation a -> [a]
-image (Relation dom cod m) = 
-   nub (concat $ Map.elems m)
+image = nub . concat . Map.elems . mapping
 
 empty :: (Eq a, Ord a) => [a] -> [a] -> Relation a
 empty dom cod = Relation (sort $ nub dom) (sort $ nub cod) Map.empty
@@ -100,9 +98,10 @@ injective r =
     containsOne [x] = True
     containsOne _ = False
 
-surjective r =
-    total $ inverse r
+surjective :: (Ord a) => Relation a -> Bool
+surjective = total . inverse
 
+total :: (Ord a) => Relation a -> Bool
 total r =
     domain r == defDomain r
                               

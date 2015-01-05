@@ -30,7 +30,6 @@ module Graph (
 import Valid
 import Data.List
 import Data.List.Utils
-import Data.Maybe
 
 data Node a = Node { nodePayload :: Maybe a
                    , nodeType    :: Maybe Int
