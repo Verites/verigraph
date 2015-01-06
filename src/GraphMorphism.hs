@@ -3,7 +3,10 @@
 module GraphMorphism (
       applyNode
     , applyEdge
+    , GraphMorphism.null
     , GraphMorphism
+    , GraphMorphism.empty
+    , inverse
     , TypedGraph
     , updateNodes
     , updateEdges
@@ -51,11 +54,16 @@ empty gA gB = GraphMorphism gA gB (R.empty [] []) (R.empty [] [])
 inverse (GraphMorphism dom cod nm em) =
     GraphMorphism cod dom (R.inverse nm) (R.inverse em)
 
+null :: TypedGraph a b -> Bool
+null = G.null . getDomain
+
+updateNodes :: NodeId -> NodeId -> GraphMorphism a b -> GraphMorphism a b
 updateNodes ln gn morphism@(GraphMorphism l g nm em)
     | G.isNodeOf l ln && G.isNodeOf g gn =
         GraphMorphism l g (R.update ln gn nm) em
     | otherwise = morphism
 
+updateEdges :: EdgeId -> EdgeId -> GraphMorphism a b -> GraphMorphism a b
 updateEdges le ge morphism@(GraphMorphism l g nm em)
     | G.isEdgeOf l le && G.isEdgeOf g ge =
         GraphMorphism l g nm (R.update le ge em)

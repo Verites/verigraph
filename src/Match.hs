@@ -15,10 +15,10 @@ module Match
 
 import Control.Monad (foldM)
 import Control.Monad.State
-import Data.List
+import qualified Data.List as L
 import Data.List.Utils
 import Data.Maybe
-import Graph (Graph, Edge, EdgeId, Node, NodeId, null)
+import Graph (Graph, Edge, EdgeId, Node, NodeId, null, sourceOf, targetOf)
 import GraphRule
 import qualified Data.Set as Set
 import Morphism 
@@ -31,6 +31,13 @@ import TypedGraphMorphism
 
 data MorphismType = Normal | Mono | Epi | Iso 
     deriving (Eq)
+
+unsafeSourceOf :: Graph a b -> EdgeId -> NodeId
+unsafeSourceOf g = head . sourceOf g
+
+unsafeTargetOf :: Graph a b -> EdgeId -> NodeId
+unsafeTargetOf g = head . sourceOf g
+
 
 -- | Given two typed graphs, return a list of typed graph morphisms, each 
 -- representing a possible homomorphism between the graphs.
@@ -55,46 +62,100 @@ findMatchesR = undefined
 --findMatchesR rule mt l r = matchGraphs r mt l g
 
 
-----------------------------------------------------------------------------
--- Edge related condition functions
+data MatchState a b = MatchState {
+    getRule         :: GraphRule a b,
+    getMorphismType :: MorphismType,
+    getLTypedGraph  :: TypedGraph a b,
+    getRTypedGraph  :: TypedGraph a b,
+    getEdges        :: [EdgeId], -- edges to match
+    getNodes        :: [NodeId], -- nodes to match
+    getMatch        :: TypedGraphMorphism a b
+    }
 
--- An EdgeCondition checks if a node satisfies it's internal requirements.
-type EdgeCondition b = Edge b -> Bool
-
-edgeSameType :: TypedGraph a b
-             -> EdgeId
-             -> TypedGraph a b
-             -> EdgeId
-             -> Bool
-edgeSameType l le r re =
-    lType == rType
-  where
-    lType = applyEdge l le
-    rType = applyEdge r re
-
-type MatchState a b = (GraphMorphism a b, TypedGraph a b, TypedGraph a b, [NodeId], [EdgeId])
-
-match :: GraphRule a b
-      -> MorphismType
-      -> (State (MatchState a b) (TypedGraphMorphism a b)
-      -> [State (MatchState a b) (TypedGraphMorphism a b)]
-match = undefined
-{-
-match _ mt (m, _, r, [], []) =
+matchGraphs :: (Eq a, Eq b)
+            => MatchState a b
+            -> [MatchState a b]
+matchGraphs st@(MatchState _ mt _ r [] [] m) =
     case mt of
-    Epi | epimorphism m -> [m]
+    Epi | epimorphism m -> [st]
         | otherwise     -> []
-    Iso | Graph.null r  -> [m]
+    Iso | GraphMorphism.null r  -> [st]
         | otherwise     -> []
-    otherwise -> [m]
--}
-           
+    otherwise -> [st]
+    
+matchGraphs st@(MatchState rule mt l r (le:les) lns m) =
+    matchAllEdges le candidates >>= matchGraphs
+  where
+    lg = domain l
+    rg = domain r
+    candidates = filter (matchesSameSource st le) $
+                 filter (matchesSameTarget st le) $
+                 querySameTypeEdges st le
+    matchEdges le re =
+        MatchState rule mt l r les lns $
+           typedMorphism (domain m) (codomain m) $
+               updateEdges le re $
+               updateNodes (unsafeSourceOf lg le) (unsafeSourceOf rg re) $
+               updateNodes (unsafeTargetOf lg le) (unsafeTargetOf rg re) $
+               mapping m
+    matchAllEdges le res =
+        map (matchEdges le) res
+        
+
+querySameTypeEdges :: MatchState a b -> EdgeId -> [EdgeId]
+querySameTypeEdges st eid =
+    applyEdge rinv typeId
+  where
+    l = getLTypedGraph st
+    r = getRTypedGraph st
+    rinv = inverse r
+    [typeId] = applyEdge l eid
+
+-- | First check if @le@'s source already occurs in the current mapping.
+-- If that's the case, check if @re@'s source is the same node to which @le@'s
+-- source got mapped.  If so, @re@ is a matching Edge. If @le@'s source doesn't
+-- occur in the current mapping, any @re@ will satisfy this condition.
+
+matchesSameSource :: (Eq a, Eq b) => MatchState a b -> EdgeId -> EdgeId -> Bool
+matchesSameSource st le re =
+    let rnodes = applyNode m leSrc
+    in case rnodes of
+        (x:xs)    -> x == reSrc
+        otherwise -> True
+  where
+    l = domain $ getLTypedGraph st
+    r = domain $ getRTypedGraph st
+    m = mapping $ getMatch st
+    leSrc = unsafeSourceOf l le
+    reSrc = unsafeSourceOf r re
+
+-- | First check if @le@'s target already occurs in the current mapping.
+-- If that's the case, check if @re@'s target is the same node to which @le@'s
+-- target got mapped.  If so, @re@ is a matching Edge. If @le@'s target doesn't
+-- occur in the current mapping, any @re@ will satisfy this condition.
+
+matchesSameTarget :: (Eq a, Eq b) => MatchState a b -> EdgeId -> EdgeId -> Bool
+matchesSameTarget st le re =
+    let rnodes = applyNode m leTgt
+    in case rnodes of
+        (x:xs)    -> x == reTgt
+        otherwise -> True
+  where
+    l = domain $ getLTypedGraph st
+    r = domain $ getRTypedGraph st
+    m = mapping $ getMatch st
+    leTgt = unsafeTargetOf l le
+    reTgt = unsafeTargetOf r re
+
+
+          
     
 
 
 {-
 -- | Generate an edge condition that checks if both G.edges are from same type.
 -- edgeTypeCondGen :: Int -> TypedGraph a b -> TypedGraph a b -> EdgeCondition b
+--
 -- edgeTypeCondGen le lg rg = (\ge -> sameEdgeType le lg re rg)
 
 -- | Generate a condition that tests if @le@'s source already occurs in @m@.

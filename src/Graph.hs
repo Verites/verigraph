@@ -21,6 +21,7 @@ module Graph (
     , nodesConnectedTo
     , nodesFromNode
     , nodesIntoNode
+    , Graph.null
     , removeEdge
     , removeNode
     , sourceOf
@@ -50,6 +51,10 @@ data Graph a b = Graph [(Int, Node a)] [(Int, Edge b)]
 empty :: Graph a b
 empty = Graph [] []
 
+null :: Graph a b -> Bool
+null (Graph [] []) = True
+null _ = False
+
 -- Build and modify graphs
 insertNode :: NodeId -> Graph a b -> Graph a b
 insertNode n g@(Graph ns es) =
@@ -63,7 +68,7 @@ insertEdge e src tgt g@(Graph ns es)
 
 removeNode :: NodeId -> Graph a b -> Graph a b
 removeNode n g@(Graph ns es)
-    | null $ incidentEdges g n = Graph (delFromAL ns n) es
+    | Prelude.null $ incidentEdges g n = Graph (delFromAL ns n) es
     | otherwise = g
 
 removeEdge :: EdgeId -> Graph a b -> Graph a b
