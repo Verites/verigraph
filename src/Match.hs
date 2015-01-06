@@ -14,10 +14,11 @@ module Match
     where
 
 import Control.Monad (foldM)
+import Control.Monad.State
 import Data.List
 import Data.List.Utils
 import Data.Maybe
-import Graph (Graph, Edge, EdgeId, Node, NodeId)
+import Graph (Graph, Edge, EdgeId, Node, NodeId, null)
 import GraphRule
 import qualified Data.Set as Set
 import Morphism 
@@ -70,6 +71,25 @@ edgeSameType l le r re =
   where
     lType = applyEdge l le
     rType = applyEdge r re
+
+type MatchState a b = (GraphMorphism a b, TypedGraph a b, TypedGraph a b, [NodeId], [EdgeId])
+
+match :: GraphRule a b
+      -> MorphismType
+      -> (State (MatchState a b) (TypedGraphMorphism a b)
+      -> [State (MatchState a b) (TypedGraphMorphism a b)]
+match = undefined
+{-
+match _ mt (m, _, r, [], []) =
+    case mt of
+    Epi | epimorphism m -> [m]
+        | otherwise     -> []
+    Iso | Graph.null r  -> [m]
+        | otherwise     -> []
+    otherwise -> [m]
+-}
+           
+    
 
 
 {-
