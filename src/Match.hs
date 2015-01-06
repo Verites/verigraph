@@ -102,8 +102,11 @@ matchGraphs st@(MatchState rule mt l r (le:les) lns m) =
     candidates = filter (matchesSameSource st le) $
                  filter (matchesSameTarget st le) $
                  querySameTypeEdges st le
+    leSrc = unsafeSourceOf lg le
+    leTgt = unsafeTargetOf lg le
+    lns' = L.delete leSrc $ L.delete leTgt lns
     matchEdges le re =
-        MatchState rule mt l r les lns $
+        MatchState rule mt l r les lns' $
            typedMorphism (domain m) (codomain m) $
                GM.updateEdges le re $
                GM.updateNodes (unsafeSourceOf lg le) (unsafeSourceOf rg re) $
@@ -111,7 +114,26 @@ matchGraphs st@(MatchState rule mt l r (le:les) lns m) =
                mapping m
     matchAllEdges le res =
         map (matchEdges le) res
-        
+
+matchGraphs st@(MatchState rule mt l r [] (ln:lns) m) =
+    matchAllNodes ln candidates >>= matchGraphs
+  where
+    candidates = querySameTypeNodes st ln
+    matchNodes ln rn =
+        MatchState rule mt l r [] lns $
+            typedMorphism (domain m) (codomain m) $
+                GM.updateNodes ln rn $ mapping m
+    matchAllNodes ln rns =
+        map (matchNodes ln) rns
+    
+querySameTypeNodes :: MatchState a b -> NodeId -> [NodeId]
+querySameTypeNodes st nid =
+    GM.applyNode rinv typeId
+  where
+    l = getLTypedGraph st
+    r = getRTypedGraph st
+    rinv = GM.inverse r
+    [typeId] = GM.applyNode l nid
 
 querySameTypeEdges :: MatchState a b -> EdgeId -> [EdgeId]
 querySameTypeEdges st eid =
