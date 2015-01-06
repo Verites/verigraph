@@ -15,7 +15,7 @@ data TypedGraphMorphism a b = TypedGraphMorphism {
                               getDomain   :: GraphMorphism a b
                             , getCodomain :: GraphMorphism a b
                             , getMapping  :: GraphMorphism a b
-                         }
+                         } deriving (Show)
 
 typedMorphism = TypedGraphMorphism
 mapping = getMapping

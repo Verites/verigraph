@@ -1,8 +1,8 @@
 {-# LANGUAGE TypeFamilies #-}
 module Match
-    (
+    ( findMatches
+    , MorphismType (..)
 {-
-    findMatches
     , findMatchesR
     , isSurjective
     --, isInjective
