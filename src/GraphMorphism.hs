@@ -59,15 +59,19 @@ null = G.null . getDomain
 
 updateNodes :: NodeId -> NodeId -> GraphMorphism a b -> GraphMorphism a b
 updateNodes ln gn morphism@(GraphMorphism l g nm em)
-    | G.isNodeOf l ln && G.isNodeOf g gn =
+    | G.isNodeOf l ln && G.isNodeOf g gn && notMapped morphism ln =
         GraphMorphism l g (R.update ln gn nm) em
     | otherwise = morphism
+  where
+    notMapped m = Prelude.null . applyNode m
 
 updateEdges :: EdgeId -> EdgeId -> GraphMorphism a b -> GraphMorphism a b
 updateEdges le ge morphism@(GraphMorphism l g nm em)
-    | G.isEdgeOf l le && G.isEdgeOf g ge =
+    | G.isEdgeOf l le && G.isEdgeOf g ge && notMapped morphism le =
         GraphMorphism l g nm (R.update le ge em)
     | otherwise = morphism
+  where
+    notMapped m = Prelude.null . applyNode m
 
 instance (Eq a, Eq b) => Eq (GraphMorphism a b) where
     m1 == m2 = domain m1 == domain m2 &&
