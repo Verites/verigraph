@@ -71,7 +71,7 @@ updateEdges le ge morphism@(GraphMorphism l g nm em)
         GraphMorphism l g nm (R.update le ge em)
     | otherwise = morphism
   where
-    notMapped m = Prelude.null . applyNode m
+    notMapped m = Prelude.null . applyEdge m
 
 instance (Eq a, Eq b) => Eq (GraphMorphism a b) where
     m1 == m2 = domain m1 == domain m2 &&
