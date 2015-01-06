@@ -18,12 +18,13 @@ import Control.Monad.State
 import qualified Data.List as L
 import Data.List.Utils
 import Data.Maybe
-import Graph (Graph, Edge, EdgeId, Node, NodeId, null, sourceOf, targetOf)
-import GraphRule
+import Graph (Graph, edges, Edge, EdgeId, Node, NodeId, nodes, null, sourceOf, targetOf)
+import GraphRule (GraphRule)
 import qualified Data.Set as Set
-import Morphism 
-import GraphMorphism
-import TypedGraphMorphism
+import Morphism (domain, codomain, epimorphism)
+import GraphMorphism (GraphMorphism, TypedGraph)
+import qualified GraphMorphism as GM
+import TypedGraphMorphism (mapping, typedMorphism, TypedGraphMorphism)
 
 -- | Is a tuple of two relations regarding two graphs (possibly equal):
 -- the first among their respective G.nodes, the other among their G.edges. Each
@@ -41,11 +42,13 @@ unsafeTargetOf g = head . sourceOf g
 
 -- | Given two typed graphs, return a list of typed graph morphisms, each 
 -- representing a possible homomorphism between the graphs.
+{-
 findMatches :: MorphismType
             -> TypedGraph a b -- left graph
             -> TypedGraph a b -- right graph
             -> [TypedGraphMorphism a b]
 findMatches = undefined
+-}
 --findMatches mt l g = 
 --    findMatchesR (Morph.empty l g) mt l g
 
@@ -53,12 +56,20 @@ findMatches = undefined
 -- representing a possible homomorphism between the graphs. The matches
 -- generated respect the given rule according to the DPO approach.
 
-findMatchesR :: GraphRule a b
-             -> MorphismType
-             -> TypedGraph a b
-             -> TypedGraph a b
-             -> [TypedGraphMorphism a b]
-findMatchesR = undefined
+findMatches :: (Eq a, Eq b)
+            => GraphRule a b
+            -> MorphismType
+            -> TypedGraph a b
+            -> TypedGraph a b
+            -> [TypedGraphMorphism a b]
+findMatches rule mt l r = 
+    map getMatch . matchGraphs $
+        MatchState rule mt l r (edges lg) (nodes lg) $
+                   typedMorphism l r $ GM.empty lg rg
+  where
+    lg = domain l
+    rg = domain r
+    
 --findMatchesR rule mt l r = matchGraphs r mt l g
 
 
@@ -79,7 +90,7 @@ matchGraphs st@(MatchState _ mt _ r [] [] m) =
     case mt of
     Epi | epimorphism m -> [st]
         | otherwise     -> []
-    Iso | GraphMorphism.null r  -> [st]
+    Iso | GM.null r  -> [st]
         | otherwise     -> []
     otherwise -> [st]
     
@@ -94,9 +105,9 @@ matchGraphs st@(MatchState rule mt l r (le:les) lns m) =
     matchEdges le re =
         MatchState rule mt l r les lns $
            typedMorphism (domain m) (codomain m) $
-               updateEdges le re $
-               updateNodes (unsafeSourceOf lg le) (unsafeSourceOf rg re) $
-               updateNodes (unsafeTargetOf lg le) (unsafeTargetOf rg re) $
+               GM.updateEdges le re $
+               GM.updateNodes (unsafeSourceOf lg le) (unsafeSourceOf rg re) $
+               GM.updateNodes (unsafeTargetOf lg le) (unsafeTargetOf rg re) $
                mapping m
     matchAllEdges le res =
         map (matchEdges le) res
@@ -104,12 +115,12 @@ matchGraphs st@(MatchState rule mt l r (le:les) lns m) =
 
 querySameTypeEdges :: MatchState a b -> EdgeId -> [EdgeId]
 querySameTypeEdges st eid =
-    applyEdge rinv typeId
+    GM.applyEdge rinv typeId
   where
     l = getLTypedGraph st
     r = getRTypedGraph st
-    rinv = inverse r
-    [typeId] = applyEdge l eid
+    rinv = GM.inverse r
+    [typeId] = GM.applyEdge l eid
 
 -- | First check if @le@'s source already occurs in the current mapping.
 -- If that's the case, check if @re@'s source is the same node to which @le@'s
@@ -118,7 +129,7 @@ querySameTypeEdges st eid =
 
 matchesSameSource :: (Eq a, Eq b) => MatchState a b -> EdgeId -> EdgeId -> Bool
 matchesSameSource st le re =
-    let rnodes = applyNode m leSrc
+    let rnodes = GM.applyNode m leSrc
     in case rnodes of
         (x:xs)    -> x == reSrc
         otherwise -> True
@@ -136,7 +147,7 @@ matchesSameSource st le re =
 
 matchesSameTarget :: (Eq a, Eq b) => MatchState a b -> EdgeId -> EdgeId -> Bool
 matchesSameTarget st le re =
-    let rnodes = applyNode m leTgt
+    let rnodes = GM.applyNode m leTgt
     in case rnodes of
         (x:xs)    -> x == reTgt
         otherwise -> True
@@ -170,7 +181,7 @@ srcIdCondGen m lg le rg =
             res =
              do lsrc   <- G.sourceOf (M.domain lg) le
                 gsrc   <- G.sourceOf (M.domain rg) ge
-                rnode  <- M.applyNode m lsrc
+                rnode  <- M.GM.applyNode m lsrc
                 return $ gsrc == rnode
         in null res || head res)
           
