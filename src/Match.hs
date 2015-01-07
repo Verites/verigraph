@@ -11,7 +11,7 @@ import qualified Data.List as L
 import Data.List.Utils
 import Data.Maybe
 import Graph (Graph, edges, Edge, EdgeId, incidentEdges, Node, 
-              NodeId, nodes, null, sourceOf, targetOf)
+              NodeId, nodes, null, sourceOf, targetOf, removeNode, removeEdge)
 import GraphRule (GraphRule)
 import qualified GraphRule as GR
 import qualified Data.Set as Set
@@ -59,7 +59,7 @@ findMatches :: (Eq a, Eq b)
             -> [TypedGraphMorphism a b]
 findMatches rule mt l r = 
     map getMatch . matchGraphs $
-        MatchState rule mt l r (edges lg) (nodes lg) $
+        MatchState rule mt l r rg (edges lg) (nodes lg) $
                    typedMorphism l r $ GM.empty lg rg
   where
     lg = domain l
@@ -73,6 +73,7 @@ data MatchState a b = MatchState {
     getMorphismType :: MorphismType,
     getLTypedGraph  :: TypedGraph a b,
     getRTypedGraph  :: TypedGraph a b,
+    getRGraph       :: Graph a b, -- modified to reduce matching algorithm's domain
     getEdges        :: [EdgeId], -- edges to match
     getNodes        :: [NodeId], -- nodes to match
     getMatch        :: TypedGraphMorphism a b
@@ -81,28 +82,33 @@ data MatchState a b = MatchState {
 matchGraphs :: (Eq a, Eq b)
             => MatchState a b
             -> [MatchState a b]
-matchGraphs st@(MatchState _ mt _ r [] [] m) =
+matchGraphs st@(MatchState _ mt _ r rg [] [] m) =
     case mt of
-    Epi | epimorphism m -> [st]
+    Epi | rg == domain r -> [st]
         | otherwise     -> []
     Iso | GM.null r  -> [st]
         | otherwise     -> []
     otherwise -> [st]
     
-matchGraphs st@(MatchState rule mt l r (le:les) lns m) =
+matchGraphs st@(MatchState rule mt l r rg (le:les) lns m) =
     matchAllEdges le candidates >>= matchGraphs
   where
     lg = domain l
-    rg = domain r
     candidates = filter (hasLoop st le) $
                  filter (matchesSameSource st le) $
                  filter (matchesSameTarget st le) $
                  querySameTypeEdges st le
     leSrc = unsafeSourceOf lg le
     leTgt = unsafeTargetOf lg le
+    reSrc re = unsafeSourceOf rg re
+    reTgt re = unsafeTargetOf rg re
     lns' = L.delete leSrc $ L.delete leTgt lns
+    rg' re | mt == Normal || mt == Epi = rg
+           | otherwise = removeNode (reSrc re) $
+                         removeNode (reTgt re) $
+                         removeEdge re rg
     matchEdges le re =
-        MatchState rule mt l r les lns' $
+        MatchState rule mt l r (rg' re) les lns' $
            typedMorphism (domain m) (codomain m) $
                GM.updateEdges le re $
                GM.updateNodes (unsafeSourceOf lg le) (unsafeSourceOf rg re) $
@@ -110,14 +116,15 @@ matchGraphs st@(MatchState rule mt l r (le:les) lns m) =
                mapping m
     matchAllEdges le res =
         map (matchEdges le) res
+    morphism = mapping m
 
-matchGraphs st@(MatchState rule mt l r [] (ln:lns) m) =
+matchGraphs st@(MatchState rule mt l r rg [] (ln:lns) m) =
     matchAllNodes ln candidates' >>= matchGraphs
   where
     matchAllNodes ln rns =
         map (matchNodes ln) rns
     matchNodes ln rn =
-        MatchState rule mt l r [] lns $
+        MatchState rule mt l r rg [] lns $
             typedMorphism (domain m) (codomain m) $
                 GM.updateNodes ln rn morphism
     candidates = filter noIdentityConflict $ querySameTypeNodes st ln
@@ -130,25 +137,28 @@ matchGraphs st@(MatchState rule mt l r [] (ln:lns) m) =
     noDangling = L.null . incidentEdges rg
     noIdentityConflict rn = notMapped rn || (toBeDeleted ln && toBeDeleted' rn)
     notMapped rn = rn `L.notElem` R.image rel
-    rg = domain r
     morphism = mapping m
     rel = GM.nodeRelation morphism
     
 querySameTypeNodes :: MatchState a b -> NodeId -> [NodeId]
 querySameTypeNodes st nid =
-    GM.applyNode rinv typeId
+    GM.applyNode rinv typeId `L.intersect` remainingNodes
   where
     l = getLTypedGraph st
     r = getRTypedGraph st
+    rg = getRGraph st
+    remainingNodes = nodes rg
     rinv = GM.inverse r
     [typeId] = GM.applyNode l nid
 
 querySameTypeEdges :: MatchState a b -> EdgeId -> [EdgeId]
 querySameTypeEdges st eid =
-    GM.applyEdge rinv typeId
+    GM.applyEdge rinv typeId `L.intersect` remainingEdges
   where
     l = getLTypedGraph st
     r = getRTypedGraph st
+    rg = getRGraph st
+    remainingEdges = edges rg
     rinv = GM.inverse r
     [typeId] = GM.applyEdge l eid
 
