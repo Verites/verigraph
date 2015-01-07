@@ -42,7 +42,9 @@ tr = GM.updateEdges 1 1 $
      GM.empty r t
 
 emptyRule =
-    graphRule (TM.typedMorphism tl tl tl) (TM.typedMorphism tr tr tr) []
+    graphRule (TM.typedMorphism tl tl (id tl))
+              (TM.typedMorphism tl tl (id tl))
+              []
     
 matches = findMatches emptyRule Mono tl tr
       

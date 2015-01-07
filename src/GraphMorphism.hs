@@ -7,6 +7,8 @@ module GraphMorphism (
     , GraphMorphism
     , GraphMorphism.empty
     , inverse
+    , nodeRelation
+    , edgeRelation
     , TypedGraph
     , updateNodes
     , updateEdges
