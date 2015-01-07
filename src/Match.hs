@@ -124,7 +124,7 @@ matchGraphs st@(MatchState rule mt l r rg [] (ln:lns) m) =
     matchAllNodes ln rns =
         map (matchNodes ln) rns
     matchNodes ln rn =
-        MatchState rule mt l r rg [] lns $
+        MatchState rule mt l r (rg' rn) [] lns $
             typedMorphism (domain m) (codomain m) $
                 GM.updateNodes ln rn morphism
     candidates = filter noIdentityConflict $ querySameTypeNodes st ln
@@ -139,6 +139,8 @@ matchGraphs st@(MatchState rule mt l r rg [] (ln:lns) m) =
     notMapped rn = rn `L.notElem` R.image rel
     morphism = mapping m
     rel = GM.nodeRelation morphism
+    rg' rn | mt == Normal || mt == Epi = rg
+           | otherwise = removeNode rn rg
     
 querySameTypeNodes :: MatchState a b -> NodeId -> [NodeId]
 querySameTypeNodes st nid =
@@ -213,60 +215,9 @@ deletedNodes rule =
     nodeMapping = GM.nodeRelation morphism
     defDom = R.defDomain nodeMapping
     img    = R.image nodeMapping
-    
-{-       
-                
-----------------------------------------------------------------------------
--- The matching algorithm
 
--- | Given a list of G.edges from @l@ to be matched and a specific mapping @m@, 
--- return a list of all possible mappings between these G.edges and those
--- from graph @g@, taking @m@ as initial mapping.
-mapGraphs ::
-    Morphism a b
-    -> MorphismType
-    -> TypedGraph a b        -- ^ @l@, the "left side" graph
-    -> (Morphism a b, TypedGraph a b, [Int], [Int]) -- ^ @m@, what already got mapped
-    -> [(Morphism a b, TypedGraph a b, [Int], [Int])]
--- When everything got mapped.
-mapGraphs _ mt _ ml@((nmap, emap), g, [], []) =
-    case mt of
-    Epi ->
-        let gMappedNodes = foldr (\(ln, gn) acc -> addToAL acc ln gn) [] nmap
-            gMappedEdges = foldr (\(le, ge) acc -> addToAL acc le ge) [] emap
-        in  if length gMappedNodes == numNodes g && length gMappedEdges == numEdges g
-               then [ml]
-               else []
-    Iso -> if nullG g
-              then [ml]
-              else []
-    otherwise -> [ml]
-mapGraphs rule mt lg (m, rg, (le:les), lns) =
-    let conds = generateEdgeConds le lg rg m
-        edgeList = G.edges g
-        candidates = filter (processEdge conds g) $ edgeList
-        newMorphism a bs = fmap (processEdgeCandidate g) candidates
-    in newMorphism a bs >>= mapGraphs r mt l
-      where
-        -- adds edge candidate to a mapping
-        processEdgeCandidate g ge =
-            let res = do
-                gs <- G.sourceOf ge g
-                gt <- G.targetOf ge g
-                ls <- G.sourceOf le l
-                lt <- G.targetOf le l
-                let newLNodeList = filter (\nid -> (Just nid /= G.sourceOf le l) && (Just nid /= G.targetOf le l)) lns
-                return (
-                    ((\nm -> addToAL nm ls gs) $
-                     (\nm -> addToAL nm lt gt) $
-                     nmap,
-                     addToAL emap le ge),
-                    if mt == Normal || mt == Epi
-                       then g
-                       else G.removeNode gs $ G.removeNode gt $ G.removeEdge ge g,
-                    les,
-                    newLNodeList)
-            in fromJust res
+{-
+    
 mapGraphs r mt l (m@(nmatch, ematch), g, [], (ln:lns)) =
     let conds = (generateConds r l ln g m)
         candidates = filter (processNode conds) $ G.nodes g
