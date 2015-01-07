@@ -35,18 +35,6 @@ unsafeTargetOf :: Graph a b -> EdgeId -> NodeId
 unsafeTargetOf g = head . targetOf g
 
 
--- | Given two typed graphs, return a list of typed graph morphisms, each 
--- representing a possible homomorphism between the graphs.
-{-
-findMatches :: MorphismType
-            -> TypedGraph a b -- left graph
-            -> TypedGraph a b -- right graph
-            -> [TypedGraphMorphism a b]
-findMatches = undefined
--}
---findMatches mt l g = 
---    findMatchesR (Morph.empty l g) mt l g
-
 -- | Given two typed graphs and a rule, return a list of mappings, each
 -- representing a possible homomorphism between the graphs. The matches
 -- generated respect the given rule according to the DPO approach.
@@ -65,8 +53,6 @@ findMatches rule mt l r =
     lg = domain l
     rg = domain r
     
---findMatchesR rule mt l r = matchGraphs r mt l g
-
 
 data MatchState a b = MatchState {
     getRule         :: GraphRule a b,
@@ -216,38 +202,3 @@ deletedNodes rule =
     defDom = R.defDomain nodeMapping
     img    = R.image nodeMapping
 
-{-
-    
-mapGraphs r mt l (m@(nmatch, ematch), g, [], (ln:lns)) =
-    let conds = (generateConds r l ln g m)
-        candidates = filter (processNode conds) $ G.nodes g
-        newMapSets = fmap processNodeCandidate candidates
-    in newMapSets >>= mapGraphs r mt l
-      where
-        processNodeCandidate gid =
-            ((addToAL nmatch ln gid, ematch),
-             if mt == Normal || mt == Epi
-                then g
-                else G.removeNode gid g,
-             [],
-             lns)
-
-
--- | List all isomorphisms (represented as mappings) between both graphs.
-findIsoMorphisms :: TypedGraph a b -> TypedGraph a b -> [Morphism a b]
-findIsoMorphisms l g
-    | numNodes l /= numNodes g ||
-      numEdges l /= numEdges g = []
-    | otherwise = findMatchesR (Morph.empty l g) Iso l g
-
-{-
-        else filter isInjective $
-                         filter (isSurjective g) $
-                                 findMatches Iso l g
--}
-
--- | Check if there's an isomorphism between two graphs.
-isIsomorphic :: TypedGraph a b -> TypedGraph a b -> Bool
-isIsomorphic a b = findIsoMorphisms a b /= []
-
--}
