@@ -37,7 +37,7 @@ unsafeSourceOf :: Graph a b -> EdgeId -> NodeId
 unsafeSourceOf g = head . sourceOf g
 
 unsafeTargetOf :: Graph a b -> EdgeId -> NodeId
-unsafeTargetOf g = head . sourceOf g
+unsafeTargetOf g = head . targetOf g
 
 
 -- | Given two typed graphs, return a list of typed graph morphisms, each 
@@ -99,7 +99,8 @@ matchGraphs st@(MatchState rule mt l r (le:les) lns m) =
   where
     lg = domain l
     rg = domain r
-    candidates = filter (matchesSameSource st le) $
+    candidates = filter (hasLoop st le) $
+                 filter (matchesSameSource st le) $
                  filter (matchesSameTarget st le) $
                  querySameTypeEdges st le
     leSrc = unsafeSourceOf lg le
@@ -144,11 +145,8 @@ querySameTypeEdges st eid =
     rinv = GM.inverse r
     [typeId] = GM.applyEdge l eid
 
--- | First check if @le@'s source already occurs in the current mapping.
--- If that's the case, check if @re@'s source is the same node to which @le@'s
--- source got mapped.  If so, @re@ is a matching Edge. If @le@'s source doesn't
--- occur in the current mapping, any @re@ will satisfy this condition.
-
+-- | In case @le@'s source already got mapped, check if @re@'s source is the
+-- same mapped node.
 matchesSameSource :: (Eq a, Eq b) => MatchState a b -> EdgeId -> EdgeId -> Bool
 matchesSameSource st le re =
     let rnodes = GM.applyNode m leSrc
@@ -162,11 +160,8 @@ matchesSameSource st le re =
     leSrc = unsafeSourceOf l le
     reSrc = unsafeSourceOf r re
 
--- | First check if @le@'s target already occurs in the current mapping.
--- If that's the case, check if @re@'s target is the same node to which @le@'s
--- target got mapped.  If so, @re@ is a matching Edge. If @le@'s target doesn't
--- occur in the current mapping, any @re@ will satisfy this condition.
-
+-- | In case @le@'s target already got mapped, check if @re@'s target is the
+-- same mapped node.
 matchesSameTarget :: (Eq a, Eq b) => MatchState a b -> EdgeId -> EdgeId -> Bool
 matchesSameTarget st le re =
     let rnodes = GM.applyNode m leTgt
@@ -180,8 +175,17 @@ matchesSameTarget st le re =
     leTgt = unsafeTargetOf l le
     reTgt = unsafeTargetOf r re
 
-
-          
+hasLoop :: (Eq a, Eq b) => MatchState a b -> EdgeId -> EdgeId -> Bool
+hasLoop st le re
+    | leSrc == leTgt = reSrc == reTgt
+    | otherwise = True
+  where
+    l = domain $ getLTypedGraph st
+    r = domain $ getRTypedGraph st
+    leSrc = unsafeSourceOf l le
+    reSrc = unsafeSourceOf r re
+    leTgt = unsafeTargetOf l le
+    reTgt = unsafeTargetOf r re
     
 
 
