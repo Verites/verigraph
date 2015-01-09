@@ -2,9 +2,11 @@ import Control.Monad.Trans.Class (lift)
 import qualified Graph as G
 import Data.IORef
 import qualified Data.Map as M
+import Data.Foldable
 import Graphics.UI.Gtk
 import Graphics.Rendering.Cairo
 import Graphics.UI.Gtk.Gdk.EventM
+import Prelude hiding (mapM_)
 
 type Coords = (Double, Double)
 
@@ -43,11 +45,28 @@ updateCanvas canvas st = do
     height' <- liftIO $ widgetGetAllocatedHeight canvas
     let width = realToFrac width' / 2
         height = realToFrac height' / 2
+    drawNodes st width height
+{-
     setSourceRGB 1 0 0
     setLineWidth 20
     arc width height 20 0 $ 2 * pi
     strokePreserve
     fill
+-}
+
+drawNodes :: IORef GrammarState -> Double -> Double -> Render ()
+drawNodes state x y = do
+    st <- liftIO $ readIORef state
+    setSourceRGB 1 0 0
+    setLineWidth 20
+    let posMap = initialGraphPos st
+    mapM_ drawNode posMap
+  where
+    drawNode (x, y) =
+        arc x y 20 0 $ 2 * pi
+        strokePreserve
+        fill
+    
 
 mouseClick :: IORef GrammarState -> EventM EButton Bool
 mouseClick st = do
