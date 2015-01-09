@@ -10,6 +10,11 @@ import Prelude hiding (mapM_)
 
 type Coords = (Double, Double)
 
+data GUI = GUI {
+    mainWindow    :: Window,
+    initialCanvas :: DrawingArea
+    }
+
 data GrammarState = GrammarState {
     initialGraph    :: G.Graph String String,
     initialGraphPos :: M.Map String Coords,
@@ -19,22 +24,37 @@ data GrammarState = GrammarState {
 main = do
     initGUI
     st <- newIORef $ GrammarState G.empty M.empty 0
-    window <- windowNew
-    set window [ windowTitle := "Verigraph" ]
-    window `on` objectDestroy $ mainQuit
-
-    canvas <- drawingAreaNew
-    canvas `on` sizeRequest $ return (Requisition 40 40)
-    ctxt <- cairoCreateContext Nothing
-    canvas `on` draw $ updateCanvas canvas st
-    canvas `on` buttonPressEvent $ mouseClick st
-
-    containerAdd window canvas
-
-    widgetShowAll window
-    widgetShow canvas
+    gui <- createGUI
+    addCallBacks gui st
+    --ctxt <- cairoCreateContext Nothing
+    showGUI gui
+--    widgetShowAll window
+--    widgetShow canvas
     mainGUI 
 
+createGUI :: IO GUI
+createGUI = do
+    window <- windowNew
+    set window [ windowTitle := "Verigraph" ]
+    canvas <- drawingAreaNew
+    containerAdd window canvas
+    return $ GUI window canvas
+
+addCallBacks :: GUI -> IORef GrammarState -> IO ()
+addCallBacks gui st = do
+    let mainWin   = mainWindow gui
+        iGrCanvas = initialCanvas gui
+    mainWin `on` objectDestroy $ mainQuit
+    iGrCanvas `on` sizeRequest $ return (Requisition 40 40)
+    iGrCanvas `on` draw $ updateCanvas iGrCanvas st
+    iGrCanvas `on` buttonPressEvent $ mouseClick gui st
+    return ()
+
+showGUI gui = do
+    let mainWin   = mainWindow gui
+        iGrCanvas = initialCanvas gui
+    widgetShowAll mainWin
+    widgetShow    iGrCanvas
 
 updateCanvas :: WidgetClass widget
              => widget
@@ -46,35 +66,30 @@ updateCanvas canvas st = do
     let width = realToFrac width' / 2
         height = realToFrac height' / 2
     drawNodes st width height
-{-
-    setSourceRGB 1 0 0
-    setLineWidth 20
-    arc width height 20 0 $ 2 * pi
-    strokePreserve
-    fill
--}
 
 drawNodes :: IORef GrammarState -> Double -> Double -> Render ()
 drawNodes state x y = do
     st <- liftIO $ readIORef state
     setSourceRGB 1 0 0
-    setLineWidth 20
+    setLineWidth 2
     let posMap = initialGraphPos st
     mapM_ drawNode posMap
   where
-    drawNode (x, y) =
+    drawNode (x, y) = do
         arc x y 20 0 $ 2 * pi
         strokePreserve
+        setSourceRGB 1 1 0
         fill
     
 
-mouseClick :: IORef GrammarState -> EventM EButton Bool
-mouseClick st = do
+mouseClick :: GUI -> IORef GrammarState -> EventM EButton Bool
+mouseClick gui st = do
     button <- eventButton
     click  <- eventClick
     coords@(x, y) <- eventCoordinates
     case (button, click) of
-        (LeftButton, DoubleClick) -> liftIO $ modifyIORef st (newNode coords)
+        (LeftButton, _) -> liftIO $ do modifyIORef st (newNode coords)
+                                       widgetQueueDraw $ mainWindow gui
         otherwise                 -> liftIO $ putStrLn "Unknown button"
     return True
 
