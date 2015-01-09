@@ -6,7 +6,7 @@ import Data.Foldable
 import Graphics.UI.Gtk
 import Graphics.Rendering.Cairo
 import Graphics.UI.Gtk.Gdk.EventM
-import Prelude hiding (mapM_)
+import Prelude hiding (mapM_, any)
 
 type Coords = (Double, Double)
 
@@ -20,6 +20,8 @@ data GrammarState = GrammarState {
     initialGraphPos :: M.Map String Coords,
     counter         :: Int
     }
+
+radius = 20 :: Double
 
 main = do
     initGUI
@@ -70,17 +72,16 @@ updateCanvas canvas st = do
 drawNodes :: IORef GrammarState -> Double -> Double -> Render ()
 drawNodes state x y = do
     st <- liftIO $ readIORef state
-    setSourceRGB 1 0 0
     setLineWidth 2
     let posMap = initialGraphPos st
     mapM_ drawNode posMap
   where
     drawNode (x, y) = do
-        arc x y 20 0 $ 2 * pi
+        setSourceRGB 0 0 0
+        arc x y radius 0 $ 2 * pi
         strokePreserve
-        setSourceRGB 1 1 0
+        setSourceRGB 0.8 0.8 0.8
         fill
-    
 
 mouseClick :: GUI -> IORef GrammarState -> EventM EButton Bool
 mouseClick gui st = do
@@ -88,10 +89,24 @@ mouseClick gui st = do
     click  <- eventClick
     coords@(x, y) <- eventCoordinates
     case (button, click) of
-        (LeftButton, _) -> liftIO $ do modifyIORef st (newNode coords)
-                                       widgetQueueDraw $ mainWindow gui
+        (LeftButton, DoubleClick) -> liftIO $ leftDoubleClick gui st coords
         otherwise                 -> liftIO $ putStrLn "Unknown button"
     return True
+
+leftDoubleClick gui st coords = do
+    state <- liftIO $ readIORef st
+    let posMap = initialGraphPos state
+    if isOverAnyNode coords posMap
+    then putStrLn $ "clicked over node" ++ (show coords)
+    else do modifyIORef st (newNode coords)
+            widgetQueueDraw $ mainWindow gui
+  where
+    isOverAnyNode coords posMap =
+        any (isOverNode coords) (M.elems posMap)
+    isOverNode (x, y) (nx, ny) = -- consider square box for simplicity
+        abs (nx - x) <= 2 * radius &&
+        abs (ny - y) <= 2 * radius
+    
 
 newNode :: Coords -> GrammarState -> GrammarState
 newNode coords st =
