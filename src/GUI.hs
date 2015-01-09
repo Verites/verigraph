@@ -10,6 +10,8 @@ import Prelude hiding (mapM_, any)
 
 type Coords = (Double, Double)
 
+data LeftButtonState = NodeDrag | SelectionDrag | LeftButtonFree
+
 data GUI = GUI {
     mainWindow    :: Window,
     initialCanvas :: DrawingArea
@@ -17,15 +19,17 @@ data GUI = GUI {
 
 data GrammarState = GrammarState {
     initialGraph    :: G.Graph String String,
-    initialGraphPos :: M.Map String Coords,
-    counter         :: Int
+    initialGraphPos :: M.Map G.NodeId Coords,
+    counter         :: Int,
+    leftButtonState :: LeftButtonState,
+    currentNodeId   :: Maybe G.NodeId
     }
 
 radius = 20 :: Double
 
 main = do
     initGUI
-    st <- newIORef $ GrammarState G.empty M.empty 0
+    st <- newIORef $ GrammarState G.empty M.empty 0 LeftButtonFree Nothing
     gui <- createGUI
     addCallBacks gui st
     --ctxt <- cairoCreateContext Nothing
@@ -50,6 +54,9 @@ addCallBacks gui st = do
     iGrCanvas `on` sizeRequest $ return (Requisition 40 40)
     iGrCanvas `on` draw $ updateCanvas iGrCanvas st
     iGrCanvas `on` buttonPressEvent $ mouseClick gui st
+    iGrCanvas `on` buttonReleaseEvent $ mouseRelease st
+    widgetAddEvents iGrCanvas [Button1MotionMask]
+    iGrCanvas `on` motionNotifyEvent $ mouseMove gui st
     return ()
 
 showGUI gui = do
@@ -90,9 +97,35 @@ mouseClick gui st = do
     coords@(x, y) <- eventCoordinates
     case (button, click) of
         (LeftButton, DoubleClick) -> liftIO $ leftDoubleClick gui st coords
+        (LeftButton, SingleClick) -> liftIO $ leftSingleClick gui st coords
         otherwise                 -> liftIO $ putStrLn "Unknown button"
     return True
 
+mouseRelease :: IORef GrammarState -> EventM EButton Bool
+mouseRelease st = do
+    liftIO $ modifyIORef st cancelDrag
+    return True
+  where
+    cancelDrag (GrammarState iGr iGrPos c _ curNId) =
+        GrammarState iGr iGrPos c LeftButtonFree curNId
+
+mouseMove :: GUI -> IORef GrammarState -> EventM EMotion Bool
+mouseMove gui st = do
+    state <- liftIO $ readIORef st
+    processLeftButton $ leftButtonState state
+    return True
+  where
+    processLeftButton NodeDrag = do
+        coords <- eventCoordinates
+        liftIO $ do modifyIORef st $ updateCoords coords
+                    widgetQueueDraw $ mainWindow gui
+    processLeftButton _ = return ()
+    updateCoords newCoords (GrammarState iGr iGrPos c lSt (Just curNId)) =
+        GrammarState iGr (M.insert curNId newCoords iGrPos) c lSt (Just curNId)
+
+    
+
+leftDoubleClick :: GUI -> IORef GrammarState -> Coords -> IO ()
 leftDoubleClick gui st coords = do
     state <- liftIO $ readIORef st
     let posMap = initialGraphPos state
@@ -100,21 +133,59 @@ leftDoubleClick gui st coords = do
     then putStrLn $ "clicked over node" ++ (show coords)
     else do modifyIORef st (newNode coords)
             widgetQueueDraw $ mainWindow gui
+
+
+leftSingleClick :: GUI -> IORef GrammarState -> Coords -> IO ()
+leftSingleClick gui st coords = do
+    state <- liftIO $ readIORef st
+    let posMap = initialGraphPos state
+    case nodeId posMap of
+        newId@(Just k) -> modifyIORef st $ nodeDrag newId
+        otherwise      -> modifyIORef st $ selDrag
   where
-    isOverAnyNode coords posMap =
-        any (isOverNode coords) (M.elems posMap)
-    isOverNode (x, y) (nx, ny) = -- consider square box for simplicity
-        abs (nx - x) <= 2 * radius &&
-        abs (ny - y) <= 2 * radius
+    nodeId posMap = checkNodeClick coords posMap
+    nodeDrag newId (GrammarState iGr iGrPos c _ _) =
+        GrammarState iGr iGrPos c NodeDrag newId
+    selDrag (GrammarState iGr iGrPos c _ curNId) =
+        GrammarState iGr iGrPos c SelectionDrag curNId
+
+checkNodeClick :: Coords -> M.Map G.NodeId Coords -> Maybe G.NodeId
+checkNodeClick coords posMap =
+    case found of
+    (x:xs)    -> Just $ fst x
+    otherwise -> Nothing     
+  where
+    found = filter insideNode $ M.toList posMap 
+    insideNode (_, nodeCoords) =
+        distance coords nodeCoords <= radius
+    
+isOverAnyNode :: Coords -> M.Map G.NodeId Coords -> Bool
+isOverAnyNode coords posMap =
+    case checkNodeClick coords posMap of
+    Just k    -> True
+    otherwise -> False
+
+distance :: Coords -> Coords -> Double
+distance (x0, y0) (x1, y1) =
+    sqrt $ (square (x1 - x0)) + (square (y1 - y0))
+  where
+    square x = x * x
+
+    
+
+{-
+leftHold :: GUI -> IORef GrammarState -> Coords -> IO ()
+leftHold
+-}
     
 
 newNode :: Coords -> GrammarState -> GrammarState
 newNode coords st =
-    GrammarState gr' pos (id + 1)
+    GrammarState gr' pos (id + 1) lState (Just id)
   where
     id = counter st
     gr = initialGraph st
     gr' = G.insertNode id gr
-    k = "i" ++ (show id)
-    pos = M.insert k coords $ initialGraphPos st
+    pos = M.insert id coords $ initialGraphPos st
+    lState = leftButtonState st
     
