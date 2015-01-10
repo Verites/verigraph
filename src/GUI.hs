@@ -1,11 +1,13 @@
 import Control.Monad.Trans.Class (lift)
 import qualified Graph as G
+import qualified GraphMorphism as GM
 import Data.IORef
 import qualified Data.Map as M
 import Data.Foldable
 import Graphics.UI.Gtk
 import Graphics.Rendering.Cairo
 import Graphics.UI.Gtk.Gdk.EventM
+import Morphism
 import Prelude hiding (mapM_, any)
 
 type Coords = (Double, Double)
@@ -18,7 +20,8 @@ data GUI = GUI {
     }
 
 data GrammarState = GrammarState {
-    initialGraph    :: G.Graph String String,
+    initialGraph    :: GM.TypedGraph String String,
+    typeGraph       :: G.Graph String String,
     initialGraphPos :: M.Map G.NodeId Coords,
     counter         :: Int,
     leftButtonState :: LeftButtonState,
@@ -29,7 +32,10 @@ radius = 20 :: Double
 
 main = do
     initGUI
-    st <- newIORef $ GrammarState G.empty M.empty 0 LeftButtonFree Nothing
+    let iSimpleGraph = G.empty :: G.Graph String String
+        tGraph = G.empty :: G.Graph String String
+        iGraph = GM.empty iSimpleGraph tGraph
+    st <- newIORef $ GrammarState iGraph tGraph M.empty 0 LeftButtonFree Nothing
     gui <- createGUI
     addCallBacks gui st
     --ctxt <- cairoCreateContext Nothing
@@ -106,8 +112,8 @@ mouseRelease st = do
     liftIO $ modifyIORef st cancelDrag
     return True
   where
-    cancelDrag (GrammarState iGr iGrPos c _ curNId) =
-        GrammarState iGr iGrPos c LeftButtonFree curNId
+    cancelDrag (GrammarState iGr tGr iGrPos c _ curNId) =
+        GrammarState iGr tGr iGrPos c LeftButtonFree curNId
 
 mouseMove :: GUI -> IORef GrammarState -> EventM EMotion Bool
 mouseMove gui st = do
@@ -120,8 +126,8 @@ mouseMove gui st = do
         liftIO $ do modifyIORef st $ updateCoords coords
                     widgetQueueDraw $ mainWindow gui
     processLeftButton _ = return ()
-    updateCoords newCoords (GrammarState iGr iGrPos c lSt (Just curNId)) =
-        GrammarState iGr (M.insert curNId newCoords iGrPos) c lSt (Just curNId)
+    updateCoords newCoords (GrammarState iGr tGr iGrPos c lSt (Just curNId)) =
+        GrammarState iGr tGr (M.insert curNId newCoords iGrPos) c lSt (Just curNId)
 
     
 
@@ -144,10 +150,10 @@ leftSingleClick gui st coords = do
         otherwise      -> modifyIORef st $ selDrag
   where
     nodeId posMap = checkNodeClick coords posMap
-    nodeDrag newId (GrammarState iGr iGrPos c _ _) =
-        GrammarState iGr iGrPos c NodeDrag newId
-    selDrag (GrammarState iGr iGrPos c _ curNId) =
-        GrammarState iGr iGrPos c SelectionDrag curNId
+    nodeDrag newId (GrammarState iGr tGr iGrPos c _ _) =
+        GrammarState iGr tGr iGrPos c NodeDrag newId
+    selDrag (GrammarState iGr tGr iGrPos c _ curNId) =
+        GrammarState iGr tGr iGrPos c SelectionDrag curNId
 
 checkNodeClick :: Coords -> M.Map G.NodeId Coords -> Maybe G.NodeId
 checkNodeClick coords posMap =
@@ -171,21 +177,16 @@ distance (x0, y0) (x1, y1) =
   where
     square x = x * x
 
-    
-
-{-
-leftHold :: GUI -> IORef GrammarState -> Coords -> IO ()
-leftHold
--}
-    
-
 newNode :: Coords -> GrammarState -> GrammarState
 newNode coords st =
-    GrammarState gr' pos (id + 1) lState (Just id)
+    GrammarState gr' tGr pos (id + 1) lState (Just id)
   where
     id = counter st
     gr = initialGraph st
-    gr' = G.insertNode id gr
+    (dom, cod, nR, eR) =
+        (domain gr, codomain gr, GM.nodeRelation gr, GM.edgeRelation gr)
+    gr' = GM.graphMorphism (G.insertNode id dom) cod nR eR
     pos = M.insert id coords $ initialGraphPos st
     lState = leftButtonState st
+    tGr = typeGraph st
     
