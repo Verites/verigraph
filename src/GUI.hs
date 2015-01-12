@@ -25,14 +25,28 @@ data GUI = GUI {
     canvas :: DrawingArea
     }
 
+data GrammarState = GrammarState {
+    getGrammar :: GraphGrammar String String,
+    graphStateMap :: M.Map Int GraphState,
+    counter :: Int -- id's from graphStates
+    }
+
+data GraphState = GraphState {
+    counter :: Int,
+    graphPos :: M.Map G.NodeId Coords,
+    leftButtonState :: LeftButtonState,
+    currentNodeId :: Maybe G.NodeId
+    }
+
+{-
 data GraphState = GraphState {
     graph    :: GM.TypedGraph String String,
-    typeGraph       :: G.Graph String String,
     graphPos :: M.Map G.NodeId Coords,
     counter         :: Int,
     leftButtonState :: LeftButtonState,
     currentNodeId   :: Maybe G.NodeId
     }
+-}
 
 radius = 20 :: Double
 
@@ -41,7 +55,16 @@ main = do
     let iSimpleGraph = G.empty :: G.Graph String String
         tGraph = G.empty :: G.Graph String String
         iGraph = GM.empty iSimpleGraph tGraph
-    st <- newIORef $ GraphState iGraph tGraph M.empty 0 LeftButtonFree Nothing
+        iGraphState = GraphState 0 M.empty LeftButtonFree Nothing
+        tGraphState = GraphState 0 M.empty LeftButtonFree Nothing
+        grammar = graphGrammar tGraph iGraph []
+        graphStates = M.insert 0 iGraphState $
+                      M.insert 1 tGraphState $
+                      M.empty
+        grammarState = GrammarState grammar graphStates 2
+                    
+    st <- newIORef grammarState
+--    st <- newIORef $ GraphState iGraph M.empty 0 LeftButtonFree Nothing
     gui <- createGUI
     addMainCallBacks gui st
 --    addCallBacks gui st
@@ -157,8 +180,8 @@ mouseRelease st = do
     liftIO $ modifyIORef st cancelDrag
     return True
   where
-    cancelDrag (GraphState iGr tGr iGrPos c _ curNId) =
-        GraphState iGr tGr iGrPos c LeftButtonFree curNId
+    cancelDrag (GraphState iGr iGrPos c _ curNId) =
+        GraphState iGr iGrPos c LeftButtonFree curNId
 
 mouseMove :: WidgetClass widget => widget -> IORef GraphState -> EventM EMotion Bool
 mouseMove widget st = do
@@ -171,8 +194,8 @@ mouseMove widget st = do
         liftIO $ do modifyIORef st $ updateCoords coords
                     widgetQueueDraw widget
     processLeftButton _ = return ()
-    updateCoords newCoords (GraphState iGr tGr iGrPos c lSt (Just curNId)) =
-        GraphState iGr tGr (M.insert curNId newCoords iGrPos) c lSt (Just curNId)
+    updateCoords newCoords (GraphState iGr iGrPos c lSt (Just curNId)) =
+        GraphState iGr (M.insert curNId newCoords iGrPos) c lSt (Just curNId)
 
     
 
@@ -195,10 +218,10 @@ leftSingleClick widget st coords = do
         otherwise      -> modifyIORef st $ selDrag
   where
     nodeId posMap = checkNodeClick coords posMap
-    nodeDrag newId (GraphState iGr tGr iGrPos c _ _) =
-        GraphState iGr tGr iGrPos c NodeDrag newId
-    selDrag (GraphState iGr tGr iGrPos c _ curNId) =
-        GraphState iGr tGr iGrPos c SelectionDrag curNId
+    nodeDrag newId (GraphState iGr iGrPos c _ _) =
+        GraphState iGr iGrPos c NodeDrag newId
+    selDrag (GraphState iGr iGrPos c _ curNId) =
+        GraphState iGr iGrPos c SelectionDrag curNId
 
 checkNodeClick :: Coords -> M.Map G.NodeId Coords -> Maybe G.NodeId
 checkNodeClick coords posMap =
@@ -224,7 +247,7 @@ distance (x0, y0) (x1, y1) =
 
 newNode :: Coords -> GraphState -> GraphState
 newNode coords st =
-    GraphState gr' tGr pos (id + 1) lState (Just id)
+    GraphState gr' pos (id + 1) lState (Just id)
   where
     id = counter st
     gr = graph st
@@ -233,5 +256,4 @@ newNode coords st =
     gr' = GM.graphMorphism (G.insertNode id dom) cod nR eR
     pos = M.insert id coords $ graphPos st
     lState = leftButtonState st
-    tGr = typeGraph st
     
