@@ -14,15 +14,21 @@ type Coords = (Double, Double)
 
 data LeftButtonState = NodeDrag | SelectionDrag | LeftButtonFree
 
-data GUI = GUI {
-    mainWindow    :: Window,
-    initialCanvas :: DrawingArea
+data Buttons = Buttons {
+    editInitialGraph :: Button,
+    addRule :: Button
     }
 
-data GrammarState = GrammarState {
-    initialGraph    :: GM.TypedGraph String String,
+data GUI = GUI {
+    mainWindow    :: Window,
+    buttons :: Buttons,
+    canvas :: DrawingArea
+    }
+
+data GraphState = GraphState {
+    graph    :: GM.TypedGraph String String,
     typeGraph       :: G.Graph String String,
-    initialGraphPos :: M.Map G.NodeId Coords,
+    graphPos :: M.Map G.NodeId Coords,
     counter         :: Int,
     leftButtonState :: LeftButtonState,
     currentNodeId   :: Maybe G.NodeId
@@ -35,9 +41,10 @@ main = do
     let iSimpleGraph = G.empty :: G.Graph String String
         tGraph = G.empty :: G.Graph String String
         iGraph = GM.empty iSimpleGraph tGraph
-    st <- newIORef $ GrammarState iGraph tGraph M.empty 0 LeftButtonFree Nothing
+    st <- newIORef $ GraphState iGraph tGraph M.empty 0 LeftButtonFree Nothing
     gui <- createGUI
-    addCallBacks gui st
+    addMainCallBacks gui st
+--    addCallBacks gui st
     --ctxt <- cairoCreateContext Nothing
     showGUI gui
 --    widgetShowAll window
@@ -48,32 +55,70 @@ createGUI :: IO GUI
 createGUI = do
     window <- windowNew
     set window [ windowTitle := "Verigraph" ]
-    canvas <- drawingAreaNew
-    containerAdd window canvas
-    return $ GUI window canvas
+    mainBox <- vBoxNew False 1
+    containerAdd window mainBox
 
-addCallBacks :: GUI -> IORef GrammarState -> IO ()
-addCallBacks gui st = do
-    let mainWin   = mainWindow gui
-        iGrCanvas = initialCanvas gui
-    mainWin `on` objectDestroy $ mainQuit
-    iGrCanvas `on` sizeRequest $ return (Requisition 40 40)
-    iGrCanvas `on` draw $ updateCanvas iGrCanvas st
-    iGrCanvas `on` buttonPressEvent $ mouseClick gui st
-    iGrCanvas `on` buttonReleaseEvent $ mouseRelease st
-    widgetAddEvents iGrCanvas [Button1MotionMask]
-    iGrCanvas `on` motionNotifyEvent $ mouseMove gui st
+    iGraphButton <- buttonNewWithLabel "Edit initial graph"
+    addRuleButton <- buttonNewWithLabel "Add rule"
+    boxPackStart mainBox iGraphButton PackNatural 1
+    boxPackStart mainBox addRuleButton PackNatural 1
+    dummyCanvas <- drawingAreaNew
+
+    let buttons = Buttons iGraphButton addRuleButton
+
+    return $ GUI window buttons dummyCanvas 
+
+iGraphDialog :: IORef GraphState ->  IO ()
+iGraphDialog st = do
+    dialog <- dialogNew
+    contentArea <- dialogGetContentArea dialog
+--    contentArea <- dialogGetActionArea dialog
+--    contentArea <- vBoxNew False 1
+    frame <- frameNew
+    frameSetLabel frame "Initial Graph"
+    canvas <- drawingAreaNew
+    containerAdd frame canvas
+
+    typeFrame    <- frameNew
+    frameSetLabel typeFrame "T Graph"
+
+    canvas `on` sizeRequest $ return (Requisition 40 40)
+    canvas `on` draw $ updateCanvas canvas st
+    canvas `on` buttonPressEvent $ mouseClick dialog st
+    canvas `on` buttonReleaseEvent $ mouseRelease st
+    widgetAddEvents canvas [Button1MotionMask]
+    canvas `on` motionNotifyEvent $ mouseMove dialog st
+
+    let cArea = castToBox contentArea
+    boxPackStart cArea frame PackGrow 1
+--    boxPackStart cArea typeButton PackGrow 1
+    widgetShowAll dialog
+    putStrLn "iGraphDialog"
+    dialogRun dialog
     return ()
+   
+
+addMainCallBacks :: GUI -> IORef GraphState -> IO ()
+addMainCallBacks gui st = do
+    let window   = mainWindow gui
+        bs = buttons gui
+        iGraphButton = editInitialGraph bs
+        addRuleButton = addRule bs
+    window `on` objectDestroy $ mainQuit
+    iGraphButton `on` buttonActivated $ iGraphDialog st
+
+    return ()
+
 
 showGUI gui = do
     let mainWin   = mainWindow gui
-        iGrCanvas = initialCanvas gui
+        iGrCanvas = canvas gui
     widgetShowAll mainWin
-    widgetShow    iGrCanvas
+--    widgetShow    iGrCanvas
 
 updateCanvas :: WidgetClass widget
              => widget
-             -> IORef GrammarState
+             -> IORef GraphState
              -> Render ()
 updateCanvas canvas st = do
     width'  <- liftIO $ widgetGetAllocatedWidth canvas
@@ -82,11 +127,11 @@ updateCanvas canvas st = do
         height = realToFrac height' / 2
     drawNodes st width height
 
-drawNodes :: IORef GrammarState -> Double -> Double -> Render ()
+drawNodes :: IORef GraphState -> Double -> Double -> Render ()
 drawNodes state x y = do
     st <- liftIO $ readIORef state
     setLineWidth 2
-    let posMap = initialGraphPos st
+    let posMap = graphPos st
     mapM_ drawNode posMap
   where
     drawNode (x, y) = do
@@ -96,27 +141,27 @@ drawNodes state x y = do
         setSourceRGB 0.8 0.8 0.8
         fill
 
-mouseClick :: GUI -> IORef GrammarState -> EventM EButton Bool
-mouseClick gui st = do
+mouseClick :: WidgetClass widget => widget -> IORef GraphState -> EventM EButton Bool
+mouseClick widget st = do
     button <- eventButton
     click  <- eventClick
     coords@(x, y) <- eventCoordinates
     case (button, click) of
-        (LeftButton, DoubleClick) -> liftIO $ leftDoubleClick gui st coords
-        (LeftButton, SingleClick) -> liftIO $ leftSingleClick gui st coords
+        (LeftButton, DoubleClick) -> liftIO $ leftDoubleClick widget st coords
+        (LeftButton, SingleClick) -> liftIO $ leftSingleClick widget st coords
         otherwise                 -> liftIO $ putStrLn "Unknown button"
     return True
 
-mouseRelease :: IORef GrammarState -> EventM EButton Bool
+mouseRelease :: IORef GraphState -> EventM EButton Bool
 mouseRelease st = do
     liftIO $ modifyIORef st cancelDrag
     return True
   where
-    cancelDrag (GrammarState iGr tGr iGrPos c _ curNId) =
-        GrammarState iGr tGr iGrPos c LeftButtonFree curNId
+    cancelDrag (GraphState iGr tGr iGrPos c _ curNId) =
+        GraphState iGr tGr iGrPos c LeftButtonFree curNId
 
-mouseMove :: GUI -> IORef GrammarState -> EventM EMotion Bool
-mouseMove gui st = do
+mouseMove :: WidgetClass widget => widget -> IORef GraphState -> EventM EMotion Bool
+mouseMove widget st = do
     state <- liftIO $ readIORef st
     processLeftButton $ leftButtonState state
     return True
@@ -124,36 +169,36 @@ mouseMove gui st = do
     processLeftButton NodeDrag = do
         coords <- eventCoordinates
         liftIO $ do modifyIORef st $ updateCoords coords
-                    widgetQueueDraw $ mainWindow gui
+                    widgetQueueDraw widget
     processLeftButton _ = return ()
-    updateCoords newCoords (GrammarState iGr tGr iGrPos c lSt (Just curNId)) =
-        GrammarState iGr tGr (M.insert curNId newCoords iGrPos) c lSt (Just curNId)
+    updateCoords newCoords (GraphState iGr tGr iGrPos c lSt (Just curNId)) =
+        GraphState iGr tGr (M.insert curNId newCoords iGrPos) c lSt (Just curNId)
 
     
 
-leftDoubleClick :: GUI -> IORef GrammarState -> Coords -> IO ()
-leftDoubleClick gui st coords = do
+leftDoubleClick :: WidgetClass widget => widget -> IORef GraphState -> Coords -> IO ()
+leftDoubleClick widget st coords = do
     state <- liftIO $ readIORef st
-    let posMap = initialGraphPos state
+    let posMap = graphPos state
     if isOverAnyNode coords posMap
     then putStrLn $ "clicked over node" ++ (show coords)
     else do modifyIORef st (newNode coords)
-            widgetQueueDraw $ mainWindow gui
+            widgetQueueDraw widget
 
 
-leftSingleClick :: GUI -> IORef GrammarState -> Coords -> IO ()
-leftSingleClick gui st coords = do
+leftSingleClick :: WidgetClass widget => widget -> IORef GraphState -> Coords -> IO ()
+leftSingleClick widget st coords = do
     state <- liftIO $ readIORef st
-    let posMap = initialGraphPos state
+    let posMap = graphPos state
     case nodeId posMap of
         newId@(Just k) -> modifyIORef st $ nodeDrag newId
         otherwise      -> modifyIORef st $ selDrag
   where
     nodeId posMap = checkNodeClick coords posMap
-    nodeDrag newId (GrammarState iGr tGr iGrPos c _ _) =
-        GrammarState iGr tGr iGrPos c NodeDrag newId
-    selDrag (GrammarState iGr tGr iGrPos c _ curNId) =
-        GrammarState iGr tGr iGrPos c SelectionDrag curNId
+    nodeDrag newId (GraphState iGr tGr iGrPos c _ _) =
+        GraphState iGr tGr iGrPos c NodeDrag newId
+    selDrag (GraphState iGr tGr iGrPos c _ curNId) =
+        GraphState iGr tGr iGrPos c SelectionDrag curNId
 
 checkNodeClick :: Coords -> M.Map G.NodeId Coords -> Maybe G.NodeId
 checkNodeClick coords posMap =
@@ -177,16 +222,16 @@ distance (x0, y0) (x1, y1) =
   where
     square x = x * x
 
-newNode :: Coords -> GrammarState -> GrammarState
+newNode :: Coords -> GraphState -> GraphState
 newNode coords st =
-    GrammarState gr' tGr pos (id + 1) lState (Just id)
+    GraphState gr' tGr pos (id + 1) lState (Just id)
   where
     id = counter st
-    gr = initialGraph st
+    gr = graph st
     (dom, cod, nR, eR) =
         (domain gr, codomain gr, GM.nodeRelation gr, GM.edgeRelation gr)
     gr' = GM.graphMorphism (G.insertNode id dom) cod nR eR
-    pos = M.insert id coords $ initialGraphPos st
+    pos = M.insert id coords $ graphPos st
     lState = leftButtonState st
     tGr = typeGraph st
     

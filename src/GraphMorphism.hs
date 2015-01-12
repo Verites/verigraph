@@ -3,6 +3,7 @@
 module GraphMorphism (
       applyNode
     , applyEdge
+    , graphMorphism
     , GraphMorphism.null
     , GraphMorphism
     , GraphMorphism.empty
@@ -52,6 +53,8 @@ applyEdge m le =
     
 empty :: Graph a b -> Graph a b -> GraphMorphism a b
 empty gA gB = GraphMorphism gA gB (R.empty [] []) (R.empty [] [])
+
+graphMorphism = GraphMorphism
 
 inverse (GraphMorphism dom cod nm em) =
     GraphMorphism cod dom (R.inverse nm) (R.inverse em)
