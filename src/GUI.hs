@@ -118,7 +118,6 @@ iGraphDialog st = do
     boxPackStart cArea frame PackGrow 1
     boxPackStart cArea typeFrame PackGrow 1
     widgetShowAll dialog
-    putStrLn "iGraphDialog"
     dialogRun dialog
     return ()
    
@@ -179,8 +178,8 @@ mouseRelease st gId = do
     liftIO $ modifyIORef st cancelDrag
     return True
   where
-    cancelDrag (GrammarState grammar grStates grCounter _) =
-        GrammarState grammar grStates grCounter LeftButtonFree
+    cancelDrag gramState =
+        gramState { leftButtonState = LeftButtonFree }
 
 mouseMove :: WidgetClass widget
           => widget -> IORef GrammarState -> Int -> EventM EMotion Bool
@@ -199,12 +198,12 @@ mouseMove widget st gId = do
         liftIO $ do modifyIORef st $ updateCoords grState nId coords
                     widgetQueueDraw widget
     processLeftButton _ _ _ = return ()
-    newGraphState (GraphState c grPos) nId newCoords =
-        GraphState c (M.insert nId newCoords grPos)
-    updateCoords grState nId newCoords st@(GrammarState gram grStates c lB) =
-        GrammarState gram
-                     (M.insert gId (newGraphState grState nId newCoords) grStates)
-                     c lB
+    newGraphState grState@(GraphState c grPos) nId newCoords =
+        grState { graphPos = M.insert nId newCoords grPos }
+    updateCoords grState nId newCoords st@(GrammarState _ grStates _ _) =
+        st { graphStateMap =
+                M.insert gId (newGraphState grState nId newCoords) grStates
+           }
 
 leftDoubleClick :: GrammarState -> Int -> Coords -> GrammarState
 leftDoubleClick state gId coords =
@@ -231,10 +230,10 @@ leftSingleClick state gId coords =
   where
     graphState = M.lookup gId $ graphStateMap state
     nodeId posMap = checkNodeClick coords posMap
-    nodeDrag newId (GrammarState iGr iGrPos c _) =
-        GrammarState iGr iGrPos c (NodeDrag newId)
-    selDrag (GrammarState iGr iGrPos c _) =
-        GrammarState iGr iGrPos c SelectionDrag
+    nodeDrag newId gramState =
+        gramState { leftButtonState = NodeDrag newId }
+    selDrag gramState =
+        gramState { leftButtonState = SelectionDrag }
 
 checkNodeClick :: Coords -> M.Map G.NodeId Coords -> Maybe G.NodeId
 checkNodeClick coords posMap =
