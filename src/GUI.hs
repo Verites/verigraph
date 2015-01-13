@@ -211,8 +211,6 @@ mouseMove widget st gId = do
                      (M.insert gId (newGraphState grState nId newCoords) grStates)
                      c lB
 
-    
-
 leftDoubleClick :: WidgetClass widget
                 => widget -> IORef GrammarState -> Int -> Coords -> IO ()
 leftDoubleClick widget st gId coords = do
@@ -225,6 +223,7 @@ leftDoubleClick widget st gId coords = do
             if isOverAnyNode coords posMap
             then putStrLn $ "clicked over node" ++ (show coords)
             else liftIO $ do modifyIORef st (newNode 0 coords)
+                             putStrLn $ "created node: "
                              widgetQueueDraw widget
 
 
@@ -269,21 +268,20 @@ distance (x0, y0) (x1, y1) =
     square x = x * x
 
 newNode :: Int -> Coords -> GrammarState -> GrammarState
-newNode 0 coords st@(GrammarState gram grStates gId lB) = -- for now only initial graph. 
-                                                          -- Will change to a safer, 
-                                                          -- type base approach
-    GrammarState gram' grStates' gId lB
+newNode gId coords st@(GrammarState gram grStates c lB) = -- for now only initial graph. 
+                                                             -- Will change to a safer, 
+                                                             -- type base approach
+    GrammarState gram' grStates' c lB
   where
     (Just grState) = M.lookup gId $ graphStateMap st -- FIX unsafe
-    id = graphCounter grState
     (tGraph, gr, rs) = (GG.typeGraph gram, GG.initialGraph gram, GG.rules gram)
     (dom, cod, nR, eR) =
         (domain gr, codomain gr, GM.nodeRelation gr, GM.edgeRelation gr)
-    gr' = GM.graphMorphism (G.insertNode id dom) cod nR eR
-    (grCount, grPos) =
+    gr' = GM.graphMorphism (G.insertNode nId dom) cod nR eR
+    (nId, grPos) =
         (graphCounter grState, graphPos grState)
-    grPos' = M.insert id coords grPos
-    grState' = GraphState grCount grPos'
+    grPos' = M.insert nId coords grPos
+    grState' = GraphState (nId + 1) grPos'
     grStates' = M.insert gId grState' grStates
     gram' = GG.graphGrammar tGraph gr' rs
     
