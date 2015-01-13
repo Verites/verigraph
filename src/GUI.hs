@@ -1,6 +1,7 @@
 import Control.Monad.Trans.Class (lift)
 import qualified Graph as G
 import qualified GraphMorphism as GM
+import qualified GraphGrammar as GG
 import Data.IORef
 import qualified Data.Map as M
 import Data.Foldable
@@ -26,7 +27,7 @@ data GUI = GUI {
     }
 
 data GrammarState = GrammarState {
-    getGrammar :: GraphGrammar String String,
+    getGrammar :: GG.GraphGrammar String String,
     graphStateMap :: M.Map Int GraphState,
     grammarCounter :: Int, -- id's from graphStates
     leftButtonState :: LeftButtonState
@@ -34,8 +35,7 @@ data GrammarState = GrammarState {
 
 data GraphState = GraphState {
     graphCounter :: Int,
-    graphPos :: M.Map G.NodeId Coords,
-    currentNodeId :: Maybe G.NodeId
+    graphPos :: M.Map G.NodeId Coords
     }
 
 {-
@@ -55,9 +55,9 @@ main = do
     let iSimpleGraph = G.empty :: G.Graph String String
         tGraph = G.empty :: G.Graph String String
         iGraph = GM.empty iSimpleGraph tGraph
-        iGraphState = GraphState 0 M.empty Nothing
-        tGraphState = GraphState 0 M.empty Nothing
-        grammar = graphGrammar tGraph iGraph []
+        iGraphState = GraphState 0 M.empty
+        tGraphState = GraphState 0 M.empty
+        grammar = GG.graphGrammar tGraph iGraph []
         graphStates = M.insert 0 iGraphState $
                       M.insert 1 tGraphState $
                       M.empty
@@ -66,7 +66,7 @@ main = do
     st <- newIORef grammarState
 --    st <- newIORef $ GraphState iGraph M.empty 0 LeftButtonFree Nothing
     gui <- createGUI
-    addMainCallBacks gui st
+    addMainCallBacks gui st 0
 --    addCallBacks gui st
     --ctxt <- cairoCreateContext Nothing
     showGUI gui
@@ -106,11 +106,11 @@ iGraphDialog st gId = do
     frameSetLabel typeFrame "T Graph"
 
     canvas `on` sizeRequest $ return (Requisition 40 40)
-    canvas `on` draw $ updateCanvas canvas st id
+    canvas `on` draw $ updateCanvas canvas st gId 
     canvas `on` buttonPressEvent $ mouseClick dialog st gId
     canvas `on` buttonReleaseEvent $ mouseRelease st gId
     widgetAddEvents canvas [Button1MotionMask]
-    canvas `on` motionNotifyEvent $ mouseMove st gId
+    canvas `on` motionNotifyEvent $ mouseMove canvas st gId
 
     let cArea = castToBox contentArea
     boxPackStart cArea frame PackGrow 1
@@ -157,8 +157,8 @@ drawNodes state gId x y = do
     setLineWidth 2
     let graphState = M.lookup gId $ graphStateMap st
     case graphState of
-    Just posMap -> mapM_ drawNode posMap
-    otherwise -> return ()
+        Just grState -> mapM_ drawNode $ graphPos grState
+        otherwise -> return ()
   where
     drawNode (x, y) = do
         setSourceRGB 0 0 0
@@ -193,20 +193,23 @@ mouseMove widget st gId = do
     state <- liftIO $ readIORef st
     coords <- eventCoordinates
     let graphState = M.lookup gId $ graphStateMap state
+        lButSt = leftButtonState state
     case graphState of
-    Nothing -> return True
-    Just grState ->
-        processLeftButton grState coords $ leftButtonState grState
-        return True
+        Nothing -> return True
+        Just grState -> do
+            processLeftButton lButSt grState coords
+            return True
   where
-    processLeftButton (NodeDrag id) coords =
-        liftIO $ do modifyIORef st $ updateCoords grState coords
+    processLeftButton (NodeDrag nId) grState coords =
+        liftIO $ do modifyIORef st $ updateCoords grState nId coords
                     widgetQueueDraw widget
-    processLeftButton _ = return ()
-    newGraphState (GraphState c grPos (Just curNId)) newCoords =
-        GraphState c (M.insert curNId newCoords grPos) (Just curNId)
-    updateCoords newGraphState newCoords (GrammarState gram grStates c lB) =
-        GrammarState gram (M.insert gId newGraphState grStates) c lB
+    processLeftButton _ _ _ = return ()
+    newGraphState (GraphState c grPos) nId newCoords =
+        GraphState c (M.insert nId newCoords grPos)
+    updateCoords grState nId newCoords st@(GrammarState gram grStates c lB) =
+        GrammarState gram
+                     (M.insert gId (newGraphState grState nId newCoords) grStates)
+                     c lB
 
     
 
@@ -217,27 +220,31 @@ leftDoubleClick widget st gId coords = do
     let graphState = M.lookup gId $ graphStateMap state
     case graphState of
         Nothing -> return ()
-        Just grState ->
+        Just grState -> do
             let posMap = graphPos grState
             if isOverAnyNode coords posMap
             then putStrLn $ "clicked over node" ++ (show coords)
-            else do modifyIORef st (newNode coords)
-                    widgetQueueDraw widget
+            else liftIO $ do modifyIORef st (newNode 0 coords)
+                             widgetQueueDraw widget
 
 
-leftSingleClick :: WidgetClass widget => widget -> IORef GrammarState -> Coords -> IO ()
-leftSingleClick widget st coords = do
+leftSingleClick :: WidgetClass widget => widget -> IORef GrammarState -> Int -> Coords -> IO ()
+leftSingleClick widget st gId coords = do
     state <- liftIO $ readIORef st
-    let posMap = graphPos state
-    case nodeId posMap of
-        newId@(Just k) -> modifyIORef st $ nodeDrag newId
-        otherwise      -> modifyIORef st $ selDrag
+    let graphState = M.lookup gId $ graphStateMap state
+    case graphState of
+        Nothing -> return ()
+        Just grState -> do
+            let posMap = graphPos grState
+            case nodeId posMap of
+                Just k -> modifyIORef st $ nodeDrag k
+                otherwise      -> modifyIORef st $ selDrag
   where
     nodeId posMap = checkNodeClick coords posMap
-    nodeDrag newId (GrammarState iGr iGrPos c _ _) =
-        GrammarState iGr iGrPos c NodeDrag newId
-    selDrag (GrammarState iGr iGrPos c _ curNId) =
-        GrammarState iGr iGrPos c SelectionDrag curNId
+    nodeDrag newId (GrammarState iGr iGrPos c _) =
+        GrammarState iGr iGrPos c (NodeDrag newId)
+    selDrag (GrammarState iGr iGrPos c _) =
+        GrammarState iGr iGrPos c SelectionDrag
 
 checkNodeClick :: Coords -> M.Map G.NodeId Coords -> Maybe G.NodeId
 checkNodeClick coords posMap =
@@ -261,21 +268,22 @@ distance (x0, y0) (x1, y1) =
   where
     square x = x * x
 
-newNode :: Coords -> GrammarState -> Int -> GrammarState
-newNode coords st@(GrammarState gram grStates gId lB) 0 = -- for now only initial graph. Will change to a safer, 
+newNode :: Int -> Coords -> GrammarState -> GrammarState
+newNode 0 coords st@(GrammarState gram grStates gId lB) = -- for now only initial graph. 
+                                                          -- Will change to a safer, 
                                                           -- type base approach
     GrammarState gram' grStates' gId lB
   where
-    (Just grState) = M.lookup gId st -- FIX unsafe
-    id = counter grState
-    (tGraph, gr, rs) = (typeGraph gram, initialGraph gram, rules gram)
+    (Just grState) = M.lookup gId $ graphStateMap st -- FIX unsafe
+    id = graphCounter grState
+    (tGraph, gr, rs) = (GG.typeGraph gram, GG.initialGraph gram, GG.rules gram)
     (dom, cod, nR, eR) =
         (domain gr, codomain gr, GM.nodeRelation gr, GM.edgeRelation gr)
     gr' = GM.graphMorphism (G.insertNode id dom) cod nR eR
-    (grCount, grPos, grNId) =
-        (graphCounter grState, graphPos grState, currentNodeId grState)
+    (grCount, grPos) =
+        (graphCounter grState, graphPos grState)
     grPos' = M.insert id coords grPos
-    grState' = GraphState grCount, grPos' grNId
+    grState' = GraphState grCount grPos'
     grStates' = M.insert gId grState' grStates
-    gram' = graphGrammar tGraph gr' rs
+    gram' = GG.graphGrammar tGraph gr' rs
     
