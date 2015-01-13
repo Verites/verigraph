@@ -49,6 +49,7 @@ data GraphState = GraphState {
 -}
 
 radius = 20 :: Double
+lineWidth = 2 :: Double
 
 main = do
     initGUI
@@ -69,8 +70,7 @@ main = do
     addMainCallBacks gui st 0
 --    addCallBacks gui st
     --ctxt <- cairoCreateContext Nothing
-    showGUI gui
---    widgetShowAll window
+    widgetShowAll $ mainWindow gui
 --    widgetShow canvas
     mainGUI 
 
@@ -132,18 +132,8 @@ addMainCallBacks gui st gId = do
 
     return ()
 
-
-showGUI gui = do
-    let mainWin   = mainWindow gui
-        iGrCanvas = canvas gui
-    widgetShowAll mainWin
---    widgetShow    iGrCanvas
-
 updateCanvas :: WidgetClass widget
-             => widget
-             -> IORef GrammarState
-             -> Int
-             -> Render ()
+             => widget -> IORef GrammarState -> Int -> Render ()
 updateCanvas canvas st gId = do
     width'  <- liftIO $ widgetGetAllocatedWidth canvas
     height' <- liftIO $ widgetGetAllocatedHeight canvas
@@ -154,7 +144,7 @@ updateCanvas canvas st gId = do
 drawNodes :: IORef GrammarState -> Int -> Double -> Double -> Render ()
 drawNodes state gId x y = do
     st <- liftIO $ readIORef state
-    setLineWidth 2
+    setLineWidth lineWidth
     let graphState = M.lookup gId $ graphStateMap st
     case graphState of
         Just grState -> mapM_ drawNode $ graphPos grState
@@ -172,11 +162,14 @@ mouseClick :: WidgetClass widget
 mouseClick widget st gId = do
     button <- eventButton
     click  <- eventClick
+    state <- liftIO $ readIORef st
     coords@(x, y) <- eventCoordinates
-    case (button, click) of
-        (LeftButton, DoubleClick) -> liftIO $ leftDoubleClick widget st gId coords
-        (LeftButton, SingleClick) -> liftIO $ leftSingleClick widget st gId coords
-        otherwise                 -> liftIO $ putStrLn "Unknown button"
+    let newState = case (button, click) of
+            (LeftButton, DoubleClick) -> leftDoubleClick state gId coords
+            (LeftButton, SingleClick) -> leftSingleClick state gId coords
+            otherwise                 -> state
+    liftIO $ writeIORef st newState
+    liftIO $ widgetQueueDraw widget
     return True
 
 mouseRelease :: IORef GrammarState -> Int -> EventM EButton Bool
@@ -211,34 +204,30 @@ mouseMove widget st gId = do
                      (M.insert gId (newGraphState grState nId newCoords) grStates)
                      c lB
 
-leftDoubleClick :: WidgetClass widget
-                => widget -> IORef GrammarState -> Int -> Coords -> IO ()
-leftDoubleClick widget st gId coords = do
-    state <- liftIO $ readIORef st
-    let graphState = M.lookup gId $ graphStateMap state
+leftDoubleClick :: GrammarState -> Int -> Coords -> GrammarState
+leftDoubleClick state gId coords = do
     case graphState of
-        Nothing -> return ()
+        Nothing -> state
         Just grState -> do
             let posMap = graphPos grState
             if isOverAnyNode coords posMap
-            then putStrLn $ "clicked over node" ++ (show coords)
-            else liftIO $ do modifyIORef st (newNode 0 coords)
-                             putStrLn $ "created node: "
-                             widgetQueueDraw widget
+            then state
+            else newNode 0 coords state
+  where
+    graphState = M.lookup gId $ graphStateMap state
 
 
-leftSingleClick :: WidgetClass widget => widget -> IORef GrammarState -> Int -> Coords -> IO ()
-leftSingleClick widget st gId coords = do
-    state <- liftIO $ readIORef st
-    let graphState = M.lookup gId $ graphStateMap state
+leftSingleClick :: GrammarState -> Int -> Coords -> GrammarState
+leftSingleClick state gId coords = do
     case graphState of
-        Nothing -> return ()
+        Nothing -> state
         Just grState -> do
             let posMap = graphPos grState
             case nodeId posMap of
-                Just k -> modifyIORef st $ nodeDrag k
-                otherwise      -> modifyIORef st $ selDrag
+                Just k -> nodeDrag k state
+                otherwise -> selDrag state
   where
+    graphState = M.lookup gId $ graphStateMap state
     nodeId posMap = checkNodeClick coords posMap
     nodeDrag newId (GrammarState iGr iGrPos c _) =
         GrammarState iGr iGrPos c (NodeDrag newId)
