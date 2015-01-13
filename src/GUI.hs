@@ -38,16 +38,6 @@ data GraphState = GraphState {
     graphPos :: M.Map G.NodeId Coords
     }
 
-{-
-data GraphState = GraphState {
-    graph    :: GM.TypedGraph String String,
-    graphPos :: M.Map G.NodeId Coords,
-    counter         :: Int,
-    leftButtonState :: LeftButtonState,
-    currentNodeId   :: Maybe G.NodeId
-    }
--}
-
 radius = 20 :: Double
 lineWidth = 2 :: Double
 
