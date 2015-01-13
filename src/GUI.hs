@@ -91,8 +91,8 @@ createGUI = do
 
     return $ GUI window buttons dummyCanvas 
 
-iGraphDialog :: IORef GrammarState ->  IO ()
-iGraphDialog st = do
+iGraphDialog :: IORef GrammarState -> Int ->  IO ()
+iGraphDialog st gId = do
     dialog <- dialogNew
     contentArea <- dialogGetContentArea dialog
 --    contentArea <- dialogGetActionArea dialog
@@ -106,11 +106,11 @@ iGraphDialog st = do
     frameSetLabel typeFrame "T Graph"
 
     canvas `on` sizeRequest $ return (Requisition 40 40)
-    canvas `on` draw $ updateCanvas canvas st
-    canvas `on` buttonPressEvent $ mouseClick dialog st
-    canvas `on` buttonReleaseEvent $ mouseRelease st
+    canvas `on` draw $ updateCanvas canvas st id
+    canvas `on` buttonPressEvent $ mouseClick dialog st gId
+    canvas `on` buttonReleaseEvent $ mouseRelease st gId
     widgetAddEvents canvas [Button1MotionMask]
-    canvas `on` motionNotifyEvent $ mouseMove dialog st
+    canvas `on` motionNotifyEvent $ mouseMove st gId
 
     let cArea = castToBox contentArea
     boxPackStart cArea frame PackGrow 1
@@ -121,14 +121,14 @@ iGraphDialog st = do
     return ()
    
 
-addMainCallBacks :: GUI -> IORef GrammarState -> IO ()
-addMainCallBacks gui st = do
+addMainCallBacks :: GUI -> IORef GrammarState -> Int -> IO ()
+addMainCallBacks gui st gId = do
     let window   = mainWindow gui
         bs = buttons gui
         iGraphButton = editInitialGraph bs
         addRuleButton = addRule bs
     window `on` objectDestroy $ mainQuit
-    iGraphButton `on` buttonActivated $ iGraphDialog st
+    iGraphButton `on` buttonActivated $ iGraphDialog st gId
 
     return ()
 
@@ -185,41 +185,44 @@ mouseRelease st gId = do
     return True
   where
     cancelDrag (GrammarState grammar grStates grCounter _) =
-        GrammarState grammar grStates grCounter _
+        GrammarState grammar grStates grCounter LeftButtonFree
 
 mouseMove :: WidgetClass widget
           => widget -> IORef GrammarState -> Int -> EventM EMotion Bool
 mouseMove widget st gId = do
     state <- liftIO $ readIORef st
-    let graphState = M.lookup id $ graphStateMap state
+    coords <- eventCoordinates
+    let graphState = M.lookup gId $ graphStateMap state
     case graphState of
     Nothing -> return True
     Just grState ->
-        processLeftButton state $ leftButtonState state
+        processLeftButton grState coords $ leftButtonState grState
         return True
   where
-    processLeftButton state (NodeDrag id) = do
-        let graphState = M.lookup id $ graphStateMap state
-        case graphState of
-        Nothing -> Return True
-        Just grState -> do
-            coords <- eventCoordinates
-            liftIO $ do modifyIORef st $ updateCoords id coords
-                        widgetQueueDraw widget
+    processLeftButton (NodeDrag id) coords =
+        liftIO $ do modifyIORef st $ updateCoords grState coords
+                    widgetQueueDraw widget
     processLeftButton _ = return ()
-    updateCoords newCoords (GrammarState iGr iGrPos c (Just curNId)) =
-        GrammarState iGr (M.insert curNId newCoords iGrPos) c (Just curNId)
+    newGraphState (GraphState c grPos (Just curNId)) newCoords =
+        GraphState c (M.insert curNId newCoords grPos) (Just curNId)
+    updateCoords newGraphState newCoords (GrammarState gram grStates c lB) =
+        GrammarState gram (M.insert gId newGraphState grStates) c lB
 
     
 
-leftDoubleClick :: WidgetClass widget => widget -> IORef GrammarState -> Coords -> IO ()
-leftDoubleClick widget st coords = do
+leftDoubleClick :: WidgetClass widget
+                => widget -> IORef GrammarState -> Int -> Coords -> IO ()
+leftDoubleClick widget st gId coords = do
     state <- liftIO $ readIORef st
-    let posMap = graphPos state
-    if isOverAnyNode coords posMap
-    then putStrLn $ "clicked over node" ++ (show coords)
-    else do modifyIORef st (newNode coords)
-            widgetQueueDraw widget
+    let graphState = M.lookup gId $ graphStateMap state
+    case graphState of
+        Nothing -> return ()
+        Just grState ->
+            let posMap = graphPos grState
+            if isOverAnyNode coords posMap
+            then putStrLn $ "clicked over node" ++ (show coords)
+            else do modifyIORef st (newNode coords)
+                    widgetQueueDraw widget
 
 
 leftSingleClick :: WidgetClass widget => widget -> IORef GrammarState -> Coords -> IO ()
@@ -258,15 +261,21 @@ distance (x0, y0) (x1, y1) =
   where
     square x = x * x
 
-newNode :: Coords -> GrammarState -> GrammarState
-newNode coords st =
-    GrammarState gr' pos (id + 1) lState (Just id)
+newNode :: Coords -> GrammarState -> Int -> GrammarState
+newNode coords st@(GrammarState gram grStates gId lB) 0 = -- for now only initial graph. Will change to a safer, 
+                                                          -- type base approach
+    GrammarState gram' grStates' gId lB
   where
-    id = counter st
-    gr = graph st
+    (Just grState) = M.lookup gId st -- FIX unsafe
+    id = counter grState
+    (tGraph, gr, rs) = (typeGraph gram, initialGraph gram, rules gram)
     (dom, cod, nR, eR) =
         (domain gr, codomain gr, GM.nodeRelation gr, GM.edgeRelation gr)
     gr' = GM.graphMorphism (G.insertNode id dom) cod nR eR
-    pos = M.insert id coords $ graphPos st
-    lState = leftButtonState st
+    (grCount, grPos, grNId) =
+        (graphCounter grState, graphPos grState, currentNodeId grState)
+    grPos' = M.insert id coords grPos
+    grState' = GraphState grCount, grPos' grNId
+    grStates' = M.insert gId grState' grStates
+    gram' = graphGrammar tGraph gr' rs
     
