@@ -81,8 +81,10 @@ createGUI = do
 
     return $ GUI window buttons dummyCanvas 
 
-iGraphDialog :: IORef GrammarState -> Int ->  IO ()
-iGraphDialog st gId = do
+iGraphDialog :: IORef GrammarState -> IO ()
+iGraphDialog st = do
+    let gId = 0
+        tId = 1
     dialog <- dialogNew
     contentArea <- dialogGetContentArea dialog
 --    contentArea <- dialogGetActionArea dialog
@@ -92,7 +94,9 @@ iGraphDialog st gId = do
     canvas <- drawingAreaNew
     containerAdd frame canvas
 
-    typeFrame    <- frameNew
+    typeFrame  <- frameNew
+    typeCanvas <- drawingAreaNew
+    containerAdd typeFrame typeCanvas
     frameSetLabel typeFrame "T Graph"
 
     canvas `on` sizeRequest $ return (Requisition 40 40)
@@ -102,9 +106,17 @@ iGraphDialog st gId = do
     widgetAddEvents canvas [Button1MotionMask]
     canvas `on` motionNotifyEvent $ mouseMove canvas st gId
 
+    typeCanvas `on` sizeRequest $ return (Requisition 40 40)
+    typeCanvas `on` draw $ updateCanvas typeCanvas st tId
+    typeCanvas `on` buttonPressEvent $ mouseClick dialog st tId
+    typeCanvas `on` buttonReleaseEvent $ mouseRelease st tId
+    widgetAddEvents typeCanvas [Button1MotionMask]
+    typeCanvas `on` motionNotifyEvent $ mouseMove typeCanvas st tId
+
+
     let cArea = castToBox contentArea
     boxPackStart cArea frame PackGrow 1
---    boxPackStart cArea typeButton PackGrow 1
+    boxPackStart cArea typeFrame PackGrow 1
     widgetShowAll dialog
     putStrLn "iGraphDialog"
     dialogRun dialog
@@ -118,7 +130,7 @@ addMainCallBacks gui st gId = do
         iGraphButton = editInitialGraph bs
         addRuleButton = addRule bs
     window `on` objectDestroy $ mainQuit
-    iGraphButton `on` buttonActivated $ iGraphDialog st gId
+    iGraphButton `on` buttonActivated $ iGraphDialog st
 
     return ()
 
@@ -195,20 +207,20 @@ mouseMove widget st gId = do
                      c lB
 
 leftDoubleClick :: GrammarState -> Int -> Coords -> GrammarState
-leftDoubleClick state gId coords = do
+leftDoubleClick state gId coords =
     case graphState of
         Nothing -> state
-        Just grState -> do
+        Just grState ->
             let posMap = graphPos grState
-            if isOverAnyNode coords posMap
-            then state
-            else newNode 0 coords state
+            in if isOverAnyNode coords posMap
+                then state
+                else newNode 0 coords state
   where
     graphState = M.lookup gId $ graphStateMap state
 
 
 leftSingleClick :: GrammarState -> Int -> Coords -> GrammarState
-leftSingleClick state gId coords = do
+leftSingleClick state gId coords =
     case graphState of
         Nothing -> state
         Just grState -> do
