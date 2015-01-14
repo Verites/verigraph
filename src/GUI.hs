@@ -28,12 +28,17 @@ data GUI = GUI {
 
 data GrammarState = GrammarState {
     getGrammar :: GG.GraphGrammar String String,
+    tGraphState :: GraphState,
     graphStateMap :: M.Map Int GraphState,
     grammarCounter :: Int, -- id's from graphStates
     leftButtonState :: LeftButtonState
     }
 
+
 data GraphState = GraphState {
+    graph :: G.Graph String String,
+    nodeTypes :: M.Map G.NodeId G.NodeId,
+    edgeTypes :: M.Map G.EdgeId G.EdgeId,
     graphCounter :: Int,
     graphPos :: M.Map G.NodeId Coords
     }
@@ -43,16 +48,15 @@ lineWidth = 2 :: Double
 
 main = do
     initGUI
-    let iSimpleGraph = G.empty :: G.Graph String String
-        tGraph = G.empty :: G.Graph String String
-        iGraph = GM.empty iSimpleGraph tGraph
-        iGraphState = GraphState 0 M.empty
-        tGraphState = GraphState 0 M.empty
-        grammar = GG.graphGrammar tGraph iGraph []
+    let iGraph = GM.empty G.empty G.empty :: GM.GraphMorphism String String
+        iGraphState = GraphState G.empty M.empty M.empty 0 M.empty
+        tGraphState = GraphState G.empty M.empty M.empty 0 M.empty
+        grammar = GG.graphGrammar G.empty iGraph []
         graphStates = M.insert 0 iGraphState $
                       M.insert 1 tGraphState $
                       M.empty
-        grammarState = GrammarState grammar graphStates 2 LeftButtonFree
+        tGraphSt = GraphState G.empty M.empty M.empty 0 M.empty
+        grammarState = GrammarState grammar tGraphSt graphStates 2 LeftButtonFree
                     
     st <- newIORef grammarState
 --    st <- newIORef $ GraphState iGraph M.empty 0 LeftButtonFree Nothing
@@ -198,12 +202,14 @@ mouseMove widget st gId = do
         liftIO $ do modifyIORef st $ updateCoords grState nId coords
                     widgetQueueDraw widget
     processLeftButton _ _ _ = return ()
-    newGraphState grState@(GraphState c grPos) nId newCoords =
-        grState { graphPos = M.insert nId newCoords grPos }
-    updateCoords grState nId newCoords st@(GrammarState _ grStates _ _) =
-        st { graphStateMap =
-                M.insert gId (newGraphState grState nId newCoords) grStates
-           }
+    newGraphState grState nId newCoords =
+        let grPos = graphPos grState in
+            grState { graphPos = M.insert nId newCoords grPos }
+    updateCoords grState nId newCoords st =
+        let grStates = graphStateMap st in
+            st { graphStateMap =
+                    M.insert gId (newGraphState grState nId newCoords) grStates
+               }
 
 leftDoubleClick :: GrammarState -> Int -> Coords -> GrammarState
 leftDoubleClick state gId coords =
@@ -213,7 +219,7 @@ leftDoubleClick state gId coords =
             let posMap = graphPos grState
             in if isOverAnyNode coords posMap
                 then state
-                else newNode 0 coords state
+                else newNode gId coords state
   where
     graphState = M.lookup gId $ graphStateMap state
 
@@ -258,20 +264,16 @@ distance (x0, y0) (x1, y1) =
     square x = x * x
 
 newNode :: Int -> Coords -> GrammarState -> GrammarState
-newNode gId coords st@(GrammarState gram grStates c lB) = -- for now only initial graph. 
-                                                             -- Will change to a safer, 
-                                                             -- type base approach
-    GrammarState gram' grStates' c lB
+newNode gId coords st =
+    st { graphStateMap = grStates' }
   where
-    (Just grState) = M.lookup gId $ graphStateMap st -- FIX unsafe
-    (tGraph, gr, rs) = (GG.typeGraph gram, GG.initialGraph gram, GG.rules gram)
-    (dom, cod, nR, eR) =
-        (domain gr, codomain gr, GM.nodeRelation gr, GM.edgeRelation gr)
-    gr' = GM.graphMorphism (G.insertNode nId dom) cod nR eR
-    (nId, grPos) =
-        (graphCounter grState, graphPos grState)
+    grStates = graphStateMap st
+    (Just grState) = M.lookup gId grStates -- FIX unsafe
+    gr = graph grState
+    gr' = G.insertNode nId gr
+    (nId, grPos) = (graphCounter grState, graphPos grState)
     grPos' = M.insert nId coords grPos
-    grState' = GraphState (nId + 1) grPos'
+    grState' =
+        GraphState gr' (nodeTypes grState) (edgeTypes grState) (nId + 1) grPos'
     grStates' = M.insert gId grState' grStates
-    gram' = GG.graphGrammar tGraph gr' rs
     
