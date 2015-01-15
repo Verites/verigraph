@@ -1,6 +1,7 @@
 {-# LANGUAGE TypeFamilies #-}
 module Graph (
-      Edge
+      edgePayload
+    , Edge
     , EdgeId
     , edges
     , edgesFromNode
@@ -9,7 +10,8 @@ module Graph (
     , Graph
     , incidentEdges
     , insertNode
-    , insertEdge
+    , insertNodeWithPayload
+    , insertEdgeWithPayload
     , isAdjacentTo
     , isEdgeOf
     , isIncidentTo
@@ -17,6 +19,7 @@ module Graph (
     , neighbourNodes
     , Node
     , NodeId
+    , nodePayload
     , nodes
     , nodesConnectedTo
     , nodesFromNode
@@ -73,6 +76,17 @@ removeNode n g@(Graph ns es)
 
 removeEdge :: EdgeId -> Graph a b -> Graph a b
 removeEdge e (Graph ns es) = Graph ns (delFromAL es e)
+
+insertNodeWithPayload :: NodeId -> a -> Graph a b -> Graph a b
+insertNodeWithPayload n p g@(Graph ns es) =
+    Graph (addToAL ns n (Node (Just p) Nothing)) es
+
+insertEdgeWithPayload :: EdgeId -> NodeId -> NodeId -> b -> Graph a b -> Graph a b
+insertEdgeWithPayload e src tgt p g@(Graph ns es)
+    | src `elem` (keysAL ns) && tgt `elem` (keysAL ns) =
+        Graph ns (addToAL es e (Edge src tgt (Just p) Nothing))
+    | otherwise = g
+
         
 -- Test the presence and access nodes and edges
 nodes :: Graph a b -> [NodeId]
