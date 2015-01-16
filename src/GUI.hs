@@ -3,6 +3,7 @@ import qualified Graph as G
 import qualified GraphMorphism as GM
 import qualified GraphGrammar as GG
 import Data.IORef
+import qualified Data.List as L
 import qualified Data.Map as M
 import Control.Applicative
 import Data.Foldable
@@ -36,7 +37,8 @@ data GUI = GUI {
 
 radius = 20 :: Double
 lineWidth = 2 :: Double
-neutralEColor = (0.8, 0.8, 0.8)
+borderColor = (0, 0, 0)
+neutralColor = (0.8, 0.8, 0.8)
 data GraphId = IGraph | TGraph
 draw = undefined
 
@@ -122,10 +124,9 @@ mouseClick widget gramRef graphId = do
             (LeftButton, DoubleClick) -> leftDoubleClick gram graphId coords
 --            (LeftButton, SingleClick) -> leftSingleClick gram graphId coords
             otherwise                 -> gram
-{-
+
     liftIO $ writeIORef gramRef newGram
     liftIO $ widgetQueueDraw widget
--}
     return True
 
 normalize :: Int -> Int -> Coords -> Coords
@@ -140,15 +141,16 @@ leftDoubleClick gram IGraph coords =
     graph = GG.initialGraph gram
     (dom, cod, nR, eR) =
         (M.domain graph, M.codomain graph, GM.nodeRelation graph, GM.edgeRelation graph)
-{-
-        (,,,,) <$> M.domain <*> M.codomain <*>
-            GM.nodeRelation <*> GM.edgeRelation graph
--}
     graph' = GM.graphMorphism (newNode coords dom) cod nR eR
+
+leftDoubleClick gram TGraph coords =
+    GG.graphGrammar (GG.initialGraph gram) tGraph' (GG.rules gram)
+  where
+    tGraph' = newNode coords $ GG.typeGraph gram
 
 newNode :: Coords -> Graph -> Graph
 newNode coords graph =
-    G.insertNodeWithPayload newId (coords, neutralEColor) graph
+    G.insertNodeWithPayload newId (coords, neutralColor) graph
   where
     newId = (+1) . length . G.nodes $ graph
 
@@ -182,8 +184,6 @@ leftSingleClick state graphId coords =
     selDrag gramState =
         gramState { leftButtonState = SelectionDrag }
 -}
-
-
     
  
 addMainCallBacks :: GUI -> IORef Grammar -> IO ()
@@ -198,50 +198,41 @@ addMainCallBacks gui gramRef = do
     return ()
 
 
-{-
-
-
 updateCanvas :: WidgetClass widget
-             => widget -> IORef GrammarState -> GraphId -> Render ()
-updateCanvas = undefined
+             => widget -> IORef Grammar -> GraphId -> Render ()
+updateCanvas canvas gramRef graphId = do
 {-
-updateCanvas canvas st graphId = do
     width'  <- liftIO $ widgetGetAllocatedWidth canvas
     height' <- liftIO $ widgetGetAllocatedHeight canvas
     let width = realToFrac width' / 2
         height = realToFrac height' / 2
-    drawNodes st graphId width height
 -}
+    drawNodes gramRef graphId
 
-drawNodes :: IORef GrammarState -> GraphId -> Double -> Double -> Render ()
-drawNodes state (GraphId gId) x y = do
-    st <- liftIO $ readIORef state
+renderColor :: EColor -> Render ()
+renderColor (r, g, b) = setSourceRGB r g b
+
+drawNodes :: IORef Grammar -> GraphId -> Render ()
+drawNodes gramRef graphId = do
+    gram <- liftIO $ readIORef gramRef
     setLineWidth lineWidth
-    let graphState = M.lookup gId $ graphStateMap st
-    case graphState of
-        Just grState -> mapM_ drawNode $ graphPos grState
-        otherwise -> return ()
+    let gr = graph gram graphId
+    mapM_ (drawNode gr) $ G.nodes gr
   where
-    drawNode (x, y) = do
-        setSourceRGB 0 0 0
-        arc x y radius 0 $ 2 * pi
-        strokePreserve
-        setSourceRGB 0.8 0.8 0.8
-        fill
+    graph gram TGraph = GG.typeGraph gram
+    graph gram IGraph = M.domain . GG.initialGraph $ gram
+    drawNode gr nId =
+        case G.lookupNode nId gr >>= G.nodePayload of
+            Nothing -> return ()
+            Just ((x, y), color) -> do
+                                    renderColor borderColor
+                                    arc x y radius 0 $ 2 * pi
+                                    strokePreserve
+                                    renderColor color
+                                    fill
 
-drawNodes st TGraph x y = do
-    state <- liftIO $ readIORef st
-    setLineWidth lineWidth
-    let grState = tGraphState state
-    mapM_ drawNode $ graphPos grState
-  where
-    drawNode (x, y) = do
-        setSourceRGB 1 0 0
-        arc x y radius 0 $ 2 * pi
-        strokePreserve
-        setSourceRGB 0.8 0.1 0.2
-        fill
 
+{-
 
 mouseRelease :: IORef GrammarState -> GraphId -> EventM EButton Bool
 mouseRelease st gId = do
