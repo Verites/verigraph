@@ -9,7 +9,10 @@ module Graph (
     , empty
     , Graph
     , incidentEdges
+    , insertEdge
+    , insertEdgeWithPayload
     , insertNode
+    , insertNodeWithPayload
     , isAdjacentTo
     , isEdgeOf
     , isIncidentTo
@@ -63,11 +66,22 @@ insertNode :: NodeId -> Graph a b -> Graph a b
 insertNode n g@(Graph ns es) =
     Graph (addToAL ns n (Node Nothing)) es
 
+insertNodeWithPayload :: NodeId -> Graph a b -> a -> Graph a b
+insertNodeWithPayload n g@(Graph ns es) p =
+    Graph (addToAL ns n (Node (Just p))) es
+
 insertEdge :: EdgeId -> NodeId -> NodeId -> Graph a b -> Graph a b
 insertEdge e src tgt g@(Graph ns es)
     | src `elem` (keysAL ns) && tgt `elem` (keysAL ns) =
         Graph ns (addToAL es e (Edge src tgt Nothing))
     | otherwise = g
+
+insertEdgeWithPayload :: EdgeId -> NodeId -> NodeId -> Graph a b -> b -> Graph a b
+insertEdgeWithPayload e src tgt g@(Graph ns es) p
+    | src `elem` (keysAL ns) && tgt `elem` (keysAL ns) =
+        Graph ns (addToAL es e (Edge src tgt (Just p)))
+    | otherwise = g
+
 
 removeNode :: NodeId -> Graph a b -> Graph a b
 removeNode n g@(Graph ns es)
@@ -79,7 +93,12 @@ removeEdge e (Graph ns es) = Graph ns (delFromAL es e)
 
 updateNodePayload :: NodeId -> Graph a b -> a -> Graph a b
 updateNodePayload n g@(Graph ns es) p =
-    Graph (addToAL ns n (Node (Just p))) es
+    case nd of
+        Nothing -> g
+        Just n' -> Graph (ns' n') es
+  where
+    nd = lookup n ns
+    ns' n' = addToAL ns n $ n' { getNodePayload = Just p }
 
 updateEdgePayload :: EdgeId -> Graph a b -> b -> Graph a b
 updateEdgePayload e g@(Graph ns es) p =
