@@ -40,7 +40,6 @@ lineWidth = 2 :: Double
 borderColor = (0, 0, 0)
 neutralColor = (0.8, 0.8, 0.8)
 data GraphId = IGraph | TGraph
-draw = undefined
 
 main = do
     initGUI
@@ -86,10 +85,10 @@ iGraphDialog gramRef = do
     frameSetLabel typeFrame "T Graph"
     canvas `on` buttonPressEvent $ mouseClick dialog gramRef gId
     canvas `on` sizeRequest $ return (Requisition 40 40)
+    canvas `on` draw $ updateCanvas canvas gramRef gId 
 
     typeCanvas `on` buttonPressEvent $ mouseClick dialog gramRef tId
     typeCanvas `on` sizeRequest $ return (Requisition 40 40)
---    canvas `on` draw $ updateCanvas canvas st gId 
 {-
     canvas `on` buttonReleaseEvent $ mouseRelease st gId
     widgetAddEvents canvas [Button1MotionMask]
@@ -150,7 +149,7 @@ leftDoubleClick gram TGraph coords =
 
 newNode :: Coords -> Graph -> Graph
 newNode coords graph =
-    G.insertNodeWithPayload newId (coords, neutralColor) graph
+    G.insertNodeWithPayload newId graph (coords, neutralColor)
   where
     newId = (+1) . length . G.nodes $ graph
 
@@ -207,29 +206,29 @@ updateCanvas canvas gramRef graphId = do
     let width = realToFrac width' / 2
         height = realToFrac height' / 2
 -}
-    drawNodes gramRef graphId
+    gram <- liftIO $ readIORef gramRef
+    drawNodes gram graphId
 
 renderColor :: EColor -> Render ()
 renderColor (r, g, b) = setSourceRGB r g b
 
-drawNodes :: IORef Grammar -> GraphId -> Render ()
-drawNodes gramRef graphId = do
-    gram <- liftIO $ readIORef gramRef
+drawNodes :: Grammar -> GraphId -> Render ()
+drawNodes gram graphId = do
     setLineWidth lineWidth
-    let gr = graph gram graphId
+    let gr = graph graphId
     mapM_ (drawNode gr) $ G.nodes gr
   where
-    graph gram TGraph = GG.typeGraph gram
-    graph gram IGraph = M.domain . GG.initialGraph $ gram
+    graph TGraph = GG.typeGraph gram
+    graph IGraph = M.domain . GG.initialGraph $ gram
     drawNode gr nId =
-        case G.lookupNode nId gr >>= G.nodePayload of
-            Nothing -> return ()
+        case G.nodePayload nId gr of
             Just ((x, y), color) -> do
                                     renderColor borderColor
                                     arc x y radius 0 $ 2 * pi
                                     strokePreserve
                                     renderColor color
                                     fill
+            otherwise -> return ()
 
 
 {-
