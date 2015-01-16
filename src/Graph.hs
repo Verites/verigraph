@@ -10,8 +10,6 @@ module Graph (
     , Graph
     , incidentEdges
     , insertNode
-    , insertNodeWithPayload
-    , insertEdgeWithPayload
     , isAdjacentTo
     , isEdgeOf
     , isIncidentTo
@@ -29,27 +27,29 @@ module Graph (
     , removeNode
     , sourceOf
     , targetOf
+    , updateEdgePayload
+    , updateNodePayload
 ) where
 
 import Valid
 import Data.List
 import Data.List.Utils
 
-data Node a = Node { nodePayload :: Maybe a
-                   , nodeType    :: Maybe Int
+data Node a = Node { getNodePayload :: Maybe a
               } deriving (Eq, Show, Read)
 
 data Edge a = Edge { getSource   :: Int
                    , getTarget   :: Int
-                   , edgePayload :: Maybe a
-                   , edgeType    :: Maybe Int
+                   , getEdgePayload :: Maybe a
               } deriving (Eq, Show, Read)
 
 type NodeId = Int
 type EdgeId = Int
 
-data Graph a b = Graph [(Int, Node a)] [(Int, Edge b)]
-    deriving (Show, Read, Eq)
+data Graph a b = Graph {
+    nodeMap :: [(Int, Node a)],
+    edgeMap :: [(Int, Edge b)]
+    } deriving (Show, Read, Eq)
 
 empty :: Graph a b
 empty = Graph [] []
@@ -61,12 +61,12 @@ null _ = False
 -- Build and modify graphs
 insertNode :: NodeId -> Graph a b -> Graph a b
 insertNode n g@(Graph ns es) =
-    Graph (addToAL ns n (Node Nothing Nothing)) es
+    Graph (addToAL ns n (Node Nothing)) es
 
 insertEdge :: EdgeId -> NodeId -> NodeId -> Graph a b -> Graph a b
 insertEdge e src tgt g@(Graph ns es)
     | src `elem` (keysAL ns) && tgt `elem` (keysAL ns) =
-        Graph ns (addToAL es e (Edge src tgt Nothing Nothing))
+        Graph ns (addToAL es e (Edge src tgt Nothing))
     | otherwise = g
 
 removeNode :: NodeId -> Graph a b -> Graph a b
@@ -77,17 +77,20 @@ removeNode n g@(Graph ns es)
 removeEdge :: EdgeId -> Graph a b -> Graph a b
 removeEdge e (Graph ns es) = Graph ns (delFromAL es e)
 
-insertNodeWithPayload :: NodeId -> a -> Graph a b -> Graph a b
-insertNodeWithPayload n p g@(Graph ns es) =
-    Graph (addToAL ns n (Node (Just p) Nothing)) es
+updateNodePayload :: NodeId -> Graph a b -> a -> Graph a b
+updateNodePayload n g@(Graph ns es) p =
+    Graph (addToAL ns n (Node (Just p))) es
 
-insertEdgeWithPayload :: EdgeId -> NodeId -> NodeId -> b -> Graph a b -> Graph a b
-insertEdgeWithPayload e src tgt p g@(Graph ns es)
-    | src `elem` (keysAL ns) && tgt `elem` (keysAL ns) =
-        Graph ns (addToAL es e (Edge src tgt (Just p) Nothing))
-    | otherwise = g
+updateEdgePayload :: EdgeId -> Graph a b -> b -> Graph a b
+updateEdgePayload e g@(Graph ns es) p =
+    case ed of
+        Nothing -> g
+        Just e' -> Graph ns $ es' e'
+  where
+    ed = lookup e es
+    es' e' = addToAL es e $ e' { getEdgePayload = Just p }
 
-        
+
 -- Test the presence and access nodes and edges
 nodes :: Graph a b -> [NodeId]
 nodes (Graph ns _) = keysAL ns        
@@ -95,11 +98,17 @@ nodes (Graph ns _) = keysAL ns
 edges :: Graph a b -> [EdgeId]
 edges (Graph _ es) = keysAL es        
 
+nodePayload :: NodeId -> Graph a b -> Maybe a
+nodePayload n g = (lookup n $ nodeMap g) >>= getNodePayload
+
+edgePayload :: EdgeId -> Graph a b -> Maybe b
+edgePayload e g = (lookup e $ edgeMap g) >>= getEdgePayload
+
 nodesConnectedTo :: Graph a b -> EdgeId -> [(NodeId, NodeId)]
 nodesConnectedTo g@(Graph _ es) e =
     let ed = lookup e es
     in case ed of
-        Just (Edge src tgt _ _) -> [(src, tgt)]
+        Just (Edge src tgt _) -> [(src, tgt)]
         otherwise -> []
 
 sourceOf :: Graph a b -> EdgeId -> [NodeId]
