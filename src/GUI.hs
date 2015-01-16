@@ -85,7 +85,7 @@ iGraphDialog gramRef = do
     frameSetLabel typeFrame "T Graph"
     canvas `on` buttonPressEvent $ mouseClick dialog gramRef gId
     canvas `on` sizeRequest $ return (Requisition 40 40)
-    canvas `on` draw $ updateCanvas canvas gramRef gId 
+    canvas `on` exposeEvent $ liftIO $ updateCanvas canvas gramRef gId 
 
     typeCanvas `on` buttonPressEvent $ mouseClick dialog gramRef tId
     typeCanvas `on` sizeRequest $ return (Requisition 40 40)
@@ -198,7 +198,7 @@ addMainCallBacks gui gramRef = do
 
 
 updateCanvas :: WidgetClass widget
-             => widget -> IORef Grammar -> GraphId -> Render ()
+             => widget -> IORef Grammar -> GraphId -> IO Bool
 updateCanvas canvas gramRef graphId = do
 {-
     width'  <- liftIO $ widgetGetAllocatedWidth canvas
@@ -206,8 +206,10 @@ updateCanvas canvas gramRef graphId = do
     let width = realToFrac width' / 2
         height = realToFrac height' / 2
 -}
+    da <- widgetGetDrawWindow canvas
     gram <- liftIO $ readIORef gramRef
-    drawNodes gram graphId
+    renderWithDrawable da $ drawNodes gram graphId
+    return True
 
 renderColor :: EColor -> Render ()
 renderColor (r, g, b) = setSourceRGB r g b
