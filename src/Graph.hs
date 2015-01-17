@@ -117,8 +117,8 @@ nodes (Graph ns _) = keysAL ns
 edges :: Graph a b -> [EdgeId]
 edges (Graph _ es) = keysAL es        
 
-nodePayload :: NodeId -> Graph a b -> Maybe a
-nodePayload n g = (lookup n $ nodeMap g) >>= getNodePayload
+nodePayload :: Graph a b -> NodeId -> Maybe a
+nodePayload g n = (lookup n $ nodeMap g) >>= getNodePayload
 
 edgePayload :: EdgeId -> Graph a b -> Maybe b
 edgePayload e g = (lookup e $ edgeMap g) >>= getEdgePayload

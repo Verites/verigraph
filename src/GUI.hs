@@ -7,8 +7,11 @@ import qualified Data.List as L
 import qualified Data.Map as M
 import Control.Applicative
 import Data.Foldable
-import Graphics.UI.Gtk
-import Graphics.Rendering.Cairo
+import Diagrams.Backend.Cairo
+import Diagrams.Backend.Gtk
+import Diagrams.Prelude as D
+import Graphics.UI.Gtk as Gtk
+import Graphics.Rendering.Cairo as Gtk
 import Graphics.UI.Gtk.Gdk.EventM
 import qualified Morphism as M
 import Prelude hiding (mapM_, any)
@@ -35,9 +38,10 @@ data GUI = GUI {
     }
 
 
-radius = 20 :: Double
-lineWidth = 2 :: Double
-borderColor = (0, 0, 0)
+-- defRadius = 20 :: Double
+defRadius = 0.02 :: Double
+defLineWidth = 2 :: Double
+defBorderColor = (0, 0, 0)
 neutralColor = (0.8, 0.8, 0.8)
 data GraphId = IGraph | TGraph
 
@@ -114,13 +118,13 @@ mouseClick widget gramRef graphId = do
     button <- eventButton
     click  <- eventClick
     gram <- liftIO $ readIORef gramRef
-    drawWindow <- eventWindow
-    width <- liftIO $ drawWindowGetWidth drawWindow
-    height <- liftIO $ drawWindowGetHeight drawWindow
+    da <- eventWindow
+    width <- liftIO $ drawWindowGetWidth da
+    height <- liftIO $ drawWindowGetHeight da
     coords@(x, y) <- eventCoordinates
     let normCoords = normalize width height coords
         newGram = case (button, click) of
-            (LeftButton, DoubleClick) -> leftDoubleClick gram graphId coords
+            (LeftButton, DoubleClick) -> leftDoubleClick gram graphId normCoords
 --            (LeftButton, SingleClick) -> leftSingleClick gram graphId coords
             otherwise                 -> gram
 
@@ -149,9 +153,15 @@ leftDoubleClick gram TGraph coords =
 
 newNode :: Coords -> Graph -> Graph
 newNode coords graph =
-    G.insertNodeWithPayload newId graph (coords, neutralColor)
+    G.insertNodeWithPayload newId graph (fitCoords coords, neutralColor)
   where
     newId = (+1) . length . G.nodes $ graph
+    fitCoords = (,) <$> fitPos . fst <*> fitPos . snd
+    fitPos x
+        | x < defRadius = defRadius
+        | x > 1 - defRadius = 1 - defRadius
+        | otherwise = x
+    
 
 {-
     case graph graphId of
@@ -196,9 +206,11 @@ addMainCallBacks gui gramRef = do
 
     return ()
 
-
+{-
 updateCanvas :: WidgetClass widget
              => widget -> IORef Grammar -> GraphId -> IO Bool
+-}
+updateCanvas :: DrawingArea -> IORef Grammar -> GraphId -> IO Bool
 updateCanvas canvas gramRef graphId = do
 {-
     width'  <- liftIO $ widgetGetAllocatedWidth canvas
@@ -207,30 +219,62 @@ updateCanvas canvas gramRef graphId = do
         height = realToFrac height' / 2
 -}
     da <- widgetGetDrawWindow canvas
+    width <- liftIO $ drawWindowGetWidth da
+    height <- liftIO $ drawWindowGetHeight da
     gram <- liftIO $ readIORef gramRef
-    renderWithDrawable da $ drawNodes gram graphId
+    let graph = M.domain $ GG.initialGraph gram
+    mapM_ (putStrLn . show . G.nodePayload graph) $ G.nodes graph
+    putStrLn ""
+    defaultRender canvas example
+{-
+    defaultRender canvas $ D.scaleToY (fromIntegral height) $ D.scaleToX (fromIntegral width) $
+        (drawNodes gram graphId) `D.atop`
+        (D.alignTL $ rect 1 1 #
+        D.translate (r2 (0.5, 0.5))) -- # showOrigin)
+-}
     return True
+  where
+    example :: Diagram Cairo R2
+    example = hrule (2 * Prelude.sum sizes) === circles # showOrigin # centerX # showOrigin
+       where circles = hcat . map alignT . zipWith D.scale sizes
+                     $ repeat (circle 1)
+             sizes   = [2,5,4,7,1,3]
 
-renderColor :: EColor -> Render ()
+renderColor :: EColor -> Gtk.Render ()
 renderColor (r, g, b) = setSourceRGB r g b
 
-drawNodes :: Grammar -> GraphId -> Render ()
+--drawNodes :: Grammar -> GraphId -> QDiagram Cairo R2 [String]
+drawNodes :: Grammar -> GraphId -> Diagram Cairo R2
+drawNodes gram graphId =
+    D.position $ map (drawNode gr) $ G.nodes gr
+  where
+    gr = case graphId of
+        IGraph -> M.domain . GG.initialGraph $ gram
+        TGraph -> GG.typeGraph gram
+    drawNode gr nId =
+        case G.nodePayload gr nId of
+            Just ((x, y), color) ->
+                ((p2 (x, -y )), D.circle defRadius # showOrigin)
+            otherwise -> ((p2 (0,0)), mempty)
+
+{-
 drawNodes gram graphId = do
-    setLineWidth lineWidth
+    setLineWidth defLineWidth
     let gr = graph graphId
     mapM_ (drawNode gr) $ G.nodes gr
   where
     graph TGraph = GG.typeGraph gram
     graph IGraph = M.domain . GG.initialGraph $ gram
     drawNode gr nId =
-        case G.nodePayload nId gr of
+        case G.nodePayload gr nId of
             Just ((x, y), color) -> do
-                                    renderColor borderColor
-                                    arc x y radius 0 $ 2 * pi
+                                    renderColor defBorderColor
+                                    Gtk.arc x y defRadius 0 $ 2 * pi
                                     strokePreserve
                                     renderColor color
                                     fill
             otherwise -> return ()
+-}
 
 
 {-
@@ -283,7 +327,7 @@ checkNodeClick coords posMap =
   where
     found = filter insideNode $ M.toList posMap 
     insideNode (_, nodeCoords) =
-        distance coords nodeCoords <= radius
+        distance coords nodeCoords <= defRadius
     
 isOverAnyNode :: Coords -> M.Map G.NodeId Coords -> Bool
 isOverAnyNode coords posMap =
