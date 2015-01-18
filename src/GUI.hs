@@ -219,33 +219,23 @@ updateCanvas canvas gramRef graphId = do
         height = realToFrac height' / 2
 -}
     da <- widgetGetDrawWindow canvas
-    width <- liftIO $ drawWindowGetWidth da
-    height <- liftIO $ drawWindowGetHeight da
+    width <- drawWindowGetWidth da >>= return . fromIntegral
+    height <- drawWindowGetHeight da >>= return . fromIntegral
     gram <- liftIO $ readIORef gramRef
     let graph = M.domain $ GG.initialGraph gram
     mapM_ (putStrLn . show . G.nodePayload graph) $ G.nodes graph
     putStrLn ""
-    defaultRender canvas example
-{-
-    defaultRender canvas $ D.scaleToY (fromIntegral height) $ D.scaleToX (fromIntegral width) $
-        (drawNodes gram graphId) `D.atop`
-        (D.alignTL $ rect 1 1 #
-        D.translate (r2 (0.5, 0.5))) -- # showOrigin)
--}
+    defaultRender canvas $ 
+        drawNodes gram graphId width height `D.atop`
+        (D.alignTL $ rect 1 1 # scaleX width # scaleY height)
     return True
-  where
-    example :: Diagram Cairo R2
-    example = hrule (2 * Prelude.sum sizes) === circles # showOrigin # centerX # showOrigin
-       where circles = hcat . map alignT . zipWith D.scale sizes
-                     $ repeat (circle 1)
-             sizes   = [2,5,4,7,1,3]
 
 renderColor :: EColor -> Gtk.Render ()
 renderColor (r, g, b) = setSourceRGB r g b
 
---drawNodes :: Grammar -> GraphId -> QDiagram Cairo R2 [String]
-drawNodes :: Grammar -> GraphId -> Diagram Cairo R2
-drawNodes gram graphId =
+
+drawNodes :: Grammar -> GraphId -> Double -> Double -> Diagram Cairo R2
+drawNodes gram graphId width height =
     D.position $ map (drawNode gr) $ G.nodes gr
   where
     gr = case graphId of
@@ -254,7 +244,7 @@ drawNodes gram graphId =
     drawNode gr nId =
         case G.nodePayload gr nId of
             Just ((x, y), color) ->
-                ((p2 (x, -y )), D.circle defRadius # showOrigin)
+                ((p2 (x * width, -y * height )), D.circle (defRadius * width / 2) # fc green # showOrigin)
             otherwise -> ((p2 (0,0)), mempty)
 
 {-
