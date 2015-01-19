@@ -48,8 +48,11 @@ data GUI = GUI {
     }
 
 
--- defRadius = 20 :: Double
 defRadius = 0.02 :: Double
+defSep = 10 :: Double
+--defRadius :: Double -> Double -> Double
+--defRadius width height = (max width height) * 0.02
+
 defLineWidth = 2 :: Double
 defBorderColor = (0, 0, 0)
 neutralColor = (0.8, 0.8, 0.8)
@@ -103,6 +106,7 @@ iGraphDialog gramRef = do
     diagRef <- newIORef mempty
 
     canvas `on` buttonPressEvent $ mouseClick canvas grBoxRef tGrBoxRef diagRef
+    canvas `on` buttonReleaseEvent $ mouseRelease grBoxRef tGrBoxRef
     canvas `on` sizeRequest $ return (Requisition 40 40)
     canvas `on` exposeEvent $ liftIO $ updateCanvas canvas grBoxRef tGrBoxRef diagRef
     widgetAddEvents canvas [Button1MotionMask]
@@ -152,20 +156,26 @@ mouseClick widget grBoxRef tGrBoxRef diagRef = do
     height <- liftIO $ drawWindowGetHeight da >>= return . fromIntegral
     coords@(x, y) <- eventCoordinates
     diag <- liftIO $ readIORef diagRef
+    grBox <- liftIO $ readIORef grBoxRef
+    tGrBox <- liftIO $ readIORef tGrBoxRef
     let normCoords = normalize width height coords
         obj = sample diag (p2 (x, -y))
-        (lBState, graph') = case (obj, button, click) of
-            ([GraphBox], LeftButton, DoubleClick) -> (LeftButtonFree, newNode normCoords graph)
-            ((GraphBox:Node n:_), LeftButton, SingleClick) -> (NodeDrag n, graph)
-            otherwise -> (LeftButtonFree, graph)
-        (tLBState, tGraph') = case (obj, button, click) of
-            ([TGraphBox], LeftButton, DoubleClick) -> (LeftButtonFree, newNode normCoords tGraph)
-            ((TGraphBox:Node n:_), LeftButton, SingleClick) -> (NodeDrag n, tGraph)
-            otherwise -> (LeftButtonFree, tGraph)
+    case (obj, button, click) of
+        ([GraphBox], LeftButton, DoubleClick) ->
+            let lBState = LeftButtonFree
+                graph' = newNode normCoords graph
+            in liftIO $ writeIORef grBoxRef $ EditingBox graph' lBState
+        ((GraphBox:Node n:_), LeftButton, SingleClick) ->
+            liftIO $ writeIORef grBoxRef $ grBox { leftButtonState = NodeDrag n }
+        ([TGraphBox], LeftButton, DoubleClick) ->
+            let lBState = LeftButtonFree
+                tGraph' = newNode normCoords tGraph
+            in liftIO $ writeIORef tGrBoxRef $ EditingBox tGraph' lBState
+        ((TGraphBox:Node n:_), LeftButton, SingleClick) ->
+            liftIO $ writeIORef tGrBoxRef $ tGrBox { leftButtonState = NodeDrag n }
+        otherwise -> return ()
 
-    liftIO $ writeIORef grBoxRef $ EditingBox graph' lBState
-    liftIO $ writeIORef tGrBoxRef $ EditingBox tGraph' tLBState
-    liftIO $ putStrLn $ "obj: " ++ show obj ++ "\t" ++ show lBState
+--    liftIO $ putStrLn $ "obj: " ++ show obj ++ "\t" ++ show lBState
 --    liftIO $ writeIORef eGuiRef $ eGui { leftButtonState = lBState }
     liftIO $ widgetQueueDraw widget
     return True
@@ -206,13 +216,19 @@ mouseMove canvas grBoxRef tGrBoxRef diagRef = do
         tGraph = eBoxGraph tGrBox
         normCoords = fitCoords $ normalize width height coords
         obj = sample diag (p2 (x, -y))
-        graph' =
-            case (obj, leftButtonState grBox) of
-               ((GraphBox:_), NodeDrag n) ->
-                   G.insertNodeWithPayload n graph (normCoords, neutralColor)
-               otherwise -> graph
+        grLBSt = leftButtonState grBox
+        tGrLBSt = leftButtonState tGrBox
+    case (obj, grLBSt, tGrLBSt) of
+       ((GraphBox:_), NodeDrag n, _) ->
+            let graph' =
+                    G.insertNodeWithPayload n graph (normCoords, neutralColor)
+            in liftIO $ writeIORef grBoxRef $ grBox { eBoxGraph = graph' }
+       ((TGraphBox:_), _, NodeDrag n) ->
+            let tGraph' =
+                    G.insertNodeWithPayload n tGraph (normCoords, neutralColor)
+            in liftIO $ writeIORef tGrBoxRef $ tGrBox { eBoxGraph = tGraph' }
+       otherwise -> return ()
 
-    liftIO $ writeIORef grBoxRef $ grBox { eBoxGraph = graph' }
     liftIO $ widgetQueueDraw canvas
     return True
 
@@ -244,9 +260,10 @@ updateCanvas canvas grBoxRef tGrBoxRef diagRef = do
         newDiag = mconcat [
                    drawNodes graph width height,
                    drawNodes tGraph width height,
-                   D.alignTL $ graphBox === tGraphBox # centerX,
+                   D.alignTL $ graphBox === strutY rad === tGraphBox # centerX,
                    D.alignTL $ rect width height # value []
                   ]
+        rad = defRadius * (max width height)
     defaultRender canvas newDiag
     liftIO $ writeIORef diagRef newDiag
     
@@ -262,10 +279,11 @@ drawNodes :: Graph -> Double -> Double -> QDiagram Cairo R2 [Obj]
 drawNodes graph width height =
     D.position $ map (drawNode graph) $ G.nodes graph
   where
+    rad = defRadius * (max width height)
     drawNode graph nId =
         case G.nodePayload graph nId of
             Just ((x, y), color) ->
-                ((p2 (x * width, -y * height)), D.circle (defRadius * width) # fc green # value [Node nId])
+                ((p2 (x * width, -y * height)), D.circle rad # fc green # value [Node nId])
             otherwise -> ((p2 (0,0)), mempty)
 
 {-
@@ -288,14 +306,12 @@ drawNodes gram graphId = do
 -}
 
 
-{-
 
-mouseRelease :: IORef GrammarState -> GraphId -> EventM EButton Bool
-mouseRelease st gId = do
-    liftIO $ modifyIORef st cancelDrag
+mouseRelease :: IORef EditingBox -> IORef EditingBox -> EventM EButton Bool
+mouseRelease grBoxRef tGrBoxRef = do
+    liftIO $ do modifyIORef grBoxRef $ cancelDrag
+                modifyIORef tGrBoxRef $ cancelDrag
     return True
   where
-    cancelDrag gramState =
-        gramState { leftButtonState = LeftButtonFree }
+    cancelDrag box = box { leftButtonState = LeftButtonFree }
 
--}
