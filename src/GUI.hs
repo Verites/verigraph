@@ -104,6 +104,8 @@ iGraphDialog gramRef = do
     canvas `on` buttonPressEvent $ mouseClick canvas eGuiRef graphRef
     canvas `on` sizeRequest $ return (Requisition 40 40)
     canvas `on` exposeEvent $ liftIO $ updateCanvas canvas eGuiRef graphRef
+    widgetAddEvents canvas [Button1MotionMask]
+    canvas `on` motionNotifyEvent $ mouseMove canvas eGuiRef graphRef
 
 {-
     typeCanvas `on` buttonPressEvent $ mouseClick canvas eGuiRef gramRef tId
@@ -111,8 +113,6 @@ iGraphDialog gramRef = do
 -}
 {-
     canvas `on` buttonReleaseEvent $ mouseRelease st gId
-    widgetAddEvents canvas [Button1MotionMask]
-    canvas `on` motionNotifyEvent $ mouseMove canvas st gId
 
  --   typeCanvas `on` draw $ updateCanvas typeCanvas st tId
     typeCanvas `on` buttonReleaseEvent $ mouseRelease st tId
@@ -140,14 +140,15 @@ mouseClick widget eGuiRef graphRef = do
     height <- liftIO $ drawWindowGetHeight da >>= return . fromIntegral
     coords@(x, y) <- eventCoordinates
     let diag = diagram eGui
-        normCoords@(x', y') = normalize width height coords
+        normCoords = normalize width height coords
         obj = sample diag (p2 (x, -y))
-        newGraph = case (obj, button, click) of
-            ([], LeftButton, DoubleClick) -> newNode normCoords graph
-        --            (LeftButton, SingleClick) -> leftSingleClick gram graphId coords
-            otherwise -> graph
+        (lBState, newGraph) = case (obj, button, click) of
+            ([], LeftButton, DoubleClick) -> (LeftButtonFree, newNode normCoords graph)
+            ((Node n:_), LeftButton, SingleClick) -> (NodeDrag n, graph)
+            otherwise -> (LeftButtonFree, graph)
 
     liftIO $ writeIORef graphRef newGraph
+    liftIO $ writeIORef eGuiRef $ eGui { leftButtonState = lBState }
     liftIO $ widgetQueueDraw widget
     return True
 
@@ -163,34 +164,33 @@ newNode coords graph =
     G.insertNodeWithPayload newId graph (fitCoords coords, neutralColor)
   where
     newId = length . G.nodes $ graph
-    fitCoords = (,) <$> fitPos . fst <*> fitPos . snd
+
+fitCoords :: Coords -> Coords
+fitCoords = (,) <$> fitPos . fst <*> fitPos . snd
+  where
     fitPos x
         | x < defRadius = defRadius
         | x > 1 - defRadius = 1 - defRadius
         | otherwise = x
 
-{-
-leftSingleClick :: Grammar -> GraphId -> QDiagram Cairo R2 [Elem]
-                -> Coords -> GrammarState
-leftSingleClick state graphId coords =
-    case graphState graphId of
-        Nothing -> state
-        Just grState -> do
-            let posMap = graphPos grState
-            case nodeId posMap of
-                Just k -> nodeDrag k state
-                otherwise -> selDrag state
-  where
-    graphState (GraphId gId) = M.lookup gId $ graphStateMap state
-    graphState TGraph = Just $ tGraphState state
-    nodeId posMap = checkNodeClick coords posMap
-    nodeDrag newId gramState =
-        gramState { leftButtonState = NodeDrag newId }
-    selDrag gramState =
-        gramState { leftButtonState = SelectionDrag }
--}
 
-    
+mouseMove :: WidgetClass widget
+          => widget -> IORef EditingGUI -> IORef Graph -> EventM EMotion Bool
+mouseMove canvas eGuiRef graphRef = do
+    eGui <- liftIO $ readIORef eGuiRef
+    graph <- liftIO $ readIORef graphRef
+    da <- eventWindow
+    width <- liftIO $ drawWindowGetWidth da >>= return . fromIntegral
+    height <- liftIO $ drawWindowGetHeight da >>= return . fromIntegral
+    normCoords <- eventCoordinates >>=
+                  return . fitCoords . (normalize width height)
+    let graph' = case leftButtonState eGui of
+            NodeDrag n -> G.insertNodeWithPayload n graph (normCoords, neutralColor)
+            otherwise -> graph
+    liftIO $ writeIORef graphRef graph'
+    liftIO $ widgetQueueDraw canvas
+    return True
+
  
 addMainCallBacks :: GUI -> IORef Grammar -> IO ()
 addMainCallBacks gui gramRef = do
@@ -266,77 +266,4 @@ mouseRelease st gId = do
     cancelDrag gramState =
         gramState { leftButtonState = LeftButtonFree }
 
-mouseMove :: WidgetClass widget
-          => widget -> IORef GrammarState -> GraphId -> EventM EMotion Bool
-mouseMove widget st graphId = do
-    state <- liftIO $ readIORef st
-    coords <- eventCoordinates
-    let graphState = case graphId of
-                        GraphId gId -> M.lookup gId $ graphStateMap state
-                        TGraph -> Just $ tGraphState state
-        lButSt = leftButtonState state
-    case graphState of
-        Nothing -> return True
-        Just grState -> do
-            processLeftButton lButSt grState coords
-            return True
-  where
-    processLeftButton (NodeDrag nId) grState coords =
-        liftIO $ do modifyIORef st $ updateCoords grState nId coords
-                    widgetQueueDraw widget
-    processLeftButton _ _ _ = return ()
-    newGraphState grState nId newCoords =
-        let grPos = graphPos grState in
-            grState { graphPos = M.insert nId newCoords grPos }
-    updateCoords grState nId newCoords st =
-        case graphId of
-        GraphId gId ->
-            let grStates = graphStateMap st in
-                st { graphStateMap =
-                        M.insert gId
-                                 (newGraphState grState nId newCoords) grStates
-                   }
-        TGraph -> st { tGraphState = newGraphState grState nId newCoords }
-
-checkNodeClick :: Coords -> M.Map G.NodeId Coords -> Maybe G.NodeId
-checkNodeClick coords posMap =
-    case found of
-    (x:xs)    -> Just $ fst x
-    otherwise -> Nothing     
-  where
-    found = filter insideNode $ M.toList posMap 
-    insideNode (_, nodeCoords) =
-        distance coords nodeCoords <= defRadius
-    
-isOverAnyNode :: Coords -> M.Map G.NodeId Coords -> Bool
-isOverAnyNode coords posMap =
-    case checkNodeClick coords posMap of
-    Just k    -> True
-    otherwise -> False
-
-distance :: Coords -> Coords -> Double
-distance (x0, y0) (x1, y1) =
-    sqrt $ (square (x1 - x0)) + (square (y1 - y0))
-  where
-    square x = x * x
-
-newNode :: GraphId -> Coords -> GrammarState -> GrammarState
-newNode graphId coords st =
-    newGramState graphId
-  where
-    grStates = graphStateMap st
-    graphState (GraphId gId) = M.lookup gId grStates
-    graphState TGraph = Just $ tGraphState st
-    (Just grState) = graphState graphId -- FIX unsafe
-    gr = graph $ grState
-    gr' = G.insertNode nId gr
-    (nId, grPos) = (graphCounter grState, graphPos grState)
-    grPos' = M.insert nId coords grPos
-    grState' =
-        GraphState gr' (nodeTypes grState) (edgeTypes grState) (nId + 1) grPos'
-    newGramState (GraphId gId) =
-        st { graphStateMap  = M.insert gId grState' grStates }
-    newGramState TGraph =
-        st { tGraphState = grState' }
-    
 -}
