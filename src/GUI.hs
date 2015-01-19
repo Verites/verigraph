@@ -136,12 +136,12 @@ mouseClick widget eGuiRef graphRef = do
     graph <- liftIO $ readIORef graphRef
     da <- eventWindow
     eGui <- liftIO $ readIORef eGuiRef
-    width <- liftIO $ drawWindowGetWidth da
-    height <- liftIO $ drawWindowGetHeight da
+    width <- liftIO $ drawWindowGetWidth da >>= return . fromIntegral
+    height <- liftIO $ drawWindowGetHeight da >>= return . fromIntegral
     coords@(x, y) <- eventCoordinates
     let diag = diagram eGui
-        normCoords = normalize width height coords
-        obj = sample diag (p2 (coords))
+        normCoords@(x', y') = normalize width height coords
+        obj = sample diag (p2 (x, -y))
         newGraph = case (obj, button, click) of
             ([], LeftButton, DoubleClick) -> newNode normCoords graph
         --            (LeftButton, SingleClick) -> leftSingleClick gram graphId coords
@@ -149,20 +149,20 @@ mouseClick widget eGuiRef graphRef = do
 
     liftIO $ writeIORef graphRef newGraph
     liftIO $ widgetQueueDraw widget
-    liftIO $ putStrLn $ show obj
     return True
 
-normalize :: Int -> Int -> Coords -> Coords
+normalize :: Double -> Double -> Coords -> Coords
 normalize width height coords@(x, y)
     | height == 0 || width == 0 = coords
-    | otherwise = (x / (fromIntegral width), y / (fromIntegral height))
+    | otherwise = (x / width, y / height)
+
 
 
 newNode :: Coords -> Graph -> Graph
 newNode coords graph =
     G.insertNodeWithPayload newId graph (fitCoords coords, neutralColor)
   where
-    newId = (+1) . length . G.nodes $ graph
+    newId = length . G.nodes $ graph
     fitCoords = (,) <$> fitPos . fst <*> fitPos . snd
     fitPos x
         | x < defRadius = defRadius
@@ -217,9 +217,9 @@ updateCanvas canvas eGuiRef graphRef = do
     return True
   where
     computeNewDiag graph width height =
-        D.scale (1 / (max width height)) $
+--        D.scale (1 / (max width height)) $
         (drawNodes graph width height `D.atop`
-        (D.alignTL $ rect width height # value [Node 100]))
+        (D.alignTL $ rect width height # fc cyan # value []))
 
 
 renderColor :: EColor -> Gtk.Render ()
