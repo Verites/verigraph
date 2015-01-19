@@ -20,7 +20,8 @@ type Coords = (Double, Double)
 type EColor = (Double, Double, Double)
 type NodePayload = (Coords, EColor)
 type EdgePayload = EColor
-data Elem = Node G.NodeId | Edge G.EdgeId
+data Elem = Node Int | Edge Int
+    deriving (Show, Eq)
 type Grammar = GG.GraphGrammar NodePayload EdgePayload
 type Graph = G.Graph NodePayload EdgePayload
 
@@ -31,6 +32,12 @@ data Buttons = Buttons {
     editInitialGraph :: Button,
     addRule :: Button
     }
+
+data EditingGUI = EditingGUI {
+    diagram :: QDiagram Cairo R2 [Elem],
+    leftButtonState :: LeftButtonState
+    }
+    
 
 data GUI = GUI {
     mainWindow    :: Window,
@@ -74,9 +81,12 @@ createGUI = do
 
 iGraphDialog :: IORef Grammar -> IO ()
 iGraphDialog gramRef = do
+    gram <- readIORef gramRef
+
     let gId = IGraph
         tId = TGraph
-        diag = mempty :: QDiagram Cairo R2 [Elem]
+        eGui = EditingGUI mempty LeftButtonFree
+        graph = M.domain $ GG.initialGraph gram
     dialog <- dialogNew
     contentArea <- dialogGetContentArea dialog
 
@@ -84,18 +94,21 @@ iGraphDialog gramRef = do
     frameSetLabel frame "Initial Graph"
     canvas <- drawingAreaNew
     containerAdd frame canvas
-    diagRef <- newIORef diag
+    eGuiRef <- newIORef eGui
+    graphRef <- newIORef graph
 
     typeFrame  <- frameNew
     typeCanvas <- drawingAreaNew
     containerAdd typeFrame typeCanvas
     frameSetLabel typeFrame "T Graph"
-    canvas `on` buttonPressEvent $ mouseClick canvas diagRef gramRef gId
+    canvas `on` buttonPressEvent $ mouseClick canvas eGuiRef graphRef
     canvas `on` sizeRequest $ return (Requisition 40 40)
-    canvas `on` exposeEvent $ liftIO $ updateCanvas canvas diagRef gramRef gId 
+    canvas `on` exposeEvent $ liftIO $ updateCanvas canvas eGuiRef graphRef
 
-    typeCanvas `on` buttonPressEvent $ mouseClick canvas diagRef gramRef tId
+{-
+    typeCanvas `on` buttonPressEvent $ mouseClick canvas eGuiRef gramRef tId
     typeCanvas `on` sizeRequest $ return (Requisition 40 40)
+-}
 {-
     canvas `on` buttonReleaseEvent $ mouseRelease st gId
     widgetAddEvents canvas [Button1MotionMask]
@@ -116,25 +129,27 @@ iGraphDialog gramRef = do
     return ()
 
 mouseClick :: WidgetClass widget
-           => widget -> IORef (QDiagram Cairo R2 [Elem])
-           -> IORef Grammar -> GraphId -> EventM EButton Bool
-mouseClick widget diagRef gramRef graphId = do
+           => widget -> IORef EditingGUI -> IORef Graph -> EventM EButton Bool
+mouseClick widget eGuiRef graphRef = do
     button <- eventButton
     click  <- eventClick
-    gram <- liftIO $ readIORef gramRef
+    graph <- liftIO $ readIORef graphRef
     da <- eventWindow
-    diag <- liftIO $ readIORef diagRef
+    eGui <- liftIO $ readIORef eGuiRef
     width <- liftIO $ drawWindowGetWidth da
     height <- liftIO $ drawWindowGetHeight da
     coords@(x, y) <- eventCoordinates
-    let normCoords = normalize width height coords
-        newGram = case (button, click) of
-            (LeftButton, DoubleClick) -> leftDoubleClick gram graphId diag normCoords
---            (LeftButton, SingleClick) -> leftSingleClick gram graphId coords
-            otherwise                 -> gram
+    let diag = diagram eGui
+        normCoords = normalize width height coords
+        obj = sample diag (p2 (coords))
+        newGraph = case (obj, button, click) of
+            ([], LeftButton, DoubleClick) -> newNode normCoords graph
+        --            (LeftButton, SingleClick) -> leftSingleClick gram graphId coords
+            otherwise -> graph
 
-    liftIO $ writeIORef gramRef newGram
+    liftIO $ writeIORef graphRef newGraph
     liftIO $ widgetQueueDraw widget
+    liftIO $ putStrLn $ show obj
     return True
 
 normalize :: Int -> Int -> Coords -> Coords
@@ -142,19 +157,6 @@ normalize width height coords@(x, y)
     | height == 0 || width == 0 = coords
     | otherwise = (x / (fromIntegral width), y / (fromIntegral height))
 
-leftDoubleClick :: Grammar -> GraphId -> QDiagram Cairo R2 [Elem] -> Coords -> Grammar
-leftDoubleClick gram IGraph diag coords =
-    GG.graphGrammar graph' (GG.typeGraph gram) (GG.rules gram)
-  where
-    graph = GG.initialGraph gram
-    (dom, cod, nR, eR) =
-        (M.domain graph, M.codomain graph, GM.nodeRelation graph, GM.edgeRelation graph)
-    graph' = GM.graphMorphism (newNode coords dom) cod nR eR
-
-leftDoubleClick gram TGraph diag coords =
-    GG.graphGrammar (GG.initialGraph gram) tGraph' (GG.rules gram)
-  where
-    tGraph' = newNode coords $ GG.typeGraph gram
 
 newNode :: Coords -> Graph -> Graph
 newNode coords graph =
@@ -166,21 +168,10 @@ newNode coords graph =
         | x < defRadius = defRadius
         | x > 1 - defRadius = 1 - defRadius
         | otherwise = x
-    
 
 {-
-    case graph graphId of
-        Nothing -> state
-        Just grState ->
-            let posMap = graphPos grState
-            in if isOverAnyNode coords posMap
-                then state
-                else newNode graphId coords state
--}
-
-
-{-
-leftSingleClick :: GrammarState -> GraphId -> Coords -> GrammarState
+leftSingleClick :: Grammar -> GraphId -> QDiagram Cairo R2 [Elem]
+                -> Coords -> GrammarState
 leftSingleClick state graphId coords =
     case graphState graphId of
         Nothing -> state
@@ -198,6 +189,7 @@ leftSingleClick state graphId coords =
     selDrag gramState =
         gramState { leftButtonState = SelectionDrag }
 -}
+
     
  
 addMainCallBacks :: GUI -> IORef Grammar -> IO ()
@@ -211,49 +203,37 @@ addMainCallBacks gui gramRef = do
 
     return ()
 
-{-
-updateCanvas :: WidgetClass widget
-             => widget -> IORef Grammar -> GraphId -> IO Bool
--}
-updateCanvas :: DrawingArea -> IORef (QDiagram Cairo R2 [Elem]) -> IORef Grammar -> GraphId -> IO Bool
-updateCanvas canvas diagRef gramRef graphId = do
-{-
-    width'  <- liftIO $ widgetGetAllocatedWidth canvas
-    height' <- liftIO $ widgetGetAllocatedHeight canvas
-    let width = realToFrac width' / 2
-        height = realToFrac height' / 2
--}
+updateCanvas :: DrawingArea -> IORef EditingGUI -> IORef Graph -> IO Bool
+updateCanvas canvas eGuiRef graphRef = do
     da <- widgetGetDrawWindow canvas
     width <- drawWindowGetWidth da >>= return . fromIntegral
     height <- drawWindowGetHeight da >>= return . fromIntegral
-    gram <- liftIO $ readIORef gramRef
-    let graph = M.domain $ GG.initialGraph gram
-        newDiag = computeNewDiag gram width height
+    graph <- liftIO $ readIORef graphRef
+    eGui <- liftIO $ readIORef eGuiRef
+    let newDiag = computeNewDiag graph width height
     defaultRender canvas newDiag
-    liftIO $ writeIORef diagRef newDiag
+    liftIO $ writeIORef eGuiRef $ eGui { diagram = newDiag }
     
     return True
   where
-    computeNewDiag gram width height =
-        drawNodes gram graphId width height `D.atop`
-        (D.alignTL $ rect 1 1 # scaleX width # scaleY height # value [])
+    computeNewDiag graph width height =
+        D.scale (1 / (max width height)) $
+        (drawNodes graph width height `D.atop`
+        (D.alignTL $ rect width height # value [Node 100]))
 
 
 renderColor :: EColor -> Gtk.Render ()
 renderColor (r, g, b) = setSourceRGB r g b
 
 
-drawNodes :: Grammar -> GraphId -> Double -> Double -> QDiagram Cairo R2 [Elem]
-drawNodes gram graphId width height =
-    D.position $ map (drawNode gr) $ G.nodes gr
+drawNodes :: Graph -> Double -> Double -> QDiagram Cairo R2 [Elem]
+drawNodes graph width height =
+    D.position $ map (drawNode graph) $ G.nodes graph
   where
-    gr = case graphId of
-        IGraph -> M.domain . GG.initialGraph $ gram
-        TGraph -> GG.typeGraph gram
-    drawNode gr nId =
-        case G.nodePayload gr nId of
+    drawNode graph nId =
+        case G.nodePayload graph nId of
             Just ((x, y), color) ->
-                ((p2 (x * width, -y * height )), D.circle (defRadius * width / 2) # fc green # showOrigin # value [Node nId])
+                ((p2 (x * width, -y * height)), D.circle (defRadius * width) # fc green # value [Node nId])
             otherwise -> ((p2 (0,0)), mempty)
 
 {-
