@@ -20,7 +20,7 @@ type Coords = (Double, Double)
 type EColor = (Double, Double, Double)
 type NodePayload = (Coords, EColor)
 type EdgePayload = EColor
-data Obj = Node Int | Edge Int | TNode Int | TEdge Int | GraphBox | TGraphBox
+data Obj = Node Int | Edge Int | GraphBox | TGraphBox
     deriving (Show, Eq)
 type ObjDiagram = QDiagram Cairo R2 [Obj]
 type Grammar = GG.GraphGrammar NodePayload EdgePayload
@@ -158,8 +158,13 @@ mouseClick widget grBoxRef tGrBoxRef diagRef = do
             ([GraphBox], LeftButton, DoubleClick) -> (LeftButtonFree, newNode normCoords graph)
             ((GraphBox:Node n:_), LeftButton, SingleClick) -> (NodeDrag n, graph)
             otherwise -> (LeftButtonFree, graph)
+        (tLBState, tGraph') = case (obj, button, click) of
+            ([TGraphBox], LeftButton, DoubleClick) -> (LeftButtonFree, newNode normCoords tGraph)
+            ((TGraphBox:Node n:_), LeftButton, SingleClick) -> (NodeDrag n, tGraph)
+            otherwise -> (LeftButtonFree, tGraph)
 
     liftIO $ writeIORef grBoxRef $ EditingBox graph' lBState
+    liftIO $ writeIORef tGrBoxRef $ EditingBox tGraph' tLBState
     liftIO $ putStrLn $ "obj: " ++ show obj ++ "\t" ++ show lBState
 --    liftIO $ writeIORef eGuiRef $ eGui { leftButtonState = lBState }
     liftIO $ widgetQueueDraw widget
@@ -232,20 +237,20 @@ updateCanvas canvas grBoxRef tGrBoxRef diagRef = do
     da <- widgetGetDrawWindow canvas
     width <- liftIO $ drawWindowGetWidth da >>= return . fromIntegral
     height <- liftIO $ drawWindowGetHeight da >>= return . fromIntegral
-    let newDiag = computeNewDiag graph width height
+    let graphBox = roundedRect width (height / 2) 10
+                    # value [GraphBox] # fc lightgreen
+        tGraphBox = roundedRect (width / 2) (height / 2) 10
+                    # value [TGraphBox] # fc lightyellow
+        newDiag = mconcat [
+                   drawNodes graph width height,
+                   drawNodes tGraph width height,
+                   D.alignTL $ graphBox === tGraphBox # centerX,
+                   D.alignTL $ rect width height # value []
+                  ]
     defaultRender canvas newDiag
     liftIO $ writeIORef diagRef newDiag
     
     return True
-  where
-    computeNewDiag graph width height =
---        D.scale (1 / (max width height)) $
-        mconcat [
-             drawNodes graph width height,
-             D.alignTL $ rect width (height / 2) # fc lightgreen # value [GraphBox] ===
-             rect (width / 2) (height / 2) # centerX # fc red # value [TGraphBox],
-             D.alignTL $ rect width height # fc cyan # value []
-            ]
         
 
 
