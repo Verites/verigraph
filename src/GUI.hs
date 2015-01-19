@@ -20,21 +20,23 @@ type Coords = (Double, Double)
 type EColor = (Double, Double, Double)
 type NodePayload = (Coords, EColor)
 type EdgePayload = EColor
-data Elem = Node Int | Edge Int
+data Obj = Node Int | Edge Int | TNode Int | TEdge Int | GraphBox | TGraphBox
     deriving (Show, Eq)
+type ObjDiagram = QDiagram Cairo R2 [Obj]
 type Grammar = GG.GraphGrammar NodePayload EdgePayload
 type Graph = G.Graph NodePayload EdgePayload
 
 
 data LeftButtonState = EdgeCreation Int | NodeDrag Int | SelectionDrag | LeftButtonFree
+    deriving (Show)
 
 data Buttons = Buttons {
     editInitialGraph :: Button,
     addRule :: Button
     }
 
-data EditingGUI = EditingGUI {
-    diagram :: QDiagram Cairo R2 [Elem],
+data EditingBox = EditingBox {
+    eBoxGraph :: Graph,
     leftButtonState :: LeftButtonState
     }
     
@@ -85,8 +87,10 @@ iGraphDialog gramRef = do
 
     let gId = IGraph
         tId = TGraph
-        eGui = EditingGUI mempty LeftButtonFree
         graph = M.domain $ GG.initialGraph gram
+        tGraph = GG.typeGraph gram
+        grBox = EditingBox graph LeftButtonFree
+        tGrBox = EditingBox tGraph LeftButtonFree
     dialog <- dialogNew
     contentArea <- dialogGetContentArea dialog
 
@@ -94,23 +98,31 @@ iGraphDialog gramRef = do
     frameSetLabel frame "Initial Graph"
     canvas <- drawingAreaNew
     containerAdd frame canvas
-    eGuiRef <- newIORef eGui
-    graphRef <- newIORef graph
+    grBoxRef <- newIORef grBox
+    tGrBoxRef <- newIORef tGrBox
+    diagRef <- newIORef mempty
 
-    typeFrame  <- frameNew
-    typeCanvas <- drawingAreaNew
-    containerAdd typeFrame typeCanvas
-    frameSetLabel typeFrame "T Graph"
-    canvas `on` buttonPressEvent $ mouseClick canvas eGuiRef graphRef
+    canvas `on` buttonPressEvent $ mouseClick canvas grBoxRef tGrBoxRef diagRef
     canvas `on` sizeRequest $ return (Requisition 40 40)
-    canvas `on` exposeEvent $ liftIO $ updateCanvas canvas eGuiRef graphRef
+    canvas `on` exposeEvent $ liftIO $ updateCanvas canvas grBoxRef tGrBoxRef diagRef
     widgetAddEvents canvas [Button1MotionMask]
-    canvas `on` motionNotifyEvent $ mouseMove canvas eGuiRef graphRef
+    canvas `on` motionNotifyEvent $ mouseMove canvas grBoxRef tGrBoxRef diagRef
 
 {-
-    typeCanvas `on` buttonPressEvent $ mouseClick canvas eGuiRef gramRef tId
-    typeCanvas `on` sizeRequest $ return (Requisition 40 40)
+    tFrame  <- frameNew
+    tCanvas <- drawingAreaNew
+    containerAdd tFrame tCanvas
+    frameSetLabel tFrame "T Graph"
+    
+    tEGuiRef <- newIORef tEGui
+    tGraphRef <- newIORef tGraph
+    tCanvas `on` buttonPressEvent $ mouseClick tCanvas tEGuiRef tGraphRef
+    tCanvas `on` sizeRequest $ return (Requisition 40 40)
+    tCanvas `on` exposeEvent $ liftIO $ updateCanvas tCanvas tEGuiRef tGraphRef
+    widgetAddEvents tCanvas [Button1MotionMask]
+    tCanvas `on` motionNotifyEvent $ mouseMove tCanvas tEGuiRef tGraphRef
 -}
+
 {-
     canvas `on` buttonReleaseEvent $ mouseRelease st gId
 
@@ -123,32 +135,33 @@ iGraphDialog gramRef = do
 
     let cArea = castToBox contentArea
     boxPackStart cArea frame PackGrow 1
-    boxPackStart cArea typeFrame PackGrow 1
+--    boxPackStart cArea tFrame PackGrow 1
     widgetShowAll dialog
     dialogRun dialog
     return ()
 
-mouseClick :: WidgetClass widget
-           => widget -> IORef EditingGUI -> IORef Graph -> EventM EButton Bool
-mouseClick widget eGuiRef graphRef = do
+mouseClick :: WidgetClass widget => widget -> IORef EditingBox
+           -> IORef EditingBox -> IORef ObjDiagram -> EventM EButton Bool
+mouseClick widget grBoxRef tGrBoxRef diagRef = do
     button <- eventButton
     click  <- eventClick
-    graph <- liftIO $ readIORef graphRef
+    graph <- liftIO $ readIORef grBoxRef >>= return . eBoxGraph
+    tGraph <- liftIO $ readIORef tGrBoxRef >>= return . eBoxGraph
     da <- eventWindow
-    eGui <- liftIO $ readIORef eGuiRef
     width <- liftIO $ drawWindowGetWidth da >>= return . fromIntegral
     height <- liftIO $ drawWindowGetHeight da >>= return . fromIntegral
     coords@(x, y) <- eventCoordinates
-    let diag = diagram eGui
-        normCoords = normalize width height coords
+    diag <- liftIO $ readIORef diagRef
+    let normCoords = normalize width height coords
         obj = sample diag (p2 (x, -y))
-        (lBState, newGraph) = case (obj, button, click) of
-            ([], LeftButton, DoubleClick) -> (LeftButtonFree, newNode normCoords graph)
-            ((Node n:_), LeftButton, SingleClick) -> (NodeDrag n, graph)
+        (lBState, graph') = case (obj, button, click) of
+            ([GraphBox], LeftButton, DoubleClick) -> (LeftButtonFree, newNode normCoords graph)
+            ((GraphBox:Node n:_), LeftButton, SingleClick) -> (NodeDrag n, graph)
             otherwise -> (LeftButtonFree, graph)
 
-    liftIO $ writeIORef graphRef newGraph
-    liftIO $ writeIORef eGuiRef $ eGui { leftButtonState = lBState }
+    liftIO $ writeIORef grBoxRef $ EditingBox graph' lBState
+    liftIO $ putStrLn $ "obj: " ++ show obj ++ "\t" ++ show lBState
+--    liftIO $ writeIORef eGuiRef $ eGui { leftButtonState = lBState }
     liftIO $ widgetQueueDraw widget
     return True
 
@@ -174,20 +187,27 @@ fitCoords = (,) <$> fitPos . fst <*> fitPos . snd
         | otherwise = x
 
 
-mouseMove :: WidgetClass widget
-          => widget -> IORef EditingGUI -> IORef Graph -> EventM EMotion Bool
-mouseMove canvas eGuiRef graphRef = do
-    eGui <- liftIO $ readIORef eGuiRef
-    graph <- liftIO $ readIORef graphRef
+mouseMove :: WidgetClass widget => widget -> IORef EditingBox
+          -> IORef EditingBox -> IORef ObjDiagram -> EventM EMotion Bool
+mouseMove canvas grBoxRef tGrBoxRef diagRef = do
+    grBox <- liftIO $ readIORef grBoxRef
+    tGrBox <- liftIO $ readIORef tGrBoxRef
+    diag <- liftIO $ readIORef diagRef
     da <- eventWindow
     width <- liftIO $ drawWindowGetWidth da >>= return . fromIntegral
     height <- liftIO $ drawWindowGetHeight da >>= return . fromIntegral
-    normCoords <- eventCoordinates >>=
-                  return . fitCoords . (normalize width height)
-    let graph' = case leftButtonState eGui of
-            NodeDrag n -> G.insertNodeWithPayload n graph (normCoords, neutralColor)
-            otherwise -> graph
-    liftIO $ writeIORef graphRef graph'
+    coords@(x, y) <- eventCoordinates
+    let graph = eBoxGraph grBox
+        tGraph = eBoxGraph tGrBox
+        normCoords = fitCoords $ normalize width height coords
+        obj = sample diag (p2 (x, -y))
+        graph' =
+            case (obj, leftButtonState grBox) of
+               ((GraphBox:_), NodeDrag n) ->
+                   G.insertNodeWithPayload n graph (normCoords, neutralColor)
+               otherwise -> graph
+
+    liftIO $ writeIORef grBoxRef $ grBox { eBoxGraph = graph' }
     liftIO $ widgetQueueDraw canvas
     return True
 
@@ -203,30 +223,37 @@ addMainCallBacks gui gramRef = do
 
     return ()
 
-updateCanvas :: DrawingArea -> IORef EditingGUI -> IORef Graph -> IO Bool
-updateCanvas canvas eGuiRef graphRef = do
+updateCanvas :: DrawingArea -> IORef EditingBox -> IORef EditingBox
+             -> IORef ObjDiagram -> IO Bool
+updateCanvas canvas grBoxRef tGrBoxRef diagRef = do
+    graph <- liftIO $ readIORef grBoxRef >>= return . eBoxGraph
+    tGraph <- liftIO $ readIORef tGrBoxRef >>= return . eBoxGraph
+    diag <- readIORef diagRef
     da <- widgetGetDrawWindow canvas
-    width <- drawWindowGetWidth da >>= return . fromIntegral
-    height <- drawWindowGetHeight da >>= return . fromIntegral
-    graph <- liftIO $ readIORef graphRef
-    eGui <- liftIO $ readIORef eGuiRef
+    width <- liftIO $ drawWindowGetWidth da >>= return . fromIntegral
+    height <- liftIO $ drawWindowGetHeight da >>= return . fromIntegral
     let newDiag = computeNewDiag graph width height
     defaultRender canvas newDiag
-    liftIO $ writeIORef eGuiRef $ eGui { diagram = newDiag }
+    liftIO $ writeIORef diagRef newDiag
     
     return True
   where
     computeNewDiag graph width height =
 --        D.scale (1 / (max width height)) $
-        (drawNodes graph width height `D.atop`
-        (D.alignTL $ rect width height # fc cyan # value []))
+        mconcat [
+             drawNodes graph width height,
+             D.alignTL $ rect width (height / 2) # fc lightgreen # value [GraphBox] ===
+             rect (width / 2) (height / 2) # centerX # fc red # value [TGraphBox],
+             D.alignTL $ rect width height # fc cyan # value []
+            ]
+        
 
 
 renderColor :: EColor -> Gtk.Render ()
 renderColor (r, g, b) = setSourceRGB r g b
 
 
-drawNodes :: Graph -> Double -> Double -> QDiagram Cairo R2 [Elem]
+drawNodes :: Graph -> Double -> Double -> QDiagram Cairo R2 [Obj]
 drawNodes graph width height =
     D.position $ map (drawNode graph) $ G.nodes graph
   where
