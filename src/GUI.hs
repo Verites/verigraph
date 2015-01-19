@@ -267,10 +267,11 @@ updateCanvas canvas grBoxRef tGrBoxRef diagRef = do
         tGraphBox = roundedRect (width / 2) (height / 2) 10
                     # value [TGraphBox] # fc lightyellow
         newDiag = mconcat [
-                   drawNodes graph width height,
-                   drawNodes tGraph width height,
-                   D.alignTL $ graphBox === strutY rad === tGraphBox # centerX,
-                   D.alignTL $ rect width height # value []
+                   drawEdges graph "i",
+                   drawNodesSimple graph "i" width height
+--                   drawNodes tGraph "i" width height,
+--                   D.alignTL $ graphBox === strutY rad === tGraphBox # centerX,
+--                   D.alignTL $ rect width height # value []
                   ]
         rad = defRadius * (max width height)
     defaultRender canvas newDiag
@@ -278,21 +279,52 @@ updateCanvas canvas grBoxRef tGrBoxRef diagRef = do
     
     return True
         
-
-
 renderColor :: EColor -> Gtk.Render ()
 renderColor (r, g, b) = setSourceRGB r g b
 
+--drawEdges :: Graph -> String -> QDiagram Cairo R2 [Obj] -> Diagram Cairo R2
+drawEdges graph prefix =
+    mconcat $ map drawEdge pairs
+  where
+    pairs = G.edges graph >>= (G.nodesConnectedTo graph)
+    drawEdge (s, t) =
+        connectOutside (prefix ++ show s) (prefix ++ show t)
 
-drawNodes :: Graph -> Double -> Double -> QDiagram Cairo R2 [Obj]
-drawNodes graph width height =
+
+{-
+addNodeValues :: Diagram Cairo R2 -> ObjDiagram
+addNodeValues diag =
+    mconcat $ map nameToValue $ names diag
+  where
+    nameToValue (name, _) =
+        case lookupName name diag of
+            Just s -> s # value Node (read name :: Int)
+            otherwise -> mempty
+-}
+
+--drawNodesSimple :: Graph -> String -> Double -> Double -> QDiagram Cairo R2 [Obj]
+drawNodesSimple graph prefix width height =
     D.position $ map (drawNode graph) $ G.nodes graph
   where
     rad = defRadius * (max width height)
     drawNode graph nId =
         case G.nodePayload graph nId of
             Just ((x, y), color) ->
-                ((p2 (x * width, -y * height)), D.circle rad # fc green # value [Node nId])
+                ((p2 (x * width, -y * height)),
+                 D.circle rad # fc green # named nId)
+            otherwise -> ((p2 (0,0)), mempty)
+
+    
+drawNodes :: Graph -> String -> Double -> Double -> QDiagram Cairo R2 [Obj]
+drawNodes graph prefix width height =
+    D.position $ map (drawNode graph) $ G.nodes graph
+  where
+    rad = defRadius * (max width height)
+    drawNode graph nId =
+        case G.nodePayload graph nId of
+            Just ((x, y), color) ->
+                ((p2 (x * width, -y * height)),
+                 D.circle rad # fc green # value [Node nId] # named nId)
             otherwise -> ((p2 (0,0)), mempty)
 
 {-
