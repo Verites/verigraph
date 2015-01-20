@@ -286,9 +286,12 @@ renderColor (r, g, b) = setSourceRGB r g b
 drawEdges graph prefix =
     mconcat $ map drawEdge pairs
   where
-    pairs = G.edges graph >>= (G.nodesConnectedTo graph)
+    pairs = G.edges graph >>= G.nodesConnectedTo graph
     drawEdge (s, t) =
-        connectOutside (prefix ++ show s) (prefix ++ show t)
+        let Just (sCoords,_) = G.nodePayload graph s
+            Just (tCoords,_) = G.nodePayload graph t
+        in (p2 (sCoords)) ~~ (ps (tCoords))
+    -- connectOutside (prefix ++ show s) (prefix ++ show t)
 
 
 {-
