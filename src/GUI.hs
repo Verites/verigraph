@@ -47,29 +47,34 @@ instance Renderable (REdge) where
     render (REdge g e)
         | null connected = return ()
         | isNothing srcP || isNothing tgtP = return ()
-        | otherwise = drawEdge srcCoords tgtCoords
+        | otherwise = drawEdge
       where
         connected = G.nodesConnectedTo g e
         srcP = G.nodePayload g . fst . head $ connected
         tgtP = G.nodePayload g . snd . head $ connected
-        srcCoords = fst . fromJust $ srcP 
-        tgtCoords = fst . fromJust $ tgtP
+        srcCoords@((x, y)) = fst . fromJust $ srcP 
+        tgtCoords@((x', y')) = fst . fromJust $ tgtP
         dirVect@(dirX, dirY) = directionVect srcCoords tgtCoords
         (dx, dy) = (dirX * defRadius, dirY * defRadius)
-        drawEdge (x, y) (x', y') = do
+        drawHead len = do
+            relMoveTo (len / 2) 0
+            relLineTo (-len / 2) len
+            relLineTo (-len / 2) (-len)
+        drawEdge = do
             setLineWidth defLineWidth
             renderColor defBorderColor
             moveTo x y
-            relMoveTo dx dy
-            lineTo (x' - dx) (y' - dy)
+            relMoveTo (1.5 * dx) (1.5 * dy)
+            lineTo (x' - (2 * dx)) (y' - (2 * dy))
+            rotate $ -(angle (dirX, dirY))
+            drawHead $ defRadius / 2
+            identityMatrix
             stroke
 
 instance Renderable (RGraph) where
     render (RGraph g) = do
         mapM_ (render . RNode g) $ G.nodes g
         mapM_ (render . REdge g) $ G.edges g
-
-
 
 data MouseAction = EdgeCreation Int | NodeSel Int | NoMouseAction
     deriving (Show)
@@ -102,18 +107,20 @@ directionVect s@(x, y) t@(x', y')
     | dist == 0 = (0, 0)
     | otherwise = (dx / dist, dy / dist)
   where 
-    dist = distance s t
+    dist = norm s t
     dx = x' - x
     dy = y' - y
 
-distance :: Coords -> Coords -> Double
-distance (x0, y0) (x1, y1) =
-    sqrt $ (square (x1 - x0)) + (square (y1 - y0))
+norm :: Coords -> Coords -> Double
+norm (x, y) (x', y') =
+    sqrt $ (square (x' - x)) + (square (y' - y))
   where
     square x = x * x
 
-
-
+angle :: Coords -> Double
+angle (dx, dy)
+    | dx > 0 = acos dy
+    | dx < 0 = - acos dy
 
 
 main = do
@@ -234,7 +241,7 @@ fetchObj graph coords
 overNode :: Graph -> Coords -> G.NodeId -> Bool
 overNode graph coords n
     | isNothing p = False
-    | distance coords nCoords < defRadius = True
+    | norm coords nCoords < defRadius = True
     | otherwise = False
   where
     p = G.nodePayload graph n
