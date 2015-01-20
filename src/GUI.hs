@@ -2,6 +2,7 @@ import Control.Monad.Trans.Class (lift)
 import qualified Graph as G
 import qualified GraphMorphism as GM
 import qualified GraphGrammar as GG
+import Data.Maybe (fromJust, isJust, isNothing)
 import Data.IORef
 import qualified Data.List as L
 import qualified Data.Map as M
@@ -17,7 +18,7 @@ type Coords = (Double, Double)
 type EColor = (Double, Double, Double)
 type NodePayload = (Coords, EColor)
 type EdgePayload = EColor
-data Obj = Node Int | Edge Int | GraphBox | TGraphBox
+data Obj = Node Int | Edge Int
     deriving (Show, Eq)
 type Grammar = GG.GraphGrammar NodePayload EdgePayload
 type Graph = G.Graph NodePayload EdgePayload
@@ -45,9 +46,6 @@ data GUI = GUI {
 
 
 defRadius = 20 :: Double
---defRadius :: Double -> Double -> Double
---defRadius width height = (max width height) * 0.02
-
 defLineWidth = 2 :: Double
 defBorderColor = (0, 0, 0)
 neutralColor = (0.8, 0.8, 0.8)
@@ -82,9 +80,7 @@ iGraphDialog :: IORef Grammar -> IO ()
 iGraphDialog gramRef = do
     gram <- readIORef gramRef
 
-    let gId = IGraph
-        tId = TGraph
-        graph = M.domain $ GG.initialGraph gram
+    let graph = M.domain $ GG.initialGraph gram
         tGraph = GG.typeGraph gram
         grBox = EditingBox graph NoMouseAction
         tGrBox = EditingBox tGraph NoMouseAction
@@ -101,9 +97,9 @@ iGraphDialog gramRef = do
     canvas `on` buttonPressEvent $ mouseClick canvas grBoxRef
 --    canvas `on` buttonReleaseEvent $ mouseRelease grBoxRef tGrBoxRef
     canvas `on` sizeRequest $ return (Requisition 600 800)
-    canvas `on` exposeEvent $ liftIO $ updateCanvas canvas grBoxRef
+    canvas `on` draw $ updateCanvas canvas grBoxRef
     widgetAddEvents canvas [Button3MotionMask]
---    canvas `on` motionNotifyEvent $ mouseMove canvas grBoxRef
+    canvas `on` motionNotifyEvent $ mouseMove canvas grBoxRef
 
 {-
     tFrame  <- frameNew
@@ -145,22 +141,44 @@ mouseClick widget grBoxRef = do
     graph <- liftIO $ readIORef grBoxRef >>= return . eBoxGraph
     coords@(x, y) <- eventCoordinates
     grBox <- liftIO $ readIORef grBoxRef
-    let grBox' = case (button, click) of
-            (LeftButton, DoubleClick) ->
+    let obj = fetchObj graph coords
+        grBox' = case (obj, button, click) of
+            (Nothing, LeftButton, DoubleClick) ->
                 EditingBox (newNode coords graph) NoMouseAction
-{-
-            ((GraphBox:Node n:_), RightButton, SingleClick) ->
+            (Just (Node n), RightButton, SingleClick) ->
                 grBox { mouseAction = NodeSel n }
-            ((GraphBox:Node n:_), LeftButton, SingleClick) ->
+            (Just (Node n), LeftButton, SingleClick) ->
                 case mouseAction grBox of
                     EdgeCreation s -> 
                         EditingBox (newEdge s n graph) NoMouseAction
                     otherwise -> grBox { mouseAction = EdgeCreation n }
--}
             otherwise -> grBox
     liftIO $ writeIORef grBoxRef grBox'
     liftIO $ widgetQueueDraw widget
     return True
+
+fetchObj :: Graph -> Coords -> Maybe Obj
+fetchObj graph coords
+    | not . null $ fetchNodes = Just . Node . head $ fetchNodes
+--    | not . null $ fetchEdges = Just . Node . head $ fetchEdges
+    | otherwise = Nothing
+  where
+    fetchNodes = filter (overNode graph coords) $ G.nodes graph
+
+overNode :: Graph -> Coords -> G.NodeId -> Bool
+overNode graph coords n
+    | isNothing p = False
+    | distance coords nCoords < defRadius = True
+    | otherwise = False
+  where
+    p = G.nodePayload graph n
+    nCoords = fst $ fromJust p
+    
+distance :: Coords -> Coords -> Double
+distance (x0, y0) (x1, y1) =
+    sqrt $ (square (x1 - x0)) + (square (y1 - y0))
+  where
+    square x = x * x
 
 normalize :: Double -> Double -> Coords -> Coords
 normalize width height coords@(x, y)
@@ -170,7 +188,7 @@ normalize width height coords@(x, y)
 
 newNode :: Coords -> Graph -> Graph
 newNode coords graph =
-    G.insertNodeWithPayload newId graph (fitCoords coords, neutralColor)
+    G.insertNodeWithPayload newId graph (coords, neutralColor)
   where
     newId = length . G.nodes $ graph
 
@@ -180,37 +198,22 @@ newEdge src tgt graph =
   where
     edgeId = length . G.edges $ graph
 
-{-
-mouseMove :: WidgetClass widget => widget -> IORef EditingBox
-          -> IORef EditingBox -> IORef ObjDiagram -> EventM EMotion Bool
-mouseMove canvas grBoxRef tGrBoxRef diagRef = do
+mouseMove :: WidgetClass widget
+          => widget -> IORef EditingBox -> EventM EMotion Bool
+mouseMove canvas grBoxRef = do
     grBox <- liftIO $ readIORef grBoxRef
-    tGrBox <- liftIO $ readIORef tGrBoxRef
-    diag <- liftIO $ readIORef diagRef
-    da <- eventWindow
-    width <- liftIO $ drawWindowGetWidth da >>= return . fromIntegral
-    height <- liftIO $ drawWindowGetHeight da >>= return . fromIntegral
     coords@(x, y) <- eventCoordinates
     let graph = eBoxGraph grBox
-        tGraph = eBoxGraph tGrBox
-        normCoords = fitCoords $ normalize width height coords
-        obj = sample diag (p2 (x, -y))
         grMouse = mouseAction grBox
-        tGrMouse = mouseAction tGrBox
-    case (obj, grMouse, tGrMouse) of
-       ((GraphBox:_), NodeSel n, _) ->
+    case grMouse of
+       (NodeSel n) ->
             let graph' =
-                    G.insertNodeWithPayload n graph (normCoords, neutralColor)
+                    G.insertNodeWithPayload n graph (coords, neutralColor)
             in liftIO $ writeIORef grBoxRef $ grBox { eBoxGraph = graph' }
-       ((TGraphBox:_), _, NodeSel n) ->
-            let tGraph' =
-                    G.insertNodeWithPayload n tGraph (normCoords, neutralColor)
-            in liftIO $ writeIORef tGrBoxRef $ tGrBox { eBoxGraph = tGraph' }
        otherwise -> return ()
 
     liftIO $ widgetQueueDraw canvas
     return True
--}
 
  
 addMainCallBacks :: GUI -> IORef Grammar -> IO ()
@@ -234,8 +237,8 @@ drawNodes graph = do
     setLineWidth defLineWidth
     mapM_ (drawNode graph) $ G.nodes graph
   where
-    drawNode gr nId =
-        case G.nodePayload gr nId of
+    drawNode gr n =
+        case G.nodePayload gr n of
             Just ((x, y), color) -> do
                                     renderColor defBorderColor
                                     Gtk.arc x y defRadius 0 $ 2 * pi
