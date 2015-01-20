@@ -23,14 +23,15 @@ data Obj = Node Int | Edge Int
 type Grammar = GG.GraphGrammar NodePayload EdgePayload
 type Graph = G.Graph NodePayload EdgePayload
 
-data RNode = GNode Graph G.NodeId
+data RNode = RNode Graph G.NodeId
+data REdge = REdge Graph G.EdgeId
 data RGraph = RGraph Graph
 
 class Renderable a where
     render :: a -> Render ()
 
 instance Renderable (RNode) where
-    render (GNode g n) =
+    render (RNode g n) =
         case G.nodePayload g n of
             Just ((x, y), color) -> do
                                     setLineWidth defLineWidth
@@ -41,8 +42,30 @@ instance Renderable (RNode) where
                                     fill
             otherwise -> return ()
 
+
+instance Renderable (REdge) where
+    render (REdge g e)
+        | null connected = return ()
+        | isNothing srcP || isNothing tgtP = return ()
+        | otherwise = drawEdge srcCoords tgtCoords
+      where
+        connected = G.nodesConnectedTo g e
+        srcP = G.nodePayload g . fst . head $ connected
+        tgtP = G.nodePayload g . snd . head $ connected
+        srcCoords = fst . fromJust $ srcP 
+        tgtCoords = fst . fromJust $ tgtP
+        drawEdge (x, y) (x', y') = do
+            setLineWidth defLineWidth
+            renderColor defBorderColor
+            moveTo x y
+            lineTo x' y'
+            stroke
+
 instance Renderable (RGraph) where
-    render (RGraph g) = mapM_ (render . GNode g) $ G.nodes g
+    render (RGraph g) = do
+        mapM_ (render . REdge g) $ G.edges g
+        mapM_ (render . RNode g) $ G.nodes g
+
 
 
 data MouseAction = EdgeCreation Int | NodeSel Int | NoMouseAction
