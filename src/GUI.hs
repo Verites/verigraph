@@ -23,6 +23,27 @@ data Obj = Node Int | Edge Int
 type Grammar = GG.GraphGrammar NodePayload EdgePayload
 type Graph = G.Graph NodePayload EdgePayload
 
+data RNode = GNode Graph G.NodeId
+data RGraph = RGraph Graph
+
+class Renderable a where
+    render :: a -> Render ()
+
+instance Renderable (RNode) where
+    render (GNode g n) =
+        case G.nodePayload g n of
+            Just ((x, y), color) -> do
+                                    setLineWidth defLineWidth
+                                    renderColor defBorderColor
+                                    Gtk.arc x y defRadius 0 $ 2 * pi
+                                    strokePreserve
+                                    renderColor color
+                                    fill
+            otherwise -> return ()
+
+instance Renderable (RGraph) where
+    render (RGraph g) = mapM_ (render . GNode g) $ G.nodes g
+
 
 data MouseAction = EdgeCreation Int | NodeSel Int | NoMouseAction
     deriving (Show)
@@ -230,22 +251,8 @@ addMainCallBacks gui gramRef = do
 updateCanvas :: DrawingArea -> IORef EditingBox -> Render ()
 updateCanvas canvas grBoxRef = do
     graph <- liftIO $ readIORef grBoxRef >>= return . eBoxGraph
-    drawNodes graph
+    render (RGraph graph)
     
-drawNodes :: Graph -> Render ()
-drawNodes graph = do
-    setLineWidth defLineWidth
-    mapM_ (drawNode graph) $ G.nodes graph
-  where
-    drawNode gr n =
-        case G.nodePayload gr n of
-            Just ((x, y), color) -> do
-                                    renderColor defBorderColor
-                                    Gtk.arc x y defRadius 0 $ 2 * pi
-                                    strokePreserve
-                                    renderColor color
-                                    fill
-            otherwise -> return ()
         
 renderColor :: EColor -> Gtk.Render ()
 renderColor (r, g, b) = setSourceRGB r g b
