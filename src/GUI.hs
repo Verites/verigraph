@@ -51,7 +51,6 @@ defRadius = 20 :: Double
 defLineWidth = 2 :: Double
 defBorderColor = (0, 0, 0)
 neutralColor = (0.8, 0.8, 0.8)
-data GraphId = IGraph | TGraph
 
 main = do
     initGUI
@@ -247,49 +246,6 @@ drawNodes graph = do
         
 renderColor :: EColor -> Gtk.Render ()
 renderColor (r, g, b) = setSourceRGB r g b
-
-{-
-drawEdges :: Graph -> String -> Double -> Double -> QDiagram Cairo R2 [Obj]
-drawEdges graph prefix width height =
-    (mconcat $ map drawEdge pairs)
-  where
-    pairs = G.edges graph >>= G.nodesConnectedTo graph
-    drawEdge (s, t) =
-        let Just ((x, y), _) = G.nodePayload graph s
-            Just ((x', y'), _) = G.nodePayload graph t
-        in (D.stroke $ (p2 (x * width, -y * height)) ~~
-                       (p2 (x' * width, -y' * height))) # value [] # fc black
-    -- connectOutside (prefix ++ show s) (prefix ++ show t)
--}
-
-
-{-
-addNodeValues :: Diagram Cairo R2 -> ObjDiagram
-addNodeValues diag =
-    mconcat $ map nameToValue $ names diag
-  where
-    nameToValue (name, _) =
-        case lookupName name diag of
-            Just s -> s # value Node (read name :: Int)
-            otherwise -> mempty
-
-    
-drawNodes :: Graph -> String -> Double -> Double -> QDiagram Cairo R2 [Obj]
-drawNodes graph prefix width height =
-    D.position $ map (drawNode graph) $ G.nodes graph
-  where
-    rad = defRadius * (max width height)
-    drawNode graph nId =
-        case G.nodePayload graph nId of
-            Just ((x, y), color) ->
-                ((p2 (x * width, -y * height)),
-                 D.circle rad # fc green # value [Node nId] # named nId)
-            otherwise -> ((p2 (0,0)), mempty)
--}
-
-
-
-
 
 mouseRelease :: IORef EditingBox -> IORef EditingBox -> EventM EButton Bool
 mouseRelease grBoxRef tGrBoxRef = do
