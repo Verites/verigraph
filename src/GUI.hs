@@ -13,6 +13,7 @@ import Graphics.Rendering.Cairo as Gtk
 import Graphics.UI.Gtk.Gdk.EventM
 import qualified Morphism as M
 import Prelude hiding (mapM_, any)
+import qualified Relation as R
 
 type Coords = (Double, Double)
 type EColor = (Double, Double, Double)
@@ -85,7 +86,7 @@ data Buttons = Buttons {
     }
 
 data EditingBox = EditingBox {
-    eBoxGraph :: Graph,
+    eBoxGraphMorphism :: GM.TypedGraph NodePayload EdgePayload,
     mouseAction :: MouseAction
     }
     
@@ -155,8 +156,10 @@ iGraphDialog gramRef = do
 
     let graph = M.domain $ GG.initialGraph gram
         tGraph = GG.typeGraph gram
-        grBox = EditingBox graph NoMouseAction
-        tGrBox = EditingBox tGraph NoMouseAction
+        nR = R.empty (G.nodes graph) (G.nodes tGraph)
+        eR = R.empty (G.edges graph) (G.edges tGraph)
+        grBox = EditingBox
+                (GM.graphMorphism graph tGraph nR eR) NoMouseAction
     dialog <- dialogNew
     contentArea <- dialogGetContentArea dialog
 
@@ -165,7 +168,6 @@ iGraphDialog gramRef = do
     canvas <- drawingAreaNew
     containerAdd frame canvas
     grBoxRef <- newIORef grBox
-    tGrBoxRef <- newIORef tGrBox
 
     canvas `on` buttonPressEvent $ mouseClick canvas grBoxRef
 --    canvas `on` buttonReleaseEvent $ mouseRelease grBoxRef tGrBoxRef
@@ -174,20 +176,16 @@ iGraphDialog gramRef = do
     widgetAddEvents canvas [Button3MotionMask]
     canvas `on` motionNotifyEvent $ mouseMove canvas grBoxRef
 
-{-
     tFrame  <- frameNew
+    frameSetLabel tFrame "T Graph"
     tCanvas <- drawingAreaNew
     containerAdd tFrame tCanvas
-    frameSetLabel tFrame "T Graph"
     
-    tEGuiRef <- newIORef tEGui
-    tGraphRef <- newIORef tGraph
-    tCanvas `on` buttonPressEvent $ mouseClick tCanvas tEGuiRef tGraphRef
-    tCanvas `on` sizeRequest $ return (Requisition 40 40)
-    tCanvas `on` exposeEvent $ liftIO $ updateCanvas tCanvas tEGuiRef tGraphRef
-    widgetAddEvents tCanvas [Button1MotionMask]
-    tCanvas `on` motionNotifyEvent $ mouseMove tCanvas tEGuiRef tGraphRef
--}
+    tCanvas `on` buttonPressEvent $ mouseClick tCanvas grBoxRef
+    tCanvas `on` sizeRequest $ return (Requisition 600 800)
+    canvas `on` draw $ updateCanvas canvas grBoxRef
+    widgetAddEvents tCanvas [Button3MotionMask]
+    tCanvas `on` motionNotifyEvent $ mouseMove tCanvas grBoxRef
 
 {-
     canvas `on` buttonReleaseEvent $ mouseRelease st gId
@@ -201,7 +199,7 @@ iGraphDialog gramRef = do
 
     let cArea = castToBox contentArea
     boxPackStart cArea frame PackGrow 1
---    boxPackStart cArea tFrame PackGrow 1
+    boxPackStart cArea tFrame PackGrow 1
     widgetShowAll dialog
     dialogRun dialog
     return ()
@@ -211,19 +209,28 @@ mouseClick :: WidgetClass widget
 mouseClick widget grBoxRef = do
     button <- eventButton
     click  <- eventClick
-    graph <- liftIO $ readIORef grBoxRef >>= return . eBoxGraph
-    coords@(x, y) <- eventCoordinates
+    typedGraph <- liftIO $ readIORef grBoxRef >>= return . eBoxGraphMorphism
     grBox <- liftIO $ readIORef grBoxRef
-    let obj = fetchObj graph coords
+    coords@(x, y) <- eventCoordinates
+    let typedGraph = eBoxGraphMorphism grBox
+        graph = M.domain typedGraph
+        tGraph = M.codomain typedGraph
+        nR = GM.nodeRelation typedGraph
+        eR = GM.edgeRelation typedGraph
+        obj = fetchObj graph coords
         grBox' = case (obj, button, click) of
             (Nothing, LeftButton, DoubleClick) ->
-                EditingBox (newNode coords graph) NoMouseAction
+                EditingBox
+                    (GM.graphMorphism (newNode coords graph) tGraph nR eR)
+                    NoMouseAction
             (Just (Node n), RightButton, SingleClick) ->
                 grBox { mouseAction = NodeSel n }
             (Just (Node n), LeftButton, SingleClick) ->
                 case mouseAction grBox of
                     EdgeCreation s -> 
-                        EditingBox (newEdge s n graph) NoMouseAction
+                        EditingBox
+                            (GM.graphMorphism (newEdge s n graph) tGraph nR eR)
+                            NoMouseAction
                     otherwise -> grBox { mouseAction = EdgeCreation n }
             otherwise -> grBox
     liftIO $ writeIORef grBoxRef grBox'
@@ -271,13 +278,18 @@ mouseMove :: WidgetClass widget
 mouseMove canvas grBoxRef = do
     grBox <- liftIO $ readIORef grBoxRef
     coords@(x, y) <- eventCoordinates
-    let graph = eBoxGraph grBox
+    let typedGraph = eBoxGraphMorphism grBox
+        graph = M.domain typedGraph
+        tGraph = M.codomain typedGraph
         grMouse = mouseAction grBox
+        nR = GM.nodeRelation typedGraph
+        eR = GM.edgeRelation typedGraph
     case grMouse of
        (NodeSel n) ->
             let graph' =
                     G.insertNodeWithPayload n graph (coords, neutralColor)
-            in liftIO $ writeIORef grBoxRef $ grBox { eBoxGraph = graph' }
+            in liftIO $ writeIORef grBoxRef $
+                grBox { eBoxGraphMorphism = GM.graphMorphism graph' tGraph nR eR }
        otherwise -> return ()
 
     liftIO $ widgetQueueDraw canvas
@@ -297,7 +309,8 @@ addMainCallBacks gui gramRef = do
 
 updateCanvas :: DrawingArea -> IORef EditingBox -> Render ()
 updateCanvas canvas grBoxRef = do
-    graph <- liftIO $ readIORef grBoxRef >>= return . eBoxGraph
+    typedGraph <- liftIO $ readIORef grBoxRef >>= return . eBoxGraphMorphism
+    let graph = M.domain typedGraph
     render (RGraph graph)
     
         
