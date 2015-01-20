@@ -54,17 +54,20 @@ instance Renderable (REdge) where
         tgtP = G.nodePayload g . snd . head $ connected
         srcCoords = fst . fromJust $ srcP 
         tgtCoords = fst . fromJust $ tgtP
+        dirVect@(dirX, dirY) = directionVect srcCoords tgtCoords
+        (dx, dy) = (dirX * defRadius, dirY * defRadius)
         drawEdge (x, y) (x', y') = do
             setLineWidth defLineWidth
             renderColor defBorderColor
             moveTo x y
-            lineTo x' y'
+            relMoveTo dx dy
+            lineTo (x' - dx) (y' - dy)
             stroke
 
 instance Renderable (RGraph) where
     render (RGraph g) = do
-        mapM_ (render . REdge g) $ G.edges g
         mapM_ (render . RNode g) $ G.nodes g
+        mapM_ (render . REdge g) $ G.edges g
 
 
 
@@ -93,6 +96,25 @@ defRadius = 20 :: Double
 defLineWidth = 2 :: Double
 defBorderColor = (0, 0, 0)
 neutralColor = (0.8, 0.8, 0.8)
+
+directionVect :: Coords -> Coords -> Coords
+directionVect s@(x, y) t@(x', y')
+    | dist == 0 = (0, 0)
+    | otherwise = (dx / dist, dy / dist)
+  where 
+    dist = distance s t
+    dx = x' - x
+    dy = y' - y
+
+distance :: Coords -> Coords -> Double
+distance (x0, y0) (x1, y1) =
+    sqrt $ (square (x1 - x0)) + (square (y1 - y0))
+  where
+    square x = x * x
+
+
+
+
 
 main = do
     initGUI
@@ -218,11 +240,6 @@ overNode graph coords n
     p = G.nodePayload graph n
     nCoords = fst $ fromJust p
     
-distance :: Coords -> Coords -> Double
-distance (x0, y0) (x1, y1) =
-    sqrt $ (square (x1 - x0)) + (square (y1 - y0))
-  where
-    square x = x * x
 
 normalize :: Double -> Double -> Coords -> Coords
 normalize width height coords@(x, y)
