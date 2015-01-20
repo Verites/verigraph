@@ -7,9 +7,6 @@ import qualified Data.List as L
 import qualified Data.Map as M
 import Control.Applicative
 import Data.Foldable
-import Diagrams.Backend.Cairo
-import Diagrams.Backend.Gtk
-import Diagrams.Prelude as D
 import Graphics.UI.Gtk as Gtk
 import Graphics.Rendering.Cairo as Gtk
 import Graphics.UI.Gtk.Gdk.EventM
@@ -22,7 +19,6 @@ type NodePayload = (Coords, EColor)
 type EdgePayload = EColor
 data Obj = Node Int | Edge Int | GraphBox | TGraphBox
     deriving (Show, Eq)
-type ObjDiagram = QDiagram Cairo R2 [Obj]
 type Grammar = GG.GraphGrammar NodePayload EdgePayload
 type Graph = G.Graph NodePayload EdgePayload
 
@@ -48,8 +44,7 @@ data GUI = GUI {
     }
 
 
-defRadius = 0.02 :: Double
-defSep = 10 :: Double
+defRadius = 20 :: Double
 --defRadius :: Double -> Double -> Double
 --defRadius width height = (max width height) * 0.02
 
@@ -103,14 +98,13 @@ iGraphDialog gramRef = do
     containerAdd frame canvas
     grBoxRef <- newIORef grBox
     tGrBoxRef <- newIORef tGrBox
-    diagRef <- newIORef mempty
 
-    canvas `on` buttonPressEvent $ mouseClick canvas grBoxRef tGrBoxRef diagRef
+    canvas `on` buttonPressEvent $ mouseClick canvas grBoxRef
 --    canvas `on` buttonReleaseEvent $ mouseRelease grBoxRef tGrBoxRef
     canvas `on` sizeRequest $ return (Requisition 600 800)
-    canvas `on` exposeEvent $ liftIO $ updateCanvas canvas grBoxRef tGrBoxRef diagRef
+    canvas `on` exposeEvent $ liftIO $ updateCanvas canvas grBoxRef
     widgetAddEvents canvas [Button3MotionMask]
-    canvas `on` motionNotifyEvent $ mouseMove canvas grBoxRef tGrBoxRef diagRef
+--    canvas `on` motionNotifyEvent $ mouseMove canvas grBoxRef
 
 {-
     tFrame  <- frameNew
@@ -144,25 +138,18 @@ iGraphDialog gramRef = do
     dialogRun dialog
     return ()
 
-mouseClick :: WidgetClass widget => widget -> IORef EditingBox
-           -> IORef EditingBox -> IORef ObjDiagram -> EventM EButton Bool
-mouseClick widget grBoxRef tGrBoxRef diagRef = do
+mouseClick :: WidgetClass widget
+           => widget -> IORef EditingBox -> EventM EButton Bool
+mouseClick widget grBoxRef = do
     button <- eventButton
     click  <- eventClick
     graph <- liftIO $ readIORef grBoxRef >>= return . eBoxGraph
-    tGraph <- liftIO $ readIORef tGrBoxRef >>= return . eBoxGraph
-    da <- eventWindow
-    width <- liftIO $ drawWindowGetWidth da >>= return . fromIntegral
-    height <- liftIO $ drawWindowGetHeight da >>= return . fromIntegral
     coords@(x, y) <- eventCoordinates
-    diag <- liftIO $ readIORef diagRef
     grBox <- liftIO $ readIORef grBoxRef
-    tGrBox <- liftIO $ readIORef tGrBoxRef
-    let normCoords = normalize width height coords
-        obj = sample diag (p2 (x, -y))
-        grBox' = case (obj, button, click) of
-            ([GraphBox], LeftButton, DoubleClick) ->
-                EditingBox (newNode normCoords graph) NoMouseAction
+    let grBox' = case (button, click) of
+            (LeftButton, DoubleClick) ->
+                EditingBox (newNode coords graph) NoMouseAction
+{-
             ((GraphBox:Node n:_), RightButton, SingleClick) ->
                 grBox { mouseAction = NodeSel n }
             ((GraphBox:Node n:_), LeftButton, SingleClick) ->
@@ -170,17 +157,9 @@ mouseClick widget grBoxRef tGrBoxRef diagRef = do
                     EdgeCreation s -> 
                         EditingBox (newEdge s n graph) NoMouseAction
                     otherwise -> grBox { mouseAction = EdgeCreation n }
+-}
             otherwise -> grBox
-        tGrBox' = case (obj, button, click) of
-            ([TGraphBox], LeftButton, DoubleClick) ->
-                EditingBox (newNode normCoords tGraph) NoMouseAction
-            ((TGraphBox:Node n:_), RightButton, SingleClick) ->
-                tGrBox { mouseAction = NodeSel n }
-            ((TGraphBox:Node n:_), LeftButton, SingleClick) ->
-                tGrBox { mouseAction = EdgeCreation n }
-            otherwise -> tGrBox
     liftIO $ writeIORef grBoxRef grBox'
-    liftIO $ writeIORef tGrBoxRef tGrBox'
     liftIO $ widgetQueueDraw widget
     return True
 
@@ -202,15 +181,7 @@ newEdge src tgt graph =
   where
     edgeId = length . G.edges $ graph
 
-fitCoords :: Coords -> Coords
-fitCoords = (,) <$> fitPos . fst <*> fitPos . snd
-  where
-    fitPos x
-        | x < defRadius = defRadius
-        | x > 1 - defRadius = 1 - defRadius
-        | otherwise = x
-
-
+{-
 mouseMove :: WidgetClass widget => widget -> IORef EditingBox
           -> IORef EditingBox -> IORef ObjDiagram -> EventM EMotion Bool
 mouseMove canvas grBoxRef tGrBoxRef diagRef = do
@@ -240,6 +211,7 @@ mouseMove canvas grBoxRef tGrBoxRef diagRef = do
 
     liftIO $ widgetQueueDraw canvas
     return True
+-}
 
  
 addMainCallBacks :: GUI -> IORef Grammar -> IO ()
@@ -253,35 +225,30 @@ addMainCallBacks gui gramRef = do
 
     return ()
 
-updateCanvas :: DrawingArea -> IORef EditingBox -> IORef EditingBox
-             -> IORef ObjDiagram -> IO Bool
-updateCanvas canvas grBoxRef tGrBoxRef diagRef = do
+updateCanvas :: DrawingArea -> IORef EditingBox -> Render ()
+updateCanvas canvas grBoxRef = do
     graph <- liftIO $ readIORef grBoxRef >>= return . eBoxGraph
-    tGraph <- liftIO $ readIORef tGrBoxRef >>= return . eBoxGraph
-    diag <- readIORef diagRef
-    da <- widgetGetDrawWindow canvas
-    width <- liftIO $ drawWindowGetWidth da >>= return . fromIntegral
-    height <- liftIO $ drawWindowGetHeight da >>= return . fromIntegral
-    let graphBox = roundedRect width (height / 2) 10
-                    # value [GraphBox] # fc lightgreen
-        tGraphBox = roundedRect (width / 2) (height / 2) 10
-                    # value [TGraphBox] # fc lightyellow
-        newDiag = mconcat [
-                   drawEdges graph "i" width height,
-                   drawNodes graph "i" width height,
---                   drawNodes tGraph "i" width height,
-                   D.alignTL $ graphBox === strutY rad === tGraphBox # centerX,
-                   D.alignTL $ rect width height # value []
-                  ]
-        rad = defRadius * (max width height)
-    defaultRender canvas newDiag
-    liftIO $ writeIORef diagRef newDiag
+    drawNodes graph
     
-    return True
+drawNodes :: Graph -> Render ()
+drawNodes graph = do
+    setLineWidth defLineWidth
+    mapM_ (drawNode graph) $ G.nodes graph
+  where
+    drawNode gr nId =
+        case G.nodePayload gr nId of
+            Just ((x, y), color) -> do
+                                    renderColor defBorderColor
+                                    Gtk.arc x y defRadius 0 $ 2 * pi
+                                    strokePreserve
+                                    renderColor color
+                                    fill
+            otherwise -> return ()
         
 renderColor :: EColor -> Gtk.Render ()
 renderColor (r, g, b) = setSourceRGB r g b
 
+{-
 drawEdges :: Graph -> String -> Double -> Double -> QDiagram Cairo R2 [Obj]
 drawEdges graph prefix width height =
     (mconcat $ map drawEdge pairs)
@@ -293,6 +260,7 @@ drawEdges graph prefix width height =
         in (D.stroke $ (p2 (x * width, -y * height)) ~~
                        (p2 (x' * width, -y' * height))) # value [] # fc black
     -- connectOutside (prefix ++ show s) (prefix ++ show t)
+-}
 
 
 {-
@@ -304,7 +272,6 @@ addNodeValues diag =
         case lookupName name diag of
             Just s -> s # value Node (read name :: Int)
             otherwise -> mempty
--}
 
     
 drawNodes :: Graph -> String -> Double -> Double -> QDiagram Cairo R2 [Obj]
@@ -318,25 +285,9 @@ drawNodes graph prefix width height =
                 ((p2 (x * width, -y * height)),
                  D.circle rad # fc green # value [Node nId] # named nId)
             otherwise -> ((p2 (0,0)), mempty)
-
-{-
-drawNodes gram graphId = do
-    setLineWidth defLineWidth
-    let gr = graph graphId
-    mapM_ (drawNode gr) $ G.nodes gr
-  where
-    graph TGraph = GG.typeGraph gram
-    graph IGraph = M.domain . GG.initialGraph $ gram
-    drawNode gr nId =
-        case G.nodePayload gr nId of
-            Just ((x, y), color) -> do
-                                    renderColor defBorderColor
-                                    Gtk.arc x y defRadius 0 $ 2 * pi
-                                    strokePreserve
-                                    renderColor color
-                                    fill
-            otherwise -> return ()
 -}
+
+
 
 
 
