@@ -1,3 +1,5 @@
+module GUI (createGUI, addMainCallbacks, showGUI, NodePayload, EdgePayload) where
+
 import Control.Monad.Trans.Class (lift)
 import qualified Graph as G
 import qualified GraphMorphism as GM
@@ -150,16 +152,6 @@ angle (dx, dy)
     | dx < 0 = - acos dy
 
 
-main = do
-    initGUI
-    let grammar :: Grammar
-        grammar = GG.graphGrammar (GM.empty G.empty G.empty) G.empty []
-    gramRef <- newIORef grammar
-    gui <- createGUI
-    widgetShowAll $ mainWindow gui
-    addMainCallBacks gui gramRef
-    mainGUI 
-
 createGUI :: IO GUI
 createGUI = do
     window <- windowNew
@@ -175,6 +167,8 @@ createGUI = do
 
     let buttons = Buttons iGraphButton addRuleButton
     return $ GUI window buttons dummyCanvas 
+
+showGUI = widgetShowAll . mainWindow
 
 iGraphDialog :: IORef Grammar -> IO ()
 iGraphDialog gramRef = do
@@ -363,8 +357,8 @@ mouseMove canvas grBoxRef = do
     return True
 
  
-addMainCallBacks :: GUI -> IORef Grammar -> IO ()
-addMainCallBacks gui gramRef = do
+addMainCallbacks :: GUI -> IORef Grammar -> IO ()
+addMainCallbacks gui gramRef = do
     let window   = mainWindow gui
         bs = buttons gui
         iGraphButton = editInitialGraph bs
