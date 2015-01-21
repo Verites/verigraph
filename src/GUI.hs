@@ -2,6 +2,9 @@ import Control.Monad.Trans.Class (lift)
 import qualified Graph as G
 import qualified GraphMorphism as GM
 import qualified GraphGrammar as GG
+import Data.Colour.Names
+import Data.Colour.SRGB (Colour, toSRGB, RGB (..))
+import Data.Colour.Palette.ColorSet (Kolor, webColors, infiniteWebColors)
 import Data.Maybe (fromJust, isJust, isNothing)
 import Data.IORef
 import qualified Data.List as L
@@ -15,10 +18,14 @@ import qualified Morphism as M
 import Prelude hiding (mapM_, any)
 import qualified Relation as R
 
+defRadius = 20 :: Double
+defLineWidth = 2 :: Double
+defBorderColor = black
+neutralColor = gray
+
 type Coords = (Double, Double)
-type EColor = (Double, Double, Double)
-type NodePayload = (Coords, EColor)
-type EdgePayload = EColor
+type NodePayload = (Coords, Kolor)
+type EdgePayload = Kolor
 data Obj = Node Int | Edge Int
     deriving (Show, Eq)
 type Grammar = GG.GraphGrammar NodePayload EdgePayload
@@ -102,10 +109,6 @@ data GUI = GUI {
     }
 
 
-defRadius = 20 :: Double
-defLineWidth = 2 :: Double
-defBorderColor = (0, 0, 0)
-neutralColor = (0.8, 0.8, 0.8)
 
 directionVect :: Coords -> Coords -> Coords
 directionVect s@(x, y) t@(x', y')
@@ -363,8 +366,11 @@ updateCanvas canvas grBoxRef f = do
     render (RGraph graph)
     
         
-renderColor :: EColor -> Gtk.Render ()
-renderColor (r, g, b) = setSourceRGB r g b
+renderColor :: Kolor -> Gtk.Render ()
+renderColor k = setSourceRGB r g b
+  where
+    rgb = toSRGB k
+    (r, g, b) = (channelRed rgb, channelGreen rgb, channelBlue rgb)
 
 mouseRelease :: IORef EditingBox -> IORef EditingBox -> EventM EButton Bool
 mouseRelease grBoxRef tGrBoxRef = do
