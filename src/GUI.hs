@@ -175,7 +175,6 @@ iGraphDialog gramRef = do
 
     canvas `on` buttonPressEvent $ domClick canvas grBoxRef
 --    canvas `on` buttonReleaseEvent $ mouseRelease grBoxRef tGrBoxRef
-    canvas `on` sizeRequest $ return (Requisition 600 800)
     canvas `on` draw $ updateCanvas canvas grBoxRef M.domain
     widgetAddEvents canvas [Button3MotionMask]
     canvas `on` motionNotifyEvent $ mouseMove canvas grBoxRef
@@ -186,7 +185,6 @@ iGraphDialog gramRef = do
     containerAdd tFrame tCanvas
     
     tCanvas `on` buttonPressEvent $ codClick tCanvas grBoxRef
-    tCanvas `on` sizeRequest $ return (Requisition 600 800)
     tCanvas `on` draw $ updateCanvas canvas grBoxRef M.codomain
     widgetAddEvents tCanvas [Button3MotionMask]
     tCanvas `on` motionNotifyEvent $ mouseMove tCanvas grBoxRef
@@ -204,6 +202,7 @@ iGraphDialog gramRef = do
     let cArea = castToBox contentArea
     boxPackStart cArea frame PackGrow 1
     boxPackStart cArea tFrame PackGrow 1
+    widgetSetSizeRequest dialog 800 600
     widgetShowAll dialog
     dialogRun dialog
     return ()
