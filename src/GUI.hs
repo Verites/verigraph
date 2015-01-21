@@ -181,7 +181,7 @@ iGraphDialog gramRef = do
         grBox = EditingBox
                 (GM.graphMorphism graph tGraph nR eR) NoMouseAction
     dialog <- dialogNew
-    contentArea <- dialogGetContentArea dialog
+    contentArea <- dialogGetContentArea dialog >>= return . castToBox
 
     frame <- frameNew
     frameSetLabel frame "Initial Graph"
@@ -204,12 +204,19 @@ iGraphDialog gramRef = do
     widgetAddEvents tCanvas [Button3MotionMask]
     tCanvas `on` motionNotifyEvent $ mouseMove tCanvas grBoxRef
 
-    let cArea = castToBox contentArea
-    boxPackStart cArea frame PackGrow 1
-    boxPackStart cArea tFrame PackGrow 1
+    boxPackStart contentArea frame PackGrow 1
+    boxPackStart contentArea tFrame PackGrow 1
+    dialogAddButton dialog "Cancel" ResponseCancel
+    dialogAddButton dialog "Apply" ResponseApply
+
     widgetSetSizeRequest dialog 800 600
     widgetShowAll dialog
-    dialogRun dialog
+    response <- dialogRun dialog
+    case response of
+        ResponseApply -> do putStrLn $ "changes to initial graph applied"
+                            widgetDestroy dialog
+        otherwise -> do putStrLn $ "changes to initial graph cancelled"
+                        widgetDestroy dialog
     return ()
 
 domClick :: WidgetClass widget
