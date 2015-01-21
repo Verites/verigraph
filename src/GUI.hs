@@ -74,7 +74,6 @@ instance Renderable (REdge) where
         drawLoop = do
             setLineWidth defLineWidth
             renderColor defBorderColor
---            scale 1 1.2
             Gtk.arcNegative x
                             (y - (2 * defRadius))
                             (1.5 * defRadius)
@@ -195,16 +194,16 @@ iGraphDialog gramRef = do
     canvas <- drawingAreaNew
     containerAdd frame canvas
     grBoxRef <- newIORef grBox
-
-    canvas `on` buttonPressEvent $ domClick canvas grBoxRef
-    canvas `on` draw $ updateCanvas canvas grBoxRef M.domain
-    widgetAddEvents canvas [Button3MotionMask]
-    canvas `on` motionNotifyEvent $ mouseMove canvas grBoxRef
-
     tFrame  <- frameNew
     frameSetLabel tFrame "T Graph"
     tCanvas <- drawingAreaNew
     containerAdd tFrame tCanvas
+
+    canvas `on` buttonPressEvent $ domClick canvas tCanvas grBoxRef
+    canvas `on` draw $ updateCanvas canvas grBoxRef M.domain
+    widgetAddEvents canvas [Button3MotionMask]
+    canvas `on` motionNotifyEvent $ mouseMove canvas grBoxRef
+
     
     tCanvas `on` buttonPressEvent $ codClick tCanvas canvas grBoxRef
     tCanvas `on` draw $ updateCanvas canvas grBoxRef M.codomain
@@ -220,14 +219,15 @@ iGraphDialog gramRef = do
     return ()
 
 domClick :: WidgetClass widget
-         => widget -> IORef EditingBox -> EventM EButton Bool
-domClick widget grBoxRef = do
+         => widget -> widget -> IORef EditingBox -> EventM EButton Bool
+domClick widget codWidget grBoxRef = do
     button <- eventButton
     click  <- eventClick
     grBox <- liftIO $ readIORef grBoxRef
     coords@(x, y) <- eventCoordinates
     let grMorph = eBoxGraphMorphism grBox
         graph = M.domain grMorph
+        codGraph = M.codomain grMorph
         obj = fetchObj graph coords
         grBox' = case (obj, button, click) of
             (Nothing, LeftButton, DoubleClick) ->
@@ -242,10 +242,15 @@ domClick widget grBoxRef = do
                         EditingBox
                             (GM.updateDomain (newEdge s n graph) grMorph)
                             NoMouseAction
+                    EdgeCreation (CodNode t) ->
+                        let domGraph' = attributeTypeColor n graph t codGraph
+                            grMorph' = GM.updateDomain domGraph' grMorph
+                        in EditingBox (GM.updateNodes n t grMorph') NoMouseAction
                     otherwise -> grBox {mouseAction = EdgeCreation (DomNode n)}
             otherwise -> grBox
     liftIO $ writeIORef grBoxRef grBox'
     liftIO $ widgetQueueDraw widget
+    liftIO $ widgetQueueDraw codWidget
     return True
 
 codClick :: WidgetClass widget
@@ -282,14 +287,14 @@ codClick widget domWidget grBoxRef = do
     liftIO $ widgetQueueDraw widget
     liftIO $ widgetQueueDraw domWidget
     return True
-  where
-    attributeTypeColor :: G.NodeId -> Graph -> G.NodeId -> Graph -> Graph
-    attributeTypeColor s sgraph t tgraph =
-        let tPayload = G.nodePayload tgraph t
-        in case tPayload of
-            Just (_, color) ->
-                G.updateNodePayload s sgraph (\(coords, _) -> (coords, color))
-            otherwise -> sgraph
+
+attributeTypeColor :: G.NodeId -> Graph -> G.NodeId -> Graph -> Graph
+attributeTypeColor s sgraph t tgraph =
+    let tPayload = G.nodePayload tgraph t
+    in case tPayload of
+        Just (_, color) ->
+            G.updateNodePayload s sgraph (\(coords, _) -> (coords, color))
+        otherwise -> sgraph
 
 
 fetchObj :: Graph -> Coords -> Maybe Obj
