@@ -1,4 +1,6 @@
-module GUI (createGUI, addMainCallbacks, showGUI, NodePayload, EdgePayload) where
+ module GUI (runGUI) where
+-- module GUI (createGUI, addMainCallbacks, showGUI, NodePayload, EdgePayload) where
+
 
 import Control.Monad.Trans.Class (lift)
 import qualified Graph as G
@@ -150,6 +152,18 @@ angle :: Coords -> Double
 angle (dx, dy)
     | dx > 0 = acos dy
     | dx < 0 = - acos dy
+
+runGUI :: IO ()
+runGUI = do
+    gramRef <- newIORef grammar
+    gui <- createGUI
+    showGUI gui
+    addMainCallbacks gui gramRef
+    return ()
+  where
+    grammar :: GG.GraphGrammar NodePayload EdgePayload
+    grammar = GG.graphGrammar (GM.empty G.empty G.empty) G.empty []
+
 
 
 createGUI :: IO GUI
