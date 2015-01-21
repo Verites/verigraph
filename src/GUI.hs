@@ -177,7 +177,6 @@ iGraphDialog gramRef = do
     grBoxRef <- newIORef grBox
 
     canvas `on` buttonPressEvent $ domClick canvas grBoxRef
---    canvas `on` buttonReleaseEvent $ mouseRelease grBoxRef tGrBoxRef
     canvas `on` draw $ updateCanvas canvas grBoxRef M.domain
     widgetAddEvents canvas [Button3MotionMask]
     canvas `on` motionNotifyEvent $ mouseMove canvas grBoxRef
@@ -191,16 +190,6 @@ iGraphDialog gramRef = do
     tCanvas `on` draw $ updateCanvas canvas grBoxRef M.codomain
     widgetAddEvents tCanvas [Button3MotionMask]
     tCanvas `on` motionNotifyEvent $ mouseMove tCanvas grBoxRef
-
-{-
-    canvas `on` buttonReleaseEvent $ mouseRelease st gId
-
- --   typeCanvas `on` draw $ updateCanvas typeCanvas st tId
-    typeCanvas `on` buttonReleaseEvent $ mouseRelease st tId
-    widgetAddEvents typeCanvas [Button1MotionMask]
-    typeCanvas `on` motionNotifyEvent $ mouseMove typeCanvas st tId
--}
-
 
     let cArea = castToBox contentArea
     boxPackStart cArea frame PackGrow 1
