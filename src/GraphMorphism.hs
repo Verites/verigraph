@@ -11,6 +11,8 @@ module GraphMorphism (
     , nodeRelation
     , edgeRelation
     , TypedGraph
+    , updateCodomain
+    , updateDomain
     , updateNodes
     , updateEdges
 ) where
@@ -61,6 +63,12 @@ inverse (GraphMorphism dom cod nm em) =
 
 null :: TypedGraph a b -> Bool
 null = G.null . getDomain
+
+updateCodomain :: Graph a b -> GraphMorphism a b -> GraphMorphism a b
+updateCodomain g gm = gm { getCodomain = g }
+
+updateDomain :: Graph a b -> GraphMorphism a b -> GraphMorphism a b
+updateDomain g gm = gm { getDomain = g }
 
 updateNodes :: NodeId -> NodeId -> GraphMorphism a b -> GraphMorphism a b
 updateNodes ln gn morphism@(GraphMorphism l g nm em)

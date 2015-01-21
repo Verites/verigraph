@@ -11,8 +11,8 @@ import GraphMorphism
 import GraphRule (GraphRule)
 
 data GraphGrammar a b = GraphGrammar {
-                            getTypeGraph    :: GraphMorphism a b
-                          , getInitialGraph :: Graph a b
+                            getInitialGraph :: GraphMorphism a b
+                          , getTypeGraph    :: Graph a b
                           , getRules        :: [(Int, GraphRule a b)]
                         }
 
