@@ -187,7 +187,7 @@ iGraphDialog gramRef = do
     tCanvas <- drawingAreaNew
     containerAdd tFrame tCanvas
     
-    tCanvas `on` buttonPressEvent $ codClick tCanvas grBoxRef
+    tCanvas `on` buttonPressEvent $ codClick tCanvas canvas grBoxRef
     tCanvas `on` draw $ updateCanvas canvas grBoxRef M.codomain
     widgetAddEvents tCanvas [Button3MotionMask]
     tCanvas `on` motionNotifyEvent $ mouseMove tCanvas grBoxRef
@@ -223,7 +223,7 @@ domClick widget grBoxRef = do
         grBox' = case (obj, button, click) of
             (Nothing, LeftButton, DoubleClick) ->
                 EditingBox
-                    (GM.updateDomain (newNode coords graph) grMorph)
+                    (GM.updateDomain (newNode coords (\_ -> neutralColor) graph) grMorph)
                     NoMouseAction
             (Just (Node n), RightButton, SingleClick) ->
                 grBox { mouseAction = NodeSel (DomNode n) }
@@ -240,8 +240,8 @@ domClick widget grBoxRef = do
     return True
 
 codClick :: WidgetClass widget
-         => widget -> IORef EditingBox -> EventM EButton Bool
-codClick widget grBoxRef = do
+         => widget -> widget -> IORef EditingBox -> EventM EButton Bool
+codClick widget domWidget grBoxRef = do
     button <- eventButton
     click  <- eventClick
     grBox <- liftIO $ readIORef grBoxRef
@@ -253,7 +253,7 @@ codClick widget grBoxRef = do
         grBox' = case (obj, button, click) of
             (Nothing, LeftButton, DoubleClick) ->
                 EditingBox
-                    (GM.updateCodomain (newNode coords graph) grMorph)
+                    (GM.updateCodomain (newNode coords webColors graph) grMorph)
                     NoMouseAction
             (Just (Node n), RightButton, SingleClick) ->
                 grBox { mouseAction = NodeSel (CodNode n) }
@@ -271,6 +271,7 @@ codClick widget grBoxRef = do
             otherwise -> grBox
     liftIO $ writeIORef grBoxRef grBox'
     liftIO $ widgetQueueDraw widget
+    liftIO $ widgetQueueDraw domWidget
     return True
   where
     attributeTypeColor :: G.NodeId -> Graph -> G.NodeId -> Graph -> Graph
@@ -306,9 +307,9 @@ normalize width height coords@(x, y)
     | otherwise = (x / width, y / height)
 
 
-newNode :: Coords -> Graph -> Graph
-newNode coords graph =
-    G.insertNodeWithPayload newId graph (coords, neutralColor)
+newNode :: Coords -> (G.NodeId -> Kolor) -> Graph -> Graph
+newNode coords f graph =
+    G.insertNodeWithPayload newId graph (coords, f newId)
   where
     newId = length . G.nodes $ graph
 
@@ -333,12 +334,12 @@ mouseMove canvas grBoxRef = do
     case grMouse of
        (NodeSel (DomNode n)) ->
             let graph' =
-                    G.insertNodeWithPayload n graph (coords, neutralColor)
+                    G.updateNodePayload n graph (\(_, color) -> (coords, color))
             in liftIO $ writeIORef grBoxRef $
                 grBox { eBoxGraphMorphism = GM.updateDomain graph' typedGraph }
        (NodeSel (CodNode n)) ->
             let codGraph' =
-                    G.insertNodeWithPayload n codGraph (coords, neutralColor)
+                    G.updateNodePayload n codGraph (\(_, color) -> (coords, color))
             in liftIO $ writeIORef grBoxRef $
                 grBox { eBoxGraphMorphism = GM.updateCodomain codGraph' typedGraph }
 
