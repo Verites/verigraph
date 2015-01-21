@@ -56,6 +56,7 @@ instance Renderable (REdge) where
     render (REdge g e)
         | null connected = return ()
         | isNothing srcP || isNothing tgtP = return ()
+        | isLoop = drawLoop
         | otherwise = drawEdge
       where
         connected = G.nodesConnectedTo g e
@@ -63,12 +64,31 @@ instance Renderable (REdge) where
         tgtP = G.nodePayload g . snd . head $ connected
         srcCoords@((x, y)) = fst . fromJust $ srcP 
         tgtCoords@((x', y')) = fst . fromJust $ tgtP
+        isLoop = srcCoords == tgtCoords
         dirVect@(dirX, dirY) = directionVect srcCoords tgtCoords
         (dx, dy) = (dirX * defRadius, dirY * defRadius)
         drawHead len = do
             relMoveTo (len / 2) 0
             relLineTo (-len / 2) len
             relLineTo (-len / 2) (-len)
+        drawLoop = do
+            setLineWidth defLineWidth
+            renderColor defBorderColor
+--            scale 1 1.2
+            Gtk.arcNegative x
+                            (y - (2 * defRadius))
+                            (1.5 * defRadius)
+                            (0.2 * pi)
+                            (0.75 * pi)
+            identityMatrix
+            moveTo x y
+            relMoveTo (1.2 * defRadius) (-1.2 * defRadius)
+            rotate (pi / 4)
+            drawHead $ 0.5 * defRadius
+            identityMatrix
+            stroke
+--            relMoveTo (-1.5 * defRadius) (-1.5 * defRadius)
+            
         drawEdge = do
             setLineWidth defLineWidth
             renderColor defBorderColor
@@ -76,7 +96,7 @@ instance Renderable (REdge) where
             relMoveTo (1.5 * dx) (1.5 * dy)
             lineTo (x' - (2 * dx)) (y' - (2 * dy))
             rotate $ -(angle (dirX, dirY))
-            drawHead $ defRadius / 2
+            drawHead $ 0.5 * defRadius
             identityMatrix
             stroke
 
