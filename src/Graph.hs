@@ -34,6 +34,7 @@ module Graph (
     , updateNodePayload
 ) where
 
+import Control.Applicative ((<$>))
 import Valid
 import Data.List
 import Data.List.Utils
@@ -91,23 +92,27 @@ removeNode n g@(Graph ns es)
 removeEdge :: EdgeId -> Graph a b -> Graph a b
 removeEdge e (Graph ns es) = Graph ns (delFromAL es e)
 
-updateNodePayload :: NodeId -> Graph a b -> a -> Graph a b
-updateNodePayload n g@(Graph ns es) p =
+updateNodePayload :: NodeId -> Graph a b -> (a -> a) -> Graph a b
+updateNodePayload n g@(Graph ns es) f =
     case nd of
         Nothing -> g
-        Just n' -> Graph (ns' n') es
+        Just n' ->
+            Graph
+            (addToAL ns n $ n' { getNodePayload = f <$> (p n') }) es
   where
     nd = lookup n ns
-    ns' n' = addToAL ns n $ n' { getNodePayload = Just p }
+    p n = getNodePayload n
 
-updateEdgePayload :: EdgeId -> Graph a b -> b -> Graph a b
-updateEdgePayload e g@(Graph ns es) p =
+updateEdgePayload :: EdgeId -> Graph a b -> (b -> b) -> Graph a b
+updateEdgePayload e g@(Graph ns es) f =
     case ed of
         Nothing -> g
-        Just e' -> Graph ns $ es' e'
+        Just e' ->
+            Graph
+            ns (addToAL es e $ e' { getEdgePayload = f <$> (p e') })
   where
     ed = lookup e es
-    es' e' = addToAL es e $ e' { getEdgePayload = Just p }
+    p e = getEdgePayload e
 
 
 -- Test the presence and access nodes and edges
