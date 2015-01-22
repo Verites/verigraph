@@ -53,7 +53,14 @@ type EdgeId = Int
 data Graph a b = Graph {
     nodeMap :: [(Int, Node a)],
     edgeMap :: [(Int, Edge b)]
-    } deriving (Show, Read, Eq)
+    } deriving (Read, Eq)
+
+instance Show (Graph a b) where
+    show gr@(Graph nm em) =
+              "Nodes:\n" ++
+              concatMap (\(n, _) -> "\t" ++ show n ++ "\n") nm ++
+              "Edges:\n" ++
+              concatMap (\(eid, e) -> "\t" ++ show eid ++ "\n") em
 
 empty :: Graph a b
 empty = Graph [] []

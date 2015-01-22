@@ -18,7 +18,7 @@ module Relation (
 ) where
 
 
-import Data.List
+import Data.List as L
 import qualified Data.Map as Map 
 
 -- datatype for endorelations em a
@@ -51,7 +51,11 @@ id dom = Relation d d idMap
 
 update :: (Eq a, Ord a) => a -> a -> Relation a -> Relation a 
 update x y (Relation dom cod m) = 
-  Relation ([x] `union` dom) ([y] `union` cod) (Map.insertWith (++) x [y] m)  
+    Relation ([x] `union` dom) ([y] `union` cod) (Map.insertWith insertUniquely x [y] m)  
+  where
+    insertUniquely y y'
+        | null $ y `L.intersect` y' = y ++ y'
+        | otherwise = y'
 
 inverse :: (Ord a) => Relation a -> Relation a
 inverse (Relation dom cod m) =
@@ -103,5 +107,5 @@ surjective = total . inverse
 
 total :: (Ord a) => Relation a -> Bool
 total r =
-    domain r == defDomain r
+    sort (domain r) == sort (defDomain r)
                               

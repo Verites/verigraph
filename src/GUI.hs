@@ -14,13 +14,14 @@ import Data.IORef
 import qualified Data.List as L
 import qualified Data.Map as M
 import Control.Applicative
-import Data.Foldable
+import Data.Foldable (mapM_)
 import Graphics.UI.Gtk as Gtk
 import Graphics.Rendering.Cairo as Gtk
 import Graphics.UI.Gtk.Gdk.EventM
 import qualified Morphism as M
 import Prelude hiding (mapM_, any)
 import qualified Relation as R
+import Valid (valid)
 
 defRadius = 20 :: Double
 defLineWidth = 2 :: Double
@@ -131,8 +132,6 @@ data GUI = GUI {
     canvas :: DrawingArea
     }
 
-
-
 directionVect :: Coords -> Coords -> Coords
 directionVect s@(x, y) t@(x', y')
     | dist == 0 = (0, 0)
@@ -163,8 +162,6 @@ runGUI = do
   where
     grammar :: GG.GraphGrammar NodePayload EdgePayload
     grammar = GG.graphGrammar (GM.empty G.empty G.empty) G.empty []
-
-
 
 createGUI :: IO GUI
 createGUI = do
@@ -226,8 +223,11 @@ iGraphDialog gramRef = do
     widgetSetSizeRequest dialog 800 600
     widgetShowAll dialog
     response <- dialogRun dialog
+    morph <- readIORef grBoxRef >>= return . mapEdges . eBoxGraphMorphism
     case response of
-        ResponseApply -> do putStrLn $ "changes to initial graph applied"
+        ResponseApply -> do if valid morph then
+                                putStrLn $ "morphism valid"
+                                else putStrLn $ "morphism invalid"
                             widgetDestroy dialog
         otherwise -> do putStrLn $ "changes to initial graph cancelled"
                         widgetDestroy dialog
@@ -347,6 +347,24 @@ newEdge src tgt graph =
     G.insertEdge edgeId src tgt graph
   where
     edgeId = length . G.edges $ graph
+
+mapEdges :: GraphMorphism -> GraphMorphism
+mapEdges gm = foldr (\e acc -> mapEdge e acc) gm $ G.edges . M.domain $ gm
+
+mapEdge :: G.EdgeId -> GraphMorphism -> GraphMorphism
+mapEdge e gm
+    | null nds || null srcNds || null tgtNds || null eds = gm
+    | otherwise = GM.updateEdges e e' gm
+  where
+    dom = M.domain gm
+    cod = M.codomain gm
+    nds = G.nodesConnectedTo dom e
+    (s, t) = head nds
+    (srcNds, tgtNds) = (GM.applyNode gm s, GM.applyNode gm t)
+    (s', t') = (head srcNds, head tgtNds)
+    eds = L.intersect (G.edgesFromNode dom s') (G.edgesIntoNode dom t')
+    e' = head eds
+    
 
 mouseMove :: WidgetClass widget
           => widget -> IORef EditingBox

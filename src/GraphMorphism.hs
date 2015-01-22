@@ -123,10 +123,10 @@ instance Valid (GraphMorphism a b) where
         R.functional em &&
         valid dom &&
         valid cod &&
-        all (\e -> (G.sourceOf cod e >>= applyEdge m) ==
-                   (applyNode m e >>= G.sourceOf dom)
+        all (\e -> (applyEdge m e >>= G.sourceOf cod) ==
+                   (G.sourceOf dom e >>= applyNode m)
                    &&
-                   (G.targetOf cod e >>= applyEdge m) ==
-                   (applyEdge m e >>= G.targetOf dom))
+                   (applyEdge m e >>= G.targetOf cod) ==
+                   (G.targetOf dom e >>= applyNode m))
             (G.edges dom)
 
