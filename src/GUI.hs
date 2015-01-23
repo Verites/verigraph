@@ -258,11 +258,34 @@ ruleDialog gramRef = do
     mapM_ (\f -> boxPackStart topBox f PackGrow 1) frames
 
     let tGraph = GG.typeGraph gram
+        nR = R.empty [] (G.nodes tGraph)
+        eR = R.empty [] (G.edges tGraph)
+        emptyGM = GM.graphMorphism G.empty tGraph nR eR
+    leftSideRef <- newIORef $
+        EditingBox emptyGM NoMouseAction
+    rightSideRef <- newIORef $
+        EditingBox emptyGM NoMouseAction
+
+
     tFrame <- frameNew
     frameSetLabel tFrame "T Graph"
     tCanvas <- drawingAreaNew
---    tCanvas `on` draw $ updateCanvas grBoxRef M.codomain
+    containerAdd tFrame tCanvas
     boxPackEnd contentArea tFrame PackGrow 1 
+
+
+    middleCanvas `on` draw $ updateCanvas leftSideRef M.domain
+    middleCanvas `on` buttonPressEvent $
+        domClick middleCanvas tCanvas leftSideRef
+    widgetAddEvents middleCanvas [Button3MotionMask]
+    middleCanvas `on` motionNotifyEvent $ mouseMove middleCanvas leftSideRef
+
+
+    tCanvas `on` draw $ updateCanvas leftSideRef M.codomain
+    tCanvas `on` buttonPressEvent $
+        codClick tCanvas middleCanvas leftSideRef
+    widgetAddEvents tCanvas [Button3MotionMask]
+    tCanvas `on` motionNotifyEvent $ mouseMove tCanvas leftSideRef
     
     widgetSetSizeRequest dialog 800 600
     widgetShowAll dialog
@@ -273,19 +296,19 @@ ruleDialog gramRef = do
 
 domClick :: WidgetClass widget
          => widget -> widget -> IORef EditingBox -> EventM EButton Bool
-domClick widget codWidget grBoxRef = do
+domClick domWidget codWidget grBoxRef = do
     button <- eventButton
     click  <- eventClick
     grBox <- liftIO $ readIORef grBoxRef
     coords@(x, y) <- eventCoordinates
     let grMorph = eBoxGraphMorphism grBox
-        graph = M.domain grMorph
-        codGraph = M.codomain grMorph
-        obj = fetchObj graph coords
+        dom = M.domain grMorph
+        cod = M.codomain grMorph
+        obj = fetchObj dom coords
         grBox' = case (obj, button, click) of
             (Nothing, LeftButton, DoubleClick) ->
                 EditingBox
-                    (GM.updateDomain (newNode coords (\_ -> neutralColor) graph) grMorph)
+                    (GM.updateDomain (newNode coords (\_ -> neutralColor) dom) grMorph)
                     NoMouseAction
             (Just (Node n), RightButton, SingleClick) ->
                 grBox { mouseAction = NodeSel (DomNode n) }
@@ -293,34 +316,34 @@ domClick widget codWidget grBoxRef = do
                 case mouseAction grBox of
                     EdgeCreation (DomNode s) -> 
                         EditingBox
-                            (GM.updateDomain (newEdge s n graph) grMorph)
+                            (GM.updateDomain (newEdge s n dom) grMorph)
                             NoMouseAction
                     EdgeCreation (CodNode t) ->
-                        let domGraph' = attributeTypeColor n graph t codGraph
-                            grMorph' = GM.updateDomain domGraph' grMorph
+                        let dom' = attributeTypeColor n dom t cod
+                            grMorph' = GM.updateDomain dom' grMorph
                         in EditingBox (GM.updateNodes n t grMorph') NoMouseAction
                     otherwise -> grBox {mouseAction = EdgeCreation (DomNode n)}
             otherwise -> grBox
     liftIO $ writeIORef grBoxRef grBox'
-    liftIO $ widgetQueueDraw widget
+    liftIO $ widgetQueueDraw domWidget
     liftIO $ widgetQueueDraw codWidget
     return True
 
 codClick :: WidgetClass widget
          => widget -> widget -> IORef EditingBox -> EventM EButton Bool
-codClick widget domWidget grBoxRef = do
+codClick codWidget domWidget grBoxRef = do
     button <- eventButton
     click  <- eventClick
     grBox <- liftIO $ readIORef grBoxRef
     coords@(x, y) <- eventCoordinates
     let grMorph = eBoxGraphMorphism grBox
-        graph = M.codomain grMorph
-        domGraph = M.domain grMorph
-        obj = fetchObj graph coords
+        cod = M.codomain grMorph
+        dom = M.domain grMorph
+        obj = fetchObj cod coords
         grBox' = case (obj, button, click) of
             (Nothing, LeftButton, DoubleClick) ->
                 EditingBox
-                    (GM.updateCodomain (newNode coords webColors graph) grMorph)
+                    (GM.updateCodomain (newNode coords webColors cod) grMorph)
                     NoMouseAction
             (Just (Node n), RightButton, SingleClick) ->
                 grBox { mouseAction = NodeSel (CodNode n) }
@@ -328,16 +351,16 @@ codClick widget domWidget grBoxRef = do
                 case mouseAction grBox of
                     EdgeCreation (CodNode s) -> 
                         EditingBox
-                            (GM.updateCodomain (newEdge s n graph) grMorph)
+                            (GM.updateCodomain (newEdge s n cod) grMorph)
                             NoMouseAction
                     EdgeCreation (DomNode s) ->
-                        let domGraph' = attributeTypeColor s domGraph n graph
-                            grMorph' = GM.updateDomain domGraph' grMorph
+                        let dom' = attributeTypeColor s dom n cod
+                            grMorph' = GM.updateDomain dom' grMorph
                         in EditingBox (GM.updateNodes s n grMorph') NoMouseAction
                     otherwise -> grBox {mouseAction = EdgeCreation (CodNode n)}
             otherwise -> grBox
     liftIO $ writeIORef grBoxRef grBox'
-    liftIO $ widgetQueueDraw widget
+    liftIO $ widgetQueueDraw codWidget
     liftIO $ widgetQueueDraw domWidget
     return True
 
