@@ -207,13 +207,13 @@ iGraphDialog gramRef = do
     containerAdd tFrame tCanvas
 
     canvas `on` buttonPressEvent $ domClick canvas tCanvas grBoxRef
-    canvas `on` draw $ updateCanvas canvas grBoxRef M.domain
+    canvas `on` draw $ updateCanvas grBoxRef M.domain
     widgetAddEvents canvas [Button3MotionMask]
     canvas `on` motionNotifyEvent $ mouseMove canvas grBoxRef
 
     
     tCanvas `on` buttonPressEvent $ codClick tCanvas canvas grBoxRef
-    tCanvas `on` draw $ updateCanvas canvas grBoxRef M.codomain
+    tCanvas `on` draw $ updateCanvas grBoxRef M.codomain
     widgetAddEvents tCanvas [Button3MotionMask]
     tCanvas `on` motionNotifyEvent $ mouseMove tCanvas grBoxRef
 
@@ -227,6 +227,13 @@ iGraphDialog gramRef = do
     response <- dialogRun dialog
     morph <- readIORef grBoxRef >>= return . mapEdges . eBoxGraphMorphism
     let gram' = GG.graphGrammar morph (GG.rules gram)
+    putStrLn $ "valid dom: " ++ show (valid $ M.domain morph) ++
+               "\nvalid cod: " ++ show (valid $ M.codomain morph) ++
+               "\ntotal nR: " ++ show (R.total $ GM.nodeRelation morph) ++
+               "\nfunctional nR: " ++ show (R.functional $ GM.nodeRelation morph)  ++
+               "\ntotal eR: " ++ show (R.total $ GM.edgeRelation morph) ++
+               "\nfunctional eR: " ++ show (R.functional $ GM.edgeRelation morph)
+    putStrLn $ show morph
     case response of
         ResponseApply -> do if valid morph then do
                                 writeIORef gramRef gram'
@@ -239,6 +246,8 @@ iGraphDialog gramRef = do
 
 ruleDialog :: IORef Grammar -> IO ()
 ruleDialog gramRef = do
+    gram <- readIORef gramRef
+
     dialog <- dialogNew
     contentArea <- dialogGetContentArea dialog >>= return . castToBox
     topBox <- hBoxNew True defSpacing -- no grids available yet in haskell's gtk3
@@ -254,8 +263,12 @@ ruleDialog gramRef = do
           zip frames canvas
 
     mapM_ (\f -> boxPackStart topBox f PackGrow 1) frames
+
+    let tGraph = GG.typeGraph gram
     tFrame <- frameNew
     frameSetLabel tFrame "T Graph"
+    tCanvas <- drawingAreaNew
+--    tCanvas `on` draw $ updateCanvas grBoxRef M.codomain
     boxPackEnd contentArea tFrame PackGrow 1 
     
     widgetSetSizeRequest dialog 800 600
@@ -381,7 +394,7 @@ newEdge src tgt graph =
     edgeId = length . G.edges $ graph
 
 mapEdges :: GraphMorphism -> GraphMorphism
-mapEdges gm = foldr (\e acc -> mapEdge e acc) gm $ G.edges . M.domain $ gm
+mapEdges gm = foldr mapEdge gm $ G.edges . M.domain $ gm
 
 mapEdge :: G.EdgeId -> GraphMorphism -> GraphMorphism
 mapEdge e gm
@@ -394,7 +407,7 @@ mapEdge e gm
     (s, t) = head nds
     (srcNds, tgtNds) = (GM.applyNode gm s, GM.applyNode gm t)
     (s', t') = (head srcNds, head tgtNds)
-    eds = L.intersect (G.edgesFromNode dom s') (G.edgesIntoNode dom t')
+    eds = L.intersect (G.edgesFromNode cod s') (G.edgesIntoNode cod t')
     e' = head eds
     
 
@@ -439,9 +452,9 @@ addMainCallbacks gui gramRef = do
     addRuleButton `on` buttonActivated $ ruleDialog gramRef
     return ()
 
-updateCanvas :: DrawingArea -> IORef EditingBox
+updateCanvas :: IORef EditingBox
              -> (GM.GraphMorphism NodePayload EdgePayload -> Graph) -> Render ()
-updateCanvas canvas grBoxRef f = do
+updateCanvas grBoxRef f = do
     typedGraph <- liftIO $ readIORef grBoxRef >>= return . eBoxGraphMorphism
     let graph = f typedGraph
     render (RGraph graph)
