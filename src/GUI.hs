@@ -15,6 +15,7 @@ import qualified Data.List as L
 import qualified Data.Map as M
 import Control.Applicative
 import Data.Foldable (mapM_)
+import Data.Traversable (sequenceA, traverse)
 import Graphics.UI.Gtk as Gtk
 import Graphics.Rendering.Cairo as Gtk
 import Graphics.UI.Gtk.Gdk.EventM
@@ -26,6 +27,7 @@ import Valid (valid)
 defRadius = 20 :: Double
 defLineWidth = 2 :: Double
 defBorderColor = black
+defSpacing = 1
 neutralColor = gray
 
 type Coords = (Double, Double)
@@ -235,6 +237,34 @@ iGraphDialog gramRef = do
                         widgetDestroy dialog
     return ()
 
+ruleDialog :: IORef Grammar -> IO ()
+ruleDialog gramRef = do
+    dialog <- dialogNew
+    contentArea <- dialogGetContentArea dialog >>= return . castToBox
+    topBox <- hBoxNew True defSpacing -- no grids available yet in haskell's gtk3
+    boxPackStart contentArea topBox PackGrow 1
+
+    frames@[leftFrame, middleFrame, rightFrame] <- mapM (\_ -> frameNew) [1, 1, 1]
+    mapM_ (\(f, l) -> frameSetLabel f l) $ zip frames ["L", "K", "R"]
+
+    canvas@[leftCanvas, middleCanvas, rightCanvas] <-
+        mapM (\_ -> drawingAreaNew) [1, 1, 1]
+
+    mapM_ (\(f, c) -> containerAdd f c) $
+          zip frames canvas
+
+    mapM_ (\f -> boxPackStart topBox f PackGrow 1) frames
+    tFrame <- frameNew
+    frameSetLabel tFrame "T Graph"
+    boxPackEnd contentArea tFrame PackGrow 1 
+    
+    widgetSetSizeRequest dialog 800 600
+    widgetShowAll dialog
+    dialogRun dialog
+    return ()
+
+
+
 domClick :: WidgetClass widget
          => widget -> widget -> IORef EditingBox -> EventM EButton Bool
 domClick widget codWidget grBoxRef = do
@@ -406,6 +436,7 @@ addMainCallbacks gui gramRef = do
         addRuleButton = addRule bs
     window `on` objectDestroy $ mainQuit
     iGraphButton `on` buttonActivated $ iGraphDialog gramRef
+    addRuleButton `on` buttonActivated $ ruleDialog gramRef
     return ()
 
 updateCanvas :: DrawingArea -> IORef EditingBox
