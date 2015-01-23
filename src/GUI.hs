@@ -227,13 +227,6 @@ iGraphDialog gramRef = do
     response <- dialogRun dialog
     morph <- readIORef grBoxRef >>= return . mapEdges . eBoxGraphMorphism
     let gram' = GG.graphGrammar morph (GG.rules gram)
-    putStrLn $ "valid dom: " ++ show (valid $ M.domain morph) ++
-               "\nvalid cod: " ++ show (valid $ M.codomain morph) ++
-               "\ntotal nR: " ++ show (R.total $ GM.nodeRelation morph) ++
-               "\nfunctional nR: " ++ show (R.functional $ GM.nodeRelation morph)  ++
-               "\ntotal eR: " ++ show (R.total $ GM.edgeRelation morph) ++
-               "\nfunctional eR: " ++ show (R.functional $ GM.edgeRelation morph)
-    putStrLn $ show morph
     case response of
         ResponseApply -> do if valid morph then do
                                 writeIORef gramRef gram'
