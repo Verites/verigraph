@@ -161,7 +161,7 @@ runGUI = do
     return ()
   where
     grammar :: GG.GraphGrammar NodePayload EdgePayload
-    grammar = GG.graphGrammar (GM.empty G.empty G.empty) G.empty []
+    grammar = GG.graphGrammar (GM.empty G.empty G.empty) []
 
 createGUI :: IO GUI
 createGUI = do
@@ -224,8 +224,10 @@ iGraphDialog gramRef = do
     widgetShowAll dialog
     response <- dialogRun dialog
     morph <- readIORef grBoxRef >>= return . mapEdges . eBoxGraphMorphism
+    let gram' = GG.graphGrammar morph (GG.rules gram)
     case response of
-        ResponseApply -> do if valid morph then
+        ResponseApply -> do if valid morph then do
+                                writeIORef gramRef gram'
                                 putStrLn $ "morphism valid"
                                 else putStrLn $ "morphism invalid"
                             widgetDestroy dialog

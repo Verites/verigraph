@@ -9,15 +9,16 @@ module GraphGrammar (
 import Graph (Graph)
 import GraphMorphism
 import GraphRule (GraphRule)
+import qualified Morphism as M
 
 data GraphGrammar a b = GraphGrammar {
                             getInitialGraph :: GraphMorphism a b
-                          , getTypeGraph    :: Graph a b
                           , getRules        :: [(Int, GraphRule a b)]
                         }
 
 graphGrammar = GraphGrammar
 initialGraph = getInitialGraph
 rules        = getRules
-typeGraph    = getTypeGraph
+typeGraph :: (Eq a, Eq b) => GraphGrammar a b -> Graph a b
+typeGraph    = M.codomain . getInitialGraph
 
