@@ -277,7 +277,7 @@ ruleDialog gramRef = do
                     mouseClick c tCanvas r f
                 widgetAddEvents c [Button3MotionMask]
                 c `on` motionNotifyEvent $ mouseMove c r) $
-          zip3 canvas references [domClick, domClick, domClick]
+          zip3 canvas references [delClick, domClick, domClick]
 
 {-
     middleCanvas `on` draw $ updateCanvas middleRef M.domain
@@ -294,7 +294,17 @@ ruleDialog gramRef = do
     widgetAddEvents tCanvas [Button3MotionMask]
     tCanvas `on` motionNotifyEvent $ mouseMove tCanvas middleRef
 
-    dialogAddButton dialog "Copy" ResponseOk
+    copyButton <- dialogAddButton dialog "Copy" ResponseOk
+    copyButton `on` buttonPressEvent $
+                    do
+                      liftIO $ do
+                          middleEBox <- readIORef middleRef
+                          writeIORef leftSideRef middleEBox
+                          writeIORef rightSideRef middleEBox
+                          widgetQueueDraw leftCanvas
+                          widgetQueueDraw rightCanvas
+                      return True
+
     dialogAddButton dialog "Cancel" ResponseCancel
     dialogAddButton dialog "Apply" ResponseApply
     
@@ -302,11 +312,11 @@ ruleDialog gramRef = do
     widgetShowAll dialog
     response <- dialogRun dialog
     case response of
-        ResponseOk -> do middleEBox <- readIORef middleRef
-                         writeIORef leftSideRef middleEBox
-                         writeIORef rightSideRef middleEBox
-                         widgetQueueDraw leftCanvas
-                         widgetQueueDraw rightCanvas
+        ResponseApply -> do
+                         leftSideBox <- readIORef leftSideRef
+                         let dom = M.domain . eBoxGraphMorphism $ leftSideBox
+                         putStrLn $ "dom: " ++ show dom
+                         widgetDestroy dialog
         otherwise -> widgetDestroy dialog
 
     return ()
@@ -397,6 +407,20 @@ simpleCodClick coords@(x, y) button click grBox =
                         grMorph' = GM.updateDomain dom' grMorph
                     in EditingBox (GM.updateNodes n t grMorph') NoEditing
     edgeCreationMode n = grBox {editingMode = EdgeCreation (CodNode n)}
+
+delClick :: MouseAction
+delClick coords@(x, y) button click grBox =
+    case (obj, button, click) of
+        (Just (Node n), LeftButton, DoubleClick) -> delNode n
+        otherwise -> grBox
+  where
+    grMorph = eBoxGraphMorphism grBox
+    dom = M.domain grMorph
+    cod = M.codomain grMorph
+    obj = fetchObj dom coords
+    delNode n = EditingBox (GM.updateDomain (G.removeNode n dom)
+                                            grMorph)
+                           NoEditing
 
 
 
