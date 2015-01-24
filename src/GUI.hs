@@ -418,9 +418,12 @@ delClick coords@(x, y) button click grBox =
     dom = M.domain grMorph
     cod = M.codomain grMorph
     obj = fetchObj dom coords
-    delNode n = EditingBox (GM.updateDomain (G.removeNode n dom)
-                                            grMorph)
-                           NoEditing
+    dom' n = G.removeNode n $
+             foldr G.removeEdge dom $ G.incidentEdges dom n
+    delNode n =
+        EditingBox (GM.updateDomain (dom' n)
+                                    grMorph)
+                    NoEditing
 
 
 
