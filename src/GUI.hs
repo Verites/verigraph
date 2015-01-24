@@ -1,7 +1,6 @@
  module GUI (runGUI) where
 -- module GUI (createGUI, addMainCallbacks, showGUI, NodePayload, EdgePayload) where
 
-
 import Control.Monad.Trans.Class (lift)
 import qualified Graph as G
 import qualified GraphMorphism as GM
@@ -233,6 +232,7 @@ iGraphDialog gramRef = do
         ResponseApply | valid morph -> do
                            writeIORef gramRef gram'
                            putStrLn $ "morphism valid"
+                           widgetDestroy dialog
                       | otherwise -> putStrLn $ "morphism invalid"
         otherwise -> do putStrLn $ "changes to initial graph cancelled"
                         widgetDestroy dialog
@@ -284,7 +284,7 @@ ruleDialog gramRef = do
 
     tCanvas `on` draw $ updateCanvas leftSideRef M.codomain
     tCanvas `on` buttonPressEvent $
-        mouseClick middleCanvas tCanvas leftSideRef codClick
+        mouseClick middleCanvas tCanvas leftSideRef simpleCodClick
     widgetAddEvents tCanvas [Button3MotionMask]
     tCanvas `on` motionNotifyEvent $ mouseMove tCanvas leftSideRef
     
@@ -359,6 +359,27 @@ codClick coords@(x, y) button click grBox =
                         grMorph' = GM.updateDomain dom' grMorph
                     in EditingBox (GM.updateNodes n t grMorph') NoEditing
     edgeCreationMode n = grBox {editingMode = EdgeCreation (CodNode n)}
+
+simpleCodClick :: MouseAction
+simpleCodClick coords@(x, y) button click grBox =
+    case (obj, button, click) of
+       (Just (Node n), RightButton, SingleClick) -> selCodNode n
+       (Just (Node n), LeftButton, SingleClick) ->
+           case editingMode grBox of
+               EdgeCreation (DomNode s) -> bindType s n
+               otherwise -> edgeCreationMode n
+       otherwise -> grBox
+  where
+    grMorph = eBoxGraphMorphism grBox
+    cod = M.codomain grMorph
+    dom = M.domain grMorph
+    obj = fetchObj cod coords
+    selCodNode n = grBox { editingMode = NodeSel (CodNode n) }
+    bindType n t =  let dom' = attributeTypeColor n dom t cod
+                        grMorph' = GM.updateDomain dom' grMorph
+                    in EditingBox (GM.updateNodes n t grMorph') NoEditing
+    edgeCreationMode n = grBox {editingMode = EdgeCreation (CodNode n)}
+
 
 
 attributeTypeColor :: G.NodeId -> Graph -> G.NodeId -> Graph -> Graph
@@ -485,5 +506,3 @@ renderColor k = setSourceRGB r g b
   where
     rgb = toSRGB k
     (r, g, b) = (channelRed rgb, channelGreen rgb, channelBlue rgb)
-
-
