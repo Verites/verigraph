@@ -262,11 +262,8 @@ ruleDialog gramRef = do
         nR = R.empty [] (G.nodes tGraph)
         eR = R.empty [] (G.edges tGraph)
         emptyGM = GM.graphMorphism G.empty tGraph nR eR
-    leftSideRef <- newIORef $
-        EditingBox emptyGM NoEditing
-    rightSideRef <- newIORef $
-        EditingBox emptyGM NoEditing
-
+    references@[leftSideRef, middleRef, rightSideRef] <-
+        mapM (\_ -> newIORef $ EditingBox emptyGM NoEditing) [1, 1, 1]
 
     tFrame <- frameNew
     frameSetLabel tFrame "T Graph"
@@ -274,23 +271,44 @@ ruleDialog gramRef = do
     containerAdd tFrame tCanvas
     boxPackEnd contentArea tFrame PackGrow 1 
 
+    mapM_ (\(c, r, f) -> do
+                c `on` draw $ updateCanvas r M.domain
+                c `on` buttonPressEvent $
+                    mouseClick c tCanvas r f
+                widgetAddEvents c [Button3MotionMask]
+                c `on` motionNotifyEvent $ mouseMove c r) $
+          zip3 canvas references [domClick, domClick, domClick]
 
-    middleCanvas `on` draw $ updateCanvas leftSideRef M.domain
+{-
+    middleCanvas `on` draw $ updateCanvas middleRef M.domain
     middleCanvas `on` buttonPressEvent $
-        mouseClick middleCanvas tCanvas leftSideRef domClick
+        mouseClick middleCanvas tCanvas middleRef domClick
     widgetAddEvents middleCanvas [Button3MotionMask]
-    middleCanvas `on` motionNotifyEvent $ mouseMove middleCanvas leftSideRef
+    middleCanvas `on` motionNotifyEvent $ mouseMove middleCanvas middleRef
+-}
 
 
-    tCanvas `on` draw $ updateCanvas leftSideRef M.codomain
+    tCanvas `on` draw $ updateCanvas middleRef M.codomain
     tCanvas `on` buttonPressEvent $
-        mouseClick middleCanvas tCanvas leftSideRef simpleCodClick
+        mouseClick middleCanvas tCanvas middleRef simpleCodClick
     widgetAddEvents tCanvas [Button3MotionMask]
-    tCanvas `on` motionNotifyEvent $ mouseMove tCanvas leftSideRef
+    tCanvas `on` motionNotifyEvent $ mouseMove tCanvas middleRef
+
+    dialogAddButton dialog "Copy" ResponseOk
+    dialogAddButton dialog "Cancel" ResponseCancel
+    dialogAddButton dialog "Apply" ResponseApply
     
     widgetSetSizeRequest dialog 800 600
     widgetShowAll dialog
-    dialogRun dialog
+    response <- dialogRun dialog
+    case response of
+        ResponseOk -> do middleEBox <- readIORef middleRef
+                         writeIORef leftSideRef middleEBox
+                         writeIORef rightSideRef middleEBox
+                         widgetQueueDraw leftCanvas
+                         widgetQueueDraw rightCanvas
+        otherwise -> widgetDestroy dialog
+
     return ()
 
 mouseClick :: WidgetClass widget => widget -> widget
