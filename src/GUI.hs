@@ -279,15 +279,6 @@ ruleDialog gramRef = do
                 c `on` motionNotifyEvent $ mouseMove c r) $
           zip3 canvas references [delClick, domClick, domClick]
 
-{-
-    middleCanvas `on` draw $ updateCanvas middleRef M.domain
-    middleCanvas `on` buttonPressEvent $
-        mouseClick middleCanvas tCanvas middleRef domClick
-    widgetAddEvents middleCanvas [Button3MotionMask]
-    middleCanvas `on` motionNotifyEvent $ mouseMove middleCanvas middleRef
--}
-
-
     tCanvas `on` draw $ updateCanvas middleRef M.codomain
     tCanvas `on` buttonPressEvent $
         mouseClick middleCanvas tCanvas middleRef simpleCodClick
