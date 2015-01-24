@@ -323,10 +323,9 @@ domClick coords@(x, y) button click grBox =
     dom = M.domain grMorph
     cod = M.codomain grMorph
     obj = fetchObj dom coords
-    addNode =
-        EditingBox (GM.updateDomain (newNode coords (\_ -> neutralColor) dom)
-                                    grMorph)
-                   NoEditing
+    addNode = EditingBox (GM.updateDomain (newNode coords (\_ -> neutralColor) dom)
+                                          grMorph)
+                         NoEditing
     selDomNode n = grBox { editingMode = NodeSel (DomNode n) }
     addEdge s n = EditingBox (GM.updateDomain (newEdge s n dom) grMorph)
                              NoEditing
@@ -352,8 +351,8 @@ codClick coords@(x, y) button click grBox =
     dom = M.domain grMorph
     obj = fetchObj cod coords
     addNode = EditingBox (GM.updateCodomain (newNode coords webColors cod)
-                                               grMorph)
-                            NoEditing
+                                            grMorph)
+                         NoEditing
     selCodNode n = grBox { editingMode = NodeSel (CodNode n) }
     addEdge s n = EditingBox (GM.updateCodomain (newEdge s n cod) grMorph)
                                 NoEditing
