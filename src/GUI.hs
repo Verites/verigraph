@@ -93,7 +93,6 @@ instance Renderable (REdge) where
             drawHead $ 0.5 * defRadius
             identityMatrix
             stroke
---            relMoveTo (-1.5 * defRadius) (-1.5 * defRadius)
             
         drawEdge = do
             setLineWidth defLineWidth
@@ -114,7 +113,7 @@ instance Renderable (RGraph) where
 data QElem = DomNode Int | DomEdge Int | CodNode Int | CodEdge Int
     deriving (Show)
 
-data MouseAction = EdgeCreation QElem | NodeSel QElem | NoMouseAction
+data EditingMode = EdgeCreation QElem | NodeSel QElem | NoEditing
     deriving (Show)
 
 data Buttons = Buttons {
@@ -124,8 +123,11 @@ data Buttons = Buttons {
 
 data EditingBox = EditingBox {
     eBoxGraphMorphism :: GM.TypedGraph NodePayload EdgePayload,
-    mouseAction :: MouseAction
+    editingMode :: EditingMode
     }
+
+
+type MouseAction = Coords -> MouseButton -> Click -> EditingBox -> EditingBox
     
 
 data GUI = GUI {
@@ -192,7 +194,7 @@ iGraphDialog gramRef = do
         nR = R.empty (G.nodes graph) (G.nodes tGraph)
         eR = R.empty (G.edges graph) (G.edges tGraph)
         grBox = EditingBox
-                (GM.graphMorphism graph tGraph nR eR) NoMouseAction
+                (GM.graphMorphism graph tGraph nR eR) NoEditing
     dialog <- dialogNew
     contentArea <- dialogGetContentArea dialog >>= return . castToBox
 
@@ -206,13 +208,13 @@ iGraphDialog gramRef = do
     tCanvas <- drawingAreaNew
     containerAdd tFrame tCanvas
 
-    canvas `on` buttonPressEvent $ domClick canvas tCanvas grBoxRef
+    canvas `on` buttonPressEvent $ mouseClick canvas tCanvas grBoxRef domClick
     canvas `on` draw $ updateCanvas grBoxRef M.domain
     widgetAddEvents canvas [Button3MotionMask]
     canvas `on` motionNotifyEvent $ mouseMove canvas grBoxRef
 
     
-    tCanvas `on` buttonPressEvent $ codClick tCanvas canvas grBoxRef
+    tCanvas `on` buttonPressEvent $ mouseClick canvas tCanvas grBoxRef codClick
     tCanvas `on` draw $ updateCanvas grBoxRef M.codomain
     widgetAddEvents tCanvas [Button3MotionMask]
     tCanvas `on` motionNotifyEvent $ mouseMove tCanvas grBoxRef
@@ -262,9 +264,9 @@ ruleDialog gramRef = do
         eR = R.empty [] (G.edges tGraph)
         emptyGM = GM.graphMorphism G.empty tGraph nR eR
     leftSideRef <- newIORef $
-        EditingBox emptyGM NoMouseAction
+        EditingBox emptyGM NoEditing
     rightSideRef <- newIORef $
-        EditingBox emptyGM NoMouseAction
+        EditingBox emptyGM NoEditing
 
 
     tFrame <- frameNew
@@ -276,14 +278,14 @@ ruleDialog gramRef = do
 
     middleCanvas `on` draw $ updateCanvas leftSideRef M.domain
     middleCanvas `on` buttonPressEvent $
-        domClick middleCanvas tCanvas leftSideRef
+        mouseClick middleCanvas tCanvas leftSideRef domClick
     widgetAddEvents middleCanvas [Button3MotionMask]
     middleCanvas `on` motionNotifyEvent $ mouseMove middleCanvas leftSideRef
 
 
     tCanvas `on` draw $ updateCanvas leftSideRef M.codomain
     tCanvas `on` buttonPressEvent $
-        codClick tCanvas middleCanvas leftSideRef
+        mouseClick middleCanvas tCanvas leftSideRef codClick
     widgetAddEvents tCanvas [Button3MotionMask]
     tCanvas `on` motionNotifyEvent $ mouseMove tCanvas leftSideRef
     
@@ -292,77 +294,76 @@ ruleDialog gramRef = do
     dialogRun dialog
     return ()
 
-
-
-domClick :: WidgetClass widget
-         => widget -> widget -> IORef EditingBox -> EventM EButton Bool
-domClick domWidget codWidget grBoxRef = do
+mouseClick :: WidgetClass widget => widget -> widget
+           -> IORef EditingBox -> MouseAction -> EventM EButton Bool
+mouseClick domWidget codWidget grBoxRef f = do
+    coords <- eventCoordinates
     button <- eventButton
-    click  <- eventClick
+    click <- eventClick
     grBox <- liftIO $ readIORef grBoxRef
-    coords@(x, y) <- eventCoordinates
-    let grMorph = eBoxGraphMorphism grBox
-        dom = M.domain grMorph
-        cod = M.codomain grMorph
-        obj = fetchObj dom coords
-        grBox' = case (obj, button, click) of
-            (Nothing, LeftButton, DoubleClick) ->
-                EditingBox
-                    (GM.updateDomain (newNode coords (\_ -> neutralColor) dom) grMorph)
-                    NoMouseAction
-            (Just (Node n), RightButton, SingleClick) ->
-                grBox { mouseAction = NodeSel (DomNode n) }
-            (Just (Node n), LeftButton, SingleClick) ->
-                case mouseAction grBox of
-                    EdgeCreation (DomNode s) -> 
-                        EditingBox
-                            (GM.updateDomain (newEdge s n dom) grMorph)
-                            NoMouseAction
-                    EdgeCreation (CodNode t) ->
-                        let dom' = attributeTypeColor n dom t cod
-                            grMorph' = GM.updateDomain dom' grMorph
-                        in EditingBox (GM.updateNodes n t grMorph') NoMouseAction
-                    otherwise -> grBox {mouseAction = EdgeCreation (DomNode n)}
-            otherwise -> grBox
-    liftIO $ writeIORef grBoxRef grBox'
-    liftIO $ widgetQueueDraw domWidget
-    liftIO $ widgetQueueDraw codWidget
-    return True
+    let grBox' = f coords button click grBox
+    liftIO $ do writeIORef grBoxRef grBox'
+                widgetQueueDraw domWidget
+                widgetQueueDraw codWidget
+    return True                
 
-codClick :: WidgetClass widget
-         => widget -> widget -> IORef EditingBox -> EventM EButton Bool
-codClick codWidget domWidget grBoxRef = do
-    button <- eventButton
-    click  <- eventClick
-    grBox <- liftIO $ readIORef grBoxRef
-    coords@(x, y) <- eventCoordinates
-    let grMorph = eBoxGraphMorphism grBox
-        cod = M.codomain grMorph
-        dom = M.domain grMorph
-        obj = fetchObj cod coords
-        grBox' = case (obj, button, click) of
-            (Nothing, LeftButton, DoubleClick) ->
-                EditingBox
-                    (GM.updateCodomain (newNode coords webColors cod) grMorph)
-                    NoMouseAction
-            (Just (Node n), RightButton, SingleClick) ->
-                grBox { mouseAction = NodeSel (CodNode n) }
-            (Just (Node n), LeftButton, SingleClick) ->
-                case mouseAction grBox of
-                    EdgeCreation (CodNode s) -> 
-                        EditingBox
-                            (GM.updateCodomain (newEdge s n cod) grMorph)
-                            NoMouseAction
-                    EdgeCreation (DomNode s) ->
-                        let dom' = attributeTypeColor s dom n cod
-                            grMorph' = GM.updateDomain dom' grMorph
-                        in EditingBox (GM.updateNodes s n grMorph') NoMouseAction
-                    otherwise -> grBox {mouseAction = EdgeCreation (CodNode n)}
-            otherwise -> grBox
-    liftIO $ writeIORef grBoxRef grBox'
-    liftIO $ widgetQueueDraw codWidget
-    liftIO $ widgetQueueDraw domWidget
-    return True
+domClick :: MouseAction
+domClick coords@(x, y) button click grBox =
+    case (obj, button, click) of
+        (Nothing, LeftButton, DoubleClick) -> addNode
+        (Just (Node n), RightButton, SingleClick) -> selDomNode n
+        (Just (Node n), LeftButton, SingleClick) ->
+            case editingMode grBox of
+                EdgeCreation (DomNode s) -> addEdge s n
+                EdgeCreation (CodNode t) -> bindType n t
+                otherwise -> edgeCreationMode n
+        otherwise -> grBox
+  where
+    grMorph = eBoxGraphMorphism grBox
+    dom = M.domain grMorph
+    cod = M.codomain grMorph
+    obj = fetchObj dom coords
+    addNode =
+        EditingBox (GM.updateDomain (newNode coords (\_ -> neutralColor) dom)
+                                    grMorph)
+                   NoEditing
+    selDomNode n = grBox { editingMode = NodeSel (DomNode n) }
+    addEdge s n = EditingBox (GM.updateDomain (newEdge s n dom) grMorph)
+                             NoEditing
+    bindType n t = let dom' = attributeTypeColor n dom t cod
+                       grMorph' = GM.updateDomain dom' grMorph
+                   in EditingBox (GM.updateNodes n t grMorph') NoEditing
+    edgeCreationMode n = grBox {editingMode = EdgeCreation (DomNode n)}
+        
+codClick :: MouseAction
+codClick coords@(x, y) button click grBox =
+    case (obj, button, click) of
+        (Nothing, LeftButton, DoubleClick) -> addNode
+        (Just (Node n), RightButton, SingleClick) -> selCodNode n
+        (Just (Node n), LeftButton, SingleClick) ->
+            case editingMode grBox of
+                EdgeCreation (CodNode s) -> addEdge s n
+                EdgeCreation (DomNode s) -> bindType s n
+                otherwise -> grBox {editingMode = EdgeCreation (CodNode n)}
+        otherwise -> grBox
+  where
+    grMorph = eBoxGraphMorphism grBox
+    cod = M.codomain grMorph
+    dom = M.domain grMorph
+    obj = fetchObj cod coords
+    addNode = EditingBox (GM.updateCodomain (newNode coords webColors cod)
+                                               grMorph)
+                            NoEditing
+    selCodNode n = grBox { editingMode = NodeSel (CodNode n) }
+    addEdge s n = EditingBox (GM.updateCodomain (newEdge s n cod) grMorph)
+                                NoEditing
+    bindType n t =  let dom' = attributeTypeColor n dom t cod
+                        grMorph' = GM.updateDomain dom' grMorph
+                    in EditingBox (GM.updateNodes n t grMorph') NoEditing
+
+
+
+
 
 attributeTypeColor :: G.NodeId -> Graph -> G.NodeId -> Graph -> Graph
 attributeTypeColor s sgraph t tgraph =
@@ -436,7 +437,7 @@ mouseMove canvas grBoxRef = do
     let typedGraph = eBoxGraphMorphism grBox
         graph = M.domain typedGraph
         codGraph = M.codomain typedGraph
-        grMouse = mouseAction grBox
+        grMouse = editingMode grBox
         nR = GM.nodeRelation typedGraph
         eR = GM.edgeRelation typedGraph
     case grMouse of
@@ -474,13 +475,6 @@ updateCanvas grBoxRef f = do
     typedGraph <- liftIO $ readIORef grBoxRef >>= return . eBoxGraphMorphism
     let graph = f typedGraph
     render (RGraph graph)
-    
-        
-renderColor :: Kolor -> Gtk.Render ()
-renderColor k = setSourceRGB r g b
-  where
-    rgb = toSRGB k
-    (r, g, b) = (channelRed rgb, channelGreen rgb, channelBlue rgb)
 
 mouseRelease :: IORef EditingBox -> IORef EditingBox -> EventM EButton Bool
 mouseRelease grBoxRef tGrBoxRef = do
@@ -488,5 +482,12 @@ mouseRelease grBoxRef tGrBoxRef = do
                 modifyIORef tGrBoxRef $ cancelDrag
     return True
   where
-    cancelDrag box = box { mouseAction = NoMouseAction }
+    cancelDrag box = box { editingMode = NoEditing }
+        
+renderColor :: Kolor -> Gtk.Render ()
+renderColor k = setSourceRGB r g b
+  where
+    rgb = toSRGB k
+    (r, g, b) = (channelRed rgb, channelGreen rgb, channelBlue rgb)
+
 
