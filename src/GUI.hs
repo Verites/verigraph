@@ -344,7 +344,7 @@ codClick coords@(x, y) button click grBox =
             case editingMode grBox of
                 EdgeCreation (CodNode s) -> addEdge s n
                 EdgeCreation (DomNode s) -> bindType s n
-                otherwise -> grBox {editingMode = EdgeCreation (CodNode n)}
+                otherwise -> edgeCreationMode n
         otherwise -> grBox
   where
     grMorph = eBoxGraphMorphism grBox
@@ -360,9 +360,7 @@ codClick coords@(x, y) button click grBox =
     bindType n t =  let dom' = attributeTypeColor n dom t cod
                         grMorph' = GM.updateDomain dom' grMorph
                     in EditingBox (GM.updateNodes n t grMorph') NoEditing
-
-
-
+    edgeCreationMode n = grBox {editingMode = EdgeCreation (CodNode n)}
 
 
 attributeTypeColor :: G.NodeId -> Graph -> G.NodeId -> Graph -> Graph
