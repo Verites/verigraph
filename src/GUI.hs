@@ -230,11 +230,10 @@ iGraphDialog gramRef = do
     morph <- readIORef grBoxRef >>= return . mapEdges . eBoxGraphMorphism
     let gram' = GG.graphGrammar morph (GG.rules gram)
     case response of
-        ResponseApply -> do if valid morph then do
-                                writeIORef gramRef gram'
-                                putStrLn $ "morphism valid"
-                                else putStrLn $ "morphism invalid"
-                            widgetDestroy dialog
+        ResponseApply | valid morph -> do
+                           writeIORef gramRef gram'
+                           putStrLn $ "morphism valid"
+                      | otherwise -> putStrLn $ "morphism invalid"
         otherwise -> do putStrLn $ "changes to initial graph cancelled"
                         widgetDestroy dialog
     return ()
