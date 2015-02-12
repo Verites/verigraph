@@ -10,6 +10,7 @@ import Data.Colour.SRGB (Colour, toSRGB, RGB (..))
 import Data.Colour.Palette.ColorSet (Kolor, webColors, infiniteWebColors)
 import Data.Maybe (fromJust, isJust, isNothing)
 import Data.IORef
+import qualified Data.Tree as T
 import qualified Data.List as L
 import qualified Data.Map as M
 import Control.Applicative
@@ -170,17 +171,40 @@ createGUI :: IO GUI
 createGUI = do
     window <- windowNew
     set window [ windowTitle := "Verigraph" ]
-    mainBox <- vBoxNew False 1
-    containerAdd window mainBox
+    hBox <- hBoxNew False 1
+    vBox <- vBoxNew False 1
+    containerAdd window hBox
+
+    view <- createViewAndModel
+    boxPackStart hBox view PackNatural 1
+
+    boxPackStart hBox vBox PackNatural 1
 
     iGraphButton <- buttonNewWithLabel "Edit initial graph"
     addRuleButton <- buttonNewWithLabel "Add rule"
-    boxPackStart mainBox iGraphButton PackNatural 1
-    boxPackStart mainBox addRuleButton PackNatural 1
+    boxPackStart vBox iGraphButton PackNatural 1
+    boxPackStart vBox addRuleButton PackNatural 1
     dummyCanvas <- drawingAreaNew
 
     let buttons = Buttons iGraphButton addRuleButton
     return $ GUI window buttons dummyCanvas 
+
+createViewAndModel :: IO TreeView
+createViewAndModel = do
+    view <- treeViewNew
+    col  <- treeViewColumnNew
+    treeViewColumnSetTitle col "Graph Grammars"
+    treeViewAppendColumn view col
+    renderer <- cellRendererTextNew
+    treeViewColumnPackStart col renderer True
+
+    tree <- treeStoreNew [] :: IO (TreeStore String)
+    treeStoreInsert tree [] 1 "Parent"
+    treeStoreInsert tree [0] 0 "Child"
+    treeViewSetModel view tree
+
+--    treeViewColumnAddAttribute col renderer "text" 0
+    return view
 
 showGUI = widgetShowAll . mainWindow
 
