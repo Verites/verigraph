@@ -13,7 +13,7 @@ import qualified Morphism as M
 
 data GraphGrammar a b = GraphGrammar {
                             getInitialGraph :: GraphMorphism a b
-                          , getRules        :: [(Int, GraphRule a b)]
+                          , getRules        :: [(String, GraphRule a b)]
                         }
 
 graphGrammar = GraphGrammar

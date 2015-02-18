@@ -5,6 +5,7 @@ import Control.Monad.Trans.Class (lift)
 import qualified Graph as G
 import qualified GraphMorphism as GM
 import qualified GraphGrammar as GG
+import qualified GraphRule as GR
 import Data.Colour.Names
 import Data.Colour.SRGB (Colour, toSRGB, RGB (..))
 import Data.Colour.Palette.ColorSet (Kolor, webColors, infiniteWebColors)
@@ -38,10 +39,16 @@ data Obj = Node Int | Edge Int
 type Grammar = GG.GraphGrammar NodePayload EdgePayload
 type Graph = G.Graph NodePayload EdgePayload
 type GraphMorphism = GM.GraphMorphism NodePayload EdgePayload
+type Rule  = GR.GraphRule NodePayload EdgePayload
 
 data RNode = RNode Graph G.NodeId
 data REdge = REdge Graph G.EdgeId
 data RGraph = RGraph Graph
+
+data TreeNode = TNGraph GraphMorphism | 
+                TNRule Rule
+                
+                
 
 class Renderable a where
     render :: a -> Render ()
@@ -118,7 +125,8 @@ data EditingMode = EdgeCreation QElem | NodeSel QElem | NoEditing
 
 data Buttons = Buttons {
     editInitialGraph :: Button,
-    addRule :: Button
+    addRule :: Button,
+    getOkButton :: Button
     }
 
 data EditingBox = EditingBox {
@@ -131,6 +139,7 @@ type MouseAction = Coords -> MouseButton -> Click -> EditingBox -> EditingBox
     
 
 data GUI = GUI {
+    treeView :: TreeView,
     mainWindow    :: Window,
     buttons :: Buttons,
     canvas :: DrawingArea
@@ -180,23 +189,28 @@ createGUI = do
     boxPackStart hBox vBox0 PackNatural 1
 
     boxPackStart hBox vBox1 PackNatural 1
+
     boxPackStart vBox0 view PackGrow 1
 
     iGraphButton <- buttonNewWithLabel "Edit initial graph"
     addRuleButton <- buttonNewWithLabel "Add rule"
+    okButton <- buttonNewWithLabel "OK"
     boxPackStart vBox1 iGraphButton PackNatural 1
     boxPackStart vBox1 addRuleButton PackNatural 1
+    boxPackStart vBox1 okButton PackNatural 1
     dummyCanvas <- drawingAreaNew
 
-    let buttons = Buttons iGraphButton addRuleButton
-    return $ GUI window buttons dummyCanvas 
+    let buttons = Buttons iGraphButton addRuleButton okButton
+    return $ GUI view window buttons dummyCanvas 
 
 createViewAndModel :: IO TreeView
 createViewAndModel = do
-    tree <- treeStoreNew [] :: IO (TreeStore String)
+    tree <- treeStoreNew [] :: IO (TreeStore TreeNode)
+{-
     treeStoreInsert tree [] 0 "Graph"
     treeStoreInsert tree [] 1 "TGraph"
     treeStoreInsertTree tree [] 2 ruleTree
+-}
 --    treeStoreInsert tree [2] 0 ruleTree
 
     view <- treeViewNew
@@ -206,37 +220,17 @@ createViewAndModel = do
     treeViewAppendColumn view col
     renderer <- cellRendererTextNew
     cellLayoutPackStart col renderer True
-    cellLayoutSetAttributes col renderer tree $ \row -> [ cellText := row ]
+--    cellLayoutSetAttributes col renderer tree $ \row -> [ cellText := row ]
 
     treeViewSetModel view tree
 --    treeViewColumnAddAttribute col renderer "text" 0
 
-    view `on` rowActivated $ rowSelected tree
+--    view `on` rowActivated $ rowSelected tree
     return view
-  where
-    g = G.insertEdge 1 1 2 $
-        G.insertEdge 2 3 3 $
-        G.insertNode 1 $
-        G.insertNode 2 $
-        G.insertNode 3 $
-        G.insertNode 4 $
-        G.empty :: Graph
-    t = G.insertEdge 1 1 2 $
-        G.insertNode 1 $
-        G.insertNode 2 $
-        G.empty :: Graph
-    tg = GM.updateEdges 1 1 $
-         GM.updateEdges 2 1 $
-         GM.updateNodes 1 1 $
-         GM.updateNodes 2 1 $
-         GM.updateNodes 3 1 $
-         GM.updateNodes 4 2 $
-         GM.empty g t
-    gg = GG.graphGrammar tg []
-    rules = GG.rules gg
+--  where
 --    rulesNames = map (("rule" ++) . show) rules
 --    ruleTree = T.Tree "Rules" ruleNames
-    ruleTree = T.Node "Rules" [T.Node "rule0" [], T.Node "rule1" []]
+--    ruleTree = T.Node "Rules" [T.Node "rule0" [], T.Node "rule1" []]
 
 rowSelected tree path _ = do
     node <- treeStoreLookup tree path
@@ -578,13 +572,29 @@ mouseMove canvas grBoxRef = do
 addMainCallbacks :: GUI -> IORef Grammar -> IO ()
 addMainCallbacks gui gramRef = do
     let window   = mainWindow gui
+        view = treeView gui
         bs = buttons gui
         iGraphButton = editInitialGraph bs
         addRuleButton = addRule bs
+        okButton = getOkButton bs
     window `on` objectDestroy $ mainQuit
+    viewRef <- newIORef view
+    gram <- readIORef gramRef
     iGraphButton `on` buttonActivated $ iGraphDialog gramRef
     addRuleButton `on` buttonActivated $ ruleDialog gramRef
+    okButton `on` buttonActivated $ updateModel gram viewRef
     return ()
+  where
+    updateModel gram viewRef = do
+        let iGraph = GG.initialGraph gram
+            rules  = GG.rules gram
+            ruleTree = foldl (\acc r -> (T.Node (TNRule r)) : acc) [] rules
+        view <- readIORef viewRef
+        tree <- treeStoreNew [] :: IO (TreeStore TreeNode)
+        treeStoreInsert tree [] 0 $ TNGraph iGraph
+        treeStoreInsertTree tree [] 0 ruleTree 
+        writeIORef viewRef $ treeViewSetModel view tree
+        
 
 updateCanvas :: IORef EditingBox
              -> (GM.GraphMorphism NodePayload EdgePayload -> Graph) -> Render ()
