@@ -172,18 +172,20 @@ createGUI = do
     window <- windowNew
     set window [ windowTitle := "Verigraph" ]
     hBox <- hBoxNew False 1
-    vBox <- vBoxNew False 1
+    vBox0 <- vBoxNew False 1
+    vBox1 <- vBoxNew False 1
     containerAdd window hBox
 
     view <- createViewAndModel
-    boxPackStart hBox view PackNatural 1
+    boxPackStart hBox vBox0 PackNatural 1
 
-    boxPackStart hBox vBox PackNatural 1
+    boxPackStart hBox vBox1 PackNatural 1
+    boxPackStart vBox0 view PackGrow 1
 
     iGraphButton <- buttonNewWithLabel "Edit initial graph"
     addRuleButton <- buttonNewWithLabel "Add rule"
-    boxPackStart vBox iGraphButton PackNatural 1
-    boxPackStart vBox addRuleButton PackNatural 1
+    boxPackStart vBox1 iGraphButton PackNatural 1
+    boxPackStart vBox1 addRuleButton PackNatural 1
     dummyCanvas <- drawingAreaNew
 
     let buttons = Buttons iGraphButton addRuleButton
@@ -191,20 +193,58 @@ createGUI = do
 
 createViewAndModel :: IO TreeView
 createViewAndModel = do
+    tree <- treeStoreNew [] :: IO (TreeStore String)
+    treeStoreInsert tree [] 0 "Graph"
+    treeStoreInsert tree [] 1 "TGraph"
+    treeStoreInsertTree tree [] 2 ruleTree
+--    treeStoreInsert tree [2] 0 ruleTree
+
     view <- treeViewNew
     col  <- treeViewColumnNew
-    treeViewColumnSetTitle col "Graph Grammars"
+
+    treeViewColumnSetTitle col "Overview"
     treeViewAppendColumn view col
     renderer <- cellRendererTextNew
-    treeViewColumnPackStart col renderer True
+    cellLayoutPackStart col renderer True
+    cellLayoutSetAttributes col renderer tree $ \row -> [ cellText := row ]
 
-    tree <- treeStoreNew [] :: IO (TreeStore String)
-    treeStoreInsert tree [] 1 "Parent"
-    treeStoreInsert tree [0] 0 "Child"
     treeViewSetModel view tree
-
 --    treeViewColumnAddAttribute col renderer "text" 0
+
+    view `on` rowActivated $ rowSelected tree
     return view
+  where
+    g = G.insertEdge 1 1 2 $
+        G.insertEdge 2 3 3 $
+        G.insertNode 1 $
+        G.insertNode 2 $
+        G.insertNode 3 $
+        G.insertNode 4 $
+        G.empty :: Graph
+    t = G.insertEdge 1 1 2 $
+        G.insertNode 1 $
+        G.insertNode 2 $
+        G.empty :: Graph
+    tg = GM.updateEdges 1 1 $
+         GM.updateEdges 2 1 $
+         GM.updateNodes 1 1 $
+         GM.updateNodes 2 1 $
+         GM.updateNodes 3 1 $
+         GM.updateNodes 4 2 $
+         GM.empty g t
+    gg = GG.graphGrammar tg []
+    rules = GG.rules gg
+--    rulesNames = map (("rule" ++) . show) rules
+--    ruleTree = T.Tree "Rules" ruleNames
+    ruleTree = T.Node "Rules" [T.Node "rule0" [], T.Node "rule1" []]
+
+rowSelected tree path _ = do
+    node <- treeStoreLookup tree path
+    putStrLn $
+        case node of
+            Nothing -> ""
+            Just n  -> show n
+
 
 showGUI = widgetShowAll . mainWindow
 
