@@ -74,8 +74,8 @@ insertNode :: NodeId -> Graph a b -> Graph a b
 insertNode n g@(Graph ns es) =
     Graph (addToAL ns n (Node Nothing)) es
 
-insertNodeWithPayload :: NodeId -> Graph a b -> a -> Graph a b
-insertNodeWithPayload n g@(Graph ns es) p =
+insertNodeWithPayload :: NodeId -> a -> Graph a b -> Graph a b
+insertNodeWithPayload n p g@(Graph ns es) =
     Graph (addToAL ns n (Node (Just p))) es
 
 insertEdge :: EdgeId -> NodeId -> NodeId -> Graph a b -> Graph a b
@@ -84,8 +84,8 @@ insertEdge e src tgt g@(Graph ns es)
         Graph ns (addToAL es e (Edge src tgt Nothing))
     | otherwise = g
 
-insertEdgeWithPayload :: EdgeId -> NodeId -> NodeId -> Graph a b -> b -> Graph a b
-insertEdgeWithPayload e src tgt g@(Graph ns es) p
+insertEdgeWithPayload :: EdgeId -> NodeId -> NodeId -> b -> Graph a b -> Graph a b
+insertEdgeWithPayload e src tgt p g@(Graph ns es)
     | src `elem` (keysAL ns) && tgt `elem` (keysAL ns) =
         Graph ns (addToAL es e (Edge src tgt (Just p)))
     | otherwise = g

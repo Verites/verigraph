@@ -45,8 +45,9 @@ data RNode = RNode Graph G.NodeId
 data REdge = REdge Graph G.EdgeId
 data RGraph = RGraph Graph
 
-data TreeNode = TNGraph GraphMorphism | 
-                TNRule Rule
+data GrammarTree = GTGraph GraphMorphism | 
+                   GTTypeGraph Graph |
+                   GTRule Rule
                 
                 
 
@@ -167,27 +168,40 @@ angle (dx, dy)
 
 runGUI :: IO ()
 runGUI = do
-    gramRef <- newIORef grammar
+--    gramRef <- newIORef grammar
     gui <- createGUI
     showGUI gui
-    addMainCallbacks gui gramRef
+--    addMainCallbacks gui gramRef
     return ()
+{-
   where
     grammar :: GG.GraphGrammar NodePayload EdgePayload
     grammar = GG.graphGrammar (GM.empty G.empty G.empty) []
+-}
 
 createGUI :: IO GUI
 createGUI = do
     window <- windowNew
     set window [ windowTitle := "Verigraph" ]
+    mainVBox <- vBoxNew False 1
     hBox <- hBoxNew False 1
     vBox0 <- vBoxNew False 1
     vBox1 <- vBoxNew False 1
-    containerAdd window hBox
+    containerAdd window mainVBox
 
+    -- Menu Widgets
+    menuBar <- menuBarNew
+    fileMenuItem <- menuItemNewWithLabel "File"
+    fileMenu <- menuNew
+    menuShellAppend menuBar fileMenuItem
+    menuItemSetSubmenu fileMenuItem fileMenu
+    newItem <- menuItemNewWithLabel "New"
+    menuAttach fileMenu newItem 0 1 0 1 
+    
     view <- createViewAndModel
+    boxPackStart mainVBox menuBar PackNatural 1
+    boxPackStart mainVBox hBox PackGrow 1
     boxPackStart hBox vBox0 PackNatural 1
-
     boxPackStart hBox vBox1 PackNatural 1
 
     boxPackStart vBox0 view PackGrow 1
@@ -205,7 +219,9 @@ createGUI = do
 
 createViewAndModel :: IO TreeView
 createViewAndModel = do
-    tree <- treeStoreNew [] :: IO (TreeStore TreeNode)
+--    tree <- treeStoreNew [] :: IO (TreeStore GrammarTree)
+    tree <- grammarToModel testGrammar
+    
 {-
     treeStoreInsert tree [] 0 "Graph"
     treeStoreInsert tree [] 1 "TGraph"
@@ -227,10 +243,39 @@ createViewAndModel = do
 
 --    view `on` rowActivated $ rowSelected tree
     return view
+  where
+    grammar :: GG.GraphGrammar NodePayload EdgePayload
+    grammar = GG.graphGrammar (GM.empty G.empty G.empty) []
+
+
 --  where
 --    rulesNames = map (("rule" ++) . show) rules
 --    ruleTree = T.Tree "Rules" ruleNames
 --    ruleTree = T.Node "Rules" [T.Node "rule0" [], T.Node "rule1" []]
+
+testGrammar :: Grammar
+testGrammar =
+    GG.graphGrammar iGraph []
+  where
+    iGraph = GM.graphMorphism g t nR eR
+    g = G.insertNodeWithPayload 0 ((100, 100), neutralColor) $
+        G.insertNodeWithPayload 1 ((100, 150), neutralColor) $
+        G.empty
+    t = G.empty
+    nR = R.empty [] []
+    eR = R.empty [] []
+
+grammarToModel :: Grammar -> IO (TreeStore GrammarTree)
+grammarToModel gg = do
+    tree <- treeStoreNew [] :: IO (TreeStore GrammarTree)
+    treeStoreInsert tree [] 0 iGraph
+    treeStoreInsert tree [] 1 tGraph
+    return tree
+  where
+    iGraph = GTGraph $ GG.initialGraph gg
+    tGraph = GTTypeGraph $ GG.typeGraph gg
+    
+    
 
 rowSelected tree path _ = do
     node <- treeStoreLookup tree path
@@ -511,7 +556,7 @@ normalize width height coords@(x, y)
 
 newNode :: Coords -> (G.NodeId -> Kolor) -> Graph -> Graph
 newNode coords f graph =
-    G.insertNodeWithPayload newId graph (coords, f newId)
+    G.insertNodeWithPayload newId (coords, f newId) graph
   where
     newId = length . G.nodes $ graph
 
@@ -582,18 +627,20 @@ addMainCallbacks gui gramRef = do
     gram <- readIORef gramRef
     iGraphButton `on` buttonActivated $ iGraphDialog gramRef
     addRuleButton `on` buttonActivated $ ruleDialog gramRef
-    okButton `on` buttonActivated $ updateModel gram viewRef
+--    okButton `on` buttonActivated $ updateModel gram viewRef
     return ()
+{-
   where
     updateModel gram viewRef = do
         let iGraph = GG.initialGraph gram
             rules  = GG.rules gram
-            ruleTree = foldl (\acc r -> (T.Node (TNRule r)) : acc) [] rules
+            ruleTree = foldl (\acc r -> (T.Node (GTRule r)) : acc) [] rules
         view <- readIORef viewRef
-        tree <- treeStoreNew [] :: IO (TreeStore TreeNode)
-        treeStoreInsert tree [] 0 $ TNGraph iGraph
+        tree <- treeStoreNew [] :: IO (TreeStore GrammarTree)
+        treeStoreInsert tree [] 0 $ GTGraph iGraph
         treeStoreInsertTree tree [] 0 ruleTree 
         writeIORef viewRef $ treeViewSetModel view tree
+-}
         
 
 updateCanvas :: IORef EditingBox
