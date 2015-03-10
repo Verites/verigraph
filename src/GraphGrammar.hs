@@ -14,7 +14,7 @@ import qualified Morphism as M
 data GraphGrammar a b = GraphGrammar {
                             getInitialGraph :: GraphMorphism a b
                           , getRules        :: [(String, GraphRule a b)]
-                        }
+                        } deriving (Show, Read)
 
 graphGrammar = GraphGrammar
 initialGraph = getInitialGraph

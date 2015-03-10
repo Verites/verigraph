@@ -14,7 +14,7 @@ data GraphRule a b = GraphRule {
                           leftSide  :: TypedGraphMorphism a b
                         , rightSide :: TypedGraphMorphism a b
                         , getNacs   :: [TypedGraphMorphism a b]
-                     }
+                     } deriving (Show, Read)
 
 left  = leftSide
 right = rightSide

@@ -45,16 +45,16 @@ data RNode = RNode Graph G.NodeId
 data REdge = REdge Graph G.EdgeId
 data RGraph = RGraph Graph
 
-data GrammarTree = GTrGraph GraphMorphism | 
-                   GTrTGraph Graph |
-                   GTrRule (String, Rule) |
+data GrammarTree = GTrGraph { getIGraph :: GraphMorphism } | 
+                   GTrTGraph { getTGraph :: Graph } |
+                   GTrRule { getRule :: (String, Rule) } |
                    GTrNode
-    deriving Show
 
-{-
 instance Show GrammarTree where
-    show g = "Test"
--}
+    show (GTrGraph gm) = show gm
+    show (GTrTGraph g) = show g
+    show (GTrRule (s, r)) = s ++ ": " ++ show r
+    show GTrNode = "Rules"
 
 
 
@@ -208,6 +208,8 @@ createGUI = do
     menuAttach fileMenu newItem 0 1 0 1 
     menuAttach fileMenu openItem 0 1 1 2 
     menuAttach fileMenu saveItem 0 1 2 3 
+
+    openItem `on` menuItemActivated $ openFile
     
     view <- createViewAndModel
     boxPackStart mainVBox menuBar PackNatural 1
@@ -227,6 +229,15 @@ createGUI = do
 
     let buttons = Buttons iGraphButton addRuleButton okButton
     return $ GUI view window buttons dummyCanvas 
+
+openFile :: IO ()
+openFile = do
+    dial <- fileChooserDialogNew (Just "Open") Nothing FileChooserActionOpen
+                                 buttons
+    file <- dialogRun dial
+    putStrLn "Opening File"
+  where
+    buttons = [ ("Cancel", ResponseCancel), ("Open", ResponseOk) ]
 
 createViewAndModel :: IO TreeView
 createViewAndModel = do
@@ -309,8 +320,9 @@ modelToGrammar tree = do
     rulesM  <- treeStoreLookup tree [2]
     let elems = do iGraphNode <- iGraphM
                    rulesNode  <- rulesM
-                   let rules = map T.rootLabel (T.subForest rulesNode)
-                   return $ GG.graphGrammar (T.rootLabel iGraphNode)
+                   let rules = map (getRule . T.rootLabel)
+                                   (T.subForest rulesNode)
+                   return $ GG.graphGrammar (getIGraph $ T.rootLabel iGraphNode)
                                             rules
     return elems
 
@@ -324,6 +336,8 @@ rowSelected tree path _ = do
         Just n -> (editIGraph (T.rootLabel n))
 
 editIGraph :: GrammarTree -> IO ()
+editIGraph = putStrLn . show
+{-
 editIGraph (GTrGraph gm) = do
     let graph = M.domain gm
         tGraph = M.codomain gm
@@ -374,6 +388,7 @@ editIGraph (GTrGraph gm) = do
         otherwise -> do putStrLn $ "changes to initial graph cancelled"
                         widgetDestroy dialog
     return ()
+-}
 
 
 

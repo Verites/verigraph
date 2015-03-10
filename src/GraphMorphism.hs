@@ -28,7 +28,7 @@ data GraphMorphism a b = GraphMorphism {
                         , getCodomain  :: Graph a b
                         , nodeRelation :: R.Relation G.NodeId
                         , edgeRelation :: R.Relation G.EdgeId
-                    }
+                    } deriving Read
 
 type TypedGraph a b = GraphMorphism a b
 
