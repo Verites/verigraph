@@ -45,11 +45,18 @@ data RNode = RNode Graph G.NodeId
 data REdge = REdge Graph G.EdgeId
 data RGraph = RGraph Graph
 
-data GrammarTree = GTGraph GraphMorphism | 
-                   GTTypeGraph Graph |
-                   GTRule Rule
-                
-                
+data GrammarTree = GTrGraph GraphMorphism | 
+                   GTrTGraph Graph |
+                   GTrRule (String, Rule) |
+                   GTrNode
+    deriving Show
+
+{-
+instance Show GrammarTree where
+    show g = "Test"
+-}
+
+
 
 class Renderable a where
     render :: a -> Render ()
@@ -171,7 +178,7 @@ runGUI = do
 --    gramRef <- newIORef grammar
     gui <- createGUI
     showGUI gui
---    addMainCallbacks gui gramRef
+    addMainCallbacks gui
     return ()
 {-
   where
@@ -196,7 +203,11 @@ createGUI = do
     menuShellAppend menuBar fileMenuItem
     menuItemSetSubmenu fileMenuItem fileMenu
     newItem <- menuItemNewWithLabel "New"
+    openItem <- menuItemNewWithLabel "Open"
+    saveItem <- menuItemNewWithLabel "Save"
     menuAttach fileMenu newItem 0 1 0 1 
+    menuAttach fileMenu openItem 0 1 1 2 
+    menuAttach fileMenu saveItem 0 1 2 3 
     
     view <- createViewAndModel
     boxPackStart mainVBox menuBar PackNatural 1
@@ -232,20 +243,26 @@ createViewAndModel = do
     view <- treeViewNew
     col  <- treeViewColumnNew
 
-    treeViewColumnSetTitle col "Overview"
+    treeViewColumnSetTitle col "Graph Grammar"
     treeViewAppendColumn view col
     renderer <- cellRendererTextNew
     cellLayoutPackStart col renderer True
 --    cellLayoutSetAttributes col renderer tree $ \row -> [ cellText := row ]
+    cellLayoutSetAttributes col renderer tree $ \row -> [ cellText := getName row ]
 
     treeViewSetModel view tree
 --    treeViewColumnAddAttribute col renderer "text" 0
 
---    view `on` rowActivated $ rowSelected tree
+    view `on` rowActivated $ rowSelected tree
+--    view `on` rowActivated $ editIGraph tree path col
     return view
   where
     grammar :: GG.GraphGrammar NodePayload EdgePayload
     grammar = GG.graphGrammar (GM.empty G.empty G.empty) []
+    getName (GTrGraph _) = "Initial Graph"
+    getName (GTrTGraph _) = "Type Graph"
+    getName GTrNode = "Rules"
+    getName (GTrRule _) = "Rule"
 
 
 --  where
@@ -258,10 +275,14 @@ testGrammar =
     GG.graphGrammar iGraph []
   where
     iGraph = GM.graphMorphism g t nR eR
+    g = G.empty :: Graph
+    t = G.empty :: Graph
+{-
     g = G.insertNodeWithPayload 0 ((100, 100), neutralColor) $
         G.insertNodeWithPayload 1 ((100, 150), neutralColor) $
         G.empty
     t = G.empty
+-}
     nR = R.empty [] []
     eR = R.empty [] []
 
@@ -270,19 +291,90 @@ grammarToModel gg = do
     tree <- treeStoreNew [] :: IO (TreeStore GrammarTree)
     treeStoreInsert tree [] 0 iGraph
     treeStoreInsert tree [] 1 tGraph
+    treeStoreInsertTree tree [] 2 ruleTree
     return tree
   where
-    iGraph = GTGraph $ GG.initialGraph gg
-    tGraph = GTTypeGraph $ GG.typeGraph gg
+    iGraph = GTrGraph $ GG.initialGraph gg
+    tGraph = GTrTGraph $ GG.typeGraph gg
+    ruleTree = T.Node GTrNode ruleForest
+    ruleForest = foldr (\r acc -> (T.Node (GTrRule r) []) : acc) [] rules
+    rules  = GG.rules gg
+
+
+
+modelToGrammar :: TreeStore GrammarTree -> IO (Maybe Grammar)
+modelToGrammar tree = do
+    iGraphM <- treeStoreLookup tree [0]
+    tGraphM <- treeStoreLookup tree [1]
+    rulesM  <- treeStoreLookup tree [2]
+    let elems = do iGraphNode <- iGraphM
+                   rulesNode  <- rulesM
+                   let rules = map T.rootLabel (T.subForest rulesNode)
+                   return $ GG.graphGrammar (T.rootLabel iGraphNode)
+                                            rules
+    return elems
+
     
     
 
 rowSelected tree path _ = do
     node <- treeStoreLookup tree path
-    putStrLn $
-        case node of
-            Nothing -> ""
-            Just n  -> show n
+    case node of
+        Nothing -> return ()
+        Just n -> (editIGraph (T.rootLabel n))
+
+editIGraph :: GrammarTree -> IO ()
+editIGraph (GTrGraph gm) = do
+    let graph = M.domain gm
+        tGraph = M.codomain gm
+        nR = GM.nodeRelation gm
+        eR = GM.edgeRelation gm
+        grBox = EditingBox
+                (GM.graphMorphism graph tGraph nR eR) NoEditing
+    dialog <- dialogNew
+    contentArea <- dialogGetContentArea dialog >>= return . castToBox
+
+    frame <- frameNew
+    frameSetLabel frame "Initial Graph"
+    canvas <- drawingAreaNew
+    containerAdd frame canvas
+    grBoxRef <- newIORef grBox
+    tFrame  <- frameNew
+    frameSetLabel tFrame "T Graph"
+    tCanvas <- drawingAreaNew
+    containerAdd tFrame tCanvas
+
+    canvas `on` buttonPressEvent $ mouseClick canvas tCanvas grBoxRef domClick
+    canvas `on` draw $ updateCanvas grBoxRef M.domain
+    widgetAddEvents canvas [Button3MotionMask]
+    canvas `on` motionNotifyEvent $ mouseMove canvas grBoxRef
+
+    
+    tCanvas `on` buttonPressEvent $ mouseClick canvas tCanvas grBoxRef codClick
+    tCanvas `on` draw $ updateCanvas grBoxRef M.codomain
+    widgetAddEvents tCanvas [Button3MotionMask]
+    tCanvas `on` motionNotifyEvent $ mouseMove tCanvas grBoxRef
+
+    boxPackStart contentArea frame PackGrow 1
+    boxPackStart contentArea tFrame PackGrow 1
+    dialogAddButton dialog "Cancel" ResponseCancel
+    dialogAddButton dialog "Apply" ResponseApply
+
+    widgetSetSizeRequest dialog 800 600
+    widgetShowAll dialog
+    response <- dialogRun dialog
+    morph <- readIORef grBoxRef >>= return . mapEdges . eBoxGraphMorphism
+--    let gram' = GG.graphGrammar morph (GG.rules gram)
+    case response of
+        ResponseApply | valid morph -> do
+--                           writeIORef gramRef gram'
+                           putStrLn $ "morphism valid"
+                           widgetDestroy dialog
+                      | otherwise -> putStrLn $ "morphism invalid"
+        otherwise -> do putStrLn $ "changes to initial graph cancelled"
+                        widgetDestroy dialog
+    return ()
+
 
 
 showGUI = widgetShowAll . mainWindow
@@ -585,8 +677,7 @@ mapEdge e gm
     
 
 mouseMove :: WidgetClass widget
-          => widget -> IORef EditingBox
-          -> EventM EMotion Bool
+          => widget -> IORef EditingBox -> EventM EMotion Bool
 mouseMove canvas grBoxRef = do
     grBox <- liftIO $ readIORef grBoxRef
     coords@(x, y) <- eventCoordinates
@@ -614,8 +705,8 @@ mouseMove canvas grBoxRef = do
     return True
 
  
-addMainCallbacks :: GUI -> IORef Grammar -> IO ()
-addMainCallbacks gui gramRef = do
+addMainCallbacks :: GUI -> IO ()
+addMainCallbacks gui = do
     let window   = mainWindow gui
         view = treeView gui
         bs = buttons gui
@@ -624,9 +715,9 @@ addMainCallbacks gui gramRef = do
         okButton = getOkButton bs
     window `on` objectDestroy $ mainQuit
     viewRef <- newIORef view
-    gram <- readIORef gramRef
-    iGraphButton `on` buttonActivated $ iGraphDialog gramRef
-    addRuleButton `on` buttonActivated $ ruleDialog gramRef
+ --   gram <- readIORef gramRef
+--    iGraphButton `on` buttonActivated $ iGraphDialog view
+--    addRuleButton `on` buttonActivated $ ruleDialog gramRef
 --    okButton `on` buttonActivated $ updateModel gram viewRef
     return ()
 {-
@@ -634,10 +725,10 @@ addMainCallbacks gui gramRef = do
     updateModel gram viewRef = do
         let iGraph = GG.initialGraph gram
             rules  = GG.rules gram
-            ruleTree = foldl (\acc r -> (T.Node (GTRule r)) : acc) [] rules
+            ruleTree = foldl (\acc r -> (T.Node (GTrRule r)) : acc) [] rules
         view <- readIORef viewRef
         tree <- treeStoreNew [] :: IO (TreeStore GrammarTree)
-        treeStoreInsert tree [] 0 $ GTGraph iGraph
+        treeStoreInsert tree [] 0 $ GTrGraph iGraph
         treeStoreInsertTree tree [] 0 ruleTree 
         writeIORef viewRef $ treeViewSetModel view tree
 -}
