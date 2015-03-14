@@ -32,14 +32,21 @@ type Rule  = GR.GraphRule NodePayload EdgePayload
 type Coords = (Double, Double)
 type NodePayload = (Coords, Kolor)
 type EdgePayload = Kolor
+
+iGraphIdx = 0
+tGraphIdx = 1
+rulesIdx = 2
+
 data GraphRel = GraphRel { getGraph :: Graph,
                            getNodeRelation :: R.Relation G.NodeId,
                            getEdgeRelation :: R.Relation G.EdgeId
                          }
-data TreeNode = TNInitialGraph GraphRel | 
-                TNTypeGraph Graph |
-                TNRule String GraphRel |
+data TreeNode = TNInitialGraph NodeStatus GraphRel | 
+                TNTypeGraph NodeStatus Graph |
+                TNRule NodeStatus String GraphRel |
                 TNRoot String
+
+data NodeStatus = Active | Inactive
 
 data GUI = GUI {
     treeView :: TreeView,
@@ -122,7 +129,7 @@ openFile = do
 createViewAndModel :: IO TreeView
 createViewAndModel = do
 --    tree <- treeStoreNew [] :: IO (TreeStore GrammarTree)
-    tree <- grammarToModel testGrammar
+    store <- grammarToModel testGrammar
     
 {-
     treeStoreInsert tree [] 0 "Graph"
@@ -139,21 +146,42 @@ createViewAndModel = do
     renderer <- cellRendererTextNew
     cellLayoutPackStart col renderer True
 --    cellLayoutSetAttributes col renderer tree $ \row -> [ cellText := row ]
-    cellLayoutSetAttributes col renderer tree $ \row -> [ cellText := getName row ]
+    cellLayoutSetAttributes col renderer store $ \row -> [ cellText := getName row ]
 
-    treeViewSetModel view tree
+    treeViewSetModel view store
 --    treeViewColumnAddAttribute col renderer "text" 0
 
+    view `on` rowActivated $ rowSelected store
 --    view `on` rowActivated $ rowSelected tree
 --    view `on` rowActivated $ editIGraph tree path col
     return view
   where
     grammar :: GG.GraphGrammar NodePayload EdgePayload
     grammar = GG.graphGrammar (GM.empty G.empty G.empty) []
-    getName (TNInitialGraph _) = "Initial Graph"
-    getName (TNTypeGraph _) = "Type Graph"
+    getName (TNInitialGraph _ _) = "Initial Graph"
+    getName (TNTypeGraph _ _) = "Type Graph"
     getName (TNRoot _) = "Rules"
-    getName (TNRule _ _) = "Rule"
+    getName (TNRule _ _ _) = "Rule"
+
+rowSelected store path _ = do
+    node <- treeStoreLookup store path
+    case node of
+        Nothing -> return ()
+        Just n -> putStrLn . getName . T.rootLabel $ n
+    val <- getTypeGraph store
+    putStrLn "extracted"
+        --(editIGraph (T.rootLabel n))
+  where
+    getName (TNInitialGraph _ _) = "Initial Graph"
+    getName (TNTypeGraph _ _) = "Type Graph"
+    getName (TNRule _ _ _) = "Rule"
+    getName (TNRoot _) = "Rules"
+
+getTypeGraph :: TreeStore a -> IO TreeNode
+getTypeGraph store = do
+    Just iter <- treeModelGetIterFirst store
+    val  <- treeModelGetValue store iter $ makeColumnIdInt 0
+    return val
 
 
 grammarToModel :: Grammar -> IO (TreeStore TreeNode)
@@ -167,8 +195,8 @@ grammarToModel gg = do
     iGraph    = GG.initialGraph gg
     iNodeRel  = GM.nodeRelation iGraph
     iEdgeRel  = GM.edgeRelation iGraph
-    iGraphRel = TNInitialGraph $ GraphRel (M.domain iGraph) iNodeRel iEdgeRel
-    tGraph    = TNTypeGraph $ GG.typeGraph gg
+    iGraphRel = TNInitialGraph Active $ GraphRel (M.domain iGraph) iNodeRel iEdgeRel
+    tGraph    = TNTypeGraph Active $ GG.typeGraph gg
 {-
     ruleTree  = T.Node TNRoot ruleForest
     ruleForest = foldr (\(s, r) acc -> (T.Node (TNRule s r) []) : acc) [] rules
