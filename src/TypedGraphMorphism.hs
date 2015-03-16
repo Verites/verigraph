@@ -20,13 +20,13 @@ data TypedGraphMorphism a b = TypedGraphMorphism {
 typedMorphism = TypedGraphMorphism
 mapping = getMapping
 
-instance (Eq a, Eq b) => Eq (TypedGraphMorphism a b) where
+instance Eq (TypedGraphMorphism a b) where
     (TypedGraphMorphism dom1 cod1 m1) == (TypedGraphMorphism dom2 cod2 m2) =
         dom1 == dom2 &&
         cod1 == cod2 &&
         m1 == m2
 
-instance (Eq a, Eq b) => Morphism (TypedGraphMorphism a b) where
+instance Morphism (TypedGraphMorphism a b) where
     type Obj (TypedGraphMorphism a b) = GraphMorphism a b
 
     domain = getDomain
@@ -42,7 +42,7 @@ instance (Eq a, Eq b) => Morphism (TypedGraphMorphism a b) where
     isomorphism = isomorphism . mapping
 
 
-instance (Eq a, Eq b) => Valid (TypedGraphMorphism a b) where
+instance Valid (TypedGraphMorphism a b) where
     valid (TypedGraphMorphism dom cod m) =
         valid dom &&
         valid cod &&

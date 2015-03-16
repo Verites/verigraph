@@ -40,12 +40,23 @@ import Data.List
 import Data.List.Utils
 
 data Node a = Node { getNodePayload :: Maybe a
-              } deriving (Eq, Show, Read)
+              } deriving (Show, Read)
+
+instance Eq (Node a) where
+    n == n' = True -- Simplifies all Eq instances that depend upon Node
 
 data Edge a = Edge { getSource   :: Int
                    , getTarget   :: Int
                    , getEdgePayload :: Maybe a
-              } deriving (Eq, Show, Read)
+              } deriving (Show, Read)
+
+instance Eq (Edge a) where
+    e == e' = s == s' && t == t'
+            where 
+              s  = getSource e
+              t  = getTarget e
+              s' = getSource e'
+              t' = getTarget e'
 
 type NodeId = Int
 type EdgeId = Int
@@ -53,7 +64,9 @@ type EdgeId = Int
 data Graph a b = Graph {
     nodeMap :: [(Int, Node a)],
     edgeMap :: [(Int, Edge b)]
-    } deriving (Read, Eq)
+    } deriving (Eq, Read)
+
+
 
 instance Show (Graph a b) where
     show gr@(Graph nm em) =

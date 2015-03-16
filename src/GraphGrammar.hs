@@ -19,6 +19,6 @@ data GraphGrammar a b = GraphGrammar {
 graphGrammar = GraphGrammar
 initialGraph = getInitialGraph
 rules        = getRules
-typeGraph :: (Eq a, Eq b) => GraphGrammar a b -> Graph a b
+typeGraph :: GraphGrammar a b -> Graph a b
 typeGraph    = M.codomain . getInitialGraph
 

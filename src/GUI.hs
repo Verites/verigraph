@@ -32,8 +32,8 @@ type Graph = G.Graph NodePayload EdgePayload
 type GraphMorphism = GM.GraphMorphism NodePayload EdgePayload
 type Rule  = GR.GraphRule NodePayload EdgePayload
 type Coords = (Double, Double)
-
-type NodePayload = (Coords, Kolor)
+type DrawingFunc = Coords -> Render ()
+type NodePayload = (Coords, DrawingFunc)
 type EdgePayload = Kolor
 
 iGraphIdx = 0

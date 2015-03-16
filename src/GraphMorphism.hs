@@ -28,7 +28,13 @@ data GraphMorphism a b = GraphMorphism {
                         , getCodomain  :: Graph a b
                         , nodeRelation :: R.Relation G.NodeId
                         , edgeRelation :: R.Relation G.EdgeId
-                    } deriving Read
+                    } deriving (Read)
+
+instance Eq (GraphMorphism a b) where
+    m1 == m2 = domain m1 == domain m2 &&
+               codomain m1 == codomain m2 &&
+               nodeRelation m1 == nodeRelation m2 &&
+               edgeRelation m1 == edgeRelation m2
 
 type TypedGraph a b = GraphMorphism a b
 
@@ -86,14 +92,8 @@ updateEdges le ge morphism@(GraphMorphism l g nm em)
   where
     notMapped m = Prelude.null . applyEdge m
 
-instance (Eq a, Eq b) => Eq (GraphMorphism a b) where
-    m1 == m2 = domain m1 == domain m2 &&
-               codomain m1 == codomain m2 &&
-               nodeRelation m1 == nodeRelation m2 &&
-               edgeRelation m1 == edgeRelation m2
 
-
-instance (Eq a, Eq b) => Morphism (GraphMorphism a b) where
+instance Morphism (GraphMorphism a b) where
     type Obj (GraphMorphism a b) = Graph a b
 
     domain = getDomain

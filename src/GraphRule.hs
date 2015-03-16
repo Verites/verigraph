@@ -21,7 +21,7 @@ right = rightSide
 nacs  = getNacs
 graphRule = GraphRule
 
-instance (Eq a, Eq b) => Valid (GraphRule a b) where
+instance Valid (GraphRule a b) where
     valid (GraphRule lside rside nacs) =
         valid lside &&
         valid rside &&
