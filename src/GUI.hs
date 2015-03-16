@@ -6,6 +6,7 @@ import qualified Graph as G
 import qualified GraphMorphism as GM
 import qualified GraphGrammar as GG
 import qualified GraphRule as GR
+--import qualified TypedGraphMorphism as TM
 import Data.Colour.Names
 import Data.Colour.SRGB (Colour, toSRGB, RGB (..))
 import Data.Colour.Palette.ColorSet (Kolor, webColors, infiniteWebColors)
@@ -31,6 +32,7 @@ type Graph = G.Graph NodePayload EdgePayload
 type GraphMorphism = GM.GraphMorphism NodePayload EdgePayload
 type Rule  = GR.GraphRule NodePayload EdgePayload
 type Coords = (Double, Double)
+
 type NodePayload = (Coords, Kolor)
 type EdgePayload = Kolor
 
@@ -60,7 +62,7 @@ data GUI = GUI {
     treeView :: TreeView,
     mainWindow    :: Window,
     buttons :: Buttons,
-    canvas :: DrawingArea
+    getCanvas :: DrawingArea
     }
 
 data Buttons = Buttons {
@@ -105,7 +107,8 @@ createGUI = do
 
     openItem `on` menuItemActivated $ openFile
     
-    view <- createViewAndModel
+    canvas <- drawingAreaNew
+    view <- createViewAndModel canvas
     boxPackStart mainVBox menuBar PackNatural 1
     boxPackStart mainVBox hBox PackGrow 1
     boxPackStart hBox vBox0 PackNatural 1
@@ -119,10 +122,9 @@ createGUI = do
     boxPackStart vBox1 iGraphButton PackNatural 1
     boxPackStart vBox1 addRuleButton PackNatural 1
     boxPackStart vBox1 okButton PackNatural 1
-    dummyCanvas <- drawingAreaNew
 
     let buttons = Buttons iGraphButton addRuleButton okButton
-    return $ GUI view window buttons dummyCanvas 
+    return $ GUI view window buttons canvas 
 
 addMainCallbacks :: GUI -> IO ()
 addMainCallbacks gui = do
@@ -133,6 +135,7 @@ addMainCallbacks gui = do
         addRuleButton = addRule bs
         okButton = getOkButton bs
     window `on` objectDestroy $ mainQuit
+
 --    viewRef <- newIORef view
  --   gram <- readIORef gramRef
 --    iGraphButton `on` buttonActivated $ iGraphDialog view
@@ -151,8 +154,8 @@ openFile = do
   where
     buttons = [ ("Cancel", ResponseCancel), ("Open", ResponseOk) ]
 
-createViewAndModel :: IO TreeView
-createViewAndModel = do
+createViewAndModel :: DrawingArea -> IO TreeView
+createViewAndModel canvas = do
 --    tree <- treeStoreNew [] :: IO (TreeStore GrammarTree)
     store <- grammarToModel testGrammar
     
@@ -176,7 +179,7 @@ createViewAndModel = do
     treeViewSetModel view store
 --    treeViewColumnAddAttribute col renderer "text" 0
 
-    view `on` rowActivated $ rowSelected store
+    view `on` rowActivated $ rowSelected canvas store
 --    view `on` rowActivated $ rowSelected tree
 --    view `on` rowActivated $ editIGraph tree path col
     return view
@@ -188,31 +191,76 @@ createViewAndModel = do
     getName (TNRoot s) = s
     getName (TNRule _ s _) = s
 
-rowSelected store path _ = do
+rowSelected canvas store path _ = do
+    tree <- treeStoreGetTree store [1]
+    let tGraphs = getActiveTypeGraphs tree
     node <- treeStoreLookup store path
     case node of
         Nothing -> return ()
-        Just n -> putStrLn . getName . T.rootLabel $ n
-    tree <- treeStoreGetTree store [1]
-    putStrLn $ show tree
-    let tGraphs = getTypeGraphs tree
+        Just (T.Node (TNInitialGraph _ _ g) _) -> editGraphRel canvas (head tGraphs) g
+        otherwise -> putStrLn "was anderes"
+--    editIGraph (T.rootLabel n))
     return ()
-        --(editIGraph (T.rootLabel n))
-  where
-    getName (TNInitialGraph _ s _) = s
-    getName (TNTypeGraph _ s _) = s
-    getName (TNRule _ s _) = s
-    getName (TNRoot s) = s
 
-getTypeGraphs :: T.Tree TreeNode -> [TreeNode]
-getTypeGraphs tree =
-    F.foldr (\n acc -> if checkNode n then n:acc else acc) [] tree
-  where
-    checkNode n = case n of
-        TNTypeGraph Active _ _ -> True
-        otherwise -> False
+editGraphRel :: DrawingArea -> Graph -> GraphRel -> IO ()
+editGraphRel canvas tGraph gRel@(GraphRel graph nR eR) =
+    putStrLn "hallo"
+{-
+do
+    let grBox = EditingBox
+                (GM.graphMorphism graph tGraph nR eR) NoEditing
+    dialog <- dialogNew
+    contentArea <- dialogGetContentArea dialog >>= return . castToBox
+
+    frame <- frameNew
+    frameSetLabel frame "Initial Graph"
+    canvas <- drawingAreaNew
+    containerAdd frame canvas
+    grBoxRef <- newIORef grBox
+    tFrame  <- frameNew
+    frameSetLabel tFrame "T Graph"
+    tCanvas <- drawingAreaNew
+    containerAdd tFrame tCanvas
+
+    canvas `on` buttonPressEvent $ mouseClick canvas tCanvas grBoxRef domClick
+    canvas `on` draw $ updateCanvas grBoxRef M.domain
+    widgetAddEvents canvas [Button3MotionMask]
+    canvas `on` motionNotifyEvent $ mouseMove canvas grBoxRef
+
     
-      
+    tCanvas `on` buttonPressEvent $ mouseClick canvas tCanvas grBoxRef codClick
+    tCanvas `on` draw $ updateCanvas grBoxRef M.codomain
+    widgetAddEvents tCanvas [Button3MotionMask]
+    tCanvas `on` motionNotifyEvent $ mouseMove tCanvas grBoxRef
+
+    boxPackStart contentArea frame PackGrow 1
+    boxPackStart contentArea tFrame PackGrow 1
+    dialogAddButton dialog "Cancel" ResponseCancel
+    dialogAddButton dialog "Apply" ResponseApply
+
+    widgetSetSizeRequest dialog 800 600
+    widgetShowAll dialog
+    response <- dialogRun dialog
+    morph <- readIORef grBoxRef >>= return . mapEdges . eBoxGraphMorphism
+--    let gram' = GG.graphGrammar morph (GG.rules gram)
+    case response of
+        ResponseApply | valid morph -> do
+--                           writeIORef gramRef gram'
+                           putStrLn $ "morphism valid"
+                           widgetDestroy dialog
+                      | otherwise -> putStrLn $ "morphism invalid"
+        otherwise -> do putStrLn $ "changes to initial graph cancelled"
+                        widgetDestroy dialog
+    return ()
+-}
+
+
+getActiveTypeGraphs :: T.Tree TreeNode -> [Graph]
+getActiveTypeGraphs tree =
+    F.foldr (\n acc -> case n of
+                          TNTypeGraph Active _ g -> g : acc
+                          otherwise -> acc)
+            [] tree
 
 
 grammarToModel :: Grammar -> IO (TreeStore TreeNode)
@@ -221,7 +269,7 @@ grammarToModel gg = do
     treeStoreInsert tree [] 0 iGraphRel
     treeStoreInsert tree [] 1 $ TNRoot "Type Graphs"
 --    treeStoreInsert tree [] 2 $ TNRoot "Rules"
---    treeStoreInsertTree tree [] 2 ruleTree
+    treeStoreInsertTree tree [] 2 ruleTree
     treeStoreInsert tree [1] 0 tGraph
     return tree
   where
@@ -231,12 +279,17 @@ grammarToModel gg = do
     iGraphRel = TNInitialGraph Active "G0" $
         GraphRel (M.domain iGraph) iNodeRel iEdgeRel
     tGraph    = TNTypeGraph Active "t0" $ GG.typeGraph gg
-{-
     ruleTree  = T.Node (TNRoot "Rules") ruleForest
     ruleForest = foldr (\(s, r) acc ->
-        (T.Node (TNRule Active s r) []) : acc) [] rules
+        (T.Node (TNRule Active s (ruleToGraphRel r)) []) : acc) [] rules
+    ruleToGraphRel r = GraphRel (M.domain dom)
+                                nodeRel
+                                edgeRel
+        where
+            dom = M.domain . GR.left $ r
+            nodeRel = GM.nodeRelation dom
+            edgeRel = GM.edgeRelation dom
     rules  = GG.rules gg
--}
 
 testGrammar :: Grammar
 testGrammar =
