@@ -60,7 +60,13 @@ instance Renderable (RGraph) where
         mapM_ (render . RNode g) $ G.nodes g
 --        mapM_ (render . REdge g) $ G.edges g
 
+
+data CanvasMode = IGraphMode |
+                  TGraphMode String |
+                  RuleMode String
+
 data State = State {
+    canvasMode :: CanvasMode,
     getInitialGraph :: GraphRel,
     getTypeGraphs   :: M.Map String (NodeStatus, Graph),
     getRules        :: M.Map String (NodeStatus, GraphRel)
@@ -170,7 +176,7 @@ addMainCallbacks gui stateRef = do
         addRuleButton = addRule bs
         okButton = getOkButton bs
     window `on` objectDestroy $ mainQuit
-    canvas `on` draw $ updateCanvas 
+    canvas `on` draw $ updateCanvas stateRef
     view `on` rowActivated $ rowSelected store stateRef
 --    viewRef <- newIORef view
  --   gram <- readIORef gramRef
@@ -178,14 +184,39 @@ addMainCallbacks gui stateRef = do
 --    addRuleButton `on` buttonActivated $ ruleDialog gramRef
 --    okButton `on` buttonActivated $ updateModel gram viewRef
     return ()
-  where
-    updateCanvas = do
-        setLineWidth defLineWidth
-        renderColor defBorderColor
-        Gtk.arc 100 40 defRadius 0 $ 2 * pi
-        strokePreserve
-        renderColor neutralColor
-        fill
+
+rowSelected store stateRef path _ = do
+--    tree <- treeStoreGetTree store [1]
+--    Just model <- treeViewGetModel view
+--    Just iter  <- treeModelGetIterFirst model
+    state <- readIORef stateRef
+    let tGraphs = getActiveTypeGraphs state
+    node <- treeStoreLookup store path
+
+    case node of
+        Nothing -> return ()
+--        Just (T.Node (TNInitialGraph _ _ g) _) -> editGraphRel (head tGraphs) g
+--        Just n -> processClicked stateRef
+        Just n -> putStrLn "clicked"
+--        otherwise -> putStrLn "was anderes"
+
+--    editIGraph (T.rootLabel n))
+    return ()
+
+updateCanvas :: IORef State -> Render ()
+updateCanvas stateRef = do
+    state <- liftIO $ readIORef stateRef
+    case canvasMode state of
+        IGraphMode -> render . RGraph . getGraph . getInitialGraph $ state
+        otherwise  -> do
+            setLineWidth defLineWidth
+            renderColor defBorderColor
+            Gtk.arc 100 40 defRadius 0 $ 2 * pi
+            strokePreserve
+            renderColor neutralColor
+            fill
+            return ()
+   where
     defRadius = 20 :: Double
     defLineWidth = 2 :: Double
     defBorderColor = black
@@ -196,9 +227,7 @@ addMainCallbacks gui stateRef = do
       where
         rgb = toSRGB k
         (r, g, b) = (channelRed rgb, channelGreen rgb, channelBlue rgb)
-
-
-
+      
 
 openFile :: IO ()
 openFile = do
@@ -251,22 +280,6 @@ createView store = do
     getName (TNRoot s) = s
     getName (TNRule _ s) = s
 
-rowSelected store stateRef path _ = do
---    tree <- treeStoreGetTree store [1]
---    Just model <- treeViewGetModel view
---    Just iter  <- treeModelGetIterFirst model
-    state <- readIORef stateRef
-    let tGraphs = getActiveTypeGraphs state
-    node <- treeStoreLookup store path
-
-    case node of
-        Nothing -> return ()
---        Just (T.Node (TNInitialGraph _ _ g) _) -> editGraphRel (head tGraphs) g
-        Just n -> putStrLn . show $ n
---        otherwise -> putStrLn "was anderes"
-
---    editIGraph (T.rootLabel n))
-    return ()
 
 editGraphRel :: Graph -> GraphRel -> IO ()
 editGraphRel tGraph gRel@(GraphRel graph nR eR) = putStrLn "editing"
@@ -329,7 +342,7 @@ getActiveTypeGraphs state =
     active _ = False
 
 grammarToState :: Grammar -> State
-grammarToState gg = State iGraphRel tGraphMap rulesMap
+grammarToState gg = State IGraphMode iGraphRel tGraphMap rulesMap
   where
     iGraph    = GG.initialGraph gg
     iNodeRel  = GM.nodeRelation iGraph
