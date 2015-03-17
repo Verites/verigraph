@@ -40,25 +40,52 @@ iGraphIdx = 0
 tGraphIdx = 1
 rulesIdx = 2
 
+{- Data types for rendering -}
+data RNode = RNode Graph G.NodeId
+data REdge = REdge Graph G.EdgeId
+data RGraph = RGraph Graph
+
+class Renderable a where
+    render :: a -> Render ()
+
+instance Renderable (RNode) where
+    render (RNode g n) =
+        case G.nodePayload g n of
+            Just (c, f) -> f c
+            otherwise   -> return ()
+
+
+instance Renderable (RGraph) where
+    render (RGraph g) = do
+        mapM_ (render . RNode g) $ G.nodes g
+--        mapM_ (render . REdge g) $ G.edges g
+
+data State = State {
+    getInitialGraph :: GraphRel,
+    getTypeGraphs   :: M.Map String (NodeStatus, Graph),
+    getRules        :: M.Map String (NodeStatus, GraphRel)
+    }
+
 data GraphRel = GraphRel { getGraph :: Graph,
                            getNodeRelation :: R.Relation G.NodeId,
                            getEdgeRelation :: R.Relation G.EdgeId
                          }
-data TreeNode = TNInitialGraph NodeStatus String GraphRel | 
-                TNTypeGraph NodeStatus String Graph |
-                TNRule NodeStatus String GraphRel |
+data TreeNode = TNInitialGraph NodeStatus String | 
+                TNTypeGraph NodeStatus String |
+                TNRule NodeStatus String |
                 TNRoot String
 
 instance Show TreeNode where
-    show (TNInitialGraph _ s _) = s
-    show (TNTypeGraph _ s _) = s
-    show (TNRule _ s _) = s
+    show (TNInitialGraph _ s ) = s
+    show (TNTypeGraph _ s) = s
+    show (TNRule _ s) = s
     show (TNRoot s) = s
 
 
 data NodeStatus = Active | Inactive
 
 data GUI = GUI {
+    treeStore :: TreeStore TreeNode,
     treeView :: TreeView,
     mainWindow    :: Window,
     buttons :: Buttons,
@@ -75,15 +102,17 @@ data Buttons = Buttons {
 runGUI :: IO ()
 runGUI = do
 --    gramRef <- newIORef grammar
-    gui <- createGUI
+    let state = grammarToState testGrammar
+    stateRef <- newIORef state
+    gui <- createGUI state
     showGUI gui
-    addMainCallbacks gui
+    addMainCallbacks gui stateRef
     return ()
 
 showGUI = widgetShowAll . mainWindow
 
-createGUI :: IO GUI
-createGUI = do
+createGUI :: State -> IO GUI
+createGUI state = do
     window <- windowNew
     set window [ windowTitle := "Verigraph" ]
     mainVBox <- vBoxNew False 1
@@ -108,40 +137,66 @@ createGUI = do
     openItem `on` menuItemActivated $ openFile
     
     canvas <- drawingAreaNew
-    view <- createViewAndModel canvas
+    store <- createModel state
+    view <- createView store
     boxPackStart mainVBox menuBar PackNatural 1
     boxPackStart mainVBox hBox PackGrow 1
     boxPackStart hBox vBox0 PackNatural 1
-    boxPackStart hBox vBox1 PackNatural 1
+    boxPackStart hBox vBox1 PackGrow 1
 
     boxPackStart vBox0 view PackGrow 1
 
     iGraphButton <- buttonNewWithLabel "Edit initial graph"
     addRuleButton <- buttonNewWithLabel "Add rule"
     okButton <- buttonNewWithLabel "OK"
+{-
     boxPackStart vBox1 iGraphButton PackNatural 1
     boxPackStart vBox1 addRuleButton PackNatural 1
     boxPackStart vBox1 okButton PackNatural 1
+-}
+    boxPackStart vBox1 canvas PackGrow 1
 
     let buttons = Buttons iGraphButton addRuleButton okButton
-    return $ GUI view window buttons canvas 
+    return $ GUI store view window buttons canvas 
 
-addMainCallbacks :: GUI -> IO ()
-addMainCallbacks gui = do
+addMainCallbacks :: GUI -> IORef State -> IO ()
+addMainCallbacks gui stateRef = do
     let window   = mainWindow gui
         view = treeView gui
+        store = treeStore gui
+        canvas = getCanvas gui
         bs = buttons gui
         iGraphButton = editInitialGraph bs
         addRuleButton = addRule bs
         okButton = getOkButton bs
     window `on` objectDestroy $ mainQuit
-
+    canvas `on` draw $ updateCanvas 
+    view `on` rowActivated $ rowSelected store stateRef
 --    viewRef <- newIORef view
  --   gram <- readIORef gramRef
 --    iGraphButton `on` buttonActivated $ iGraphDialog view
 --    addRuleButton `on` buttonActivated $ ruleDialog gramRef
 --    okButton `on` buttonActivated $ updateModel gram viewRef
     return ()
+  where
+    updateCanvas = do
+        setLineWidth defLineWidth
+        renderColor defBorderColor
+        Gtk.arc 100 40 defRadius 0 $ 2 * pi
+        strokePreserve
+        renderColor neutralColor
+        fill
+    defRadius = 20 :: Double
+    defLineWidth = 2 :: Double
+    defBorderColor = black
+    defSpacing = 1
+    neutralColor = gray
+    renderColor :: Kolor -> Gtk.Render ()
+    renderColor k = setSourceRGB r g b
+      where
+        rgb = toSRGB k
+        (r, g, b) = (channelRed rgb, channelGreen rgb, channelBlue rgb)
+
 
 
 
@@ -154,10 +209,15 @@ openFile = do
   where
     buttons = [ ("Cancel", ResponseCancel), ("Open", ResponseOk) ]
 
-createViewAndModel :: DrawingArea -> IO TreeView
-createViewAndModel canvas = do
+createModel :: State -> IO (TreeStore TreeNode)
+createModel state = stateToModel state
+
+createView :: TreeStore TreeNode -> IO TreeView
+createView store = do
 --    tree <- treeStoreNew [] :: IO (TreeStore GrammarTree)
-    store <- grammarToModel testGrammar
+--    let state = grammarToState testGrammar
+--    stateRef <- newIORef state
+--    store <- stateToModel state
     
 {-
     treeStoreInsert tree [] 0 "Graph"
@@ -179,32 +239,38 @@ createViewAndModel canvas = do
     treeViewSetModel view store
 --    treeViewColumnAddAttribute col renderer "text" 0
 
-    view `on` rowActivated $ rowSelected canvas store
+--    view `on` rowActivated $ rowSelected stateRef
 --    view `on` rowActivated $ rowSelected tree
 --    view `on` rowActivated $ editIGraph tree path col
     return view
   where
-    grammar :: GG.GraphGrammar NodePayload EdgePayload
-    grammar = GG.graphGrammar (GM.empty G.empty G.empty) []
-    getName (TNInitialGraph _ s _) = s
-    getName (TNTypeGraph _ s _) = s
+--    grammar :: GG.GraphGrammar NodePayload EdgePayload
+--    grammar = GG.graphGrammar (GM.empty G.empty G.empty) []
+    getName (TNInitialGraph _ s) = s
+    getName (TNTypeGraph _ s) = s
     getName (TNRoot s) = s
-    getName (TNRule _ s _) = s
+    getName (TNRule _ s) = s
 
-rowSelected canvas store path _ = do
-    tree <- treeStoreGetTree store [1]
-    let tGraphs = getActiveTypeGraphs tree
+rowSelected store stateRef path _ = do
+--    tree <- treeStoreGetTree store [1]
+--    Just model <- treeViewGetModel view
+--    Just iter  <- treeModelGetIterFirst model
+    state <- readIORef stateRef
+    let tGraphs = getActiveTypeGraphs state
     node <- treeStoreLookup store path
+
     case node of
         Nothing -> return ()
-        Just (T.Node (TNInitialGraph _ _ g) _) -> editGraphRel canvas (head tGraphs) g
-        otherwise -> putStrLn "was anderes"
+--        Just (T.Node (TNInitialGraph _ _ g) _) -> editGraphRel (head tGraphs) g
+        Just n -> putStrLn . show $ n
+--        otherwise -> putStrLn "was anderes"
+
 --    editIGraph (T.rootLabel n))
     return ()
 
-editGraphRel :: DrawingArea -> Graph -> GraphRel -> IO ()
-editGraphRel canvas tGraph gRel@(GraphRel graph nR eR) =
-    putStrLn "hallo"
+editGraphRel :: Graph -> GraphRel -> IO ()
+editGraphRel tGraph gRel@(GraphRel graph nR eR) = putStrLn "editing"
+
 {-
 do
     let grBox = EditingBox
@@ -255,16 +321,44 @@ do
 -}
 
 
-getActiveTypeGraphs :: T.Tree TreeNode -> [Graph]
-getActiveTypeGraphs tree =
-    F.foldr (\n acc -> case n of
-                          TNTypeGraph Active _ g -> g : acc
-                          otherwise -> acc)
-            [] tree
+getActiveTypeGraphs :: State -> [Graph]
+getActiveTypeGraphs state =
+    map (\(s, g) -> g) $ M.elems $ M.filter active $ getTypeGraphs state
+  where
+    active (Active, _) = True
+    active _ = False
 
+grammarToState :: Grammar -> State
+grammarToState gg = State iGraphRel tGraphMap rulesMap
+  where
+    iGraph    = GG.initialGraph gg
+    iNodeRel  = GM.nodeRelation iGraph
+    iEdgeRel  = GM.edgeRelation iGraph
+    iGraphRel = GraphRel (M.domain iGraph) iNodeRel iEdgeRel
+    tGraph = (Active, GG.typeGraph gg)
+    tGraphMap = M.insert "t0" tGraph $ M.empty
+    rulesMap = M.empty
+--    rules  = GG.rules gg
+--    ruleToGraphRel 
+--    rulesMap = foldr (\(s, r) acc -> M.insert s r acc) M.empty rules
+
+stateToModel :: State -> IO (TreeStore TreeNode)
+stateToModel state = do
+    tree <- treeStoreNew [] :: IO (TreeStore TreeNode)
+    treeStoreInsert tree [] 0 $ TNInitialGraph Active "G0"
+    treeStoreInsert tree [] 1 $ TNRoot "Type Graphs"
+    treeStoreInsertForest tree [1] 0 tGraphForest
+--    treeStoreInsertTree tree [] 2 ruleTree
+    return tree
+  where
+    rules   = getRules state
+    tGraphs = M.toList $ getTypeGraphs state
+    tGraphForest = map (\(s, g) -> T.Node (TNTypeGraph Active s) []) tGraphs
+    
 
 grammarToModel :: Grammar -> IO (TreeStore TreeNode)
-grammarToModel gg = do
+grammarToModel = stateToModel . grammarToState
+{-
     tree <- treeStoreNew [] :: IO (TreeStore TreeNode)
     treeStoreInsert tree [] 0 iGraphRel
     treeStoreInsert tree [] 1 $ TNRoot "Type Graphs"
@@ -290,6 +384,7 @@ grammarToModel gg = do
             nodeRel = GM.nodeRelation dom
             edgeRel = GM.edgeRelation dom
     rules  = GG.rules gg
+-}
 
 testGrammar :: Grammar
 testGrammar =
