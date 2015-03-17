@@ -197,7 +197,13 @@ rowSelected store stateRef path _ = do
         Nothing -> return ()
 --        Just (T.Node (TNInitialGraph _ _ g) _) -> editGraphRel (head tGraphs) g
 --        Just n -> processClicked stateRef
-        Just n -> putStrLn "clicked"
+        Just (T.Node (TNInitialGraph _ _) _) ->
+            writeIORef stateRef $ state { canvasMode = IGraphMode }
+        Just (T.Node (TNTypeGraph _ s) _) ->
+            writeIORef stateRef $ state { canvasMode = TGraphMode s }
+        Just (T.Node (TNRule _ s) _) ->
+            writeIORef stateRef $ state { canvasMode = RuleMode s }
+        otherwise -> return ()
 --        otherwise -> putStrLn "was anderes"
 
 --    editIGraph (T.rootLabel n))
