@@ -1,4 +1,4 @@
- module GUI (runGUI) where
+module GUI (runGUI) where
 -- module GUI (createGUI, addMainCallbacks, showGUI, NodePayload, EdgePayload) where
 
 import Control.Monad.Trans.Class (lift)
@@ -32,8 +32,7 @@ type Graph = G.Graph NodePayload EdgePayload
 type GraphMorphism = GM.GraphMorphism NodePayload EdgePayload
 type Rule  = GR.GraphRule NodePayload EdgePayload
 type Coords = (Double, Double)
-type DrawingFunc = Coords -> Render ()
-type NodePayload = (Coords, DrawingFunc)
+type NodePayload = (Coords, Render (), Coords -> Bool)
 type EdgePayload = Kolor
 data Obj = Node Int | Edge Int
     deriving (Show, Eq)
@@ -65,7 +64,7 @@ class Renderable a where
 instance Renderable (RNode) where
     render (RNode g n) =
         case G.nodePayload g n of
-            Just (c, f) -> f c
+            Just (coords, renderFunc, checkFunc) -> renderFunc coords
             otherwise   -> return ()
 
 
@@ -84,18 +83,30 @@ drawCircle color (x, y) = do
     renderColor color
     fill
 
+insideCircle :: Double -> Coords -> Coords -> Bool
+insideCircle radius circleCoords coords =
+    norm circleCoords coords <= radius
+
+norm :: Coords -> Coords -> Double
+norm (x, y) (x', y') =
+    sqrt $ (square (x' - x)) + (square (y' - y))
+  where
+    square x = x * x
+
+
+
 
 data CanvasMode = IGraphMode |
                   TGraphMode String |
                   RuleMode String
     deriving Show
 
-data State = State {
-    canvasMode :: CanvasMode,
-    getInitialGraph :: GraphRel,
-    getTypeGraphs   :: M.Map String (NodeStatus, Graph),
-    getRules        :: M.Map String (NodeStatus, GraphRel)
-    }
+-- To keep it uniform, typegraphs are also described as GraphRel
+data State = State { canvasMode :: CanvasMode,
+                     getInitialGraph :: GraphRel,
+                     getTypeGraphs   :: M.Map String (NodeStatus, GraphRel),
+                     getRules        :: M.Map String (NodeStatus, GraphRel)
+                   }
 
 data GraphRel = GraphRel { getGraph :: Graph,
                            getNodeRelation :: R.Relation G.NodeId,
@@ -243,8 +254,39 @@ mouseClick widget stateRef = do
     button <- eventButton
     click <- eventClick
     state <- liftIO $ readIORef stateRef
-        
-    return True                
+    let graph = currentGraph state
+        graph' = case graph of 
+                    Just g  -> processClick g coords button click
+                    Nothing -> graph
+    return True
+
+processClick :: Graph -> Coords -> MouseButton -> Click -> Graph
+processClick g coords@(x, y) button click =
+    case (objects, button, click) of
+        ([], LeftButton, DoubleClick) -> addNode
+        otherwise -> g
+  where
+    objects = filter (\(_, _, f) -> f coords) $
+              map (\n -> G.nodePayload g n) $
+              G.nodes g
+    addNode = newNode coords (drawCircle neutralColor) (insideCircle defRadius coords)
+
+newNode :: Graph -> Coords -> (Coords -> Render ()) -> (Coords -> Bool) -> Graph
+newNode graph coords renderFunc checkFunc  =
+    G.insertNodeWithPayload newId (coords, renderFunc, checkFunc) graph
+  where
+    newId = length . G.nodes $ graph
+
+
+currentGraph :: State -> Maybe GraphRel
+currentGraph state =
+    case canvasMode state of
+        IGraphMode   -> Just $ getInitialGraph state
+        TGraphMode k -> M.lookup k tGraphs >>= return . snd
+        RuleMode k   -> M.lookup k rules >>= return . snd
+  where
+    tGraphs = getTypeGraphs state
+    rules   = getRules state
 
 {-
 fetchObj :: Graph -> Coords -> Maybe Obj
