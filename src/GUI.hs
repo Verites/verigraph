@@ -64,6 +64,7 @@ instance Renderable (RGraph) where
 data CanvasMode = IGraphMode |
                   TGraphMode String |
                   RuleMode String
+    deriving Show
 
 data State = State {
     canvasMode :: CanvasMode,
@@ -177,7 +178,7 @@ addMainCallbacks gui stateRef = do
         okButton = getOkButton bs
     window `on` objectDestroy $ mainQuit
     canvas `on` draw $ updateCanvas stateRef
-    view `on` rowActivated $ rowSelected store stateRef
+    view `on` rowActivated $ rowSelected gui store stateRef
 --    viewRef <- newIORef view
  --   gram <- readIORef gramRef
 --    iGraphButton `on` buttonActivated $ iGraphDialog view
@@ -185,7 +186,7 @@ addMainCallbacks gui stateRef = do
 --    okButton `on` buttonActivated $ updateModel gram viewRef
     return ()
 
-rowSelected store stateRef path _ = do
+rowSelected gui store stateRef path _ = do
 --    tree <- treeStoreGetTree store [1]
 --    Just model <- treeViewGetModel view
 --    Just iter  <- treeModelGetIterFirst model
@@ -193,36 +194,43 @@ rowSelected store stateRef path _ = do
     let tGraphs = getActiveTypeGraphs state
     node <- treeStoreLookup store path
 
-    case node of
-        Nothing -> return ()
 --        Just (T.Node (TNInitialGraph _ _ g) _) -> editGraphRel (head tGraphs) g
 --        Just n -> processClicked stateRef
-        Just (T.Node (TNInitialGraph _ _) _) ->
-            writeIORef stateRef $ state { canvasMode = IGraphMode }
-        Just (T.Node (TNTypeGraph _ s) _) ->
-            writeIORef stateRef $ state { canvasMode = TGraphMode s }
-        Just (T.Node (TNRule _ s) _) ->
-            writeIORef stateRef $ state { canvasMode = RuleMode s }
-        otherwise -> return ()
+    let state' = case node of
+                    Just (T.Node (TNInitialGraph _ _) _) ->
+                        state { canvasMode = IGraphMode }
+                    Just (T.Node (TNTypeGraph _ s) _) ->
+                        state { canvasMode = TGraphMode s }
+                    Just (T.Node (TNRule _ s) _) ->
+                        state { canvasMode = RuleMode s }
+                    otherwise -> state
 --        otherwise -> putStrLn "was anderes"
 
 --    editIGraph (T.rootLabel n))
+    writeIORef stateRef state'
+    widgetQueueDraw $ getCanvas gui
     return ()
 
 updateCanvas :: IORef State -> Render ()
 updateCanvas stateRef = do
     state <- liftIO $ readIORef stateRef
     case canvasMode state of
-        IGraphMode -> render . RGraph . getGraph . getInitialGraph $ state
-        otherwise  -> do
-            setLineWidth defLineWidth
-            renderColor defBorderColor
+        IGraphMode -> do --render . RGraph . getGraph . getInitialGraph $ state
+            renderColor orange
             Gtk.arc 100 40 defRadius 0 $ 2 * pi
-            strokePreserve
-            renderColor neutralColor
             fill
             return ()
-   where
+        TGraphMode _ -> do
+            renderColor green
+            Gtk.arc 100 40 defRadius 0 $ 2 * pi
+            fill
+            return ()
+        otherwise  -> do
+            renderColor red
+            Gtk.arc 100 40 defRadius 0 $ 2 * pi
+            fill
+            return ()
+  where
     defRadius = 20 :: Double
     defLineWidth = 2 :: Double
     defBorderColor = black
