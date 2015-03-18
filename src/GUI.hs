@@ -35,10 +35,24 @@ type Coords = (Double, Double)
 type DrawingFunc = Coords -> Render ()
 type NodePayload = (Coords, DrawingFunc)
 type EdgePayload = Kolor
+data Obj = Node Int | Edge Int
+    deriving (Show, Eq)
 
 iGraphIdx = 0
 tGraphIdx = 1
 rulesIdx = 2
+defRadius = 20 :: Double
+defLineWidth = 2 :: Double
+defBorderColor = black
+defSpacing = 1
+neutralColor = gray
+renderColor :: Kolor -> Gtk.Render ()
+renderColor k = setSourceRGB r g b
+  where
+    rgb = toSRGB k
+    (r, g, b) = (channelRed rgb, channelGreen rgb, channelBlue rgb)
+
+
 
 {- Data types for rendering -}
 data RNode = RNode Graph G.NodeId
@@ -59,6 +73,16 @@ instance Renderable (RGraph) where
     render (RGraph g) = do
         mapM_ (render . RNode g) $ G.nodes g
 --        mapM_ (render . REdge g) $ G.edges g
+
+
+drawCircle :: Kolor -> Coords -> Render ()
+drawCircle color (x, y) = do
+    setLineWidth defLineWidth
+    renderColor defBorderColor
+    Gtk.arc x y defRadius 0 $ 2 * pi
+    strokePreserve
+    renderColor color
+    fill
 
 
 data CanvasMode = IGraphMode |
@@ -177,6 +201,7 @@ addMainCallbacks gui stateRef = do
         addRuleButton = addRule bs
         okButton = getOkButton bs
     window `on` objectDestroy $ mainQuit
+    canvas `on` buttonPressEvent $ mouseClick canvas stateRef
     canvas `on` draw $ updateCanvas stateRef
     view `on` rowActivated $ rowSelected gui store stateRef
 --    viewRef <- newIORef view
@@ -211,6 +236,27 @@ rowSelected gui store stateRef path _ = do
     widgetQueueDraw $ getCanvas gui
     return ()
 
+mouseClick :: WidgetClass widget =>
+    widget -> IORef State -> EventM EButton Bool
+mouseClick widget stateRef = do
+    coords <- eventCoordinates
+    button <- eventButton
+    click <- eventClick
+    state <- liftIO $ readIORef stateRef
+        
+    return True                
+
+{-
+fetchObj :: Graph -> Coords -> Maybe Obj
+fetchObj graph coords
+    | not . null $ fetchNodes = Just . Node . head $ fetchNodes
+--    | not . null $ fetchEdges = Just . Node . head $ fetchEdges
+    | otherwise = Nothing
+  where
+    fetchNodes = filter (overNode graph coords) $ G.nodes graph
+-}
+
+
 updateCanvas :: IORef State -> Render ()
 updateCanvas stateRef = do
     state <- liftIO $ readIORef stateRef
@@ -230,17 +276,6 @@ updateCanvas stateRef = do
             Gtk.arc 100 40 defRadius 0 $ 2 * pi
             fill
             return ()
-  where
-    defRadius = 20 :: Double
-    defLineWidth = 2 :: Double
-    defBorderColor = black
-    defSpacing = 1
-    neutralColor = gray
-    renderColor :: Kolor -> Gtk.Render ()
-    renderColor k = setSourceRGB r g b
-      where
-        rgb = toSRGB k
-        (r, g, b) = (channelRed rgb, channelGreen rgb, channelBlue rgb)
       
 
 openFile :: IO ()
@@ -428,4 +463,6 @@ testGrammar =
 -}
     nR = R.empty [] []
     eR = R.empty [] []
+
+
 
