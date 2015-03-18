@@ -32,7 +32,7 @@ type Graph = G.Graph NodePayload EdgePayload
 type GraphMorphism = GM.GraphMorphism NodePayload EdgePayload
 type Rule  = GR.GraphRule NodePayload EdgePayload
 type Coords = (Double, Double)
-type NodePayload = (Coords, Render (), Coords -> Bool)
+type NodePayload = (Coords, Coords -> Render (), Coords -> Bool)
 type EdgePayload = Kolor
 data Obj = Node Int | Edge Int
     deriving (Show, Eq)
@@ -249,27 +249,36 @@ rowSelected gui store stateRef path _ = do
 
 mouseClick :: WidgetClass widget =>
     widget -> IORef State -> EventM EButton Bool
-mouseClick widget stateRef = do
+mouseClick canvas stateRef = do
     coords <- eventCoordinates
     button <- eventButton
     click <- eventClick
     state <- liftIO $ readIORef stateRef
-    let graph = currentGraph state
-        graph' = case graph of 
-                    Just g  -> processClick g coords button click
-                    Nothing -> graph
+    let Just grel = currentGraph state -- FIXME unsafe pattern matching
+        grel' = processClick grel coords button click
+    liftIO $ writeIORef stateRef $ do 
+        case canvasMode state of
+            IGraphMode -> state { getInitialGraph = grel' }
+            TGraphMode k -> state { getTypeGraphs =
+                                        M.insert k (Active, grel') -- FIXME get status
+                                                   (getTypeGraphs state) }
+            otherwise -> state
+    liftIO $ widgetQueueDraw canvas
     return True
 
-processClick :: Graph -> Coords -> MouseButton -> Click -> Graph
-processClick g coords@(x, y) button click =
+processClick :: GraphRel -> Coords -> MouseButton -> Click -> GraphRel
+processClick grel coords@(x, y) button click =
     case (objects, button, click) of
-        ([], LeftButton, DoubleClick) -> addNode
-        otherwise -> g
+        ([], LeftButton, DoubleClick) -> grel { getGraph = addNode }
+        otherwise -> grel
   where
-    objects = filter (\(_, _, f) -> f coords) $
-              map (\n -> G.nodePayload g n) $
-              G.nodes g
-    addNode = newNode coords (drawCircle neutralColor) (insideCircle defRadius coords)
+    g = getGraph grel
+    listPayloads = map (\n -> G.nodePayload g n) $ G.nodes g
+    objects = filter (\p -> case p of
+                                Just (coords, _ , cf) -> cf coords
+                                otherwise -> False)
+                     listPayloads
+    addNode = newNode g coords (drawCircle neutralColor) (insideCircle defRadius coords)
 
 newNode :: Graph -> Coords -> (Coords -> Render ()) -> (Coords -> Bool) -> Graph
 newNode graph coords renderFunc checkFunc  =
@@ -425,9 +434,9 @@ do
 -}
 
 
-getActiveTypeGraphs :: State -> [Graph]
+getActiveTypeGraphs :: State -> [GraphRel]
 getActiveTypeGraphs state =
-    map (\(s, g) -> g) $ M.elems $ M.filter active $ getTypeGraphs state
+    map (\(s, g) -> g) $ M.elems . M.filter active . getTypeGraphs $ state
   where
     active (Active, _) = True
     active _ = False
@@ -439,7 +448,8 @@ grammarToState gg = State IGraphMode iGraphRel tGraphMap rulesMap
     iNodeRel  = GM.nodeRelation iGraph
     iEdgeRel  = GM.edgeRelation iGraph
     iGraphRel = GraphRel (M.domain iGraph) iNodeRel iEdgeRel
-    tGraph = (Active, GG.typeGraph gg)
+    emptyRel = R.empty [] []
+    tGraph = (Active, GraphRel (GG.typeGraph gg) emptyRel emptyRel)
     tGraphMap = M.insert "t0" tGraph $ M.empty
     rulesMap = M.empty
 --    rules  = GG.rules gg
