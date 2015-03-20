@@ -95,29 +95,40 @@ norm (x, y) (x', y') =
   where
     square x = x * x
 
-
-
-
-data CanvasMode = IGraphMode |
-                  TGraphMode String |
-                  RuleMode String
+data CanvasMode = IGraphMode Key |
+                  TGraphMode Key |
+                  RuleMode Key
     deriving Show
 
+
+data SelMode = SelNodes [G.NodeId]
+             | SelEdges [G.EdgeId]
+             | DragNodes [G.NodeId]
+             | DrawEdge G.NodeId
+             | IdleMode
+    
+
+data RowStatus = Active | Inactive
+
+type GrammarEntry = (RowStatus, SelMode, GraphRel)
+type Key = String
+
 -- To keep it uniform, typegraphs are also described as GraphRel
-data State = State { canvasMode :: CanvasMode,
-                     getInitialGraph :: GraphRel,
-                     getTypeGraphs   :: [(String, (NodeStatus, GraphRel))],
-                     getRules        :: [(String, (NodeStatus, GraphRel))]
-                   }
+data State =
+    State { canvasMode :: CanvasMode,
+            getInitialGraphs :: [(Key, GrammarEntry)],
+            getTypeGraphs   :: [(Key, GrammarEntry)],
+            getRules        :: [(Key, GrammarEntry)]
+          }
 
 data GraphRel = GraphRel { getGraph :: Graph,
                            getNodeRelation :: R.Relation G.NodeId,
                            getEdgeRelation :: R.Relation G.EdgeId
                          } deriving Show
-data TreeNode = TNInitialGraph NodeStatus String | 
-                TNTypeGraph NodeStatus String |
-                TNRule NodeStatus String |
-                TNRoot String
+data TreeNode = TNInitialGraph RowStatus Key | 
+                TNTypeGraph RowStatus Key |
+                TNRule RowStatus Key |
+                TNRoot Key
 
 instance Show TreeNode where
     show (TNInitialGraph _ s ) = s
@@ -126,7 +137,6 @@ instance Show TreeNode where
     show (TNRoot s) = s
 
 
-data NodeStatus = Active | Inactive
 
 data GUI = GUI {
     treeStore :: TreeStore TreeNode,
@@ -226,8 +236,8 @@ rowSelected gui store stateRef path _ = do
     node <- treeStoreLookup store path
 
     let state' = case node of
-                    Just (T.Node (TNInitialGraph _ _) _) ->
-                        state { canvasMode = IGraphMode }
+                    Just (T.Node (TNInitialGraph _ s) _) ->
+                        state { canvasMode = IGraphMode s }
                     Just (T.Node (TNTypeGraph _ s) _) ->
                         state { canvasMode = TGraphMode s }
                     Just (T.Node (TNRule _ s) _) ->
@@ -249,10 +259,13 @@ mouseClick canvas stateRef = do
         grel' = processClick grel coords button click
     liftIO $ writeIORef stateRef $
         case canvasMode state of
-            IGraphMode -> state { getInitialGraph = grel' }
+            IGraphMode k -> state { getInitialGraphs =
+                                        addToAL (getInitialGraphs state)
+                                                k (Active, IdleMode, grel')
+                                }
             TGraphMode k -> state { getTypeGraphs =
                                         addToAL (getTypeGraphs state)
-                                                k (Active, grel') -- FIXME get status
+                                                k (Active, IdleMode, grel') -- FIXME get status
                                   }
             otherwise -> state
     liftIO $ widgetQueueDraw canvas
@@ -283,29 +296,34 @@ newNode graph coords renderFunc checkFunc  =
 currentGraph :: State -> Maybe GraphRel
 currentGraph state =
     case canvasMode state of
-        IGraphMode   -> Just $ getInitialGraph state
-        TGraphMode k -> lookup k tGraphs >>= return . snd
-        RuleMode k   -> lookup k rules >>= return . snd
+        IGraphMode k  -> lookup k iGraphs >>= return . graphRel
+        TGraphMode k -> lookup k tGraphs >>= return . graphRel
+        RuleMode k   -> lookup k rules >>= return . graphRel
   where
+    iGraphs = getInitialGraphs state
     tGraphs = getTypeGraphs state
     rules   = getRules state
+    graphRel = \(_, _, grel) -> grel
 
 
 updateCanvas :: IORef State -> Render ()
 updateCanvas stateRef = do
     state <- liftIO $ readIORef stateRef
     case canvasMode state of
-        IGraphMode -> render . RGraph . getGraph . getInitialGraph $ state
-        TGraphMode s ->
-            let tGraph = lookup s . getTypeGraphs $ state
-            in case tGraph of
-                Nothing -> return ()
-                Just t  -> render . RGraph . getGraph . snd $ t
+        IGraphMode k -> fetchAndRender k $ getInitialGraphs state
+        TGraphMode k -> fetchAndRender k $ getTypeGraphs state
         otherwise  -> do
             renderColor red
             Gtk.arc 100 40 defRadius 0 $ 2 * pi
             fill
             return ()
+  where
+    graphRel = \(_, _, grel) -> grel
+    fetchAndRender k l =
+        let graph = lookup k l
+        in case graph of
+            Nothing -> return ()
+            Just t  -> render . RGraph . getGraph . graphRel $ t
       
 
 openFile :: IO ()
@@ -345,21 +363,22 @@ createView store = do
 
 getActiveTypeGraphs :: State -> [GraphRel]
 getActiveTypeGraphs state =
-    map (\(_, (_, g)) -> g) $ filter active . getTypeGraphs $ state
+    map (\(_, (_, _, g)) -> g) $ filter active . getTypeGraphs $ state
   where
-    active (_, (Active, _)) = True
+    active (_, (Active, _, _)) = True
     active _ = False
 
 grammarToState :: Grammar -> State
-grammarToState gg = State IGraphMode iGraphRel tGraphList rulesList
+grammarToState gg = State (IGraphMode "g0") iGraphList tGraphList rulesList
   where
     iGraph    = GG.initialGraph gg
     iNodeRel  = GM.nodeRelation iGraph
     iEdgeRel  = GM.edgeRelation iGraph
     iGraphRel = GraphRel (M.domain iGraph) iNodeRel iEdgeRel
     emptyRel = R.empty [] []
-    tGraph = (Active, GraphRel (GG.typeGraph gg) emptyRel emptyRel)
+    tGraph = (Active, IdleMode, GraphRel (GG.typeGraph gg) emptyRel emptyRel)
     tGraphList = addToAL [] "t0" tGraph
+    iGraphList = [("g0", (Active, IdleMode, iGraphRel))]
     rulesList = []
 --    rules  = GG.rules gg
 --    ruleToGraphRel 
