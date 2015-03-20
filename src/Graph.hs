@@ -25,6 +25,7 @@ module Graph (
     , nodesConnectedTo
     , nodesFromNode
     , nodesIntoNode
+    , nodesWithPayload
     , Graph.null
     , removeEdge
     , removeNode
@@ -144,6 +145,10 @@ edges (Graph _ es) = keysAL es
 
 nodePayload :: Graph a b -> NodeId -> Maybe a
 nodePayload g n = (lookup n $ nodeMap g) >>= getNodePayload
+
+nodesWithPayload :: Graph a b -> [(NodeId, Maybe a)]
+nodesWithPayload (Graph nodeMap _) =
+    map (\(k, n) -> (k, getNodePayload n)) nodeMap
 
 edgePayload :: EdgeId -> Graph a b -> Maybe b
 edgePayload e g = (lookup e $ edgeMap g) >>= getEdgePayload

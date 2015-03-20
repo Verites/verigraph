@@ -116,13 +116,14 @@ type Key = String
 
 -- To keep it uniform, typegraphs are also described as GraphEditState
 data State =
-    State { canvasMode :: CanvasMode,
+    State { canvasMode       :: CanvasMode,
             getInitialGraphs :: [(Key, GraphEditState)],
-            getTypeGraphs   :: [(Key, GraphEditState)],
-            getRules        :: [(Key, GraphEditState)]
+            getTypeGraphs    :: [(Key, GraphEditState)],
+            getRules         :: [(Key, GraphEditState)]
           }
 
-data GraphEditState = GraphEditState { getStatus :: RowStatus
+data GraphEditState = GraphEditState {
+                           getStatus :: RowStatus
                          , getSelMode :: SelMode
                          , getGraph :: Graph
                          , getNodeRelation :: R.Relation G.NodeId
@@ -278,14 +279,17 @@ processClick :: GraphEditState -> Coords -> MouseButton -> Click -> GraphEditSta
 processClick gstate coords@(x, y) button click =
     case (objects, button, click) of
         ([], LeftButton, DoubleClick) -> gstate { getGraph = addNode }
+        (((k, p):_), LeftButton, DoubleClick) ->
+            gstate { getSelMode = SelNodes [k] }
         otherwise -> gstate
   where
     g = getGraph gstate
-    listPayloads = map (\n -> G.nodePayload g n) $ G.nodes g
-    objects = filter (\p -> case p of
-                                Just (refCoords, _ , cf) -> cf refCoords coords
-                                otherwise -> False)
-                     listPayloads
+    listPayloads = G.nodesWithPayload g
+    objects =
+        filter (\p -> case p of
+                          (_, Just (refCoords, _ , cf)) -> cf refCoords coords
+                          otherwise -> False)
+               listPayloads
     addNode = newNode g coords (drawCircle neutralColor) (insideCircle defRadius)
 
 newNode :: Graph -> Coords -> (Coords -> Render ())
