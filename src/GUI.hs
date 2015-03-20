@@ -106,24 +106,27 @@ data SelMode = SelNodes [G.NodeId]
              | DragNodes [G.NodeId]
              | DrawEdge G.NodeId
              | IdleMode
+    deriving Show
     
 
 data RowStatus = Active | Inactive
+    deriving (Eq, Show)
 
-type GrammarEntry = (RowStatus, SelMode, GraphRel)
 type Key = String
 
--- To keep it uniform, typegraphs are also described as GraphRel
+-- To keep it uniform, typegraphs are also described as GraphEditState
 data State =
     State { canvasMode :: CanvasMode,
-            getInitialGraphs :: [(Key, GrammarEntry)],
-            getTypeGraphs   :: [(Key, GrammarEntry)],
-            getRules        :: [(Key, GrammarEntry)]
+            getInitialGraphs :: [(Key, GraphEditState)],
+            getTypeGraphs   :: [(Key, GraphEditState)],
+            getRules        :: [(Key, GraphEditState)]
           }
 
-data GraphRel = GraphRel { getGraph :: Graph,
-                           getNodeRelation :: R.Relation G.NodeId,
-                           getEdgeRelation :: R.Relation G.EdgeId
+data GraphEditState = GraphEditState { getStatus :: RowStatus
+                         , getSelMode :: SelMode
+                         , getGraph :: Graph
+                         , getNodeRelation :: R.Relation G.NodeId
+                         , getEdgeRelation :: R.Relation G.EdgeId
                          } deriving Show
 data TreeNode = TNInitialGraph RowStatus Key | 
                 TNTypeGraph RowStatus Key |
@@ -255,29 +258,29 @@ mouseClick canvas stateRef = do
     button <- eventButton
     click <- eventClick
     state <- liftIO $ readIORef stateRef
-    let Just grel = currentGraph state -- FIXME unsafe pattern matching
-        grel' = processClick grel coords button click
+    let Just gstate = currentGraph state -- FIXME unsafe pattern matching
+        gstate' = processClick gstate coords button click
     liftIO $ writeIORef stateRef $
         case canvasMode state of
             IGraphMode k -> state { getInitialGraphs =
                                         addToAL (getInitialGraphs state)
-                                                k (Active, IdleMode, grel')
+                                                k gstate'
                                 }
             TGraphMode k -> state { getTypeGraphs =
                                         addToAL (getTypeGraphs state)
-                                                k (Active, IdleMode, grel') -- FIXME get status
+                                                k gstate'
                                   }
             otherwise -> state
     liftIO $ widgetQueueDraw canvas
     return True
 
-processClick :: GraphRel -> Coords -> MouseButton -> Click -> GraphRel
-processClick grel coords@(x, y) button click =
+processClick :: GraphEditState -> Coords -> MouseButton -> Click -> GraphEditState
+processClick gstate coords@(x, y) button click =
     case (objects, button, click) of
-        ([], LeftButton, DoubleClick) -> grel { getGraph = addNode }
-        otherwise -> grel
+        ([], LeftButton, DoubleClick) -> gstate { getGraph = addNode }
+        otherwise -> gstate
   where
-    g = getGraph grel
+    g = getGraph gstate
     listPayloads = map (\n -> G.nodePayload g n) $ G.nodes g
     objects = filter (\p -> case p of
                                 Just (refCoords, _ , cf) -> cf refCoords coords
@@ -293,17 +296,16 @@ newNode graph coords renderFunc checkFunc  =
     newId = length . G.nodes $ graph
 
 
-currentGraph :: State -> Maybe GraphRel
+currentGraph :: State -> Maybe GraphEditState
 currentGraph state =
     case canvasMode state of
-        IGraphMode k  -> lookup k iGraphs >>= return . graphRel
-        TGraphMode k -> lookup k tGraphs >>= return . graphRel
-        RuleMode k   -> lookup k rules >>= return . graphRel
+        IGraphMode k  -> lookup k iGraphs
+        TGraphMode k -> lookup k tGraphs
+        RuleMode k   -> lookup k rules
   where
     iGraphs = getInitialGraphs state
     tGraphs = getTypeGraphs state
     rules   = getRules state
-    graphRel = \(_, _, grel) -> grel
 
 
 updateCanvas :: IORef State -> Render ()
@@ -318,12 +320,11 @@ updateCanvas stateRef = do
             fill
             return ()
   where
-    graphRel = \(_, _, grel) -> grel
     fetchAndRender k l =
         let graph = lookup k l
         in case graph of
             Nothing -> return ()
-            Just t  -> render . RGraph . getGraph . graphRel $ t
+            Just t  -> render . RGraph . getGraph $ t
       
 
 openFile :: IO ()
@@ -361,12 +362,11 @@ createView store = do
     getName (TNRule _ s) = s
 
 
-getActiveTypeGraphs :: State -> [GraphRel]
+getActiveTypeGraphs :: State -> [(Key, GraphEditState)]
 getActiveTypeGraphs state =
-    map (\(_, (_, _, g)) -> g) $ filter active . getTypeGraphs $ state
+    filter active $ getTypeGraphs state
   where
-    active (_, (Active, _, _)) = True
-    active _ = False
+    active (_, gstate) = getStatus gstate == Active
 
 grammarToState :: Grammar -> State
 grammarToState gg = State (IGraphMode "g0") iGraphList tGraphList rulesList
@@ -374,14 +374,14 @@ grammarToState gg = State (IGraphMode "g0") iGraphList tGraphList rulesList
     iGraph    = GG.initialGraph gg
     iNodeRel  = GM.nodeRelation iGraph
     iEdgeRel  = GM.edgeRelation iGraph
-    iGraphRel = GraphRel (M.domain iGraph) iNodeRel iEdgeRel
+    iGraphEditState = GraphEditState Active IdleMode (M.domain iGraph) iNodeRel iEdgeRel
     emptyRel = R.empty [] []
-    tGraph = (Active, IdleMode, GraphRel (GG.typeGraph gg) emptyRel emptyRel)
-    tGraphList = addToAL [] "t0" tGraph
-    iGraphList = [("g0", (Active, IdleMode, iGraphRel))]
+    tGraphEditState = GraphEditState Active IdleMode (GG.typeGraph gg) emptyRel emptyRel
+    tGraphList = addToAL [] "t0" tGraphEditState
+    iGraphList = [("g0", iGraphEditState)]
     rulesList = []
 --    rules  = GG.rules gg
---    ruleToGraphRel 
+--    ruleToGraphEditState 
 --    rulesMap = foldr (\(s, r) acc -> M.insert s r acc) M.empty rules
 
 stateToModel :: State -> IO (TreeStore TreeNode)
