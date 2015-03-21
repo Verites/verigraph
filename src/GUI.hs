@@ -34,7 +34,8 @@ type Graph = G.Graph NodePayload EdgePayload
 type GraphMorphism = GM.GraphMorphism NodePayload EdgePayload
 type Rule  = GR.GraphRule NodePayload EdgePayload
 type Coords = (Double, Double)
-type NodePayload = (Coords, Coords -> Render (), Coords -> Coords -> Bool)
+type NodePayload =
+    (Coords, Bool -> Coords -> Render (), Coords -> Coords -> Bool)
 type EdgePayload = Kolor
 data Obj = Node Int | Edge Int
     deriving (Show, Eq)
@@ -42,11 +43,13 @@ data Obj = Node Int | Edge Int
 iGraphIdx = 0
 tGraphIdx = 1
 rulesIdx = 2
+defGraphName = "g0"
+defTGraphName = "t0"
 defRadius = 20 :: Double
 defLineWidth = 2 :: Double
 defBorderColor = black
 defSpacing = 1
-neutralColor = gray
+neutralColor = gainsboro
 renderColor :: Kolor -> Gtk.Render ()
 renderColor k = setSourceRGB r g b
   where
@@ -56,7 +59,7 @@ renderColor k = setSourceRGB r g b
 
 
 {- Data types for rendering -}
-data RNode = RNode Graph G.NodeId
+data RNode = RNode GraphEditState G.NodeId
 data REdge = REdge Graph G.EdgeId
 data RGraph = RGraph Graph
 
@@ -64,26 +67,39 @@ class Renderable a where
     render :: a -> Render ()
 
 instance Renderable (RNode) where
-    render (RNode g n) =
+    render (RNode gstate n) =
         case G.nodePayload g n of
-            Just (coords, renderFunc, checkFunc) -> renderFunc coords
+            Just (coords, renderFunc, checkFunc) -> renderFunc sel coords
             otherwise   -> return ()
+      where
+        g = getGraph gstate
+        sel = case getSelMode gstate of
+                SelNodes ns -> n `elem` ns
+                otherwise   -> False
 
-
+{-
 instance Renderable (RGraph) where
     render (RGraph g) = do
         mapM_ (render . RNode g) $ G.nodes g
 --        mapM_ (render . REdge g) $ G.edges g
+-}
 
+instance Renderable GraphEditState where
+    render gstate = do
+        mapM_ (render . RNode gstate) $ G.nodes (getGraph gstate)
+        
 
-drawCircle :: Kolor -> Coords -> Render ()
-drawCircle color (x, y) = do
+drawCircle :: Kolor -> Bool -> Coords -> Render ()
+drawCircle color sel (x, y) = do
     setLineWidth defLineWidth
     renderColor defBorderColor
     Gtk.arc x y defRadius 0 $ 2 * pi
     strokePreserve
     renderColor color
-    fill
+    if sel then fillPreserve >> highlight else fill
+  where
+    highlight = do setSourceRGBA 0 0 0 0.4
+                   fill
 
 insideCircle :: Double -> Coords -> Coords -> Bool
 insideCircle radius circleCoords coords =
@@ -103,7 +119,7 @@ data CanvasMode = IGraphMode Key |
 
 data SelMode = SelNodes [G.NodeId]
              | SelEdges [G.EdgeId]
-             | DragNodes [G.NodeId]
+--             | DragNodes [G.NodeId]
              | DrawEdge G.NodeId
              | IdleMode
     deriving Show
@@ -129,6 +145,7 @@ data GraphEditState = GraphEditState {
                          , getNodeRelation :: R.Relation G.NodeId
                          , getEdgeRelation :: R.Relation G.EdgeId
                          } deriving Show
+
 data TreeNode = TNInitialGraph RowStatus Key | 
                 TNTypeGraph RowStatus Key |
                 TNRule RowStatus Key |
@@ -278,8 +295,10 @@ mouseClick canvas stateRef = do
 processClick :: GraphEditState -> Coords -> MouseButton -> Click -> GraphEditState
 processClick gstate coords@(x, y) button click =
     case (objects, button, click) of
-        ([], LeftButton, DoubleClick) -> gstate { getGraph = addNode }
-        (((k, p):_), LeftButton, DoubleClick) ->
+        ([], LeftButton, DoubleClick) ->
+            gstate { getGraph = graph'
+                   , getSelMode = SelNodes [newId]}
+        (((k, p):_), LeftButton, SingleClick) ->
             gstate { getSelMode = SelNodes [k] }
         otherwise -> gstate
   where
@@ -290,20 +309,24 @@ processClick gstate coords@(x, y) button click =
                           (_, Just (refCoords, _ , cf)) -> cf refCoords coords
                           otherwise -> False)
                listPayloads
-    addNode = newNode g coords (drawCircle neutralColor) (insideCircle defRadius)
+    (newId, graph') =
+        addNode g coords (drawCircle neutralColor) (insideCircle defRadius)
 
-newNode :: Graph -> Coords -> (Coords -> Render ())
-                           -> (Coords -> Coords -> Bool) -> Graph
-newNode graph coords renderFunc checkFunc  =
-    G.insertNodeWithPayload newId (coords, renderFunc, checkFunc) graph
+addNode :: Graph -> Coords -> (Bool -> Coords -> Render ())
+                           -> (Coords -> Coords -> Bool) -> (Int, Graph)
+addNode graph coords renderFunc checkFunc  =
+    (newId, graph')
   where
     newId = length . G.nodes $ graph
+    graph' = G.insertNodeWithPayload newId
+                                     (coords, renderFunc, checkFunc)
+                                     graph
 
 
 currentGraph :: State -> Maybe GraphEditState
 currentGraph state =
     case canvasMode state of
-        IGraphMode k  -> lookup k iGraphs
+        IGraphMode k -> lookup k iGraphs
         TGraphMode k -> lookup k tGraphs
         RuleMode k   -> lookup k rules
   where
@@ -328,7 +351,7 @@ updateCanvas stateRef = do
         let graph = lookup k l
         in case graph of
             Nothing -> return ()
-            Just t  -> render . RGraph . getGraph $ t
+            Just gstate  -> render gstate
       
 
 openFile :: IO ()
@@ -373,7 +396,7 @@ getActiveTypeGraphs state =
     active (_, gstate) = getStatus gstate == Active
 
 grammarToState :: Grammar -> State
-grammarToState gg = State (IGraphMode "g0") iGraphList tGraphList rulesList
+grammarToState gg = State (IGraphMode defGraphName) iGraphList tGraphList rulesList
   where
     iGraph    = GG.initialGraph gg
     iNodeRel  = GM.nodeRelation iGraph
@@ -381,8 +404,8 @@ grammarToState gg = State (IGraphMode "g0") iGraphList tGraphList rulesList
     iGraphEditState = GraphEditState Active IdleMode (M.domain iGraph) iNodeRel iEdgeRel
     emptyRel = R.empty [] []
     tGraphEditState = GraphEditState Active IdleMode (GG.typeGraph gg) emptyRel emptyRel
-    tGraphList = addToAL [] "t0" tGraphEditState
-    iGraphList = [("g0", iGraphEditState)]
+    tGraphList = addToAL [] defTGraphName tGraphEditState
+    iGraphList = [(defGraphName, iGraphEditState)]
     rulesList = []
 --    rules  = GG.rules gg
 --    ruleToGraphEditState 
@@ -391,7 +414,7 @@ grammarToState gg = State (IGraphMode "g0") iGraphList tGraphList rulesList
 stateToModel :: State -> IO (TreeStore TreeNode)
 stateToModel state = do
     tree <- treeStoreNew [] :: IO (TreeStore TreeNode)
-    treeStoreInsert tree [] 0 $ TNInitialGraph Active "G0"
+    treeStoreInsert tree [] 0 $ TNInitialGraph Active defGraphName
     treeStoreInsert tree [] 1 $ TNRoot "Type Graphs"
     treeStoreInsertForest tree [1] 0 tGraphForest
 --    treeStoreInsertTree tree [] 2 ruleTree
