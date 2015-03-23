@@ -284,14 +284,14 @@ mouseClick canvas stateRef = do
         gstate' = processClick gstate coords button click
     liftIO $ writeIORef stateRef $
         case canvasMode state of
-            IGraphMode k -> state
-                { getInitialGraphs =
-                      addToAL (getInitialGraphs state) k gstate'
-                }
-            TGraphMode k -> state
-                { getTypeGraphs =
-                      addToAL (getTypeGraphs state) k gstate'
-                }
+            IGraphMode k ->
+                state { getInitialGraphs =
+                            addToAL (getInitialGraphs state) k gstate'
+                      } 
+            TGraphMode k ->
+                state { getTypeGraphs =
+                            addToAL (getTypeGraphs state) k gstate'
+                      }
             otherwise -> state
     liftIO $ widgetQueueDraw canvas
     return True
@@ -325,9 +325,8 @@ addNode graph coords renderFunc checkFunc =
     (newId, graph')
   where
     newId = length . G.nodes $ graph
-    graph' = G.insertNodeWithPayload newId
-                                     (coords, renderFunc, checkFunc)
-                                     graph
+    graph' =
+        G.insertNodeWithPayload newId (coords, renderFunc, checkFunc) graph
 
 
 currentGraph :: State -> Maybe GraphEditState
@@ -335,7 +334,7 @@ currentGraph state =
     case canvasMode state of
         IGraphMode k -> lookup k iGraphs
         TGraphMode k -> lookup k tGraphs
-        RuleMode k   -> lookup k rules
+        RuleMode k -> lookup k rules
   where
     iGraphs = getInitialGraphs state
     tGraphs = getTypeGraphs state
@@ -375,7 +374,6 @@ createModel state = stateToModel state
 
 createView :: TreeStore TreeNode -> IO TreeView
 createView store = do
-
     view <- treeViewNew
     col  <- treeViewColumnNew
 
@@ -388,7 +386,6 @@ createView store = do
 
     treeViewSetModel view store
 --    treeViewColumnAddAttribute col renderer "text" 0
-
     return view
   where
     getName (TNInitialGraph _ s) = s
@@ -448,3 +445,4 @@ testGrammar =
     t = G.empty :: Graph
     nR = R.empty [] []
     eR = R.empty [] []
+
