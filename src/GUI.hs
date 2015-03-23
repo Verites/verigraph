@@ -273,15 +273,15 @@ rowSelected gui store stateRef path _ = do
     widgetQueueDraw $ getCanvas gui
     return ()
 
-mouseClick :: WidgetClass widget =>
-    widget -> IORef State -> EventM EButton Bool
+mouseClick :: WidgetClass widget
+           => widget -> IORef State -> EventM EButton Bool
 mouseClick canvas stateRef = do
     coords <- eventCoordinates
     button <- eventButton
     click <- eventClick
     state <- liftIO $ readIORef stateRef
     let Just gstate = currentGraph state -- FIXME unsafe pattern matching
-        gstate' = processClick gstate coords button click
+    gstate' <- liftIO $ processClick state gstate coords button click
     liftIO $ writeIORef stateRef $
         case canvasMode state of
             IGraphMode k ->
@@ -296,15 +296,26 @@ mouseClick canvas stateRef = do
     liftIO $ widgetQueueDraw canvas
     return True
 
-processClick :: GraphEditState -> Coords -> MouseButton -> Click -> GraphEditState
-processClick gstate coords@(x, y) button click =
+processClick :: State
+             -> GraphEditState
+             -> Coords
+             -> MouseButton
+             -> Click
+             -> IO GraphEditState
+processClick state gstate coords@(x, y) button click =
     case (objects, button, click) of
-        ([], LeftButton, DoubleClick) -> gstate
-            { getGraph = graph'
-            , getSelMode = SelNodes [newId]}
-        (((k, p):_), LeftButton, SingleClick) -> gstate
-            { getSelMode = SelNodes [k] }
-        otherwise -> gstate
+        ([], LeftButton, DoubleClick) ->
+            return $
+                gstate { getGraph = graph'
+                       , getSelMode = SelNodes [newId]
+                       }
+        (((k, p):_), LeftButton, SingleClick) ->
+            return $
+                gstate { getSelMode = SelNodes [k] }
+        (((k, p):_), LeftButton, DoubleClick) -> do
+            nodeEditDialog state
+            return gstate
+        otherwise -> return gstate
   where
     g = getGraph gstate
     listPayloads = G.nodesWithPayload g
@@ -328,6 +339,27 @@ addNode graph coords renderFunc checkFunc =
     graph' =
         G.insertNodeWithPayload newId (coords, renderFunc, checkFunc) graph
 
+nodeEditDialog :: State -> IO ()
+nodeEditDialog state = do
+    dial <- dialogNew
+    cArea <- return . castToBox =<< dialogGetContentArea dial
+--    colorButton <- buttonNewWithLabel "Select color"
+--    colorButton `on` buttonPressEvent $ chooseColor
+    colorSel <- colorSelectionNew
+    boxPackStart cArea colorSel PackNatural 1
+    widgetShowAll dial
+    dialogRun dial
+    return ()
+
+{-
+chooseColor :: EventM EButton Bool
+chooseColor = do
+    liftIO $ do
+        dial <- colorSelectionDialogNew "Select color"
+        widgetShowAll dial
+        dialogRun dial
+    return True
+-}
 
 currentGraph :: State -> Maybe GraphEditState
 currentGraph state =
