@@ -32,7 +32,7 @@ import Valid (valid)
 type Grammar = GG.GraphGrammar NodePayload EdgePayload
 type Graph = G.Graph NodePayload EdgePayload
 type GraphMorphism = GM.GraphMorphism NodePayload EdgePayload
-type Rule  = GR.GraphRule NodePayload EdgePayload
+type Rule = GR.GraphRule NodePayload EdgePayload
 type Coords = (Double, Double)
 type NodePayload =
     (Coords, Bool -> Coords -> Render (), Coords -> Coords -> Bool)
@@ -112,15 +112,15 @@ norm (x, y) (x', y') =
   where
     square x = x * x
 
-data CanvasMode
-    = IGraphMode Key
+data CanvasMode =
+      IGraphMode Key
     | TGraphMode Key
     | RuleMode Key
     deriving Show
 
 
-data SelMode
-    = SelNodes [G.NodeId]
+data SelMode =
+      SelNodes [G.NodeId]
     | SelEdges [G.EdgeId]
 --  | DragNodes [G.NodeId]
     | DrawEdge G.NodeId
