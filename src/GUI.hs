@@ -70,12 +70,12 @@ instance Renderable (RNode) where
     render (RNode gstate n) =
         case G.nodePayload g n of
             Just (coords, renderFunc, checkFunc) -> renderFunc sel coords
-            otherwise   -> return ()
+            otherwise -> return ()
       where
         g = getGraph gstate
         sel = case getSelMode gstate of
                 SelNodes ns -> n `elem` ns
-                otherwise   -> False
+                otherwise -> False
 
 {-
 instance Renderable (RGraph) where
@@ -98,8 +98,9 @@ drawCircle color sel (x, y) = do
     renderColor color
     if sel then fillPreserve >> highlight else fill
   where
-    highlight = do setSourceRGBA 0 0 0 0.4
-                   fill
+    highlight = do
+        setSourceRGBA 0 0 0 0.4
+        fill
 
 insideCircle :: Double -> Coords -> Coords -> Bool
 insideCircle radius circleCoords coords =
@@ -111,17 +112,19 @@ norm (x, y) (x', y') =
   where
     square x = x * x
 
-data CanvasMode = IGraphMode Key |
-                  TGraphMode Key |
-                  RuleMode Key
+data CanvasMode
+    = IGraphMode Key
+    | TGraphMode Key
+    | RuleMode Key
     deriving Show
 
 
-data SelMode = SelNodes [G.NodeId]
-             | SelEdges [G.EdgeId]
---             | DragNodes [G.NodeId]
-             | DrawEdge G.NodeId
-             | IdleMode
+data SelMode
+    = SelNodes [G.NodeId]
+    | SelEdges [G.EdgeId]
+--  | DragNodes [G.NodeId]
+    | DrawEdge G.NodeId
+    | IdleMode
     deriving Show
     
 
@@ -131,25 +134,26 @@ data RowStatus = Active | Inactive
 type Key = String
 
 -- To keep it uniform, typegraphs are also described as GraphEditState
-data State =
-    State { canvasMode       :: CanvasMode,
-            getInitialGraphs :: [(Key, GraphEditState)],
-            getTypeGraphs    :: [(Key, GraphEditState)],
-            getRules         :: [(Key, GraphEditState)]
-          }
+data State = State
+    { canvasMode       :: CanvasMode
+    , getInitialGraphs :: [(Key, GraphEditState)]
+    , getTypeGraphs    :: [(Key, GraphEditState)]
+    , getRules         :: [(Key, GraphEditState)]
+    }
 
-data GraphEditState = GraphEditState {
-                           getStatus :: RowStatus
-                         , getSelMode :: SelMode
-                         , getGraph :: Graph
-                         , getNodeRelation :: R.Relation G.NodeId
-                         , getEdgeRelation :: R.Relation G.EdgeId
-                         } deriving Show
+data GraphEditState = GraphEditState
+    { getStatus :: RowStatus
+    , getSelMode :: SelMode
+    , getGraph :: Graph
+    , getNodeRelation :: R.Relation G.NodeId
+    , getEdgeRelation :: R.Relation G.EdgeId
+    } deriving Show
 
-data TreeNode = TNInitialGraph RowStatus Key | 
-                TNTypeGraph RowStatus Key |
-                TNRule RowStatus Key |
-                TNRoot Key
+data TreeNode
+    = TNInitialGraph RowStatus Key
+    | TNTypeGraph RowStatus Key
+    | TNRule RowStatus Key
+    | TNRoot Key
 
 instance Show TreeNode where
     show (TNInitialGraph _ s ) = s
@@ -159,18 +163,18 @@ instance Show TreeNode where
 
 
 
-data GUI = GUI {
-    treeStore :: TreeStore TreeNode,
-    treeView :: TreeView,
-    mainWindow    :: Window,
-    buttons :: Buttons,
-    getCanvas :: DrawingArea
+data GUI = GUI
+    { treeStore :: TreeStore TreeNode
+    , treeView :: TreeView
+    , mainWindow  :: Window
+    , buttons :: Buttons
+    , getCanvas :: DrawingArea
     }
 
-data Buttons = Buttons {
-    editInitialGraph :: Button,
-    addRule :: Button,
-    getOkButton :: Button
+data Buttons = Buttons
+    { editInitialGraph :: Button
+    , addRule :: Button
+    , getOkButton :: Button
     }
 
 
@@ -280,14 +284,14 @@ mouseClick canvas stateRef = do
         gstate' = processClick gstate coords button click
     liftIO $ writeIORef stateRef $
         case canvasMode state of
-            IGraphMode k -> state { getInitialGraphs =
-                                        addToAL (getInitialGraphs state)
-                                                k gstate'
-                                }
-            TGraphMode k -> state { getTypeGraphs =
-                                        addToAL (getTypeGraphs state)
-                                                k gstate'
-                                  }
+            IGraphMode k -> state
+                { getInitialGraphs =
+                      addToAL (getInitialGraphs state) k gstate'
+                }
+            TGraphMode k -> state
+                { getTypeGraphs =
+                      addToAL (getTypeGraphs state) k gstate'
+                }
             otherwise -> state
     liftIO $ widgetQueueDraw canvas
     return True
@@ -295,11 +299,11 @@ mouseClick canvas stateRef = do
 processClick :: GraphEditState -> Coords -> MouseButton -> Click -> GraphEditState
 processClick gstate coords@(x, y) button click =
     case (objects, button, click) of
-        ([], LeftButton, DoubleClick) ->
-            gstate { getGraph = graph'
-                   , getSelMode = SelNodes [newId]}
-        (((k, p):_), LeftButton, SingleClick) ->
-            gstate { getSelMode = SelNodes [k] }
+        ([], LeftButton, DoubleClick) -> gstate
+            { getGraph = graph'
+            , getSelMode = SelNodes [newId]}
+        (((k, p):_), LeftButton, SingleClick) -> gstate
+            { getSelMode = SelNodes [k] }
         otherwise -> gstate
   where
     g = getGraph gstate
@@ -312,9 +316,12 @@ processClick gstate coords@(x, y) button click =
     (newId, graph') =
         addNode g coords (drawCircle neutralColor) (insideCircle defRadius)
 
-addNode :: Graph -> Coords -> (Bool -> Coords -> Render ())
-                           -> (Coords -> Coords -> Bool) -> (Int, Graph)
-addNode graph coords renderFunc checkFunc  =
+addNode :: Graph
+        -> Coords
+        -> (Bool -> Coords -> Render ())
+        -> (Coords -> Coords -> Bool)
+        -> (Int, Graph)
+addNode graph coords renderFunc checkFunc =
     (newId, graph')
   where
     newId = length . G.nodes $ graph
@@ -332,7 +339,7 @@ currentGraph state =
   where
     iGraphs = getInitialGraphs state
     tGraphs = getTypeGraphs state
-    rules   = getRules state
+    rules = getRules state
 
 
 updateCanvas :: IORef State -> Render ()
@@ -341,7 +348,7 @@ updateCanvas stateRef = do
     case canvasMode state of
         IGraphMode k -> fetchAndRender k $ getInitialGraphs state
         TGraphMode k -> fetchAndRender k $ getTypeGraphs state
-        otherwise  -> do
+        otherwise -> do
             renderColor red
             Gtk.arc 100 40 defRadius 0 $ 2 * pi
             fill
@@ -376,7 +383,8 @@ createView store = do
     treeViewAppendColumn view col
     renderer <- cellRendererTextNew
     cellLayoutPackStart col renderer True
-    cellLayoutSetAttributes col renderer store $ \row -> [ cellText := getName row ]
+    cellLayoutSetAttributes col renderer store $
+        \row -> [ cellText := getName row ]
 
     treeViewSetModel view store
 --    treeViewColumnAddAttribute col renderer "text" 0
@@ -398,12 +406,14 @@ getActiveTypeGraphs state =
 grammarToState :: Grammar -> State
 grammarToState gg = State (IGraphMode defGraphName) iGraphList tGraphList rulesList
   where
-    iGraph    = GG.initialGraph gg
-    iNodeRel  = GM.nodeRelation iGraph
-    iEdgeRel  = GM.edgeRelation iGraph
-    iGraphEditState = GraphEditState Active IdleMode (M.domain iGraph) iNodeRel iEdgeRel
+    iGraph = GG.initialGraph gg
+    iNodeRel = GM.nodeRelation iGraph
+    iEdgeRel = GM.edgeRelation iGraph
+    iGraphEditState =
+        GraphEditState Active IdleMode (M.domain iGraph) iNodeRel iEdgeRel
     emptyRel = R.empty [] []
-    tGraphEditState = GraphEditState Active IdleMode (GG.typeGraph gg) emptyRel emptyRel
+    tGraphEditState =
+        GraphEditState Active IdleMode (GG.typeGraph gg) emptyRel emptyRel
     tGraphList = addToAL [] defTGraphName tGraphEditState
     iGraphList = [(defGraphName, iGraphEditState)]
     rulesList = []
@@ -420,7 +430,7 @@ stateToModel state = do
 --    treeStoreInsertTree tree [] 2 ruleTree
     return tree
   where
-    rules   = getRules state
+    rules = getRules state
     tGraphs = getTypeGraphs state
     tGraphForest = map (\(s, g) -> T.Node (TNTypeGraph Active s) []) tGraphs
     
