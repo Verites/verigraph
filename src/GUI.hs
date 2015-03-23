@@ -213,7 +213,7 @@ createGUI state = do
     menuAttach fileMenu openItem 0 1 1 2 
     menuAttach fileMenu saveItem 0 1 2 3 
 
-    openItem `on` menuItemActivated $ openFile
+    openItem `on` menuItemActivated $ openFileDialog
     
     canvas <- drawingAreaNew
     store <- createModel state
@@ -361,10 +361,10 @@ updateCanvas stateRef = do
             Just gstate  -> render gstate
       
 
-openFile :: IO ()
-openFile = do
-    dial <- fileChooserDialogNew (Just "Open") Nothing FileChooserActionOpen
-                                 buttons
+openFileDialog :: IO ()
+openFileDialog = do
+    dial <- fileChooserDialogNew
+                (Just "Open") Nothing FileChooserActionOpen buttons
     file <- dialogRun dial
     putStrLn "Opening File"
   where
@@ -404,7 +404,8 @@ getActiveTypeGraphs state =
     active (_, gstate) = getStatus gstate == Active
 
 grammarToState :: Grammar -> State
-grammarToState gg = State (IGraphMode defGraphName) iGraphList tGraphList rulesList
+grammarToState gg =
+    State (IGraphMode defGraphName) iGraphList tGraphList rulesList
   where
     iGraph = GG.initialGraph gg
     iNodeRel = GM.nodeRelation iGraph
