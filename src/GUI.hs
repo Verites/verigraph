@@ -48,6 +48,7 @@ defTGraphName = "t0"
 defRadius = 20 :: Double
 defLineWidth = 2 :: Double
 defBorderColor = black
+initialColor = Color 13363 25956 42148
 defSpacing = 1
 neutralColor = gainsboro
 renderColor :: Kolor -> Gtk.Render ()
@@ -343,12 +344,23 @@ nodeEditDialog :: State -> IO ()
 nodeEditDialog state = do
     dial <- dialogNew
     cArea <- return . castToBox =<< dialogGetContentArea dial
---    colorButton <- buttonNewWithLabel "Select color"
+    entry <- entryNew
+    colorButton <- colorButtonNewWithColor initialColor
+    boxPackStart cArea entry PackNatural 1
+    boxPackStart cArea colorButton PackNatural 1
 --    colorButton `on` buttonPressEvent $ chooseColor
     colorSel <- colorSelectionNew
-    boxPackStart cArea colorSel PackNatural 1
+--    boxPackStart cArea colorSel PackNatural 1
+    applyButton  <- dialogAddButton dial "Apply" ResponseApply
+    cancelButton <- dialogAddButton dial "Cancel" ResponseCancel
     widgetShowAll dial
-    dialogRun dial
+    response <- dialogRun dial
+    case response of
+        ResponseApply -> do
+            color <- colorButtonGetColor colorButton
+            putStrLn . show $ color
+            widgetDestroy dial
+        ResponseCancel -> widgetDestroy dial
     return ()
 
 {-
