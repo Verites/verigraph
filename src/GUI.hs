@@ -361,6 +361,7 @@ nodeEditDialog state = do
             putStrLn . show $ color
             widgetDestroy dial
         ResponseCancel -> widgetDestroy dial
+        _ -> return ()
     return ()
 
 {-
