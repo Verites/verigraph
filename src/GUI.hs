@@ -47,6 +47,7 @@ defGraphName = "g0"
 defTGraphName = "t0"
 defRadius = 20 :: Double
 defLineWidth = 2 :: Double
+-- FIXME temporary magic constants
 defBorderColor = Color 65535 65535 65535
 initialColor = Color 13363 25956 42148
 defSpacing = 1
@@ -284,7 +285,7 @@ mouseClick canvas stateRef = do
     click <- eventClick
     state <- liftIO $ readIORef stateRef
     let Just gstate = currentGraph state -- FIXME unsafe pattern matching
-    gstate' <- liftIO $ processClick state gstate coords button click
+    gstate' <- liftIO $ processClick canvas state gstate coords button click
     liftIO $ writeIORef stateRef $
         case canvasMode state of
             IGraphMode k ->
@@ -297,13 +298,15 @@ mouseClick canvas stateRef = do
     liftIO $ widgetQueueDraw canvas
     return True
 
-processClick :: State
+processClick :: WidgetClass widget
+             => widget
+             -> State
              -> GraphEditState
              -> Coords
              -> MouseButton
              -> Click
              -> IO GraphEditState
-processClick state gstate coords@(x, y) button click =
+processClick canvas state gstate coords@(x, y) button click =
     case (objects, button, click) of
         ([], LeftButton, DoubleClick) ->
             return $
@@ -313,9 +316,11 @@ processClick state gstate coords@(x, y) button click =
         (((k, p):_), LeftButton, SingleClick) ->
             return $
                 gstate { getSelMode = SelNodes [k] }
-        (((k, p):_), LeftButton, DoubleClick) -> do
+        (((k, (Just p)):_), LeftButton, DoubleClick) -> do
             case canvasMode state of
-                TGraphMode -> typeEditDialog state
+                TGraphMode -> do 
+                    state' <- typeEditDialog canvas k p state
+                    return ()
                 otherwise -> return ()
             return gstate
         otherwise -> return gstate
@@ -342,8 +347,9 @@ addNode graph coords renderFunc checkFunc =
     graph' =
         G.insertNodeWithPayload newId (coords, renderFunc, checkFunc) graph
 
-typeEditDialog :: State -> IO ()
-typeEditDialog state = do
+typeEditDialog :: WidgetClass widget
+               => widget -> G.NodeId -> NodePayload -> State -> IO (State)
+typeEditDialog canvas n p@(coords, renderFunc, checkFunc) state = do
     dial <- dialogNew
     cArea <- return . castToBox =<< dialogGetContentArea dial
     entry <- entryNew
@@ -357,15 +363,25 @@ typeEditDialog state = do
     cancelButton <- dialogAddButton dial "Cancel" ResponseCancel
     widgetShowAll dial
     response <- dialogRun dial
-    case response of
+    let tGraph = getGraph tGraphState
+        tGraphState = getTypeGraph $ state
+        p' newColor = (coords, drawCircle newColor, checkFunc)
+    case response of 
         ResponseApply -> do
             color <- colorButtonGetColor colorButton
-            putStrLn . show $ color
+            let tGraph' =
+                    G.updateNodePayload n tGraph (\_ -> p' color)
+                tGraphState' = tGraphState { getGraph = tGraph' }
+                state' = state { getTypeGraph = tGraphState' }
             widgetDestroy dial
-        ResponseCancel -> widgetDestroy dial
-        _ -> return ()
-    return ()
+            widgetQueueDraw canvas
+            return state'
+        ResponseCancel -> do
+            widgetDestroy dial
+            return state
+        otherwise -> return state
 
+    
 {-
 chooseColor :: EventM EButton Bool
 chooseColor = do
@@ -429,16 +445,11 @@ createView store = do
     renderer <- cellRendererTextNew
     cellLayoutPackStart col renderer True
     cellLayoutSetAttributes col renderer store $
-        \row -> [ cellText := getName row ]
+        \row -> [ cellText := show row ]
 
     treeViewSetModel view store
 --    treeViewColumnAddAttribute col renderer "text" 0
     return view
-  where
-    getName (TNInitialGraph _ s) = s
-    getName TNTypeGraph = "Type Graph"
-    getName (TNRoot s) = s
-    getName (TNRule _ s) = s
 
 
 
