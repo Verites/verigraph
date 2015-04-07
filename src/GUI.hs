@@ -319,7 +319,9 @@ processClick state gstate coords@(x, y) button click =
                 TGraphMode -> do 
                     state' <- typeEditDialog k p state
                     return $  getTypeGraph state'
-                otherwise -> return gstate
+                otherwise -> do
+                    state' <- nodeEditDialog k p state
+                    return $ getTypeGraph state'
         otherwise -> return gstate
   where
     objects =
@@ -375,6 +377,35 @@ typeEditDialog n p@(coords, renderFunc, checkFunc) state = do
             widgetDestroy dial
             return state
         otherwise -> return state
+
+nodeEditDialog :: G.NodeId -> NodePayload -> State -> IO (State)
+nodeEditDialog n p@(coords, renderFunc, checkFunc) state = do
+    dial <- dialogNew
+    cArea <- return . castToBox =<< dialogGetContentArea dial
+    let tGraph = getGraph . getTypeGraph $ state
+        nodes = G.nodes tGraph
+    store <- listStoreNew $ L.reverse nodes
+    -- Create and prepare TreeView
+    view <- treeViewNew
+    col  <- treeViewColumnNew
+
+    treeViewColumnSetTitle col "Node Types"
+    treeViewAppendColumn view col
+
+    renderer <- cellRendererTextNew
+    cellLayoutPackStart col renderer True
+    cellLayoutSetAttributes col renderer store $
+        \row -> [ cellText := show row ]
+    treeViewSetModel view store
+    boxPackStart cArea view PackGrow 1
+
+    widgetShowAll dial
+    response <- dialogRun dial
+
+    return state
+    
+
+        
 
     
 {-
