@@ -320,9 +320,8 @@ processClick canvas state gstate coords@(x, y) button click =
             case canvasMode state of
                 TGraphMode -> do 
                     state' <- typeEditDialog canvas k p state
-                    return ()
-                otherwise -> return ()
-            return gstate
+                    return $  getTypeGraph state'
+                otherwise -> return gstate
         otherwise -> return gstate
   where
     objects =
