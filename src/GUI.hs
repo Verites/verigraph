@@ -285,7 +285,7 @@ mouseClick canvas stateRef = do
     click <- eventClick
     state <- liftIO $ readIORef stateRef
     let Just gstate = currentGraph state -- FIXME unsafe pattern matching
-    gstate' <- liftIO $ processClick canvas state gstate coords button click
+    gstate' <- liftIO $ processClick state gstate coords button click
     liftIO $ writeIORef stateRef $
         case canvasMode state of
             IGraphMode k ->
@@ -298,15 +298,13 @@ mouseClick canvas stateRef = do
     liftIO $ widgetQueueDraw canvas
     return True
 
-processClick :: WidgetClass widget
-             => widget
-             -> State
+processClick :: State
              -> GraphEditState
              -> Coords
              -> MouseButton
              -> Click
              -> IO GraphEditState
-processClick canvas state gstate coords@(x, y) button click =
+processClick state gstate coords@(x, y) button click =
     case (objects, button, click) of
         ([], LeftButton, DoubleClick) ->
             return $
@@ -319,7 +317,7 @@ processClick canvas state gstate coords@(x, y) button click =
         (((k, (Just p)):_), LeftButton, DoubleClick) -> do
             case canvasMode state of
                 TGraphMode -> do 
-                    state' <- typeEditDialog canvas k p state
+                    state' <- typeEditDialog k p state
                     return $  getTypeGraph state'
                 otherwise -> return gstate
         otherwise -> return gstate
@@ -346,9 +344,8 @@ addNode graph coords renderFunc checkFunc =
     graph' =
         G.insertNodeWithPayload newId (coords, renderFunc, checkFunc) graph
 
-typeEditDialog :: WidgetClass widget
-               => widget -> G.NodeId -> NodePayload -> State -> IO (State)
-typeEditDialog canvas n p@(coords, renderFunc, checkFunc) state = do
+typeEditDialog :: G.NodeId -> NodePayload -> State -> IO (State)
+typeEditDialog n p@(coords, renderFunc, checkFunc) state = do
     dial <- dialogNew
     cArea <- return . castToBox =<< dialogGetContentArea dial
     entry <- entryNew
@@ -373,7 +370,6 @@ typeEditDialog canvas n p@(coords, renderFunc, checkFunc) state = do
                 tGraphState' = tGraphState { getGraph = tGraph' }
                 state' = state { getTypeGraph = tGraphState' }
             widgetDestroy dial
-            widgetQueueDraw canvas
             return state'
         ResponseCancel -> do
             widgetDestroy dial
