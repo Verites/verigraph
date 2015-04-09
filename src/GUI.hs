@@ -197,7 +197,9 @@ showGUI = widgetShowAll . mainWindow
 createGUI :: State -> IO GUI
 createGUI state = do
     window <- windowNew
-    set window [ windowTitle := "Verigraph" ]
+    set window [ windowTitle := "Verigraph"
+               , windowDefaultWidth := 800
+               , windowDefaultHeight := 600 ]
     mainVBox <- vBoxNew False 1
     hBox <- hBoxNew False 1
     vBox0 <- vBoxNew False 1
