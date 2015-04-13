@@ -9,7 +9,6 @@ import qualified GraphRule as GR
 --import qualified TypedGraphMorphism as TM
 --import Data.Colour.Names
 --import Data.Colour.SRGB (Colour, toSRGB, RGB (..))
---import Data.Colour.Palette.ColorSet (Kolor, webColors, infiniteWebColors)
 import qualified Data.Foldable as F
 import Data.List.Utils
 import Data.Maybe (fromJust, isJust, isNothing)
@@ -256,7 +255,9 @@ addMainCallbacks gui stateRef = do
         okButton = getOkButton bs
     window `on` objectDestroy $ mainQuit
     canvas `on` buttonPressEvent $ mouseClick canvas stateRef
-    canvas `on` draw $ updateCanvas stateRef
+    dwin <- widgetGetDrawWindow canvas
+    canvas `on` exposeEvent $ do liftIO $ renderWithDrawable dwin (updateCanvas stateRef)
+                                 return True
     view `on` rowActivated $ rowSelected gui store stateRef
 --    okButton `on` buttonActivated $ updateModel gram viewRef
     return ()
