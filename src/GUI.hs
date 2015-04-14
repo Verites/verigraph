@@ -7,9 +7,8 @@ import qualified GraphMorphism as GM
 import qualified GraphGrammar as GG
 import qualified GraphRule as GR
 --import qualified TypedGraphMorphism as TM
-import Data.Colour.Names
-import Data.Colour.SRGB (Colour, toSRGB, RGB (..))
-import Data.Colour.Palette.ColorSet (Kolor, webColors, infiniteWebColors)
+--import Data.Colour.Names
+--import Data.Colour.SRGB (Colour, toSRGB, RGB (..))
 import qualified Data.Foldable as F
 import Data.List.Utils
 import Data.Maybe (fromJust, isJust, isNothing)
@@ -36,7 +35,7 @@ type Rule = GR.GraphRule NodePayload EdgePayload
 type Coords = (Double, Double)
 type NodePayload =
     (Coords, Bool -> Coords -> Render (), Coords -> Coords -> Bool)
-type EdgePayload = Kolor
+type EdgePayload = Color
 data Obj = Node Int | Edge Int
     deriving (Show, Eq)
 
@@ -47,17 +46,20 @@ defGraphName = "g0"
 defTGraphName = "t0"
 defRadius = 20 :: Double
 defLineWidth = 2 :: Double
-defBorderColor = black
+-- FIXME temporary magic constants
+defBorderColor = Color 65535 65535 65535
 initialColor = Color 13363 25956 42148
 defSpacing = 1
-neutralColor = gainsboro
-renderColor :: Kolor -> Gtk.Render ()
-renderColor k = setSourceRGB r g b
+neutralColor = Color 13363 25956 42148 -- gainsboro
+renderColor :: Color -> Gtk.Render ()
+renderColor (Color r g b) = setSourceRGB  r' g' b'
   where
-    rgb = toSRGB k
-    (r, g, b) = (channelRed rgb, channelGreen rgb, channelBlue rgb)
-
-
+    (r', g', b') = (fromIntegral r / denom,
+                    fromIntegral g / denom,
+                    fromIntegral b / denom) :: (Double, Double, Double)
+    denom = 65535 :: Double
+--    rgb = toSRGB k
+--    (r, g, b) = (channelRed rgb, channelGreen rgb, channelBlue rgb)
 
 {- Data types for rendering -}
 data RNode = RNode GraphEditState G.NodeId
@@ -90,7 +92,7 @@ instance Renderable GraphEditState where
         mapM_ (render . RNode gstate) $ G.nodes (getGraph gstate)
         
 
-drawCircle :: Kolor -> Bool -> Coords -> Render ()
+drawCircle :: Color -> Bool -> Coords -> Render ()
 drawCircle color sel (x, y) = do
     setLineWidth defLineWidth
     renderColor defBorderColor
@@ -115,7 +117,7 @@ norm (x, y) (x', y') =
 
 data CanvasMode =
       IGraphMode Key
-    | TGraphMode Key
+    | TGraphMode
     | RuleMode Key
     deriving Show
 
@@ -138,7 +140,7 @@ type Key = String
 data State = State
     { canvasMode       :: CanvasMode
     , getInitialGraphs :: [(Key, GraphEditState)]
-    , getTypeGraphs    :: [(Key, GraphEditState)]
+    , getTypeGraph    :: GraphEditState
     , getRules         :: [(Key, GraphEditState)]
     }
 
@@ -152,13 +154,13 @@ data GraphEditState = GraphEditState
 
 data TreeNode
     = TNInitialGraph RowStatus Key
-    | TNTypeGraph RowStatus Key
+    | TNTypeGraph
     | TNRule RowStatus Key
     | TNRoot Key
 
 instance Show TreeNode where
     show (TNInitialGraph _ s ) = s
-    show (TNTypeGraph _ s) = s
+    show TNTypeGraph = "Type Graph"
     show (TNRule _ s) = s
     show (TNRoot s) = s
 
@@ -194,7 +196,9 @@ showGUI = widgetShowAll . mainWindow
 createGUI :: State -> IO GUI
 createGUI state = do
     window <- windowNew
-    set window [ windowTitle := "Verigraph" ]
+    set window [ windowTitle := "Verigraph"
+               , windowDefaultWidth := 800
+               , windowDefaultHeight := 600 ]
     mainVBox <- vBoxNew False 1
     hBox <- hBoxNew False 1
     vBox0 <- vBoxNew False 1
@@ -251,21 +255,23 @@ addMainCallbacks gui stateRef = do
         okButton = getOkButton bs
     window `on` objectDestroy $ mainQuit
     canvas `on` buttonPressEvent $ mouseClick canvas stateRef
-    canvas `on` draw $ updateCanvas stateRef
+    dwin <- widgetGetDrawWindow canvas
+    canvas `on` exposeEvent $ do liftIO $ renderWithDrawable dwin (updateCanvas stateRef)
+                                 return True
     view `on` rowActivated $ rowSelected gui store stateRef
 --    okButton `on` buttonActivated $ updateModel gram viewRef
     return ()
 
 rowSelected gui store stateRef path _ = do
     state <- readIORef stateRef
-    let tGraphs = getActiveTypeGraphs state
+    let tGraph = getTypeGraph state
     node <- treeStoreLookup store path
 
     let state' = case node of
                     Just (T.Node (TNInitialGraph _ s) _) ->
                         state { canvasMode = IGraphMode s }
-                    Just (T.Node (TNTypeGraph _ s) _) ->
-                        state { canvasMode = TGraphMode s }
+                    Just (T.Node TNTypeGraph _) ->
+                        state { canvasMode = TGraphMode }
                     Just (T.Node (TNRule _ s) _) ->
                         state { canvasMode = RuleMode s }
                     otherwise -> state
@@ -289,10 +295,8 @@ mouseClick canvas stateRef = do
                 state { getInitialGraphs =
                             addToAL (getInitialGraphs state) k gstate'
                       } 
-            TGraphMode k ->
-                state { getTypeGraphs =
-                            addToAL (getTypeGraphs state) k gstate'
-                      }
+            TGraphMode ->
+                state { getTypeGraph = gstate' }
             otherwise -> state
     liftIO $ widgetQueueDraw canvas
     return True
@@ -313,18 +317,23 @@ processClick state gstate coords@(x, y) button click =
         (((k, p):_), LeftButton, SingleClick) ->
             return $
                 gstate { getSelMode = SelNodes [k] }
-        (((k, p):_), LeftButton, DoubleClick) -> do
-            nodeEditDialog state
-            return gstate
+        (((k, (Just p)):_), LeftButton, DoubleClick) -> do
+            case canvasMode state of
+                TGraphMode -> do 
+                    state' <- typeEditDialog k p state
+                    return $  getTypeGraph state'
+                otherwise -> do
+                    state' <- nodeEditDialog k p state
+                    return $ getTypeGraph state'
         otherwise -> return gstate
   where
-    g = getGraph gstate
-    listPayloads = G.nodesWithPayload g
     objects =
         filter (\p -> case p of
                           (_, Just (refCoords, _ , cf)) -> cf refCoords coords
                           otherwise -> False)
                listPayloads
+    listPayloads = G.nodesWithPayload g
+    g = getGraph gstate
     (newId, graph') =
         addNode g coords (drawCircle neutralColor) (insideCircle defRadius)
 
@@ -340,8 +349,8 @@ addNode graph coords renderFunc checkFunc =
     graph' =
         G.insertNodeWithPayload newId (coords, renderFunc, checkFunc) graph
 
-nodeEditDialog :: State -> IO ()
-nodeEditDialog state = do
+typeEditDialog :: G.NodeId -> NodePayload -> State -> IO (State)
+typeEditDialog n p@(coords, renderFunc, checkFunc) state = do
     dial <- dialogNew
     cArea <- return . castToBox =<< dialogGetContentArea dial
     entry <- entryNew
@@ -355,15 +364,53 @@ nodeEditDialog state = do
     cancelButton <- dialogAddButton dial "Cancel" ResponseCancel
     widgetShowAll dial
     response <- dialogRun dial
-    case response of
+    let tGraph = getGraph tGraphState
+        tGraphState = getTypeGraph $ state
+        p' newColor = (coords, drawCircle newColor, checkFunc)
+    case response of 
         ResponseApply -> do
             color <- colorButtonGetColor colorButton
-            putStrLn . show $ color
+            let tGraph' =
+                    G.updateNodePayload n tGraph (\_ -> p' color)
+                tGraphState' = tGraphState { getGraph = tGraph' }
+                state' = state { getTypeGraph = tGraphState' }
             widgetDestroy dial
-        ResponseCancel -> widgetDestroy dial
-        _ -> return ()
-    return ()
+            return state'
+        ResponseCancel -> do
+            widgetDestroy dial
+            return state
+        otherwise -> return state
 
+nodeEditDialog :: G.NodeId -> NodePayload -> State -> IO (State)
+nodeEditDialog n p@(coords, renderFunc, checkFunc) state = do
+    dial <- dialogNew
+    cArea <- return . castToBox =<< dialogGetContentArea dial
+    let tGraph = getGraph . getTypeGraph $ state
+        nodes = G.nodes tGraph
+    store <- listStoreNew $ L.reverse nodes
+    -- Create and prepare TreeView
+    view <- treeViewNew
+    col  <- treeViewColumnNew
+
+    treeViewColumnSetTitle col "Node Types"
+    treeViewAppendColumn view col
+
+    renderer <- cellRendererTextNew
+    cellLayoutPackStart col renderer True
+    cellLayoutSetAttributes col renderer store $
+        \row -> [ cellText := show row ]
+    treeViewSetModel view store
+    boxPackStart cArea view PackGrow 1
+
+    widgetShowAll dial
+    response <- dialogRun dial
+
+    return state
+    
+
+        
+
+    
 {-
 chooseColor :: EventM EButton Bool
 chooseColor = do
@@ -378,11 +425,11 @@ currentGraph :: State -> Maybe GraphEditState
 currentGraph state =
     case canvasMode state of
         IGraphMode k -> lookup k iGraphs
-        TGraphMode k -> lookup k tGraphs
+        TGraphMode -> Just tGraph
         RuleMode k -> lookup k rules
   where
     iGraphs = getInitialGraphs state
-    tGraphs = getTypeGraphs state
+    tGraph = getTypeGraph state
     rules = getRules state
 
 
@@ -391,9 +438,9 @@ updateCanvas stateRef = do
     state <- liftIO $ readIORef stateRef
     case canvasMode state of
         IGraphMode k -> fetchAndRender k $ getInitialGraphs state
-        TGraphMode k -> fetchAndRender k $ getTypeGraphs state
+        TGraphMode -> render $ getTypeGraph state
         otherwise -> do
-            renderColor red
+            renderColor $ defBorderColor
             Gtk.arc 100 40 defRadius 0 $ 2 * pi
             fill
             return ()
@@ -427,27 +474,17 @@ createView store = do
     renderer <- cellRendererTextNew
     cellLayoutPackStart col renderer True
     cellLayoutSetAttributes col renderer store $
-        \row -> [ cellText := getName row ]
+        \row -> [ cellText := show row ]
 
     treeViewSetModel view store
 --    treeViewColumnAddAttribute col renderer "text" 0
     return view
-  where
-    getName (TNInitialGraph _ s) = s
-    getName (TNTypeGraph _ s) = s
-    getName (TNRoot s) = s
-    getName (TNRule _ s) = s
 
 
-getActiveTypeGraphs :: State -> [(Key, GraphEditState)]
-getActiveTypeGraphs state =
-    filter active $ getTypeGraphs state
-  where
-    active (_, gstate) = getStatus gstate == Active
 
 grammarToState :: Grammar -> State
 grammarToState gg =
-    State (IGraphMode defGraphName) iGraphList tGraphList rulesList
+    State (IGraphMode defGraphName) iGraphList tGraph rulesList
   where
     iGraph = GG.initialGraph gg
     iNodeRel = GM.nodeRelation iGraph
@@ -455,9 +492,8 @@ grammarToState gg =
     iGraphEditState =
         GraphEditState Active IdleMode (M.domain iGraph) iNodeRel iEdgeRel
     emptyRel = R.empty [] []
-    tGraphEditState =
+    tGraph =
         GraphEditState Active IdleMode (GG.typeGraph gg) emptyRel emptyRel
-    tGraphList = addToAL [] defTGraphName tGraphEditState
     iGraphList = [(defGraphName, iGraphEditState)]
     rulesList = []
 --    rules  = GG.rules gg
@@ -468,14 +504,12 @@ stateToModel :: State -> IO (TreeStore TreeNode)
 stateToModel state = do
     tree <- treeStoreNew [] :: IO (TreeStore TreeNode)
     treeStoreInsert tree [] 0 $ TNInitialGraph Active defGraphName
-    treeStoreInsert tree [] 1 $ TNRoot "Type Graphs"
-    treeStoreInsertForest tree [1] 0 tGraphForest
+    treeStoreInsert tree [] 2 $ TNTypeGraph
 --    treeStoreInsertTree tree [] 2 ruleTree
     return tree
   where
     rules = getRules state
-    tGraphs = getTypeGraphs state
-    tGraphForest = map (\(s, g) -> T.Node (TNTypeGraph Active s) []) tGraphs
+    tGraph = getTypeGraph state
     
 
 grammarToModel :: Grammar -> IO (TreeStore TreeNode)
