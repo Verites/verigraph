@@ -23,7 +23,8 @@ import qualified Data.Map as M
 import Control.Applicative
 import Data.Foldable (mapM_)
 import Data.Traversable (sequenceA, traverse)
-import Graphics.UI.Gtk as Gtk
+import Graphics.UI.Gtk hiding (get, set) -- conflict with fclabels
+import qualified Graphics.UI.Gtk as Gtk
 import Graphics.Rendering.Cairo as Gtk
 import Graphics.UI.Gtk.Gdk.EventM
 import qualified Morphism as M
@@ -112,9 +113,6 @@ data Buttons = Buttons
 $(mkLabels [''State, ''GraphEditState, ''GUI, ''Buttons])
 
 
-iGraphIdx = 0
-tGraphIdx = 1
-rulesIdx = 2
 defGraphName = "g0"
 defTGraphName = "t0"
 defRadius = 20 :: Double
@@ -266,22 +264,23 @@ addMainCallbacks gui stateRef = do
     dwin <- widgetGetDrawWindow canvas
     canvas `on` exposeEvent $ do liftIO $ renderWithDrawable dwin (updateCanvas stateRef)
                                  return True
-    view `on` rowActivated $ rowSelected gui store stateRef
+    view `on` cursorChanged $ rowSelected gui store stateRef view
 --    okButton `on` buttonActivated $ updateModel gram viewRef
     return ()
 
-rowSelected gui store stateRef path _ = do
+rowSelected gui store stateRef view = do
+    (path, _) <- treeViewGetCursor view
     state <- readIORef stateRef
     let tGraph = _getTypeGraph state
     node <- treeStoreLookup store path
 
     let state' = case node of
                     Just (T.Node (TNInitialGraph _ s) _) ->
-                        state { _canvasMode = IGraphMode s }
+                        set canvasMode (IGraphMode s) state
                     Just (T.Node TNTypeGraph _) ->
-                        state { _canvasMode = TGraphMode }
+                        set canvasMode TGraphMode state
                     Just (T.Node (TNRule _ s) _) ->
-                        state { _canvasMode = RuleMode s }
+                        set canvasMode (RuleMode s) state
                     otherwise -> state
 
     writeIORef stateRef state'
@@ -296,26 +295,26 @@ mouseClick canvas stateRef = do
     click <- eventClick
     state <- liftIO $ readIORef stateRef
     let Just gstate = currentGraph state -- FIXME unsafe pattern matching
-    gstate' <- liftIO $ processClick state gstate coords button click
+    gstate' <- liftIO $ chooseMouseAction state gstate coords button click
     liftIO $ writeIORef stateRef $
         case _canvasMode state of
             IGraphMode k ->
-                state { _getInitialGraphs =
-                            addToAL (_getInitialGraphs state) k gstate'
-                      } 
+                modify getInitialGraphs
+                       (\s -> addToAL s k gstate')
+                       state
             TGraphMode ->
-                state { _getTypeGraph = gstate' }
+                set getTypeGraph gstate' state
             otherwise -> state
     liftIO $ widgetQueueDraw canvas
     return True
 
-processClick :: State
-             -> GraphEditState
-             -> Coords
-             -> MouseButton
-             -> Click
-             -> IO GraphEditState
-processClick state gstate coords@(x, y) button click =
+chooseMouseAction :: State
+                  -> GraphEditState
+                  -> Coords
+                  -> MouseButton
+                  -> Click
+                  -> IO GraphEditState
+chooseMouseAction state gstate coords@(x, y) button click =
     case (objects, button, click) of
         ([], LeftButton, DoubleClick) ->
             return $
@@ -324,7 +323,7 @@ processClick state gstate coords@(x, y) button click =
                        }
         (((k, p):_), LeftButton, SingleClick) ->
             return $
-                gstate { _getSelMode = SelNodes [k] }
+                set getSelMode (SelNodes [k]) gstate
         (((k, (Just p)):_), LeftButton, DoubleClick) -> do
             case _canvasMode state of
                 TGraphMode -> do 
@@ -390,9 +389,9 @@ nodeEditDialog :: G.NodeId -> NodePayload -> State -> IO (State)
 nodeEditDialog n p@(coords, renderFunc, checkFunc) state = do
     dial <- dialogNew
     cArea <- return . castToBox =<< dialogGetUpper dial
-    let tGraph = _getGraph . _getTypeGraph $ state
+    let tGraph = get (getGraph . getTypeGraph) state
         nodes = G.nodes tGraph
-    store <- listStoreNew $ L.reverse nodes
+    store <- listStoreNew $ L.sort nodes
     -- Create and prepare TreeView
     view <- treeViewNew
     col  <- treeViewColumnNew
