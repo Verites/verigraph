@@ -372,16 +372,13 @@ typeEditDialog n p@(coords, renderFunc, checkFunc) state = do
     cancelButton <- dialogAddButton dial "Cancel" ResponseCancel
     widgetShowAll dial
     response <- dialogRun dial
-    let tGraph = _getGraph tGraphState
-        tGraphState = _getTypeGraph $ state
-        p' newColor = (coords, drawCircle newColor, checkFunc)
+    let p' newColor = (coords, drawCircle newColor, checkFunc)
     case response of 
         ResponseApply -> do
             color <- colorButtonGetColor colorButton
-            let tGraph' =
-                    G.updateNodePayload n tGraph (\_ -> p' color)
-                tGraphState' = tGraphState { _getGraph = tGraph' }
-                state' = state { _getTypeGraph = tGraphState' }
+            let state' = modify (getGraph . getTypeGraph)
+                                (\g -> G.updateNodePayload n g (\_ -> p' color))
+                                state
             widgetDestroy dial
             return state'
         ResponseCancel -> do
