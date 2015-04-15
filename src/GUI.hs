@@ -70,8 +70,7 @@ data CanvasMode =
 
 
 data SelMode =
-      SelNodes [G.NodeId]
-    | SelEdges [G.EdgeId]
+      SelObjects [Obj]
 --  | DragNodes [G.NodeId]
     | DrawEdge G.NodeId
     | IdleMode
@@ -176,7 +175,7 @@ drawCircle color state gstate n =
         fill
     p = G.nodePayload (_getGraph gstate) n
     sel = case _getSelMode gstate of
-            SelNodes ns -> n `elem` ns
+            SelObjects ns -> (Node n) `elem` ns
             otherwise -> False
 
 nodeRenderType :: State -> GraphEditState -> G.NodeId -> Render ()
@@ -321,11 +320,11 @@ chooseMouseAction state gstate coords@(x, y) button click =
         ([], LeftButton, DoubleClick) ->
             return $
                 gstate { _getGraph = graph'
-                       , _getSelMode = SelNodes [newId]
+                       , _getSelMode = SelObjects [Node newId]
                        }
         (((k, p):_), LeftButton, SingleClick) ->
             return $
-                set getSelMode (SelNodes [k]) gstate
+                set getSelMode (SelObjects [Node k]) gstate
         (((k, (Just p)):_), LeftButton, DoubleClick) ->
             case _canvasMode state of
                 TGraphMode -> typeEditDialog k p state gstate
