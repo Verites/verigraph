@@ -57,6 +57,7 @@ data State = State
 data GraphEditState = GraphEditState
     { _getStatus :: RowStatus
     , _getSelMode :: SelMode
+    , _refCoords :: Coords
     , _getGraph :: Graph
     , _getNodeRelation :: R.Relation G.NodeId
     , _getEdgeRelation :: R.Relation G.EdgeId
@@ -266,6 +267,8 @@ addMainCallbacks gui stateRef = do
     dwin <- widgetGetDrawWindow canvas
     canvas `on` exposeEvent $ do liftIO $ renderWithDrawable dwin (updateCanvas stateRef)
                                  return True
+    widgetAddEvents canvas [Button1MotionMask]
+--    canvas `on` motionNotifyEvent $ 
     view `on` cursorChanged $ rowSelected gui store stateRef view
     return ()
 
@@ -297,15 +300,7 @@ mouseClick canvas stateRef = do
     state <- liftIO $ readIORef stateRef
     let Just gstate = currentGraph state -- FIXME unsafe pattern matching
     gstate' <- liftIO $ chooseMouseAction state gstate coords button click
-    liftIO $ writeIORef stateRef $
-        case _canvasMode state of
-            IGraphMode k ->
-                modify getInitialGraphs
-                       (\s -> addToAL s k gstate')
-                       state
-            TGraphMode ->
-                set getTypeGraph gstate' state
-            otherwise -> state
+    liftIO $ writeIORef stateRef $ setCurGraphState gstate' state
     liftIO $ widgetQueueDraw canvas
     return True
 
@@ -324,7 +319,8 @@ chooseMouseAction state gstate coords@(x, y) button click =
                        }
         (((k, p):_), LeftButton, SingleClick) ->
             return $
-                set getSelMode (SelObjects [Node k]) gstate
+                set getSelMode (SelObjects [Node k]) $
+                set refCoords coords gstate
         (((k, (Just p)):_), LeftButton, DoubleClick) ->
             case _canvasMode state of
                 TGraphMode -> typeEditDialog k p state gstate
@@ -426,7 +422,14 @@ nodeEditDialog n p@(coords, renderFunc, checkFunc) state gstate = do
             return $ modify getGraph updateRenderFunc gstate'
         _ -> do
             return gstate
-    
+
+mouseMove :: WidgetClass widget
+          => widget -> IORef State -> EventM EButton Bool
+mouseMove canvas stateRef = do
+    coords <- eventCoordinates
+    state <- liftIO $ readIORef stateRef
+    let gstate = currentGraph state
+        refCoords = get refCoords gstate
 
 currentGraph :: State -> Maybe GraphEditState
 currentGraph state =
@@ -438,6 +441,17 @@ currentGraph state =
     iGraphs = _getInitialGraphs state
     tGraph = _getTypeGraph state
     rules = _getRules state
+
+setCurGraphState :: GraphEditState -> State -> State
+setCurGraphState gstate' state =
+    case _canvasMode state of
+        IGraphMode k ->
+            modify getInitialGraphs
+                   (\s -> addToAL s k gstate')
+                   state
+        TGraphMode ->
+            set getTypeGraph gstate' state
+        otherwise -> state
 
 
 updateCanvas :: IORef State -> Render ()
@@ -484,10 +498,10 @@ grammarToState gg =
     iNodeRel = GM.nodeRelation iGraph
     iEdgeRel = GM.edgeRelation iGraph
     iGraphEditState =
-        GraphEditState Active IdleMode (M.domain iGraph) iNodeRel iEdgeRel
+        GraphEditState Active IdleMode (0, 0) (M.domain iGraph) iNodeRel iEdgeRel
     emptyRel = R.empty [] []
     tGraph =
-        GraphEditState Active IdleMode (GG.typeGraph gg) emptyRel emptyRel
+        GraphEditState Active IdleMode (0, 0) (GG.typeGraph gg) emptyRel emptyRel
     iGraphList = [(defGraphName, iGraphEditState)]
     rulesList = []
 --    rules  = GG.rules gg
