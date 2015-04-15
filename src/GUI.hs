@@ -436,17 +436,6 @@ nodeEditDialog n p@(coords, renderFunc, checkFunc) state gstate = do
         _ -> do
             return gstate
     
-        
-    
-{-
-chooseColor :: EventM EButton Bool
-chooseColor = do
-    liftIO $ do
-        dial <- colorSelectionDialogNew "Select color"
-        widgetShowAll dial
-        dialogRun dial
-    return True
--}
 
 currentGraph :: State -> Maybe GraphEditState
 currentGraph state =
@@ -465,23 +454,6 @@ updateCanvas stateRef = do
     state <- liftIO $ readIORef stateRef
     render state
 
-{-
-    case _canvasMode state of
-        IGraphMode k -> fetchAndRender k $ _getInitialGraphs state
-        TGraphMode -> render $ _getTypeGraph state
-        otherwise -> do
-            renderColor $ defBorderColor
-            Gtk.arc 100 40 defRadius 0 $ 2 * pi
-            fill
-            return ()
-  where
-    fetchAndRender k l =
-        let graph = lookup k l
-        in case graph of
-            Nothing -> return ()
-            Just gstate  -> render gstate
--}
-      
 
 openFileDialog :: IO ()
 openFileDialog = do
