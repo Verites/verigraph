@@ -1,13 +1,13 @@
 {-# LANGUAGE TypeFamilies, MultiParamTypeClasses, FlexibleContexts #-}
 
-module Relation (
+module Abstract.Relation (
       apply
     , compose
     , defDomain
     , domain
     , empty
     , functional
-    , Relation.id
+    , Abstract.Relation.id
     , image
     , injective
     , inverse

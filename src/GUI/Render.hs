@@ -14,7 +14,7 @@ import GUI.Editing
 import Graphics.Rendering.Cairo as Gtk
 import Graphics.UI.Gtk (Color (..))
 import qualified Graph.Graph as G
-import qualified Relation as R
+import qualified Abstract.Relation as R
 import Prelude hiding ((.))
 import Control.Category
 

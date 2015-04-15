@@ -29,8 +29,8 @@ import qualified Graph.Graph as G
 import qualified Graph.GraphMorphism as GM
 import qualified Graph.GraphGrammar as GG
 import qualified Graph.GraphRule as GR
-import qualified Morphism as M
-import qualified Relation as R
+import qualified Abstract.Morphism as M
+import qualified Abstract.Relation as R
 import Graphics.Rendering.Cairo (Render)
 import Graphics.UI.Gtk (Color, TreeStore, treeStoreNew, treeStoreInsert)
 import Data.Label -- fclabels

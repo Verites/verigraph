@@ -27,11 +27,11 @@ import Graphics.UI.Gtk hiding (get, set) -- conflict with fclabels
 import qualified Graphics.UI.Gtk as Gtk
 import Graphics.Rendering.Cairo as Gtk
 import Graphics.UI.Gtk.Gdk.EventM
-import qualified Morphism as M
+import qualified Abstract.Morphism as M
 import Prelude hiding (mapM_, any, (.), id)
 import Control.Category -- for fclabels, including (.) and id
-import qualified Relation as R
-import Valid (valid)
+import qualified Abstract.Relation as R
+import Abstract.Valid (valid)
 
 import GUI.Render
 import GUI.Editing

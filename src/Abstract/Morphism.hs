@@ -1,6 +1,6 @@
 {-# LANGUAGE TypeFamilies, MultiParamTypeClasses, FlexibleContexts #-}
 
-module Morphism where
+module Abstract.Morphism where
 
 class (Eq m) => Morphism m where
     type Obj m :: *
