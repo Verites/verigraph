@@ -152,7 +152,7 @@ instance Renderable (RNode) where
 
 instance Renderable State where
     render state =
-        case currentGraph state of
+        case currentGraphState state of
             Just gstate -> 
                 mapM_ (render . RNode state gstate) $ G.nodes (_getGraph gstate)
             Nothing -> return ()
@@ -298,7 +298,7 @@ mouseClick canvas stateRef = do
     button <- eventButton
     click <- eventClick
     state <- liftIO $ readIORef stateRef
-    let Just gstate = currentGraph state -- FIXME unsafe pattern matching
+    let Just gstate = currentGraphState state -- FIXME unsafe pattern matching
     gstate' <- liftIO $ chooseMouseAction state gstate coords button click
     liftIO $ writeIORef stateRef $ setCurGraphState gstate' state
     liftIO $ widgetQueueDraw canvas
@@ -423,16 +423,18 @@ nodeEditDialog n p@(coords, renderFunc, checkFunc) state gstate = do
         _ -> do
             return gstate
 
+{-
 mouseMove :: WidgetClass widget
           => widget -> IORef State -> EventM EButton Bool
 mouseMove canvas stateRef = do
     coords <- eventCoordinates
     state <- liftIO $ readIORef stateRef
-    let gstate = currentGraph state
+    let gstate = currentGraphState state
         refCoords = get refCoords gstate
+-}
 
-currentGraph :: State -> Maybe GraphEditState
-currentGraph state =
+currentGraphState :: State -> Maybe GraphEditState
+currentGraphState state =
     case _canvasMode state of
         IGraphMode k -> lookup k iGraphs
         TGraphMode -> Just tGraph
@@ -452,6 +454,14 @@ setCurGraphState gstate' state =
         TGraphMode ->
             set getTypeGraph gstate' state
         otherwise -> state
+
+modCurGraphState :: (GraphEditState -> GraphEditState) -> State -> State
+modCurGraphState f state =
+    case gstate' of
+        Just gstate' -> setCurGraphState gstate' state
+        Nothing -> state
+  where
+    gstate' = fmap f $ currentGraphState state
 
 
 updateCanvas :: IORef State -> Render ()
