@@ -1,13 +1,13 @@
 {-# LANGUAGE TemplateHaskell #-} -- fclabels
 
-module GUI (runGUI) where
+module GUI.GUI (runGUI) where
 -- module GUI (createGUI, addMainCallbacks, showGUI, NodePayload, EdgePayload) where
 
 import Control.Monad.Trans.Class (lift)
-import qualified Graph as G
-import qualified GraphMorphism as GM
-import qualified GraphGrammar as GG
-import qualified GraphRule as GR
+import qualified Graph.Graph as G
+import qualified Graph.GraphMorphism as GM
+import qualified Graph.GraphGrammar as GG
+import qualified Graph.GraphRule as GR
 --import qualified TypedGraphMorphism as TM
 --import Data.Colour.Names
 --import Data.Colour.SRGB (Colour, toSRGB, RGB (..))
@@ -33,69 +33,8 @@ import Control.Category -- for fclabels, including (.) and id
 import qualified Relation as R
 import Valid (valid)
 
-type Grammar = GG.GraphGrammar NodePayload EdgePayload
-type Graph = G.Graph NodePayload EdgePayload
-type GraphMorphism = GM.GraphMorphism NodePayload EdgePayload
-type Rule = GR.GraphRule NodePayload EdgePayload
-type Coords = (Double, Double)
-type NodePayload =
-    ( Coords
-    , State -> GraphEditState -> G.NodeId -> Render ()
-    , Coords -> Coords -> Bool)
-type EdgePayload = Color
-data Obj = Node Int | Edge Int
-    deriving (Show, Eq)
-
--- To keep it uniform, typegraphs are also described as GraphEditState
-data State = State
-    { _canvasMode       :: CanvasMode
-    , _getInitialGraphs :: [(Key, GraphEditState)]
-    , _getTypeGraph    :: GraphEditState
-    , _getRules         :: [(Key, GraphEditState)]
-    }
-
-data GraphEditState = GraphEditState
-    { _getStatus :: RowStatus
-    , _getSelMode :: SelMode
-    , _refCoords :: Coords
-    , _getGraph :: Graph
-    , _getNodeRelation :: R.Relation G.NodeId
-    , _getEdgeRelation :: R.Relation G.EdgeId
-    } deriving Show
-
-data CanvasMode =
-      IGraphMode Key
-    | TGraphMode
-    | RuleMode Key
-    deriving Show
-
-
-data SelMode =
-      SelObjects [Obj]
---  | DragNodes [G.NodeId]
-    | DrawEdge G.NodeId
-    | IdleMode
-    deriving Show
-    
-
-data RowStatus = Active | Inactive
-    deriving (Eq, Show)
-
-type Key = String
-
-
-data TreeNode
-    = TNInitialGraph RowStatus Key
-    | TNTypeGraph
-    | TNRule RowStatus Key
-    | TNRoot Key
-
-instance Show TreeNode where
-    show (TNInitialGraph _ s ) = s
-    show TNTypeGraph = "Type Graph"
-    show (TNRule _ s) = s
-    show (TNRoot s) = s
-
+import GUI.Render
+import GUI.Editing
 
 
 data GUI = GUI
@@ -111,87 +50,12 @@ data Buttons = Buttons
     , _getOkButton :: Button
     }
 
-$(mkLabels [''State, ''GraphEditState, ''GUI, ''Buttons])
+$(mkLabels [''GUI, ''Buttons])
 
 
-defGraphName = "g0"
-defTGraphName = "t0"
-defRadius = 20 :: Double
-defLineWidth = 2 :: Double
 -- FIXME temporary magic constants
-defBorderColor = Color 65535 65535 65535
-initialColor = Color 13363 25956 42148
-defSpacing = 1
 neutralColor = Color 13363 25956 42148 -- gainsboro
-renderColor :: Color -> Gtk.Render ()
-renderColor (Color r g b) = setSourceRGB  r' g' b'
-  where
-    (r', g', b') = (fromIntegral r / denom,
-                    fromIntegral g / denom,
-                    fromIntegral b / denom) :: (Double, Double, Double)
-    denom = 65535 :: Double
---    rgb = toSRGB k
---    (r, g, b) = (channelRed rgb, channelGreen rgb, channelBlue rgb)
-
-{- Data types for rendering -}
-data RNode = RNode State GraphEditState G.NodeId
-data REdge = REdge Graph G.EdgeId
-data RGraph = RGraph Graph
-
-class Renderable a where
-    render :: a -> Render ()
-
-instance Renderable (RNode) where
-    render (RNode state gstate n) =
-        case G.nodePayload g n of
-            Just (coords, renderFunc, checkFunc) -> renderFunc state gstate n
-            otherwise -> return ()
-      where
-        g = _getGraph gstate
-
-
-instance Renderable State where
-    render state =
-        case currentGraphState state of
-            Just gstate -> 
-                mapM_ (render . RNode state gstate) $ G.nodes (_getGraph gstate)
-            Nothing -> return ()
-        
-
-drawCircle :: Color -> State -> GraphEditState -> G.NodeId -> Render ()
-drawCircle color state gstate n =
-    case p of
-        Just ((x, y), rF, cF) -> do
-            setLineWidth defLineWidth
-            renderColor defBorderColor
-            Gtk.arc x y defRadius 0 $ 2 * pi
-            strokePreserve
-            renderColor color
-            if sel then fillPreserve >> highlight else fill
-            return ()
-        otherwise -> return ()
-  where
-    highlight = do
-        setSourceRGBA 0 0 0 0.4
-        fill
-    p = G.nodePayload (_getGraph gstate) n
-    sel = case _getSelMode gstate of
-            SelObjects ns -> (Node n) `elem` ns
-            otherwise -> False
-
-nodeRenderType :: State -> GraphEditState -> G.NodeId -> Render ()
-nodeRenderType state gstate n =
-    case newP of
-        Just (_, rF, _) -> rF state gstate n
-        _ -> return ()
-  where
-    nodeTypes = R.apply (_getNodeRelation gstate) n
-    tGraph = get (getGraph . getTypeGraph) state
-    newP = case nodeTypes of
-               (x:xs) -> G.nodePayload tGraph x
-               _ -> Nothing
-        
-
+initialColor = Color 13363 25956 42148
 
 insideCircle :: Double -> Coords -> Coords -> Bool
 insideCircle radius circleCoords coords =
@@ -433,36 +297,6 @@ mouseMove canvas stateRef = do
         refCoords = get refCoords gstate
 -}
 
-currentGraphState :: State -> Maybe GraphEditState
-currentGraphState state =
-    case _canvasMode state of
-        IGraphMode k -> lookup k iGraphs
-        TGraphMode -> Just tGraph
-        RuleMode k -> lookup k rules
-  where
-    iGraphs = _getInitialGraphs state
-    tGraph = _getTypeGraph state
-    rules = _getRules state
-
-setCurGraphState :: GraphEditState -> State -> State
-setCurGraphState gstate' state =
-    case _canvasMode state of
-        IGraphMode k ->
-            modify getInitialGraphs
-                   (\s -> addToAL s k gstate')
-                   state
-        TGraphMode ->
-            set getTypeGraph gstate' state
-        otherwise -> state
-
-modCurGraphState :: (GraphEditState -> GraphEditState) -> State -> State
-modCurGraphState f state =
-    case gstate' of
-        Just gstate' -> setCurGraphState gstate' state
-        Nothing -> state
-  where
-    gstate' = fmap f $ currentGraphState state
-
 
 updateCanvas :: IORef State -> Render ()
 updateCanvas stateRef = do
@@ -498,50 +332,6 @@ createView store = do
 --    treeViewColumnAddAttribute col renderer "text" 0
     return view
 
-
-
-grammarToState :: Grammar -> State
-grammarToState gg =
-    State (IGraphMode defGraphName) iGraphList tGraph rulesList
-  where
-    iGraph = GG.initialGraph gg
-    iNodeRel = GM.nodeRelation iGraph
-    iEdgeRel = GM.edgeRelation iGraph
-    iGraphEditState =
-        GraphEditState Active IdleMode (0, 0) (M.domain iGraph) iNodeRel iEdgeRel
-    emptyRel = R.empty [] []
-    tGraph =
-        GraphEditState Active IdleMode (0, 0) (GG.typeGraph gg) emptyRel emptyRel
-    iGraphList = [(defGraphName, iGraphEditState)]
-    rulesList = []
---    rules  = GG.rules gg
---    ruleToGraphEditState 
---    rulesMap = foldr (\(s, r) acc -> M.insert s r acc) M.empty rules
-
-stateToModel :: State -> IO (TreeStore TreeNode)
-stateToModel state = do
-    tree <- treeStoreNew [] :: IO (TreeStore TreeNode)
-    treeStoreInsert tree [] 0 $ TNInitialGraph Active defGraphName
-    treeStoreInsert tree [] 2 $ TNTypeGraph
---    treeStoreInsertTree tree [] 2 ruleTree
-    return tree
-  where
-    rules = _getRules state
-    tGraph = _getTypeGraph state
-    
-
-grammarToModel :: Grammar -> IO (TreeStore TreeNode)
-grammarToModel = stateToModel . grammarToState
-
-testGrammar :: Grammar
-testGrammar =
-    GG.graphGrammar iGraph []
-  where
-    iGraph = GM.graphMorphism g t nR eR
-    g = G.empty :: Graph
-    t = G.empty :: Graph
-    nR = R.empty [] []
-    eR = R.empty [] []
 
 -- Unusual order of arguments to follow AssocList (MissingH) convension
 updateAL :: [(Key, a)] -> Key -> (a -> a) -> [(Key, a)]

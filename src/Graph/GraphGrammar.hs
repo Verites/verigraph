@@ -1,4 +1,4 @@
-module GraphGrammar (
+module Graph.GraphGrammar (
       graphGrammar
     , GraphGrammar
     , initialGraph
@@ -6,9 +6,9 @@ module GraphGrammar (
     , typeGraph
 ) where
 
-import Graph (Graph)
-import GraphMorphism
-import GraphRule (GraphRule)
+import Graph.Graph (Graph)
+import Graph.GraphMorphism
+import Graph.GraphRule (GraphRule)
 import qualified Morphism as M
 
 data GraphGrammar a b = GraphGrammar {

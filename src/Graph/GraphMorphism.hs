@@ -1,12 +1,12 @@
 {-# LANGUAGE TypeFamilies #-}
 
-module GraphMorphism (
+module Graph.GraphMorphism (
       applyNode
     , applyEdge
     , graphMorphism
-    , GraphMorphism.null
+    , Graph.GraphMorphism.null
     , GraphMorphism
-    , GraphMorphism.empty
+    , Graph.GraphMorphism.empty
     , inverse
     , nodeRelation
     , edgeRelation
@@ -18,8 +18,8 @@ module GraphMorphism (
 ) where
 
 import qualified Relation as R
-import Graph as G
-import Graph (Graph)
+import Graph.Graph as G
+import Graph.Graph (Graph)
 import Morphism
 import Valid
 

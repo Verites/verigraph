@@ -1,5 +1,5 @@
 {-# LANGUAGE TypeFamilies #-}
-module Match
+module Graph.Match
     ( findMatches
     , MorphismType (..)
     )
@@ -10,16 +10,16 @@ import Control.Monad.State
 import qualified Data.List as L
 import Data.List.Utils
 import Data.Maybe
-import Graph (Graph, edges, Edge, EdgeId, incidentEdges, Node, 
+import Graph.Graph (Graph, edges, Edge, EdgeId, incidentEdges, Node, 
               NodeId, nodes, null, sourceOf, targetOf, removeNode, removeEdge)
-import GraphRule (GraphRule)
-import qualified GraphRule as GR
+import Graph.GraphRule (GraphRule)
+import qualified Graph.GraphRule as GR
 import qualified Data.Set as Set
 import Morphism (domain, codomain, epimorphism)
-import GraphMorphism (GraphMorphism, TypedGraph)
-import qualified GraphMorphism as GM
+import Graph.GraphMorphism (GraphMorphism, TypedGraph)
+import qualified Graph.GraphMorphism as GM
 import qualified Relation as R
-import TypedGraphMorphism (mapping, typedMorphism, TypedGraphMorphism)
+import Graph.TypedGraphMorphism (mapping, typedMorphism, TypedGraphMorphism)
 
 -- | Is a tuple of two relations regarding two graphs (possibly equal):
 -- the first among their respective G.nodes, the other among their G.edges. Each

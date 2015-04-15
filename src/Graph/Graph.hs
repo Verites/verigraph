@@ -1,5 +1,5 @@
 {-# LANGUAGE TypeFamilies #-}
-module Graph (
+module Graph.Graph (
       edgePayload
     , Edge
     , EdgeId
@@ -26,7 +26,7 @@ module Graph (
     , nodesFromNode
     , nodesIntoNode
     , nodesWithPayload
-    , Graph.null
+    , Graph.Graph.null
     , removeEdge
     , removeNode
     , sourceOf

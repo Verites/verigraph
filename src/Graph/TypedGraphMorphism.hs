@@ -1,13 +1,13 @@
 {-# LANGUAGE TypeFamilies #-}
 
-module TypedGraphMorphism (
+module Graph.TypedGraphMorphism (
       mapping
     , typedMorphism
     , TypedGraphMorphism
 ) where
 
-import Graph (Graph)
-import GraphMorphism
+import Graph.Graph (Graph)
+import Graph.GraphMorphism
 import Morphism
 import Valid
 

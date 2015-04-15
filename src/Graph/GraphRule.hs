@@ -1,4 +1,4 @@
-module GraphRule (
+module Graph.GraphRule (
       graphRule
     , GraphRule
     , left
@@ -6,7 +6,7 @@ module GraphRule (
     , nacs
 ) where
 
-import TypedGraphMorphism (TypedGraphMorphism)
+import Graph.TypedGraphMorphism (TypedGraphMorphism)
 import Morphism
 import Valid
 
