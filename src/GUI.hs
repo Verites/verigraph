@@ -39,7 +39,9 @@ type GraphMorphism = GM.GraphMorphism NodePayload EdgePayload
 type Rule = GR.GraphRule NodePayload EdgePayload
 type Coords = (Double, Double)
 type NodePayload =
-    (Coords, Bool -> Coords -> Render (), Coords -> Coords -> Bool)
+    ( Coords
+    , State -> GraphEditState -> G.NodeId -> Render ()
+    , Coords -> Coords -> Bool)
 type EdgePayload = Color
 data Obj = Node Int | Edge Int
     deriving (Show, Eq)
@@ -132,7 +134,7 @@ renderColor (Color r g b) = setSourceRGB  r' g' b'
 --    (r, g, b) = (channelRed rgb, channelGreen rgb, channelBlue rgb)
 
 {- Data types for rendering -}
-data RNode = RNode GraphEditState G.NodeId
+data RNode = RNode State GraphEditState G.NodeId
 data REdge = REdge Graph G.EdgeId
 data RGraph = RGraph Graph
 
@@ -140,34 +142,64 @@ class Renderable a where
     render :: a -> Render ()
 
 instance Renderable (RNode) where
-    render (RNode gstate n) =
+    render (RNode state gstate n) =
         case G.nodePayload g n of
-            Just (coords, renderFunc, checkFunc) -> renderFunc sel coords
+            Just (coords, renderFunc, checkFunc) -> renderFunc state gstate n
             otherwise -> return ()
       where
         g = _getGraph gstate
-        sel = case _getSelMode gstate of
-                SelNodes ns -> n `elem` ns
-                otherwise -> False
 
 
-instance Renderable GraphEditState where
-    render gstate = do
-        mapM_ (render . RNode gstate) $ G.nodes (_getGraph gstate)
+instance Renderable State where
+    render state =
+        case mbGstate of
+            Just gstate -> 
+                mapM_ (render . RNode state gstate) $ G.nodes (_getGraph gstate)
+            Nothing -> return ()
+      where
+        mbGstate =
+            case _canvasMode state of
+                IGraphMode k -> L.lookup k $ _getInitialGraphs state
+                TGraphMode -> Just $ _getTypeGraph state
+                otherwise -> Nothing
+            
+         
         
 
-drawCircle :: Color -> Bool -> Coords -> Render ()
-drawCircle color sel (x, y) = do
-    setLineWidth defLineWidth
-    renderColor defBorderColor
-    Gtk.arc x y defRadius 0 $ 2 * pi
-    strokePreserve
-    renderColor color
-    if sel then fillPreserve >> highlight else fill
+drawCircle :: Color -> State -> GraphEditState -> G.NodeId -> Render ()
+drawCircle color state gstate n =
+    case p of
+        Just ((x, y), rF, cF) -> do
+            setLineWidth defLineWidth
+            renderColor defBorderColor
+            Gtk.arc x y defRadius 0 $ 2 * pi
+            strokePreserve
+            renderColor color
+            if sel then fillPreserve >> highlight else fill
+            return ()
+        otherwise -> return ()
   where
     highlight = do
         setSourceRGBA 0 0 0 0.4
         fill
+    p = G.nodePayload (_getGraph gstate) n
+    sel = case _getSelMode gstate of
+            SelNodes ns -> n `elem` ns
+            otherwise -> False
+
+nodeRenderType :: State -> GraphEditState -> G.NodeId -> Render ()
+nodeRenderType state gstate n =
+    case newP of
+        Just (_, rF, _) -> rF state gstate n
+        _ -> return ()
+  where
+    nodeTypes = R.apply (_getNodeRelation gstate) n
+    tGraph = get (getGraph . getTypeGraph) state
+    newP = case nodeTypes of
+               (x:xs) -> G.nodePayload tGraph x
+               _ -> Nothing
+        
+
 
 insideCircle :: Double -> Coords -> Coords -> Bool
 insideCircle radius circleCoords coords =
@@ -316,11 +348,12 @@ chooseMouseAction state gstate coords@(x, y) button click =
     listPayloads = G.nodesWithPayload g
     g = _getGraph gstate
     (newId, graph') =
-        addNode g coords (drawCircle neutralColor) (insideCircle defRadius)
+        addNode g coords (drawCircle neutralColor)
+                         (insideCircle defRadius)
 
 addNode :: Graph
         -> Coords
-        -> (Bool -> Coords -> Render ())
+        -> (State -> GraphEditState -> G.NodeId -> Render ())
         -> (Coords -> Coords -> Bool)
         -> (Int, Graph)
 addNode graph coords renderFunc checkFunc =
@@ -382,12 +415,13 @@ nodeEditDialog n p@(coords, renderFunc, checkFunc) state gstate = do
     dialogAddButton dial "Cancel" ResponseCancel
 
     widgetShowAll dial
-    response <- dialogRun dial
     tidRef <- newIORef 0
     view `on` cursorChanged $ do
         Just iter <- treeSelectionGetSelected =<< treeViewGetSelection view
         tid <- listStoreGetValue store $ listStoreIterToIndex iter
         writeIORef tidRef tid
+
+    response <- dialogRun dial
     widgetDestroy dial
     case response of
         ResponseApply -> do
@@ -396,12 +430,11 @@ nodeEditDialog n p@(coords, renderFunc, checkFunc) state gstate = do
             let gstate' = modify getNodeRelation
                                  (R.update n tid)
                                  gstate
-                Just (_, newRender, _) = -- FIXME
-                    G.nodePayload (get (getGraph . getTypeGraph) state) tid
                 updateRenderFunc g =
-                    G.updateNodePayload n g (\(c, r, cf) -> (c, newRender, cf))
+                    G.updateNodePayload n g (\(c, _, cf) -> (c, nodeRenderType, cf))
             return $ modify getGraph updateRenderFunc gstate'
-        _ -> return gstate
+        _ -> do
+            return gstate
     
         
     
@@ -430,6 +463,9 @@ currentGraph state =
 updateCanvas :: IORef State -> Render ()
 updateCanvas stateRef = do
     state <- liftIO $ readIORef stateRef
+    render state
+
+{-
     case _canvasMode state of
         IGraphMode k -> fetchAndRender k $ _getInitialGraphs state
         TGraphMode -> render $ _getTypeGraph state
@@ -444,6 +480,7 @@ updateCanvas stateRef = do
         in case graph of
             Nothing -> return ()
             Just gstate  -> render gstate
+-}
       
 
 openFileDialog :: IO ()
