@@ -152,18 +152,10 @@ instance Renderable (RNode) where
 
 instance Renderable State where
     render state =
-        case mbGstate of
+        case currentGraph state of
             Just gstate -> 
                 mapM_ (render . RNode state gstate) $ G.nodes (_getGraph gstate)
             Nothing -> return ()
-      where
-        mbGstate =
-            case _canvasMode state of
-                IGraphMode k -> L.lookup k $ _getInitialGraphs state
-                TGraphMode -> Just $ _getTypeGraph state
-                otherwise -> Nothing
-            
-         
         
 
 drawCircle :: Color -> State -> GraphEditState -> G.NodeId -> Render ()
