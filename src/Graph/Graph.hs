@@ -36,7 +36,7 @@ module Graph.Graph (
 ) where
 
 import Control.Applicative ((<$>))
-import Valid
+import Abstract.Valid
 import Data.List
 import Data.List.Utils
 

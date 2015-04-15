@@ -9,7 +9,7 @@ module Graph.GraphGrammar (
 import Graph.Graph (Graph)
 import Graph.GraphMorphism
 import Graph.GraphRule (GraphRule)
-import qualified Morphism as M
+import qualified Abstract.Morphism as M
 
 data GraphGrammar a b = GraphGrammar {
                             getInitialGraph :: GraphMorphism a b

@@ -8,8 +8,8 @@ module Graph.TypedGraphMorphism (
 
 import Graph.Graph (Graph)
 import Graph.GraphMorphism
-import Morphism
-import Valid
+import Abstract.Morphism as M
+import Abstract.Valid
 
 data TypedGraphMorphism a b = TypedGraphMorphism {
                               getDomain   :: GraphMorphism a b
@@ -36,7 +36,7 @@ instance Morphism (TypedGraphMorphism a b) where
                       (codomain t2)
                       $ compose (getMapping t1)
                                 (getMapping t2)
-    id t = TypedGraphMorphism t t (Morphism.id $ domain t)
+    id t = TypedGraphMorphism t t (M.id $ domain t)
     monomorphism = monomorphism . mapping
     epimorphism = epimorphism . mapping
     isomorphism = isomorphism . mapping

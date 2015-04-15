@@ -17,11 +17,11 @@ module Graph.GraphMorphism (
     , updateEdges
 ) where
 
-import qualified Relation as R
+import qualified Abstract.Relation as R
 import Graph.Graph as G
 import Graph.Graph (Graph)
-import Morphism
-import Valid
+import Abstract.Morphism
+import Abstract.Valid
 
 data GraphMorphism a b = GraphMorphism {
                           getDomain    :: Graph a b

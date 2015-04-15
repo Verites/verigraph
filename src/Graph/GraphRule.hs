@@ -7,8 +7,8 @@ module Graph.GraphRule (
 ) where
 
 import Graph.TypedGraphMorphism (TypedGraphMorphism)
-import Morphism
-import Valid
+import Abstract.Morphism
+import Abstract.Valid
 
 data GraphRule a b = GraphRule {
                           leftSide  :: TypedGraphMorphism a b

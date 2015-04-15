@@ -15,10 +15,10 @@ import Graph.Graph (Graph, edges, Edge, EdgeId, incidentEdges, Node,
 import Graph.GraphRule (GraphRule)
 import qualified Graph.GraphRule as GR
 import qualified Data.Set as Set
-import Morphism (domain, codomain, epimorphism)
+import Abstract.Morphism (domain, codomain, epimorphism)
 import Graph.GraphMorphism (GraphMorphism, TypedGraph)
 import qualified Graph.GraphMorphism as GM
-import qualified Relation as R
+import qualified Abstract.Relation as R
 import Graph.TypedGraphMorphism (mapping, typedMorphism, TypedGraphMorphism)
 
 -- | Is a tuple of two relations regarding two graphs (possibly equal):
