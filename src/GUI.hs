@@ -14,7 +14,7 @@ import qualified GraphRule as GR
 import qualified Data.Foldable as F
 import Data.Label -- fclabels
 import Data.List.Utils
-import Data.Maybe (fromJust, isJust, isNothing)
+import Data.Maybe (fromMaybe, fromJust)
 import Data.IORef
 import Debug.Trace
 import qualified Data.Tree as T
@@ -367,8 +367,8 @@ typeEditDialog n p@(coords, renderFunc, checkFunc) state = do
 --    colorButton `on` buttonPressEvent $ chooseColor
     colorSel <- colorSelectionNew
 --    boxPackStart cArea colorSel PackNatural 1
-    applyButton  <- dialogAddButton dial "Apply" ResponseApply
-    cancelButton <- dialogAddButton dial "Cancel" ResponseCancel
+    dialogAddButton dial "Apply" ResponseApply
+    dialogAddButton dial "Cancel" ResponseCancel
     widgetShowAll dial
     response <- dialogRun dial
     let p' newColor = (coords, drawCircle newColor, checkFunc)
@@ -406,14 +406,39 @@ nodeEditDialog n p@(coords, renderFunc, checkFunc) state = do
     treeViewSetModel view store
     boxPackStart cArea view PackGrow 1
 
+    dialogAddButton dial "Apply" ResponseApply
+    dialogAddButton dial "Cancel" ResponseCancel
+
     widgetShowAll dial
     response <- dialogRun dial
 
-    return state
+    widgetDestroy dial
+    case response of
+        ResponseApply -> do
+            (path, _) <- treeViewGetCursor view
+            tid <- listStoreGetValue store (head path) -- FIXME handle safely
+{-
+            let state' =
+                    modify getInitialGraphs
+                           (\l -> updateAL (show n)
+                                           l
+                                           (\g -> modify getNodeRelation
+                                                         (R.update n tid)
+                                                         g))
+                           state
+-}
+            let key = show n
+                Just gstate = L.lookup key $ get getInitialGraphs state
+                gstate' = modify getNodeRelation
+                                 (R.update n tid)
+                                 gstate
+                state' = modify getInitialGraphs
+                                (\l -> addToAL l key gstate')
+                                state
+            return state'
+        _ -> return state
     
-
         
-
     
 {-
 chooseColor :: EventM EButton Bool
@@ -528,4 +553,14 @@ testGrammar =
     t = G.empty :: Graph
     nR = R.empty [] []
     eR = R.empty [] []
+
+-- Unusual order of arguments to follow AssocList (MissingH) convension
+updateAL :: [(Key, a)] -> Key -> (a -> a) -> [(Key, a)]
+updateAL l k f =
+    case found of
+        Nothing -> l
+        Just e  -> addToAL l k (f e)
+  where
+    found = L.lookup k l
+
 
