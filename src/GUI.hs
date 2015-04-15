@@ -14,7 +14,7 @@ import qualified GraphRule as GR
 import qualified Data.Foldable as F
 import Data.Label -- fclabels
 import Data.List.Utils
-import Data.Maybe (fromMaybe, fromJust)
+import Data.Maybe (fromMaybe)
 import Data.IORef
 import Debug.Trace
 import qualified Data.Tree as T
@@ -100,7 +100,6 @@ data GUI = GUI
     { _treeStore :: TreeStore TreeNode
     , _treeView :: TreeView
     , _mainWindow  :: Window
-    , _buttons :: Buttons
     , _getCanvas :: DrawingArea
     }
 
@@ -151,12 +150,6 @@ instance Renderable (RNode) where
                 SelNodes ns -> n `elem` ns
                 otherwise -> False
 
-{-
-instance Renderable (RGraph) where
-    render (RGraph g) = do
-        mapM_ (render . RNode g) $ G.nodes g
---        mapM_ (render . REdge g) $ G.edges g
--}
 
 instance Renderable GraphEditState where
     render gstate = do
@@ -189,7 +182,6 @@ norm (x, y) (x', y') =
 
 runGUI :: IO ()
 runGUI = do
---    gramRef <- newIORef grammar
     let state = grammarToState testGrammar
     stateRef <- newIORef state
     gui <- createGUI state
@@ -236,18 +228,9 @@ createGUI state = do
 
     boxPackStart vBox0 view PackGrow 1
 
-    iGraphButton <- buttonNewWithLabel "Edit initial graph"
-    addRuleButton <- buttonNewWithLabel "Add rule"
-    okButton <- buttonNewWithLabel "OK"
-{-
-    boxPackStart vBox1 iGraphButton PackNatural 1
-    boxPackStart vBox1 addRuleButton PackNatural 1
-    boxPackStart vBox1 okButton PackNatural 1
--}
     boxPackStart vBox1 canvas PackGrow 1
 
-    let buttons = Buttons iGraphButton addRuleButton okButton
-    return $ GUI store view window buttons canvas 
+    return $ GUI store view window canvas 
 
 addMainCallbacks :: GUI -> IORef State -> IO ()
 addMainCallbacks gui stateRef = do
@@ -255,17 +238,12 @@ addMainCallbacks gui stateRef = do
         view = _treeView gui
         store = _treeStore gui
         canvas = _getCanvas gui
-        bs = _buttons gui
-        iGraphButton = _editInitialGraph bs
-        addRuleButton = _addRule bs
-        okButton = _getOkButton bs
     window `on` objectDestroy $ mainQuit
     canvas `on` buttonPressEvent $ mouseClick canvas stateRef
     dwin <- widgetGetDrawWindow canvas
     canvas `on` exposeEvent $ do liftIO $ renderWithDrawable dwin (updateCanvas stateRef)
                                  return True
     view `on` cursorChanged $ rowSelected gui store stateRef view
---    okButton `on` buttonActivated $ updateModel gram viewRef
     return ()
 
 rowSelected gui store stateRef view = do
@@ -324,14 +302,10 @@ chooseMouseAction state gstate coords@(x, y) button click =
         (((k, p):_), LeftButton, SingleClick) ->
             return $
                 set getSelMode (SelNodes [k]) gstate
-        (((k, (Just p)):_), LeftButton, DoubleClick) -> do
+        (((k, (Just p)):_), LeftButton, DoubleClick) ->
             case _canvasMode state of
-                TGraphMode -> do 
-                    state' <- typeEditDialog k p state
-                    return $  _getTypeGraph state'
-                otherwise -> do
-                    state' <- nodeEditDialog k p state
-                    return $ _getTypeGraph state'
+                TGraphMode -> typeEditDialog k p state gstate
+                otherwise -> nodeEditDialog k p state gstate
         otherwise -> return gstate
   where
     objects =
@@ -356,8 +330,8 @@ addNode graph coords renderFunc checkFunc =
     graph' =
         G.insertNodeWithPayload newId (coords, renderFunc, checkFunc) graph
 
-typeEditDialog :: G.NodeId -> NodePayload -> State -> IO (State)
-typeEditDialog n p@(coords, renderFunc, checkFunc) state = do
+typeEditDialog :: G.NodeId -> NodePayload -> State -> GraphEditState -> IO (GraphEditState)
+typeEditDialog n p@(coords, renderFunc, checkFunc) state gstate = do
     dial <- dialogNew
     cArea <- return . castToBox =<< dialogGetUpper dial
     entry <- entryNew
@@ -375,23 +349,21 @@ typeEditDialog n p@(coords, renderFunc, checkFunc) state = do
     case response of 
         ResponseApply -> do
             color <- colorButtonGetColor colorButton
-            let state' = modify (getGraph . getTypeGraph)
-                                (\g -> G.updateNodePayload n g (\_ -> p' color))
-                                state
             widgetDestroy dial
-            return state'
+            return $ modify getGraph
+                            (\g -> G.updateNodePayload n g (\_ -> p' color))
+                            gstate
         ResponseCancel -> do
             widgetDestroy dial
-            return state
-        otherwise -> return state
+            return gstate
+        otherwise -> return gstate
 
-nodeEditDialog :: G.NodeId -> NodePayload -> State -> IO (State)
-nodeEditDialog n p@(coords, renderFunc, checkFunc) state = do
+nodeEditDialog :: G.NodeId -> NodePayload -> State -> GraphEditState -> IO (GraphEditState)
+nodeEditDialog n p@(coords, renderFunc, checkFunc) state gstate = do
     dial <- dialogNew
     cArea <- return . castToBox =<< dialogGetUpper dial
-    let tGraph = get (getGraph . getTypeGraph) state
-        nodes = G.nodes tGraph
-    store <- listStoreNew $ L.sort nodes
+    let nodeList = G.nodes $ get (getGraph . getTypeGraph) state
+    store <- listStoreNew $ L.sort nodeList
     -- Create and prepare TreeView
     view <- treeViewNew
     col  <- treeViewColumnNew
@@ -411,32 +383,25 @@ nodeEditDialog n p@(coords, renderFunc, checkFunc) state = do
 
     widgetShowAll dial
     response <- dialogRun dial
-
+    tidRef <- newIORef 0
+    view `on` cursorChanged $ do
+        Just iter <- treeSelectionGetSelected =<< treeViewGetSelection view
+        tid <- listStoreGetValue store $ listStoreIterToIndex iter
+        writeIORef tidRef tid
     widgetDestroy dial
     case response of
         ResponseApply -> do
-            (path, _) <- treeViewGetCursor view
-            tid <- listStoreGetValue store (head path) -- FIXME handle safely
-{-
-            let state' =
-                    modify getInitialGraphs
-                           (\l -> updateAL (show n)
-                                           l
-                                           (\g -> modify getNodeRelation
-                                                         (R.update n tid)
-                                                         g))
-                           state
--}
-            let key = show n
-                Just gstate = L.lookup key $ get getInitialGraphs state
-                gstate' = modify getNodeRelation
+            -- FIXME handle safely
+            tid <- readIORef tidRef
+            let gstate' = modify getNodeRelation
                                  (R.update n tid)
                                  gstate
-                state' = modify getInitialGraphs
-                                (\l -> addToAL l key gstate')
-                                state
-            return state'
-        _ -> return state
+                Just (_, newRender, _) = -- FIXME
+                    G.nodePayload (get (getGraph . getTypeGraph) state) tid
+                updateRenderFunc g =
+                    G.updateNodePayload n g (\(c, r, cf) -> (c, newRender, cf))
+            return $ modify getGraph updateRenderFunc gstate'
+        _ -> return gstate
     
         
     
