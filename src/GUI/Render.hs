@@ -76,9 +76,9 @@ drawCircle color state gstate n =
         setSourceRGBA 0 0 0 0.4
         fill
     p = G.nodePayload (_getGraph gstate) n
-    sel = case _getSelMode gstate of
-            SelObjects ns -> (Node n) `elem` ns
-            otherwise -> False
+    sel = case get selObjects gstate of
+            [] -> False
+            ns -> (Node n) `elem` ns
 
 nodeRenderType :: State -> GraphEditState -> G.NodeId -> Render ()
 nodeRenderType state gstate n =

@@ -116,7 +116,7 @@ addMainCallbacks gui stateRef = do
     canvas `on` exposeEvent $ do liftIO $ renderWithDrawable dwin (updateCanvas stateRef)
                                  return True
     widgetAddEvents canvas [Button1MotionMask]
---    canvas `on` motionNotifyEvent $ mouseMove canvas stateRef
+    canvas `on` motionNotifyEvent $ mouseMove canvas stateRef
     view `on` cursorChanged $ rowSelected gui store stateRef view
     return ()
 
@@ -146,10 +146,13 @@ mouseClick canvas stateRef = do
     button <- eventButton
     click <- eventClick
     state <- liftIO $ readIORef stateRef
-    let Just gstate = currentGraphState state -- FIXME unsafe pattern matching
-    gstate' <- liftIO $ chooseMouseAction state gstate coords button click
-    liftIO $ writeIORef stateRef $ setCurGraphState gstate' state
-    liftIO $ widgetQueueDraw canvas
+    let mgstate = currentGraphState state -- FIXME unsafe pattern matching
+    case mgstate of
+        Just gstate -> do
+            gstate' <- liftIO $ chooseMouseAction state gstate coords button click
+            liftIO $ writeIORef stateRef $ setCurGraphState gstate' state
+            liftIO $ widgetQueueDraw canvas
+        _ -> return ()
     return True
 
 chooseMouseAction :: State
@@ -162,12 +165,15 @@ chooseMouseAction state gstate coords@(x, y) button click =
     case (objects, button, click) of
         ([], LeftButton, DoubleClick) ->
             return $
+                set refCoords coords $
                 gstate { _getGraph = graph'
-                       , _getSelMode = SelObjects [Node newId]
+                       , _selObjects = [Node newId]
                        }
+        ([], LeftButton, SingleClick) ->
+            return $ set selObjects [] gstate
         (((k, p):_), LeftButton, SingleClick) ->
             return $
-                set getSelMode (SelObjects [Node k]) $
+                set selObjects [Node k] $
                 set refCoords coords gstate
         (((k, (Just p)):_), LeftButton, DoubleClick) ->
             case _canvasMode state of
@@ -271,29 +277,30 @@ nodeEditDialog n p@(coords, renderFunc, checkFunc) state gstate = do
         _ -> do
             return gstate
 
-{-
 mouseMove :: WidgetClass widget
           => widget -> IORef State -> EventM EMotion Bool
 mouseMove canvas stateRef = do
-    (x, y) <- eventCoordinates
+    coords@(x, y) <- eventCoordinates
     state <- liftIO $ readIORef stateRef
     let Just gstate = currentGraphState state -- FIXME
-        refCoords = _refCoords gstate
+        (refX, refY) = _refCoords gstate
+        (dx, dy) = (x - refX, y - refY)
         updateCoords g n =
-            G.updateNodePayload n g (\((refX, refY), rF, cF) ->
-                                            ((x + refX, y + refY), rF, cF))
-        SelObjects selObjs = get getSelMode gstate -- FIXME
-        updateAllNodes :: Graph -> Graph
+            G.updateNodePayload n g (\((x, y), rF, cF) ->
+                                            ((x + dx, y + dy), rF, cF))
+        selObjs = get selObjects gstate -- FIXME
+--        updateAllNodes :: Graph -> Graph
         updateAllNodes g =
             foldr (\n acc -> case n of
                                 Node n -> updateCoords acc n
                                 _ -> acc)
                   g
                   selObjs
-        gstate' = modify getGraph updateAllNodes gstate
-    liftIO $ writeIORef stateRef $ setCurGraphState gstate' state
+        gstate' = set refCoords coords gstate
+        gstate'' = modify getGraph updateAllNodes gstate'
+    liftIO $ writeIORef stateRef $ setCurGraphState gstate'' state
+    liftIO $ widgetQueueDraw canvas
     return True
--}
 
 
 updateCanvas :: IORef State -> Render ()
