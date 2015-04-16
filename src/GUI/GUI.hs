@@ -38,10 +38,8 @@ data Buttons = Buttons
 
 $(mkLabels [''GUI, ''Buttons])
 
-
 -- FIXME temporary magic constants
 neutralColor = Color 13363 25956 42148 -- gainsboro
-initialColor = Color 13363 25956 42148
 
 insideCircle :: Double -> Coords -> Coords -> Bool
 insideCircle radius circleCoords coords =
@@ -118,7 +116,7 @@ addMainCallbacks gui stateRef = do
     canvas `on` exposeEvent $ do liftIO $ renderWithDrawable dwin (updateCanvas stateRef)
                                  return True
     widgetAddEvents canvas [Button1MotionMask]
---    canvas `on` motionNotifyEvent $ 
+--    canvas `on` motionNotifyEvent $ mouseMove canvas stateRef
     view `on` cursorChanged $ rowSelected gui store stateRef view
     return ()
 
@@ -205,7 +203,7 @@ typeEditDialog n p@(coords, renderFunc, checkFunc) state gstate = do
     dial <- dialogNew
     cArea <- return . castToBox =<< dialogGetUpper dial
     entry <- entryNew
-    colorButton <- colorButtonNewWithColor initialColor
+    colorButton <- colorButtonNewWithColor neutralColor
     boxPackStart cArea entry PackNatural 1
     boxPackStart cArea colorButton PackNatural 1
 --    colorButton `on` buttonPressEvent $ chooseColor
@@ -275,12 +273,26 @@ nodeEditDialog n p@(coords, renderFunc, checkFunc) state gstate = do
 
 {-
 mouseMove :: WidgetClass widget
-          => widget -> IORef State -> EventM EButton Bool
+          => widget -> IORef State -> EventM EMotion Bool
 mouseMove canvas stateRef = do
-    coords <- eventCoordinates
+    (x, y) <- eventCoordinates
     state <- liftIO $ readIORef stateRef
-    let gstate = currentGraphState state
-        refCoords = get refCoords gstate
+    let Just gstate = currentGraphState state -- FIXME
+        refCoords = _refCoords gstate
+        updateCoords g n =
+            G.updateNodePayload n g (\((refX, refY), rF, cF) ->
+                                            ((x + refX, y + refY), rF, cF))
+        SelObjects selObjs = get getSelMode gstate -- FIXME
+        updateAllNodes :: Graph -> Graph
+        updateAllNodes g =
+            foldr (\n acc -> case n of
+                                Node n -> updateCoords acc n
+                                _ -> acc)
+                  g
+                  selObjs
+        gstate' = modify getGraph updateAllNodes gstate
+    liftIO $ writeIORef stateRef $ setCurGraphState gstate' state
+    return True
 -}
 
 
