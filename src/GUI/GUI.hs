@@ -3,38 +3,24 @@
 module GUI.GUI (runGUI) where
 -- module GUI (createGUI, addMainCallbacks, showGUI, NodePayload, EdgePayload) where
 
-import Control.Monad.Trans.Class (lift)
 import qualified Graph.Graph as G
-import qualified Graph.GraphMorphism as GM
-import qualified Graph.GraphGrammar as GG
-import qualified Graph.GraphRule as GR
---import qualified TypedGraphMorphism as TM
---import Data.Colour.Names
---import Data.Colour.SRGB (Colour, toSRGB, RGB (..))
-import qualified Data.Foldable as F
+import GUI.Render
+import GUI.Editing
+
 import Data.Label -- fclabels
 import Data.List.Utils
-import Data.Maybe (fromMaybe)
 import Data.IORef
-import Debug.Trace
-import qualified Data.Tree as T
+import qualified Data.Tree as T ( Tree( Node ))
 import qualified Data.List as L
-import qualified Data.Map as M
 import Control.Applicative
-import Data.Foldable (mapM_)
-import Data.Traversable (sequenceA, traverse)
 import Graphics.UI.Gtk hiding (get, set) -- conflict with fclabels
 import qualified Graphics.UI.Gtk as Gtk
 import Graphics.Rendering.Cairo as Gtk
-import Graphics.UI.Gtk.Gdk.EventM
-import qualified Abstract.Morphism as M
 import Prelude hiding (mapM_, any, (.), id)
 import Control.Category -- for fclabels, including (.) and id
 import qualified Abstract.Relation as R
 import Abstract.Valid (valid)
 
-import GUI.Render
-import GUI.Editing
 
 
 data GUI = GUI
