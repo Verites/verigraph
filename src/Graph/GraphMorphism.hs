@@ -22,6 +22,7 @@ import Graph.Graph as G
 import Graph.Graph (Graph)
 import Abstract.Morphism
 import Abstract.Valid
+import Data.Maybe (isNothing)
 
 data GraphMorphism a b = GraphMorphism {
                           getDomain    :: Graph a b
@@ -51,13 +52,17 @@ instance Show (GraphMorphism a b) where
 
 
 
-applyNode :: GraphMorphism a b -> G.NodeId -> [G.NodeId]
+applyNode :: GraphMorphism a b -> G.NodeId -> Maybe G.NodeId
 applyNode m ln =
-    R.apply (nodeRelation m) ln
+    case R.apply (nodeRelation m) ln of
+        (x:xs) -> Just x
+        _ -> Nothing
 
-applyEdge :: GraphMorphism a b -> G.EdgeId -> [G.EdgeId]
+applyEdge :: GraphMorphism a b -> G.EdgeId -> Maybe G.EdgeId
 applyEdge m le =
-    R.apply (edgeRelation m) le
+    case R.apply (edgeRelation m) le of
+        (x:xs) -> Just x
+        _ -> Nothing
     
 empty :: Graph a b -> Graph a b -> GraphMorphism a b
 empty gA gB = GraphMorphism gA gB (R.empty [] []) (R.empty [] [])
@@ -82,7 +87,7 @@ updateNodes ln gn morphism@(GraphMorphism l g nm em)
         GraphMorphism l g (R.update ln gn nm) em
     | otherwise = morphism
   where
-    notMapped m = Prelude.null . applyNode m
+    notMapped m = isNothing . applyNode m
 
 updateEdges :: EdgeId -> EdgeId -> GraphMorphism a b -> GraphMorphism a b
 updateEdges le ge morphism@(GraphMorphism l g nm em)
@@ -90,7 +95,7 @@ updateEdges le ge morphism@(GraphMorphism l g nm em)
         GraphMorphism l g nm (R.update le ge em)
     | otherwise = morphism
   where
-    notMapped m = Prelude.null . applyEdge m
+    notMapped m = isNothing . applyEdge m
 
 
 instance Morphism (GraphMorphism a b) where
@@ -123,10 +128,10 @@ instance Valid (GraphMorphism a b) where
         R.functional em &&
         valid dom &&
         valid cod &&
-        all (\e -> (applyEdge m e >>= G.sourceOf cod) ==
-                   (G.sourceOf dom e >>= applyNode m)
+        all (\e -> (G.sourceOf cod =<< applyEdge m e) ==
+                   (applyNode m =<< G.sourceOf dom e)
                    &&
-                   (applyEdge m e >>= G.targetOf cod) ==
-                   (G.targetOf dom e >>= applyNode m))
+                   (G.targetOf cod =<< applyEdge m e) ==
+                   (applyNode m =<< G.targetOf dom e))
             (G.edges dom)
 

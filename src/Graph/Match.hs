@@ -9,7 +9,7 @@ import Control.Monad (foldM)
 import Control.Monad.State
 import qualified Data.List as L
 import Data.List.Utils
-import Data.Maybe
+import Data.Maybe -- (fromMaybe)
 import Graph.Graph (Graph, edges, Edge, EdgeId, incidentEdges, Node, 
               NodeId, nodes, null, sourceOf, targetOf, removeNode, removeEdge)
 import Graph.GraphRule (GraphRule)
@@ -29,11 +29,16 @@ data MorphismType = Normal | Mono | Epi | Iso
     deriving (Eq)
 
 unsafeSourceOf :: Graph a b -> EdgeId -> NodeId
-unsafeSourceOf g = head . sourceOf g
+unsafeSourceOf g e =
+    case sourceOf g e of
+        Just s -> s
+        Nothing -> error "Edge e doesn't exist, or has no source node"
 
 unsafeTargetOf :: Graph a b -> EdgeId -> NodeId
-unsafeTargetOf g = head . targetOf g
-
+unsafeTargetOf g e =
+    case targetOf g e of
+        Just s -> s
+        Nothing -> error "Edge e doesn't exist, or has no target node"
 
 -- | Given two typed graphs and a rule, return a list of mappings, each
 -- representing a possible homomorphism between the graphs. The matches
