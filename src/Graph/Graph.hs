@@ -10,20 +10,19 @@ module Graph.Graph (
     -- * Construction
     , empty
 
-    -- * Insertion
+    -- ** Insertion
     , insertEdge
     , insertNode
     , insertEdgeWithPayload
     , insertNodeWithPayload
 
-    -- * Delete / Update
+    -- ** Delete/Update
     , removeEdge
     , removeNode
     , updateEdgePayload
     , updateNodePayload
 
-    -- * Conversion
-
+    -- * Extraction
     , edges
     , nodes
     , edgesFromNode
@@ -37,14 +36,15 @@ module Graph.Graph (
 
     -- * Query
     , Graph.Graph.null
-    , isEdgeOf
-    , isNodeOf
-    , isAdjacentTo
-    , isIncidentTo
     , nodePayload
     , edgePayload
     , sourceOf
     , targetOf
+    -- ** Predicates
+    , isEdgeOf
+    , isNodeOf
+    , isAdjacentTo
+    , isIncidentTo
 ) where
 
 import Control.Applicative ((<$>))
