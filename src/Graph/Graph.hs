@@ -1,38 +1,50 @@
 {-# LANGUAGE TypeFamilies #-}
 module Graph.Graph (
-      edgePayload
-    , Edge
+    -- * Types
+      Edge
     , EdgeId
-    , edges
-    , edgesFromNode
-    , edgesIntoNode
-    , empty
-    , Graph
-    , incidentEdges
-    , insertEdge
-    , insertEdgeWithPayload
-    , insertNode
-    , insertNodeWithPayload
-    , isAdjacentTo
-    , isEdgeOf
-    , isIncidentTo
-    , isNodeOf
-    , neighbourNodes
     , Node
     , NodeId
-    , nodePayload
+    , Graph
+
+    -- * Construction
+    , empty
+
+    -- * Insertion
+    , insertEdge
+    , insertNode
+    , insertEdgeWithPayload
+    , insertNodeWithPayload
+
+    -- * Delete / Update
+    , removeEdge
+    , removeNode
+    , updateEdgePayload
+    , updateNodePayload
+
+    -- * Conversion
+
+    , edges
     , nodes
+    , edgesFromNode
+    , edgesIntoNode
+    , incidentEdges
+    , neighbourNodes
     , nodesConnectedTo
     , nodesFromNode
     , nodesIntoNode
     , nodesWithPayload
+
+    -- * Query
     , Graph.Graph.null
-    , removeEdge
-    , removeNode
+    , isEdgeOf
+    , isNodeOf
+    , isAdjacentTo
+    , isIncidentTo
+    , nodePayload
+    , edgePayload
     , sourceOf
     , targetOf
-    , updateEdgePayload
-    , updateNodePayload
 ) where
 
 import Control.Applicative ((<$>))
@@ -59,9 +71,6 @@ instance Eq (Edge a) where
               s' = getSource e'
               t' = getTarget e'
 
-type NodeId = Int
-type EdgeId = Int
-
 data Graph a b = Graph {
     nodeMap :: [(Int, Node a)],
     edgeMap :: [(Int, Edge b)]
@@ -74,14 +83,14 @@ instance Show (Graph a b) where
               "Edges:\n" ++
               concatMap (\(eid, e) -> "\t" ++ show eid ++ "\n") em
 
+
+type NodeId = Int
+type EdgeId = Int
+
 -- | Create an empty Graph.
 empty :: Graph a b
 empty = Graph [] []
 
--- | Test whether a graph is empty.
-null :: Graph a b -> Bool
-null (Graph [] []) = True
-null _ = False
 
 -- | Insert a node @n@ in a graph @g@, without payload.
 insertNode :: NodeId -> Graph a b -> Graph a b
@@ -142,7 +151,6 @@ updateEdgePayload e g@(Graph ns es) f =
     ed = lookup e es
     p e = getEdgePayload e
 
-
 -- | Return a list of all node id's from from @g@.
 nodes :: Graph a b -> [NodeId]
 nodes (Graph ns _) = keysAL ns        
@@ -150,6 +158,26 @@ nodes (Graph ns _) = keysAL ns
 -- | Return a list of all edge id's from from @g@.
 edges :: Graph a b -> [EdgeId]
 edges (Graph _ es) = keysAL es        
+
+-- | Return a list of all edges with @n@ as a source node.
+edgesFromNode :: Graph a b -> NodeId -> [EdgeId]
+edgesFromNode g n = filter (\e -> sourceOf g e == Just n) (edges g)
+
+-- | Return a list of all edges with @n@ as a target node.
+edgesIntoNode :: Graph a b -> NodeId -> [EdgeId]
+edgesIntoNode g n = filter (\e -> targetOf g e == Just n) (edges g)
+
+-- | Return a list of all nodes that are target of any edge going out from @n@.
+nodesFromNode :: Graph a b -> NodeId -> [NodeId]
+nodesFromNode g n = filter (\v -> isAdjacentTo g n v) (nodes g)
+
+-- | Return a list of all nodes that are source of any edge going into @n@.
+nodesIntoNode :: Graph a b -> NodeId -> [NodeId]
+nodesIntoNode g n = filter (\v -> isAdjacentTo g v n) (nodes g)
+
+-- | Return a list of all neighbour nodes from @n@.
+neighbourNodes :: Graph a b -> NodeId -> [NodeId]
+neighbourNodes g n = nub $ nodesIntoNode g n ++ nodesFromNode g n 
 
 -- | Return @n@'s payload.
 nodePayload :: Graph a b -> NodeId -> Maybe a
@@ -189,7 +217,12 @@ targetOf (Graph _ es) e =
         otherwise -> Nothing
   where
     res = lookup e es
-  
+
+-- | Test whether a graph is empty.
+null :: Graph a b -> Bool
+null (Graph [] []) = True
+null _ = False
+
 -- | Test if @n@ is a node from graph @g@.
 isNodeOf :: Graph a b -> NodeId -> Bool
 isNodeOf g n  = n `elem` (nodes g)
@@ -197,26 +230,6 @@ isNodeOf g n  = n `elem` (nodes g)
 -- | Test if @e@ is an edge from graph @g@.
 isEdgeOf :: Graph a b -> EdgeId -> Bool
 isEdgeOf g e  = e `elem` (edges g)
-
--- | Return a list of all edges with @n@ as a source node.
-edgesFromNode :: Graph a b -> NodeId -> [EdgeId]
-edgesFromNode g n = filter (\e -> sourceOf g e == Just n) (edges g)
-
--- | Return a list of all edges with @n@ as a target node.
-edgesIntoNode :: Graph a b -> NodeId -> [EdgeId]
-edgesIntoNode g n = filter (\e -> targetOf g e == Just n) (edges g)
-
--- | Return a list of all nodes that are target of any edge going out from @n@.
-nodesFromNode :: Graph a b -> NodeId -> [NodeId]
-nodesFromNode g n = filter (\v -> isAdjacentTo g n v) (nodes g)
-
--- | Return a list of all nodes that are source of any edge going into @n@.
-nodesIntoNode :: Graph a b -> NodeId -> [NodeId]
-nodesIntoNode g n = filter (\v -> isAdjacentTo g v n) (nodes g)
-
--- | Return a list of all neighbour nodes from @n@.
-neighbourNodes :: Graph a b -> NodeId -> [NodeId]
-neighbourNodes g n = nub $ nodesIntoNode g n ++ nodesFromNode g n 
 
 -- | Test if @n1@ and @n2@ are adjacent.
 isAdjacentTo :: Graph a b -> NodeId -> NodeId -> Bool
@@ -246,27 +259,3 @@ instance Valid (Graph a b) where
                     otherwise -> False)
             (edges g)
 
-{-
-instance TypedGraphClass (Graph a b) where
-    getTypeOfNode n (Graph ns _) =
-        let found = lookup n ns
-        in case found of
-            Just nd   -> nodeType nd
-            otherwise -> Nothing
-    setTypeOfNode tn n (Graph ns es) =
-        let found = lookup n ns
-        in case found of
-            Just (Node p _) -> Graph (addToAL ns n (Node p (Just tn))) es
-            otherwise -> Graph ns es
-
-    getTypeOfEdge e (Graph _ es) =
-        let found = lookup e es
-        in case found of
-            Just ed   -> edgeType ed
-            otherwise -> Nothing
-    setTypeOfEdge te e (Graph ns es) =
-        let found = lookup e es
-        in case found of
-            Just (Edge s t p _) -> Graph ns (addToAL es e (Edge s t p (Just te)))
-            otherwise -> Graph ns es
--}
