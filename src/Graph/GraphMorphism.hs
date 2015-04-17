@@ -1,21 +1,25 @@
 {-# LANGUAGE TypeFamilies #-}
 
 module Graph.GraphMorphism (
-      applyNode
-    , applyEdge
-    , graphMorphism
-    , Graph.GraphMorphism.null
-    , GraphMorphism
-    , Graph.GraphMorphism.empty
-    , inverse
-    , nodeRelation
-    , edgeRelation
+    -- * Types
+      GraphMorphism
     , TypedGraph
+    -- * Construction
+    , Graph.GraphMorphism.empty
+    , graphMorphism
+    -- * Transformation
+    , inverse
     , updateCodomain
     , updateDomain
     , updateNodes
     , updateEdges
-) where
+    -- * Query
+    , applyNode
+    , applyEdge
+    , nodeRelation
+    , edgeRelation
+    , Graph.GraphMorphism.null
+    ) where
 
 import qualified Abstract.Relation as R
 import Graph.Graph as G
@@ -50,37 +54,47 @@ instance Show (GraphMorphism a b) where
         concatMap (\e -> (show e) ++ " --> " ++ (show (applyEdge m e)) ++ "\n")
                   (G.edges $ getDomain m)
 
-
-
+-- | Return the node to which @ln@ gets mapped.
 applyNode :: GraphMorphism a b -> G.NodeId -> Maybe G.NodeId
 applyNode m ln =
     case R.apply (nodeRelation m) ln of
         (x:xs) -> Just x
         _ -> Nothing
 
+-- | Return the edge to which @le@ gets mapped.
 applyEdge :: GraphMorphism a b -> G.EdgeId -> Maybe G.EdgeId
 applyEdge m le =
     case R.apply (edgeRelation m) le of
         (x:xs) -> Just x
         _ -> Nothing
     
+-- | An empty morphism between two graphs.
 empty :: Graph a b -> Graph a b -> GraphMorphism a b
 empty gA gB = GraphMorphism gA gB (R.empty [] []) (R.empty [] [])
 
+-- | Construct a graph morphism based on domain, codomain and both node and
+-- edge relations.
 graphMorphism = GraphMorphism
 
+-- | The inverse graph morphism.
 inverse (GraphMorphism dom cod nm em) =
     GraphMorphism cod dom (R.inverse nm) (R.inverse em)
 
+-- | Test if the morphism is null.
 null :: TypedGraph a b -> Bool
 null = G.null . getDomain
 
+-- | Set a new codomain.
 updateCodomain :: Graph a b -> GraphMorphism a b -> GraphMorphism a b
 updateCodomain g gm = gm { getCodomain = g }
 
+-- | Set a new domain.
 updateDomain :: Graph a b -> GraphMorphism a b -> GraphMorphism a b
 updateDomain g gm = gm { getDomain = g }
 
+-- | Add a mapping between both nodes into the morphism. If @ln@ is already
+-- mapped, or neither nodes are in their respective graphs, return the original
+-- morphism.
 updateNodes :: NodeId -> NodeId -> GraphMorphism a b -> GraphMorphism a b
 updateNodes ln gn morphism@(GraphMorphism l g nm em)
     | G.isNodeOf l ln && G.isNodeOf g gn && notMapped morphism ln =
@@ -89,6 +103,9 @@ updateNodes ln gn morphism@(GraphMorphism l g nm em)
   where
     notMapped m = isNothing . applyNode m
 
+-- | Add a mapping between both edges into the morphism. If @le@ is already
+-- mapped, or neither edges are in their respective graphs, return the original
+-- morphism.
 updateEdges :: EdgeId -> EdgeId -> GraphMorphism a b -> GraphMorphism a b
 updateEdges le ge morphism@(GraphMorphism l g nm em)
     | G.isEdgeOf l le && G.isEdgeOf g ge && notMapped morphism le =
