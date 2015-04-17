@@ -1,6 +1,8 @@
 module Graph.GraphRule (
+    -- * Types
+      GraphRule
+    -- * Basic Functions
       graphRule
-    , GraphRule
     , left
     , right
     , nacs
@@ -16,9 +18,13 @@ data GraphRule a b = GraphRule {
                         , getNacs   :: [TypedGraphMorphism a b]
                      } deriving (Show, Read)
 
+-- | Return the left-side (deletion) typed graph morphism of the rule.
 left  = leftSide
+-- | Return the right-side (creation) typed graph morphism of the rule.
 right = rightSide
+-- | Return a list of all NAC's.
 nacs  = getNacs
+-- | Create a rule based on both typed graph morphisms and a list of NAC's.
 graphRule = GraphRule
 
 instance Valid (GraphRule a b) where
