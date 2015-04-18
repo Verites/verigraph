@@ -83,13 +83,14 @@ matchGraphs st@(MatchState _ mt _ r rg [] [] m) =
     otherwise -> [st]
     
 matchGraphs st@(MatchState rule mt l r rg (le:les) lns m) =
-    matchAllEdges le candidates >>= matchGraphs
+    matchAllEdges le validCandidates >>= matchGraphs
   where
     lg = domain l
-    candidates = filter (hasLoop st le) $
-                 filter (matchesSameSource st le) $
-                 filter (matchesSameTarget st le) $
-                 querySameTypeEdges st le
+    validCandidates =
+        filter (hasLoop st le) $
+        filter (matchesSameSource st le) $
+        filter (matchesSameTarget st le) $
+        querySameTypeEdges st le
     leSrc = unsafeSourceOf lg le
     leTgt = unsafeTargetOf lg le
     reSrc re = unsafeSourceOf rg re
@@ -99,6 +100,7 @@ matchGraphs st@(MatchState rule mt l r rg (le:les) lns m) =
            | otherwise = removeNode (reSrc re) $
                          removeNode (reTgt re) $
                          removeEdge re rg
+    -- | @re@ is a valid candidate.
     matchEdges le re =
         MatchState rule mt l r (rg' re) les lns' $
            typedMorphism (domain m) (codomain m) $
@@ -111,7 +113,7 @@ matchGraphs st@(MatchState rule mt l r rg (le:les) lns m) =
     morphism = mapping m
 
 matchGraphs st@(MatchState rule mt l r rg [] (ln:lns) m) =
-    matchAllNodes ln candidates' >>= matchGraphs
+    matchAllNodes ln validCandidates' >>= matchGraphs
   where
     matchAllNodes ln rns =
         map (matchNodes ln) rns
@@ -119,9 +121,9 @@ matchGraphs st@(MatchState rule mt l r rg [] (ln:lns) m) =
         MatchState rule mt l r (rg' rn) [] lns $
             typedMorphism (domain m) (codomain m) $
                 GM.updateNodes ln rn morphism
-    candidates = filter noIdentityConflict $ querySameTypeNodes st ln
-    candidates' | toBeDeleted ln = filter noDangling candidates
-                | otherwise = candidates
+    validCandidates = filter noIdentityConflict $ querySameTypeNodes st ln
+    validCandidates' | toBeDeleted ln = filter noDangling validCandidates
+                     | otherwise = validCandidates
     toBeDeleted ln = ln `L.elem` deletedFromL
     toBeDeleted' rn = rn `L.elem` deletedFromR 
     deletedFromL = deletedNodes rule
