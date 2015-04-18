@@ -21,29 +21,28 @@ import qualified Graph.GraphMorphism as GM
 import qualified Abstract.Relation as R
 import Graph.TypedGraphMorphism (mapping, typedMorphism, TypedGraphMorphism)
 
--- | Is a tuple of two relations regarding two graphs (possibly equal):
--- the first among their respective G.nodes, the other among their G.edges. Each
--- relation is described as a list of (Int, Int) tuples.
-
+-- | 'MorphismType' forces 'findMatches' to only return the desired morphisms.
+-- It's used to reduce the search space when possible.
 data MorphismType = Normal | Mono | Epi | Iso 
     deriving (Eq)
 
+-- | unwrap 'sourceOf' from the Maybe monad.
 unsafeSourceOf :: Graph a b -> EdgeId -> NodeId
 unsafeSourceOf g e =
     case sourceOf g e of
         Just s -> s
         Nothing -> error "Edge e doesn't exist, or has no source node"
 
+-- | unwrap 'targetOf' from the Maybe monad.
 unsafeTargetOf :: Graph a b -> EdgeId -> NodeId
 unsafeTargetOf g e =
     case targetOf g e of
         Just s -> s
         Nothing -> error "Edge e doesn't exist, or has no target node"
 
--- | Given two typed graphs and a rule, return a list of mappings, each
--- representing a possible homomorphism between the graphs. The matches
--- generated respect the given rule according to the DPO approach.
-
+-- | Return a list all possible homomorphisms between the graphs, filtering
+-- out morphisms that would be invalid according to the given rule and morphism
+-- type.
 findMatches :: (Eq a, Eq b)
             => GraphRule a b
             -> MorphismType
@@ -60,16 +59,18 @@ findMatches rule mt l r =
     
 
 data MatchState a b = MatchState {
-    getRule         :: GraphRule a b,
+    getRule         :: GraphRule a b, -- ^ the (unchanged) rule that guides the matching.
     getMorphismType :: MorphismType,
     getLTypedGraph  :: TypedGraph a b,
     getRTypedGraph  :: TypedGraph a b,
-    getRGraph       :: Graph a b, -- modified to reduce matching algorithm's domain
-    getEdges        :: [EdgeId], -- edges to match
-    getNodes        :: [NodeId], -- nodes to match
+    getRGraph       :: Graph a b, -- ^ modified to reduce matching algorithm's domain
+    getEdges        :: [EdgeId], -- ^ edges to match
+    getNodes        :: [NodeId], -- ^ nodes to match
     getMatch        :: TypedGraphMorphism a b
     }
 
+-- | The main algorithm that return all possible matches between the two
+-- graphs inside the given MatchState.
 matchGraphs :: (Eq a, Eq b)
             => MatchState a b
             -> [MatchState a b]
@@ -133,8 +134,10 @@ matchGraphs st@(MatchState rule mt l r rg [] (ln:lns) m) =
     rg' rn | mt == Normal || mt == Epi = rg
            | otherwise = removeNode rn rg
     
+-- | Return a list of all nodes in the right-side graph that has the same
+-- type as @n@.
 querySameTypeNodes :: MatchState a b -> NodeId -> [NodeId]
-querySameTypeNodes st nid =
+querySameTypeNodes st n =
     GM.applyNode rinv typeId `L.intersect` remainingNodes
   where
     l = getLTypedGraph st
@@ -142,8 +145,10 @@ querySameTypeNodes st nid =
     rg = getRGraph st
     remainingNodes = nodes rg
     rinv = GM.inverse r
-    [typeId] = GM.applyNode l nid
+    [typeId] = GM.applyNode l n
 
+-- | Return a list of all edges in the right-side graph that has the same
+-- type as @n@.
 querySameTypeEdges :: MatchState a b -> EdgeId -> [EdgeId]
 querySameTypeEdges st eid =
     GM.applyEdge rinv typeId `L.intersect` remainingEdges
@@ -185,6 +190,7 @@ matchesSameTarget st le re =
     leTgt = unsafeTargetOf l le
     reTgt = unsafeTargetOf r re
 
+-- | If @le@ is a loop edge, forces that @re@ also forms a loop.
 hasLoop :: (Eq a, Eq b) => MatchState a b -> EdgeId -> EdgeId -> Bool
 hasLoop st le re
     | leSrc == leTgt = reSrc == reTgt
@@ -197,6 +203,7 @@ hasLoop st le re
     leTgt = unsafeTargetOf l le
     reTgt = unsafeTargetOf r re
 
+-- | Return a list of all nodes removed by @rule@.
 deletedNodes :: (Eq a, Eq b) => GraphRule a b -> [NodeId]
 deletedNodes rule =
     (L.\\) defDom img

@@ -2,7 +2,7 @@ module Graph.GraphRule (
     -- * Types
       GraphRule
     -- * Basic Functions
-      graphRule
+    , graphRule
     , left
     , right
     , nacs
