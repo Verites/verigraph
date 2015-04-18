@@ -111,7 +111,7 @@ addMainCallbacks gui stateRef = do
         store = _treeStore gui
         canvas = _getCanvas gui
     window `on` objectDestroy $ mainQuit
-    canvas `on` buttonPressEvent $ mouseClick canvas stateRef
+    canvas `on` buttonPressEvent $ tryEvent $ mouseClick canvas stateRef
     dwin <- widgetGetDrawWindow canvas
     canvas `on` exposeEvent $ do liftIO $ renderWithDrawable dwin (updateCanvas stateRef)
                                  return True
@@ -140,28 +140,31 @@ rowSelected gui store stateRef view = do
     return ()
 
 mouseClick :: WidgetClass widget
-           => widget -> IORef State -> EventM EButton Bool
+           => widget -> IORef State -> EventM EButton ()
 mouseClick canvas stateRef = do
     coords <- eventCoordinates
     button <- eventButton
     click <- eventClick
     state <- liftIO $ readIORef stateRef
+    modifiers <- eventModifier
     let mgstate = currentGraphState state -- FIXME unsafe pattern matching
+        multiSel = Control `L.elem` modifiers
     case mgstate of
         Just gstate -> do
-            gstate' <- liftIO $ chooseMouseAction state gstate coords button click
+            gstate' <- liftIO $
+                chooseMouseAction state gstate coords button click multiSel
             liftIO $ writeIORef stateRef $ setCurGraphState gstate' state
             liftIO $ widgetQueueDraw canvas
         _ -> return ()
-    return True
 
 chooseMouseAction :: State
                   -> GraphEditState
                   -> Coords
                   -> MouseButton
                   -> Click
+                  -> Bool
                   -> IO GraphEditState
-chooseMouseAction state gstate coords@(x, y) button click =
+chooseMouseAction state gstate coords@(x, y) button click multiSel =
     case (objects, button, click) of
         ([], LeftButton, DoubleClick) ->
             return $
@@ -171,10 +174,15 @@ chooseMouseAction state gstate coords@(x, y) button click =
                        }
         ([], LeftButton, SingleClick) ->
             return $ set selObjects [] gstate
-        (((k, p):_), LeftButton, SingleClick) ->
+        (((k, p):_), LeftButton, SingleClick) -> do
+            let n = Node k
             return $
-                set selObjects [Node k] $
-                set refCoords coords gstate
+                set refCoords coords $
+                (case (multiSel, n `L.elem` _selObjects gstate) of
+                      (False, False) -> set selObjects [n]
+                      (True, False) -> modify selObjects (n:)
+                      (True, True) -> modify selObjects (L.delete n)
+                      _ -> id) $ gstate
         (((k, (Just p)):_), LeftButton, DoubleClick) ->
             case _canvasMode state of
                 TGraphMode -> typeEditDialog k p state gstate
