@@ -29,9 +29,9 @@ import qualified Data.Map as Map
 -- datatype for endorelations on a
 data Relation a = 
    Relation { 
-       domain   :: [a],     -- domain 
-       codomain :: [a],     -- codomain
-       mapping  :: Map.Map a [a]  -- mapping
+       domain   :: [a],
+       codomain :: [a],
+       mapping  :: Map.Map a [a]
    } deriving (Ord,Show,Read)                
 
 instance (Eq a) => Eq (Relation a) where
