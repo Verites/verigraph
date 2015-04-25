@@ -63,7 +63,7 @@ runGUI = do
 
 showGUI = widgetShowAll . _mainWindow
 
-createGUI :: State -> IO GUI
+createGUI :: GramState -> IO GUI
 createGUI state = do
     window <- windowNew
     Gtk.set window [ windowTitle := "Verigraph"
@@ -104,7 +104,7 @@ createGUI state = do
 
     return $ GUI store view window canvas 
 
-addMainCallbacks :: GUI -> IORef State -> IO ()
+addMainCallbacks :: GUI -> IORef GramState -> IO ()
 addMainCallbacks gui stateRef = do
     let window   = _mainWindow gui
         view = _treeView gui
@@ -140,7 +140,7 @@ rowSelected gui store stateRef view = do
     return ()
 
 mouseClick :: WidgetClass widget
-           => widget -> IORef State -> EventM EButton ()
+           => widget -> IORef GramState -> EventM EButton ()
 mouseClick canvas stateRef = do
     coords <- eventCoordinates
     button <- eventButton
@@ -157,7 +157,7 @@ mouseClick canvas stateRef = do
             liftIO $ widgetQueueDraw canvas
         _ -> return ()
 
-chooseMouseAction :: State
+chooseMouseAction :: GramState
                   -> GraphEditState
                   -> Coords
                   -> MouseButton
@@ -182,7 +182,8 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
                       (False, False) -> set selObjects [n]
                       (True, False) -> modify selObjects (n:)
                       (True, True) -> modify selObjects (L.delete n)
-                      _ -> id) $ gstate
+                      _ -> id) $
+                gstate
         (((k, (Just p)):_), LeftButton, DoubleClick) ->
             case _canvasMode state of
                 TGraphMode -> typeEditDialog k p state gstate
@@ -202,7 +203,7 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
 
 addNode :: Graph
         -> Coords
-        -> (State -> GraphEditState -> G.NodeId -> Render ())
+        -> (GramState -> GraphEditState -> G.NodeId -> Render ())
         -> (Coords -> Coords -> Bool)
         -> (Int, Graph)
 addNode graph coords renderFunc checkFunc =
@@ -212,7 +213,7 @@ addNode graph coords renderFunc checkFunc =
     graph' =
         G.insertNodeWithPayload newId (coords, renderFunc, checkFunc) graph
 
-typeEditDialog :: G.NodeId -> NodePayload -> State -> GraphEditState -> IO (GraphEditState)
+typeEditDialog :: G.NodeId -> NodePayload -> GramState -> GraphEditState -> IO (GraphEditState)
 typeEditDialog n p@(coords, renderFunc, checkFunc) state gstate = do
     dial <- dialogNew
     cArea <- return . castToBox =<< dialogGetUpper dial
@@ -240,7 +241,7 @@ typeEditDialog n p@(coords, renderFunc, checkFunc) state gstate = do
             return gstate
         otherwise -> return gstate
 
-nodeEditDialog :: G.NodeId -> NodePayload -> State -> GraphEditState -> IO (GraphEditState)
+nodeEditDialog :: G.NodeId -> NodePayload -> GramState -> GraphEditState -> IO (GraphEditState)
 nodeEditDialog n p@(coords, renderFunc, checkFunc) state gstate = do
     dial <- dialogNew
     cArea <- return . castToBox =<< dialogGetUpper dial
@@ -286,7 +287,7 @@ nodeEditDialog n p@(coords, renderFunc, checkFunc) state gstate = do
             return gstate
 
 mouseMove :: WidgetClass widget
-          => widget -> IORef State -> EventM EMotion Bool
+          => widget -> IORef GramState -> EventM EMotion Bool
 mouseMove canvas stateRef = do
     coords@(x, y) <- eventCoordinates
     state <- liftIO $ readIORef stateRef
@@ -311,7 +312,7 @@ mouseMove canvas stateRef = do
     return True
 
 
-updateCanvas :: IORef State -> Render ()
+updateCanvas :: IORef GramState -> Render ()
 updateCanvas stateRef = do
     state <- liftIO $ readIORef stateRef
     render state
@@ -326,7 +327,7 @@ openFileDialog = do
   where
     buttons = [ ("Cancel", ResponseCancel), ("Open", ResponseOk) ]
 
-createModel :: State -> IO (TreeStore TreeNode)
+createModel :: GramState -> IO (TreeStore TreeNode)
 createModel state = stateToModel state
 
 createView :: TreeStore TreeNode -> IO TreeView

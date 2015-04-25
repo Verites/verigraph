@@ -25,7 +25,7 @@ defBorderColor = Color 65535 65535 65535
 defSpacing = 1
 
 {- Data types for rendering -}
-data RNode = RNode State GraphEditState G.NodeId
+data RNode = RNode GramState GraphEditState G.NodeId
 data REdge = REdge Graph G.EdgeId
 data RGraph = RGraph Graph
 
@@ -41,7 +41,7 @@ instance Renderable (RNode) where
         g = _getGraph gstate
 
 
-instance Renderable State where
+instance Renderable GramState where
     render state =
         case currentGraphState state of
             Just gstate -> 
@@ -59,7 +59,7 @@ renderColor (Color r g b) = setSourceRGB  r' g' b'
 --    (r, g, b) = (channelRed rgb, channelGreen rgb, channelBlue rgb)
 
 
-drawCircle :: Color -> State -> GraphEditState -> G.NodeId -> Render ()
+drawCircle :: Color -> GramState -> GraphEditState -> G.NodeId -> Render ()
 drawCircle color state gstate n =
     case p of
         Just ((x, y), rF, cF) -> do
@@ -80,7 +80,7 @@ drawCircle color state gstate n =
             [] -> False
             ns -> (Node n) `elem` ns
 
-nodeRenderType :: State -> GraphEditState -> G.NodeId -> Render ()
+nodeRenderType :: GramState -> GraphEditState -> G.NodeId -> Render ()
 nodeRenderType state gstate n =
     case newP of
         Just (_, rF, _) -> rF state gstate n

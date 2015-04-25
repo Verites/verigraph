@@ -2,7 +2,7 @@
 
 {-
 module GUI.Editing (
-      State (..)
+      GramState (..)
     , GraphEditState (..)
     , CanvasMode (..)
     , SelMode (..)
@@ -44,7 +44,7 @@ type Rule = GR.GraphRule NodePayload EdgePayload
 type Coords = (Double, Double)
 type NodePayload =
     ( Coords
-    , State -> GraphEditState -> G.NodeId -> Render ()
+    , GramState -> GraphEditState -> G.NodeId -> Render ()
     , Coords -> Coords -> Bool)
 type EdgePayload = Color
 data Obj = Node Int | Edge Int
@@ -64,7 +64,7 @@ instance Show TreeNode where
 
 
 -- To keep it uniform, typegraphs are also described as GraphEditState
-data State = State
+data GramState = GramState
     { _canvasMode       :: CanvasMode
     , _getInitialGraphs :: [(Key, GraphEditState)]
     , _getTypeGraph    :: GraphEditState
@@ -102,9 +102,9 @@ data RowStatus = Active | Inactive
 
 type Key = String
 
-$(mkLabels [''State, ''GraphEditState])
+$(mkLabels [''GramState, ''GraphEditState])
 
-currentGraphState :: State -> Maybe GraphEditState
+currentGraphState :: GramState -> Maybe GraphEditState
 currentGraphState state =
     case _canvasMode state of
         IGraphMode k -> lookup k iGraphs
@@ -115,7 +115,7 @@ currentGraphState state =
     tGraph = _getTypeGraph state
     rules = _getRules state
 
-setCurGraphState :: GraphEditState -> State -> State
+setCurGraphState :: GraphEditState -> GramState -> GramState
 setCurGraphState gstate' state =
     case _canvasMode state of
         IGraphMode k ->
@@ -126,7 +126,7 @@ setCurGraphState gstate' state =
             set getTypeGraph gstate' state
         otherwise -> state
 
-modCurGraphState :: (GraphEditState -> GraphEditState) -> State -> State
+modCurGraphState :: (GraphEditState -> GraphEditState) -> GramState -> GramState
 modCurGraphState f state =
     case gstate' of
         Just gstate' -> setCurGraphState gstate' state
@@ -134,9 +134,9 @@ modCurGraphState f state =
   where
     gstate' = fmap f $ currentGraphState state
 
-grammarToState :: Grammar -> State
+grammarToState :: Grammar -> GramState
 grammarToState gg =
-    State (IGraphMode defGraphName) iGraphList tGraph rulesList
+    GramState (IGraphMode defGraphName) iGraphList tGraph rulesList
   where
     iGraph = GG.initialGraph gg
     iNodeRel = GM.nodeRelation iGraph
@@ -152,7 +152,7 @@ grammarToState gg =
 --    ruleToGraphEditState 
 --    rulesMap = foldr (\(s, r) acc -> M.insert s r acc) M.empty rules
 
-stateToModel :: State -> IO (TreeStore TreeNode)
+stateToModel :: GramState -> IO (TreeStore TreeNode)
 stateToModel state = do
     tree <- treeStoreNew [] :: IO (TreeStore TreeNode)
     treeStoreInsert tree [] 0 $ TNInitialGraph Active defGraphName
