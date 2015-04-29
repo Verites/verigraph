@@ -74,6 +74,7 @@ data GramState = GramState
 data GraphEditState = GraphEditState
     { _getStatus :: RowStatus
     , _selObjects :: [Obj]
+    , _mouseMode :: MouseMode
     , _refCoords :: Coords
     , _getGraph :: Graph
     , _getNodeRelation :: R.Relation G.NodeId
@@ -95,7 +96,9 @@ data SelMode =
     | []
     deriving Show
 -}
-    
+
+data MouseMode = SelMode | EdgeCreation Int
+    deriving Show
 
 data RowStatus = Active | Inactive
     deriving (Eq, Show)
@@ -142,10 +145,10 @@ grammarToState gg =
     iNodeRel = GM.nodeRelation iGraph
     iEdgeRel = GM.edgeRelation iGraph
     iGraphEditState =
-        GraphEditState Active [] (0, 0) (M.domain iGraph) iNodeRel iEdgeRel
+        GraphEditState Active [] SelMode (0, 0) (M.domain iGraph) iNodeRel iEdgeRel
     emptyRel = R.empty [] []
     tGraph =
-        GraphEditState Active [] (0, 0) (GG.typeGraph gg) emptyRel emptyRel
+        GraphEditState Active [] SelMode (0, 0) (GG.typeGraph gg) emptyRel emptyRel
     iGraphList = [(defGraphName, iGraphEditState)]
     rulesList = []
 --    rules  = GG.rules gg

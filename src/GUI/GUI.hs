@@ -165,29 +165,47 @@ chooseMouseAction :: GramState
                   -> Bool
                   -> IO GraphEditState
 chooseMouseAction state gstate coords@(x, y) button click multiSel =
-    case (objects, button, click) of
-        ([], LeftButton, DoubleClick) ->
+    case button of
+        LeftButton ->
+            fmap (set mouseMode SelMode) $
+            case (objects, click) of
+            ([], DoubleClick) ->
+                -- create node
+                return $
+                    set refCoords coords $
+                    gstate { _getGraph = graph'
+                           , _selObjects = [Node newId]
+                           }
+            ([], SingleClick) ->
+                -- unselect nodes
+                return $ set selObjects [] gstate
+            (((k, p):_), SingleClick) -> do
+                -- select node
+                let n = Node k
+                return $
+                    set refCoords coords $
+                    (case (multiSel, n `L.elem` _selObjects gstate) of
+                          (False, False) -> set selObjects [n]
+                          (True, False) -> modify selObjects (n:)
+                          (True, True) -> modify selObjects (L.delete n)
+                          _ -> id) $
+                    gstate
+            (((k, (Just p)):_), DoubleClick) ->
+                -- open editing dialog
+                case _canvasMode state of
+                    TGraphMode -> typeEditDialog k p state gstate
+                    otherwise -> nodeEditDialog k p state gstate
+            otherwise -> return gstate
+        RightButton ->
             return $
-                set refCoords coords $
-                gstate { _getGraph = graph'
-                       , _selObjects = [Node newId]
-                       }
-        ([], LeftButton, SingleClick) ->
-            return $ set selObjects [] gstate
-        (((k, p):_), LeftButton, SingleClick) -> do
-            let n = Node k
-            return $
-                set refCoords coords $
-                (case (multiSel, n `L.elem` _selObjects gstate) of
-                      (False, False) -> set selObjects [n]
-                      (True, False) -> modify selObjects (n:)
-                      (True, True) -> modify selObjects (L.delete n)
-                      _ -> id) $
-                gstate
-        (((k, (Just p)):_), LeftButton, DoubleClick) ->
-            case _canvasMode state of
-                TGraphMode -> typeEditDialog k p state gstate
-                otherwise -> nodeEditDialog k p state gstate
+            case (objects, click) of
+            (((k, p):_), SingleClick) -> do
+                let n = Node k
+                case _mouseMode gstate of
+                    EdgeCreation src ->
+                        modify getGraph (addEdge src k) gstate
+                    otherwise -> set mouseMode (EdgeCreation k) gstate
+            otherwise -> gstate
         otherwise -> return gstate
   where
     objects =
@@ -200,6 +218,9 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
     (newId, graph') =
         addNode g coords (drawCircle neutralColor)
                          (insideCircle defRadius)
+    addEdge src tgt gr =
+        let newId = length . G.edges $ gr
+        in G.insertEdge newId src tgt gr
 
 addNode :: Graph
         -> Coords

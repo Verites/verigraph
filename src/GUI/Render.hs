@@ -26,13 +26,13 @@ defSpacing = 1
 
 {- Data types for rendering -}
 data RNode = RNode GramState GraphEditState G.NodeId
-data REdge = REdge Graph G.EdgeId
+data REdge = REdge GramState GraphEditState G.EdgeId
 data RGraph = RGraph Graph
 
 class Renderable a where
     render :: a -> Render ()
 
-instance Renderable (RNode) where
+instance Renderable RNode where
     render (RNode state gstate n) =
         case G.nodePayload g n of
             Just (coords, renderFunc, checkFunc) -> renderFunc state gstate n
@@ -40,6 +40,16 @@ instance Renderable (RNode) where
       where
         g = _getGraph gstate
 
+instance Renderable REdge where
+    render (REdge state gstate n) =
+        let gr = get getGraph gstate
+            connected = G.nodesConnectedTo gr n
+        in case connected of
+               Just (src, tgt) -> do
+                   setLineWidth defLineWidth
+                   renderColor defBorderColor
+                   return ()
+               Nothing -> return ()
 
 instance Renderable GramState where
     render state =
