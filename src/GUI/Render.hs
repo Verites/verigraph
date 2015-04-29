@@ -10,6 +10,7 @@ module GUI.Render (
 
 import Data.Label -- fclabels
 --import GUI.Editing (State (..), GraphEditState (..))
+import Control.Monad (liftM)
 import GUI.Editing
 import Graphics.Rendering.Cairo as Gtk
 import Graphics.UI.Gtk (Color (..))
@@ -43,13 +44,20 @@ instance Renderable RNode where
 instance Renderable REdge where
     render (REdge state gstate n) =
         let gr = get getGraph gstate
-            connected = G.nodesConnectedTo gr n
-        in case connected of
-               Just (src, tgt) -> do
-                   setLineWidth defLineWidth
-                   renderColor defBorderColor
-                   return ()
-               Nothing -> return ()
+            coords = do
+                (src, tgt) <- G.nodesConnectedTo gr n
+                srcC <- liftM getCoords $ G.nodePayload gr src
+                tgtC <- liftM getCoords $ G.nodePayload gr tgt
+                return (srcC, tgtC)
+        in case coords of
+            Just (srcC, tgtC) -> do
+               setLineWidth defLineWidth
+               renderColor defBorderColor
+               return ()
+            Nothing -> return ()
+        where
+            getCoords (c, _, _) = c
+
 
 instance Renderable GramState where
     render state =
