@@ -23,6 +23,7 @@ import Control.Category
 defRadius = 20 :: Double
 defLineWidth = 2 :: Double
 defBorderColor = Color 65535 65535 65535
+defLineColor = Color 0 0 0
 defSpacing = 1
 
 {- Data types for rendering -}
@@ -50,20 +51,35 @@ instance Renderable REdge where
                 tgtC <- liftM getCoords $ G.nodePayload gr tgt
                 return (srcC, tgtC)
         in case coords of
-            Just (srcC, tgtC) -> do
-               setLineWidth defLineWidth
-               renderColor defBorderColor
-               return ()
+            Just (srcC@(x, y), tgtC@(x', y')) -> do
+                let (dirX, dirY) = directionVect srcC tgtC
+                    (dx, dy) = (dirX * defRadius, dirY * defRadius)
+                    dist = norm srcC tgtC
+                setLineWidth defLineWidth
+                renderColor defLineColor
+                moveTo x y
+                lineTo (x' - (2 * dx)) (y' - (2 * dy))
+                rotate $ -(angle (dirX, dirY))
+                drawHead $ 0.5 * defRadius
+                identityMatrix
+                stroke
             Nothing -> return ()
         where
             getCoords (c, _, _) = c
+            drawHead len = do
+                relMoveTo (len / 2) 0
+                relLineTo (-len / 2) len
+                relLineTo (-len / 2) (-len)
+
 
 
 instance Renderable GramState where
     render state =
         case currentGraphState state of
-            Just gstate -> 
-                mapM_ (render . RNode state gstate) $ G.nodes (_getGraph gstate)
+            Just gstate -> do
+                let gr = get getGraph gstate
+                mapM_ (render . REdge state gstate) $ G.edges gr
+                mapM_ (render . RNode state gstate) $ G.nodes gr
             Nothing -> return ()
 
 renderColor :: Color -> Gtk.Render ()
@@ -109,4 +125,24 @@ nodeRenderType state gstate n =
     newP = case nodeTypes of
                (x:xs) -> G.nodePayload tGraph x
                _ -> Nothing
+
+directionVect :: Coords -> Coords -> Coords
+directionVect s@(x, y) t@(x', y')
+    | dist == 0 = (0, 0)
+    | otherwise = (dx / dist, dy / dist)
+  where 
+    dist = norm s t
+    dx = x' - x
+    dy = y' - y
+
+norm :: Coords -> Coords -> Double
+norm (x, y) (x', y') =
+    sqrt $ (square (x' - x)) + (square (y' - y))
+  where
+    square x = x * x
+
+angle :: Coords -> Double
+angle (dx, dy)
+    | dx > 0 = acos dy
+    | dx < 0 = - acos dy
 
