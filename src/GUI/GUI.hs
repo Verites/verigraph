@@ -220,7 +220,7 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
                          (insideCircle defRadius)
     addEdge src tgt gr =
         let newId = length . G.edges $ gr
-        in G.insertEdge newId src tgt gr
+        in G.insertEdgeWithPayload newId src tgt 2 gr
 
 addNode :: Graph
         -> Coords

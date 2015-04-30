@@ -46,7 +46,7 @@ type NodePayload =
     ( Coords
     , GramState -> GraphEditState -> G.NodeId -> Render ()
     , Coords -> Coords -> Bool)
-type EdgePayload = Color
+type EdgePayload = Double
 data Obj = Node Int | Edge Int
     deriving (Show, Eq)
 

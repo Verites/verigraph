@@ -10,7 +10,6 @@ module GUI.Render (
 
 import Data.Label -- fclabels
 --import GUI.Editing (State (..), GraphEditState (..))
-import Control.Monad (liftM)
 import GUI.Editing
 import Graphics.Rendering.Cairo as Gtk
 import Graphics.UI.Gtk (Color (..))
@@ -47,18 +46,26 @@ instance Renderable REdge where
         let gr = get getGraph gstate
             coords = do
                 (src, tgt) <- G.nodesConnectedTo gr n
-                srcC <- liftM getCoords $ G.nodePayload gr src
-                tgtC <- liftM getCoords $ G.nodePayload gr tgt
-                return (srcC, tgtC)
+                srcC <- fmap getCoords $ G.nodePayload gr src
+                tgtC <- fmap getCoords $ G.nodePayload gr tgt
+                bendFactor <- G.edgePayload gr n
+                return (srcC, tgtC, bendFactor)
         in case coords of
-            Just (srcC@(x, y), tgtC@(x', y')) -> do
+            Just (srcC@(x, y), tgtC@(x', y'), bendFactor) -> do
                 let (dirX, dirY) = directionVect srcC tgtC
-                    (dx, dy) = (dirX * defRadius, dirY * defRadius)
+                    (scaledX, scaledY) = (dirX * defRadius, dirY * defRadius)
                     dist = norm srcC tgtC
+                    -- first bezier control point
+                    ctrlX = x + dirX * (dist / 3) - scaledY * bendFactor
+                    ctrlY = y + dirY * (dist / 3) + scaledX * bendFactor
+                    -- second bezier control point
+                    ctrlX' = x + dirX * (2 * dist / 3) - scaledY * bendFactor
+                    ctrlY' = y + dirY * (2 * dist / 3) + scaledX * bendFactor
                 setLineWidth defLineWidth
                 renderColor defLineColor
                 moveTo x y
-                lineTo (x' - (2 * dx)) (y' - (2 * dy))
+--                lineTo (x' - (2 * dx)) (y' - (2 * dy))
+                curveTo ctrlX ctrlY ctrlX' ctrlY' x' y'
                 rotate $ -(angle (dirX, dirY))
                 drawHead $ 0.5 * defRadius
                 identityMatrix
@@ -145,4 +152,5 @@ angle :: Coords -> Double
 angle (dx, dy)
     | dx > 0 = acos dy
     | dx < 0 = - acos dy
+    | otherwise = 0
 
