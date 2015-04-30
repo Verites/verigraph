@@ -189,8 +189,8 @@ nodesWithPayload (Graph nodeMap _) =
     map (\(k, n) -> (k, getNodePayload n)) nodeMap
 
 -- | Return @e@'s payload.
-edgePayload :: EdgeId -> Graph a b -> Maybe b
-edgePayload e g = (lookup e $ edgeMap g) >>= getEdgePayload
+edgePayload :: Graph a b -> EdgeId -> Maybe b
+edgePayload g e = (lookup e $ edgeMap g) >>= getEdgePayload
 
 -- | Return a pair containing @e@'s source and target nodes.
 nodesConnectedTo :: Graph a b -> EdgeId -> Maybe (NodeId, NodeId)
