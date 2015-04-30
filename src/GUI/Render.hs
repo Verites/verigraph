@@ -56,20 +56,25 @@ instance Renderable REdge where
                     (scaledX, scaledY) = (dirX * defRadius, dirY * defRadius)
                     dist = norm srcC tgtC
                     -- first bezier control point
+                    -- the last terms from ctrlX and ctrlY form a right angle
+                    -- to the direction vector.
                     ctrlX = x + dirX * (dist / 3) - scaledY * bendFactor
                     ctrlY = y + dirY * (dist / 3) + scaledX * bendFactor
                     -- second bezier control point
                     ctrlX' = x + dirX * (2 * dist / 3) - scaledY * bendFactor
                     ctrlY' = y + dirY * (2 * dist / 3) + scaledX * bendFactor
+                    (dirX', dirY') = directionVect (x', y') (ctrlX', ctrlY')
                 setLineWidth defLineWidth
                 renderColor defLineColor
                 moveTo x y
 --                lineTo (x' - (2 * dx)) (y' - (2 * dy))
                 curveTo ctrlX ctrlY ctrlX' ctrlY' x' y'
-                rotate $ -(angle (dirX, dirY))
-                drawHead $ 0.5 * defRadius
-                identityMatrix
+                relMoveTo (dirX' * 1.7 * defRadius) (dirY' * 1.7 * defRadius)
+                rotate $ -(angle (dirX', dirY'))
+                rotate pi
+--                drawHead $ 0.5 * defRadius
                 stroke
+                identityMatrix
             Nothing -> return ()
         where
             getCoords (c, _, _) = c
