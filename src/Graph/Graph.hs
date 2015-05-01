@@ -2,9 +2,9 @@
 module Graph.Graph (
     -- * Types
       Edge
-    , EdgeId
+    , EdgeId (..)
     , Node
-    , NodeId
+    , NodeId (..)
     , Graph
 
     -- * Construction
@@ -58,8 +58,8 @@ data Node a = Node { getNodePayload :: Maybe a
 instance Eq (Node a) where
     n == n' = True -- Simplifies all Eq instances that depend upon Node
 
-data Edge a = Edge { getSource   :: Int
-                   , getTarget   :: Int
+data Edge a = Edge { getSource   :: NodeId
+                   , getTarget   :: NodeId
                    , getEdgePayload :: Maybe a
               } deriving (Show, Read)
 
@@ -72,8 +72,8 @@ instance Eq (Edge a) where
               t' = getTarget e'
 
 data Graph a b = Graph {
-    nodeMap :: [(Int, Node a)],
-    edgeMap :: [(Int, Edge b)]
+    nodeMap :: [(NodeId, Node a)],
+    edgeMap :: [(EdgeId, Edge b)]
     } deriving (Eq, Read)
 
 instance Show (Graph a b) where
@@ -84,8 +84,8 @@ instance Show (Graph a b) where
               concatMap (\(eid, e) -> "\t" ++ show eid ++ "\n") em
 
 
-type NodeId = Int
-type EdgeId = Int
+newtype NodeId = NodeId Int deriving (Eq, Ord, Read, Show)
+newtype EdgeId = EdgeId Int deriving (Eq, Ord, Read, Show)
 
 -- | Create an empty Graph.
 empty :: Graph a b
@@ -189,8 +189,8 @@ nodesWithPayload (Graph nodeMap _) =
     map (\(k, n) -> (k, getNodePayload n)) nodeMap
 
 -- | Return @e@'s payload.
-edgePayload :: EdgeId -> Graph a b -> Maybe b
-edgePayload e g = (lookup e $ edgeMap g) >>= getEdgePayload
+edgePayload :: Graph a b -> EdgeId -> Maybe b
+edgePayload g e = (lookup e $ edgeMap g) >>= getEdgePayload
 
 -- | Return a pair containing @e@'s source and target nodes.
 nodesConnectedTo :: Graph a b -> EdgeId -> Maybe (NodeId, NodeId)
@@ -238,7 +238,7 @@ isAdjacentTo g n1 n2 =
 
 -- | Test if @n@ is connected to edge @e@.
 isIncidentTo :: Graph a b -> NodeId -> EdgeId -> Bool
-isIncidentTo g e n =
+isIncidentTo g n e =
     case res of
         Just (s, t) -> n == s || n == t
         otherwise   -> False

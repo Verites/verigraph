@@ -162,7 +162,7 @@ chooseMouseAction :: GramState
                   -> Coords
                   -> MouseButton
                   -> Click
-                  -> Bool
+                  -> Bool -- ^ multiSel: control is pressed
                   -> IO GraphEditState
 chooseMouseAction state gstate coords@(x, y) button click multiSel =
     case button of
@@ -219,18 +219,18 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
         addNode g coords (drawCircle neutralColor)
                          (insideCircle defRadius)
     addEdge src tgt gr =
-        let newId = length . G.edges $ gr
+        let newId = G.EdgeId $ length . G.edges $ gr
         in G.insertEdgeWithPayload newId src tgt 2 gr
 
 addNode :: Graph
         -> Coords
         -> (GramState -> GraphEditState -> G.NodeId -> Render ())
         -> (Coords -> Coords -> Bool)
-        -> (Int, Graph)
+        -> (G.NodeId, Graph)
 addNode graph coords renderFunc checkFunc =
     (newId, graph')
   where
-    newId = length . G.nodes $ graph
+    newId = G.NodeId . length . G.nodes $ graph
     graph' =
         G.insertNodeWithPayload newId (coords, renderFunc, checkFunc) graph
 
@@ -286,7 +286,7 @@ nodeEditDialog n p@(coords, renderFunc, checkFunc) state gstate = do
     dialogAddButton dial "Cancel" ResponseCancel
 
     widgetShowAll dial
-    tidRef <- newIORef 0
+    tidRef <- newIORef $ G.NodeId 0
     view `on` cursorChanged $ do
         Just iter <- treeSelectionGetSelected =<< treeViewGetSelection view
         tid <- listStoreGetValue store $ listStoreIterToIndex iter

@@ -47,7 +47,7 @@ type NodePayload =
     , GramState -> GraphEditState -> G.NodeId -> Render ()
     , Coords -> Coords -> Bool)
 type EdgePayload = Double
-data Obj = Node Int | Edge Int
+data Obj = Node G.NodeId | Edge G.EdgeId
     deriving (Show, Eq)
 
 data TreeNode
@@ -97,7 +97,7 @@ data SelMode =
     deriving Show
 -}
 
-data MouseMode = SelMode | EdgeCreation Int
+data MouseMode = SelMode | EdgeCreation G.NodeId
     deriving Show
 
 data RowStatus = Active | Inactive
@@ -146,9 +146,10 @@ grammarToState gg =
     iEdgeRel = GM.edgeRelation iGraph
     iGraphEditState =
         GraphEditState Active [] SelMode (0, 0) (M.domain iGraph) iNodeRel iEdgeRel
-    emptyRel = R.empty [] []
+    emptyNodeRel = R.empty [] []
+    emptyEdgeRel = R.empty [] [] :: R.Relation G.EdgeId
     tGraph =
-        GraphEditState Active [] SelMode (0, 0) (GG.typeGraph gg) emptyRel emptyRel
+        GraphEditState Active [] SelMode (0, 0) (GG.typeGraph gg) emptyNodeRel emptyEdgeRel
     iGraphList = [(defGraphName, iGraphEditState)]
     rulesList = []
 --    rules  = GG.rules gg
