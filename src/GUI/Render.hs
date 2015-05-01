@@ -6,6 +6,8 @@ module GUI.Render (
     , drawCircle
     , nodeRenderType
     , defRadius
+    , norm
+    , directionVect
     ) where
 
 import Data.Label -- fclabels
@@ -49,7 +51,7 @@ instance Renderable REdge where
                 (src, tgt) <- G.nodesConnectedTo gr n
                 srcC <- fmap getCoords $ G.nodePayload gr src
                 tgtC <- fmap getCoords $ G.nodePayload gr tgt
-                (bendFactor, _) <- G.edgePayload gr n
+                (_, _, bendFactor, _) <- G.edgePayload gr n
                 return (srcC, tgtC, bendFactor)
         in case coords of
             Just (srcC@(x, y), tgtC@(x', y'), bendFactor) -> do

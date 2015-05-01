@@ -41,16 +41,19 @@ $(mkLabels [''GUI, ''Buttons])
 -- FIXME temporary magic constants
 neutralColor = Color 13363 25956 42148 -- gainsboro
 
+-- functions to check for clicked objects
 insideCircle :: Double -> Coords -> Coords -> Bool
 insideCircle radius circleCoords coords =
     norm circleCoords coords <= radius
 
-norm :: Coords -> Coords -> Double
-norm (x, y) (x', y') =
-    sqrt $ (square (x' - x)) + (square (y' - y))
-  where
-    square x = x * x
-
+onEdge :: Coords -> Coords -> Coords -> Double -> Bool
+onEdge src@(x, y) tgt@(x', y') coords bendFactor =
+    norm coords edgeCenter <= defRadius -- defRadius is arbitrary, meant as a test
+  where 
+    (dx, dy) = directionVect src tgt
+    dist = norm src tgt
+    edgeCenter = ( x + dx * dist / 2 - dy * defRadius * bendFactor
+                 , y + dy * dist / 2 + dx * defRadius * bendFactor )
 
 runGUI :: IO ()
 runGUI = do
@@ -179,7 +182,7 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
             ([], SingleClick) ->
                 -- unselect nodes
                 return $ set selObjects [] gstate
-            ((n@(Node _ _):_), SingleClick) -> do
+            ((n@(Node _ _):_), SingleClick) -> 
                 -- select node
                 return $
                     set refCoords coords $
@@ -194,6 +197,9 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
                 case _canvasMode state of
                     TGraphMode -> typeEditDialog k p state gstate
                     otherwise -> nodeEditDialog k p state gstate
+            ((e@(Edge k p):_), SingleClick) -> do
+                liftIO . putStrLn $ "clicked " ++ show k
+                return gstate
             otherwise -> return gstate
         RightButton ->
             return $
@@ -210,12 +216,15 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
     edgeObjects =
         -- the Edge constructor transforms EdgeId into an Obj
         map (\(k, Just p) -> Edge k p) $
-        filter (\(_, p) -> False) -- have no edge checkFunc yet
-{-
-                        case p of
-                          Just (refCoords, _ , cf) -> cf refCoords coords
-                          otherwise -> False)
--}
+        filter (\(_, p) ->
+                    let res = do
+                        (src, tgt, bendFactor, cf) <- p
+                        (srcC, _, _) <- G.nodePayload g src
+                        (tgtC, _, _) <- G.nodePayload g tgt
+                        return $ cf srcC tgtC coords bendFactor
+                    in case res of
+                        Just True -> True
+                        otherwise -> False)
                (G.edgesWithPayload g)
     nodeObjects =
         -- the Node constructor transforms NodeId into an Obj
@@ -232,7 +241,8 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
     addEdge src tgt gr =
         let newId = G.EdgeId . length . G.edges $ gr
             bendFactor = 2
-        in G.insertEdgeWithPayload newId src tgt (bendFactor, (\_ _ -> False)) gr
+        in G.insertEdgeWithPayload
+               newId src tgt (src, tgt, bendFactor, onEdge) gr
 
 addNode :: Graph
         -> Coords
@@ -329,8 +339,8 @@ mouseMove canvas stateRef = do
         (refX, refY) = _refCoords gstate
         (dx, dy) = (x - refX, y - refY)
         updateCoords g n =
-            G.updateNodePayload n g (\((x, y), rF, cF) ->
-                                            ((x + dx, y + dy), rF, cF))
+            G.updateNodePayload n g (\((x, y), rf, cf) ->
+                                            ((x + dx, y + dy), rf, cf))
         selObjs = get selObjects gstate -- FIXME
         updateAllNodes g =
             foldr (\n acc -> case n of

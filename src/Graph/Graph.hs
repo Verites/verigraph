@@ -92,7 +92,6 @@ newtype EdgeId = EdgeId Int deriving (Eq, Ord, Read, Show)
 empty :: Graph a b
 empty = Graph [] []
 
-
 -- | Insert a node @n@ in a graph @g@, without payload.
 insertNode :: NodeId -> Graph a b -> Graph a b
 insertNode n g@(Graph ns es) =

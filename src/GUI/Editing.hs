@@ -46,7 +46,12 @@ type NodePayload =
     ( Coords
     , GramState -> GraphEditState -> G.NodeId -> Render ()
     , Coords -> Coords -> Bool)
-type EdgePayload = ( Double, Coords -> Coords -> Bool )
+type EdgePayload =
+    ( G.NodeId -- ^ source
+    , G.NodeId -- ^ target
+    , Double -- ^ bendFactor
+    , Coords -> Coords -> Coords -> Double -> Bool -- ^ check function
+    )
 -- | Obj make handling heterogeneous node/edge lists easier, useful to
 -- select both type of entities simultaneously
 data Obj = Node G.NodeId NodePayload | Edge G.EdgeId EdgePayload
