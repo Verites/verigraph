@@ -63,25 +63,27 @@ instance Renderable REdge where
                     -- second bezier control point
                     ctrlX' = x + dirX * (2 * dist / 3) - scaledY * bendFactor
                     ctrlY' = y + dirY * (2 * dist / 3) + scaledX * bendFactor
-                    (dirX', dirY') = directionVect (x', y') (ctrlX', ctrlY')
+                    (dirX', dirY') = directionVect (ctrlX', ctrlY') (x', y')
                 setLineWidth defLineWidth
                 renderColor defLineColor
                 moveTo x y
---                lineTo (x' - (2 * dx)) (y' - (2 * dy))
                 curveTo ctrlX ctrlY ctrlX' ctrlY' x' y'
-                relMoveTo (dirX' * 1.7 * defRadius) (dirY' * 1.7 * defRadius)
-                rotate $ -(angle (dirX', dirY'))
-                rotate pi
---                drawHead $ 0.5 * defRadius
                 stroke
+                setLineWidth defLineWidth
+                renderColor defLineColor
+                moveTo x' y'
+                relMoveTo (- defRadius * dirX') (- defRadius * dirY')
+                rotate $ (angle (dirX', dirY'))
+                drawHead $ defRadius * 1.5
+                fill
                 identityMatrix
             Nothing -> return ()
         where
             getCoords (c, _, _) = c
             drawHead len = do
-                relMoveTo (len / 2) 0
-                relLineTo (-len / 2) len
-                relLineTo (-len / 2) (-len)
+                relLineTo (-len / 2) (len / 4)
+                relLineTo 0 (- len / 2)
+                relLineTo (len / 2) (len / 4)
 
 
 
@@ -155,7 +157,10 @@ norm (x, y) (x', y') =
 
 angle :: Coords -> Double
 angle (dx, dy)
-    | dx > 0 = acos dy
-    | dx < 0 = - acos dy
-    | otherwise = 0
+    | dx == 0 && dy >= 0 = pi / 2
+    | dx == 0 && dy < 0  = (-pi) / 2
+    | dx >= 0 = ang
+    | dx < 0 = ang - pi
+  where
+    ang = atan $ dy / dx
 
