@@ -46,9 +46,19 @@ type NodePayload =
     ( Coords
     , GramState -> GraphEditState -> G.NodeId -> Render ()
     , Coords -> Coords -> Bool)
-type EdgePayload = Double
-data Obj = Node G.NodeId | Edge G.EdgeId
-    deriving (Show, Eq)
+type EdgePayload = ( Double, Coords -> Coords -> Bool )
+-- | Obj make handling heterogeneous node/edge lists easier, useful to
+-- select both type of entities simultaneously
+data Obj = Node G.NodeId NodePayload | Edge G.EdgeId EdgePayload
+
+instance Show Obj where
+    show (Node id _) = show id
+    show (Edge id _) = show id
+
+instance Eq Obj where
+    Node x _ == Node y _ = x == y
+    Edge x _ == Edge y _ = x == y
+    _ == _ = False
 
 data TreeNode
     = TNInitialGraph RowStatus Key

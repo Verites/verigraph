@@ -174,14 +174,13 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
                 return $
                     set refCoords coords $
                     gstate { _getGraph = graph'
-                           , _selObjects = [Node newId]
+                           , _selObjects = [Node newId p']
                            }
             ([], SingleClick) ->
                 -- unselect nodes
                 return $ set selObjects [] gstate
-            (((k, p):_), SingleClick) -> do
+            ((n@(Node _ _):_), SingleClick) -> do
                 -- select node
-                let n = Node k
                 return $
                     set refCoords coords $
                     (case (multiSel, n `L.elem` _selObjects gstate) of
@@ -190,7 +189,7 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
                           (True, True) -> modify selObjects (L.delete n)
                           _ -> id) $
                     gstate
-            (((k, (Just p)):_), DoubleClick) ->
+            ((n@(Node k p):_), DoubleClick) ->
                 -- open editing dialog
                 case _canvasMode state of
                     TGraphMode -> typeEditDialog k p state gstate
@@ -199,8 +198,7 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
         RightButton ->
             return $
             case (objects, click) of
-            (((k, p):_), SingleClick) -> do
-                let n = Node k
+            ((Node k p:_), SingleClick) -> do
                 case _mouseMode gstate of
                     EdgeCreation src ->
                         modify getGraph (addEdge src k) gstate
@@ -208,32 +206,46 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
             otherwise -> gstate
         otherwise -> return gstate
   where
-    objects =
-        filter (\p -> case p of
-                          (_, Just (refCoords, _ , cf)) -> cf refCoords coords
+    objects = nodeObjects ++ edgeObjects
+    edgeObjects =
+        -- the Edge constructor transforms EdgeId into an Obj
+        map (\(k, Just p) -> Edge k p) $
+        filter (\(_, p) -> False) -- have no edge checkFunc yet
+{-
+                        case p of
+                          Just (refCoords, _ , cf) -> cf refCoords coords
                           otherwise -> False)
-               listPayloads
-    listPayloads = G.nodesWithPayload g
+-}
+               (G.edgesWithPayload g)
+    nodeObjects =
+        -- the Node constructor transforms NodeId into an Obj
+        -- No payload-less nodes pass filtering
+        map (\(k, Just p) -> Node k p) $ 
+        filter (\(_, p) -> case p of
+                          Just (refCoords, _ , cf) -> cf refCoords coords
+                          otherwise -> False)
+               (G.nodesWithPayload g)
     g = _getGraph gstate
-    (newId, graph') =
+    (newId, p', graph') =
         addNode g coords (drawCircle neutralColor)
                          (insideCircle defRadius)
     addEdge src tgt gr =
         let newId = G.EdgeId . length . G.edges $ gr
             bendFactor = 2
-        in G.insertEdgeWithPayload newId src tgt bendFactor gr
+        in G.insertEdgeWithPayload newId src tgt (bendFactor, (\_ _ -> False)) gr
 
 addNode :: Graph
         -> Coords
         -> (GramState -> GraphEditState -> G.NodeId -> Render ())
         -> (Coords -> Coords -> Bool)
-        -> (G.NodeId, Graph)
+        -> (G.NodeId, NodePayload, Graph)
 addNode graph coords renderFunc checkFunc =
-    (newId, graph')
+    (newId, p, graph')
   where
     newId = G.NodeId . length . G.nodes $ graph
+    p = (coords, renderFunc, checkFunc)
     graph' =
-        G.insertNodeWithPayload newId (coords, renderFunc, checkFunc) graph
+        G.insertNodeWithPayload newId p graph
 
 typeEditDialog :: G.NodeId -> NodePayload -> GramState -> GraphEditState -> IO (GraphEditState)
 typeEditDialog n p@(coords, renderFunc, checkFunc) state gstate = do
@@ -320,10 +332,9 @@ mouseMove canvas stateRef = do
             G.updateNodePayload n g (\((x, y), rF, cF) ->
                                             ((x + dx, y + dy), rF, cF))
         selObjs = get selObjects gstate -- FIXME
---        updateAllNodes :: Graph -> Graph
         updateAllNodes g =
             foldr (\n acc -> case n of
-                                Node n -> updateCoords acc n
+                                Node n _ -> updateCoords acc n
                                 _ -> acc)
                   g
                   selObjs

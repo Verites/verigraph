@@ -9,6 +9,7 @@ module GUI.Render (
     ) where
 
 import Data.Label -- fclabels
+import Data.Maybe (fromJust)
 --import GUI.Editing (State (..), GraphEditState (..))
 import GUI.Editing
 import Graphics.Rendering.Cairo as Gtk
@@ -48,7 +49,7 @@ instance Renderable REdge where
                 (src, tgt) <- G.nodesConnectedTo gr n
                 srcC <- fmap getCoords $ G.nodePayload gr src
                 tgtC <- fmap getCoords $ G.nodePayload gr tgt
-                bendFactor <- G.edgePayload gr n
+                (bendFactor, _) <- G.edgePayload gr n
                 return (srcC, tgtC, bendFactor)
         in case coords of
             Just (srcC@(x, y), tgtC@(x', y'), bendFactor) -> do
@@ -137,7 +138,7 @@ drawCircle color state gstate n =
     p = G.nodePayload (_getGraph gstate) n
     sel = case get selObjects gstate of
             [] -> False
-            ns -> (Node n) `elem` ns
+            ns -> (Node n (fromJust p)) `elem` ns -- safe due to lazy eval
 
 nodeRenderType :: GramState -> GraphEditState -> G.NodeId -> Render ()
 nodeRenderType state gstate n =

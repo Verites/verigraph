@@ -27,6 +27,7 @@ module Graph.Graph (
     , nodes
     , edgesFromNode
     , edgesIntoNode
+    , edgesWithPayload
     , incidentEdges
     , neighbourNodes
     , nodesConnectedTo
@@ -191,6 +192,11 @@ nodesWithPayload (Graph nodeMap _) =
 -- | Return @e@'s payload.
 edgePayload :: Graph a b -> EdgeId -> Maybe b
 edgePayload g e = (lookup e $ edgeMap g) >>= getEdgePayload
+
+-- | Return a list of all edge id's, together with their payloads.
+edgesWithPayload :: Graph a b -> [(EdgeId, Maybe b)]
+edgesWithPayload (Graph _ edgeMap) =
+    map (\(k, e) -> (k, getEdgePayload e)) edgeMap
 
 -- | Return a pair containing @e@'s source and target nodes.
 nodesConnectedTo :: Graph a b -> EdgeId -> Maybe (NodeId, NodeId)
