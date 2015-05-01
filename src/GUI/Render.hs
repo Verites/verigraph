@@ -53,35 +53,48 @@ instance Renderable REdge where
         in case coords of
             Just (srcC@(x, y), tgtC@(x', y'), bendFactor) -> do
                 let (dirX, dirY) = directionVect srcC tgtC
-                    (scaledX, scaledY) = (dirX * defRadius, dirY * defRadius)
                     dist = norm srcC tgtC
-                    -- first bezier control point
-                    -- the last terms from ctrlX and ctrlY form a right angle
-                    -- to the direction vector.
-                    ctrlX = x + dirX * (dist / 3) - scaledY * bendFactor
-                    ctrlY = y + dirY * (dist / 3) + scaledX * bendFactor
-                    -- second bezier control point
-                    ctrlX' = x + dirX * (2 * dist / 3) - scaledY * bendFactor
-                    ctrlY' = y + dirY * (2 * dist / 3) + scaledX * bendFactor
-                    (dirX', dirY') = directionVect (x', y') (ctrlX', ctrlY')
+                    (scaledX, scaledY) = ( dirX * defRadius * bendFactor
+                                         , dirY * defRadius * bendFactor )
+                    bigRadius = defRadius * 4 -- for extra bend in loops
+                    -- Control points coodinates.
+                    (ctrlX, ctrlY, ctrlX', ctrlY')
+                        -- dist == 0 tests for loops.
+                        | dist == 0 = ( x - bendFactor - bigRadius
+                                      , y - bendFactor - bigRadius
+                                      , x + bendFactor + bigRadius
+                                      , y - bendFactor - bigRadius )
+                        | otherwise =
+                          -- first bezier control point
+                          -- the last terms from ctrlX and ctrlY form a right angle
+                          -- to the direction vector.
+                          ( x + dirX * (dist / 3) - scaledY
+                          , y + dirY * (dist / 3) + scaledX
+                          -- second bezier control point
+                          , x + dirX * (2 * dist / 3) - scaledY
+                          , y + dirY * (2 * dist / 3) + scaledX )
+                    (dirX', dirY') = directionVect (ctrlX', ctrlY') (x', y')
                 setLineWidth defLineWidth
                 renderColor defLineColor
+
                 moveTo x y
---                lineTo (x' - (2 * dx)) (y' - (2 * dy))
                 curveTo ctrlX ctrlY ctrlX' ctrlY' x' y'
-                relMoveTo (dirX' * 1.7 * defRadius) (dirY' * 1.7 * defRadius)
-                rotate $ -(angle (dirX', dirY'))
-                rotate pi
---                drawHead $ 0.5 * defRadius
                 stroke
+                setLineWidth defLineWidth
+                renderColor defLineColor
+                moveTo x' y'
+                relMoveTo (- defRadius * dirX') (- defRadius * dirY')
+                rotate $ (angle (dirX', dirY'))
+                drawHead $ defRadius * 1.5
+                fill
                 identityMatrix
             Nothing -> return ()
         where
             getCoords (c, _, _) = c
             drawHead len = do
-                relMoveTo (len / 2) 0
-                relLineTo (-len / 2) len
-                relLineTo (-len / 2) (-len)
+                relLineTo (-len / 2) (len / 4)
+                relLineTo 0 (- len / 2)
+                relLineTo (len / 2) (len / 4)
 
 
 
@@ -140,7 +153,7 @@ nodeRenderType state gstate n =
 
 directionVect :: Coords -> Coords -> Coords
 directionVect s@(x, y) t@(x', y')
-    | dist == 0 = (0, 0)
+    | dist == 0 = (-1, 1)
     | otherwise = (dx / dist, dy / dist)
   where 
     dist = norm s t
@@ -155,7 +168,10 @@ norm (x, y) (x', y') =
 
 angle :: Coords -> Double
 angle (dx, dy)
-    | dx > 0 = acos dy
-    | dx < 0 = - acos dy
-    | otherwise = 0
+    | dx == 0 && dy >= 0 = pi / 2
+    | dx == 0 && dy < 0  = (-pi) / 2
+    | dx >= 0 = ang
+    | dx < 0 = ang - pi
+  where
+    ang = atan $ dy / dx
 
