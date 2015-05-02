@@ -6,6 +6,7 @@ module GUI.Render (
     , drawNode
     , nodeRenderType
     , defRadius
+    , ctrlPoints
     , edgeCenter
     , norm
     , directionVect
@@ -64,21 +65,8 @@ instance Renderable REdge where
                                          , dirY * defRadius * bendFactor )
                     bigRadius = defRadius * 4 -- for extra bend in loops
                     -- Control points coodinates.
-                    (ctrlX, ctrlY, ctrlX', ctrlY')
-                        -- dist == 0 tests for loops.
-                        | dist == 0 = ( x - bendFactor - bigRadius
-                                      , y - bendFactor - bigRadius
-                                      , x + bendFactor + bigRadius
-                                      , y - bendFactor - bigRadius )
-                        | otherwise =
-                          -- first bezier control point
-                          -- the last terms from ctrlX and ctrlY form a right angle
-                          -- to the direction vector.
-                          ( x + dirX * (dist / 3) - scaledY
-                          , y + dirY * (dist / 3) + scaledX
-                          -- second bezier control point
-                          , x + dirX * (2 * dist / 3) - scaledY
-                          , y + dirY * (2 * dist / 3) + scaledX )
+                    (ctrlP1@(ctrlX, ctrlY), ctrlP2@(ctrlX', ctrlY')) =
+                        ctrlPoints srcC tgtC bendFactor
                     (dirX', dirY') = directionVect (ctrlX', ctrlY') (x', y')
                 setLineWidth defLineWidth
                 renderColor defLineColor
@@ -98,7 +86,7 @@ instance Renderable REdge where
                 identityMatrix
                 if sel p
                     then
-                       do let (cx, cy) = edgeCenter srcC tgtC bendFactor
+                       do let (cx, cy) = edgeCenter srcC tgtC ctrlP1 ctrlP2
                           drawCtrlPoint cx cy
                           fill
                     else return ()
@@ -190,11 +178,39 @@ angle (dx, dy)
     | dx < 0 = ang - pi
   where
     ang = atan $ dy / dx
+    
+edgeCenter :: Coords -> Coords -> Coords -> Coords -> Coords
+edgeCenter src@(x, y) tgt@(x', y') ctrlP1@(cx, cy) ctrlP2@(cx', cy') =
+    0.125 `mul` src `add`
+    0.375 `mul` ctrlP1 `add`
+    0.375 `mul` ctrlP2 `add`
+    0.125 `mul` tgt
+  where  
+    infixl 7 `mul`
+    c `mul` (x', y') = (c * x', c * y')
+    infixl 6 `add`
+    (x, y) `add` (x', y') = (x + x', y + y')
 
-edgeCenter :: Coords -> Coords -> Double -> Coords
-edgeCenter src@(x, y) tgt@(x', y') bendFactor =
-    ( x + dx * dist / 2 - dy * defRadius * bendFactor
-    , y + dy * dist / 2 + dx * defRadius * bendFactor )
+
+ctrlPoints :: Coords -> Coords -> Double -> (Coords, Coords)
+ctrlPoints src@(x, y) tgt@(x', y') bendFactor
+    | dist == 0 = ( ( x - bendFactor - bigRadius
+                    , y - bendFactor - bigRadius)
+                  , ( x + bendFactor + bigRadius
+                    , y - bendFactor - bigRadius)) 
+    | otherwise =
+        -- first bezier control point
+        -- the last terms from ctrlX and ctrlY form a right angle
+        -- to the direction vector.
+        ( ( x + dirX * (dist / 3) - scaledY
+          , y + dirY * (dist / 3) + scaledX )
+        -- second bezier control point
+        , ( x + dirX * (2 * dist / 3) - scaledY
+          , y + dirY * (2 * dist / 3) + scaledX ) )
   where
-    (dx, dy) = directionVect src tgt
     dist = norm src tgt
+    (dirX, dirY) = directionVect src tgt
+    (scaledX, scaledY) = ( dirX * defRadius * bendFactor
+                         , dirY * defRadius * bendFactor )
+    bigRadius = 4 * defRadius
+

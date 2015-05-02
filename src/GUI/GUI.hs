@@ -12,6 +12,7 @@ import Data.List.Utils
 import Data.IORef
 import qualified Data.Tree as T ( Tree( Node ))
 import qualified Data.List as L
+import Debug.Trace
 import Control.Applicative
 import Graphics.UI.Gtk hiding (get, set) -- conflict with fclabels
 import qualified Graphics.UI.Gtk as Gtk
@@ -48,11 +49,18 @@ insideCircle radius circleCoords coords =
 
 onEdge :: Coords -> Coords -> Coords -> Double -> Bool
 onEdge src@(x, y) tgt@(x', y') coords bendFactor =
+    trace ("src: " ++ show src ++
+           "\ttgt: " ++ show tgt ++
+           "\tctrlP1: " ++ show ctrlP1 ++
+           "\tctrlP2: " ++ show ctrlP2 ++
+           "\teCenter: " ++ show eCenter ++
+           "\tcoords: " ++ show coords) $
     norm coords eCenter <= defRadius -- defRadius is arbitrary, meant as a test
   where 
     (dx, dy) = directionVect src tgt
     dist = norm src tgt
-    eCenter = edgeCenter src tgt bendFactor
+    (ctrlP1, ctrlP2) = ctrlPoints src tgt bendFactor
+    eCenter = edgeCenter src tgt ctrlP1 ctrlP2
 
 runGUI :: IO ()
 runGUI = do
