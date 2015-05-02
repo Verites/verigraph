@@ -28,7 +28,7 @@ import Control.Category
 defRadius = 20 :: Double
 defLineWidth = 2 :: Double
 defBorderColor = Color 65535 65535 65535
-defLineColor = Color 60000 0 0
+defLineColor = Color 0 0 0
 ctrlPointColor = Color 65535 65535 0
 defSpacing = 1
 
@@ -55,13 +55,13 @@ instance Renderable REdge where
                 (src, tgt) <- G.nodesConnectedTo gr e
                 srcC <- fmap getCoords $ G.nodePayload gr src
                 tgtC <- fmap getCoords $ G.nodePayload gr tgt
-                p@(_, _, bendMag, _) <- G.edgePayload gr e
-                return (srcC, tgtC, bendMag, p)
+                p@(_, _, bendVect, _) <- G.edgePayload gr e
+                return (srcC, tgtC, bendVect, p)
         in case coords of
-            Just (srcC@(x, y), tgtC@(x', y'), bendMag, p) -> do
+            Just (srcC@(x, y), tgtC@(x', y'), bendVect, p) -> do
                 let -- Control points coodinates.
                     (ctrlP1@(ctrlX, ctrlY), ctrlP2@(ctrlX', ctrlY')) =
-                        ctrlPoints srcC tgtC bendMag
+                        ctrlPoints srcC tgtC bendVect
                     (dirX', dirY') = directionVect (ctrlX', ctrlY') (x', y')
                 setLineWidth defLineWidth
                 renderColor defLineColor
@@ -190,24 +190,23 @@ bezierPoints t src tgt ctrlP1 ctrlP2 =
     infixl 6 `add`
     (x, y) `add` (x', y') = (x + x', y + y')
    
-ctrlPoints :: Coords -> Coords -> Double -> (Coords, Coords)
-ctrlPoints src@(x, y) tgt@(x', y') bendMag
-    | dist == 0 = ( ( x - bendMag
-                    , y - bendMag)
-                  , ( x + bendMag
-                    , y - bendMag)) 
+ctrlPoints :: Coords -> Coords -> Coords -> (Coords, Coords)
+ctrlPoints src@(x, y) tgt@(x', y') bendVect@(bx, by)
+    | dist == 0 = ( ( x - bx - radius
+                    , y + by - radius)
+                  , ( x + bx + radius
+                    , y + by - radius)) 
     | otherwise =
         -- first bezier control point
         -- the last terms from ctrlX and ctrlY form a right angle
         -- to the direction vector.
-        ( ( x + dirX * (dist / 3) - scaledY
-          , y + dirY * (dist / 3) + scaledX )
+        ( ( x + dirX * (dist / 3) + bx
+          , y + dirY * (dist / 3) + by )
         -- second bezier control point
-        , ( x + dirX * (2 * dist / 3) - scaledY
-          , y + dirY * (2 * dist / 3) + scaledX ) )
+        , ( x + dirX * (2 * dist / 3) + bx
+          , y + dirY * (2 * dist / 3) + by ) )
   where
     dist = norm src tgt
     (dirX, dirY) = directionVect src tgt
-    (scaledX, scaledY) = ( dirX * bendMag
-                         , dirY * bendMag )
+    radius = 4 * defRadius
 

@@ -49,8 +49,8 @@ type NodePayload =
 type EdgePayload =
     ( G.NodeId -- ^ source
     , G.NodeId -- ^ target
-    , Double -- ^ bendFactor
-    , Coords -> Coords -> Coords -> Double -> Bool -- ^ check function
+    , Coords -- ^ center displacement vector
+    , Coords -> Coords -> Coords -> Coords -> Bool -- ^ check function
     )
 -- | Obj make handling heterogeneous node/edge lists easier, useful to
 -- select both type of entities simultaneously
