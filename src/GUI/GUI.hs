@@ -48,7 +48,9 @@ insideCircle radius circleCoords coords =
 
 onEdge :: Coords -> Coords -> Coords -> Coords -> Bool
 onEdge src@(x, y) tgt@(x', y') coords bendVect =
-    norm coords eCenter <= defRadius
+    norm coords eCenter <= radius ||
+    norm coords ctrlP1 <= radius ||
+    norm coords ctrlP2 <= radius
   where 
     (dx, dy) = directionVect src tgt
     dist = norm src tgt

@@ -192,9 +192,9 @@ bezierPoints t src tgt ctrlP1 ctrlP2 =
    
 ctrlPoints :: Coords -> Coords -> Coords -> (Coords, Coords)
 ctrlPoints src@(x, y) tgt@(x', y') bendVect@(bx, by)
-    | dist == 0 = ( ( x - bx - radius
+    | dist == 0 = ( ( x - bx - 4 * radius
                     , y + by - radius)
-                  , ( x + bx + radius
+                  , ( x + bx + 4 * radius
                     , y + by - radius)) 
     | otherwise =
         -- first bezier control point
@@ -208,5 +208,5 @@ ctrlPoints src@(x, y) tgt@(x', y') bendVect@(bx, by)
   where
     dist = norm src tgt
     (dirX, dirY) = directionVect src tgt
-    radius = 4 * defRadius
+    radius = 2 * defRadius
 
