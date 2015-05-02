@@ -3,13 +3,15 @@
 module GUI.Render (
       renderColor
     , render
-    , drawCircle
+    , drawNode
     , nodeRenderType
     , defRadius
+    , edgeCenter
     , norm
     , directionVect
     ) where
 
+import Control.Monad (guard)
 import Data.Label -- fclabels
 import Data.Maybe (fromJust)
 --import GUI.Editing (State (..), GraphEditState (..))
@@ -25,7 +27,8 @@ import Control.Category
 defRadius = 20 :: Double
 defLineWidth = 2 :: Double
 defBorderColor = Color 65535 65535 65535
-defLineColor = Color 0 0 0
+defLineColor = Color 60000 0 0
+ctrlPointColor = Color 65535 65535 0
 defSpacing = 1
 
 {- Data types for rendering -}
@@ -45,16 +48,16 @@ instance Renderable RNode where
         g = _getGraph gstate
 
 instance Renderable REdge where
-    render (REdge state gstate n) =
+    render (REdge state gstate e) =
         let gr = get getGraph gstate
             coords = do
-                (src, tgt) <- G.nodesConnectedTo gr n
+                (src, tgt) <- G.nodesConnectedTo gr e
                 srcC <- fmap getCoords $ G.nodePayload gr src
                 tgtC <- fmap getCoords $ G.nodePayload gr tgt
-                (_, _, bendFactor, _) <- G.edgePayload gr n
-                return (srcC, tgtC, bendFactor)
+                p@(_, _, bendFactor, _) <- G.edgePayload gr e
+                return (srcC, tgtC, bendFactor, p)
         in case coords of
-            Just (srcC@(x, y), tgtC@(x', y'), bendFactor) -> do
+            Just (srcC@(x, y), tgtC@(x', y'), bendFactor, p) -> do
                 let (dirX, dirY) = directionVect srcC tgtC
                     dist = norm srcC tgtC
                     (scaledX, scaledY) = ( dirX * defRadius * bendFactor
@@ -82,6 +85,7 @@ instance Renderable REdge where
 
                 moveTo x y
                 curveTo ctrlX ctrlY ctrlX' ctrlY' x' y'
+--                if sel p then strokePreserve >> highlight >> stroke else stroke
                 stroke
                 setLineWidth defLineWidth
                 renderColor defLineColor
@@ -89,7 +93,15 @@ instance Renderable REdge where
                 relMoveTo (- defRadius * dirX') (- defRadius * dirY')
                 rotate $ (angle (dirX', dirY'))
                 drawHead $ defRadius * 1.5
+--                if sel p then fillPreserve >> highlight >> fill else fill
                 fill
+                identityMatrix
+                if sel p
+                    then
+                       do let (cx, cy) = edgeCenter srcC tgtC bendFactor
+                          drawCtrlPoint cx cy
+                          fill
+                    else return ()
                 identityMatrix
             Nothing -> return ()
         where
@@ -98,7 +110,12 @@ instance Renderable REdge where
                 relLineTo (-len / 2) (len / 4)
                 relLineTo 0 (- len / 2)
                 relLineTo (len / 2) (len / 4)
-
+            drawCtrlPoint x y = do
+                setLineWidth defLineWidth
+                renderColor ctrlPointColor
+                arc x y (defRadius / 4) 0 $ 2 * pi
+            sel p = Edge e p `elem` get selObjects gstate
+            highlight = setSourceRGBA 0 0 0 0.4
 
 
 instance Renderable GramState where
@@ -121,8 +138,8 @@ renderColor (Color r g b) = setSourceRGB  r' g' b'
 --    (r, g, b) = (channelRed rgb, channelGreen rgb, channelBlue rgb)
 
 
-drawCircle :: Color -> GramState -> GraphEditState -> G.NodeId -> Render ()
-drawCircle color state gstate n =
+drawNode :: Color -> GramState -> GraphEditState -> G.NodeId -> Render ()
+drawNode color state gstate n =
     case p of
         Just ((x, y), rF, cF) -> do
             setLineWidth defLineWidth
@@ -130,17 +147,13 @@ drawCircle color state gstate n =
             Gtk.arc x y defRadius 0 $ 2 * pi
             strokePreserve
             renderColor color
-            if sel then fillPreserve >> highlight else fill
+            if sel then fillPreserve >> highlight >> fill else fill
             return ()
         otherwise -> return ()
   where
-    highlight = do
-        setSourceRGBA 0 0 0 0.4
-        fill
+    highlight = setSourceRGBA 0 0 0 0.4
     p = G.nodePayload (_getGraph gstate) n
-    sel = case get selObjects gstate of
-            [] -> False
-            ns -> (Node n (fromJust p)) `elem` ns -- safe due to lazy eval
+    sel = Node n (fromJust p) `elem` get selObjects gstate
 
 nodeRenderType :: GramState -> GraphEditState -> G.NodeId -> Render ()
 nodeRenderType state gstate n =
@@ -178,3 +191,10 @@ angle (dx, dy)
   where
     ang = atan $ dy / dx
 
+edgeCenter :: Coords -> Coords -> Double -> Coords
+edgeCenter src@(x, y) tgt@(x', y') bendFactor =
+    ( x + dx * dist / 2 - dy * defRadius * bendFactor
+    , y + dy * dist / 2 + dx * defRadius * bendFactor )
+  where
+    (dx, dy) = directionVect src tgt
+    dist = norm src tgt

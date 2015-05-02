@@ -48,12 +48,11 @@ insideCircle radius circleCoords coords =
 
 onEdge :: Coords -> Coords -> Coords -> Double -> Bool
 onEdge src@(x, y) tgt@(x', y') coords bendFactor =
-    norm coords edgeCenter <= defRadius -- defRadius is arbitrary, meant as a test
+    norm coords eCenter <= defRadius -- defRadius is arbitrary, meant as a test
   where 
     (dx, dy) = directionVect src tgt
     dist = norm src tgt
-    edgeCenter = ( x + dx * dist / 2 - dy * defRadius * bendFactor
-                 , y + dy * dist / 2 + dx * defRadius * bendFactor )
+    eCenter = edgeCenter src tgt bendFactor
 
 runGUI :: IO ()
 runGUI = do
@@ -182,14 +181,14 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
             ([], SingleClick) ->
                 -- unselect nodes
                 return $ set selObjects [] gstate
-            ((n@(Node _ _):_), SingleClick) -> 
+            ((x:_), SingleClick) -> 
                 -- select node
                 return $
                     set refCoords coords $
-                    (case (multiSel, n `L.elem` _selObjects gstate) of
-                          (False, False) -> set selObjects [n]
-                          (True, False) -> modify selObjects (n:)
-                          (True, True) -> modify selObjects (L.delete n)
+                    (case (multiSel, x `L.elem` _selObjects gstate) of
+                          (False, False) -> set selObjects [x]
+                          (True, False) -> modify selObjects (x:)
+                          (True, True) -> modify selObjects (L.delete x)
                           _ -> id) $
                     gstate
             ((n@(Node k p):_), DoubleClick) ->
@@ -197,9 +196,6 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
                 case _canvasMode state of
                     TGraphMode -> typeEditDialog k p state gstate
                     otherwise -> nodeEditDialog k p state gstate
-            ((e@(Edge k p):_), SingleClick) -> do
-                liftIO . putStrLn $ "clicked " ++ show k
-                return gstate
             otherwise -> return gstate
         RightButton ->
             return $
@@ -236,7 +232,7 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
                (G.nodesWithPayload g)
     g = _getGraph gstate
     (newId, p', graph') =
-        addNode g coords (drawCircle neutralColor)
+        addNode g coords (drawNode neutralColor)
                          (insideCircle defRadius)
     addEdge src tgt gr =
         let newId = G.EdgeId . length . G.edges $ gr
@@ -272,7 +268,7 @@ typeEditDialog n p@(coords, renderFunc, checkFunc) state gstate = do
     dialogAddButton dial "Cancel" ResponseCancel
     widgetShowAll dial
     response <- dialogRun dial
-    let p' newColor = (coords, drawCircle newColor, checkFunc)
+    let p' newColor = (coords, drawNode newColor, checkFunc)
     case response of 
         ResponseApply -> do
             color <- colorButtonGetColor colorButton
