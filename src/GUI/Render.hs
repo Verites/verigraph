@@ -174,7 +174,6 @@ angle (dx, dy)
   where
     ang = atan $ dy / dx
     
--- Uses the bézier cubic equation with parameter t = 0.5. 
 edgeCenter :: Coords -> Coords -> Coords -> Coords -> Coords
 edgeCenter src tgt ctrlP1 ctrlP2 =
     bezierPoints 0.5 src tgt ctrlP1 ctrlP2

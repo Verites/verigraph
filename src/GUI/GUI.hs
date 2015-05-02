@@ -338,6 +338,8 @@ mouseMove canvas stateRef = do
         updateCoords g n =
             G.updateNodePayload n g (\((x, y), rf, cf) ->
                                             ((x + dx, y + dy), rf, cf))
+        updateBendMag e g =
+            G.updateEdgePayload e g (\(s, t, bf, cf) -> (s, t, bf + dy, cf))
         selObjs = get selObjects gstate -- FIXME
         updateAllNodes g =
             foldr (\n acc -> case n of
@@ -346,7 +348,10 @@ mouseMove canvas stateRef = do
                   g
                   selObjs
         gstate' = set refCoords coords gstate
-        gstate'' = modify getGraph updateAllNodes gstate'
+        gstate'' =
+            case selObjs of
+                [Edge e _] -> modify getGraph (updateBendMag e) gstate'
+                _ -> modify getGraph updateAllNodes gstate'
     liftIO $ writeIORef stateRef $ setCurGraphState gstate'' state
     liftIO $ widgetQueueDraw canvas
     return True
