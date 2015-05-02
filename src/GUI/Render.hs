@@ -179,17 +179,23 @@ angle (dx, dy)
   where
     ang = atan $ dy / dx
     
+-- Uses the bézier cubic equation with parameter t = 0.5. 
 edgeCenter :: Coords -> Coords -> Coords -> Coords -> Coords
-edgeCenter src@(x, y) tgt@(x', y') ctrlP1@(cx, cy) ctrlP2@(cx', cy') =
-    0.125 `mul` src `add`
-    0.375 `mul` ctrlP1 `add`
-    0.375 `mul` ctrlP2 `add`
-    0.125 `mul` tgt
+edgeCenter src tgt ctrlP1 ctrlP2 =
+    bezierPoints 0.5 src tgt ctrlP1 ctrlP2
+
+bezierPoints :: Double -> Coords -> Coords -> Coords -> Coords -> Coords
+bezierPoints t src tgt ctrlP1 ctrlP2 =
+    ((1 - t) ^ 3) `mul` src `add`
+    (3 * t * (1 - t) ^ 2) `mul` ctrlP1 `add`
+    (3 * t ^ 2 * (1 - t)) `mul` ctrlP2 `add`
+    t ^ 3 `mul` tgt
   where  
     infixl 7 `mul`
     c `mul` (x', y') = (c * x', c * y')
     infixl 6 `add`
     (x, y) `add` (x', y') = (x + x', y + y')
+   
 
 
 ctrlPoints :: Coords -> Coords -> Double -> (Coords, Coords)
