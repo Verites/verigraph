@@ -118,6 +118,7 @@ addMainCallbacks gui stateRef = do
         canvas = _getCanvas gui
     window `on` objectDestroy $ mainQuit
     canvas `on` buttonPressEvent $ tryEvent $ mouseClick canvas stateRef
+    window `on` keyPressEvent $ tryEvent $ keyPress canvas stateRef
     dwin <- widgetGetDrawWindow canvas
     canvas `on` exposeEvent $ do liftIO $ renderWithDrawable dwin (updateCanvas stateRef)
                                  return True
@@ -360,6 +361,29 @@ mouseMove canvas stateRef = do
     liftIO $ widgetQueueDraw canvas
     return True
 
+keyPress :: WidgetClass widget
+           => widget -> IORef GramState -> EventM EKey ()
+keyPress = undefined
+{-
+keyPress canvas stateRef = do
+    key <- eventKeyName
+    state <- liftIO $ readIORef stateRef
+    let mgstate = currentGraphState state
+    case (mgstate, key) of
+        (Just gstate, "Delete") -> do
+            let gstate' = modify getGraph deleteObjects gstate
+            liftIO $ writeIORef stateRef $ setCurGraphState gstate'
+        _ -> return ()
+  where
+    (selectedEdges, selectedNodes) =
+        L.partition isEdge $ get selObjects gstate
+    isEdge (Edge _ _) = True
+    isEdge _ = False
+    deleteEdges gr = foldr G.removeEdge gr selectedEdges
+    deleteNodes gr = foldr G.removeNode gr selectedNodes
+    deleteObjects = deleteNodes . deleteEdges
+-}
+        
 
 updateCanvas :: IORef GramState -> Render ()
 updateCanvas stateRef = do
