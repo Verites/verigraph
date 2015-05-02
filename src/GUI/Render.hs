@@ -55,18 +55,13 @@ instance Renderable REdge where
                 (src, tgt) <- G.nodesConnectedTo gr e
                 srcC <- fmap getCoords $ G.nodePayload gr src
                 tgtC <- fmap getCoords $ G.nodePayload gr tgt
-                p@(_, _, bendFactor, _) <- G.edgePayload gr e
-                return (srcC, tgtC, bendFactor, p)
+                p@(_, _, bendMag, _) <- G.edgePayload gr e
+                return (srcC, tgtC, bendMag, p)
         in case coords of
-            Just (srcC@(x, y), tgtC@(x', y'), bendFactor, p) -> do
-                let (dirX, dirY) = directionVect srcC tgtC
-                    dist = norm srcC tgtC
-                    (scaledX, scaledY) = ( dirX * defRadius * bendFactor
-                                         , dirY * defRadius * bendFactor )
-                    bigRadius = defRadius * 4 -- for extra bend in loops
-                    -- Control points coodinates.
+            Just (srcC@(x, y), tgtC@(x', y'), bendMag, p) -> do
+                let -- Control points coodinates.
                     (ctrlP1@(ctrlX, ctrlY), ctrlP2@(ctrlX', ctrlY')) =
-                        ctrlPoints srcC tgtC bendFactor
+                        ctrlPoints srcC tgtC bendMag
                     (dirX', dirY') = directionVect (ctrlX', ctrlY') (x', y')
                 setLineWidth defLineWidth
                 renderColor defLineColor
@@ -196,14 +191,12 @@ bezierPoints t src tgt ctrlP1 ctrlP2 =
     infixl 6 `add`
     (x, y) `add` (x', y') = (x + x', y + y')
    
-
-
 ctrlPoints :: Coords -> Coords -> Double -> (Coords, Coords)
-ctrlPoints src@(x, y) tgt@(x', y') bendFactor
-    | dist == 0 = ( ( x - bendFactor - bigRadius
-                    , y - bendFactor - bigRadius)
-                  , ( x + bendFactor + bigRadius
-                    , y - bendFactor - bigRadius)) 
+ctrlPoints src@(x, y) tgt@(x', y') bendMag
+    | dist == 0 = ( ( x - bendMag
+                    , y - bendMag)
+                  , ( x + bendMag
+                    , y - bendMag)) 
     | otherwise =
         -- first bezier control point
         -- the last terms from ctrlX and ctrlY form a right angle
@@ -216,7 +209,6 @@ ctrlPoints src@(x, y) tgt@(x', y') bendFactor
   where
     dist = norm src tgt
     (dirX, dirY) = directionVect src tgt
-    (scaledX, scaledY) = ( dirX * defRadius * bendFactor
-                         , dirY * defRadius * bendFactor )
-    bigRadius = 4 * defRadius
+    (scaledX, scaledY) = ( dirX * bendMag
+                         , dirY * bendMag )
 

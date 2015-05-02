@@ -47,12 +47,12 @@ insideCircle radius circleCoords coords =
     norm circleCoords coords <= radius
 
 onEdge :: Coords -> Coords -> Coords -> Double -> Bool
-onEdge src@(x, y) tgt@(x', y') coords bendFactor =
+onEdge src@(x, y) tgt@(x', y') coords bendMag =
     norm coords eCenter <= defRadius -- defRadius is arbitrary, meant as a test
   where 
     (dx, dy) = directionVect src tgt
     dist = norm src tgt
-    (ctrlP1, ctrlP2) = ctrlPoints src tgt bendFactor
+    (ctrlP1, ctrlP2) = ctrlPoints src tgt bendMag
     eCenter = edgeCenter src tgt ctrlP1 ctrlP2
 
 runGUI :: IO ()
@@ -215,10 +215,10 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
         map (\(k, Just p) -> Edge k p) $
         filter (\(_, p) ->
                     let res = do
-                        (src, tgt, bendFactor, cf) <- p
+                        (src, tgt, bendMag, cf) <- p
                         (srcC, _, _) <- G.nodePayload g src
                         (tgtC, _, _) <- G.nodePayload g tgt
-                        return $ cf srcC tgtC coords bendFactor
+                        return $ cf srcC tgtC coords bendMag
                     in case res of
                         Just True -> True
                         otherwise -> False)
@@ -237,9 +237,9 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
                          (insideCircle defRadius)
     addEdge src tgt gr =
         let newId = G.EdgeId . length . G.edges $ gr
-            bendFactor = 2
+            bendMag = 100
         in G.insertEdgeWithPayload
-               newId src tgt (src, tgt, bendFactor, onEdge) gr
+               newId src tgt (src, tgt, bendMag, onEdge) gr
 
 addNode :: Graph
         -> Coords
