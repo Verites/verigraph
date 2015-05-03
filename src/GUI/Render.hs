@@ -62,21 +62,25 @@ instance Renderable REdge where
                 let -- Control points coodinates.
                     (ctrlP1@(ctrlX, ctrlY), ctrlP2@(ctrlX', ctrlY')) =
                         ctrlPoints srcC tgtC bendVect
-                    (dirX', dirY') = directionVect (ctrlX', ctrlY') (x', y')
+                -- Edge drawing
                 setLineWidth defLineWidth
                 renderColor defLineColor
-
                 moveTo x y
                 curveTo ctrlX ctrlY ctrlX' ctrlY' x' y'
---                if sel p then strokePreserve >> highlight >> stroke else stroke
                 stroke
+                -- Edge head drawing
                 setLineWidth defLineWidth
                 renderColor defLineColor
                 moveTo x' y'
-                relMoveTo (- defRadius * dirX') (- defRadius * dirY')
-                rotate $ (angle (dirX', dirY'))
+                let (dx, dy) = directionVect ctrlP2 tgtC
+                -- move to node borders
+                relMoveTo (- defRadius * dx) (- defRadius * dy)
+                rotate $
+                    let refP =
+                            bezierPoints 0.95 srcC tgtC ctrlP1 ctrlP2
+                        deriv = directionVect refP tgtC
+                    in angle deriv
                 drawHead $ defRadius * 1.5
---                if sel p then fillPreserve >> highlight >> fill else fill
                 fill
                 identityMatrix
                 if sel p
