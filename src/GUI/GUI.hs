@@ -363,26 +363,27 @@ mouseMove canvas stateRef = do
 
 keyPress :: WidgetClass widget
            => widget -> IORef GramState -> EventM EKey ()
-keyPress = undefined
-{-
 keyPress canvas stateRef = do
     key <- eventKeyName
     state <- liftIO $ readIORef stateRef
     let mgstate = currentGraphState state
     case (mgstate, key) of
         (Just gstate, "Delete") -> do
-            let gstate' = modify getGraph deleteObjects gstate
-            liftIO $ writeIORef stateRef $ setCurGraphState gstate'
+            let sel = L.partition isEdge $ get selObjects gstate
+                gstate' = modify getGraph (deleteObjects sel) gstate
+            liftIO $ writeIORef stateRef $ setCurGraphState gstate' state
         _ -> return ()
+    liftIO $ widgetQueueDraw canvas
   where
-    (selectedEdges, selectedNodes) =
-        L.partition isEdge $ get selObjects gstate
     isEdge (Edge _ _) = True
     isEdge _ = False
-    deleteEdges gr = foldr G.removeEdge gr selectedEdges
-    deleteNodes gr = foldr G.removeNode gr selectedNodes
-    deleteObjects = deleteNodes . deleteEdges
--}
+    deleteEdges edges gr = foldr G.removeEdge gr edges
+    deleteNodes nodes gr = foldr G.removeNode gr nodes
+    deleteObjects sel =
+        let selEdges = map (\(Edge e _) -> e) $ fst sel
+            selNodes = map (\(Node n _) -> n) $ snd sel
+        in deleteNodes selNodes . deleteEdges selEdges
+        
         
 
 updateCanvas :: IORef GramState -> Render ()
