@@ -42,16 +42,18 @@ type Graph = G.Graph NodePayload EdgePayload
 type GraphMorphism = GM.GraphMorphism NodePayload EdgePayload
 type Rule = GR.GraphRule NodePayload EdgePayload
 type Coords = (Double, Double)
-type NodePayload =
-    ( Coords
-    , GramState -> GraphEditState -> G.NodeId -> Render ()
-    , Coords -> Coords -> Bool)
-type EdgePayload =
-    ( G.NodeId -- ^ source
-    , G.NodeId -- ^ target
-    , Coords -- ^ center displacement vector
-    , Coords -> Coords -> Coords -> Coords -> Bool -- ^ check function
-    )
+data NodePayload = NodePayload {
+      _nodeCoords :: Coords
+    , _nodeRender :: GramState -> GraphEditState -> G.NodeId -> Render ()
+    , _nodeCheck :: Coords -> Coords -> Bool
+    }
+
+data EdgePayload = EdgePayload {
+      _edgeSrc :: G.NodeId -- ^ source
+    , _edgeTgt :: G.NodeId -- ^ target
+    , _bendVect :: Coords -- ^ center displacement vector
+    , _edgeCheck :: Coords -> Coords -> Coords -> Coords -> Bool -- ^ check function
+    }
 -- | Obj make handling heterogeneous node/edge lists easier, useful to
 -- select both type of entities simultaneously
 data Obj = Node G.NodeId NodePayload | Edge G.EdgeId EdgePayload
@@ -122,7 +124,7 @@ data RowStatus = Active | Inactive
 
 type Key = String
 
-$(mkLabels [''GramState, ''GraphEditState])
+$(mkLabels [''GramState, ''GraphEditState, ''NodePayload, ''EdgePayload])
 
 currentGraphState :: GramState -> Maybe GraphEditState
 currentGraphState state =

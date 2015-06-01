@@ -223,9 +223,9 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
         map (\(k, Just p) -> Edge k p) $
         filter (\(_, p) ->
                     let res = do
-                        (src, tgt, bendVect, cf) <- p
-                        (srcC, _, _) <- G.nodePayload g src
-                        (tgtC, _, _) <- G.nodePayload g tgt
+                        (EdgePayload src tgt bendVect cf) <- p
+                        (NodePayload srcC _ _) <- G.nodePayload g src
+                        (NodePayload tgtC _ _) <- G.nodePayload g tgt
                         return $ cf srcC tgtC coords bendVect
                     in case res of
                         Just True -> True
@@ -236,7 +236,7 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
         -- No payload-less nodes pass filtering
         map (\(k, Just p) -> Node k p) $ 
         filter (\(_, p) -> case p of
-                          Just (refCoords, _ , cf) -> cf refCoords coords
+                          Just (NodePayload refCoords _ cf) -> cf refCoords coords
                           otherwise -> False)
                (G.nodesWithPayload g)
     g = _getGraph gstate
@@ -247,7 +247,7 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
         let newId = get freeEdgeId gstate
             bendVect = (0, -100)
         in G.insertEdgeWithPayload
-               newId src tgt (src, tgt, bendVect, onEdge) gr
+               newId src tgt (EdgePayload src tgt bendVect onEdge) gr
 
 addNode :: GraphEditState
         -> Coords
@@ -258,13 +258,13 @@ addNode gstate coords renderFunc checkFunc =
     (p, graph')
   where
     newId = get freeNodeId gstate
-    p = (coords, renderFunc, checkFunc)
+    p = NodePayload coords renderFunc checkFunc
     graph = get getGraph gstate
     graph' =
         G.insertNodeWithPayload newId p graph
 
 typeEditDialog :: G.NodeId -> NodePayload -> GramState -> GraphEditState -> IO (GraphEditState)
-typeEditDialog n p@(coords, renderFunc, checkFunc) state gstate = do
+typeEditDialog n p@(NodePayload coords renderFunc checkFunc) state gstate = do
     dial <- dialogNew
     cArea <- return . castToBox =<< dialogGetUpper dial
     entry <- entryNew
@@ -278,7 +278,7 @@ typeEditDialog n p@(coords, renderFunc, checkFunc) state gstate = do
     dialogAddButton dial "Cancel" ResponseCancel
     widgetShowAll dial
     response <- dialogRun dial
-    let p' newColor = (coords, drawNode newColor, checkFunc)
+    let p' newColor = NodePayload coords (drawNode newColor) checkFunc
     case response of 
         ResponseApply -> do
             color <- colorButtonGetColor colorButton
@@ -292,7 +292,7 @@ typeEditDialog n p@(coords, renderFunc, checkFunc) state gstate = do
         otherwise -> return gstate
 
 nodeEditDialog :: G.NodeId -> NodePayload -> GramState -> GraphEditState -> IO (GraphEditState)
-nodeEditDialog n p@(coords, renderFunc, checkFunc) state gstate = do
+nodeEditDialog n p@(NodePayload coords renderFunc checkFunc) state gstate = do
     dial <- dialogNew
     cArea <- return . castToBox =<< dialogGetUpper dial
     let nodeList = G.nodes $ get (getGraph . getTypeGraph) state
@@ -331,7 +331,7 @@ nodeEditDialog n p@(coords, renderFunc, checkFunc) state gstate = do
                                  (R.update n tid)
                                  gstate
                 updateRenderFunc g =
-                    G.updateNodePayload n g (\(c, _, cf) -> (c, nodeRenderType, cf))
+                    G.updateNodePayload n g (set nodeRender nodeRenderType)
             return $ modify getGraph updateRenderFunc gstate'
         _ -> do
             return gstate
@@ -345,11 +345,10 @@ mouseMove canvas stateRef = do
         (refX, refY) = _refCoords gstate
         (dx, dy) = (x - refX, y - refY)
         updateCoords g n =
-            G.updateNodePayload n g (\((x, y), rf, cf) ->
-                                            ((x + dx, y + dy), rf, cf))
+            G.updateNodePayload n g (modify nodeCoords (\(x, y) -> (x + dx, y + dy)))
         updateBendVect e g =
             G.updateEdgePayload
-                e g (\(s, t, (bx, by), cf) -> (s, t, (bx + dx, by + dy), cf))
+                e g (modify bendVect (\(bx, by) -> (bx + dx, by + dy)))
         selObjs = get selObjects gstate
         updateAllNodes g =
             foldr (\n acc -> case n of

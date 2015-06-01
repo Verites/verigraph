@@ -44,7 +44,7 @@ class Renderable a where
 instance Renderable RNode where
     render (RNode state gstate n) =
         case G.nodePayload g n of
-            Just (coords, renderFunc, checkFunc) -> renderFunc state gstate n
+            Just p -> (get nodeRender p) state gstate n
             otherwise -> return ()
       where
         g = _getGraph gstate
@@ -54,10 +54,10 @@ instance Renderable REdge where
         let gr = get getGraph gstate
             coords = do
                 (src, tgt) <- G.nodesConnectedTo gr e
-                srcC <- fmap getCoords $ G.nodePayload gr src
-                tgtC <- fmap getCoords $ G.nodePayload gr tgt
-                p@(_, _, bendVect, _) <- G.edgePayload gr e
-                return (srcC, tgtC, bendVect, p)
+                srcC <- fmap (get nodeCoords) $ G.nodePayload gr src
+                tgtC <- fmap (get nodeCoords) $ G.nodePayload gr tgt
+                p <- G.edgePayload gr e
+                return (srcC, tgtC, (get bendVect p), p)
         in case coords of
             Just (srcC@(x, y), tgtC@(x', y'), bendVect, p) -> do
                 let -- Control points coodinates.
@@ -93,7 +93,6 @@ instance Renderable REdge where
                 identityMatrix
             Nothing -> return ()
         where
-            getCoords (c, _, _) = c
             drawHead len = do
                 relLineTo (-len / 2) (len / 4)
                 relLineTo 0 (- len / 2)
@@ -129,7 +128,8 @@ renderColor (Color r g b) = setSourceRGB  r' g' b'
 drawNode :: Color -> GramState -> GraphEditState -> G.NodeId -> Render ()
 drawNode color state gstate n =
     case p of
-        Just ((x, y), rF, cF) -> do
+        Just p -> do
+            let (x, y) = get nodeCoords p
             setLineWidth defLineWidth
             renderColor defBorderColor
             Gtk.arc x y defRadius 0 $ 2 * pi
@@ -146,7 +146,7 @@ drawNode color state gstate n =
 nodeRenderType :: GramState -> GraphEditState -> G.NodeId -> Render ()
 nodeRenderType state gstate n =
     case newP of
-        Just (_, rF, _) -> rF state gstate n
+        Just p -> (get nodeRender p) state gstate n
         _ -> return ()
   where
     nodeTypes = R.apply (_getNodeRelation gstate) n
