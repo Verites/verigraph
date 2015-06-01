@@ -87,7 +87,9 @@ data GramState = GramState
     }
 
 data GraphEditState = GraphEditState
-    { _getStatus :: RowStatus
+    { _freeNodeId :: G.NodeId
+    , _freeEdgeId :: G.EdgeId
+    , _getStatus :: RowStatus
     , _selObjects :: [Obj]
     , _mouseMode :: MouseMode
     , _refCoords :: Coords
@@ -154,19 +156,25 @@ modCurGraphState f state =
 
 grammarToState :: Grammar -> GramState
 grammarToState gg =
-    GramState (IGraphMode defGraphName) iGraphList tGraph rulesList
+    GramState (IGraphMode defGraphName) iGraphList tGraphState rulesList
   where
-    iGraph = GG.initialGraph gg
-    iNodeRel = GM.nodeRelation iGraph
-    iEdgeRel = GM.edgeRelation iGraph
+    iGraphState = GG.initialGraph gg
+    iGraph = M.domain iGraphState
+    iNodeRel = GM.nodeRelation iGraphState
+    iEdgeRel = GM.edgeRelation iGraphState
     iGraphEditState =
-        GraphEditState Active [] SelMode (0, 0) (M.domain iGraph) iNodeRel iEdgeRel
+        GraphEditState maxNodeId maxEdgeId Active [] SelMode (0, 0) iGraph iNodeRel iEdgeRel
     emptyNodeRel = R.empty [] []
     emptyEdgeRel = R.empty [] [] :: R.Relation G.EdgeId
-    tGraph =
-        GraphEditState Active [] SelMode (0, 0) (GG.typeGraph gg) emptyNodeRel emptyEdgeRel
+    tGraph = GG.typeGraph gg
+    tGraphState =
+        GraphEditState tMaxNodeId tMaxEdgeId Active [] SelMode (0, 0) tGraph emptyNodeRel emptyEdgeRel
     iGraphList = [(defGraphName, iGraphEditState)]
     rulesList = []
+    maxNodeId = G.NodeId . length . G.nodes $ iGraph
+    maxEdgeId = G.EdgeId . length . G.edges $ iGraph
+    tMaxNodeId = G.NodeId . length . G.nodes $ tGraph
+    tMaxEdgeId = G.EdgeId . length . G.edges $ tGraph
 --    rules  = GG.rules gg
 --    ruleToGraphEditState 
 --    rulesMap = foldr (\(s, r) acc -> M.insert s r acc) M.empty rules

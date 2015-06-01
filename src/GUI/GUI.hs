@@ -179,9 +179,11 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
             ([], DoubleClick) ->
                 -- create node
                 return $
+                    let n@(G.NodeId nid) = get freeNodeId gstate in
                     set refCoords coords $
+                    set freeNodeId (G.NodeId (nid + 1)) $
                     gstate { _getGraph = graph'
-                           , _selObjects = [Node newId p']
+                           , _selObjects = [Node n p']
                            }
             ([], SingleClick) ->
                 -- unselect nodes
@@ -208,8 +210,10 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
             ((Node k p:_), SingleClick) -> do
                 case _mouseMode gstate of
                     EdgeCreation src ->
-                        modify getGraph (addEdge src k) gstate
-                    otherwise -> set mouseMode (EdgeCreation k) gstate
+                        modify getGraph (addEdge src k) $ 
+                        modify freeEdgeId (\(G.EdgeId i) -> G.EdgeId (i + 1)) gstate
+                    otherwise -> set mouseMode (EdgeCreation k) $
+                                 gstate
             otherwise -> gstate
         otherwise -> return gstate
   where
@@ -236,25 +240,26 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
                           otherwise -> False)
                (G.nodesWithPayload g)
     g = _getGraph gstate
-    (newId, p', graph') =
-        addNode g coords (drawNode neutralColor)
+    (p', graph') =
+        addNode gstate coords (drawNode neutralColor)
                          (insideCircle defRadius)
     addEdge src tgt gr =
-        let newId = G.EdgeId . length . G.edges $ gr
+        let newId = get freeEdgeId gstate
             bendVect = (0, -100)
         in G.insertEdgeWithPayload
                newId src tgt (src, tgt, bendVect, onEdge) gr
 
-addNode :: Graph
+addNode :: GraphEditState
         -> Coords
         -> (GramState -> GraphEditState -> G.NodeId -> Render ())
         -> (Coords -> Coords -> Bool)
-        -> (G.NodeId, NodePayload, Graph)
-addNode graph coords renderFunc checkFunc =
-    (newId, p, graph')
+        -> (NodePayload, Graph)
+addNode gstate coords renderFunc checkFunc =
+    (p, graph')
   where
-    newId = G.NodeId . length . G.nodes $ graph
+    newId = get freeNodeId gstate
     p = (coords, renderFunc, checkFunc)
+    graph = get getGraph gstate
     graph' =
         G.insertNodeWithPayload newId p graph
 
@@ -345,7 +350,7 @@ mouseMove canvas stateRef = do
         updateBendVect e g =
             G.updateEdgePayload
                 e g (\(s, t, (bx, by), cf) -> (s, t, (bx + dx, by + dy), cf))
-        selObjs = get selObjects gstate -- FIXME
+        selObjs = get selObjects gstate
         updateAllNodes g =
             foldr (\n acc -> case n of
                                 Node n _ -> updateCoords acc n

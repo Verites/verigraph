@@ -23,6 +23,7 @@ import qualified Graph.Graph as G
 import qualified Abstract.Relation as R
 import Prelude hiding ((.))
 import Control.Category
+import Debug.Trace (trace)
 
 
 defRadius = 20 :: Double
@@ -77,7 +78,7 @@ instance Renderable REdge where
                 relMoveTo (- defRadius * dx) (- defRadius * dy)
                 rotate $
                     let refP =
-                            bezierPoints 0.95 srcC tgtC ctrlP1 ctrlP2
+                            bezierPoints 0.70 srcC tgtC ctrlP1 ctrlP2
                         deriv = directionVect refP tgtC
                     in angle deriv
                 drawHead $ defRadius * 1.5
