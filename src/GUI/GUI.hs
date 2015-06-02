@@ -293,7 +293,6 @@ typeEditDialog n p@(NodePayload nid coords renderFunc checkFunc) state gstate = 
             shapeButtons <- radioButtonGetGroup circleButton
             shapeButtons' <- filterM toggleButtonGetActive shapeButtons
             shapeStr <- buttonGetLabel $ head shapeButtons'
-            liftIO $ putStrLn . show . length $ shapeButtons'
             let shapeFunc = case shapeStr of
                              "Square" -> drawSquare
                              "Circle" -> drawCircle
