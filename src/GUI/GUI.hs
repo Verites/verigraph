@@ -7,6 +7,7 @@ import qualified Graph.Graph as G
 import GUI.Render
 import GUI.Editing
 
+import Control.Monad (filterM)
 import Data.Label -- fclabels
 import Data.List.Utils
 import Data.IORef
@@ -274,14 +275,30 @@ typeEditDialog n p@(NodePayload nid coords renderFunc checkFunc) state gstate = 
 --    colorButton `on` buttonPressEvent $ chooseColor
     colorSel <- colorSelectionNew
 --    boxPackStart cArea colorSel PackNatural 1
+    -- box to group all radio buttons according to available shapes
+    nodeShapeBox <- vBoxNew False 2
+    circleButton <- radioButtonNewWithLabel "Circle" 
+    squareButton <- radioButtonNewWithLabelFromWidget circleButton "Square" 
+    boxPackStart nodeShapeBox circleButton PackGrow 2
+    boxPackStart nodeShapeBox squareButton PackGrow 2
+    boxPackStart cArea nodeShapeBox PackGrow 2
+    
     dialogAddButton dial "Apply" ResponseApply
     dialogAddButton dial "Cancel" ResponseCancel
     widgetShowAll dial
     response <- dialogRun dial
-    let p' newColor = NodePayload nid coords (drawCircle newColor) checkFunc
     case response of 
         ResponseApply -> do
             color <- colorButtonGetColor colorButton
+            shapeButtons <- radioButtonGetGroup circleButton
+            shapeButtons' <- filterM toggleButtonGetActive shapeButtons
+            shapeStr <- buttonGetLabel $ head shapeButtons'
+            liftIO $ putStrLn . show . length $ shapeButtons'
+            let shapeFunc = case shapeStr of
+                             "Square" -> drawSquare
+                             "Circle" -> drawCircle
+                             _ -> drawCircle --FIXME
+                p' newColor = set nodeRender (shapeFunc newColor) p
             widgetDestroy dial
             return $ modify getGraph
                             (\g -> G.updateNodePayload n g (\_ -> p' color))

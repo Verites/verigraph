@@ -85,8 +85,14 @@ instance Show (Graph a b) where
               concatMap (\(eid, e) -> "\t" ++ show eid ++ "\n") em
 
 
-newtype NodeId = NodeId Int deriving (Eq, Ord, Read, Show)
-newtype EdgeId = EdgeId Int deriving (Eq, Ord, Read, Show)
+newtype NodeId = NodeId Int deriving (Eq, Ord, Read)
+newtype EdgeId = EdgeId Int deriving (Eq, Ord, Read)
+
+instance Show NodeId where
+    show (NodeId i) = show i
+
+instance Show EdgeId where
+    show (EdgeId i) = show i
 
 -- | Create an empty Graph.
 empty :: Graph a b
