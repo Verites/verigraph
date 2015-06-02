@@ -223,9 +223,9 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
         map (\(k, Just p) -> Edge k p) $
         filter (\(_, p) ->
                     let res = do
-                        (EdgePayload src tgt bendVect cf) <- p
-                        (NodePayload srcC _ _) <- G.nodePayload g src
-                        (NodePayload tgtC _ _) <- G.nodePayload g tgt
+                        (EdgePayload _ src tgt bendVect cf) <- p
+                        (NodePayload _ srcC _ _) <- G.nodePayload g src
+                        (NodePayload _ tgtC _ _) <- G.nodePayload g tgt
                         return $ cf srcC tgtC coords bendVect
                     in case res of
                         Just True -> True
@@ -236,7 +236,7 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
         -- No payload-less nodes pass filtering
         map (\(k, Just p) -> Node k p) $ 
         filter (\(_, p) -> case p of
-                          Just (NodePayload refCoords _ cf) -> cf refCoords coords
+                          Just p -> (get nodeCheck p) (get nodeCoords p) coords
                           otherwise -> False)
                (G.nodesWithPayload g)
     g = _getGraph gstate
@@ -247,7 +247,7 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
         let newId = get freeEdgeId gstate
             bendVect = (0, -100)
         in G.insertEdgeWithPayload
-               newId src tgt (EdgePayload src tgt bendVect onEdge) gr
+               newId src tgt (EdgePayload newId src tgt bendVect onEdge) gr
 
 addNode :: GraphEditState
         -> Coords
@@ -258,13 +258,13 @@ addNode gstate coords renderFunc checkFunc =
     (p, graph')
   where
     newId = get freeNodeId gstate
-    p = NodePayload coords renderFunc checkFunc
+    p = NodePayload newId coords renderFunc checkFunc
     graph = get getGraph gstate
     graph' =
         G.insertNodeWithPayload newId p graph
 
 typeEditDialog :: G.NodeId -> NodePayload -> GramState -> GraphEditState -> IO (GraphEditState)
-typeEditDialog n p@(NodePayload coords renderFunc checkFunc) state gstate = do
+typeEditDialog n p@(NodePayload nid coords renderFunc checkFunc) state gstate = do
     dial <- dialogNew
     cArea <- return . castToBox =<< dialogGetUpper dial
     entry <- entryNew
@@ -278,7 +278,7 @@ typeEditDialog n p@(NodePayload coords renderFunc checkFunc) state gstate = do
     dialogAddButton dial "Cancel" ResponseCancel
     widgetShowAll dial
     response <- dialogRun dial
-    let p' newColor = NodePayload coords (drawNode newColor) checkFunc
+    let p' newColor = NodePayload nid coords (drawNode newColor) checkFunc
     case response of 
         ResponseApply -> do
             color <- colorButtonGetColor colorButton
@@ -292,7 +292,7 @@ typeEditDialog n p@(NodePayload coords renderFunc checkFunc) state gstate = do
         otherwise -> return gstate
 
 nodeEditDialog :: G.NodeId -> NodePayload -> GramState -> GraphEditState -> IO (GraphEditState)
-nodeEditDialog n p@(NodePayload coords renderFunc checkFunc) state gstate = do
+nodeEditDialog n p@(NodePayload _ coords renderFunc checkFunc) state gstate = do
     dial <- dialogNew
     cArea <- return . castToBox =<< dialogGetUpper dial
     let nodeList = G.nodes $ get (getGraph . getTypeGraph) state

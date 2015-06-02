@@ -43,13 +43,15 @@ type GraphMorphism = GM.GraphMorphism NodePayload EdgePayload
 type Rule = GR.GraphRule NodePayload EdgePayload
 type Coords = (Double, Double)
 data NodePayload = NodePayload {
-      _nodeCoords :: Coords
+      _nodeId :: G.NodeId
+    , _nodeCoords :: Coords
     , _nodeRender :: GramState -> GraphEditState -> G.NodeId -> Render ()
     , _nodeCheck :: Coords -> Coords -> Bool
     }
 
 data EdgePayload = EdgePayload {
-      _edgeSrc :: G.NodeId -- ^ source
+      _edgeId :: G.EdgeId
+    , _edgeSrc :: G.NodeId -- ^ source
     , _edgeTgt :: G.NodeId -- ^ target
     , _bendVect :: Coords -- ^ center displacement vector
     , _edgeCheck :: Coords -> Coords -> Coords -> Coords -> Bool -- ^ check function

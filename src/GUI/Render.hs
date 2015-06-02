@@ -28,9 +28,10 @@ import Debug.Trace (trace)
 
 defRadius = 20 :: Double
 defLineWidth = 2 :: Double
-defBorderColor = Color 65535 65535 65535
+blueCode = 65535
+defBorderColor = Color blueCode blueCode blueCode
 defLineColor = Color 0 0 0
-ctrlPointColor = Color 65535 65535 0
+ctrlPointColor = Color blueCode blueCode 0
 defSpacing = 1
 
 {- Data types for rendering -}
@@ -44,7 +45,9 @@ class Renderable a where
 instance Renderable RNode where
     render (RNode state gstate n) =
         case G.nodePayload g n of
-            Just p -> (get nodeRender p) state gstate n
+            Just p -> do 
+                (get nodeRender p) state gstate n
+                drawNodeLabel p
             otherwise -> return ()
       where
         g = _getGraph gstate
@@ -120,7 +123,7 @@ renderColor (Color r g b) = setSourceRGB  r' g' b'
     (r', g', b') = (fromIntegral r / denom,
                     fromIntegral g / denom,
                     fromIntegral b / denom) :: (Double, Double, Double)
-    denom = 65535 :: Double
+    denom = fromIntegral blueCode
 --    rgb = toSRGB k
 --    (r, g, b) = (channelRed rgb, channelGreen rgb, channelBlue rgb)
 
@@ -131,6 +134,7 @@ drawNode color state gstate n =
         Just p -> do
             let (x, y) = get nodeCoords p
             setLineWidth defLineWidth
+            strokePreserve
             renderColor defBorderColor
             Gtk.arc x y defRadius 0 $ 2 * pi
             strokePreserve
@@ -142,6 +146,18 @@ drawNode color state gstate n =
     highlight = setSourceRGBA 0 0 0 0.4
     p = G.nodePayload (_getGraph gstate) n
     sel = Node n (fromJust p) `elem` get selObjects gstate
+
+drawNodeLabel :: NodePayload -> Render ()
+drawNodeLabel p = do
+    moveTo (x - 4) (y + 4) -- so it gets centered
+    setSourceRGB 0 0 0
+    setFontSize 13
+    showText $ show nid
+    fill
+  where
+    (x, y) = get nodeCoords p
+    nid = get nodeId p
+   
 
 nodeRenderType :: GramState -> GraphEditState -> G.NodeId -> Render ()
 nodeRenderType state gstate n =
