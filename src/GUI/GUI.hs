@@ -241,7 +241,7 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
                (G.nodesWithPayload g)
     g = _getGraph gstate
     (p', graph') =
-        addNode gstate coords (drawNode neutralColor)
+        addNode gstate coords (drawCircle neutralColor)
                          (insideCircle defRadius)
     addEdge src tgt gr =
         let newId = get freeEdgeId gstate
@@ -278,7 +278,7 @@ typeEditDialog n p@(NodePayload nid coords renderFunc checkFunc) state gstate = 
     dialogAddButton dial "Cancel" ResponseCancel
     widgetShowAll dial
     response <- dialogRun dial
-    let p' newColor = NodePayload nid coords (drawNode newColor) checkFunc
+    let p' newColor = NodePayload nid coords (drawCircle newColor) checkFunc
     case response of 
         ResponseApply -> do
             color <- colorButtonGetColor colorButton

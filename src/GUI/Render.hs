@@ -3,7 +3,8 @@
 module GUI.Render (
       renderColor
     , render
-    , drawNode
+    , drawCircle
+    , drawSquare
     , nodeRenderType
     , defRadius
     , ctrlPoints
@@ -128,13 +129,12 @@ renderColor (Color r g b) = setSourceRGB  r' g' b'
 --    (r, g, b) = (channelRed rgb, channelGreen rgb, channelBlue rgb)
 
 
-drawNode :: Color -> GramState -> GraphEditState -> G.NodeId -> Render ()
-drawNode color state gstate n =
+drawCircle :: Color -> GramState -> GraphEditState -> G.NodeId -> Render ()
+drawCircle color state gstate n =
     case p of
         Just p -> do
             let (x, y) = get nodeCoords p
             setLineWidth defLineWidth
-            strokePreserve
             renderColor defBorderColor
             Gtk.arc x y defRadius 0 $ 2 * pi
             strokePreserve
@@ -146,6 +146,28 @@ drawNode color state gstate n =
     highlight = setSourceRGBA 0 0 0 0.4
     p = G.nodePayload (_getGraph gstate) n
     sel = Node n (fromJust p) `elem` get selObjects gstate
+
+drawSquare :: Color -> GramState -> GraphEditState -> G.NodeId -> Render ()
+drawSquare color state gstate n =
+    case p of
+        Just p -> do
+            let (x, y) = get nodeCoords p
+            setLineWidth defLineWidth
+            renderColor defBorderColor
+            moveTo (x - defRadius) (y - defRadius)
+            relLineTo (2 * defRadius) 0
+            relLineTo 0 (2 * defRadius)
+            relLineTo (-2 * defRadius) 0
+            relLineTo 0 (-2 * defRadius)
+            renderColor color
+            if sel then fillPreserve >> highlight >> fill else fill
+            return ()
+        otherwise -> return ()
+  where
+    highlight = setSourceRGBA 0 0 0 0.4
+    p = G.nodePayload (_getGraph gstate) n
+    sel = Node n (fromJust p) `elem` get selObjects gstate
+
 
 drawNodeLabel :: NodePayload -> Render ()
 drawNodeLabel p = do
