@@ -53,8 +53,9 @@ data EdgePayload = EdgePayload {
       _edgeId :: G.EdgeId
     , _edgeSrc :: G.NodeId -- ^ source
     , _edgeTgt :: G.NodeId -- ^ target
-    , _bendVect :: Coords -- ^ center displacement vector
-    , _edgeCheck :: Coords -> Coords -> Coords -> Coords -> Bool -- ^ check function
+    , _ctrlP1 :: Coords -- ^ center displacement vector
+    , _ctrlP2 :: Coords -- ^ center displacement vector
+    , _edgeCheck :: Coords -> Coords -> Coords -> Coords -> Coords -> Bool -- ^ check function
     }
 -- | Obj make handling heterogeneous node/edge lists easier, useful to
 -- select both type of entities simultaneously

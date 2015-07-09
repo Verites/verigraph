@@ -61,17 +61,20 @@ instance Renderable REdge where
                 srcC <- fmap (get nodeCoords) $ G.nodePayload gr src
                 tgtC <- fmap (get nodeCoords) $ G.nodePayload gr tgt
                 p <- G.edgePayload gr e
-                return (srcC, tgtC, (get bendVect p), p)
+                return (srcC, tgtC, get ctrlP1 p, get ctrlP2 p, p)
         in case coords of
-            Just (srcC@(x, y), tgtC@(x', y'), bendVect, p) -> do
+            Just (srcC@(x, y), tgtC@(x', y'), ctrlP1, ctrlP2, p) -> do
                 let -- Control points coodinates.
-                    (ctrlP1@(ctrlX, ctrlY), ctrlP2@(ctrlX', ctrlY')) =
-                        ctrlPoints srcC tgtC bendVect
+                    (ctrlX, ctrlY) = ctrlP1
+                    (ctrlX', ctrlY') = ctrlP2
+--                    ctrlPoints srcC tgtC bendVect
                 -- Edge drawing
                 setLineWidth defLineWidth
                 renderColor defLineColor
                 moveTo x y
-                curveTo ctrlX ctrlY ctrlX' ctrlY' x' y'
+                lineTo ctrlX ctrlY
+                lineTo ctrlX' ctrlY'
+                lineTo x' y'
                 stroke
                 -- Edge head drawing
                 setLineWidth defLineWidth

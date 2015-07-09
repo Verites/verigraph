@@ -4,6 +4,7 @@ module GUI.GUI (runGUI) where
 -- module GUI (createGUI, addMainCallbacks, showGUI, NodePayload, EdgePayload) where
 
 import qualified Graph.Graph as G
+import qualified GUI.Coords as C (add, mul)
 import GUI.Render
 import GUI.Editing
 
@@ -47,15 +48,14 @@ insideCircle :: Double -> Coords -> Coords -> Bool
 insideCircle radius circleCoords coords =
     norm circleCoords coords <= radius
 
-onEdge :: Coords -> Coords -> Coords -> Coords -> Bool
-onEdge src@(x, y) tgt@(x', y') coords bendVect =
+onEdge :: Coords -> Coords -> Coords -> Coords -> Coords -> Bool
+onEdge src@(x, y) tgt@(x', y') coords ctrlP1 ctrlP2 =
     norm coords eCenter <= radius ||
     norm coords ctrlP1 <= radius ||
     norm coords ctrlP2 <= radius
   where 
     (dx, dy) = directionVect src tgt
     dist = norm src tgt
-    (ctrlP1, ctrlP2) = ctrlPoints src tgt bendVect
     eCenter = edgeCenter src tgt ctrlP1 ctrlP2
     radius = 2 * defRadius -- defRadius is arbitrary, meant as a test
 
@@ -224,10 +224,10 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
         map (\(k, Just p) -> Edge k p) $
         filter (\(_, p) ->
                     let res = do
-                        (EdgePayload _ src tgt bendVect cf) <- p
+                        (EdgePayload _ src tgt ctrlP1 ctrlP2 cf) <- p
                         (NodePayload _ srcC _ _) <- G.nodePayload g src
                         (NodePayload _ tgtC _ _) <- G.nodePayload g tgt
-                        return $ cf srcC tgtC coords bendVect
+                        return $ cf srcC tgtC coords ctrlP1 ctrlP2
                     in case res of
                         Just True -> True
                         otherwise -> False)
@@ -246,9 +246,11 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
                          (insideCircle defRadius)
     addEdge src tgt gr =
         let newId = get freeEdgeId gstate
-            bendVect = (0, -100)
+            -- FIXME correct
+            ctrlP1 = (0, 0) -- 0.5 `C.mul` (src `C.add` tgt)
+            ctrlP2 = (1, 1) -- ctrlP2
         in G.insertEdgeWithPayload
-               newId src tgt (EdgePayload newId src tgt bendVect onEdge) gr
+               newId src tgt (EdgePayload newId src tgt ctrlP1 ctrlP2 onEdge) gr
 
 addNode :: GraphEditState
         -> Coords
@@ -362,9 +364,11 @@ mouseMove canvas stateRef = do
         (dx, dy) = (x - refX, y - refY)
         updateCoords g n =
             G.updateNodePayload n g (modify nodeCoords (\(x, y) -> (x + dx, y + dy)))
+{-
         updateBendVect e g =
             G.updateEdgePayload
                 e g (modify bendVect (\(bx, by) -> (bx + dx, by + dy)))
+-}
         selObjs = get selObjects gstate
         updateAllNodes g =
             foldr (\n acc -> case n of
@@ -375,7 +379,7 @@ mouseMove canvas stateRef = do
         gstate' = set refCoords coords gstate
         gstate'' =
             case selObjs of
-                [Edge e _] -> modify getGraph (updateBendVect e) gstate'
+--                [Edge e _] -> modify getGraph (updateBendVect e) gstate'
                 _ -> modify getGraph updateAllNodes gstate'
     liftIO $ writeIORef stateRef $ setCurGraphState gstate'' state
     liftIO $ widgetQueueDraw canvas
