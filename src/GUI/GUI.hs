@@ -14,6 +14,7 @@ import Data.List.Utils
 import Data.IORef
 import qualified Data.Tree as T ( Tree( Node ))
 import qualified Data.List as L
+import Debug.Trace
 import Control.Applicative
 import Graphics.UI.Gtk hiding (get, set) -- conflict with fclabels
 import qualified Graphics.UI.Gtk as Gtk
@@ -208,12 +209,12 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
         RightButton ->
             return $
             case (objects, click) of
-            ((Node k p:_), SingleClick) -> do
+            ((Node n p:_), SingleClick) -> do
                 case _mouseMode gstate of
-                    EdgeCreation src ->
-                        modify getGraph (addEdge src k) $ 
+                    EdgeCreation src srcP ->
+                        modify getGraph (addEdge src srcP n p) $ 
                         modify freeEdgeId (\(G.EdgeId i) -> G.EdgeId (i + 1)) gstate
-                    otherwise -> set mouseMode (EdgeCreation k) $
+                    otherwise -> set mouseMode (EdgeCreation n p) $
                                  gstate
             otherwise -> gstate
         otherwise -> return gstate
@@ -244,11 +245,13 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
     (p', graph') =
         addNode gstate coords (drawCircle neutralColor)
                          (insideCircle defRadius)
-    addEdge src tgt gr =
+    addEdge src srcP tgt tgtP gr =
         let newId = get freeEdgeId gstate
             -- FIXME correct
-            ctrlP1 = (0, 0) -- 0.5 `C.mul` (src `C.add` tgt)
-            ctrlP2 = (1, 1) -- ctrlP2
+            srcC = get nodeCoords srcP
+            tgtC = get nodeCoords tgtP
+            ctrlP1 = 0.5 `C.mul` (srcC `C.add` tgtC)
+            ctrlP2 = ctrlP2
         in G.insertEdgeWithPayload
                newId src tgt (EdgePayload newId src tgt ctrlP1 ctrlP2 onEdge) gr
 

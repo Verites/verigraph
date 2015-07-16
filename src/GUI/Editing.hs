@@ -101,7 +101,7 @@ data GraphEditState = GraphEditState
     , _getGraph :: Graph
     , _getNodeRelation :: R.Relation G.NodeId
     , _getEdgeRelation :: R.Relation G.EdgeId
-    } deriving Show
+    }
 
 data CanvasMode =
       IGraphMode Key
@@ -119,8 +119,7 @@ data SelMode =
     deriving Show
 -}
 
-data MouseMode = SelMode | EdgeCreation G.NodeId
-    deriving Show
+data MouseMode = SelMode | EdgeCreation G.NodeId NodePayload
 
 data RowStatus = Active | Inactive
     deriving (Eq, Show)
