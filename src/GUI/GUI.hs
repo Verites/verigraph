@@ -251,7 +251,7 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
             srcC = get nodeCoords srcP
             tgtC = get nodeCoords tgtP
             ctrlP1 = 0.5 `C.mul` (srcC `C.add` tgtC)
-            ctrlP2 = ctrlP2
+            ctrlP2 = ctrlP1
         in G.insertEdgeWithPayload
                newId src tgt (EdgePayload newId src tgt ctrlP1 ctrlP2 onEdge) gr
 

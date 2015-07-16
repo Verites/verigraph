@@ -98,7 +98,7 @@ instance Renderable REdge where
                           fill
                     else return ()
                 identityMatrix
-            Nothing -> return ()
+            otherwise -> return ()
         where
             drawHead len = do
                 relLineTo (-len / 2) (len / 4)
@@ -204,6 +204,7 @@ directionVect s@(x, y) t@(x', y')
     dist = norm s t
     dx = x' - x
     dy = y' - y
+
 
 norm :: Coords -> Coords -> Double
 norm (x, y) (x', y') =
