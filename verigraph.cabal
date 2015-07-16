@@ -19,6 +19,15 @@ executable verigraph
   main-is:             Main.hs
   -- other-modules:       
   other-extensions:    TypeFamilies, MultiParamTypeClasses, FlexibleContexts
-  build-depends:       base >=4.5 && <4.8, containers >=0.4 && <0.6, MissingH >=1.1 && <1.4, transformers >=0.3 && <0.4, colour >=2.3 && <2.4, gtk >=0.12 && <0.14, cairo >=0.12 && <0.14, mtl >=2.1 && <2.2, fclabels >= 1.1 && <2.0
+  build-depends:       base >=4.5 && <4.8,
+                       cairo >=0.12 && <0.14,
+                       colour >=2.3 && <2.4,
+                       containers >=0.4 && <0.6,
+                       fclabels >= 1.1 && <2.0,
+                       gtk >=0.12 && <0.14,
+                       MissingH >=1.1 && <1.4,
+                       mtl >=2.1 && <2.2,
+                       transformers >=0.3 && <0.4,
+                       vector-space >= 0.8.6
   hs-source-dirs:      src/
   default-language:    Haskell98

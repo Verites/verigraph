@@ -7,15 +7,15 @@ module GUI.Render (
     , drawSquare
     , nodeRenderType
     , defRadius
-    , ctrlPoints
-    , edgeCenter
-    , norm
-    , directionVect
     ) where
 
 import Control.Monad (guard)
+import Data.AdditiveGroup ((^-^))
+import Data.AffineSpace ((.-.))
+import Data.Cross (cross2)
 import Data.Label -- fclabels
 import Data.Maybe (fromJust)
+import Data.VectorSpace (normalized)
 --import GUI.Editing (State (..), GraphEditState (..))
 import GUI.Editing
 import Graphics.Rendering.Cairo as Gtk
@@ -65,36 +65,44 @@ instance Renderable REdge where
         in case coords of
             Just (srcC@(x, y), tgtC@(x', y'), ctrlP1, ctrlP2, p) -> do
                 let -- Control points coodinates.
-                    (ctrlX, ctrlY) = ctrlP1
-                    (ctrlX', ctrlY') = ctrlP2
+                    baseX = tgtC ^-^ srcC
+                    (ctrlX, ctrlY) = trace ("baseX = " ++ show baseX ++ "\tbaseY = " ++ show baseY ++
+                                            "\nctrlP1_x = " ++ show (fst ctrlP1) ++ "\tctrlP1_y = " ++ show (snd ctrlP1) ++
+                                            "\nx = " ++ show x ++ "\ty = " ++ show y) $
+
+                                        (fst baseX * fst ctrlP1, - snd baseX * snd ctrlP1)
+--                                        (fst baseX * fst ctrlP1, - snd baseX * snd ctrlP1)
+                    (ctrlX', ctrlY') = (fst baseX * fst ctrlP2, - snd baseX * snd ctrlP2)
 --                    ctrlPoints srcC tgtC bendVect
                 -- Edge drawing
                 setLineWidth defLineWidth
                 renderColor defLineColor
                 moveTo x y
-                lineTo ctrlX ctrlY
-                lineTo ctrlX' ctrlY'
+                relLineTo ctrlX ctrlY
+                relLineTo ctrlX' ctrlY'
                 lineTo x' y'
                 stroke
                 -- Edge head drawing
                 setLineWidth defLineWidth
                 renderColor defLineColor
                 moveTo x' y'
-                let (dx, dy) = directionVect ctrlP2 tgtC
+--                let (dx, dy) = directionVect ctrlP2 tgtC
                 -- move to node borders
-                relMoveTo (- defRadius * dx) (- defRadius * dy)
+--                relMoveTo (- defRadius * dx) (- defRadius * dy)
+{-
                 rotate $
                     let refP =
                             bezierPoints 0.70 srcC tgtC ctrlP1 ctrlP2
                         deriv = directionVect refP tgtC
                     in angle deriv
+-}
                 drawHead $ defRadius * 1.5
                 fill
                 identityMatrix
                 if sel p
                     then
-                       do let (cx, cy) = edgeCenter srcC tgtC ctrlP1 ctrlP2
-                          drawCtrlPoint cx cy
+                       do --let (cx, cy) = edgeCenter srcC tgtC ctrlP1 ctrlP2
+                          --drawCtrlPoint cx cy
                           fill
                     else return ()
                 identityMatrix
@@ -195,65 +203,4 @@ nodeRenderType state gstate n =
     newP = case nodeTypes of
                (x:xs) -> G.nodePayload tGraph x
                _ -> Nothing
-
-directionVect :: Coords -> Coords -> Coords
-directionVect s@(x, y) t@(x', y')
-    | dist == 0 = (-1, 1)
-    | otherwise = (dx / dist, dy / dist)
-  where 
-    dist = norm s t
-    dx = x' - x
-    dy = y' - y
-
-
-norm :: Coords -> Coords -> Double
-norm (x, y) (x', y') =
-    sqrt $ (square (x' - x)) + (square (y' - y))
-  where
-    square x = x * x
-
-angle :: Coords -> Double
-angle (dx, dy)
-    | dx == 0 && dy >= 0 = pi / 2
-    | dx == 0 && dy < 0  = (-pi) / 2
-    | dx >= 0 = ang
-    | dx < 0 = ang - pi
-  where
-    ang = atan $ dy / dx
-    
-edgeCenter :: Coords -> Coords -> Coords -> Coords -> Coords
-edgeCenter src tgt ctrlP1 ctrlP2 =
-    bezierPoints 0.5 src tgt ctrlP1 ctrlP2
-
-bezierPoints :: Double -> Coords -> Coords -> Coords -> Coords -> Coords
-bezierPoints t src tgt ctrlP1 ctrlP2 =
-    ((1 - t) ^ 3) `mul` src `add`
-    (3 * t * (1 - t) ^ 2) `mul` ctrlP1 `add`
-    (3 * t ^ 2 * (1 - t)) `mul` ctrlP2 `add`
-    t ^ 3 `mul` tgt
-  where  
-    infixl 7 `mul`
-    c `mul` (x', y') = (c * x', c * y')
-    infixl 6 `add`
-    (x, y) `add` (x', y') = (x + x', y + y')
-   
-ctrlPoints :: Coords -> Coords -> Coords -> (Coords, Coords)
-ctrlPoints src@(x, y) tgt@(x', y') bendVect@(bx, by)
-    | dist == 0 = ( ( x - bx - 4 * radius
-                    , y + by - radius)
-                  , ( x + bx + 4 * radius
-                    , y + by - radius)) 
-    | otherwise =
-        -- first bezier control point
-        -- the last terms from ctrlX and ctrlY form a right angle
-        -- to the direction vector.
-        ( ( x + dirX * (dist / 3) + bx
-          , y + dirY * (dist / 3) + by )
-        -- second bezier control point
-        , ( x + dirX * (2 * dist / 3) + bx
-          , y + dirY * (2 * dist / 3) + by ) )
-  where
-    dist = norm src tgt
-    (dirX, dirY) = directionVect src tgt
-    radius = 2 * defRadius
 

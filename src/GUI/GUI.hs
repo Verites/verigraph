@@ -4,16 +4,18 @@ module GUI.GUI (runGUI) where
 -- module GUI (createGUI, addMainCallbacks, showGUI, NodePayload, EdgePayload) where
 
 import qualified Graph.Graph as G
-import qualified GUI.Coords as C (add, mul)
 import GUI.Render
 import GUI.Editing
 
+import Data.AdditiveGroup ((^+^), (^-^))
+import Data.AffineSpace (distance)
 import Control.Monad (filterM)
 import Data.Label -- fclabels
 import Data.List.Utils
 import Data.IORef
 import qualified Data.Tree as T ( Tree( Node ))
 import qualified Data.List as L
+import Data.VectorSpace ((^*), lerp, normalized)
 import Debug.Trace
 import Control.Applicative
 import Graphics.UI.Gtk hiding (get, set) -- conflict with fclabels
@@ -47,17 +49,17 @@ neutralColor = Color 13363 25956 42148 -- gainsboro
 -- functions to check for clicked objects
 insideCircle :: Double -> Coords -> Coords -> Bool
 insideCircle radius circleCoords coords =
-    norm circleCoords coords <= radius
+    distance circleCoords coords <= radius
 
 onEdge :: Coords -> Coords -> Coords -> Coords -> Coords -> Bool
 onEdge src@(x, y) tgt@(x', y') coords ctrlP1 ctrlP2 =
-    norm coords eCenter <= radius ||
-    norm coords ctrlP1 <= radius ||
-    norm coords ctrlP2 <= radius
+--    distance coords eCenter <= radius ||
+    distance coords ctrlP1 <= radius ||
+    distance coords ctrlP2 <= radius
   where 
-    (dx, dy) = directionVect src tgt
-    dist = norm src tgt
-    eCenter = edgeCenter src tgt ctrlP1 ctrlP2
+--    (dx, dy) = directionVect src tgt
+    dist = distance src tgt
+--    eCenter = edgeCenter src tgt ctrlP1 ctrlP2
     radius = 2 * defRadius -- defRadius is arbitrary, meant as a test
 
 runGUI :: IO ()
@@ -250,8 +252,8 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
             -- FIXME correct
             srcC = get nodeCoords srcP
             tgtC = get nodeCoords tgtP
-            ctrlP1 = 0.5 `C.mul` (srcC `C.add` tgtC)
-            ctrlP2 = ctrlP1
+            ctrlP1 = (normalized (tgtC ^-^ srcC)) ^* 0.25
+            ctrlP2 = (normalized (tgtC ^-^ srcC)) ^* 0.75
         in G.insertEdgeWithPayload
                newId src tgt (EdgePayload newId src tgt ctrlP1 ctrlP2 onEdge) gr
 
