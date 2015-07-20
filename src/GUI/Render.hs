@@ -65,11 +65,10 @@ instance Renderable REdge where
         in case coords of
             Just (srcC@(x, y), tgtC@(x', y'), ctrlP1, ctrlP2, p) -> do
                 let -- Control points coodinates.
-                    baseX = normalized $ tgtC ^-^ srcC
+                    baseX = tgtC ^-^ srcC
                     baseY = cross2 baseX
                     (ctrlX, ctrlY) = srcC ^+^ (baseX ^* fst ctrlP1 ^+^ baseY ^* snd ctrlP1)
                     (ctrlX', ctrlY') = srcC ^+^ (baseX ^* fst ctrlP2 ^+^ baseY ^* snd ctrlP2)
---                    ctrlPoints srcC tgtC bendVect
                 -- Edge drawing
                 setLineWidth defLineWidth
                 renderColor defLineColor

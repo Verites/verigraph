@@ -15,7 +15,7 @@ import Data.List.Utils
 import Data.IORef
 import qualified Data.Tree as T ( Tree( Node ))
 import qualified Data.List as L
-import Data.VectorSpace ((^*), lerp, normalized)
+import Data.VectorSpace ((^*), lerp, magnitude, normalized)
 import Debug.Trace
 import Control.Applicative
 import Graphics.UI.Gtk hiding (get, set) -- conflict with fclabels
@@ -252,9 +252,9 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
             -- FIXME correct
             srcC = get nodeCoords srcP
             tgtC = get nodeCoords tgtP
-            diffC = tgtC ^-^ srcC
-            ctrlP1 = (fst diffC * 0.25, 0)
-            ctrlP2 = (fst diffC , 0)
+            len = magnitude $ tgtC ^-^ srcC
+            ctrlP1 = (0.25, 0)
+            ctrlP2 = (0.75, 0)
         in G.insertEdgeWithPayload
                newId src tgt (EdgePayload newId src tgt ctrlP1 ctrlP2 onEdge) gr
 
