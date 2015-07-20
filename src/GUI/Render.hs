@@ -10,12 +10,12 @@ module GUI.Render (
     ) where
 
 import Control.Monad (guard)
-import Data.AdditiveGroup ((^-^))
+import Data.AdditiveGroup ((^+^), (^-^))
 import Data.AffineSpace ((.-.))
 import Data.Cross (cross2)
 import Data.Label -- fclabels
 import Data.Maybe (fromJust)
-import Data.VectorSpace (normalized)
+import Data.VectorSpace (normalized, (^*))
 --import GUI.Editing (State (..), GraphEditState (..))
 import GUI.Editing
 import Graphics.Rendering.Cairo as Gtk
@@ -29,10 +29,10 @@ import Debug.Trace (trace)
 
 defRadius = 20 :: Double
 defLineWidth = 2 :: Double
-blueCode = 65535
-defBorderColor = Color blueCode blueCode blueCode
+fullChannel = 65535
+defBorderColor = Color fullChannel fullChannel fullChannel
 defLineColor = Color 0 0 0
-ctrlPointColor = Color blueCode blueCode 0
+ctrlPointColor = Color fullChannel fullChannel 0
 defSpacing = 1
 
 {- Data types for rendering -}
@@ -65,26 +65,29 @@ instance Renderable REdge where
         in case coords of
             Just (srcC@(x, y), tgtC@(x', y'), ctrlP1, ctrlP2, p) -> do
                 let -- Control points coodinates.
-                    baseX = tgtC ^-^ srcC
-                    (ctrlX, ctrlY) = trace ("baseX = " ++ show baseX ++ "\tbaseY = " ++ show baseY ++
-                                            "\nctrlP1_x = " ++ show (fst ctrlP1) ++ "\tctrlP1_y = " ++ show (snd ctrlP1) ++
-                                            "\nx = " ++ show x ++ "\ty = " ++ show y) $
-
-                                        (fst baseX * fst ctrlP1, - snd baseX * snd ctrlP1)
---                                        (fst baseX * fst ctrlP1, - snd baseX * snd ctrlP1)
-                    (ctrlX', ctrlY') = (fst baseX * fst ctrlP2, - snd baseX * snd ctrlP2)
+                    baseX = normalized $ tgtC ^-^ srcC
+                    baseY = cross2 baseX
+                    (ctrlX, ctrlY) = srcC ^+^ (baseX ^* fst ctrlP1 ^+^ baseY ^* snd ctrlP1)
+                    (ctrlX', ctrlY') = srcC ^+^ (baseX ^* fst ctrlP2 ^+^ baseY ^* snd ctrlP2)
 --                    ctrlPoints srcC tgtC bendVect
                 -- Edge drawing
                 setLineWidth defLineWidth
                 renderColor defLineColor
                 moveTo x y
-                relLineTo ctrlX ctrlY
-                relLineTo ctrlX' ctrlY'
+                lineTo ctrlX ctrlY
+                lineTo ctrlX' ctrlY'
                 lineTo x' y'
                 stroke
+                -- control point's drawing
+                drawCtrlPoint ctrlX ctrlY 
+                fill
+                drawCtrlPoint ctrlX' ctrlY'
+                fill
+
                 -- Edge head drawing
                 setLineWidth defLineWidth
                 renderColor defLineColor
+
                 moveTo x' y'
 --                let (dx, dy) = directionVect ctrlP2 tgtC
                 -- move to node borders
@@ -135,7 +138,7 @@ renderColor (Color r g b) = setSourceRGB  r' g' b'
     (r', g', b') = (fromIntegral r / denom,
                     fromIntegral g / denom,
                     fromIntegral b / denom) :: (Double, Double, Double)
-    denom = fromIntegral blueCode
+    denom = fromIntegral fullChannel
 --    rgb = toSRGB k
 --    (r, g, b) = (channelRed rgb, channelGreen rgb, channelBlue rgb)
 

@@ -252,8 +252,9 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
             -- FIXME correct
             srcC = get nodeCoords srcP
             tgtC = get nodeCoords tgtP
-            ctrlP1 = (normalized (tgtC ^-^ srcC)) ^* 0.25
-            ctrlP2 = (normalized (tgtC ^-^ srcC)) ^* 0.75
+            diffC = tgtC ^-^ srcC
+            ctrlP1 = (fst diffC * 0.25, 0)
+            ctrlP2 = (fst diffC , 0)
         in G.insertEdgeWithPayload
                newId src tgt (EdgePayload newId src tgt ctrlP1 ctrlP2 onEdge) gr
 
