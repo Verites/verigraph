@@ -4,27 +4,28 @@ module GUI.GUI (runGUI) where
 -- module GUI (createGUI, addMainCallbacks, showGUI, NodePayload, EdgePayload) where
 
 import qualified Graph.Graph as G
-import GUI.Render
 import GUI.Editing
+import GUI.Render
 
+import qualified Abstract.Relation as R
+import Abstract.Valid (valid)
+import Control.Applicative
+import Control.Category -- for fclabels, including (.) and id
+import Control.Monad (filterM)
 import Data.AdditiveGroup ((^+^), (^-^))
 import Data.AffineSpace (distance)
-import Control.Monad (filterM)
 import Data.Label -- fclabels
+import qualified Data.List as L
 import Data.List.Utils
+import Data.Maybe (mapMaybe)
 import Data.IORef
 import qualified Data.Tree as T ( Tree( Node ))
-import qualified Data.List as L
 import Data.VectorSpace ((^*), lerp, magnitude, normalized)
 import Debug.Trace
-import Control.Applicative
 import Graphics.UI.Gtk hiding (get, set) -- conflict with fclabels
 import qualified Graphics.UI.Gtk as Gtk
 import Graphics.Rendering.Cairo as Gtk
 import Prelude hiding (mapM_, any, (.), id)
-import Control.Category -- for fclabels, including (.) and id
-import qualified Abstract.Relation as R
-import Abstract.Valid (valid)
 
 
 
@@ -51,14 +52,13 @@ insideCircle :: Double -> Coords -> Coords -> Bool
 insideCircle radius circleCoords coords =
     distance circleCoords coords <= radius
 
-onEdge :: Coords -> Coords -> Coords -> Coords -> Coords -> Bool
-onEdge src@(x, y) tgt@(x', y') coords ctrlP1 ctrlP2 =
+onEdge :: Coords -> Coords -> Coords -> Coords -> Coords -> Maybe CtrlPoint
+onEdge srcC@(x, y) tgtC@(x', y') coords cp1 cp2
 --    distance coords eCenter <= radius ||
-    distance coords ctrlP1 <= radius ||
-    distance coords ctrlP2 <= radius
+    | distance coords cp1 <= radius = Just ctrlP1
+    | distance coords cp2 <= radius = Just ctrlP2
+    | otherwise = Nothing
   where 
---    (dx, dy) = directionVect src tgt
-    dist = distance src tgt
 --    eCenter = edgeCenter src tgt ctrlP1 ctrlP2
     radius = 2 * defRadius -- defRadius is arbitrary, meant as a test
 
@@ -193,7 +193,7 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
                 -- unselect nodes
                 return $ set selObjects [] gstate
             ((x:_), SingleClick) -> 
-                -- select node
+                -- select object
                 return $
                     set refCoords coords $
                     (case (multiSel, x `L.elem` _selObjects gstate) of
@@ -224,17 +224,17 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
     objects = nodeObjects ++ edgeObjects
     edgeObjects =
         -- the Edge constructor transforms EdgeId into an Obj
-        map (\(k, Just p) -> Edge k p) $
-        filter (\(_, p) ->
+--        map (\(k, Just p, cf) -> Edge k p [cf]) $
+        mapMaybe (\(k, p) ->
                     let res = do
                         (EdgePayload _ src tgt ctrlP1 ctrlP2 cf) <- p
                         (NodePayload _ srcC _ _) <- G.nodePayload g src
                         (NodePayload _ tgtC _ _) <- G.nodePayload g tgt
-                        return $ cf srcC tgtC coords ctrlP1 ctrlP2
+                        cf srcC tgtC coords ctrlP1 ctrlP2
                     in case res of
-                        Just True -> True
-                        otherwise -> False)
-               (G.edgesWithPayload g)
+                        Just cp -> p >>= (\p' -> Just $ Edge k p' [cp])
+                        otherwise -> Nothing)
+               $ G.edgesWithPayload g
     nodeObjects =
         -- the Node constructor transforms NodeId into an Obj
         -- No payload-less nodes pass filtering
@@ -252,9 +252,10 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
             -- FIXME correct
             srcC = get nodeCoords srcP
             tgtC = get nodeCoords tgtP
-            len = magnitude $ tgtC ^-^ srcC
-            ctrlP1 = (0.25, 0)
-            ctrlP2 = (0.75, 0)
+            diffV = tgtC ^-^ srcC
+--            len = magnitude $ tgtC ^-^ srcC
+            ctrlP1 = srcC ^+^ diffV ^* 0.25
+            ctrlP2 = srcC ^+^ diffV ^* 0.75
         in G.insertEdgeWithPayload
                newId src tgt (EdgePayload newId src tgt ctrlP1 ctrlP2 onEdge) gr
 
@@ -366,27 +367,30 @@ mouseMove canvas stateRef = do
     coords@(x, y) <- eventCoordinates
     state <- liftIO $ readIORef stateRef
     let Just gstate = currentGraphState state -- FIXME
-        (refX, refY) = _refCoords gstate
-        (dx, dy) = (x - refX, y - refY)
-        updateCoords g n =
-            G.updateNodePayload n g (modify nodeCoords (\(x, y) -> (x + dx, y + dy)))
-{-
-        updateBendVect e g =
-            G.updateEdgePayload
-                e g (modify bendVect (\(bx, by) -> (bx + dx, by + dy)))
--}
+        refC = _refCoords gstate
+        deltaC = coords ^-^ refC
+        updateCoords n g =
+            G.updateNodePayload n g (modify nodeCoords (\coords -> coords ^+^ deltaC))
+        -- updates all selected control points from g
+        updateCtrlP e ctrlPLst g =
+            foldr (\ctrlP g -> 
+                    G.updateEdgePayload
+                        e g (modify ctrlP (\baseC -> baseC ^+^ deltaC)))
+                  g
+                  ctrlPLst
         selObjs = get selObjects gstate
-        updateAllNodes g =
+        updateAllObjs g =
             foldr (\n acc -> case n of
-                                Node n _ -> updateCoords acc n
-                                _ -> acc)
+                                Node n _ -> updateCoords n acc
+                                Edge e _ f -> updateCtrlP e f acc)
                   g
                   selObjs
         gstate' = set refCoords coords gstate
         gstate'' =
             case selObjs of
---                [Edge e _] -> modify getGraph (updateBendVect e) gstate'
-                _ -> modify getGraph updateAllNodes gstate'
+--                [Edge e _ ctrlPLst] -> modify getGraph (updateCtrlP e ctrlPLst) gstate'
+                (_:_) -> modify getGraph updateAllObjs gstate'
+                _ -> gstate'
     liftIO $ writeIORef stateRef $ setCurGraphState gstate'' state
     liftIO $ widgetQueueDraw canvas
     return True
@@ -405,12 +409,12 @@ keyPress canvas stateRef = do
         _ -> return ()
     liftIO $ widgetQueueDraw canvas
   where
-    isEdge (Edge _ _) = True
+    isEdge (Edge _ _ _) = True
     isEdge _ = False
     deleteEdges edges gr = foldr G.removeEdge gr edges
     deleteNodes nodes gr = foldr G.removeNode gr nodes
     deleteObjects sel =
-        let selEdges = map (\(Edge e _) -> e) $ fst sel
+        let selEdges = map (\(Edge e _ _) -> e) $ fst sel
             selNodes = map (\(Node n _) -> n) $ snd sel
         in deleteNodes selNodes . deleteEdges selEdges
         

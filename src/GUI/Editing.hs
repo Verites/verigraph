@@ -55,19 +55,22 @@ data EdgePayload = EdgePayload {
     , _edgeTgt :: G.NodeId -- ^ target
     , _ctrlP1 :: Coords -- ^ center displacement vector
     , _ctrlP2 :: Coords -- ^ center displacement vector
-    , _edgeCheck :: Coords -> Coords -> Coords -> Coords -> Coords -> Bool -- ^ check function
+    , _edgeCheck :: Coords -> Coords -> Coords -> Coords -> Coords -> Maybe CtrlPoint -- ^ check function
     }
+
+type CtrlPoint = Lens (->) EdgePayload Coords
+
 -- | Obj make handling heterogeneous node/edge lists easier, useful to
 -- select both type of entities simultaneously
-data Obj = Node G.NodeId NodePayload | Edge G.EdgeId EdgePayload
+data Obj = Node G.NodeId NodePayload | Edge G.EdgeId EdgePayload [CtrlPoint]
 
 instance Show Obj where
     show (Node id _) = show id
-    show (Edge id _) = show id
+    show (Edge id _ _) = show id
 
 instance Eq Obj where
     Node x _ == Node y _ = x == y
-    Edge x _ == Edge y _ = x == y
+    Edge x _ _ == Edge y _ _ = x == y
     _ == _ = False
 
 data TreeNode

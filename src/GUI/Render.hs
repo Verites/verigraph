@@ -65,10 +65,8 @@ instance Renderable REdge where
         in case coords of
             Just (srcC@(x, y), tgtC@(x', y'), ctrlP1, ctrlP2, p) -> do
                 let -- Control points coodinates.
-                    baseX = tgtC ^-^ srcC
-                    baseY = cross2 baseX
-                    (ctrlX, ctrlY) = srcC ^+^ (baseX ^* fst ctrlP1 ^+^ baseY ^* snd ctrlP1)
-                    (ctrlX', ctrlY') = srcC ^+^ (baseX ^* fst ctrlP2 ^+^ baseY ^* snd ctrlP2)
+                    (ctrlX, ctrlY) = ctrlP1
+                    (ctrlX', ctrlY') = ctrlP2
                 -- Edge drawing
                 setLineWidth defLineWidth
                 renderColor defLineColor
@@ -118,7 +116,7 @@ instance Renderable REdge where
                 setLineWidth defLineWidth
                 renderColor ctrlPointColor
                 arc x y (defRadius / 4) 0 $ 2 * pi
-            sel p = Edge e p `elem` get selObjects gstate
+            sel p = Edge e p [] `elem` get selObjects gstate
             highlight = setSourceRGBA 0 0 0 0.4
 
 
