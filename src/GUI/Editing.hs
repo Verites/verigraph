@@ -58,10 +58,12 @@ data EdgePayload = EdgePayload {
     , _edgeCheck :: Coords -> Coords -> Coords -> Coords -> Coords -> Maybe CtrlPoint -- ^ check function
     }
 
-type CtrlPoint = Lens (->) EdgePayload Coords
+-- CtrlPoint is an index of a control point (at first only 0 or 1).
+type CtrlPoint = Int
 
 -- | Obj make handling heterogeneous node/edge lists easier, useful to
--- select both type of entities simultaneously
+-- select both type of entities simultaneously.
+-- The list of control points is a list of the selected indexes.
 data Obj = Node G.NodeId NodePayload | Edge G.EdgeId EdgePayload [CtrlPoint]
 
 instance Show Obj where
@@ -70,7 +72,7 @@ instance Show Obj where
 
 instance Eq Obj where
     Node x _ == Node y _ = x == y
-    Edge x _ _ == Edge y _ _ = x == y
+    Edge x _ cps == Edge y _ cps' = x == y && cps == cps'
     _ == _ = False
 
 data TreeNode

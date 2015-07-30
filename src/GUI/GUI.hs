@@ -55,8 +55,8 @@ insideCircle radius circleCoords coords =
 onEdge :: Coords -> Coords -> Coords -> Coords -> Coords -> Maybe CtrlPoint
 onEdge srcC@(x, y) tgtC@(x', y') coords cp1 cp2
 --    distance coords eCenter <= radius ||
-    | distance coords cp1 <= radius = Just ctrlP1
-    | distance coords cp2 <= radius = Just ctrlP2
+    | distance coords cp1 <= radius = Just 0
+    | distance coords cp2 <= radius = Just 1
     | otherwise = Nothing
   where 
 --    eCenter = edgeCenter src tgt ctrlP1 ctrlP2
@@ -196,7 +196,7 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
                 -- select object
                 return $
                     set refCoords coords $
-                    (case (multiSel, x `L.elem` _selObjects gstate) of
+                    (case (multiSel, x `L.elem` get selObjects gstate) of
                           (False, False) -> set selObjects [x]
                           (True, False) -> modify selObjects (x:)
                           (True, True) -> modify selObjects (L.delete x)
@@ -372,17 +372,22 @@ mouseMove canvas stateRef = do
         updateCoords n g =
             G.updateNodePayload n g (modify nodeCoords (\coords -> coords ^+^ deltaC))
         -- updates all selected control points from g
-        updateCtrlP e ctrlPLst g =
-            foldr (\ctrlP g -> 
-                    G.updateEdgePayload
-                        e g (modify ctrlP (\baseC -> baseC ^+^ deltaC)))
+        updateCtrlP e ctrlPts g =
+            foldr (\ctrlP g ->
+                    case ctrlP of
+                    0 -> G.updateEdgePayload
+                            e g (modify ctrlP1 (\baseC -> baseC ^+^ deltaC))
+                    1 -> G.updateEdgePayload
+                            e g (modify ctrlP2 (\baseC -> baseC ^+^ deltaC))
+                    _ -> g)
+
                   g
-                  ctrlPLst
+                  ctrlPts
         selObjs = get selObjects gstate
         updateAllObjs g =
             foldr (\n acc -> case n of
                                 Node n _ -> updateCoords n acc
-                                Edge e _ f -> updateCtrlP e f acc)
+                                Edge e _ ctrlPts -> updateCtrlP e ctrlPts acc)
                   g
                   selObjs
         gstate' = set refCoords coords gstate
