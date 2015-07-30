@@ -32,6 +32,7 @@ defLineWidth = 2 :: Double
 fullChannel = 65535
 defBorderColor = Color fullChannel fullChannel fullChannel
 defLineColor = Color 0 0 0
+defSelColor = Color fullChannel 0 0
 ctrlPointColor = Color fullChannel fullChannel 0
 defSpacing = 1
 
@@ -76,8 +77,14 @@ instance Renderable REdge where
                 lineTo x' y'
                 stroke
                 -- control point's drawing
+                if ctrlPntSelected 0 
+                    then renderColor defSelColor
+                    else renderColor ctrlPointColor
                 drawCtrlPoint ctrlX ctrlY 
                 fill
+                if ctrlPntSelected 1
+                    then renderColor defSelColor
+                    else renderColor ctrlPointColor
                 drawCtrlPoint ctrlX' ctrlY'
                 fill
 
@@ -108,13 +115,18 @@ instance Renderable REdge where
                 identityMatrix
             otherwise -> return ()
         where
+            selected = get selObjects gstate
+            ctrlPntSelected id = any (\o -> case o of
+                                        Edge e p ls -> id `elem` ls
+                                        _ -> False)
+                                     selected
             drawHead len = do
                 relLineTo (-len / 2) (len / 4)
                 relLineTo 0 (- len / 2)
                 relLineTo (len / 2) (len / 4)
             drawCtrlPoint x y = do
                 setLineWidth defLineWidth
-                renderColor ctrlPointColor
+--                renderColor ctrlPointColor
                 arc x y (defRadius / 4) 0 $ 2 * pi
             sel p = Edge e p [] `elem` get selObjects gstate
             highlight = setSourceRGBA 0 0 0 0.4
