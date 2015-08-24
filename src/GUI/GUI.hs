@@ -344,7 +344,7 @@ nodeEditDialog n p@(NodePayload _ label coords renderFunc checkFunc) state gstat
     renderer <- cellRendererTextNew
     cellLayoutPackStart col renderer True
     cellLayoutSetAttributes col renderer store $
-        \row -> [ cellText := show . snd $ row ]
+        \row -> [ cellText := snd row ]
     treeViewSetModel view store
     boxPackStart cArea view PackGrow 1
 
@@ -364,7 +364,6 @@ nodeEditDialog n p@(NodePayload _ label coords renderFunc checkFunc) state gstat
             -- FIXME handle safely
             tid <- readIORef tidRef
             text <- entryGetText entry
-            putStrLn text
             let gstate' = modify getNodeRelation
                                  (R.update n tid)
                                  gstate
