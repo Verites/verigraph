@@ -92,10 +92,12 @@ instance Renderable REdge where
                 setLineWidth defLineWidth
                 renderColor defLineColor
 
-                moveTo x' y'
+                moveTo ctrlX' ctrlY'
 --                let (dx, dy) = directionVect ctrlP2 tgtC
                 -- move to node borders
 --                relMoveTo (- defRadius * dx) (- defRadius * dy)
+                rotate $ 
+                    angle . normalized $ tgtC ^-^ ctrlP2
 {-
                 rotate $
                     let refP =
@@ -117,7 +119,7 @@ instance Renderable REdge where
         where
             selected = get selObjects gstate
             ctrlPntSelected id = any (\o -> case o of
-                                        Edge e p ls -> id `elem` ls
+                                        Edge e' p ls -> e == e' && id `elem` ls
                                         _ -> False)
                                      selected
             drawHead len = do
@@ -195,13 +197,15 @@ drawSquare color state gstate n =
 drawNodeLabel :: NodePayload -> Render ()
 drawNodeLabel p = do
     moveTo (x - 4) (y + 4) -- so it gets centered
+    relMoveTo offset 0
     setSourceRGB 0 0 0
     setFontSize 13
-    showText $ show nid
+    showText label
     fill
   where
     (x, y) = get nodeCoords p
-    nid = get nodeId p
+    label = get nodeLabel p
+    offset = fromIntegral $ - (length label `div` 2) * 4
    
 
 nodeRenderType :: GramState -> GraphEditState -> G.NodeId -> Render ()
@@ -215,4 +219,13 @@ nodeRenderType state gstate n =
     newP = case nodeTypes of
                (x:xs) -> G.nodePayload tGraph x
                _ -> Nothing
+
+angle :: Coords -> Double
+angle (dx, dy)
+    | dx == 0 && dy >= 0 = pi / 2
+    | dx == 0 && dy < 0  = (-pi) / 2
+    | dx >= 0 = ang
+    | dx < 0 = ang - pi
+  where
+    ang = atan $ dy / dx
 

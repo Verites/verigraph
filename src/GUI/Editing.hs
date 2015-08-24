@@ -44,6 +44,7 @@ type Rule = GR.GraphRule NodePayload EdgePayload
 type Coords = (Double, Double)
 data NodePayload = NodePayload {
       _nodeId :: G.NodeId
+    , _nodeLabel :: String
     , _nodeCoords :: Coords
     , _nodeRender :: GramState -> GraphEditState -> G.NodeId -> Render ()
     , _nodeCheck :: Coords -> Coords -> Bool
@@ -51,6 +52,7 @@ data NodePayload = NodePayload {
 
 data EdgePayload = EdgePayload {
       _edgeId :: G.EdgeId
+    , _edgeLabel :: String
     , _edgeSrc :: G.NodeId -- ^ source
     , _edgeTgt :: G.NodeId -- ^ target
     , _ctrlP1 :: Coords -- ^ center displacement vector

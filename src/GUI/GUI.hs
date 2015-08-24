@@ -14,6 +14,7 @@ import Control.Category -- for fclabels, including (.) and id
 import Control.Monad (filterM)
 import Data.AdditiveGroup ((^+^), (^-^))
 import Data.AffineSpace (distance)
+import qualified Data.Function as F
 import Data.Label -- fclabels
 import qualified Data.List as L
 import Data.List.Utils
@@ -227,9 +228,9 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
 --        map (\(k, Just p, cf) -> Edge k p [cf]) $
         mapMaybe (\(k, p) ->
                     let res = do
-                        (EdgePayload _ src tgt ctrlP1 ctrlP2 cf) <- p
-                        (NodePayload _ srcC _ _) <- G.nodePayload g src
-                        (NodePayload _ tgtC _ _) <- G.nodePayload g tgt
+                        (EdgePayload _ _ src tgt ctrlP1 ctrlP2 cf) <- p
+                        (NodePayload _ _ srcC _ _) <- G.nodePayload g src
+                        (NodePayload _ _ tgtC _ _) <- G.nodePayload g tgt
                         cf srcC tgtC coords ctrlP1 ctrlP2
                     in case res of
                         Just cp -> p >>= (\p' -> Just $ Edge k p' [cp])
@@ -257,7 +258,7 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
             ctrlP1 = srcC ^+^ diffV ^* 0.25
             ctrlP2 = srcC ^+^ diffV ^* 0.75
         in G.insertEdgeWithPayload
-               newId src tgt (EdgePayload newId src tgt ctrlP1 ctrlP2 onEdge) gr
+               newId src tgt (EdgePayload newId (show newId) src tgt ctrlP1 ctrlP2 onEdge) gr
 
 addNode :: GraphEditState
         -> Coords
@@ -268,16 +269,17 @@ addNode gstate coords renderFunc checkFunc =
     (p, graph')
   where
     newId = get freeNodeId gstate
-    p = NodePayload newId coords renderFunc checkFunc
+    p = NodePayload newId (show newId) coords renderFunc checkFunc
     graph = get getGraph gstate
     graph' =
         G.insertNodeWithPayload newId p graph
 
 typeEditDialog :: G.NodeId -> NodePayload -> GramState -> GraphEditState -> IO (GraphEditState)
-typeEditDialog n p@(NodePayload nid coords renderFunc checkFunc) state gstate = do
+typeEditDialog n p@(NodePayload nid label coords renderFunc checkFunc) state gstate = do
     dial <- dialogNew
     cArea <- return . castToBox =<< dialogGetUpper dial
     entry <- entryNew
+    entrySetText entry label
     colorButton <- colorButtonNewWithColor neutralColor
     boxPackStart cArea entry PackNatural 1
     boxPackStart cArea colorButton PackNatural 1
@@ -302,11 +304,13 @@ typeEditDialog n p@(NodePayload nid coords renderFunc checkFunc) state gstate = 
             shapeButtons <- radioButtonGetGroup circleButton
             shapeButtons' <- filterM toggleButtonGetActive shapeButtons
             shapeStr <- buttonGetLabel $ head shapeButtons'
+            text <- entryGetText entry
             let shapeFunc = case shapeStr of
                              "Square" -> drawSquare
                              "Circle" -> drawCircle
                              _ -> drawCircle --FIXME
-                p' newColor = set nodeRender (shapeFunc newColor) p
+                p' newColor = set nodeLabel text $
+                              set nodeRender (shapeFunc newColor) p
             widgetDestroy dial
             return $ modify getGraph
                             (\g -> G.updateNodePayload n g (\_ -> p' color))
@@ -317,11 +321,19 @@ typeEditDialog n p@(NodePayload nid coords renderFunc checkFunc) state gstate = 
         otherwise -> return gstate
 
 nodeEditDialog :: G.NodeId -> NodePayload -> GramState -> GraphEditState -> IO (GraphEditState)
-nodeEditDialog n p@(NodePayload _ coords renderFunc checkFunc) state gstate = do
+nodeEditDialog n p@(NodePayload _ label coords renderFunc checkFunc) state gstate = do
     dial <- dialogNew
     cArea <- return . castToBox =<< dialogGetUpper dial
-    let nodeList = G.nodes $ get (getGraph . getTypeGraph) state
-    store <- listStoreNew $ L.sort nodeList
+    entry <- entryNew
+    entrySetText entry label
+    boxPackStart cArea entry PackNatural 1
+
+    let nodeList = G.nodesWithPayload $ get (getGraph . getTypeGraph) state
+        nodesWithLabels = map (\(k, p) -> case p of 
+                                    Just p -> (k, get nodeLabel p)
+                                    _ -> (k, ""))
+                              nodeList
+    store <- listStoreNew $ L.sortBy (compare `F.on` fst) nodesWithLabels
     -- Create and prepare TreeView
     view <- treeViewNew
     col  <- treeViewColumnNew
@@ -332,7 +344,7 @@ nodeEditDialog n p@(NodePayload _ coords renderFunc checkFunc) state gstate = do
     renderer <- cellRendererTextNew
     cellLayoutPackStart col renderer True
     cellLayoutSetAttributes col renderer store $
-        \row -> [ cellText := show row ]
+        \row -> [ cellText := show . snd $ row ]
     treeViewSetModel view store
     boxPackStart cArea view PackGrow 1
 
@@ -340,25 +352,31 @@ nodeEditDialog n p@(NodePayload _ coords renderFunc checkFunc) state gstate = do
     dialogAddButton dial "Cancel" ResponseCancel
 
     widgetShowAll dial
-    tidRef <- newIORef $ G.NodeId 0
+    tidRef <- newIORef $ G.NodeId (-1)
     view `on` cursorChanged $ do
         Just iter <- treeSelectionGetSelected =<< treeViewGetSelection view
-        tid <- listStoreGetValue store $ listStoreIterToIndex iter
+        tid <- fmap fst $ listStoreGetValue store $ listStoreIterToIndex iter
         writeIORef tidRef tid
 
     response <- dialogRun dial
-    widgetDestroy dial
     case response of
         ResponseApply -> do
             -- FIXME handle safely
             tid <- readIORef tidRef
+            text <- entryGetText entry
+            putStrLn text
             let gstate' = modify getNodeRelation
                                  (R.update n tid)
                                  gstate
+                p' = set nodeLabel text p
+                p'' = if tid == G.NodeId (-1) then p' -- unchanged
+                      else set nodeRender nodeRenderType p'
                 updateRenderFunc g =
-                    G.updateNodePayload n g (set nodeRender nodeRenderType)
+                    G.updateNodePayload n g (\_ -> p'')
+            widgetDestroy dial
             return $ modify getGraph updateRenderFunc gstate'
         _ -> do
+            widgetDestroy dial
             return gstate
 
 mouseMove :: WidgetClass widget
