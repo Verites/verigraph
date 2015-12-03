@@ -34,9 +34,9 @@ data Relation a =
        mapping  :: Map.Map a [a]
    } deriving (Ord,Show,Read)                
 
-instance (Eq a) => Eq (Relation a) where
-    r1 == r2 = domain r1 == domain r2     &&
-               codomain r1 == codomain r2 &&
+instance (Eq a, Ord a) => Eq (Relation a) where
+    r1 == r2 = sort(domain r1)   == sort(domain r2)   &&
+               sort(codomain r1) == sort(codomain r2) &&
                mapping r1 == mapping r2
                
 -- | Return a list of all domain elements mapped by the relation.
