@@ -70,7 +70,7 @@ applyEdge m le =
     
 -- | An empty morphism between two graphs.
 empty :: Graph a b -> Graph a b -> GraphMorphism a b
-empty gA gB = GraphMorphism gA gB (R.empty [] []) (R.empty [] [])
+empty gA gB = GraphMorphism gA gB (R.empty (nodes gA) (nodes gB)) (R.empty (edges gA) (edges gB))
 
 -- | Construct a graph morphism based on domain, codomain and both node and
 -- edge relations.
