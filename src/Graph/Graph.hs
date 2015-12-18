@@ -75,7 +75,16 @@ instance Eq (Edge a) where
 data Graph a b = Graph {
     nodeMap :: [(NodeId, Node a)],
     edgeMap :: [(EdgeId, Edge b)]
-    } deriving (Eq, Read)
+    } deriving (Read)
+
+eq :: (Eq t1, Eq t2) => [(t1, t2)] -> [(t1, t2)] -> Bool
+eq [] [] = True
+eq a  b  = hasAny a b && hasAny b a
+
+instance Eq (Graph a b) where
+    (Graph nodeMap1 edgeMap1) == (Graph nodeMap2 edgeMap2) =
+         eq nodeMap1 nodeMap2 &&
+         eq edgeMap1 edgeMap2
 
 instance Show (Graph a b) where
     show gr@(Graph nm em) =
