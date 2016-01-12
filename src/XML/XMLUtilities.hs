@@ -1,4 +1,5 @@
-{-# LANGUAGE Arrows, NoMonomorphismRestriction #-}
+{-# LANGUAGE Arrows                    #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
 
 module XML.XMLUtilities
 ( atTag
@@ -11,8 +12,8 @@ module XML.XMLUtilities
 
 where
 
-import Text.XML.HXT.Core
-import Data.Char
+import           Data.Char
+import           Text.XML.HXT.Core
 
 atTag tag = deep (isElem >>> hasName tag)
 
@@ -26,4 +27,4 @@ textAtTag tag = atTag tag >>> text
 
 parseHTML = readString [ withValidate no, withParseHTML yes, withWarnings no ]
 
-parseXML file = readDocument [withValidate no, withRemoveWS yes] file
+parseXML = readDocument [withValidate no, withRemoveWS yes]
