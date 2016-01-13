@@ -30,6 +30,17 @@ getGraphs = atTag "graph" >>>
     edges <- listA getTypedEdges -< graph
     returnA -< (idg, nodes, edges)
 
+getRules = atTag "rule" >>>
+  proc rule -> do
+    ruleId <- getAttrValue "id" -< rule
+    ruleName <- getAttrValue "name" -< rule
+    preservedGraph <- getGraphs <<< atTag "preserved" -< rule
+    nodesDeleted <- listA getTypedNodes <<< atTag "deleted" -< rule
+    edgesDeleted <- listA getTypedEdges <<< atTag "deleted" -< rule
+    nodesCreated <- listA getTypedNodes <<< atTag "created" -< rule
+    edgesCreated <- listA getTypedEdges <<< atTag "created" -< rule
+    returnA -< (ruleId, ruleName, preservedGraph, (nodesDeleted, edgesDeleted), (nodesCreated, edgesCreated))
+
 getNodes = atTag "node" >>>
   proc node -> do
     idn <- getAttrValue "id" -< node
@@ -71,7 +82,4 @@ readTypeGraph = runX (parseXML "instrutivo.xml" >>> getTypeGraph)
 
 readGraphs = runX (parseXML "instrutivo.xml" >>> getInitialGraphs)
 
---main = do
---  tg <- runX (parseXML "instrutivo.xml" >>> getTypeGraph)
---  print tg
---  return ()
+readRules = runX (parseXML "instrutivo.xml" >>> getRules)
