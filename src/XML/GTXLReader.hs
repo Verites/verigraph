@@ -1,9 +1,14 @@
 {-# LANGUAGE Arrows                    #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
+--FIXME hERANÇA
 module XML.GTXLReader where
 
+import           Abstract.Valid
+import           Data.Hashable
 import           Data.String.Utils
+import           Graph.Graph
+import qualified Graph.GraphMorphism as GM
 import           System.Environment
 import           Text.XML.HXT.Core
 import           XML.XMLUtilities
@@ -73,13 +78,56 @@ getType = atTag "type" >>>
     returnA -< clearEdgeId $ clearNodeId t
 
 clearNodeId :: String -> String
-clearNodeId = replace "%:RECT:java.awt.Color[r=0,g=0,b=0]:[NODE]:" ""
+clearNodeId = replace "%:RECT:java.awt.Color[r=0,g=0,b=0]:[NODE]:" "" . replace "#" ""
 
 clearEdgeId :: String -> String
-clearEdgeId = replace "%:SOLID_LINE:java.awt.Color[r=0,g=0,b=0]:[EDGE]:" ""
+clearEdgeId = last . split ":" . replace "%:SOLID_LINE:java.awt.Color[r=0,g=0,b=0]:[EDGE]:" "" . replace "#" ""
 
-readTypeGraph = runX (parseXML "instrutivo.xml" >>> getTypeGraph)
+readTypeGraph :: String -> IO [(String, [String], [(String, String, String)])]
+readTypeGraph fileName = runX (parseXML fileName >>> getTypeGraph)
 
-readGraphs = runX (parseXML "instrutivo.xml" >>> getInitialGraphs)
+readGraphs :: String -> IO [[(String, [(String, String)],
+  [(String, String, String, String)])]]
+readGraphs fileName = runX (parseXML fileName >>> getInitialGraphs)
 
-readRules = runX (parseXML "instrutivo.xml" >>> getRules)
+readRules fileName = runX (parseXML fileName >>> getRules)
+
+instatiateTypeGraph :: (String, [String], [(String, String, String)]) -> Graph a b
+instatiateTypeGraph (a,b,c) = build nodes edges
+  where
+    nodes = map hash b
+    edges = map (\(x,y,z) -> (hash x, hash y, hash z)) c
+
+
+instatiateTypedGraph (a,b,c) tg = GM.gmbuild k tg nodeTyping edgeTyping
+  where
+    k = build nodesK edgesK
+    nodesK = map (hash . fst) b
+    edgesK = map (\(x,_,y,z) -> (hash x, hash y, hash z)) c
+    nodeTyping = map (\(x,y) -> (hash x, hash y)) b
+    edgeTyping = map (\(x,y,_,_) -> (hash x, hash y)) c
+
+--instatiateTypedGraphs :: x -> Graph a b
+instatiateTypedGraphs tg (ruleId,ruleName,interfaceGraph,deletedElems,createdElems) = x
+  where
+    x = instatiateTypedGraph interfaceGraph tg
+
+i1 = readTypeGraph fileName
+i2 = readGraphs fileName
+i3 = readRules fileName
+
+
+main = do
+  typeGraph <- readTypeGraph fileName
+  a <- return $ fmap instatiateTypeGraph typeGraph
+  print (fmap valid a)
+  return a
+
+fileName = "teste-conflito.xml"
+main2 = do
+  rules <- readRules fileName
+  typeGraph <- readTypeGraph fileName
+  let tg = instatiateTypeGraph $ head typeGraph
+  print (fmap (instatiateTypedGraphs tg) rules)
+  print (fmap valid  (fmap (instatiateTypedGraphs tg) rules))
+  return ()
