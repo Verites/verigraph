@@ -8,7 +8,6 @@ import           System.Environment
 import           Text.XML.HXT.Core
 import           XML.XMLUtilities
 
-
 isTypeGraph :: String -> Bool
 isTypeGraph = ("TypeGraph" ==)
 
@@ -23,8 +22,8 @@ getGraphs = atTag "initial" >>>
   proc i -> do
     graph <- atTag "graph" -< i
     idg <- getAttrValue "id" -< graph
-    nodes <- listA getNodes -< graph
-    edges <- listA getEdges -< graph
+    nodes <- listA getTypedNodes -< graph
+    edges <- listA getTypedEdges -< graph
     returnA -< (idg, nodes, edges)
 
 getNodes = atTag "node" >>>
@@ -32,12 +31,31 @@ getNodes = atTag "node" >>>
     idn <- getAttrValue "id" -< node
     returnA -< clearNodeId idn
 
+getTypedNodes = atTag "node" >>>
+  proc node -> do
+    idn <- getAttrValue "id" -< node
+    nt <- getType -< node
+    returnA -< (idn, nt)
+
 getEdges = atTag "edge" >>>
   proc edge -> do
     ide <- getAttrValue "id" -< edge
     source <- getAttrValue "from" -< edge
     target <- getAttrValue "to" -< edge
     returnA -< (clearEdgeId ide, clearNodeId source, clearNodeId target)
+
+getTypedEdges = atTag "edge" >>>
+  proc edge -> do
+    ide <- getAttrValue "id" -< edge
+    source <- getAttrValue "from" -< edge
+    target <- getAttrValue "to" -< edge
+    et <- getType -< edge
+    returnA -< (clearEdgeId ide, et, clearNodeId source, clearNodeId target)
+
+getType = atTag "type" >>>
+  proc t -> do
+    t <- getAttrValue "xlink:href" -< t
+    returnA -< clearEdgeId $ clearNodeId t
 
 clearNodeId :: String -> String
 clearNodeId = replace "%:RECT:java.awt.Color[r=0,g=0,b=0]:[NODE]:" ""
