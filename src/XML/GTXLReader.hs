@@ -18,9 +18,13 @@ getTypeGraph = atTag "graph" >>>
     edges <- listA getEdges -< graph
     returnA -< (idg, nodes, edges)
 
-getGraphs = atTag "initial" >>>
+getInitialGraphs = atTag "initial" >>>
   proc i -> do
-    graph <- atTag "graph" -< i
+    graphs <- listA getGraphs -< i
+    returnA -< graphs
+
+getGraphs = atTag "graph" >>>
+  proc graph -> do
     idg <- getAttrValue "id" -< graph
     nodes <- listA getTypedNodes -< graph
     edges <- listA getTypedEdges -< graph
@@ -65,7 +69,7 @@ clearEdgeId = replace "%:SOLID_LINE:java.awt.Color[r=0,g=0,b=0]:[EDGE]:" ""
 
 readTypeGraph = runX (parseXML "instrutivo.xml" >>> getTypeGraph)
 
-readGraphs = runX (parseXML "instrutivo.xml" >>> getGraphs)
+readGraphs = runX (parseXML "instrutivo.xml" >>> getInitialGraphs)
 
 --main = do
 --  tg <- runX (parseXML "instrutivo.xml" >>> getTypeGraph)
