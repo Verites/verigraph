@@ -68,10 +68,16 @@ applyEdge m le =
     case R.apply (edgeRelation m) le of
         (x:xs) -> Just x
         _ -> Nothing
-    
+
 -- | An empty morphism between two graphs.
 empty :: Graph a b -> Graph a b -> GraphMorphism a b
 empty gA gB = GraphMorphism gA gB (R.empty (nodes gA) (nodes gB)) (R.empty (edges gA) (edges gB))
+
+-- | Construct a graph morphism
+gmbuild :: Graph a b -> Graph a b -> [(Int,Int)] -> [(Int,Int)] -> GraphMorphism a b
+gmbuild gA gB n e = foldr (\(a,b) -> updateEdges a b) g (map (\(x,y) -> (EdgeId x,EdgeId y)) e)
+    where
+        g = foldr (\(a,b) -> updateNodes a b) (Graph.GraphMorphism.empty gA gB) (map (\(x,y) -> (NodeId x,NodeId y)) n)
 
 -- | Construct a graph morphism based on domain, codomain and both node and
 -- edge relations.
@@ -142,7 +148,7 @@ instance Morphism (GraphMorphism a b) where
     isomorphism m =
         monomorphism m && epimorphism m
 
-               
+
 
 instance Valid (GraphMorphism a b) where
     valid m@(GraphMorphism dom cod nm em) =
@@ -158,4 +164,3 @@ instance Valid (GraphMorphism a b) where
                    (G.targetOf cod =<< applyEdge m e) ==
                    (applyNode m =<< G.targetOf dom e))
             (G.edges dom)
-
