@@ -7,8 +7,11 @@ module XML.GTXLReader where
 import           Abstract.Valid
 import           Data.Hashable
 import           Data.String.Utils
-import           Graph.Graph
+import qualified Graph.Graph as G
 import qualified Graph.GraphMorphism as GM
+import qualified Graph.TypedGraphMorphism as TGM
+import qualified Abstract.Morphism as M
+import qualified Graph.GraphRule as GR
 import           System.Environment
 import           Text.XML.HXT.Core
 import           XML.XMLUtilities
@@ -92,25 +95,80 @@ readGraphs fileName = runX (parseXML fileName >>> getInitialGraphs)
 
 readRules fileName = runX (parseXML fileName >>> getRules)
 
-instatiateTypeGraph :: (String, [String], [(String, String, String)]) -> Graph a b
-instatiateTypeGraph (a,b,c) = build nodes edges
+instatiateTypeGraph :: (String, [String], [(String, String, String)]) -> G.Graph a b
+instatiateTypeGraph (a,b,c) = G.build nodes edges
   where
     nodes = map hash b
     edges = map (\(x,y,z) -> (hash x, hash y, hash z)) c
 
 
-instatiateTypedGraph (a,b,c) tg = GM.gmbuild k tg nodeTyping edgeTyping
+instatiateTypedGraph (a,b,c) tg = GM.gmbuild g tg nodeTyping edgeTyping
   where
-    k = build nodesK edgesK
-    nodesK = map (hash . fst) b
-    edgesK = map (\(x,_,y,z) -> (hash x, hash y, hash z)) c
+    g = G.build nodesG edgesG
+    nodesG = map (hash . fst) b
+    edgesG = map (\(x,_,y,z) -> (hash x, hash y, hash z)) c
     nodeTyping = map (\(x,y) -> (hash x, hash y)) b
     edgeTyping = map (\(x,y,_,_) -> (hash x, hash y)) c
 
---instatiateTypedGraphs :: x -> Graph a b
-instatiateTypedGraphs tg (ruleId,ruleName,interfaceGraph,deletedElems,createdElems) = x
+addElemsToGraph :: GM.GraphMorphism a b
+               {-}-> [(String,String)]
+               -> [(String,String,String,String)]-}
+               -> ([(String, String)],[(String, String, String, String)])
+               -> GM.GraphMorphism a b
+addElemsToGraph graph (nodes,edges) = graphWithNewEdges
   where
-    x = instatiateTypedGraph interfaceGraph tg
+    graphWithNewNodes = foldl insertNode graph nodes
+    graphWithNewEdges = foldl insertEdge graphWithNewNodes edges
+
+insertEdge :: GM.GraphMorphism a b -> (String,String,String,String) -> GM.GraphMorphism a b
+insertEdge graph (edgeId,edgeType,src,tgt) =
+    GM.updateEdges (G.EdgeId hashId) (G.EdgeId (hash edgeType)) graphWithEdgeTyped
+  where
+    hashId = hash edgeId
+    graphWithEdge = G.insertEdge (G.EdgeId hashId) (G.NodeId (hash src)) (G.NodeId (hash tgt)) (M.domain graph)
+    graphWithEdgeTyped = GM.updateDomain graphWithEdge graph
+
+insertNode :: GM.GraphMorphism a b -> (String,String) -> GM.GraphMorphism a b
+insertNode graph (nodeId,nodeType) =
+    GM.updateNodes (G.NodeId hashId) (G.NodeId (hash nodeType)) graphWithNodeTyped
+  where
+    hashId = hash nodeId
+    graphWithNode = G.insertNode (G.NodeId hashId) (M.domain graph)
+    graphWithNodeTyped = GM.updateDomain graphWithNode graph
+
+instatiateTypedGraphs :: G.Graph a b
+                      -> (String,
+                          String,
+                          (String,
+                           [(String, String)],
+                           [(String, String, String, String)]),
+                          ([(String, String)],
+                           [(String, String, String, String)]),
+                          ([(String, String)],
+                           [(String, String, String, String)]))
+                      -> (GM.GraphMorphism a b,
+                          GM.GraphMorphism a b,
+                          GM.GraphMorphism a b)
+instatiateTypedGraphs tg (ruleId,ruleName,interfaceGraph,deletedElems,createdElems) = (l,k,r)
+  where
+    k = instatiateTypedGraph interfaceGraph tg
+    l = addElemsToGraph k deletedElems
+    r = addElemsToGraph k createdElems
+
+instatiateRule tg rule = GR.graphRule mapL mapR []
+  where
+    (l,k,r) = instatiateTypedGraphs tg rule
+    mapL = TGM.typedMorphism k l (mapId k l)
+    mapR = TGM.typedMorphism k r (mapId k r)
+
+mapId :: GM.GraphMorphism a b -> GM.GraphMorphism a b -> GM.GraphMorphism a b
+mapId g r = edgesUpdated
+  where
+    init = GM.empty (M.domain g) (M.domain r)
+    zipNodes = zip (G.nodes $ M.domain g) (G.nodes $ M.domain g)
+    zipEdges = zip (G.edges $ M.domain g) (G.edges $ M.domain g)
+    nodesUpdated = foldr (\(a,b) -> GM.updateNodes a b) init zipNodes
+    edgesUpdated = foldr (\(a,b) -> GM.updateEdges a b) nodesUpdated zipEdges
 
 i1 = readTypeGraph fileName
 i2 = readGraphs fileName
@@ -124,10 +182,14 @@ main = do
   return a
 
 fileName = "teste-conflito.xml"
+
 main2 = do
   rules <- readRules fileName
   typeGraph <- readTypeGraph fileName
   let tg = instatiateTypeGraph $ head typeGraph
-  print (fmap (instatiateTypedGraphs tg) rules)
-  print (fmap valid  (fmap (instatiateTypedGraphs tg) rules))
+  --print (fmap (instatiateTypedGraphs tg) rules)
+  print (fmap (instatiateRule tg) rules)
+  let rulesVerigraph = fmap (instatiateRule tg) rules
+  print (fmap valid rulesVerigraph)
+  --print
   return ()
