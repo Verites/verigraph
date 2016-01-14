@@ -5,7 +5,9 @@
 module XML.GTXLReader where
 
 import           Abstract.Valid
+import           CriticalPairs.CriticalPairsTeste
 import           Data.Hashable
+import           Data.Matrix
 import           Data.String.Utils
 import qualified Graph.Graph as G
 import qualified Graph.GraphMorphism as GM
@@ -200,5 +202,6 @@ main2 = do
   print (fmap (instatiateRule tg) rules)
   let rulesVerigraph = fmap (instatiateRule tg) rules
   print (fmap valid rulesVerigraph)
-  --print
+  let cps = matrix (length rulesVerigraph) (length rulesVerigraph) (\y -> fst $ countCP2 (rulesVerigraph!!((fst y)-1)) (rulesVerigraph!!((snd y)-1)))
+  print cps
   return ()
