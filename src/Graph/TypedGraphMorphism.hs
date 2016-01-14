@@ -1,12 +1,17 @@
 {-# LANGUAGE TypeFamilies #-}
 
 module Graph.TypedGraphMorphism (
-      mapping
+      inverseTGM
+    , nodesDomain
+    , edgesDomain
+    , nodesCodomain
+    , edgesCodomain
+    , mapping
     , typedMorphism
     , TypedGraphMorphism
 ) where
 
-import Graph.Graph (Graph)
+import Graph.Graph (Graph,nodes,edges)
 import Graph.GraphMorphism
 import Abstract.Morphism as M
 import Abstract.Valid
@@ -19,6 +24,14 @@ data TypedGraphMorphism a b = TypedGraphMorphism {
 
 typedMorphism = TypedGraphMorphism
 mapping = getMapping
+
+inverseTGM x = typedMorphism (M.codomain x) (M.domain x) (inverse (mapping x))
+
+nodesDomain x = nodes (M.domain (getDomain x))
+edgesDomain x = edges (M.domain (getDomain x))
+
+nodesCodomain x = nodes (M.domain (getCodomain x))
+edgesCodomain x = edges (M.domain (getCodomain x))
 
 instance Eq (TypedGraphMorphism a b) where
     (TypedGraphMorphism dom1 cod1 m1) == (TypedGraphMorphism dom2 cod2 m2) =

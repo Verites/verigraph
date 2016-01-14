@@ -7,6 +7,7 @@ module Graph.GraphMorphism (
     -- * Construction
     , Graph.GraphMorphism.empty
     , graphMorphism
+    , gmbuild
     -- * Transformation
     , inverse
     , updateCodomain
@@ -75,6 +76,12 @@ empty gA gB = GraphMorphism gA gB (R.empty (nodes gA) (nodes gB)) (R.empty (edge
 -- | Construct a graph morphism based on domain, codomain and both node and
 -- edge relations.
 graphMorphism = GraphMorphism
+
+-- | Construct a graph morphism
+gmbuild :: Graph a b -> Graph a b -> [(Int,Int)] -> [(Int,Int)] -> GraphMorphism a b
+gmbuild gA gB n e = foldr (\(a,b) -> updateEdges a b) g (map (\(x,y) -> (EdgeId x,EdgeId y)) e)
+    where
+        g = foldr (\(a,b) -> updateNodes a b) (Graph.GraphMorphism.empty gA gB) (map (\(x,y) -> (NodeId x,NodeId y)) n)
 
 -- | The inverse graph morphism.
 inverse (GraphMorphism dom cod nm em) =

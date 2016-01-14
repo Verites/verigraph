@@ -35,7 +35,7 @@ data Relation a =
    } deriving (Ord,Show,Read)                
 
 instance (Eq a, Ord a) => Eq (Relation a) where
-    r1 == r2 = sort(domain r1)   == sort(domain r2)   &&
+    r1 == r2 = sort(domain r1) == sort(domain r2) &&
                sort(codomain r1) == sort(codomain r2) &&
                mapping r1 == mapping r2
                
