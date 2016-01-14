@@ -24,7 +24,7 @@ executable verigraph
                        colour >=2.3 && <2.4,
                        containers >=0.4 && <0.6,
                        fclabels >= 2.0 && <2.1,
-                       gtk >=0.12 && <0.14,
+--                       gtk >=0.12 && <0.14,
                        MissingH >=1.1 && <1.4,
                        mtl >=2.2 && <2.3,
                        transformers >=0.4 && <0.5,
