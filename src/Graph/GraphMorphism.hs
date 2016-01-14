@@ -83,12 +83,6 @@ gmbuild gA gB n e = foldr (\(a,b) -> updateEdges a b) g (map (\(x,y) -> (EdgeId 
 -- edge relations.
 graphMorphism = GraphMorphism
 
--- | Construct a graph morphism
-gmbuild :: Graph a b -> Graph a b -> [(Int,Int)] -> [(Int,Int)] -> GraphMorphism a b
-gmbuild gA gB n e = foldr (\(a,b) -> updateEdges a b) g (map (\(x,y) -> (EdgeId x,EdgeId y)) e)
-    where
-        g = foldr (\(a,b) -> updateNodes a b) (Graph.GraphMorphism.empty gA gB) (map (\(x,y) -> (NodeId x,NodeId y)) n)
-
 -- | The inverse graph morphism.
 inverse (GraphMorphism dom cod nm em) =
     GraphMorphism cod dom (R.inverse nm) (R.inverse em)

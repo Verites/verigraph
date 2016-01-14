@@ -276,12 +276,6 @@ isIncidentTo g n e =
 incidentEdges :: Graph a b -> NodeId -> [EdgeId]
 incidentEdges g n = nub $ edgesIntoNode g n ++ edgesFromNode g n
 
--- | Build a Graph
-build :: [Int] -> [(Int,Int,Int)] -> Graph a b
-build n e = foldr (\(a,b,c) -> insertEdge a b c) g (map (\(a,b,c) -> (EdgeId a,NodeId b,NodeId c)) e)
-  where
-    g = foldr insertNode empty (map NodeId n)
-
 instance Valid (Graph a b) where
     valid g =
         all (\e ->
