@@ -67,7 +67,7 @@ data Edge a = Edge { getSource   :: NodeId
 
 instance Eq (Edge a) where
     e == e' = s == s' && t == t'
-            where 
+            where
               s  = getSource e
               t  = getTarget e
               s' = getSource e'
@@ -175,11 +175,11 @@ updateEdgePayload e g@(Graph ns es) f =
 
 -- | Return a list of all node id's from from @g@.
 nodes :: Graph a b -> [NodeId]
-nodes (Graph ns _) = keysAL ns        
+nodes (Graph ns _) = keysAL ns
 
 -- | Return a list of all edge id's from from @g@.
 edges :: Graph a b -> [EdgeId]
-edges (Graph _ es) = keysAL es        
+edges (Graph _ es) = keysAL es
 
 -- | Return a list of all edges with @n@ as a source node.
 edgesFromNode :: Graph a b -> NodeId -> [EdgeId]
@@ -199,7 +199,7 @@ nodesIntoNode g n = filter (\v -> isAdjacentTo g v n) (nodes g)
 
 -- | Return a list of all neighbour nodes from @n@.
 neighbourNodes :: Graph a b -> NodeId -> [NodeId]
-neighbourNodes g n = nub $ nodesIntoNode g n ++ nodesFromNode g n 
+neighbourNodes g n = nub $ nodesIntoNode g n ++ nodesFromNode g n
 
 -- | Return @n@'s payload.
 nodePayload :: Graph a b -> NodeId -> Maybe a
@@ -232,7 +232,7 @@ sourceOf :: Graph a b -> EdgeId -> Maybe NodeId
 sourceOf (Graph _ es) e =
     case res of
         Just ed -> Just $ getSource ed
-        _ -> Nothing 
+        _ -> Nothing
   where
     res = lookup e es
 
@@ -276,6 +276,12 @@ isIncidentTo g n e =
 incidentEdges :: Graph a b -> NodeId -> [EdgeId]
 incidentEdges g n = nub $ edgesIntoNode g n ++ edgesFromNode g n
 
+-- | Build a Graph
+build :: [Int] -> [(Int,Int,Int)] -> Graph a b
+build n e = foldr (\(a,b,c) -> insertEdge a b c) g (map (\(a,b,c) -> (EdgeId a,NodeId b,NodeId c)) e)
+  where
+    g = foldr insertNode empty (map NodeId n)
+
 instance Valid (Graph a b) where
     valid g =
         all (\e ->
@@ -285,4 +291,3 @@ instance Valid (Graph a b) where
                     (Just s, Just t) -> isNodeOf g s && isNodeOf g t
                     otherwise -> False)
             (edges g)
-

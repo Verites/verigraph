@@ -27,6 +27,7 @@ import Graphics.UI.Gtk hiding (get, set) -- conflict with fclabels
 import qualified Graphics.UI.Gtk as Gtk
 import Graphics.Rendering.Cairo as Gtk
 import Prelude hiding (mapM_, any, (.), id)
+import qualified Data.Text as DT
 
 
 
@@ -423,7 +424,7 @@ keyPress canvas stateRef = do
     key <- eventKeyName
     state <- liftIO $ readIORef stateRef
     let mgstate = currentGraphState state
-    case (mgstate, key) of
+    case (mgstate, DT.unpack key) of
         (Just gstate, "Delete") -> do
             let sel = L.partition isEdge $ get selObjects gstate
                 gstate' = modify getGraph (deleteObjects sel) gstate
