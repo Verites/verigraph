@@ -9,6 +9,7 @@ module Graph.Graph (
 
     -- * Construction
     , empty
+    , build
 
     -- ** Insertion
     , insertEdge
@@ -106,6 +107,12 @@ instance Show EdgeId where
 -- | Create an empty Graph.
 empty :: Graph a b
 empty = Graph [] []
+
+-- | Build a Graph
+build :: [Int] -> [(Int,Int,Int)] -> Graph a b
+build n e = foldr (\(a,b,c) -> insertEdge a b c) g (map (\(a,b,c) -> (EdgeId a,NodeId b,NodeId c)) e)
+    where
+        g = foldr insertNode empty (map NodeId n)
 
 -- | Insert a node @n@ in a graph @g@, without payload.
 insertNode :: NodeId -> Graph a b -> Graph a b
