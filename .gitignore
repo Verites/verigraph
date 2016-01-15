@@ -1,3 +1,4 @@
 dist/
 *.xsl
 *.orig
+*.swp
