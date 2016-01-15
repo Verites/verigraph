@@ -30,7 +30,7 @@ type ParsedGraph = (String, [ParsedNode], [ParsedEdge])
 type ParsedTypedGraph = (String, [ParsedTypedNode], [ParsedTypedEdge])
 type ParsedRule = (String, String, ParsedTypedGraph,
                    ([ParsedTypedNode], [ParsedTypedEdge]),
-                   ([ParsedTypedNode], [ParsedTypedEdge]))
+                   ([ParsedTypedNode], [ParsedTypedEdge]), [ParsedNAC])
 type ParsedNAC = ([ParsedTypedNode], [ParsedTypedEdge])
 
 parseTypeGraphs :: ArrowXml cat => cat (NTree XNode) ParsedGraph
@@ -65,8 +65,8 @@ parseRule = atTag "rule" >>>
     edgesDeleted    <- listA parseTypedEdge <<< atTag "deleted" -< rule
     nodesCreated    <- listA parseTypedNode <<< atTag "created" -< rule
     edgesCreated    <- listA parseTypedEdge <<< atTag "created" -< rule
-    nacs            <- listA parseNAC <<< atTag "precondition"  -< rule
-    returnA -< (ruleId, ruleName, preservedGraph, (nodesDeleted, edgesDeleted), (nodesCreated, edgesCreated))
+    nacs            <- listA parseNAC                           -< rule
+    returnA -< (ruleId, ruleName, preservedGraph, (nodesDeleted, edgesDeleted), (nodesCreated, edgesCreated), nacs)
 
 parseNode :: ArrowXml cat => cat (NTree XNode) ParsedNode
 parseNode = atTag "node" >>>
@@ -105,7 +105,7 @@ parseType = atTag "type" >>>
     returnA -< clearEdgeId $ clearNodeId t
 
 parseNAC :: ArrowXml cat => cat(NTree XNode) ParsedNAC
-parseNAC = atTag "condition" >>> atTag "graphCondition" >>>
+parseNAC = atTag "precondition" >>> atTag "condition" >>> atTag "graphCondition" >>>
   proc gc -> do
   name  <- isA isNac <<< getAttrValue "name"  -< gc
   nodes <- listA parseTypedNode               -< gc
@@ -173,20 +173,32 @@ insertNode graph (nodeId,nodeType) =
     graphWithNode = G.insertNode (G.NodeId hashId) (M.domain graph)
     graphWithNodeTyped = GM.updateDomain graphWithNode graph
 
-instatiateTypedGraphs :: G.Graph a b -> ParsedRule ->
-  ( GM.GraphMorphism a b, GM.GraphMorphism a b, GM.GraphMorphism a b)
-instatiateTypedGraphs tg (ruleId,ruleName,interfaceGraph,deletedElems,createdElems) = (l,k,r)
+instatiateTypedGraphsFromRule :: G.Graph a b -> ParsedRule ->
+  ( GM.GraphMorphism a b, GM.GraphMorphism a b, GM.GraphMorphism a b, [GM.GraphMorphism a b])
+instatiateTypedGraphsFromRule tg (ruleId,ruleName,interfaceGraph,deletedElems,createdElems,nacs) = (l,k,r,n)
   where
     k = instatiateTypedGraph interfaceGraph tg
     l = addElemsToGraph k deletedElems
     r = addElemsToGraph k createdElems
+    n = instatiateNacMorphisms l nacs
+
+instatiateNacMorphisms :: GM.GraphMorphism a b -> [ParsedNAC] -> [GM.GraphMorphism a b]
+instatiateNacMorphisms lhs = map (createNacMorphism lhs)
+
+createNacMorphism :: GM.GraphMorphism a b -> ParsedNAC -> GM.GraphMorphism a b
+createNacMorphism = addElemsToGraph
+
 
 instatiateRule :: G.Graph a b -> ParsedRule -> GR.GraphRule a b
-instatiateRule tg rule = GR.graphRule mapL mapR []
+instatiateRule tg rule = GR.graphRule mapL mapR mapNacs
   where
-    (l,k,r) = instatiateTypedGraphs tg rule
-    mapL = TGM.typedMorphism k l (mapId k l)
-    mapR = TGM.typedMorphism k r (mapId k r)
+    (l,k,r,ns) = instatiateTypedGraphsFromRule tg rule
+    mapL = instatiateTypedMorphism k l
+    mapR = instatiateTypedMorphism k r
+    mapNacs = map (instatiateTypedMorphism l) ns
+
+instatiateTypedMorphism :: GM.GraphMorphism a b -> GM.GraphMorphism a b -> TGM.TypedGraphMorphism a b
+instatiateTypedMorphism a b = TGM.typedMorphism a b (mapId a b)
 
 mapId :: GM.GraphMorphism a b -> GM.GraphMorphism a b -> GM.GraphMorphism a b
 mapId g r = edgesUpdated
