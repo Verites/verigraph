@@ -31,6 +31,7 @@ type ParsedTypedGraph = (String, [ParsedTypedNode], [ParsedTypedEdge])
 type ParsedRule = (String, String, ParsedTypedGraph,
                    ([ParsedTypedNode], [ParsedTypedEdge]),
                    ([ParsedTypedNode], [ParsedTypedEdge]))
+type ParsedNAC = ([ParsedTypedNode], [ParsedTypedEdge])
 
 parseTypeGraphs :: ArrowXml cat => cat (NTree XNode) ParsedGraph
 parseTypeGraphs = atTag "graph" >>>
@@ -57,13 +58,14 @@ parseGraph = atTag "graph" >>>
 parseRule :: ArrowXml cat => cat (NTree XNode) ParsedRule
 parseRule = atTag "rule" >>>
   proc rule -> do
-    ruleId <- getAttrValue "id" -< rule
-    ruleName <- getAttrValue "name" -< rule
-    preservedGraph <- parseGraph <<< atTag "preserved" -< rule
-    nodesDeleted <- listA parseTypedNode <<< atTag "deleted" -< rule
-    edgesDeleted <- listA parseTypedEdge <<< atTag "deleted" -< rule
-    nodesCreated <- listA parseTypedNode <<< atTag "created" -< rule
-    edgesCreated <- listA parseTypedEdge <<< atTag "created" -< rule
+    ruleId          <- getAttrValue "id"                        -< rule
+    ruleName        <- getAttrValue "name"                      -< rule
+    preservedGraph  <- parseGraph <<< atTag "preserved"         -< rule
+    nodesDeleted    <- listA parseTypedNode <<< atTag "deleted" -< rule
+    edgesDeleted    <- listA parseTypedEdge <<< atTag "deleted" -< rule
+    nodesCreated    <- listA parseTypedNode <<< atTag "created" -< rule
+    edgesCreated    <- listA parseTypedEdge <<< atTag "created" -< rule
+    nacs            <- listA parseNAC <<< atTag "precondition"  -< rule
     returnA -< (ruleId, ruleName, preservedGraph, (nodesDeleted, edgesDeleted), (nodesCreated, edgesCreated))
 
 parseNode :: ArrowXml cat => cat (NTree XNode) ParsedNode
@@ -102,6 +104,17 @@ parseType = atTag "type" >>>
     t <- getAttrValue "xlink:href" -< t
     returnA -< clearEdgeId $ clearNodeId t
 
+parseNAC :: ArrowXml cat => cat(NTree XNode) ParsedNAC
+parseNAC = atTag "condition" >>> atTag "graphCondition" >>>
+  proc gc -> do
+  name  <- isA isNac <<< getAttrValue "name"  -< gc
+  nodes <- listA parseTypedNode               -< gc
+  edges <- listA parseTypedEdge               -< gc
+  returnA -< (nodes, edges)
+
+isNac :: String -> Bool
+isNac = ("Nac" == )
+
 clearNodeId :: String -> String
 clearNodeId = replace "%:RECT:java.awt.Color[r=0,g=0,b=0]:[NODE]:" "" . replace "#" ""
 
@@ -116,6 +129,9 @@ readGraphs fileName = runX (parseXML fileName >>> parseInitialGraphs)
 
 readRule :: String -> IO [ParsedRule]
 readRule fileName = runX (parseXML fileName >>> parseRule)
+
+readNac :: String -> IO [ParsedNAC]
+readNac fileName = runX (parseXML fileName >>> parseNAC)
 
 instatiateTypeGraph :: ParsedGraph -> G.Graph a b
 instatiateTypeGraph (a,b,c) = G.build nodes edges
@@ -184,6 +200,7 @@ mapId g r = edgesUpdated
 i1 = readTypeGraph fileName
 i2 = readGraphs fileName
 i3 = readRule fileName
+i4 = readNac fileName
 
 
 main = do
