@@ -4,20 +4,20 @@
 --FIXME hERANÇA
 module XML.GTXLReader where
 
+import qualified Abstract.Morphism                as M
 import           Abstract.Valid
 import           CriticalPairs.CriticalPairsTeste
 import           Data.Hashable
 import           Data.Matrix
 import           Data.String.Utils
-import qualified Graph.Graph as G
-import qualified Graph.GraphMorphism as GM
-import qualified Graph.TypedGraphMorphism as TGM
-import qualified Abstract.Morphism as M
-import qualified Graph.GraphRule as GR
+import           Data.Tree.NTree.TypeDefs
+import qualified Graph.Graph                      as G
+import qualified Graph.GraphMorphism              as GM
+import qualified Graph.GraphRule                  as GR
+import qualified Graph.TypedGraphMorphism         as TGM
 import           System.Environment
 import           Text.XML.HXT.Core
 import           XML.XMLUtilities
-import           Data.Tree.NTree.TypeDefs
 
 isTypeGraph :: String -> Bool
 isTypeGraph = ("TypeGraph" ==)
