@@ -15,23 +15,13 @@ import qualified Graph.Graph                      as G
 import qualified Graph.GraphMorphism              as GM
 import qualified Graph.GraphRule                  as GR
 import qualified Graph.TypedGraphMorphism         as TGM
+import           XML.ParsedTypes
 import           System.Environment
 import           Text.XML.HXT.Core
 import           XML.XMLUtilities
 
 isTypeGraph :: String -> Bool
 isTypeGraph = ("TypeGraph" ==)
-
-type ParsedNode = String -- NodeId
-type ParsedTypedNode = (String, String) -- (NodeId, NodeType)
-type ParsedEdge = (String, String, String)
-type ParsedTypedEdge = (String, String, String, String)
-type ParsedGraph = (String, [ParsedNode], [ParsedEdge])
-type ParsedTypedGraph = (String, [ParsedTypedNode], [ParsedTypedEdge])
-type ParsedRule = (String, String, ParsedTypedGraph,
-                   ([ParsedTypedNode], [ParsedTypedEdge]),
-                   ([ParsedTypedNode], [ParsedTypedEdge]), [ParsedNAC])
-type ParsedNAC = ([ParsedTypedNode], [ParsedTypedEdge])
 
 parseTypeGraphs :: ArrowXml cat => cat (NTree XNode) ParsedGraph
 parseTypeGraphs = atTag "graph" >>>

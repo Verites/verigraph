@@ -1,5 +1,6 @@
 module XML.GGXWriter where
 
+import           XML.ParsedTypes
 import           Text.XML.HXT.Core
 
 writeRoot :: ArrowXml a => a XmlTree XmlTree -> a XmlTree XmlTree
@@ -9,7 +10,7 @@ writeGts :: ArrowXml a => a XmlTree XmlTree
 writeGts = mkelem "GraphTransformationSystem" [ sattr "ID" "I1",
             sattr "directed" "true", sattr "name" "GraGra",
             sattr "parallel" "true" ]
-            (writeProperties ++ [writeTypes] ++ [writeHostGraph])
+            (writeProperties ++ [writeTypes] ++ [writeHostGraph] ++ writeRules)
 
 defaultProperties = [("CSP","true"),("dangling","true"),("identification","true"),
   ("NACs","true"),("PACs","true"),("GACs","true"),("breakAllLayer","true"),
@@ -119,6 +120,33 @@ writeAdditionalEdgeLayout :: ArrowXml a => a XmlTree XmlTree
 writeAdditionalEdgeLayout =
   mkelem "additionalLayout"
   [ sattr "aktlength" "200", sattr "force" "10", sattr "preflength" "200" ] []
+
+writeRules :: ArrowXml a => [Rule] -> [a XmlTree XmlTree]
+writeRules = map writeRule
+
+writeRule :: ArrowXml a => String -> Rule -> a XmlTree XmlTree
+writeRule name (lhs, rhs, morphisms) =
+  mkelem "Rule"
+  [sattr "ID" "I22", sattr "formula" "true", sattr "name" name]
+  [writeLHS name lhs, writeRHS name rhs, writeMorphism name morphisms] -- ++ writeApplicationConditions
+
+writeLHS :: ArrowXml a => String -> ParsedTypedGraph -> a XmlTree XmlTree
+writeLHS ruleName (gid, nodes, edges) = writeGraph "graphId" "LHS" ("LeftOf_" ++ ruleName) nodes edges
+
+writeRHS :: ArrowXml a => String -> ParsedTypedGraph -> a XmlTree XmlTree
+writeRHS ruleName (gid, nodes, edges)= writeGraph "graphId" "RHS" ("RightOf_" ++ ruleName) nodes edges
+
+writeMorphism :: ArrowXml a => String -> [(String, String)]-> a XmlTree XmlTree
+writeMorphism name mappings =
+  mkelem "Morphism"
+  [sattr "comment" "Formula: true", sattr "name" name]
+  $ writeMappings mappings
+
+writeMappings :: ArrowXml a => [(String, String)] -> [a XmlTree XmlTree]
+writeMappings = map writeMapping
+
+writeMapping :: ArrowXml a => (String, String) -> a XmlTree XmlTree
+writeMapping (image, orig) = mkelem "Mapping" [sattr "image" image, sattr "orig" orig] []
 
 writeMain :: ArrowXml a => a XmlTree XmlTree
 writeMain = writeRoot writeGts
