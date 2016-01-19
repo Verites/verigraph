@@ -19,8 +19,7 @@ import CriticalPairs.GPToVeri
 import Graph.Graph
 import qualified CriticalPairs.Matches as MT
 import Data.List.Utils (countElem)
-import Data.List (group,sort)
-import Data.Maybe (fromJust)
+import Data.Maybe (mapMaybe)
 
 import CriticalPairs.CriticalPairs (CP(..),CriticalPair(..))
 
@@ -49,11 +48,10 @@ countCP l r = (useDel+both,proFor+both)
 
 {-Cálculo dos Pares Críticos-}
 criticalPairs :: GraphRule a b -> GraphRule a b -> [CriticalPair a b]
-criticalPairs l r = criticalPairsAux l r (zip m1s m2s)
+criticalPairs l r = criticalPairsAux l r ms
     where
         graphEqClass = GP.genEqClass $ mixLeftRule l r
-        m1s = map (mountTGM (left l) "Left" ) graphEqClass
-        m2s = map (mountTGM (left r) "Right") graphEqClass
+        ms = map (mountTGMBoth (left l) (left r)) graphEqClass
 
 criticalPairsAux :: GraphRule a b -> GraphRule a b ->
                     [(TGM.TypedGraphMorphism a b,TGM.TypedGraphMorphism a b)] ->
@@ -85,10 +83,7 @@ useDeleteAux :: Eq t => GraphRule a b -> TGM.TypedGraphMorphism a b -> TGM.Typed
 useDeleteAux l m1 m2 apply dom cod = map (\x -> delByLeft x && isInMatchRight x) (cod m1)
     where
         delByLeft = ruleDeletes l m1 apply dom
-        isInMatchRight = elemIsInMatch apply m2
-
-elemIsInMatch :: Eq t => (GM.GraphMorphism a b -> t -> Maybe t) -> TGM.TypedGraphMorphism a b -> t -> Bool
-elemIsInMatch apply m n = apply (GM.inverse $ TGM.mapping m) n /= Nothing
+        isInMatchRight n = apply (GM.inverse $ TGM.mapping m2) n /= Nothing
 
 {-produceEdgeDeleteNode :: GraphRule a b -> GraphRule a b -> (TGM.TypedGraphMorphism a b,TGM.TypedGraphMorphism a b) -> Bool
 produceEdgeDeleteNode l r (m1,m2) = satsGluingCond r (compl nvMB)
@@ -141,7 +136,7 @@ produceForbid l r (m1,m2) = if Prelude.null (nacs r) then False else satsGluingC
         m1' = head (if Prelude.null matchs then MT.matches (M.domain m2') (M.domain m2') MT.FREE else matchs)
 
 dpo :: GraphRule a b -> TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b
-dpo rule m = m
+dpo rule m = M.compose (left rule) m
 
 satsGluingCondBoth :: (GraphRule a b, TGM.TypedGraphMorphism a b) ->
                       (GraphRule a b, TGM.TypedGraphMorphism a b) ->
@@ -169,8 +164,8 @@ satsDelItemsAux :: Eq t => GraphRule a b -> TGM.TypedGraphMorphism a b
 satsDelItemsAux rule m dom apply l n = (length incident <= 1) || (not someIsDel)
     where
         incident = [a | a <- dom m, apply (TGM.mapping m) a == (Just n)]
-        someIsDel = Nothing `elem` (map rlDel incident)
-        rlDel = apply (GM.inverse (TGM.mapping (left rule)))
+        ruleDel = apply (GM.inverse (TGM.mapping (left rule)))
+        someIsDel = Nothing `elem` (map ruleDel incident)
 
 {-retorna True se não existirem dangling edges no grafo-}
 satsIncEdges :: GraphRule a b -> TGM.TypedGraphMorphism a b -> Bool
@@ -179,8 +174,8 @@ satsIncEdges r m = False `notElem` (concat incidentEdgesDel)
         mapM = TGM.mapping m
         l = M.domain mapM
         g = M.codomain mapM
-        imageLInG = map fromJust (map (GM.applyNode mapM) (nodes l))
-        delNodes = filter (ruleDeletes r m GM.applyNode TGM.nodesDomain) imageLInG
+        matchedLInG = mapMaybe (GM.applyNode mapM) (nodes l)
+        delNodes = filter (ruleDeletes r m GM.applyNode TGM.nodesDomain) matchedLInG
         hasIncEdges = map (incidentEdges g) delNodes
         verEdgeDel = map (ruleDeletes r m GM.applyEdge TGM.edgesDomain)
         incidentEdgesDel = map verEdgeDel hasIncEdges

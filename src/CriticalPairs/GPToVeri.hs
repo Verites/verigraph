@@ -1,6 +1,7 @@
 module CriticalPairs.GPToVeri (
    setType,
    mountTGM,
+   mountTGMBoth,
    toMorphism
    ) where
 
@@ -13,6 +14,11 @@ import Graph.Graph
 import Data.Maybe (fromJust)
 
 {-Conversão para as estruturas do Verigraph-}
+
+mountTGMBoth :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b
+             -> GP.EqClassGraphMap
+             -> (TGM.TypedGraphMorphism a b, TGM.TypedGraphMorphism a b)
+mountTGMBoth l r g = (mountTGM l "Left" g, mountTGM r "Right" g)
 
 mountTGM :: TGM.TypedGraphMorphism a b -> String -> GP.EqClassGraphMap -> TGM.TypedGraphMorphism a b
 mountTGM morph side g = TGM.typedMorphism (M.codomain morph) typeMorphism morphism
