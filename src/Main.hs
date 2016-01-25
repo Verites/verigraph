@@ -16,6 +16,8 @@ import Data.Maybe
 import CriticalPairs.Matches
 import CriticalPairs.GPToVeri
 
+import qualified XML.GTXLReader as XML
+
 iN = insertNode
 iE = insertEdge
 uN = GM.updateNodes
