@@ -211,16 +211,18 @@ main = do
   print (fmap valid a)
   return a
 
-fileName = "teste-conflito.xml"
+fileName = "teste.xml"
 
-main2 = do
-  rules <- readRule fileName
-  typeGraph <- readTypeGraph fileName
+main2 fs = do
+  rules <- readRule fs
+  typeGraph <- readTypeGraph fs
   let tg = instatiateTypeGraph $ head typeGraph
   --print (fmap (instatiateTypedGraphs tg) rules)
-  print (fmap (instatiateRule tg) rules)
+  --print (fmap (instatiateRule tg) rules)
   let rulesVerigraph = fmap (instatiateRule tg) rules
-  print (fmap valid rulesVerigraph)
+  --print (fmap valid rulesVerigraph)
   let cps = matrix (length rulesVerigraph) (length rulesVerigraph) (\y -> fst $ countCP2 (rulesVerigraph!!((fst y)-1)) (rulesVerigraph!!((snd y)-1)))
   print cps
+  let cps2 = matrix (length rulesVerigraph) (length rulesVerigraph) (\y -> snd $ countCP2 (rulesVerigraph!!((fst y)-1)) (rulesVerigraph!!((snd y)-1)))
+  print cps2
   return ()

@@ -8,6 +8,8 @@ import qualified Graph.GraphMorphism as GM
 import qualified Graph.TypedGraphMorphism as TGM
 import Graph.GraphRule
 import System.Process
+import System.Environment
+import System.Exit
 
 import Data.Matrix
 
@@ -192,25 +194,6 @@ testeCreate = graphRule l8 r8 []
 
 {-Fim das Regras-}
 
-gInit = build [501,502,503,504] [(501,503,501),(504,502,504)]
-gTyped = GM.gmbuild gInit grafotipo [(501,1),(502,2),(503,3),(504,4)] [(501,1),(504,4)]
-
-le1 = M.codomain (left sendMsg)
-match1 = head (matches le1 gTyped FREE)
-re1 = M.codomain (create sendMsg match1 20000)
-
-le2 = M.codomain (left getDATA)
-match2 = head (matches le2 re1 FREE)
-re2 = M.codomain (create getDATA match2 20200)
-
-le3 = M.codomain (left receiveMSG)
-match3 = head (matches le3 re2 FREE)
-re3 = M.codomain (create receiveMSG match3 20400)
-
-le4 = M.codomain (left deleteMSG)
-match4 = head (matches le4 re3 FREE)
-re4 = M.codomain (create deleteMSG match4 20600)
-
 -----
 
 --rules = [sendMsg,getDATA,receiveMSG,deleteMSG]
@@ -267,13 +250,20 @@ main :: IO ()
 main =
    do
       --f ((length ggs)-1)
-      f2
+      args <- getArgs
+      parse args
+--      let fileName = head args
+--      print (if Prelude.null args then "Error" else ma)
+      return ()
+
+parse [] = error "Passe um arquivo, por favor"
+parse fs = XML.main2 $ head fs
 
 --apaga os .dot
-f2 =
+{-f2 =
    do
       writeFile ("m.txt") ((show (length rules)) ++ "\n" ++ (show ma))
-      return ()
+      return ()-}
 
 --cria os .dot e os .jpg
 {-f 0 =
