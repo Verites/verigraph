@@ -128,26 +128,26 @@ r5 = TGM.typedMorphism tkr5 trr5 kr5_rr5
 teste = graphRule l5 r5 []
 
 {-testeNac-}
-lr6 = build [211] []
-kr6 = build [221] []
-rr6 = build [231] []
+lr6 = build [212] []
+kr6 = build [222] []
+rr6 = build [232] []
 
 --tipagem
-tlr6 = GM.gmbuild lr6 grafotipo [(211,1)] []
-tkr6 = GM.gmbuild kr6 grafotipo [(221,1)] []
-trr6 = GM.gmbuild rr6 grafotipo [(231,1)] []
+tlr6 = GM.gmbuild lr6 grafotipo [(212,2)] []
+tkr6 = GM.gmbuild kr6 grafotipo [(222,2)] []
+trr6 = GM.gmbuild rr6 grafotipo [(232,2)] []
 
 --span
-kr6_lr6 = GM.gmbuild kr6 lr6 [(221,211)] []
+kr6_lr6 = GM.gmbuild kr6 lr6 [(222,212)] []
 l6 = TGM.typedMorphism tkr6 tlr6 kr6_lr6
 
-kr6_rr6 = GM.gmbuild kr6 rr6 [(221,231)] []
+kr6_rr6 = GM.gmbuild kr6 rr6 [(222,232)] []
 r6 = TGM.typedMorphism tkr6 trr6 kr6_rr6
 
 --nac
 ng6 = build [242,241] []
 nt6 = GM.gmbuild ng6 grafotipo [(242,2),(241,1)] []
-lr6_n6 = GM.gmbuild lr6 ng6 [(211,241)] []
+lr6_n6 = GM.gmbuild lr6 ng6 [(212,242)] []
 nac6 = TGM.typedMorphism tlr6 nt6 lr6_n6
 
 wnac = graphRule l6 r6 [nac6]
@@ -191,6 +191,27 @@ r8 = TGM.typedMorphism tkr8 trr8 kr8_rr8
 testeCreate = graphRule l8 r8 []
 
 {-Fim das Regras-}
+
+gInit = build [501,502,503,504] [(501,503,501),(504,502,504)]
+gTyped = GM.gmbuild gInit grafotipo [(501,1),(502,2),(503,3),(504,4)] [(501,1),(504,4)]
+
+le1 = M.codomain (left sendMsg)
+match1 = head (matches le1 gTyped FREE)
+re1 = M.codomain (create sendMsg match1 20000)
+
+le2 = M.codomain (left getDATA)
+match2 = head (matches le2 re1 FREE)
+re2 = M.codomain (create getDATA match2 20200)
+
+le3 = M.codomain (left receiveMSG)
+match3 = head (matches le3 re2 FREE)
+re3 = M.codomain (create receiveMSG match3 20400)
+
+le4 = M.codomain (left deleteMSG)
+match4 = head (matches le4 re3 FREE)
+re4 = M.codomain (create deleteMSG match4 20600)
+
+-----
 
 --rules = [sendMsg,getDATA,receiveMSG,deleteMSG]
 rules = [sendMsg,getDATA,receiveMSG,deleteMSG,teste,wnac,wnac2,testeCreate]

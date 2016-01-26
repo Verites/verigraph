@@ -146,7 +146,7 @@ produceForbid l r (m1,m2) = if Prelude.null (nacs r) || Prelude.null m1' then Fa
         exp = True `elem` (map (\x -> satsGluingCondBoth (l,x) (r,m2'))) (concat m1s')
 
 dpo :: GraphRule a b -> TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b
-dpo rule m = create rule m
+dpo rule m = create rule m 20000
 
 satsGluingCondBoth :: (GraphRule a b, TGM.TypedGraphMorphism a b) ->
                       (GraphRule a b, TGM.TypedGraphMorphism a b) ->
@@ -215,13 +215,27 @@ satOneNac rule m nac = True `notElem` checkCompose
       typeG   = M.codomain m
 
 --------------
-
-create rule m = creatEdgs (creatNods created 2000) 2010
+create rule m n = clean (creatEdgs (creatNods created n) (n+100))
     where
         l = left rule
         r = TGM.inverseTGM (right rule)
         deleted = M.compose l m
         created = M.compose r deleted
+
+clean :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b
+clean m = cleanNodes (cleanEdges m)
+
+cleanNodes :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b
+cleanNodes m = m--TGM.typedMorphism (M.domain m) (M.codomain m) 
+
+cleanEdges :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b
+cleanEdges m = if rem == [] then m else TGM.typedMorphism (M.domain m) newCod newMap
+    where
+        ma = TGM.mapping m
+        rem = filter (\x -> GM.applyEdge (GM.inverse ma) x == Nothing) (edges (M.codomain ma))
+        newG = foldr removeEdge (M.codomain ma) rem
+        newCod = GM.updateDomain newG (M.codomain m)
+        newMap = GM.updateCodomain newG ma
 
 creatEdgs :: TGM.TypedGraphMorphism a b -> Int -> TGM.TypedGraphMorphism a b
 creatEdgs m n = if indefEdges == [] then m else creatEdgs (fst pair) (snd pair)
