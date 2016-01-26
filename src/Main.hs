@@ -171,10 +171,29 @@ r7 = TGM.typedMorphism tkr7 trr7 kr7_rr7
 
 wnac2 = graphRule l7 r7 []
 
+{-testeCreate-}
+lr8 = build [] []
+kr8 = build [] []
+rr8 = build [350] []
+
+--tipagem
+tlr8 = GM.gmbuild lr8 grafotipo [] []
+tkr8 = GM.gmbuild kr8 grafotipo [] []
+trr8 = GM.gmbuild rr8 grafotipo [(350,1)] []
+
+--span
+kr8_lr8 = GM.gmbuild kr8 lr8 [] []
+l8 = TGM.typedMorphism tkr8 tlr8 kr8_lr8
+
+kr8_rr8 = GM.gmbuild kr8 rr8 [] []
+r8 = TGM.typedMorphism tkr8 trr8 kr8_rr8
+
+testeCreate = graphRule l8 r8 []
+
 {-Fim das Regras-}
 
 --rules = [sendMsg,getDATA,receiveMSG,deleteMSG]
-rules = [sendMsg,getDATA,receiveMSG,deleteMSG,teste,wnac,wnac2]
+rules = [sendMsg,getDATA,receiveMSG,deleteMSG,teste,wnac,wnac2,testeCreate]
 --rules = [receiveMSG,teste]
 --rules = [sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG]
 --10.7s
@@ -197,6 +216,13 @@ m2X = dpo (inverseGR sendMsg) m'X -- entra (R -> G') sai (L -> G)
 m1X = head (matches (M.codomain (left sendMsg)) (M.domain m2X) FREE)
 --t = satsGluingCondBoth (sendMsg,m1X) (sendMsg,m2X)
 
+---------
+cps = criticalPairs2 getDATA sendMsg
+cp0 = cps!!0
+l = left sendMsg
+r = TGM.inverseTGM (right sendMsg)
+deleted = M.compose l (m2 cp0)
+created = M.compose r deleted
 ---------
 
 ma  = matrix (length rules) (length rules) (\y -> fst $ countCP (rules!!((fst y)-1)) (rules!!((snd y)-1)))

@@ -4,6 +4,11 @@ module CriticalPairs.CriticalPairsTeste
    --CriticalPair2 (..),
    criticalPairs2,
    countCP2,
+   create,
+   creatNodes,
+   creatNods,
+   creatEdges,
+   creatEdgs
    )
     where
 
@@ -126,17 +131,22 @@ actE a (x:xs) n = actE newTGM xs (n+1)
         newTGM = TGM.typedMorphism (M.domain a) newCod (GM.updateEdges x newId (GM.updateCodomain newCodGraph (TGM.mapping a)))-}
 
 produceForbid :: GraphRule a b -> GraphRule a b -> (TGM.TypedGraphMorphism a b,TGM.TypedGraphMorphism a b) -> Bool
-produceForbid l r (m1,m2) = if Prelude.null (nacs r) then False else satsGluingCondBoth (l,m1') (r,m2')
+produceForbid l r (m1,m2) = if Prelude.null (nacs r) || Prelude.null m1' then False else exp
     where
         graphEqClass = map (\x -> GP.genEqClass (mixTGM x (right l))) (nacs r)
         --g' = mountTGM l "Left" (head $ head graphEqClass)
         m' = mountTGM (right l) "Right" (last $ head graphEqClass)
+        ms' = map (mountTGM (right l) "Right") (concat graphEqClass)
         m2' = dpo (inverseGR l) m' -- entra (R -> G') sai (L -> G)
-        matchs = MT.matches (M.codomain (left r)) (M.domain m2') MT.FREE --só pra nao dar empty list
-        m1' = head (if Prelude.null matchs then MT.matches (M.domain m2') (M.domain m2') MT.FREE else matchs)
+        m2s' = map (dpo (inverseGR l)) ms' -- entra (R -> G') sai (L -> G)
+        matchs = MT.matches (M.codomain (left r)) (M.codomain m2') MT.FREE --só pra nao dar empty list
+        matchss = map (\x -> MT.matches (M.codomain (left r)) (M.codomain x) MT.FREE) m2s' --só pra nao dar empty list
+        m1' = matchs-- head (if Prelude.null matchs then MT.matches (M.domain m2') (M.domain m2') MT.FREE else matchs)
+        m1s' = matchss-- head (if Prelude.null matchs then MT.matches (M.domain m2') (M.domain m2') MT.FREE else matchs)
+        exp = True `elem` (map (\x -> satsGluingCondBoth (l,x) (r,m2'))) (concat m1s')
 
 dpo :: GraphRule a b -> TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b
-dpo rule m = M.compose (left rule) m
+dpo rule m = create rule m
 
 satsGluingCondBoth :: (GraphRule a b, TGM.TypedGraphMorphism a b) ->
                       (GraphRule a b, TGM.TypedGraphMorphism a b) ->
@@ -203,3 +213,50 @@ satOneNac rule m nac = True `notElem` checkCompose
       matches = MT.matches typeNac typeG MT.FREE
       typeNac = M.codomain nac
       typeG   = M.codomain m
+
+--------------
+
+create rule m = creatEdgs (creatNods created 2000) 2010
+    where
+        l = left rule
+        r = TGM.inverseTGM (right rule)
+        deleted = M.compose l m
+        created = M.compose r deleted
+
+creatEdgs :: TGM.TypedGraphMorphism a b -> Int -> TGM.TypedGraphMorphism a b
+creatEdgs m n = if indefEdges == [] then m else creatEdgs (fst pair) (snd pair)
+    where
+        pair = creatEdges m n (head indefEdges)
+        g = M.domain (M.domain m)
+        indefEdges = filter (\x -> GM.applyEdge (TGM.mapping m) x == Nothing) (edges g)
+
+creatEdges :: TGM.TypedGraphMorphism a b -> Int -> EdgeId -> (TGM.TypedGraphMorphism a b, Int)
+creatEdges m n nod = (TGM.typedMorphism (M.domain m) typedG mapG, n+1)
+    where
+        (Just typ) = GM.applyEdge (M.domain m) nod
+        (Just src) = sourceOf (M.domain (M.domain m)) nod
+        (Just srcInG) = GM.applyNode (TGM.mapping m) src
+        (Just tgt) = targetOf (M.domain (M.domain m)) nod
+        (Just tgtInG) = GM.applyNode (TGM.mapping m) tgt
+        updateGraphG = insertEdge (EdgeId n) srcInG tgtInG (M.domain (M.codomain m))
+        updateTypeG = GM.updateDomain updateGraphG (M.codomain m)
+        typedG = GM.updateEdges (EdgeId n) typ updateTypeG
+        updateGraphG2 = GM.updateCodomain updateGraphG (TGM.mapping m)
+        mapG = GM.updateEdges nod (EdgeId n) updateGraphG2
+
+creatNods :: TGM.TypedGraphMorphism a b -> Int -> TGM.TypedGraphMorphism a b
+creatNods m n = if indefNodes == [] then m else creatNods (fst pair) (snd pair)
+    where
+        pair = creatNodes m n (head indefNodes)
+        g = M.domain (M.domain m)
+        indefNodes = filter (\x -> GM.applyNode (TGM.mapping m) x == Nothing) (nodes g)
+
+creatNodes :: TGM.TypedGraphMorphism a b -> Int -> NodeId -> (TGM.TypedGraphMorphism a b, Int)
+creatNodes m n nod = (TGM.typedMorphism (M.domain m) typedG mapG, n+1)
+    where
+        (Just typ) = GM.applyNode (M.domain m) nod
+        updateGraphG = insertNode (NodeId n) (M.domain (M.codomain m))
+        updateTypeG = GM.updateDomain updateGraphG (M.codomain m)
+        typedG = GM.updateNodes (NodeId n) typ updateTypeG
+        updateGraphG2 = GM.updateCodomain updateGraphG (TGM.mapping m)
+        mapG = GM.updateNodes nod (NodeId n) updateGraphG2
