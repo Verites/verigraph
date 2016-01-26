@@ -4,33 +4,24 @@
 --FIXME hERANÇA
 module XML.GTXLReader where
 
+import qualified Abstract.Morphism                as M
 import           Abstract.Valid
 import           CriticalPairs.CriticalPairsTeste
 import           Data.Hashable
 import           Data.Matrix
 import           Data.String.Utils
-import qualified Graph.Graph as G
-import qualified Graph.GraphMorphism as GM
-import qualified Graph.TypedGraphMorphism as TGM
-import qualified Abstract.Morphism as M
-import qualified Graph.GraphRule as GR
+import           Data.Tree.NTree.TypeDefs
+import qualified Graph.Graph                      as G
+import qualified Graph.GraphMorphism              as GM
+import qualified Graph.GraphRule                  as GR
+import qualified Graph.TypedGraphMorphism         as TGM
+import           XML.ParsedTypes
 import           System.Environment
 import           Text.XML.HXT.Core
 import           XML.XMLUtilities
-import           Data.Tree.NTree.TypeDefs
 
 isTypeGraph :: String -> Bool
 isTypeGraph = ("TypeGraph" ==)
-
-type ParsedNode = String -- NodeId
-type ParsedTypedNode = (String, String) -- (NodeId, NodeType)
-type ParsedEdge = (String, String, String)
-type ParsedTypedEdge = (String, String, String, String)
-type ParsedGraph = (String, [ParsedNode], [ParsedEdge])
-type ParsedTypedGraph = (String, [ParsedTypedNode], [ParsedTypedEdge])
-type ParsedRule = (String, String, ParsedTypedGraph,
-                   ([ParsedTypedNode], [ParsedTypedEdge]),
-                   ([ParsedTypedNode], [ParsedTypedEdge]))
 
 parseTypeGraphs :: ArrowXml cat => cat (NTree XNode) ParsedGraph
 parseTypeGraphs = atTag "graph" >>>
@@ -57,14 +48,15 @@ parseGraph = atTag "graph" >>>
 parseRule :: ArrowXml cat => cat (NTree XNode) ParsedRule
 parseRule = atTag "rule" >>>
   proc rule -> do
-    ruleId <- getAttrValue "id" -< rule
-    ruleName <- getAttrValue "name" -< rule
-    preservedGraph <- parseGraph <<< atTag "preserved" -< rule
-    nodesDeleted <- listA parseTypedNode <<< atTag "deleted" -< rule
-    edgesDeleted <- listA parseTypedEdge <<< atTag "deleted" -< rule
-    nodesCreated <- listA parseTypedNode <<< atTag "created" -< rule
-    edgesCreated <- listA parseTypedEdge <<< atTag "created" -< rule
-    returnA -< (ruleId, ruleName, preservedGraph, (nodesDeleted, edgesDeleted), (nodesCreated, edgesCreated))
+    ruleId          <- getAttrValue "id"                        -< rule
+    ruleName        <- getAttrValue "name"                      -< rule
+    preservedGraph  <- parseGraph <<< atTag "preserved"         -< rule
+    nodesDeleted    <- listA parseTypedNode <<< atTag "deleted" -< rule
+    edgesDeleted    <- listA parseTypedEdge <<< atTag "deleted" -< rule
+    nodesCreated    <- listA parseTypedNode <<< atTag "created" -< rule
+    edgesCreated    <- listA parseTypedEdge <<< atTag "created" -< rule
+    nacs            <- listA parseNAC                           -< rule
+    returnA -< (ruleId, ruleName, preservedGraph, (nodesDeleted, edgesDeleted), (nodesCreated, edgesCreated), nacs)
 
 parseNode :: ArrowXml cat => cat (NTree XNode) ParsedNode
 parseNode = atTag "node" >>>
@@ -102,6 +94,17 @@ parseType = atTag "type" >>>
     t <- getAttrValue "xlink:href" -< t
     returnA -< clearEdgeId $ clearNodeId t
 
+parseNAC :: ArrowXml cat => cat(NTree XNode) ParsedNAC
+parseNAC = atTag "precondition" >>> atTag "condition" >>> atTag "graphCondition" >>>
+  proc gc -> do
+  name  <- isA isNac <<< getAttrValue "name"  -< gc
+  nodes <- listA parseTypedNode               -< gc
+  edges <- listA parseTypedEdge               -< gc
+  returnA -< (nodes, edges)
+
+isNac :: String -> Bool
+isNac = ("Nac" == )
+
 clearNodeId :: String -> String
 clearNodeId = replace "%:RECT:java.awt.Color[r=0,g=0,b=0]:[NODE]:" "" . replace "#" ""
 
@@ -116,6 +119,9 @@ readGraphs fileName = runX (parseXML fileName >>> parseInitialGraphs)
 
 readRule :: String -> IO [ParsedRule]
 readRule fileName = runX (parseXML fileName >>> parseRule)
+
+readNac :: String -> IO [ParsedNAC]
+readNac fileName = runX (parseXML fileName >>> parseNAC)
 
 instatiateTypeGraph :: ParsedGraph -> G.Graph a b
 instatiateTypeGraph (a,b,c) = G.build nodes edges
@@ -157,20 +163,32 @@ insertNode graph (nodeId,nodeType) =
     graphWithNode = G.insertNode (G.NodeId hashId) (M.domain graph)
     graphWithNodeTyped = GM.updateDomain graphWithNode graph
 
-instatiateTypedGraphs :: G.Graph a b -> ParsedRule ->
-  ( GM.GraphMorphism a b, GM.GraphMorphism a b, GM.GraphMorphism a b)
-instatiateTypedGraphs tg (ruleId,ruleName,interfaceGraph,deletedElems,createdElems) = (l,k,r)
+instatiateTypedGraphsFromRule :: G.Graph a b -> ParsedRule ->
+  ( GM.GraphMorphism a b, GM.GraphMorphism a b, GM.GraphMorphism a b, [GM.GraphMorphism a b])
+instatiateTypedGraphsFromRule tg (ruleId,ruleName,interfaceGraph,deletedElems,createdElems,nacs) = (l,k,r,n)
   where
     k = instatiateTypedGraph interfaceGraph tg
     l = addElemsToGraph k deletedElems
     r = addElemsToGraph k createdElems
+    n = instatiateNacMorphisms l nacs
+
+instatiateNacMorphisms :: GM.GraphMorphism a b -> [ParsedNAC] -> [GM.GraphMorphism a b]
+instatiateNacMorphisms lhs = map (createNacMorphism lhs)
+
+createNacMorphism :: GM.GraphMorphism a b -> ParsedNAC -> GM.GraphMorphism a b
+createNacMorphism = addElemsToGraph
+
 
 instatiateRule :: G.Graph a b -> ParsedRule -> GR.GraphRule a b
-instatiateRule tg rule = GR.graphRule mapL mapR []
+instatiateRule tg rule = GR.graphRule mapL mapR mapNacs
   where
-    (l,k,r) = instatiateTypedGraphs tg rule
-    mapL = TGM.typedMorphism k l (mapId k l)
-    mapR = TGM.typedMorphism k r (mapId k r)
+    (l,k,r,ns) = instatiateTypedGraphsFromRule tg rule
+    mapL = instatiateTypedMorphism k l
+    mapR = instatiateTypedMorphism k r
+    mapNacs = map (instatiateTypedMorphism l) ns
+
+instatiateTypedMorphism :: GM.GraphMorphism a b -> GM.GraphMorphism a b -> TGM.TypedGraphMorphism a b
+instatiateTypedMorphism a b = TGM.typedMorphism a b (mapId a b)
 
 mapId :: GM.GraphMorphism a b -> GM.GraphMorphism a b -> GM.GraphMorphism a b
 mapId g r = edgesUpdated
@@ -184,6 +202,7 @@ mapId g r = edgesUpdated
 i1 = readTypeGraph fileName
 i2 = readGraphs fileName
 i3 = readRule fileName
+i4 = readNac fileName
 
 
 main = do
