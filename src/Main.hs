@@ -197,8 +197,8 @@ testeCreate = graphRule l8 r8 []
 
 -----
 
---rules = [sendMsg,getDATA,receiveMSG,deleteMSG]
-rules = [sendMsg,getDATA,receiveMSG,deleteMSG,teste,wnac,wnac2,testeCreate]
+rules = [sendMsg,getDATA,receiveMSG,deleteMSG]
+--rules = [sendMsg,getDATA,receiveMSG,deleteMSG,teste,wnac,wnac2,testeCreate]
 --rules = [receiveMSG,teste]
 --rules = [sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG]
 --10.7s
@@ -246,6 +246,24 @@ gg = GP.genEqClass $ mixTGM (head (nacs sendMsg)) (right sendMsg)
 
 --classes de equivalencia em formato Text
 --ggs = gind (map GP.eqGraph gg)
+
+graphEqClass = map (\x -> GP.genEqClass (mixTGM x (right getDATA))) (nacs sendMsg)
+ms = map (map (mountTGM (right getDATA) "Right")) graphEqClass
+ms' = map (filter (satsGluingCond getDATA)) ms
+m2s' = map (map (\x -> RW.dpo x (inverseGR getDATA))) ms'
+matchss = map (map (\x -> matches (M.codomain (left sendMsg)) (M.codomain x) FREE)) m2s'
+exp1 = f3 getDATA sendMsg m2s' matchss
+exp2 = True `elem` (concat exp1)
+
+k l r = exp2
+    where
+        graphEqClass = map (\x -> GP.genEqClass (mixTGM x (right l))) (nacs r)
+        ms = map (map (mountTGM (right l) "Right")) graphEqClass
+        ms' = map (filter (satsGluingCond l)) ms
+        m2s' = map (map (\x -> RW.dpo x (inverseGR l))) ms'
+        matchss = map (map (\x -> matches (M.codomain (left r)) (M.codomain x) FREE)) m2s'
+        exp = f3 l r m2s' matchss
+        exp2 = True `elem` (concat exp)
 
 main :: IO ()
 main =

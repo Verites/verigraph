@@ -221,8 +221,9 @@ main2 fs = do
   --print (fmap (instatiateRule tg) rules)
   let rulesVerigraph = fmap (instatiateRule tg) rules
   --print (fmap valid rulesVerigraph)
-  let cps = matrix (length rulesVerigraph) (length rulesVerigraph) (\y -> fst $ countCP2 (rulesVerigraph!!((fst y)-1)) (rulesVerigraph!!((snd y)-1)))
-  print cps
-  let cps2 = matrix (length rulesVerigraph) (length rulesVerigraph) (\y -> snd $ countCP2 (rulesVerigraph!!((fst y)-1)) (rulesVerigraph!!((snd y)-1)))
-  print cps2
+  print (head rulesVerigraph)
+  --let cps = matrix (length rulesVerigraph) (length rulesVerigraph) (\(x,y) -> fst $ countCP2 (rulesVerigraph!!(x-1)) (rulesVerigraph!!(y-1)))
+  --print cps
+  --let cps2 = matrix (length rulesVerigraph) (length rulesVerigraph) (\(x,y) -> snd $ countCP2 (rulesVerigraph!!(x-1)) (rulesVerigraph!!(y-1)))
+  --print cps2
   return ()

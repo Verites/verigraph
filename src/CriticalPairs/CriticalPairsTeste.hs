@@ -4,7 +4,11 @@ module CriticalPairs.CriticalPairsTeste
    --CriticalPair2 (..),
    criticalPairs2,
    countCP2,
-   satsGluingCondBoth
+   satsGluingCondBoth,
+   satsGluingCond,
+   f1,
+   f2,
+   f3
    )
     where
 
@@ -87,61 +91,33 @@ useDeleteAux l m1 m2 apply dom cod = map (\x -> delByLeft x && isInMatchRight x)
         delByLeft = ruleDeletes l m1 apply dom
         isInMatchRight n = apply (GM.inverse $ TGM.mapping m2) n /= Nothing
 
-{-produceEdgeDeleteNode :: GraphRule a b -> GraphRule a b -> (TGM.TypedGraphMorphism a b,TGM.TypedGraphMorphism a b) -> Bool
-produceEdgeDeleteNode l r (m1,m2) = satsGluingCond r (compl nvMB)
-    where
-        kToG = M.compose (left l) m1
-        gToK = TGM.typedMorphism (M.codomain kToG) (M.domain kToG) (GM.inverse (TGM.mapping kToG))
-        gToR = M.compose gToK (right l)
-        rToG = TGM.typedMorphism (M.codomain gToR) (M.domain gToR) (GM.inverse (TGM.mapping gToR))
-        nvMB = M.compose m2 gToR
-
-compl :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b
-compl a = actE (actN a ap 1500) ab 1750
-    where
-        mp = TGM.mapping a
-        ap = filter (\x -> GM.applyNode mp x == Nothing) (nodes (M.domain mp))
-        ab = filter (\x -> GM.applyEdge mp x == Nothing) (edges (M.domain mp))
-
-actN :: TGM.TypedGraphMorphism a b -> [NodeId] -> Int -> TGM.TypedGraphMorphism a b
-actN a [] _ = a
-actN a (x:xs) n = actN newTGM xs (n+1)
-    where
-        newId = NodeId n
-        typId = fromJust (GM.applyNode (M.domain a) x)
-        oldCod = M.codomain a
-        oldCodGraph = M.domain oldCod
-        newCodGraph = insertNode newId oldCodGraph
-        newCod = GM.updateNodes newId typId (GM.updateDomain newCodGraph oldCod)
-        newTGM = TGM.typedMorphism (M.domain a) newCod (GM.updateNodes x newId (GM.updateCodomain newCodGraph (TGM.mapping a)))
-
-actE :: TGM.TypedGraphMorphism a b -> [EdgeId] -> Int -> TGM.TypedGraphMorphism a b
-actE a [] _ = a
-actE a (x:xs) n = actE newTGM xs (n+1)
-    where
-        newId = EdgeId n
-        typId = fromJust (GM.applyEdge (M.domain a) x)
-        oldCod = M.codomain a
-        oldCodGraph = M.domain oldCod
-        newCodGraph = insertEdge newId (NodeId 1) (NodeId 1) oldCodGraph
-        newCod = GM.updateEdges newId typId (GM.updateDomain newCodGraph oldCod)
-        newTGM = TGM.typedMorphism (M.domain a) newCod (GM.updateEdges x newId (GM.updateCodomain newCodGraph (TGM.mapping a)))-}
-
 produceForbid :: GraphRule a b -> GraphRule a b -> (TGM.TypedGraphMorphism a b,TGM.TypedGraphMorphism a b) -> Bool
 produceForbid l r (m1,m2) = if Prelude.null (nacs r) then False else exp2
     where
         graphEqClass = map (\x -> GP.genEqClass (mixTGM x (right l))) (nacs r)
-        --m' = mountTGM (right l) "Right" (last $ head graphEqClass)
-        ms' = map (mountTGM (right l) "Right") (concat graphEqClass)
-        --m2' = RW.dpo m' (inverseGR l) -- entra (R -> G') sai (L -> G)
-        --filtrar sats
-        m2s' = map (\x -> RW.dpo x (inverseGR l)) ms'
-        --matchs = MT.matches (M.codomain (left r)) (M.codomain m2') MT.FREE --só pra nao dar empty list
-        matchss = map (\x -> MT.matches (M.codomain (left r)) (M.codomain x) MT.FREE) m2s'
-        --m1' = matchs-- head (if Prelude.null matchs then MT.matches (M.domain m2') (M.domain m2') MT.FREE else matchs)
-        --m1s' = matchss
-        exp = map (map (\x -> map (\y -> satsGluingCondBoth (r,x) (l,y)) m2s')) matchss
-        exp2 = True `elem` (concat (concat exp))
+        ms = map (map (mountTGM (right l) "Right")) graphEqClass
+        ms' = map (filter (satsGluingCond l)) ms
+        m2s' = map (map (\x -> RW.dpo x (inverseGR l))) ms'
+        matchss = map (map (\x -> MT.matches (M.codomain (left r)) (M.codomain x) MT.FREE)) m2s'
+        exp = f3 l r m2s' matchss
+        exp2 = True `elem` (concat exp)
+
+f1 l = (\x -> True `elem` (map (satsGluingCond l) x))
+
+f2 :: GraphRule a b -> GraphRule a b -> [TGM.TypedGraphMorphism a b] -> [[TGM.TypedGraphMorphism a b]] -> [Bool]
+f2 l r x y =
+    do
+        a <- x
+        b <- y
+        c <- b
+        return (satsGluingCondBoth (l,a) (r,c))
+
+f3 :: GraphRule a b -> GraphRule a b -> [[TGM.TypedGraphMorphism a b]] -> [[[TGM.TypedGraphMorphism a b]]] -> [[Bool]]
+f3 l r x y =
+    do
+        a <- x
+        b <- y
+        return (f2 l r a b)
 
 satsGluingCondBoth :: (GraphRule a b, TGM.TypedGraphMorphism a b) ->
                       (GraphRule a b, TGM.TypedGraphMorphism a b) ->
