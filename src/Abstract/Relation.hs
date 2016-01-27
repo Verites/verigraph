@@ -2,7 +2,7 @@
 
 module Abstract.Relation (
     -- * Types
-      Relation
+      Relation(..)
     -- * Construction
     , empty
     -- * Transformation

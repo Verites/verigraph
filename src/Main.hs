@@ -6,6 +6,7 @@ import qualified CriticalPairs.GraphPart as GP
 import Graph.Graph
 import qualified Graph.GraphMorphism as GM
 import qualified Graph.TypedGraphMorphism as TGM
+import qualified Graph.Rewriting as RW
 import Graph.GraphRule
 import System.Process
 import System.Environment

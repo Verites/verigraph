@@ -8,7 +8,7 @@ module Graph.TypedGraphMorphism (
     , edgesCodomain
     , mapping
     , typedMorphism
-    , TypedGraphMorphism
+    , TypedGraphMorphism(..)
 ) where
 
 import Graph.Graph (Graph,nodes,edges)
@@ -27,11 +27,11 @@ mapping = getMapping
 
 inverseTGM x = typedMorphism (M.codomain x) (M.domain x) (inverse (mapping x))
 
-nodesDomain x = nodes (M.domain (getDomain x))
-edgesDomain x = edges (M.domain (getDomain x))
+nodesDomain x = nodes (M.domain (Graph.TypedGraphMorphism.getDomain x))
+edgesDomain x = edges (M.domain (Graph.TypedGraphMorphism.getDomain x))
 
-nodesCodomain x = nodes (M.domain (getCodomain x))
-edgesCodomain x = edges (M.domain (getCodomain x))
+nodesCodomain x = nodes (M.domain (Graph.TypedGraphMorphism.getCodomain x))
+edgesCodomain x = edges (M.domain (Graph.TypedGraphMorphism.getCodomain x))
 
 instance Eq (TypedGraphMorphism a b) where
     (TypedGraphMorphism dom1 cod1 m1) == (TypedGraphMorphism dom2 cod2 m2) =
@@ -42,8 +42,8 @@ instance Eq (TypedGraphMorphism a b) where
 instance Morphism (TypedGraphMorphism a b) where
     type Obj (TypedGraphMorphism a b) = GraphMorphism a b
 
-    domain = getDomain
-    codomain = getCodomain
+    domain = Graph.TypedGraphMorphism.getDomain
+    codomain = Graph.TypedGraphMorphism.getCodomain
     compose t1 t2 =
         TypedGraphMorphism (domain t1)
                       (codomain t2)

@@ -3,7 +3,8 @@ module CriticalPairs.CriticalPairsTeste
    --CP2 (..),
    --CriticalPair2 (..),
    criticalPairs2,
-   countCP2
+   countCP2,
+   satsGluingCondBoth
    )
     where
 
@@ -11,6 +12,7 @@ import Graph.GraphRule
 import qualified CriticalPairs.GraphPart as GP
 import qualified Graph.GraphMorphism as GM
 import qualified Graph.TypedGraphMorphism as TGM
+import qualified Graph.Rewriting as RW
 import qualified Abstract.Relation as R
 import qualified Abstract.Morphism as M
 import qualified CriticalPairs.Deletion as D
@@ -126,21 +128,20 @@ actE a (x:xs) n = actE newTGM xs (n+1)
         newTGM = TGM.typedMorphism (M.domain a) newCod (GM.updateEdges x newId (GM.updateCodomain newCodGraph (TGM.mapping a)))-}
 
 produceForbid :: GraphRule a b -> GraphRule a b -> (TGM.TypedGraphMorphism a b,TGM.TypedGraphMorphism a b) -> Bool
-produceForbid l r (m1,m2) = if Prelude.null (nacs r) then False else exp
+produceForbid l r (m1,m2) = if Prelude.null (nacs r) then False else exp2
     where
         graphEqClass = map (\x -> GP.genEqClass (mixTGM x (right l))) (nacs r)
-        --g' = mountTGM l "Left" (head $ head graphEqClass)
-        m' = mountTGM (right l) "Right" (last $ head graphEqClass)
+        --m' = mountTGM (right l) "Right" (last $ head graphEqClass)
         ms' = map (mountTGM (right l) "Right") (concat graphEqClass)
-        m2' = dpo (inverseGR l) m' -- entra (R -> G') sai (L -> G)
-        m2s' = map (dpo (inverseGR l)) ms' -- entra (R -> G') sai (L -> G)
-        matchs = MT.matches (M.codomain (left r)) (M.codomain m2') MT.FREE --só pra nao dar empty list
-        matchss = map (\x -> MT.matches (M.codomain (left r)) (M.codomain x) MT.FREE) m2s' --só pra nao dar empty list
-        m1' = matchs-- head (if Prelude.null matchs then MT.matches (M.domain m2') (M.domain m2') MT.FREE else matchs)
-        m1s' = matchss-- head (if Prelude.null matchs then MT.matches (M.domain m2') (M.domain m2') MT.FREE else matchs)
-        exp = True `elem` (map (\x -> satsGluingCondBoth (l,x) (r,m2'))) (concat m1s')
-
-dpo rule m = m
+        --m2' = RW.dpo m' (inverseGR l) -- entra (R -> G') sai (L -> G)
+        --filtrar sats
+        m2s' = map (\x -> RW.dpo x (inverseGR l)) ms'
+        --matchs = MT.matches (M.codomain (left r)) (M.codomain m2') MT.FREE --só pra nao dar empty list
+        matchss = map (\x -> MT.matches (M.codomain (left r)) (M.codomain x) MT.FREE) m2s'
+        --m1' = matchs-- head (if Prelude.null matchs then MT.matches (M.domain m2') (M.domain m2') MT.FREE else matchs)
+        --m1s' = matchss
+        exp = map (map (\x -> map (\y -> satsGluingCondBoth (r,x) (l,y)) m2s')) matchss
+        exp2 = True `elem` (concat (concat exp))
 
 satsGluingCondBoth :: (GraphRule a b, TGM.TypedGraphMorphism a b) ->
                       (GraphRule a b, TGM.TypedGraphMorphism a b) ->

@@ -2,7 +2,7 @@
 
 module Graph.GraphMorphism (
     -- * Types
-      GraphMorphism
+      GraphMorphism(..)
     , TypedGraph
     -- * Construction
     , Graph.GraphMorphism.empty

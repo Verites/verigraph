@@ -5,7 +5,7 @@ module Graph.Graph (
     , EdgeId (..)
     , Node
     , NodeId (..)
-    , Graph
+    , Graph(..)
 
     -- * Construction
     , empty
