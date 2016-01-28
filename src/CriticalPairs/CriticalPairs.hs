@@ -93,28 +93,35 @@ useDeleteAux l m1 m2 apply dom cod = map (\x -> delByLeft x && isInMatchRight x)
 ------------------------------------------------------------------------
 
 allProduceForbid :: GraphRule a b -> GraphRule a b -> [CriticalPair a b]
-allProduceForbid l r = if Prelude.null (nacs r) then [] else allProduceForbidAux l r ms
+allProduceForbid l r = if Prelude.null (nacs r) then [] else allProduceForbidAux l r pairs
     where
-        graphEqClass = map (\x -> GP.genEqClass (mixTGM x (right l))) (nacs r)
-        ms = map (map (mountTGM (right l) "Right")) graphEqClass
+        pairs = concat (map (createPairs l) (nacs r))
+
+createPairs :: GraphRule a b
+     -> TGM.TypedGraphMorphism a b
+     -> [(TGM.TypedGraphMorphism a b, TGM.TypedGraphMorphism a b)]
+createPairs l r = map (\x -> mountTGMBoth (right l) r x) g
+    where
+        g = GP.genEqClass (mixTGM (right l) r)
 
 allProduceForbidAux :: GraphRule a b -> GraphRule a b
-                -> [[TGM.TypedGraphMorphism a b]]
-                -> [CriticalPair a b]
-allProduceForbidAux l r []           = []
-allProduceForbidAux l r (ms:xs) = (concat (isProduceForbid l r ms)) ++ (allProduceForbidAux l r xs)
+     -> [(TGM.TypedGraphMorphism a b, TGM.TypedGraphMorphism a b)]
+     -> [CriticalPair a b]
+allProduceForbidAux l r []          = []
+allProduceForbidAux l r ((ms,_):xs) = isProduceForbid ++ (allProduceForbidAux l r xs)
     where
-        filtered = filter (satsGluingCond (inverseGR l)) ms
-        isProduceForbid l r ms = (map (produceForbid l r) filtered)
+        gluing = satsGluingCond (inverseGR l) ms
+        isProduceForbid = if gluing then produceForbid l r ms else []
 
-produceForbid :: GraphRule a b -> GraphRule a b -> TGM.TypedGraphMorphism a b -> [CriticalPair a b]
-produceForbid l r m' = if exp then [newCP] else []
+produceForbid :: GraphRule a b -> GraphRule a b
+     -> TGM.TypedGraphMorphism a b
+     -> [CriticalPair a b]
+produceForbid l r m' = newCP
     where
         m = RW.dpo m' (inverseGR l)
         matches = MT.matches (M.codomain (left r)) (M.codomain m) MT.FREE
         filtered = filter (\x -> satsGluingCondBoth (l,m) (r,x)) matches
-        exp = not (Prelude.null filtered)
-        newCP = CriticalPair m (head filtered) ProduceForbid
+        newCP = map (\x -> CriticalPair m x ProduceForbid) filtered
 
 ------------------------------------------------------------------------
 
