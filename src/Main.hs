@@ -1,7 +1,7 @@
 import CriticalPairs.VeriToGP
 --import CriticalPairs.GPToJPG
 import CriticalPairs.CriticalPairs
-import CriticalPairs.CriticalPairsTeste
+--import CriticalPairs.CriticalPairsTeste
 import qualified CriticalPairs.GraphPart as GP
 import Graph.Graph
 import qualified Graph.GraphMorphism as GM
@@ -197,14 +197,14 @@ testeCreate = graphRule l8 r8 []
 
 -----
 
-rules = [sendMsg,getDATA,receiveMSG,deleteMSG]
---rules = [sendMsg,getDATA,receiveMSG,deleteMSG,teste,wnac,wnac2,testeCreate]
+--rules = [sendMsg,getDATA,receiveMSG,deleteMSG]
+rules = [sendMsg,getDATA,receiveMSG,deleteMSG,teste,wnac,wnac2,testeCreate]
 --rules = [receiveMSG,teste]
 --rules = [sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG]
 --10.7s
 --15s -- 28s
 
-cpRT = criticalPairs2 receiveMSG teste
+cpRT = criticalPairs receiveMSG teste
 mA = m1 (cpRT!!1)
 mB = m2 (cpRT!!1)
 kToG = M.compose (left receiveMSG) mA
@@ -213,16 +213,8 @@ gToR = M.compose gToK (right receiveMSG)
 rToG = TGM.typedMorphism (M.codomain gToR) (M.domain gToR) (GM.inverse (TGM.mapping gToR))
 nvMB = M.compose mB gToR
 
-----
-
-gX = map (\x -> GP.genEqClass (mixTGM x (right sendMsg))) (nacs sendMsg)
-m'X = mountTGM (right sendMsg) "Right" (last $ head gX)
-m2X = dpo (inverseGR sendMsg) m'X -- entra (R -> G') sai (L -> G)
-m1X = head (matches (M.codomain (left sendMsg)) (M.domain m2X) FREE)
---t = satsGluingCondBoth (sendMsg,m1X) (sendMsg,m2X)
-
 ---------
-cps = criticalPairs2 getDATA sendMsg
+cps = criticalPairs getDATA sendMsg
 cp0 = cps!!0
 l = left sendMsg
 r = TGM.inverseTGM (right sendMsg)
@@ -230,10 +222,13 @@ deleted = M.compose l (m2 cp0)
 created = M.compose r deleted
 ---------
 
-ma  = matrix (length rules) (length rules) (\y -> fst $ countCP (rules!!((fst y)-1)) (rules!!((snd y)-1)))
-mb  = matrix (length rules) (length rules) (\y -> fst $ countCP2 (rules!!((fst y)-1)) (rules!!((snd y)-1)))
-mpfa = matrix (length rules) (length rules) (\y -> snd $ countCP (rules!!((fst y)-1)) (rules!!((snd y)-1)))
-mpfb = matrix (length rules) (length rules) (\y -> snd $ countCP2 (rules!!((fst y)-1)) (rules!!((snd y)-1)))
+ms = map (map (mountTGM (right getDATA) "Right")) (map(\x -> GP.genEqClass (mixTGM x (right getDATA))) (nacs sendMsg))
+
+
+m  = matrix (length rules) (length rules) (\y -> fst $ countCP (rules!!((fst y)-1)) (rules!!((snd y)-1)))
+--mb  = matrix (length rules) (length rules) (\y -> fst $ countCP2 (rules!!((fst y)-1)) (rules!!((snd y)-1)))
+mpf = matrix (length rules) (length rules) (\y -> snd $ countCP (rules!!((fst y)-1)) (rules!!((snd y)-1)))
+--mpfb = matrix (length rules) (length rules) (\y -> snd $ countCP2 (rules!!((fst y)-1)) (rules!!((snd y)-1)))
 
 --ma2  = matrix (length rules) (length rules) (\y -> criticalPairs  (rules!!((fst y)-1)) (rules!!((snd y)-1)))
 --mb2  = matrix (length rules) (length rules) (\y -> criticalPairs2 (rules!!((fst y)-1)) (rules!!((snd y)-1)))
@@ -247,26 +242,8 @@ gg = GP.genEqClass $ mixTGM (head (nacs sendMsg)) (right sendMsg)
 --classes de equivalencia em formato Text
 --ggs = gind (map GP.eqGraph gg)
 
-graphEqClass = map (\x -> GP.genEqClass (mixTGM x (right getDATA))) (nacs sendMsg)
-ms = map (map (mountTGM (right getDATA) "Right")) graphEqClass
-ms' = map (filter (satsGluingCond getDATA)) ms
-m2s' = map (map (\x -> RW.dpo x (inverseGR getDATA))) ms'
-matchss = map (map (\x -> matches (M.codomain (left sendMsg)) (M.codomain x) FREE)) m2s'
-exp1 = f3 getDATA sendMsg m2s' matchss
-exp2 = True `elem` (concat exp1)
-
-k l r = exp2
-    where
-        graphEqClass = map (\x -> GP.genEqClass (mixTGM x (right l))) (nacs r)
-        ms = map (map (mountTGM (right l) "Right")) graphEqClass
-        ms' = map (filter (satsGluingCond l)) ms
-        m2s' = map (map (\x -> RW.dpo x (inverseGR l))) ms'
-        matchss = map (map (\x -> matches (M.codomain (left r)) (M.codomain x) FREE)) m2s'
-        exp = f3 l r m2s' matchss
-        exp2 = True `elem` (concat exp)
-
 main :: IO ()
-main =
+main = f2{-
    do
       --f ((length ggs)-1)
       args <- getArgs
@@ -276,13 +253,14 @@ main =
       return ()
 
 parse [] = error "Passe um arquivo, por favor"
-parse fs = XML.main2 $ head fs
+parse fs = XML.main2 $ head fs-}
 
 --apaga os .dot
-{-f2 =
+f2 =
    do
-      writeFile ("m.txt") ((show (length rules)) ++ "\n" ++ (show ma))
-      return ()-}
+      writeFile ("m.txt") ((show (length rules)) ++ "\n" ++ (show m))
+      writeFile ("mpf.txt") ((show (length rules)) ++ "\n" ++ (show mpf))
+      return ()
 
 --cria os .dot e os .jpg
 {-f 0 =

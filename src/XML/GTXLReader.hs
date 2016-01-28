@@ -6,7 +6,7 @@ module XML.GTXLReader where
 
 import qualified Abstract.Morphism                as M
 import           Abstract.Valid
-import           CriticalPairs.CriticalPairsTeste
+import           CriticalPairs.CriticalPairs
 import           Data.Hashable
 import           Data.Matrix
 import           Data.String.Utils
@@ -222,8 +222,8 @@ main2 fs = do
   let rulesVerigraph = fmap (instatiateRule tg) rules
   --print (fmap valid rulesVerigraph)
   print (head rulesVerigraph)
-  --let cps = matrix (length rulesVerigraph) (length rulesVerigraph) (\(x,y) -> fst $ countCP2 (rulesVerigraph!!(x-1)) (rulesVerigraph!!(y-1)))
+  --let cps = matrix (length rulesVerigraph) (length rulesVerigraph) (\(x,y) -> fst $ countCP (rulesVerigraph!!(x-1)) (rulesVerigraph!!(y-1)))
   --print cps
-  --let cps2 = matrix (length rulesVerigraph) (length rulesVerigraph) (\(x,y) -> snd $ countCP2 (rulesVerigraph!!(x-1)) (rulesVerigraph!!(y-1)))
+  --let cps2 = matrix (length rulesVerigraph) (length rulesVerigraph) (\(x,y) -> snd $ countCP (rulesVerigraph!!(x-1)) (rulesVerigraph!!(y-1)))
   --print cps2
   return ()
