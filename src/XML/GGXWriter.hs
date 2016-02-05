@@ -1,7 +1,7 @@
 module XML.GGXWriter where
 
-import           XML.ParsedTypes
 import           Text.XML.HXT.Core
+import           XML.ParsedTypes
 
 writeRoot :: ArrowXml a => a XmlTree XmlTree -> a XmlTree XmlTree
 writeRoot makebody = mkelem "Document" [sattr "version" "1.0"] [ makebody ]
@@ -147,6 +147,23 @@ writeMappings = map writeMapping
 
 writeMapping :: ArrowXml a => (String, String) -> a XmlTree XmlTree
 writeMapping (image, orig) = mkelem "Mapping" [sattr "image" image, sattr "orig" orig] []
+
+writeRule :: ArrowXml a => String -> a XmlTree XmlTree
+writeRule ruleName = mkelem "Rule"
+                      [sattr "ID" "IDRULE", sattr "formula" "true", sattr "name" ruleName]
+                      [writeLHS, writeRHS, writeMapping, writeApplicationCondition]
+
+writeLHS :: ArrowXml a => a XmlTree XmlTree
+writeLHS = mkelem "Graph" [] []
+
+writeRHS :: ArrowXml a => a XmlTree XmlTree
+writeRHS = mkelem "Graph" [] []
+
+writeMapping :: ArrowXml a => a XmlTree XmlTree
+writeMapping = mkelem "Morphism" [] []
+
+writeApplicationCondition :: ArrowXml a => a XmlTree XmlTree
+writeApplicationCondition = mkelem "Graph" [] []
 
 writeMain :: ArrowXml a => a XmlTree XmlTree
 writeMain = writeRoot writeGts
