@@ -187,6 +187,6 @@ satOneNac :: GraphRule a b -> TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphi
 satOneNac rule m nac = True `notElem` checkCompose
    where
       checkCompose = map (\x -> (M.compose nac x) == m) matches
-      matches = MT.matches typeNac typeG MT.FREE
+      matches = MT.matches typeNac typeG MT.INJ
       typeNac = M.codomain nac
       typeG   = M.codomain m
