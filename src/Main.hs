@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeFamilies #-}
+
 import CriticalPairs.VeriToGP
 --import CriticalPairs.GPToJPG
 import CriticalPairs.CriticalPairs
@@ -204,7 +206,7 @@ rules = [sendMsg,getDATA,receiveMSG,deleteMSG,teste,wnac,wnac2,testeCreate]
 --10.7s
 --15s -- 28s
 
-cpRT = criticalPairs receiveMSG teste
+{-cpRT = criticalPairs receiveMSG teste
 mA = m1 (cpRT!!1)
 mB = m2 (cpRT!!1)
 kToG = M.compose (left receiveMSG) mA
@@ -220,12 +222,38 @@ l = left sendMsg
 r = TGM.inverseTGM (right sendMsg)
 deleted = M.compose l (m2 cp0)
 created = M.compose r deleted
----------
+---------}
+
+n1 = head (nacs wnac)
+pairs = createPairs testeCreate n1
+xp1 = filter (\x -> satsGluingCond (inverseGR testeCreate) (snd x)) pairs
+mm2 = map (\x -> RW.dpo (snd x) (inverseGR testeCreate)) xp1
+mm2b = filter (satsNacs testeCreate) mm2--testar nacs testeCreate
+d = RW.poc (snd (head pairs)) (left (inverseGR testeCreate))
+mm1 = map (\x -> matches (M.codomain d) (M.codomain x) FREE) mm2b
+mm1b = map (filter (satsNacs sendMsg)) mm1--testar nacs sendMsg
+c x1 x2 = if satsGluingCond x1 x2 then [1] else []
+xp2 = map (map (c wnac)) mm1b
+resp = concat (concat xp2)
+
+{-pfOneNac n l r = filter (pfPair n l r) (createPairs r n)
+
+pfPair n l r (h2,q12) = if satsGluingCond (inverseGR r) q12 then pfPOC n l r pair (RW.poc h2 (left (inverseGR r))) else False
+
+pfPOC n l r pair poc = if satsNacs r po then pfH12 n l r pair poc po else False
+    where
+        po = RW.po poc (right (inverseGR r))
+
+pfH12 n l r pair poc po = if Prelude.null mats then False else True--satsGluingCond l m
+    where
+        mats = matches (M.codomain (left l)) (M.codomain po) FREE
+        m = mats!!0-}
+
+---
 
 graphEqClass = map (\x -> GP.genEqClass (mixTGM (right getDATA) x)) (nacs sendMsg)
 --md = map (\x -> (map (mountTGMBoth (right getDATA) x graphEqClass))) (nacs sendMsg)
 ms = map (map (mountTGM (right getDATA) "Right")) (map(\x -> GP.genEqClass (mixTGM x (right getDATA))) (nacs sendMsg))
-
 
 m  = matrix (length rules) (length rules) (\y -> fst $ countCP (rules!!((fst y)-1)) (rules!!((snd y)-1)))
 --mb  = matrix (length rules) (length rules) (\y -> fst $ countCP2 (rules!!((fst y)-1)) (rules!!((snd y)-1)))

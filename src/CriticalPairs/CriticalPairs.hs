@@ -91,8 +91,37 @@ useDeleteAux l m1 m2 apply dom cod = map (\x -> delByLeft x && isInMatchRight x)
         isInMatchRight n = apply (GM.inverse $ TGM.mapping m2) n /= Nothing
 
 ------------------------------------------------------------------------
+adjForAGG = True
 
 allProduceForbid :: GraphRule a b -> GraphRule a b -> [CriticalPair a b]
+allProduceForbid l r =
+    if adjForAGG
+        then concat (map (produceForbidOneNac r l) (nacs r))
+        else concat (map (produceForbidOneNac l r) (nacs l))
+
+produceForbidOneNac :: GraphRule a b -> GraphRule a b
+                    -> TGM.TypedGraphMorphism a b
+                    -> [CriticalPair a b]
+produceForbidOneNac l r n = concat (concat filtMatches)
+    where
+        pairs = createPairs r n
+        filtPairs = filter (\x -> satsGluingCond (inverseGR r) (snd x)) pairs
+        m2 = map (\(_,x) -> RW.dpo x (inverseGR r)) filtPairs
+        filtM2 = filter (satsNacs r) m2 --testar nacs testeCreate
+        --Check existence of h12 : L1 -> D2 s.t. e2 . h12 = q12 . n1 - If not existent, then abort
+        m1 = map (\x -> MT.matches (M.codomain (left l)) (M.codomain x) MT.FREE) filtM2
+        filtM1 = map (filter (satsNacs l)) m1 --testar nacs sendMsg
+        c x1 x2 = if satsGluingCond x1 x2 then [CriticalPair n n ProduceForbid] else [] --nao sei com quais morfismos criar o CP
+        filtMatches = map (map (c l)) filtM1
+
+createPairs :: GraphRule a b
+     -> TGM.TypedGraphMorphism a b
+     -> [(TGM.TypedGraphMorphism a b, TGM.TypedGraphMorphism a b)]
+createPairs r nac = map (mountTGMBoth nac (right r)) g
+    where
+        g = GP.genEqClass (mixTGM nac (right r))
+
+{-allProduceForbid :: GraphRule a b -> GraphRule a b -> [CriticalPair a b]
 allProduceForbid l r = if Prelude.null (nacs r) then [] else allProduceForbidAux l r pairs
     where
         pairs = concat (map (createPairs l) (nacs r))
@@ -121,7 +150,7 @@ produceForbid l r m' = newCP
         m = RW.dpo m' (inverseGR l)
         matches = MT.matches (M.codomain (left r)) (M.codomain m) MT.FREE
         filtered = filter (\x -> satsGluingCondBoth (l,m) (r,x)) matches
-        newCP = map (\x -> CriticalPair m x ProduceForbid) filtered
+        newCP = map (\x -> CriticalPair m x ProduceForbid) filtered-}
 
 ------------------------------------------------------------------------
 
@@ -181,10 +210,10 @@ ruleDeletes rule m apply list n = inL && (not isPreserv)
 
 {-retorna True se as NACs não impossibilitam a aplicação das regras-}
 satsNacs :: GraphRule a b -> TGM.TypedGraphMorphism a b -> Bool
-satsNacs rule m = False `notElem` (map (satOneNac rule m) (nacs rule))
+satsNacs rule m = False `notElem` (map (satsOneNac m) (nacs rule))
 
-satOneNac :: GraphRule a b -> TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b -> Bool
-satOneNac rule m nac = True `notElem` checkCompose
+satsOneNac :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b -> Bool
+satsOneNac m nac = True `notElem` checkCompose
    where
       checkCompose = map (\x -> (M.compose nac x) == m) matches
       matches = MT.matches typeNac typeG MT.INJ
