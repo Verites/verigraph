@@ -10,7 +10,7 @@ writeGts :: ArrowXml a => a XmlTree XmlTree
 writeGts = mkelem "GraphTransformationSystem" [ sattr "ID" "I1",
             sattr "directed" "true", sattr "name" "GraGra",
             sattr "parallel" "true" ]
-            (writeProperties ++ [writeTypes] ++ [writeHostGraph] ++ writeRules)
+            (writeProperties ++ [writeTypes] ++ [writeHostGraph] ++ (writeRules []))
 
 defaultProperties = [("CSP","true"),("dangling","true"),("identification","true"),
   ("NACs","true"),("PACs","true"),("GACs","true"),("breakAllLayer","true"),
@@ -53,6 +53,10 @@ nodeTestList = [("I12","I2"),("I13","I3"),("I14","I5"),("I15","I4")]
 edgeTestList = [("I16","I7","I14","I12"),("I17","I8","I13","I12")
                 ,("I18","I6","I13","I14"),("I19","I9","I13","I15")
                 ,("I20","I10","I14","I15")]
+
+--Ajustar isso aqui para uma regra exemplo
+rulesTesteList = [("sendMsg",("I24",[("I25","1"),("I26","3"),("I27","4")],[])]
+                  ([],[("I28","1","I26","I25")]),([],[("I33","5","I26","I27")])
 
 writeNodeTypes :: ArrowXml a => [(String,String)] -> [a XmlTree XmlTree]
 writeNodeTypes = map writeNodeType
@@ -124,11 +128,11 @@ writeAdditionalEdgeLayout =
 writeRules :: ArrowXml a => [Rule] -> [a XmlTree XmlTree]
 writeRules = map writeRule
 
-writeRule :: ArrowXml a => String -> Rule -> a XmlTree XmlTree
-writeRule name (lhs, rhs, morphisms) =
+writeRule :: ArrowXml a => Rule -> a XmlTree XmlTree
+writeRule (ruleName, lhs, rhs, maps) =
   mkelem "Rule"
-  [sattr "ID" "I22", sattr "formula" "true", sattr "name" name]
-  [writeLHS name lhs, writeRHS name rhs, writeMorphism name morphisms] -- ++ writeApplicationConditions
+    [sattr "ID" "IDRULE", sattr "formula" "true", sattr "name" ruleName]
+    $ [writeLHS ruleName lhs, writeRHS ruleName rhs] ++  writeMappings maps ++ [ writeApplicationCondition]
 
 writeLHS :: ArrowXml a => String -> ParsedTypedGraph -> a XmlTree XmlTree
 writeLHS ruleName (gid, nodes, edges) = writeGraph "graphId" "LHS" ("LeftOf_" ++ ruleName) nodes edges
@@ -147,20 +151,6 @@ writeMappings = map writeMapping
 
 writeMapping :: ArrowXml a => (String, String) -> a XmlTree XmlTree
 writeMapping (image, orig) = mkelem "Mapping" [sattr "image" image, sattr "orig" orig] []
-
-writeRule :: ArrowXml a => String -> a XmlTree XmlTree
-writeRule ruleName = mkelem "Rule"
-                      [sattr "ID" "IDRULE", sattr "formula" "true", sattr "name" ruleName]
-                      [writeLHS, writeRHS, writeMapping, writeApplicationCondition]
-
-writeLHS :: ArrowXml a => a XmlTree XmlTree
-writeLHS = mkelem "Graph" [] []
-
-writeRHS :: ArrowXml a => a XmlTree XmlTree
-writeRHS = mkelem "Graph" [] []
-
-writeMapping :: ArrowXml a => a XmlTree XmlTree
-writeMapping = mkelem "Morphism" [] []
 
 writeApplicationCondition :: ArrowXml a => a XmlTree XmlTree
 writeApplicationCondition = mkelem "Graph" [] []

@@ -11,5 +11,5 @@ type ParsedRule = (String, String, ParsedTypedGraph,
                    ([ParsedTypedNode], [ParsedTypedEdge]), [ParsedNAC])
 type ParsedNAC = ([ParsedTypedNode], [ParsedTypedEdge])
 
-type Rule = (ParsedTypedGraph, ParsedTypedGraph, [Morphism])
+type Rule = (String, ParsedTypedGraph, ParsedTypedGraph, [Morphism])
 type Morphism = (String, String) -- |(image, orig)
