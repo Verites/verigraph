@@ -51,28 +51,20 @@ countCP l r = (useDel+both,proFor+both)
 criticalPairs :: GraphRule a b -> GraphRule a b -> [CriticalPair a b]
 criticalPairs l r = (allUseDelete l r) ++ (allProduceForbid l r)
 
-{-Calcula o tipo do conflito de um par epi
-criticalPair :: GraphRule a b -> GraphRule a b -> (TGM.TypedGraphMorphism a b,TGM.TypedGraphMorphism a b) -> CP
-criticalPair l r (m1,m2) = case (useDelete l r (m1,m2), produceForbid l r (m1,m2)) of
-                       (True,True)   -> Both
-                       (True,False)  -> UseDelete
-                       (False,True)  -> ProduceForbid
-                       (False,False) -> FOL-}
-
 allUseDelete :: GraphRule a b -> GraphRule a b -> [CriticalPair a b]
-allUseDelete l r = allUseDeleteAux l r ms
+allUseDelete l r = map (\(m1,m2) -> CriticalPair m1 m2 UseDelete) useDel
     where
-        graphEqClass = GP.genEqClass $ mixLeftRule l r
-        ms = map (mountTGMBoth (left l) (left r)) graphEqClass
+        pairs = createPairs (left l) (left r)
+        gluing = filter (\(m1,m2) -> satsGluingCondBoth (l,m1) (r,m2)) pairs
+        useDel = filter (useDelete l r) gluing
 
-allUseDeleteAux :: GraphRule a b -> GraphRule a b
-                -> [(TGM.TypedGraphMorphism a b,TGM.TypedGraphMorphism a b)]
-                -> [CriticalPair a b]
-allUseDeleteAux l r []           = []
-allUseDeleteAux l r ((m1,m2):xs) = (if isUseDelete l r m1 m2 then [newCP] else []) ++ (allUseDeleteAux l r xs)
+{-UseDelete através dos diagramas, falta que RW.poc retorne o morfismo d2
+useDelete :: GraphRule a b -> GraphRule a b -> (TGM.TypedGraphMorphism a b,TGM.TypedGraphMorphism a b) -> Bool
+useDelete l r (m1,m2) = Prelude.null filt
     where
-        isUseDelete l r m1 m2 = satsGluingCondBoth (l,m1) (r,m2) && useDelete l r (m1,m2)
-        newCP = CriticalPair m1 m2 UseDelete
+        d2 = RW.poc m2 (left r)
+        l1TOd2 = MT.matches (M.codomain (left l)) (M.domain d2) MT.FREE
+        filt = filter (\x -> m1 == M.compose x d2) l1TOd2-}
 
 useDelete :: GraphRule a b -> GraphRule a b -> (TGM.TypedGraphMorphism a b,TGM.TypedGraphMorphism a b) -> Bool
 useDelete l r (m1,m2) = True `elem` (nods ++ edgs)
@@ -91,7 +83,7 @@ useDeleteAux l m1 m2 apply dom cod = map (\x -> delByLeft x && isInMatchRight x)
         isInMatchRight n = apply (GM.inverse $ TGM.mapping m2) n /= Nothing
 
 ------------------------------------------------------------------------
-adjForAGG = True
+adjForAGG = True --Verificar o sentido
 
 allProduceForbid :: GraphRule a b -> GraphRule a b -> [CriticalPair a b]
 allProduceForbid l r =
@@ -102,57 +94,26 @@ allProduceForbid l r =
 produceForbidOneNac :: GraphRule a b -> GraphRule a b
                     -> TGM.TypedGraphMorphism a b
                     -> [CriticalPair a b]
-produceForbidOneNac l r n = concat (concat filtMatches)
+produceForbidOneNac l r n = map (\(m1,m2) -> CriticalPair m1 m2 ProduceForbid) filtM1
     where
-        pairs = createPairs r n
-        filtPairs = filter (\x -> satsGluingCond (inverseGR r) (snd x)) pairs
-        m2 = map (\(_,x) -> RW.dpo x (inverseGR r)) filtPairs
-        filtM2 = filter (satsNacs r) m2 --testar nacs testeCreate
+        pairs = createPairs n (right r)
+        inverseRule = inverseGR r
+        filtPairs = filter (\(_,x) -> satsGluingCond inverseRule x) pairs
+        m2 = map (\(_,x) -> RW.dpo x inverseRule) filtPairs
+        filtM2 = filter (satsNacs r) m2
         --Check existence of h12 : L1 -> D2 s.t. e2 . h12 = q12 . n1 - If not existent, then abort
-        m1 = map (\x -> MT.matches (M.codomain (left l)) (M.codomain x) MT.FREE) filtM2
-        filtM1 = map (filter (satsNacs l)) m1 --testar nacs sendMsg
-        c x1 x2 = if satsGluingCond x1 x2 then [CriticalPair n n ProduceForbid] else [] --nao sei com quais morfismos criar o CP
-        filtMatches = map (map (c l)) filtM1
+        --código abaixo é provisório
+        m1 = concat (map (\x -> createM1 (MT.matches (M.codomain (left l)) (M.codomain x) MT.FREE) x) filtM2)--pares (m1,m2)
+        filtM1 = filter (\(x,y) -> satsGluingCond l x) m1
 
-createPairs :: GraphRule a b
+createM1 matchs m2 = map (\x -> (x,m2)) matchs
+
+createPairs :: TGM.TypedGraphMorphism a b
      -> TGM.TypedGraphMorphism a b
      -> [(TGM.TypedGraphMorphism a b, TGM.TypedGraphMorphism a b)]
-createPairs r nac = map (mountTGMBoth nac (right r)) g
+createPairs l r = map (mountTGMBoth l r) g
     where
-        g = GP.genEqClass (mixTGM nac (right r))
-
-{-allProduceForbid :: GraphRule a b -> GraphRule a b -> [CriticalPair a b]
-allProduceForbid l r = if Prelude.null (nacs r) then [] else allProduceForbidAux l r pairs
-    where
-        pairs = concat (map (createPairs l) (nacs r))
-
-createPairs :: GraphRule a b
-     -> TGM.TypedGraphMorphism a b
-     -> [(TGM.TypedGraphMorphism a b, TGM.TypedGraphMorphism a b)]
-createPairs l r = map (\x -> mountTGMBoth (right l) r x) g
-    where
-        g = GP.genEqClass (mixTGM (right l) r)
-
-allProduceForbidAux :: GraphRule a b -> GraphRule a b
-     -> [(TGM.TypedGraphMorphism a b, TGM.TypedGraphMorphism a b)]
-     -> [CriticalPair a b]
-allProduceForbidAux l r []          = []
-allProduceForbidAux l r ((ms,_):xs) = isProduceForbid ++ (allProduceForbidAux l r xs)
-    where
-        gluing = satsGluingCond (inverseGR l) ms
-        isProduceForbid = if gluing then produceForbid l r ms else []
-
-produceForbid :: GraphRule a b -> GraphRule a b
-     -> TGM.TypedGraphMorphism a b
-     -> [CriticalPair a b]
-produceForbid l r m' = newCP
-    where
-        m = RW.dpo m' (inverseGR l)
-        matches = MT.matches (M.codomain (left r)) (M.codomain m) MT.FREE
-        filtered = filter (\x -> satsGluingCondBoth (l,m) (r,x)) matches
-        newCP = map (\x -> CriticalPair m x ProduceForbid) filtered-}
-
-------------------------------------------------------------------------
+        g = GP.genEqClass (mixTGM l r)
 
 satsGluingCondBoth :: (GraphRule a b, TGM.TypedGraphMorphism a b) ->
                       (GraphRule a b, TGM.TypedGraphMorphism a b) ->

@@ -224,30 +224,14 @@ deleted = M.compose l (m2 cp0)
 created = M.compose r deleted
 ---------}
 
-n1 = head (nacs wnac)
-pairs = createPairs testeCreate n1
-xp1 = filter (\x -> satsGluingCond (inverseGR testeCreate) (snd x)) pairs
-mm2 = map (\x -> RW.dpo (snd x) (inverseGR testeCreate)) xp1
-mm2b = filter (satsNacs testeCreate) mm2--testar nacs testeCreate
-d = RW.poc (snd (head pairs)) (left (inverseGR testeCreate))
-mm1 = map (\x -> matches (M.codomain d) (M.codomain x) FREE) mm2b
-mm1b = map (filter (satsNacs sendMsg)) mm1--testar nacs sendMsg
-c x1 x2 = if satsGluingCond x1 x2 then [1] else []
-xp2 = map (map (c wnac)) mm1b
-resp = concat (concat xp2)
-
-{-pfOneNac n l r = filter (pfPair n l r) (createPairs r n)
-
-pfPair n l r (h2,q12) = if satsGluingCond (inverseGR r) q12 then pfPOC n l r pair (RW.poc h2 (left (inverseGR r))) else False
-
-pfPOC n l r pair poc = if satsNacs r po then pfH12 n l r pair poc po else False
-    where
-        po = RW.po poc (right (inverseGR r))
-
-pfH12 n l r pair poc po = if Prelude.null mats then False else True--satsGluingCond l m
-    where
-        mats = matches (M.codomain (left l)) (M.codomain po) FREE
-        m = mats!!0-}
+n1 = head (nacs sendMsg)
+pairs = createPairs n1 (right getDATA)
+xp1 = filter (\x -> satsGluingCond (inverseGR getDATA) (snd x)) pairs
+mm2 = map (\x -> RW.dpo (snd x) (inverseGR getDATA)) xp1
+mm2b = filter (satsNacs getDATA) mm2--testar nacs testeCreate
+mm1 = map (\x -> matches (M.codomain (left sendMsg)) (M.codomain x) FREE) mm2b
+mm1b = map (filter (satsGluingCond sendMsg)) mm1--testar nacs sendMsg
+resp = concat mm1b
 
 ---
 
