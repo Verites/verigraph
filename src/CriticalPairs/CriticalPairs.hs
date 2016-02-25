@@ -73,8 +73,8 @@ allDeleteUse l r = map (\(m1,m2) -> CriticalPair m1 m2 DeleteUse) delUse
 {-deleteUse :: GraphRule a b -> GraphRule a b -> (TGM.TypedGraphMorphism a b,TGM.TypedGraphMorphism a b) -> Bool
 deleteUse l r (m1,m2) = Prelude.null filt
     where
-        d2 = RW.poc m2 (left r)
-        l1TOd2 = MT.matches (M.codomain (left l)) (M.domain d2) MT.FREE
+        (_,d2) = RW.poc m2 (left r)
+        l1TOd2 = MT.matches (M.domain m1) (M.domain d2) MT.FREE
         filt = filter (\x -> m1 == M.compose x d2) l1TOd2-}
 
 -- | Rule @l@ causes a delete-use conflict with @r@ if rule @l@ deletes something that is used by @r@

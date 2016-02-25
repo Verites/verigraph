@@ -1,18 +1,30 @@
 {-# LANGUAGE TypeFamilies #-}
 
 module Graph.TypedGraphMorphism (
-      inverseTGM
+      TypedGraphMorphism
+    , invertTGM
     , nodesDomain
     , edgesDomain
     , nodesCodomain
     , edgesCodomain
     , mapping
     , typedMorphism
-    , TypedGraphMorphism(..)
+    , removeNodeDomTyped
+    , removeEdgeDomTyped
+    , removeNodeCodTyped
+    , removeEdgeCodTyped
+    , createEdgeDomTGM
+    , createEdgeCodTGM
+    , updateEdgeRelationTGM
+    , updateNodeRelationTGM
+    , orphanNodesTyped
+    , orphanEdgesTyped
 ) where
 
 import Graph.Graph (Graph,nodes,edges)
+import Graph.Graph as G
 import Graph.GraphMorphism
+import Graph.GraphMorphism as GM
 import Abstract.Morphism as M
 import Abstract.Valid
 
@@ -25,13 +37,103 @@ data TypedGraphMorphism a b = TypedGraphMorphism {
 typedMorphism = TypedGraphMorphism
 mapping = getMapping
 
-inverseTGM x = typedMorphism (M.codomain x) (M.domain x) (inverse (mapping x))
+-- | Return the orphan nodes in a typed graph morphism
+orphanNodesTyped :: TypedGraphMorphism a b -> [G.NodeId]
+orphanNodesTyped tgm = GM.orphanNodes (mapping tgm)
+
+-- | Return the orphan edges in a typed graph morphism
+orphanEdgesTyped :: TypedGraphMorphism a b -> [G.EdgeId]
+orphanEdgesTyped tgm = GM.orphanEdges (mapping tgm)
+
+-- | Invert a typed graph morphism
+invertTGM :: TypedGraphMorphism a b -> TypedGraphMorphism a b
+invertTGM tgm = 
+  let dom = M.domain tgm
+      cod = M.codomain tgm 
+      m   = mapping tgm
+  in TypedGraphMorphism cod dom (GM.inverse m)
 
 nodesDomain x = nodes (M.domain (Graph.TypedGraphMorphism.getDomain x))
 edgesDomain x = edges (M.domain (Graph.TypedGraphMorphism.getDomain x))
 
 nodesCodomain x = nodes (M.domain (Graph.TypedGraphMorphism.getCodomain x))
 edgesCodomain x = edges (M.domain (Graph.TypedGraphMorphism.getCodomain x))
+
+-- | This function adds an edge e1 (with source s1, target t1 and type tp) to the domain of the typed graph morphism, and associate it to e2
+--   It assumes s1, t1, e2, tp already exist, and that e1 does not exist.
+createEdgeDomTGM :: G.EdgeId -> G.NodeId -> G.NodeId -> G.EdgeId -> G.EdgeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+createEdgeDomTGM e1 s1 t1 tp e2 tgm = 
+  let dom = M.domain tgm
+      cod = M.codomain tgm 
+      m   = mapping tgm
+  in TypedGraphMorphism (GM.createEdgeDom e1 s1 t1 tp dom)
+                           cod
+                           (GM.createEdgeDom e1 s1 t1 e2 m)
+                      
+
+-- | This function adds an edge e2 (with source s2, target t2 and type tp) to the codomain of the typed graph morphism
+--   It assumes s2, t2, tp already exist, and that e2 does not exist.
+createEdgeCodTGM :: G.EdgeId -> G.NodeId -> G.NodeId -> G.EdgeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+createEdgeCodTGM e2 s2 t2 tp tgm = 
+  let dom = M.domain tgm
+      cod = M.codomain tgm 
+      m   = mapping tgm
+  in TypedGraphMorphism dom 
+                           (GM.createEdgeCod e2 s2 t2 cod)
+                           (GM.createEdgeDom e2 s2 t2 tp m)
+
+-- | updates a typed graph morphism, mapping node n1 to node n2. It assumes both nodes already exist.
+updateNodeRelationTGM :: G.NodeId -> G.NodeId -> G.NodeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b 
+updateNodeRelationTGM n1 n2 tp tgm = 
+  let dom = M.domain tgm
+      cod = M.codomain tgm 
+      m   = mapping tgm
+  in TypedGraphMorphism (GM.updateNodeRelationGM n1 tp dom) 
+                        (GM.updateNodeRelationGM n2 tp cod) 
+                        (GM.updateNodeRelationGM n1 n2 m)
+
+-- | updates a typed graph morphism, mapping edge e1 to edge e2. It assumes both edges already exist.
+updateEdgeRelationTGM :: G.EdgeId -> G.EdgeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+updateEdgeRelationTGM e1 e2 tgm = 
+  let dom = M.domain tgm
+      cod = M.codomain tgm 
+      m   = mapping tgm
+  in TypedGraphMorphism dom cod (GM.updateEdgeRelationGM e1 e2 m)
+
+-- | Remove a node from the domain of a typed graph morphism
+removeNodeDomTyped :: G.NodeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+removeNodeDomTyped n tgm  =
+  let dom = M.domain tgm
+      cod = M.codomain tgm 
+      m   = mapping tgm
+  in TypedGraphMorphism (GM.removeNodeDom n dom) cod (GM.removeNodeDom n m)  
+
+
+-- | Remove an edge from the domain of a typed graph morphism
+removeEdgeDomTyped :: G.EdgeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+removeEdgeDomTyped e tgm =
+  let dom = M.domain tgm
+      cod = M.codomain tgm 
+      m   = mapping tgm
+  in TypedGraphMorphism (GM.removeEdgeDom e dom) cod (GM.removeEdgeDom e m)  
+
+
+-- | Remove a node from the codomain of a typed graph morphism
+removeNodeCodTyped :: G.NodeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+removeNodeCodTyped n tgm = 
+  let dom = M.domain tgm
+      cod = M.codomain tgm 
+      m   = mapping tgm
+  in TypedGraphMorphism dom (GM.removeNodeDom n cod) (GM.removeNodeCod n m)  
+
+
+-- | Remove an edge from the domain of a typed graph morphism
+removeEdgeCodTyped :: G.EdgeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+removeEdgeCodTyped e tgm =
+  let dom = M.domain tgm
+      cod = M.codomain tgm 
+      m   = mapping tgm
+  in TypedGraphMorphism dom (GM.removeEdgeDom e cod) (GM.removeEdgeCod e m)  
 
 instance Eq (TypedGraphMorphism a b) where
     (TypedGraphMorphism dom1 cod1 m1) == (TypedGraphMorphism dom2 cod2 m2) =

@@ -47,6 +47,10 @@ module Graph.Graph (
     , isNodeOf
     , isAdjacentTo
     , isIncidentTo
+    
+    --
+    , newNodes
+    , newEdges
 ) where
 
 import Control.Applicative ((<$>))
@@ -103,6 +107,43 @@ instance Show NodeId where
 
 instance Show EdgeId where
     show (EdgeId i) = show i
+
+---- Convenient instances of Number and Enum classes for NodeId and EdgeId
+instance Num (NodeId) where
+  (NodeId x)  +  (NodeId y) = NodeId (x+y)
+  (NodeId x)  *  (NodeId y) = NodeId (x*y)
+  (NodeId x)  -  (NodeId y) = NodeId (x-y)
+  negate (NodeId x) = NodeId (negate x)
+  signum (NodeId x) = NodeId (signum x)
+  fromInteger x       = (NodeId $ fromIntegral x)
+  abs (NodeId x)    = NodeId (abs x)
+
+instance Enum (NodeId) where
+  toEnum x = NodeId x
+  fromEnum (NodeId x) = x 
+
+instance Num (EdgeId) where
+  (EdgeId x)  +  (EdgeId y) = EdgeId (x+y)
+  (EdgeId x)  *  (EdgeId y) = EdgeId (x*y)
+  (EdgeId x)  -  (EdgeId y) = EdgeId (x-y)
+  negate (EdgeId x) = EdgeId (negate x)
+  signum (EdgeId x) = EdgeId (signum x)
+  fromInteger x       = EdgeId $ fromIntegral x
+  abs (EdgeId x)    = EdgeId (abs x)
+
+instance Enum (EdgeId) where
+  toEnum x = EdgeId x
+  fromEnum (EdgeId x) = x 
+
+-- | Infinite list of new node instances of a graph
+newNodes :: Graph a b -> [NodeId]
+newNodes g = [succ maxNode..]
+  where maxNode = foldr max 0 (nodes g)
+
+-- | Infinite list of new edge instances of a graph
+newEdges :: Graph a b -> [EdgeId]
+newEdges g = [succ maxEdge..]
+  where maxEdge = foldr max 0 (edges g)
 
 -- | Create an empty Graph.
 empty :: Graph a b
