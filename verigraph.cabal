@@ -20,7 +20,7 @@ executable verigraph
   -- other-modules:       
   other-extensions:    TypeFamilies, MultiParamTypeClasses, FlexibleContexts
   build-depends:       base >=4.8 && <4.9,
-                       cairo >=0.12 && <0.14,
+--                       cairo >=0.12 && <0.14,
                        colour >=2.3 && <2.4,
                        containers >=0.4 && <0.6,
                        fclabels >= 2.0 && <2.1,

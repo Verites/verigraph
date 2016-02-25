@@ -2,8 +2,12 @@
 --LEONARDO MARQUES RODRIGUES
 --DEZEMBRO/2015
 
-module CriticalPairs.Matches (matches,
-                PROP(..))
+module CriticalPairs.Matches(
+  matches,
+  PROP(..),
+  in_nac,
+  matches_nac
+  )
        where
 
 
@@ -21,15 +25,13 @@ import CriticalPairs.Estruturas
 --INTERFACE--
 
 --IN--
-interfaceIN :: GM.GraphMorphism a b -> GM.GraphMorphism a b -> (TGraphs, TGraphs)
-interfaceIN t1 t2 = (graph1,graph2)
+toTGraph  :: GM.GraphMorphism a b -> TGraphs
+toTGraph  t1  = graph
    where
-     graph1 = TGraph nodes1 edges1
-     nodes1 = toTNodes t1 (G.nodes (M.domain t1))
-     edges1 = toTEdges t1 (G.edges (M.domain t1)) nodes1
-     graph2 = TGraph nodes2 edges2
-     nodes2 = toTNodes t2 (G.nodes (M.domain t2))
-     edges2 = toTEdges t2 (G.edges (M.domain t2)) nodes2
+     graph = TGraph nodes edges
+     nodes = toTNodes t1 (G.nodes (M.domain t1))
+     edges = toTEdges t1 (G.edges (M.domain t1)) nodes
+
 
 toTNodes :: GM.GraphMorphism a b -> [G.NodeId] -> [TNodes]
 toTNodes t [] = []
@@ -50,6 +52,85 @@ toTEdges t id@((G.EdgeId n):ns) nodes = case (GM.applyEdge t (G.EdgeId n)) of
 
 --FALTA A INTERFACE PARA A INSTANCIAÇÃO PARCIAL DE ENTRADA --
 
+
+
+
+
+
+in_nac :: TGM.TypedGraphMorphism a b-> TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b
+in_nac nac match = foldl (aux1) new_nodes edges_rule
+  where
+    dom = M.codomain nac
+    cod = M.codomain match
+    mapping = GM.empty (M.domain dom) (M.domain cod)
+    nodes_rule = G.nodes $ M.domain $ M.domain nac
+    edges_rule = G.edges $ M.domain $ M.domain nac
+
+    new_nodes = foldl (aux) (TGM.typedMorphism dom cod mapping) nodes_rule
+
+    aux :: TGM.TypedGraphMorphism a b -> G.NodeId -> TGM.TypedGraphMorphism a b
+    aux match_nac n =  updateMappingNodes x y match_nac
+      where
+        (Just x) = GM.applyNode (TGM.mapping nac) n
+        (Just y) = GM.applyNode (TGM.mapping match) n
+
+    aux1 :: TGM.TypedGraphMorphism a b -> G.EdgeId -> TGM.TypedGraphMorphism a b
+    aux1 match_nac e =  updateMappingEdges x y match_nac
+      where
+        (Just x) = GM.applyEdge (TGM.mapping nac) e
+        (Just y) = GM.applyEdge (TGM.mapping match) e
+
+
+updateMappingNodes :: G.NodeId -> G.NodeId -> TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b
+updateMappingNodes  n1 n2 tgm =
+  TGM.typedMorphism  dom cod (GM.updateNodes n1 n2 m)
+  where
+    dom = M.domain tgm
+    cod = M.codomain tgm
+    m = TGM.mapping tgm
+
+updateMappingEdges :: G.EdgeId -> G.EdgeId -> TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b
+updateMappingEdges  e1 e2 tgm =
+  TGM.typedMorphism  dom cod (GM.updateEdges e1 e2 m)
+  where
+    dom = M.domain tgm
+    cod = M.codomain tgm
+    m = TGM.mapping tgm
+
+
+matches_nac :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b -> [TGM.TypedGraphMorphism a b]
+matches_nac nac m = do
+  let
+    (TGraph nodes_nac edges_nac) = toTGraph (M.codomain nac)
+    (TGraph nodes_inst edges_inst) = toTGraph (M.codomain m)
+
+    tgm = in_nac nac m
+    x = M.domain tgm
+    y = M.codomain tgm
+    
+  
+    fn :: [TNodes]-> [TNodes] -> TGM.TypedGraphMorphism a b -> TFN
+    fn [] _ _=[]
+    fn (n:ns) ns' tgm =
+      (case GM.applyNode (TGM.mapping tgm) (G.NodeId (name n)) of
+          Nothing -> []
+          (Just (G.NodeId n')) -> [(n, fromJust $ find (\x -> n' == name x) ns')]) ++ fn ns ns' tgm
+
+    fe :: [TEdges] -> [TEdges] -> TGM.TypedGraphMorphism a b -> TFE
+    fe [] _ _=[]
+    fe (e:es)  es' tgm =
+      (case GM.applyEdge (TGM.mapping tgm) (G.EdgeId (label e)) of
+          Nothing -> []
+          (Just (G.EdgeId e')) -> [(e, fromJust $ find (\x -> e' == label x) es')]) ++ fe es es' tgm 
+
+    morph :: [TMF]
+    morph = concat $ mapAlt nodes_nac edges_nac nodes_inst edges_inst (fn nodes_nac nodes_inst tgm) (fe edges_nac edges_inst tgm) INJ
+
+    morphs = map (\a -> interfaceOUT (end_n a) (end_e a) x y) morph
+
+  rtrn <- map (\b -> TGM.typedMorphism x y b) morphs
+  return rtrn
+
 --OUT--
 
 interfaceOUT :: TFN -> TFE -> GM.GraphMorphism a b -> GM.GraphMorphism a b -> GM.GraphMorphism a b
@@ -63,9 +144,9 @@ interfaceOUT (fn:fns) fe t1 t2 = GM.updateNodes (G.NodeId $ name $ fst fn) (G.No
 
 matches :: GM.GraphMorphism a b -> GM.GraphMorphism a b -> PROP -> [TGM.TypedGraphMorphism a b]
 matches x y p = do
-  let (t1,t2) = interfaceIN x y
-      morph = morphism t1 t2 p
-      morphs = map (\a -> interfaceOUT (end_n a) (end_e a) x y) morph
+  let (t1,t2) = (toTGraph x,  toTGraph y)
+  let morph = morphism t1 t2 p
+  let morphs = map (\a -> interfaceOUT (end_n a) (end_e a) x y) morph
   rtrn <- map (\b -> TGM.typedMorphism x y b) morphs
   return rtrn
 
@@ -74,7 +155,7 @@ matches x y p = do
 
   
 -------------------------------------------------------------------
-
+{-
 make_st :: TGraphs -> TGraphs -> TFN -> TFE -> (TGraphs,TGraphs)
 make_st graph1 graph2 fn fe = (graph1',graph2')
   where
@@ -91,7 +172,7 @@ make_st graph1 graph2 fn fe = (graph1',graph2')
     make_n_e _ [] _ = []
     make_n_e pos x f@(h:t) = make_n_e pos x' t
       where x' = delete (pos h) x
-
+-}
 
 
 
@@ -107,10 +188,12 @@ morphism graph1 graph2 injective =
     edgesSrc = edges graph1
     edgesTgt = edges graph2
 
-    mapAlt :: [TNodes] -> [TEdges] ->[TNodes] -> [TEdges] -> TFN -> TFE -> PROP -> [[TMF]]
+  in  concat $! mapAlt nodesSrc edgesSrc nodesTgt edgesTgt [] [] injective
+
+mapAlt :: [TNodes] -> [TEdges] ->[TNodes] -> [TEdges] -> TFN -> TFE -> PROP -> [[TMF]]
 
     --IF NO HAS FREE NODES OR FREE EDGES TO MAP, RETURN THE FOUND MORPHISMO
-    mapAlt [] [] nodesT edgesT fn fe prop =
+mapAlt [] [] nodesT edgesT fn fe prop =
       case prop of
         FREE -> free
         INJ  -> free
@@ -132,7 +215,7 @@ morphism graph1 graph2 injective =
                 x' = delete y x
                 
     --IF HAS FREE NODES, AND FREE EDGES, VERIFY THE CURRENT STATUS
-    mapAlt nodes edges@(h:t) nodesT edgesT fn fe prop
+mapAlt nodes edges@(h:t) nodesT edgesT fn fe prop
       | null edgesT = return []
       | otherwise  = do
                        y <- edgesT
@@ -169,7 +252,7 @@ morphism graph1 graph2 injective =
                          Nothing  -> return $! []
 
     --IF HAS FREE NODES, MAP ALL FREE NODES TO ALL DESTINATION NODES
-    mapAlt nodes@(h:t) [] nodesT edgesT fn fe prop
+mapAlt nodes@(h:t) [] nodesT edgesT fn fe prop
       | null nodesT = return []
       | otherwise  = do
                        y <- nodesT
@@ -193,26 +276,26 @@ morphism graph1 graph2 injective =
                          Nothing  -> return $! []
 
     --VALIDATION OF A NODE MAPPING
-    update_nodes_mapping :: (TNodes,TNodes) -> TFN -> Maybe TFN
+update_nodes_mapping :: (TNodes,TNodes) -> TFN -> Maybe TFN
 
     --IF HAS NO MAPPING YET, VERIFY THE TYPES OF NODES
-    update_nodes_mapping (n1,n2) []          = if (typeN n1) == (typeN n2) then Just [(n1,n2)]
+update_nodes_mapping (n1,n2) []          = if (typeN n1) == (typeN n2) then Just [(n1,n2)]
                                                                            else Nothing
     --IF HAS A MAPPING (OR MORE), VERIFY IF n1 ALREADY WAS MAPPED AND THE COMPATIBILITY
     --OF THE EXISTENT MAPPING
-    update_nodes_mapping (n1,n2) l@((a,b):t) = if n1==a then if n2==b then Just l
-                                                                      else Nothing
-                                                        else do l <- update_nodes_mapping (n1,n2) t
-                                                                return $! (a,b):l
+update_nodes_mapping (n1,n2) l@((a,b):t) = if n1==a then if n2==b then Just l else Nothing else
+                                             do
+                                               l <- update_nodes_mapping (n1,n2) t
+                                               return $ (a,b):l
 
     --VALIDATION OF A EDGE MAPPING
-    update_edges_mapping :: (TEdges,TEdges) -> TFE -> Maybe TFE
+update_edges_mapping :: (TEdges,TEdges) -> TFE -> Maybe TFE
 
     -- VERIFY IF THE TYPES OF e1 AND e2 ARE COMPATIBLES
-    update_edges_mapping (e1,e2) l = if (typeE e1) == (typeE e2) then Just ((e1,e2):l)
-                                                                 else Nothing
+update_edges_mapping (e1,e2) l = if (typeE e1) == (typeE e2) then Just ((e1,e2):l)
+                                 else Nothing
 
-  in  concat $! mapAlt nodesSrc edgesSrc nodesTgt edgesTgt [] [] injective
+
 
 
 
