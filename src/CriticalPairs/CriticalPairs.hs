@@ -192,10 +192,16 @@ satsNacs rule m = False `notElem` (map (satsOneNac m) (nacs rule))
 -- | Return True if the NAC @nac@ is satified by @m@
 -- Get all injective matches (q) from @nac@ to G (codomain of @m@)
 -- and check if some of them commutes: @m@ == q . @nac@
-satsOneNac :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b -> Bool
+{-satsOneNac :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b -> Bool
 satsOneNac m nac = True `notElem` checkCompose
    where
       checkCompose = map (\x -> (M.compose nac x) == m) matches
       matches = MT.matches typeNac typeG MT.INJ
       typeNac = M.codomain nac
-      typeG   = M.codomain m
+      typeG   = M.codomain m-}
+
+satsOneNac :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b -> Bool
+satsOneNac m nac = True `notElem` checkCompose
+   where
+      checkCompose = map (\x -> (M.compose nac x) == m) matches
+      matches = MT.matches_nac nac m
