@@ -10,6 +10,18 @@ import qualified Graph.GraphMorphism as GM
 import qualified Graph.TypedGraphMorphism as TGM 
 import qualified Graph.GraphRule as GR
 
+-- | Maps elements on themselves
+idMap :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b
+idMap m k = TGM.typedMorphism (Mor.codomain k) (Mor.codomain m) edgesUpdate
+    where
+        graphG = Mor.domain (Mor.codomain m)
+        graphD = Mor.domain (Mor.codomain k)
+        init = GM.empty graphG graphD
+        nodes = G.nodes graphD
+        edges = G.edges graphD
+        nodesUpdate = foldl (\gm n -> GM.updateNodes n n gm) init nodes
+        edgesUpdate = foldl (\gm e -> GM.updateEdges e e gm) nodesUpdate edges
+
 ------------ Pushout Complement -------------
 {- 
    algorithm:
@@ -31,18 +43,9 @@ poc m l =
       k        = foldr (TGM.removeNodeCodTyped)                                          -- delete all edges, then all nodes from ml
                      (foldr (TGM.removeEdgeCodTyped) ml delEdges) 
                          delNodes
-  in (k, createL' m k)
+  in (k, idMap m k)
 
-createL' :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b
-createL' m k = TGM.typedMorphism (Mor.codomain k) (Mor.codomain m) edgesUpdate
-    where
-        graphG = Mor.domain (Mor.codomain m)
-        graphD = Mor.domain (Mor.codomain k)
-        init = GM.empty graphG graphD
-        nodes = G.nodes graphD
-        edges = G.edges graphD
-        nodesUpdate = foldl (\gm n -> GM.updateNodes n n gm) init nodes
-        edgesUpdate = foldl (\gm e -> GM.updateEdges e e gm) nodesUpdate edges
+
 
 ------------ Pushout  ------------------------
 
@@ -57,7 +60,8 @@ createL' m k = TGM.typedMorphism (Mor.codomain k) (Mor.codomain m) edgesUpdate
 -}
 
 -- | Pushout : D <-k- K,   K -r-> R ,  ====>  G' <-m'- R  (comatch)
-po :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b ->  TGM.TypedGraphMorphism a b
+po :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b
+   -> (TGM.TypedGraphMorphism a b, TGM.TypedGraphMorphism a b)
 po k r = 
   let 
       kr = Mor.compose (TGM.invertTGM r) k                                 -- invert r and compose with k, obtain kr : R -> D
@@ -89,14 +93,18 @@ po k r =
       kr''      = foldr (\(a,sa,ta,b,sb,tb,tp) tgm -> TGM.updateEdgeRelationTGM a b (TGM.createEdgeCodTGM b sb tb tp tgm) )
                         kr'
                         edgeTable'
-  in kr''
+  in (kr'', idMap kr'' k)
 
 
 -- | Pushout
-dpo :: TGM.TypedGraphMorphism a b -> GR.GraphRule a b -> TGM.TypedGraphMorphism a b
+dpo :: TGM.TypedGraphMorphism a b -> GR.GraphRule a b
+    -> (TGM.TypedGraphMorphism a b, TGM.TypedGraphMorphism a b, TGM.TypedGraphMorphism a b, TGM.TypedGraphMorphism a b)
 dpo m rule = 
   let
      l = GR.left rule
      r = GR.right rule
-     (m',l') = poc m l
-  in po m' r
+     (m', l') = poc m l
+     (m'', r') = po m' r
+  in (m',m'',l',r')
+
+comatch (_,m'',_,_) = m''

@@ -112,7 +112,7 @@ produceForbidOneNac l r n = map (\(m1,m2) -> CriticalPair m1 m2 ProduceForbid) f
         pairs = createPairs (right l) n
         inverseRule = inverseGR l
         filtPairs = filter (\(m'1,_) -> satsGluingCond inverseRule m'1) pairs
-        m1 = map (\(m'1,_) -> RW.dpo m'1 inverseRule) filtPairs
+        m1 = map (\(m'1,_) -> RW.comatch (RW.dpo m'1 inverseRule)) filtPairs
         filtM1 = filter (satsNacs l) m1
         --Check existence of h12 : L1 -> D2 s.t. e2 . h12 = q12 . n1 - If not existent, then abort
         --código abaixo é provisório
@@ -200,6 +200,7 @@ satsOneNac m nac = True `notElem` checkCompose
       typeNac = M.codomain nac
       typeG   = M.codomain m-}
 
+-- | Return True if the NAC @nac@ is satified by @m@
 satsOneNac :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b -> Bool
 satsOneNac m nac = True `notElem` checkCompose
    where

@@ -224,15 +224,24 @@ deleted = M.compose l (m2 cp0)
 created = M.compose r deleted
 ---------}
 
-n1 = head (nacs sendMsg)
-pairs = createPairs n1 (right getDATA)
-xp1 = filter (\x -> satsGluingCond (inverseGR getDATA) (snd x)) pairs
-mm2 = map (\x -> RW.dpo (snd x) (inverseGR getDATA)) xp1
-mm2b = filter (satsNacs getDATA) mm2--testar nacs testeCreate
-mm1 = map (\x -> matches (M.codomain (left sendMsg)) (M.codomain x) FREE) mm2b
-mm1b = map (filter (satsGluingCond sendMsg)) mm1--testar nacs sendMsg
-resp = concat mm1b
-
+n = head (nacs sendMsg)
+pairs = createPairs (right getDATA) n
+inverseRule = inverseGR getDATA
+filtPairs = filter (\(m'1,_) -> satsGluingCond inverseRule m'1) pairs
+fstPairs = map fst filtPairs
+mm1 = map (\(m'1,_) -> RW.comatch (RW.dpo m'1 inverseRule)) filtPairs
+filtM1 = filter (satsNacs getDATA) mm1
+l' = map (\m1 -> snd (RW.poc m1 (left getDATA))) filtM1
+r' = map (\(_,m'1) -> snd (RW.poc m'1 (left inverseRule))) filtPairs
+h12 = map (\x -> matches (M.codomain (left sendMsg)) (M.domain x) FREE) l'
+filtH12 = map (\(x,y,z) -> validH12 x y z) (zip3 h12 fstPairs r')
+--validH12 = (\(h12,m1,d) -> 
+--filH12 = map (map (\x -> M.compose h12 )) h12
+--mm2 = concat (map (\x -> createM2 x (matches (M.codomain x) FREE)) filtM1)--pairs (m1,m2)
+--filtM2 = filter (\(x,y) -> satsGluingCond sendMsg y) mm2
+validH12 h12 q r' = if length valid == 0 then [] else valid
+    where
+        valid = filter (\h -> M.compose n q == M.compose h r') h12
 ---
 
 graphEqClass = map (\x -> GP.genEqClass (mixTGM (right getDATA) x)) (nacs sendMsg)
