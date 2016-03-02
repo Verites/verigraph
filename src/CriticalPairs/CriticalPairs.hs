@@ -109,17 +109,27 @@ produceForbidOneNac :: GraphRule a b -> GraphRule a b
                     -> [CriticalPair a b]
 produceForbidOneNac l r n = map (\(m1,m2) -> CriticalPair m1 m2 ProduceForbid) filtM2
     where
-        pairs = createPairs (right l) n
         inverseRule = inverseGR l
+        pairs = createPairs (right l) n
         filtPairs = filter (\(m'1,_) -> satsGluingCond inverseRule m'1) pairs
+        sndPairs = map snd filtPairs
         m1 = map (\(m'1,_) -> RW.comatch (RW.dpo m'1 inverseRule)) filtPairs
         filtM1 = filter (satsNacs l) m1
-        --Check existence of h12 : L1 -> D2 s.t. e2 . h12 = q12 . n1 - If not existent, then abort
-        --código abaixo é provisório
-        m2 = concat (map (\x -> createM2 x (MT.matches (M.codomain (left r)) (M.codomain x) MT.FREE)) filtM1)--pairs (m1,m2)
-        filtM2 = filter (\(x,y) -> satsGluingCond r y) m2
+        l' = map (\m1 -> snd (RW.poc m1 (left l))) filtM1
+        r' = map (\(_,m'1) -> snd (RW.poc m'1 (left inverseRule))) filtPairs
+        h12 = map (\x -> MT.matches (M.codomain (left r)) (M.domain x) MT.FREE) l'
+        filtH12 = map (\(x,y,z) -> validH12 x y z) (zip3 h12 sndPairs r')
+        g = GM.empty Graph.Graph.empty Graph.Graph.empty
+        adjH12 = ajeit filtH12 filtM1 l'
+        m1m2 = map (\(h,m1,ls) -> (m1,M.compose h ls)) adjH12
+        filtM2 = filter (\(m1,m2) -> satsGluingCond r m2) m1m2
+        validH12 h12 q r' = if length valid == 0 then [] else valid
+            where
+                valid = filter (\h -> M.compose n q == M.compose h r') h12
 
-createM2 m1 matchs = map (\x -> (m1,x)) matchs
+--codigo provisorio, verificar problema no matches
+ajeit [] _ _ = []
+ajeit (h:hs) (m1:m1s) (l:ls) = (if Prelude.null h then [] else [(head h,m1,l)]) ++ (ajeit hs m1s ls)
 
 ---- Gluing Conditions
 
