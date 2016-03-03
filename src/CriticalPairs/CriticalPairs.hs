@@ -120,16 +120,14 @@ produceForbidOneNac l r n = map (\(m1,m2) -> CriticalPair m1 m2 ProduceForbid) f
         h12 = map (\x -> MT.matches (M.codomain (left r)) (M.domain x) MT.FREE) l'
         filtH12 = map (\(x,y,z) -> validH12 x y z) (zip3 h12 sndPairs r')
         g = GM.empty Graph.Graph.empty Graph.Graph.empty
-        adjH12 = ajeit filtH12 filtM1 l'
+        adjH12 = zipIfNoEmpty filtH12 filtM1 l'
         m1m2 = map (\(h,m1,ls) -> (m1,M.compose h ls)) adjH12
         filtM2 = filter (\(m1,m2) -> satsGluingCond r m2) m1m2
-        validH12 h12 q r' = if length valid == 0 then [] else valid
-            where
-                valid = filter (\h -> M.compose n q == M.compose h r') h12
+        validH12 h12 q r' = filter (\h -> M.compose n q == M.compose h r') h12
 
 --codigo provisorio, verificar problema no matches
-ajeit [] _ _ = []
-ajeit (h:hs) (m1:m1s) (l:ls) = (if Prelude.null h then [] else [(head h,m1,l)]) ++ (ajeit hs m1s ls)
+zipIfNoEmpty [] _ _ = []
+zipIfNoEmpty (h:hs) (m1:m1s) (l:ls) = (if Prelude.null h then [] else [(head h,m1,l)]) ++ (zipIfNoEmpty hs m1s ls)
 
 ---- Gluing Conditions
 

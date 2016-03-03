@@ -199,8 +199,8 @@ testeCreate = graphRule l8 r8 []
 
 -----
 
---rules = [sendMsg,getDATA,receiveMSG,deleteMSG]
-rules = [sendMsg,getDATA,receiveMSG,deleteMSG,teste,wnac,wnac2,testeCreate]
+rules = [sendMsg,getDATA,receiveMSG,deleteMSG]
+--rules = [sendMsg,getDATA,receiveMSG,deleteMSG,teste,wnac,wnac2,testeCreate]
 --rules = [receiveMSG,teste]
 --rules = [sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG]
 --10.7s
@@ -225,7 +225,7 @@ created = M.compose r deleted
 ---------}
 
 ri = sendMsg
-le = receiveMSG
+le = deleteMSG
 
 n = head (nacs ri)
 inverseRule = inverseGR le
