@@ -1,5 +1,5 @@
 {-# LANGUAGE TypeFamilies #-}
-module Graph.Graph (
+module Graph.Graph {-(
     -- * Types
       Edge
     , EdgeId (..)
@@ -51,7 +51,7 @@ module Graph.Graph (
     --
     , newNodes
     , newEdges
-) where
+) -}where
 
 import Control.Applicative ((<$>))
 import Abstract.Valid
@@ -83,9 +83,11 @@ data Graph a b = Graph {
     } deriving (Read)
 
 -- | Verify equality of two Maps
--- isInfixOf checks if x is contained in y
 eq :: (Eq t1, Eq t2) => [(t1, t2)] -> [(t1, t2)] -> Bool
-eq a b = isInfixOf a b && isInfixOf b a
+eq a b = contained a b && contained b a
+
+contain :: Eq t => [t] -> [t] -> Bool
+contain a b = False `notElem` (map (\x -> x `elem` b) a)
 
 instance Eq (Graph a b) where
     (Graph nodeMap1 edgeMap1) == (Graph nodeMap2 edgeMap2) =
