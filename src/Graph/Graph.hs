@@ -82,9 +82,10 @@ data Graph a b = Graph {
     edgeMap :: [(EdgeId, Edge b)]
     } deriving (Read)
 
+-- | Verify equality of two Maps
+-- isInfixOf checks if x is contained in y
 eq :: (Eq t1, Eq t2) => [(t1, t2)] -> [(t1, t2)] -> Bool
-eq [] [] = True
-eq a  b  = isInfixOf a b && isInfixOf b a
+eq a b = isInfixOf a b && isInfixOf b a
 
 instance Eq (Graph a b) where
     (Graph nodeMap1 edgeMap1) == (Graph nodeMap2 edgeMap2) =
