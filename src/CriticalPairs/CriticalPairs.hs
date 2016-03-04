@@ -120,10 +120,12 @@ produceForbidOneNac l r n = let
         m1 = map fst ml'
         l' = map snd ml'
         
-        filtM1 = filter (satsNacs l) m1
-        h12 = map (\x -> MT.matches (M.codomain (left r)) (M.codomain x) MT.FREE) k
+        m1k = zip m1 k
+        filtM1 = filter (\(m1,_) -> satsNacs l m1) m1k
+        
+        h12 = map (\(_,k) -> MT.matches (M.codomain (left r)) (M.codomain k) MT.FREE) filtM1
         filtH12 = map (\(x,y,z) -> validH12 x y z) (zip3 h12 (map snd filtPairs) r')
-        adjH12 = zipIfNoEmpty filtH12 filtM1 l'
+        adjH12 = zipIfNoEmpty filtH12 (map fst filtM1) l'
         
         m1m2 = map (\(h,m1,ls) -> (m1,M.compose h ls)) adjH12
         filtM2 = filter (\(m1,m2) -> satsGluingCond r m2) m1m2
@@ -132,7 +134,6 @@ produceForbidOneNac l r n = let
         
         zipIfNoEmpty [] _ _ = []
         zipIfNoEmpty (h:hs) (m1:m1s) (l:ls) = (if Prelude.null h then [] else [(head h,m1,l)]) ++ (zipIfNoEmpty hs m1s ls)
-        zipIfNoEmpty _ _ _ = [] -- verificar
         
         in map (\(m1,m2) -> CriticalPair m1 m2 ProduceForbid) filtM2
 

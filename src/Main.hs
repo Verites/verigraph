@@ -225,7 +225,7 @@ created = M.compose r deleted
 ---------}
 
 ri = sendMsg
-le = getDATA
+le = sendMsg
 
 n = head (nacs ri)
 inverseRule = inverseGR le
@@ -243,9 +243,11 @@ ml' = map (\x -> RW.po x (right inverseRule)) k
 mm1 = map fst ml'
 l' = map snd ml'
 
-filtM1 = filter (satsNacs le) mm1
+m1k = zip mm1 k
 
-h12 = map (\x -> matches (M.codomain (left ri)) (M.codomain x) FREE) k
+filtM1 = filter (\(m1,_) -> satsNacs le m1) m1k
+
+h12 = map (\(_,k) -> matches (M.codomain (left ri)) (M.codomain k) FREE) filtM1
 filtH12 = map (\(x,y,z) -> validH12 x y z) (zip3 h12 (map snd filtPairs) r')
 adjH12 = ajeita filtH12 filtM1 l'
 
