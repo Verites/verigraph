@@ -86,8 +86,8 @@ data Graph a b = Graph {
 eq :: (Eq t1, Eq t2) => [(t1, t2)] -> [(t1, t2)] -> Bool
 eq a b = contained a b && contained b a
 
-contain :: Eq t => [t] -> [t] -> Bool
-contain a b = False `notElem` (map (\x -> x `elem` b) a)
+contained :: Eq t => [t] -> [t] -> Bool
+contained a b = False `notElem` (map (\x -> x `elem` b) a)
 
 instance Eq (Graph a b) where
     (Graph nodeMap1 edgeMap1) == (Graph nodeMap2 edgeMap2) =
