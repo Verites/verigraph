@@ -107,27 +107,34 @@ allProduceForbid l r = concat (map (produceForbidOneNac l r) (nacs r))
 produceForbidOneNac :: GraphRule a b -> GraphRule a b
                     -> TGM.TypedGraphMorphism a b
                     -> [CriticalPair a b]
-produceForbidOneNac l r n = map (\(m1,m2) -> CriticalPair m1 m2 ProduceForbid) filtM2
-    where
+produceForbidOneNac l r n = let
         inverseRule = inverseGR l
         pairs = createPairs (right l) n
         filtPairs = filter (\(m'1,_) -> satsGluingCond inverseRule m'1) pairs
-        sndPairs = map snd filtPairs
-        m1 = map (\(m'1,_) -> RW.comatch (RW.dpo m'1 inverseRule)) filtPairs
+        
+        kr' = map (\(m'1,_) -> RW.poc m'1 (left inverseRule)) filtPairs
+        k = map fst kr'
+        r' = map snd kr'
+        
+        ml' = map (\x -> RW.po x (right inverseRule)) k
+        m1 = map fst ml'
+        l' = map snd ml'
+        
         filtM1 = filter (satsNacs l) m1
-        l' = map (\m1 -> snd (RW.poc m1 (left l))) filtM1
-        r' = map (\(_,m'1) -> snd (RW.poc m'1 (left inverseRule))) filtPairs
-        h12 = map (\x -> MT.matches (M.codomain (left r)) (M.domain x) MT.FREE) l'
-        filtH12 = map (\(x,y,z) -> validH12 x y z) (zip3 h12 sndPairs r')
-        g = GM.empty Graph.Graph.empty Graph.Graph.empty
+        h12 = map (\x -> MT.matches (M.codomain (left r)) (M.codomain x) MT.FREE) k
+        filtH12 = map (\(x,y,z) -> validH12 x y z) (zip3 h12 (map snd filtPairs) r')
         adjH12 = zipIfNoEmpty filtH12 filtM1 l'
+        
         m1m2 = map (\(h,m1,ls) -> (m1,M.compose h ls)) adjH12
         filtM2 = filter (\(m1,m2) -> satsGluingCond r m2) m1m2
+        
         validH12 h12 q r' = filter (\h -> M.compose n q == M.compose h r') h12
-
---codigo provisorio, verificar problema no matches
-zipIfNoEmpty [] _ _ = []
-zipIfNoEmpty (h:hs) (m1:m1s) (l:ls) = (if Prelude.null h then [] else [(head h,m1,l)]) ++ (zipIfNoEmpty hs m1s ls)
+        
+        zipIfNoEmpty [] _ _ = []
+        zipIfNoEmpty (h:hs) (m1:m1s) (l:ls) = (if Prelude.null h then [] else [(head h,m1,l)]) ++ (zipIfNoEmpty hs m1s ls)
+        zipIfNoEmpty _ _ _ = [] -- verificar
+        
+        in map (\(m1,m2) -> CriticalPair m1 m2 ProduceForbid) filtM2
 
 ---- Gluing Conditions
 

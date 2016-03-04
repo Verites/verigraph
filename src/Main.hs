@@ -225,29 +225,93 @@ created = M.compose r deleted
 ---------}
 
 ri = sendMsg
-le = deleteMSG
+le = getDATA
 
 n = head (nacs ri)
 inverseRule = inverseGR le
+
 pairs = createPairs (right le) n
 filtPairs = filter (\(m'1,_) -> satsGluingCond inverseRule m'1) pairs
-sndPairs = map snd filtPairs
-mm1 = map (\(m'1,_) -> RW.comatch (RW.dpo m'1 inverseRule)) filtPairs
+m' = map fst filtPairs
+q = map snd filtPairs
+
+kr' = map (\m'1 -> RW.poc m'1 (left inverseRule)) m'
+k = map fst kr'
+r' = map snd kr'
+
+ml' = map (\x -> RW.po x (right inverseRule)) k
+mm1 = map fst ml'
+l' = map snd ml'
+
 filtM1 = filter (satsNacs le) mm1
-l' = map (\m1 -> snd (RW.poc m1 (left le))) filtM1
-r' = map (\(_,m'1) -> snd (RW.poc m'1 (left inverseRule))) filtPairs
-h12 = map (\x -> matches (M.codomain (left ri)) (M.domain x) FREE) l'
-filtH12 = map (\(x,y,z) -> validH12 x y z) (zip3 h12 sndPairs r')
+
+h12 = map (\x -> matches (M.codomain (left ri)) (M.codomain x) FREE) k
+filtH12 = map (\(x,y,z) -> validH12 x y z) (zip3 h12 (map snd filtPairs) r')
 adjH12 = ajeita filtH12 filtM1 l'
+
 mm2 = map (\(h,m1,ls) -> (m1,M.compose h ls)) adjH12
 filtM2 = filter (\(m1,m2) -> satsGluingCond ri m2) mm2
 
 len = length filtM2
 
 validH12 h12 q r' = filter (\h -> M.compose n q == M.compose h r') h12
+
 ajeita [] _ _ = []
 ajeita (h:hs) (m1:m1s) (l:ls) = (if Prelude.null h then [] else [(head h,m1,l)]) ++ (ajeita hs m1s ls)
 ---
+
+{-g = fst (head filtPairs)
+k = fst (RW.poc g (left inverseRule))
+r = right inverseRule
+
+kr = M.compose (TGM.invertTGM r) k                                 -- invert r and compose with k, obtain kr : R -> D
+createdNodess = TGM.orphanNodesTyped r                                -- nodes in R to be created
+createdEdgess = TGM.orphanEdgesTyped r                                -- edges in R to be created
+nodeTable    = zip createdNodess (GM.newNodesTyped $ M.codomain kr) -- table mapping NodeIds in R to NodeIds in G'
+edgeTable    = zip createdEdgess (GM.newEdgesTyped $ M.codomain kr) -- table mapping EdgeIds in R to EdgeIds in G'   
+
+-- generate new node instances in G', associating them to the "created" nodes in R
+kr'          = foldr (\(a,b) tgm -> let tp = fromJust $ GM.applyNode (M.domain kr) a 
+ in TGM.updateNodeRelationTGM a b tp tgm)
+ kr 
+ nodeTable
+
+-- query the instance graphs R
+typemor = M.domain         kr'                     -- typemor is the typed graph (R -> T)
+g2      = M.domain         typemor                 -- g  is the instance graph R 
+mp      = TGM.mapping        kr'                     -- mp is the mapping of kr'  : (R -> D'), where D' = D + new nodes
+s1 e = fromJust $ sourceOf g2 e                    -- obtain source of e in R
+t1 e = fromJust $ targetOf g2 e                    -- obtain target of e in R
+s2 e = fromJust $ GM.applyNode mp (s1 e)             -- obtain source of m'(e) in G'
+t2 e = fromJust $ GM.applyNode mp (t1 e)             -- obtain target of m'(e) in G'
+tp e = fromJust $ GM.applyEdge typemor e             -- obtain type of e in R
+
+-- generate new edge table with new information
+edgeTable' = map (\(e,e2) -> (e, s1 e, t1 e, e2, s2 e, t2 e, tp e)) edgeTable
+
+--(101,103,101,1009,1006,1002,1)
+e101 = EdgeId 101
+n103 = NodeId 103
+n101 = NodeId 101
+e1009 = EdgeId 1009
+n1006 = NodeId 1006
+n1002 = NodeId 1002
+e1 = EdgeId 1
+
+--(103,102,103,1010,1000,1006,3)
+e103 = EdgeId 103
+n102 = NodeId 102
+e1010 = EdgeId 1010
+n1000 = NodeId 1000
+e3 = EdgeId 3
+
+-- create new morphism adding all edges
+kr''      = foldr (\(a,sa,ta,b,sb,tb,tp) tgm -> TGM.updateEdgeRelationTGM a b (TGM.createEdgeCodTGM b sb tb tp tgm) )
+ kr'
+ edgeTable'-}
+
+-----
+
 
 graphEqClass = map (\x -> GP.genEqClass (mixTGM (right getDATA) x)) (nacs sendMsg)
 --md = map (\x -> (map (mountTGMBoth (right getDATA) x graphEqClass))) (nacs sendMsg)
