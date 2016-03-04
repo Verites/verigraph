@@ -84,7 +84,7 @@ data Graph a b = Graph {
 
 eq :: (Eq t1, Eq t2) => [(t1, t2)] -> [(t1, t2)] -> Bool
 eq [] [] = True
-eq a  b  = hasAny a b && hasAny b a
+eq a  b  = isInfixOf a b && isInfixOf b a
 
 instance Eq (Graph a b) where
     (Graph nodeMap1 edgeMap1) == (Graph nodeMap2 edgeMap2) =
