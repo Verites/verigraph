@@ -79,8 +79,8 @@ createEdgeCodTGM e2 s2 t2 tp tgm =
       cod = M.codomain tgm 
       m   = mapping tgm
   in TypedGraphMorphism dom 
-                           (GM.createEdgeCod e2 s2 t2 cod)
-                           (GM.createEdgeDom e2 s2 t2 tp m)
+                           (GM.createEdgeDom e2 s2 t2 tp cod)
+                           (GM.createEdgeCod e2 s2 t2 m)
 
 -- | updates a typed graph morphism, mapping node n1 to node n2. It assumes both nodes already exist.
 updateNodeRelationTGM :: G.NodeId -> G.NodeId -> G.NodeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b 

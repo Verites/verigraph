@@ -83,11 +83,11 @@ po k r =
       s1 e = fromJust $ G.sourceOf g e                     -- obtain source of e in R
       t1 e = fromJust $ G.targetOf g e                     -- obtain target of e in R
       s2 e = fromJust $ GM.applyNode mp (s1 e)             -- obtain source of m'(e) in G'
-      t2 e = fromJust $ GM.applyNode mp (s2 e)             -- obtain target of m'(e) in G'
+      t2 e = fromJust $ GM.applyNode mp (t1 e)             -- obtain target of m'(e) in G'
       tp e = fromJust $ GM.applyEdge typemor e             -- obtain type of e in R
 
       -- generate new edge table with new information
-      edgeTable' = map (\(e,e2) -> (e, s1 e, t1 e, e2, s2 e,t2 e, tp e)) edgeTable
+      edgeTable' = map (\(e,e2) -> (e, s1 e, t1 e, e2, s2 e, t2 e, tp e)) edgeTable
 
       -- create new morphism adding all edges
       kr''      = foldr (\(a,sa,ta,b,sb,tb,tp) tgm -> TGM.updateEdgeRelationTGM a b (TGM.createEdgeCodTGM b sb tb tp tgm) )

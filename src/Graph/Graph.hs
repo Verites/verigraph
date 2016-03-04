@@ -1,5 +1,5 @@
 {-# LANGUAGE TypeFamilies #-}
-module Graph.Graph {-(
+module Graph.Graph (
     -- * Types
       Edge
     , EdgeId (..)
@@ -51,7 +51,7 @@ module Graph.Graph {-(
     --
     , newNodes
     , newEdges
-) -}where
+) where
 
 import Control.Applicative ((<$>))
 import Abstract.Valid
