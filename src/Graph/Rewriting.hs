@@ -1,4 +1,10 @@
-module Graph.Rewriting where
+module Graph.Rewriting 
+  (
+    poc,
+    po,
+    dpo,
+    comatch
+  ) where
 
 import Data.Maybe
 import qualified Data.List as L
@@ -106,4 +112,5 @@ dpo m rule =
      (m'', r') = po m' r
   in (m',m'',l',r')
 
-comatch (_,m'',_,_) = m''
+comatch :: TGM.TypedGraphMorphism a b -> GR.GraphRule a b -> TGM.TypedGraphMorphism a b
+comatch m rule = let (_,m',_,_) = dpo m rule in m'
