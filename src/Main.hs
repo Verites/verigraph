@@ -3,7 +3,6 @@
 import CriticalPairs.VeriToGP
 --import CriticalPairs.GPToJPG
 import CriticalPairs.CriticalPairs
---import CriticalPairs.CriticalPairsTeste
 import qualified CriticalPairs.GraphPart as GP
 import Graph.Graph
 import qualified Graph.GraphMorphism as GM
@@ -199,8 +198,8 @@ testeCreate = graphRule l8 r8 []
 
 -----
 
-rules = [sendMsg,getDATA,receiveMSG,deleteMSG]
---rules = [sendMsg,getDATA,receiveMSG,deleteMSG,teste,wnac,wnac2,testeCreate]
+--rules = [sendMsg,getDATA,receiveMSG,deleteMSG]
+rules = [sendMsg,getDATA,receiveMSG,deleteMSG,teste,wnac,wnac2,testeCreate]
 
 --rules = [sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG]
 --35.6s useDelete old - nac matches part inj
@@ -321,13 +320,9 @@ graphEqClass = map (\x -> GP.genEqClass (mixTGM (right getDATA) x)) (nacs sendMs
 --md = map (\x -> (map (mountTGMBoth (right getDATA) x graphEqClass))) (nacs sendMsg)
 ms = map (map (mountTGM (right getDATA) "Right")) (map(\x -> GP.genEqClass (mixTGM x (right getDATA))) (nacs sendMsg))
 
-m  = matrix (length rules) (length rules) (\y -> fst $ countCP (rules!!((fst y)-1)) (rules!!((snd y)-1)))
---mb  = matrix (length rules) (length rules) (\y -> fst $ countCP2 (rules!!((fst y)-1)) (rules!!((snd y)-1)))
-mpf = matrix (length rules) (length rules) (\y -> snd $ countCP (rules!!((fst y)-1)) (rules!!((snd y)-1)))
---mpfb = matrix (length rules) (length rules) (\y -> snd $ countCP2 (rules!!((fst y)-1)) (rules!!((snd y)-1)))
-
---ma2  = matrix (length rules) (length rules) (\y -> criticalPairs  (rules!!((fst y)-1)) (rules!!((snd y)-1)))
---mb2  = matrix (length rules) (length rules) (\y -> criticalPairs2 (rules!!((fst y)-1)) (rules!!((snd y)-1)))
+m   = matrix (length rules) (length rules) (\y -> delUse $ countCP (rules!!((fst y)-1)) (rules!!((snd y)-1)))
+mpf = matrix (length rules) (length rules) (\y -> proFor $ countCP (rules!!((fst y)-1)) (rules!!((snd y)-1)))
+mpe = matrix (length rules) (length rules) (\y -> proEdg $ countCP (rules!!((fst y)-1)) (rules!!((snd y)-1)))
 
 --classes de equivalência dos lados esquerdos das regras
 --utilizado apenas no módulo toJPG

@@ -1,16 +1,17 @@
 module CriticalPairs.CriticalPairs
-{- (
-   CP (..),
-   CriticalPair (..),
+ (
+   CP,
+   CriticalPair,
    criticalPairs,
    countCP,
-   satsGluingCondBoth,
    satsGluingCond,
-   f1,
-   f2,
-   f3
-   )
-    -}where
+   satsGluingCondBoth,
+   satsNacs,
+   createPairs,
+   delUse,
+   proFor,
+   proEdg
+   ) where
 
 import Graph.GraphRule
 import qualified CriticalPairs.GraphPart as GP
@@ -25,7 +26,7 @@ import qualified CriticalPairs.Matches as MT
 import Data.List.Utils (countElem)
 import Data.Maybe (mapMaybe)
 
-data CP = FOL | DeleteUse | ProduceForbid | Both deriving(Eq,Show)
+data CP = FOL | DeleteUse | ProduceForbid | ProduceEdgeDeleteNode deriving(Eq,Show)
 
 -- | A Critical Pair is defined as two matches from the left side of their rules to a same graph
 -- CP indicates the type of the Critical Pair
@@ -39,13 +40,17 @@ data CriticalPair a b = CriticalPair {
 --instance Show (CriticalPair a b) where
 --  show (CriticalPair m1 m2 cp) = "{"++(show $ TGM.mapping m1)++(show $ TGM.mapping m2)++(show cp)++"}"
 
--- | Return a pair: (amount of DeleteUse, amount of ProduceForbid)
-countCP :: GraphRule a b -> GraphRule a b -> (Int,Int)
-countCP l r = (delUse+both,proFor+both)
+delUse (x,_,_) = x
+proFor (_,x,_) = x
+proEdg (_,_,x) = x
+
+-- | Return a pair: amount of (DeleteUse, ProduceForbid, ProduceEdgeDeleteNode)
+countCP :: GraphRule a b -> GraphRule a b -> (Int,Int,Int)
+countCP l r = (delUse,proFor,proEdg)
     where
-        delUse = countElem DeleteUse     list
-        proFor = countElem ProduceForbid list
-        both   = countElem Both          list
+        delUse = countElem DeleteUse             list
+        proFor = countElem ProduceForbid         list
+        proEdg = countElem ProduceEdgeDeleteNode list
         list   = map cp (criticalPairs l r)
 
 -- | Create all jointly surjective pairs of @m1@ and @m2@
@@ -56,7 +61,7 @@ createPairs m1 m2 = map (mountTGMBoth m1 m2) (GP.genEqClass (mixTGM m1 m2))
 
 -- | All Critical Pairs
 criticalPairs :: GraphRule a b -> GraphRule a b -> [CriticalPair a b]
-criticalPairs l r = (allDeleteUse l r) ++ (allProduceForbid l r)
+criticalPairs l r = (allDeleteUse l r) ++ (allProduceForbid l r) ++ (allProdEdgeDelNode l r)
 
 ---- Delete-Use
 
@@ -136,6 +141,23 @@ produceForbidOneNac l r n = let
         zipIfNoEmpty (h:hs) (m1:m1s) (l:ls) = (if Prelude.null h then [] else [(head h,m1,l)]) ++ (zipIfNoEmpty hs m1s ls)
         
         in map (\(m1,m2) -> CriticalPair m1 m2 ProduceForbid) filtM2
+
+---- Produce Edge Delete Node
+
+allProdEdgeDelNode :: GraphRule a b -> GraphRule a b -> [CriticalPair a b]
+allProdEdgeDelNode l r = map (\(m1,m2) -> CriticalPair m1 m2 ProduceEdgeDeleteNode) conflictPairs
+    where
+        pairs = createPairs (left l) (left r)
+        filteredPairs = filter (\(m1,m2) -> satsGluingCondBoth (l,m1) (r,m2)) pairs
+        conflictPairs = filter (prodEdgeDelNode l r) filteredPairs
+
+prodEdgeDelNode :: GraphRule a b -> GraphRule a b -> (TGM.TypedGraphMorphism a b,TGM.TypedGraphMorphism a b) -> Bool
+prodEdgeDelNode l r (m1,m2) = not (satsIncEdges r lp)
+    where
+        (_,p,l',r') = RW.dpo m1 l
+        gd = TGM.invertTGM l'
+        ld = M.compose m2 gd
+        lp = M.compose ld r'
 
 ---- Gluing Conditions
 
