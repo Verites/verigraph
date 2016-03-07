@@ -10,11 +10,17 @@ module Abstract.Relation (
     , Abstract.Relation.id
     , inverse
     , update
+    , removeDom
+    , removeCod
+    , insertCod
     -- * Query
     , apply
     , defDomain
     , domain
+    , codomain
     , image
+    , mapping
+    , orphans
     -- ** Predicates
     , functional
     , injective
@@ -38,7 +44,7 @@ instance (Eq a, Ord a) => Eq (Relation a) where
     r1 == r2 = sort(domain r1) == sort(domain r2) &&
                sort(codomain r1) == sort(codomain r2) &&
                mapping r1 == mapping r2
-               
+
 -- | Return a list of all domain elements mapped by the relation.
 defDomain :: Relation a -> [a]
 defDomain = Map.keys . Map.filter (not . L.null) . mapping
@@ -57,6 +63,10 @@ id dom = Relation d d idMap
     where
     d = sort $ nub dom
     idMap = foldr (\x acc -> Map.insert x [x] acc) Map.empty dom
+
+-- | Return the elements in the domain which are not in the image of the relation (orphans)
+orphans :: (Eq a) => Relation a -> [a]
+orphans r = (L.\\) (codomain r) (image r)
 
 -- | Add a mapping between @x@ and @y@ to the relation. If @x@ already exists,
 -- @y@ is joined to the corresponding elements.
@@ -98,6 +108,30 @@ compose r1@(Relation dom cod m) r2@(Relation dom' cod' m') =
                      in Map.insert a im m)
             Map.empty
             $ defDomain r1
+
+-- | Remove an element from the domain of the relation 
+removeDom :: (Eq a, Ord a) => a -> Relation a -> Relation a
+removeDom x r = 
+ let d = domain r
+     c = codomain r
+     m = mapping r
+ in  Relation (L.delete x d) c (Map.delete x m)
+
+-- | Remove an element from the codomain of the relation
+removeCod :: (Eq a,Ord a) => a -> Relation a -> Relation a
+removeCod x r = 
+ let d = domain r
+     c = codomain r
+     m = mapping r
+  in Relation d (L.delete x c) (Map.map (L.delete x) m)
+
+-- | Insert an element on the codomain of the relation
+insertCod :: (Eq a,Ord a) => a -> Relation a -> Relation a
+insertCod x r = 
+ let d = domain r
+     c = codomain r
+     m = mapping r
+  in Relation d (L.union [x] c) m
 
 -- | Test if @r@ is functional.
 functional :: (Ord a) => Relation a -> Bool

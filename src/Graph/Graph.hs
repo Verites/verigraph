@@ -5,7 +5,7 @@ module Graph.Graph (
     , EdgeId (..)
     , Node
     , NodeId (..)
-    , Graph
+    , Graph(..)
 
     -- * Construction
     , empty
@@ -47,6 +47,10 @@ module Graph.Graph (
     , isNodeOf
     , isAdjacentTo
     , isIncidentTo
+    
+    --
+    , newNodes
+    , newEdges
 ) where
 
 import Control.Applicative ((<$>))
@@ -78,9 +82,12 @@ data Graph a b = Graph {
     edgeMap :: [(EdgeId, Edge b)]
     } deriving (Read)
 
+-- | Verify equality of two Maps
 eq :: (Eq t1, Eq t2) => [(t1, t2)] -> [(t1, t2)] -> Bool
-eq [] [] = True
-eq a  b  = hasAny a b && hasAny b a
+eq a b = contained a b && contained b a
+
+contained :: Eq t => [t] -> [t] -> Bool
+contained a b = False `notElem` (map (\x -> x `elem` b) a)
 
 instance Eq (Graph a b) where
     (Graph nodeMap1 edgeMap1) == (Graph nodeMap2 edgeMap2) =
@@ -103,6 +110,43 @@ instance Show NodeId where
 
 instance Show EdgeId where
     show (EdgeId i) = show i
+
+---- Convenient instances of Number and Enum classes for NodeId and EdgeId
+instance Num (NodeId) where
+  (NodeId x)  +  (NodeId y) = NodeId (x+y)
+  (NodeId x)  *  (NodeId y) = NodeId (x*y)
+  (NodeId x)  -  (NodeId y) = NodeId (x-y)
+  negate (NodeId x) = NodeId (negate x)
+  signum (NodeId x) = NodeId (signum x)
+  fromInteger x       = (NodeId $ fromIntegral x)
+  abs (NodeId x)    = NodeId (abs x)
+
+instance Enum (NodeId) where
+  toEnum x = NodeId x
+  fromEnum (NodeId x) = x 
+
+instance Num (EdgeId) where
+  (EdgeId x)  +  (EdgeId y) = EdgeId (x+y)
+  (EdgeId x)  *  (EdgeId y) = EdgeId (x*y)
+  (EdgeId x)  -  (EdgeId y) = EdgeId (x-y)
+  negate (EdgeId x) = EdgeId (negate x)
+  signum (EdgeId x) = EdgeId (signum x)
+  fromInteger x       = EdgeId $ fromIntegral x
+  abs (EdgeId x)    = EdgeId (abs x)
+
+instance Enum (EdgeId) where
+  toEnum x = EdgeId x
+  fromEnum (EdgeId x) = x 
+
+-- | Infinite list of new node instances of a graph
+newNodes :: Graph a b -> [NodeId]
+newNodes g = [succ maxNode..]
+  where maxNode = foldr max 0 (nodes g)
+
+-- | Infinite list of new edge instances of a graph
+newEdges :: Graph a b -> [EdgeId]
+newEdges g = [succ maxEdge..]
+  where maxEdge = foldr max 0 (edges g)
 
 -- | Create an empty Graph.
 empty :: Graph a b

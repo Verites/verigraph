@@ -1,210 +1,246 @@
-module CriticalPairs.CriticalPairs (
-   CP (..),
-   CriticalPair (..),
+module CriticalPairs.CriticalPairs
+ (
+   CP,
+   CriticalPair,
    criticalPairs,
    countCP,
-   dpo
+   satsGluingCond,
+   satsGluingCondBoth,
+   satsNacs,
+   createPairs,
+   delUse,
+   proFor,
+   proEdg
    ) where
 
 import Graph.GraphRule
 import qualified CriticalPairs.GraphPart as GP
 import qualified Graph.GraphMorphism as GM
 import qualified Graph.TypedGraphMorphism as TGM
-import qualified Abstract.Relation as R
+import qualified Graph.Rewriting as RW
 import qualified Abstract.Morphism as M
-import qualified CriticalPairs.Deletion as D
 import CriticalPairs.VeriToGP
 import CriticalPairs.GPToVeri
 import Graph.Graph
 import qualified CriticalPairs.Matches as MT
 import Data.List.Utils (countElem)
+import Data.Maybe (mapMaybe)
 
-data CP = FOL | UseDelete | ProduceForbid | Both deriving(Eq,Show)
+data CP = FOL | DeleteUse | ProduceForbid | ProduceEdgeDeleteNode deriving(Eq,Show)
 
+-- | A Critical Pair is defined as two matches from the left side of their rules to a same graph
+-- CP indicates the type of the Critical Pair
+-- It assumes that the derivation of the rule with match @m1@ causes a conflict with the rule with match @m2@
 data CriticalPair a b = CriticalPair {
     m1 :: TGM.TypedGraphMorphism a b,
     m2 :: TGM.TypedGraphMorphism a b,
     cp :: CP
     } deriving (Eq,Show)
-    
+
 --instance Show (CriticalPair a b) where
 --  show (CriticalPair m1 m2 cp) = "{"++(show $ TGM.mapping m1)++(show $ TGM.mapping m2)++(show cp)++"}"
 
-{-Retorna (número de UseDeletes, número de ProduceForbid)-}
-countCP :: GraphRule a b -> GraphRule a b -> (Int,Int)
-countCP l r = (useDel+both,proFor+both)
-    where
-        useDel = countElem UseDelete     list
-        proFor = countElem ProduceForbid list
-        both   = countElem Both          list
-        list   = map (\x -> cp x) (criticalPairs l r)
+delUse (x,_,_) = x
+proFor (_,x,_) = x
+proEdg (_,_,x) = x
 
-{-Cálculo dos Pares Críticos-}
+-- | Return a pair: amount of (DeleteUse, ProduceForbid, ProduceEdgeDeleteNode)
+countCP :: GraphRule a b -> GraphRule a b -> (Int,Int,Int)
+countCP l r = (delUse,proFor,proEdg)
+    where
+        delUse = countElem DeleteUse             list
+        proFor = countElem ProduceForbid         list
+        proEdg = countElem ProduceEdgeDeleteNode list
+        list   = map cp (criticalPairs l r)
+
+-- | Create all jointly surjective pairs of @m1@ and @m2@
+createPairs :: TGM.TypedGraphMorphism a b
+     -> TGM.TypedGraphMorphism a b
+     -> [(TGM.TypedGraphMorphism a b, TGM.TypedGraphMorphism a b)]
+createPairs m1 m2 = map (mountTGMBoth m1 m2) (GP.genEqClass (mixTGM m1 m2))
+
+-- | All Critical Pairs
 criticalPairs :: GraphRule a b -> GraphRule a b -> [CriticalPair a b]
-criticalPairs l r = criticalPairsAux l r (D.setDeletion l r (GP.genEqClass $ mixLeftRule l r))
+criticalPairs l r = (allDeleteUse l r) ++ (allProduceForbid l r) ++ (allProdEdgeDelNode l r)
 
-criticalPairsAux :: GraphRule a b -> GraphRule a b -> [GP.EqClassGraphMap] -> [CriticalPair a b]
-criticalPairsAux l r []     = []
-criticalPairsAux l r (x:xs) = (if (satsGluingCondBoth (l,m1) (r,m2) g) then [newCP] else []) ++ (criticalPairsAux l r xs)
-  where
-    newCP = CriticalPair m1 m2 cp
-    cp = criticalPair l r g
-    g = GP.eqGraph x
-    m1 = mountTGM (left l) "Left"  x
-    m2 = mountTGM (left r) "Right" x
-    {-m1 = TGM.typedMorphism (M.codomain (left l)) typeMorphismL morphismL
-    m2 = TGM.typedMorphism (M.codomain (left r)) typeMorphismR morphismR
-    typeMorphismL = setType x (GM.empty (M.codomain morphismL) (M.codomain $ M.domain (left l)))
-    typeMorphismR = setType x (GM.empty (M.codomain morphismR) (M.codomain $ M.domain (left r)))
-    morphismL = toMorphism x "Left"
-    morphismR = toMorphism x "Right"-}
+---- Delete-Use
 
-{-Calcula o tipo do conflito de um par epi-}
-criticalPair :: GraphRule a b -> GraphRule a b -> GP.EqClassGraph -> CP
-criticalPair l r g = case (useDelete l r g, produceForbid l r g) of
-                       (True,True)   -> Both
-                       (True,False)  -> UseDelete
-                       (False,True)  -> ProduceForbid
-                       (False,False) -> FOL
-
-useDelete :: GraphRule a b -> GraphRule a b -> GP.EqClassGraph -> Bool
-useDelete l r ( []  , []  ) = False
-useDelete l r ( []  ,edges) = (delByLeft && isInMatchRight) || (useDelete l r ([], tail edges))
-  where
-    delByLeft      = True `elem` (map D.edelByLeft (head edges))
-    isInMatchRight = True `elem` (map GP.eRight (head edges))
-useDelete l r (nodes,edges) = (delByLeft && isInMatchRight) || (useDelete l r (tail nodes, edges))
-  where
-    delByLeft      = True `elem` (map D.ndelByLeft (head nodes))
-    isInMatchRight = True `elem` (map GP.nRight (head nodes))
-
-produceForbid :: GraphRule a b -> GraphRule a b -> GP.EqClassGraph -> Bool
-produceForbid l r g = False
+-- | All DeleteUse caused by the derivation of @l@ before @r@
+allDeleteUse :: GraphRule a b -> GraphRule a b -> [CriticalPair a b]
+allDeleteUse l r = map (\(m1,m2) -> CriticalPair m1 m2 DeleteUse) delUse
     where
-        gDoQuadro = map (\x -> D.setDeletion l r $ GP.genEqClass $ mixTGM (right r) x) (nacs l) --[[GP.EqClassGraphMap]]
-        firstNacG = head gDoQuadro
-        --m' = ..
-        firstNacM' = map (\x -> mountTGM (right r) "Right" x) firstNacG --[TGM.TypedGraphMorphism]
-        firstNacM = map (dpo l) firstNacM' --[TGM.TypedGraphMorphism]
-        firstNacM1 = map (\x -> MT.matches (M.codomain (left l)) (M.codomain x) MT.FREE) firstNacM --[[TGM.TypedGraphMorphism]]
-        umM1 = head firstNacM1 --[TGM.TypedGraphMorphism]
-        valid = satsGluingCondBoth (l,head umM1) (r,head firstNacM) g
+        pairs = createPairs (left l) (left r)                                --get all jointly surjective pairs of L1 and L2
+        gluing = filter (\(m1,m2) -> satsGluingCondBoth (l,m1) (r,m2)) pairs --filter the pairs that not satisfie gluing conditions of L and R
+        delUse = filter (deleteUse l r) gluing                               --select just the pairs that are in DeleteUse conflict
 
-dpo :: GraphRule a b -> TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b
-dpo _ b = b
+-- | DeleteUse using a most aproximated algorithm of the categorial diagram
+-- missing that RW.poc returns the morsphism d2
+{-deleteUse :: GraphRule a b -> GraphRule a b -> (TGM.TypedGraphMorphism a b,TGM.TypedGraphMorphism a b) -> Bool
+deleteUse l r (m1,m2) = Prelude.null filt
+    where
+        (_,d2) = RW.poc m2 (left r)
+        l1TOd2 = MT.matches (M.domain m1) (M.domain d2) MT.FREE
+        filt = filter (\x -> m1 == M.compose x d2) l1TOd2-}
 
+-- | Rule @l@ causes a delete-use conflict with @r@ if rule @l@ deletes something that is used by @r@
+-- @(m1,m2)@ is a pair of matches on the same graph
+deleteUse :: GraphRule a b -> GraphRule a b -> (TGM.TypedGraphMorphism a b,TGM.TypedGraphMorphism a b) -> Bool
+deleteUse l r (m1,m2) = True `elem` (nods ++ edgs)
+    where
+        nods = deleteUseAux l m1 m2 GM.applyNode TGM.nodesDomain TGM.nodesCodomain
+        edgs = deleteUseAux l m1 m2 GM.applyEdge TGM.edgesDomain TGM.edgesCodomain
+
+-- | Verify if some element in a graph is deleted by @l@ and is in the match of @r@
+deleteUseAux :: Eq t => GraphRule a b -> TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b
+                     -> (GM.GraphMorphism a b -> t -> Maybe t)
+                     -> (TGM.TypedGraphMorphism a b -> [t]) --domain
+                     -> (TGM.TypedGraphMorphism a b -> [t]) --codomain
+                     -> [Bool]
+deleteUseAux l m1 m2 apply dom cod = map (\x -> delByLeft x && isInMatchRight x) (cod m1)
+    where
+        delByLeft = ruleDeletes l m1 apply dom
+        isInMatchRight n = apply (GM.inverse $ TGM.mapping m2) n /= Nothing
+
+---- Produce-Forbid
+
+-- | All ProduceForbid caused by the derivation of @l@ before @r@
+-- rule @l@ causes a produce-forbid conflict with @r@ if some NAC in @r@ fails to be satisfied after the aplication of @l@
+allProduceForbid :: GraphRule a b -> GraphRule a b -> [CriticalPair a b]
+allProduceForbid l r = concat (map (produceForbidOneNac l r) (nacs r))
+
+-- | Check ProduceForbid for a NAC @n@ in @r@
+produceForbidOneNac :: GraphRule a b -> GraphRule a b
+                    -> TGM.TypedGraphMorphism a b
+                    -> [CriticalPair a b]
+produceForbidOneNac l r n = let
+        inverseRule = inverseGR l
+        pairs = createPairs (right l) n
+        filtPairs = filter (\(m'1,_) -> satsGluingCond inverseRule m'1) pairs
+        
+        kr' = map (\(m'1,_) -> RW.poc m'1 (left inverseRule)) filtPairs
+        k = map fst kr'
+        r' = map snd kr'
+        
+        ml' = map (\x -> RW.po x (right inverseRule)) k
+        m1 = map fst ml'
+        l' = map snd ml'
+        
+        m1k = zip m1 k
+        filtM1 = filter (\(m1,_) -> satsNacs l m1) m1k
+        
+        h12 = map (\(_,k) -> MT.matches (M.codomain (left r)) (M.codomain k) MT.FREE) filtM1
+        filtH12 = map (\(x,y,z) -> validH12 x y z) (zip3 h12 (map snd filtPairs) r')
+        adjH12 = zipIfNoEmpty filtH12 (map fst filtM1) l'
+        
+        m1m2 = map (\(h,m1,ls) -> (m1,M.compose h ls)) adjH12
+        filtM2 = filter (\(m1,m2) -> satsGluingCond r m2) m1m2
+        
+        validH12 h12 q r' = filter (\h -> M.compose n q == M.compose h r') h12
+        
+        zipIfNoEmpty [] _ _ = []
+        zipIfNoEmpty (h:hs) (m1:m1s) (l:ls) = (if Prelude.null h then [] else [(head h,m1,l)]) ++ (zipIfNoEmpty hs m1s ls)
+        
+        in map (\(m1,m2) -> CriticalPair m1 m2 ProduceForbid) filtM2
+
+---- Produce Edge Delete Node
+
+allProdEdgeDelNode :: GraphRule a b -> GraphRule a b -> [CriticalPair a b]
+allProdEdgeDelNode l r = map (\(m1,m2) -> CriticalPair m1 m2 ProduceEdgeDeleteNode) conflictPairs
+    where
+        pairs = createPairs (left l) (left r)
+        filteredPairs = filter (\(m1,m2) -> satsGluingCondBoth (l,m1) (r,m2)) pairs
+        conflictPairs = filter (prodEdgeDelNode l r) filteredPairs
+
+prodEdgeDelNode :: GraphRule a b -> GraphRule a b -> (TGM.TypedGraphMorphism a b,TGM.TypedGraphMorphism a b) -> Bool
+prodEdgeDelNode l r (m1,m2) = not (satsIncEdges r lp)
+    where
+        (_,p,l',r') = RW.dpo m1 l
+        gd = TGM.invertTGM l'
+        ld = M.compose m2 gd
+        lp = M.compose ld r'
+
+---- Gluing Conditions
+
+-- | Check gluing conditions for a pair of matches
 satsGluingCondBoth :: (GraphRule a b, TGM.TypedGraphMorphism a b) ->
                       (GraphRule a b, TGM.TypedGraphMorphism a b) ->
-                      GP.EqClassGraph ->
                       Bool
-satsGluingCondBoth (l,m1) (r,m2) g = (satsGluingCond l "Left" g m1) && (satsGluingCond r "Right" g m2)
+satsGluingCondBoth (l,m1) (r,m2) = (satsGluingCond l m1) && (satsGluingCond r m2)
 
-satsGluingCond :: GraphRule a b -> String -> GP.EqClassGraph -> TGM.TypedGraphMorphism a b -> Bool
-satsGluingCond rule side g m = identificationCondition && danglingCondition && nacsCondition
-   where
-      identificationCondition = satsDelItems rule side g
-      danglingCondition       = satsIncEdges rule side g
-      nacsCondition           = satsNacs     rule g m
+-- | Check gluing conditions for a match
+satsGluingCond :: GraphRule a b -> TGM.TypedGraphMorphism a b -> Bool
+satsGluingCond rule m = identificationCondition && danglingCondition && nacsCondition
+    where
+        identificationCondition = satsDelItems rule m
+        danglingCondition       = satsIncEdges rule m
+        nacsCondition           = satsNacs     rule m
 
-{-Old version
-satsGluingCond :: GraphRule a b -> GraphRule a b -> GP.EqClassGraph -> TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b -> Bool
-satsGluingCond l r g m1 m2 = identificationCondition && danglingCondition && nacsCondition
-   where
-      identificationCondition = (satsDelItems l "Left" g) && (satsDelItems r "Right" g)
-      danglingCondition       = (satsIncEdges l "Left" g) && (satsIncEdges r "Right" g)
-      nacsCondition           = (satsNacs l g m1) && (satsNacs r g m2)-}
+-- | Return True if the match @m@ satifies the identification condition
+satsDelItems :: GraphRule a b -> TGM.TypedGraphMorphism a b -> Bool
+satsDelItems rule m = False `notElem` (nodesDelPres ++ edgesDelPres)
+    where
+        nodesDelPres = map (satsDelItemsAux rule m TGM.nodesDomain GM.applyNode (TGM.nodesDomain m)) (TGM.nodesCodomain m)
+        edgesDelPres = map (satsDelItemsAux rule m TGM.edgesDomain GM.applyEdge (TGM.edgesDomain m)) (TGM.edgesCodomain m)
 
-{-retorna True se as NACs não impossibilitam a aplicação das regras-}
-satsNacs :: GraphRule a b -> GP.EqClassGraph -> TGM.TypedGraphMorphism a b -> Bool
-satsNacs rule g m = False `notElem` (map (satOneNac rule m) (nacs rule))
+-- | Check if in the match @m@, a element @n@ is deleted and at same time have another incident element on himself
+satsDelItemsAux :: Eq t => GraphRule a b -> TGM.TypedGraphMorphism a b
+                         -> (TGM.TypedGraphMorphism a b -> [t])
+                         -> (GM.GraphMorphism a b -> t -> Maybe t)
+                         -> [t] -> t -> Bool
+-- if just one element is incident in @n@, so it is not deleted and preserved at same match
+-- otherwise, is needed to verify if in the list of incident elements, if some is deleting @n@
+-- if two or more incident elements delete the element @n@ return False
+satsDelItemsAux rule m dom apply l n = (length incident <= 1) || (not someIsDel)
+    where
+        incident = [a | a <- dom m, apply (TGM.mapping m) a == (Just n)] 
+        ruleDel = apply (GM.inverse (TGM.mapping (left rule)))
+        someIsDel = Nothing `elem` (map ruleDel incident)
 
-{-Old version
-satsNacs :: GraphRule a b -> GraphRule a b -> GP.EqClassGraph -> TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b -> Bool
-satsNacs l r g m1 m2 = satsNacsL && satsNacsR
-   where
-      satsNacsL = False `notElem` (map (satOneNac l m1) (nacs l))
-      satsNacsR = False `notElem` (map (satOneNac r m2) (nacs r))-}
+-- | Return True if do not exist dangling edges by the derivation of @r@ with match @m@
+satsIncEdges :: GraphRule a b -> TGM.TypedGraphMorphism a b -> Bool
+satsIncEdges r m = False `notElem` (concat incidentEdgesDel)
+    where
+        mapM = TGM.mapping m
+        l = M.domain mapM
+        g = M.codomain mapM
+        matchedLInG = mapMaybe (GM.applyNode mapM) (nodes l)
+        delNodes = filter (ruleDeletes r m GM.applyNode TGM.nodesDomain) matchedLInG
+        hasIncEdges = map (incidentEdges g) delNodes
+        verEdgeDel = map (ruleDeletes r m GM.applyEdge TGM.edgesDomain)
+        incidentEdgesDel = map verEdgeDel hasIncEdges
 
-satOneNac :: GraphRule a b -> TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b -> Bool
-satOneNac rule m nac = True `notElem` checkCompose
+-- | Return True if the element @n@ is deleted by the rule @rule@ with match @m@
+-- assumes that @n@ has type NodeId or EdgeId
+-- @n@ not is necessarily element of G (the graph matched by @m@), in this case return False
+-- @list@ must get all element in the domain of @m@
+ruleDeletes :: Eq t => GraphRule a b -> TGM.TypedGraphMorphism a b
+                  -> (GM.GraphMorphism a b -> t -> Maybe t)
+                  -> (TGM.TypedGraphMorphism a b -> [t])
+                  -> t -> Bool
+ruleDeletes rule m apply list n = inL && (not isPreserv)
+    where
+        inL = any (\x -> apply (TGM.mapping m) x == (Just n)) (list m)
+        kToG = M.compose (left rule) m
+        isPreserv = any (\x -> apply (TGM.mapping kToG) x == (Just n)) (list kToG)
+
+-- | Return True if all NACs of @rule@ are satified by @m@
+satsNacs :: GraphRule a b -> TGM.TypedGraphMorphism a b -> Bool
+satsNacs rule m = False `notElem` (map (satsOneNac m) (nacs rule))
+
+-- | Return True if the NAC @nac@ is satified by @m@
+-- Get all injective matches (q) from @nac@ to G (codomain of @m@)
+-- and check if some of them commutes: @m@ == q . @nac@
+{-satsOneNac :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b -> Bool
+satsOneNac m nac = True `notElem` checkCompose
    where
       checkCompose = map (\x -> (M.compose nac x) == m) matches
-      matches = MT.matches typeNac typeG MT.FREE
+      matches = MT.matches typeNac typeG MT.INJ
       typeNac = M.codomain nac
-      typeG   = M.codomain m
+      typeG   = M.codomain m-}
 
-{-retorna True se não existirem elementos deletados e preservados ao mesmo tempo pela mesma regra no grafo-}
-satsDelItems :: GraphRule a b -> String -> GP.EqClassGraph -> Bool
-satsDelItems r side (nodes,edges) = True `notElem` ((map nodeDelPres nodes) ++ (map edgeDelPres edges))
-  where
-    nodeDelPres nods = isDelAndMore (nleft nods)
-    nleft       nods = if side == "Right" then map D.ndelByRight (filter GP.nRight nods) else map D.ndelByLeft (filter GP.nLeft nods)
-    edgeDelPres edgs = isDelAndMore (eleft edgs)
-    eleft       edgs = if side == "Right" then map D.edelByRight (filter GP.eRight edgs) else map D.edelByLeft (filter GP.eLeft edgs)
-
-isDelAndMore :: [Bool] -> Bool
-isDelAndMore l = True `elem` l && length(l) > 1
-
-{-Old version
-satsDelItems :: GraphRule a b -> GraphRule a b -> GP.EqClassGraph -> Bool
-satsDelItems l r (nodes,edges) = True `notElem` ((map nodeDelPres nodes) ++ (map edgeDelPres edges))
-  where
-    nodeDelPres nods = isDelAndMore (nleft nods) || isDelAndMore (nright nods)
-    nleft       nods = map D.ndelByLeft  (filter GP.nLeft  nods)
-    nright      nods = map D.ndelByRight (filter GP.nRight nods)
-    edgeDelPres edgs = isDelAndMore (eleft edgs) || isDelAndMore (eright edgs)
-    eleft       edgs = map D.edelByLeft  (filter GP.eLeft  edgs)
-    eright      edgs = map D.edelByRight (filter GP.eRight edgs)-}
-
-{- older version
-satsDelItems l r ( []  , []  ) = True
-satsDelItems l r ( []  ,edges) = if edgeDelPres then False else satsDelItems l r ([],tail edges)
-  where
-    edgeDelPres = isDelAndMore left || isDelAndMore right
-    left        = map D.edelByLeft  (filter GP.eLeft  (head edges))
-    right       = map D.edelByRight (filter GP.eRight (head edges))
-    
-satsDelItems l r (nodes,edges) = if nodeDelPres then False else satsDelItems l r (tail nodes,edges)
-  where
-    nodeDelPres = isDelAndMore left || isDelAndMore right
-    left        = map D.ndelByLeft  (filter GP.nLeft  (head nodes))
-    right       = map D.ndelByRight (filter GP.nRight (head nodes))
--}
-
-{-retorna True se não existirem dangling edges no grafo-}
-satsIncEdges :: GraphRule a b -> String -> GP.EqClassGraph -> Bool
-satsIncEdges l side ( []  ,  _  ) = True
-satsIncEdges l side (nodes,edges) = if (ruleDel side) then False else satsIncEdges l side (tail nodes,edges)
-  where
-    ruleDel              s    = nodeWillBeDeleted s && hasIncidentEdge s
-    nodeWillBeDeleted "Right" = True `elem` (map D.ndelByRight (head nodes))
-    nodeWillBeDeleted "Left"  = True `elem` (map D.ndelByLeft  (head nodes))
-    hasIncidentEdge   "Right" = hasIncEdge D.edelByRight edges (head nodes)
-    hasIncidentEdge   "Left"  = hasIncEdge D.edelByLeft  edges (head nodes)
-
-{-Old version
-satsIncEdges :: GraphRule a b -> GraphRule a b -> GP.EqClassGraph -> Bool
-satsIncEdges l r ( []  ,  _  ) = True
-satsIncEdges l r (nodes,edges) = if (ruleDel "Left") || (ruleDel "Right") then False else satsIncEdges l r (tail nodes,edges)
-  where
-    ruleDel              s    = nodeWillBeDeleted s && hasIncidentEdge s
-    nodeWillBeDeleted "Right" = True `elem` (map D.ndelByRight (head nodes))
-    nodeWillBeDeleted "Left"  = True `elem` (map D.ndelByLeft  (head nodes))
-    hasIncidentEdge   "Right" = hasIncEdge D.edelByRight edges (head nodes)
-    hasIncidentEdge   "Left"  = hasIncEdge D.edelByLeft  edges (head nodes)-}
-
-hasIncEdge :: (GP.Edge -> Bool) -> [[GP.Edge]] -> [GP.Node] -> Bool
-hasIncEdge f e []     = False
-hasIncEdge f e (n:ns) = (hasIncEdgeEachNode f n e) || (hasIncEdge f e ns)
-
-hasIncEdgeEachNode :: (GP.Edge -> Bool) -> GP.Node -> [[GP.Edge]] -> Bool
-hasIncEdgeEachNode f n []     = False
-hasIncEdgeEachNode f n (e:xs) = (hasIncEdgeEachNodeEveryEdge (map f e) n e) || (hasIncEdgeEachNode f n xs)
-
-hasIncEdgeEachNodeEveryEdge :: [Bool] -> GP.Node -> [GP.Edge] -> Bool
-hasIncEdgeEachNodeEveryEdge _ _  []    = False
-hasIncEdgeEachNodeEveryEdge l n (e:xs) = ((isSource || isTarget) && edgeBeDeleted) || (hasIncEdgeEachNodeEveryEdge l n xs)
+-- | Return True if the NAC @nac@ is satified by @m@
+satsOneNac :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b -> Bool
+satsOneNac m nac = True `notElem` checkCompose
    where
-      isSource      = (GP.source e) == n
-      isTarget      = (GP.target e) == n
-      edgeBeDeleted = True `notElem` l
+      checkCompose = map (\x -> (M.compose nac x) == m) matches
+      matches = MT.matches_nac nac m
