@@ -175,7 +175,7 @@ getRHS rule = ("", nodes, edges)
 getMorphisms :: GR.GraphRule a b -> [Morphism]
 getMorphisms rule = nodesMorph ++ edgesMorph
   where
-    invL = TGM.inverseTGM (GR.left rule)
+    invL = TGM.invertTGM (GR.left rule)
     lr = M.compose invL (GR.right rule)
     mapping = TGM.mapping lr
     nodeMap n = fromJust $ GM.applyNode mapping n
