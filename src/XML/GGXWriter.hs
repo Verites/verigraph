@@ -8,6 +8,7 @@ import qualified Graph.GraphGrammar  as GG
 import qualified Graph.GraphMorphism as GM
 import qualified Graph.GraphRule     as GR
 import qualified Abstract.Morphism   as M
+import qualified Graph.TypedGraphMorphism as TGM
 
 writeRoot :: ArrowXml a => a XmlTree XmlTree -> a XmlTree XmlTree
 writeRoot makebody = mkelem "Document" [sattr "version" "1.0"] [ makebody ]
@@ -144,12 +145,12 @@ writeRules grammar = map writeRule $ GG.rules grammar
 writeRule :: ArrowXml a => (String, GR.GraphRule b c) -> a XmlTree XmlTree
 writeRule (ruleName, rule) =
   mkelem "Rule"
-    [sattr "ID" "IDRULE", sattr "formula" "true", sattr "name" ruleName]
-    $ [writeLHS ruleName lhs, writeRHS ruleName rhs] ++  writeMappings morphisms ++ [ writeApplicationCondition]
+    [sattr "ID" ruleName, sattr "formula" "true", sattr "name" ruleName]
+    $ [writeLHS ruleName lhs, writeRHS ruleName rhs] ++ [writeMorphism ruleName morphisms] ++ [ writeApplicationCondition]
   where
     lhs = getLHS rule
     rhs = getRHS rule
-    morphisms = []
+    morphisms = getMorphisms rule
 
 getLHS :: GR.GraphRule a b -> ParsedTypedGraph
 getLHS rule = ("", nodes, edges)
@@ -171,17 +172,30 @@ getRHS rule = ("", nodes, edges)
     nodes = map (\n -> ("N" ++ show n, "N" ++ show (typn n))) (G.nodes (M.domain graphR))
     edges = map (\e -> ("E" ++ show e, "E" ++ show (typed e), "N" ++ show (src (M.domain graphR) e), "N" ++ show (tgt (M.domain graphR) e))) (G.edges $ M.domain graphR)
 
+getMorphisms :: GR.GraphRule a b -> [Morphism]
+getMorphisms rule = nodesMorph ++ edgesMorph
+  where
+    invL = TGM.inverseTGM (GR.left rule)
+    lr = M.compose invL (GR.right rule)
+    mapping = TGM.mapping lr
+    nodeMap n = fromJust $ GM.applyNode mapping n
+    nodes = filter (\n -> GM.applyNode mapping n /= Nothing) (G.nodes (M.domain mapping))
+    nodesMorph = map (\n -> ("N" ++ show (nodeMap n), "N" ++ show n)) nodes
+    edgeMap e = fromJust $ GM.applyEdge mapping e
+    edges = filter (\e -> GM.applyEdge mapping e /= Nothing) (G.edges (M.domain mapping))
+    edgesMorph = map (\e -> ("E" ++ show (edgeMap e), "E" ++ show e)) edges
+
 writeLHS :: ArrowXml a => String -> ParsedTypedGraph -> a XmlTree XmlTree
 writeLHS ruleName (_, nodes, edges) = writeGraph ("LeftOf_" ++ ruleName) "LHS" ("LeftOf_" ++ ruleName) nodes edges
 
 writeRHS :: ArrowXml a => String -> ParsedTypedGraph -> a XmlTree XmlTree
 writeRHS ruleName (_, nodes, edges)= writeGraph ("RightOf_" ++ ruleName) "RHS" ("RightOf_" ++ ruleName) nodes edges
 
-writeMorphism :: ArrowXml a => String -> [(String, String)]-> a XmlTree XmlTree
-writeMorphism name mappings =
+writeMorphism :: ArrowXml a => String -> [Morphism] -> a XmlTree XmlTree
+writeMorphism name morphisms =
   mkelem "Morphism"
   [sattr "comment" "Formula: true", sattr "name" name]
-  $ writeMappings mappings
+  $ writeMappings morphisms
 
 writeMappings :: ArrowXml a => [(String, String)] -> [a XmlTree XmlTree]
 writeMappings = map writeMapping
