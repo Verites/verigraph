@@ -1,22 +1,32 @@
 module XML.GGXWriter where
 
+import           Data.Maybe
 import           Text.XML.HXT.Core
 import           XML.ParsedTypes
+import qualified Graph.Graph         as G
+import qualified Graph.GraphGrammar  as GG
+import qualified Graph.GraphMorphism as GM
+import qualified Graph.GraphRule     as GR
+import qualified Abstract.Morphism   as M
 
 writeRoot :: ArrowXml a => a XmlTree XmlTree -> a XmlTree XmlTree
 writeRoot makebody = mkelem "Document" [sattr "version" "1.0"] [ makebody ]
 
-writeGts :: ArrowXml a => a XmlTree XmlTree
-writeGts = mkelem "GraphTransformationSystem" [ sattr "ID" "I1",
+writeGts :: ArrowXml a => GG.GraphGrammar b c -> a XmlTree XmlTree
+writeGts grammar = mkelem "GraphTransformationSystem" [ sattr "ID" "I1",
             sattr "directed" "true", sattr "name" "GraGra",
             sattr "parallel" "true" ]
-            (writeProperties ++ [writeTypes] ++ [writeHostGraph] ++ (writeRules []))
+            (writeProperties ++ [writeTypes (GG.typeGraph grammar)] ++ [writeHostGraph] ++ writeRules grammar)
 
+defaultProperties :: [(String, String)]
 defaultProperties = [("CSP","true"),("dangling","true"),("identification","true"),
   ("NACs","true"),("PACs","true"),("GACs","true"),("breakAllLayer","true"),
   ("showGraphAfterStep","true"),("TypeGraphLevel","ENABLED")]
 
+defaultNodeNameComplement :: String
 defaultNodeNameComplement = "%:RECT:java.awt.Color[r=0,g=0,b=0]:[NODE]:"
+
+defaultEdgeNameComplement :: String
 defaultEdgeNameComplement = "%:SOLID_LINE:java.awt.Color[r=0,g=0,b=0]:[EDGE]:"
 
 writeProperties :: ArrowXml a => [a XmlTree XmlTree]
@@ -35,28 +45,31 @@ writeTaggedValue :: ArrowXml a => (String, String) -> a XmlTree XmlTree
 writeTaggedValue (tag, value) = mkelem "TaggedValue" [sattr "Tag" tag,
                               sattr "TagValue" value] []
 
-writeTypes :: ArrowXml a => a XmlTree XmlTree
-writeTypes = mkelem "Types" []
-  $ writeNodeTypes nodeTypeTestList ++ writeEdgeTypes edgeTypeTestList
-  ++ [writeTypeGraph]
+writeTypes :: ArrowXml a => G.Graph b c -> a XmlTree XmlTree
+writeTypes graph = mkelem "Types" []
+  $ writeNodeTypes nodeTypeList ++ writeEdgeTypes edgeTypeList
+  ++ [writeTypeGraph graph]
+    where
+      nodeTypeList = map (\n -> ("N" ++ show n, show n)) (G.nodes graph)
+      edgeTypeList = map (\e -> ("E" ++ show e, show e)) (G.edges graph)
 
-writeTypeGraph :: ArrowXml a => a XmlTree XmlTree
-writeTypeGraph = writeGraph "I11" "TG" "TypeGraph" nodeTestList edgeTestList
+writeTypeGraph :: ArrowXml a => G.Graph b c -> a XmlTree XmlTree
+writeTypeGraph graph = writeGraph "TypeGraph" "TG" "TypeGraph" nodeList edgeList
+  where
+    nodeList = map (\n -> ("n" ++ show n, "N" ++ show n)) (G.nodes graph)
+    edgeList = map (\e -> ("e" ++ show e, "E" ++ show e, "n" ++ show (src graph e), "n" ++ show (tgt graph e))) (G.edges graph)
 
+src :: G.Graph a b -> G.EdgeId -> G.NodeId
+src g e = fromJust $ G.sourceOf g e
+
+tgt :: G.Graph a b -> G.EdgeId -> G.NodeId
+tgt g e = fromJust $ G.targetOf g e
+
+cn :: String -> String
 cn a = a ++ defaultNodeNameComplement
+
+ce :: String -> String
 ce a = a ++ defaultEdgeNameComplement
-
-nodeTypeTestList = [("I2","1"),("I3","2"),("I4","4"),("I5","3")]
-edgeTypeTestList = [("I6","3"),("I7","1"),("I8","2"),("I9","4"),("I10","5")]
-
-nodeTestList = [("I12","I2"),("I13","I3"),("I14","I5"),("I15","I4")]
-edgeTestList = [("I16","I7","I14","I12"),("I17","I8","I13","I12")
-                ,("I18","I6","I13","I14"),("I19","I9","I13","I15")
-                ,("I20","I10","I14","I15")]
-
---Ajustar isso aqui para uma regra exemplo
-rulesTesteList = [("sendMsg",("I24",[("I25","1"),("I26","3"),("I27","4")],[])]
-                  ([],[("I28","1","I26","I25")]),([],[("I33","5","I26","I27")])
 
 writeNodeTypes :: ArrowXml a => [(String,String)] -> [a XmlTree XmlTree]
 writeNodeTypes = map writeNodeType
@@ -125,20 +138,44 @@ writeAdditionalEdgeLayout =
   mkelem "additionalLayout"
   [ sattr "aktlength" "200", sattr "force" "10", sattr "preflength" "200" ] []
 
-writeRules :: ArrowXml a => [Rule] -> [a XmlTree XmlTree]
-writeRules = map writeRule
+writeRules :: ArrowXml a => GG.GraphGrammar b c -> [a XmlTree XmlTree]
+writeRules grammar = map writeRule $ GG.rules grammar
 
-writeRule :: ArrowXml a => Rule -> a XmlTree XmlTree
-writeRule (ruleName, lhs, rhs, maps) =
+writeRule :: ArrowXml a => (String, GR.GraphRule b c) -> a XmlTree XmlTree
+writeRule (ruleName, rule) =
   mkelem "Rule"
     [sattr "ID" "IDRULE", sattr "formula" "true", sattr "name" ruleName]
-    $ [writeLHS ruleName lhs, writeRHS ruleName rhs] ++  writeMappings maps ++ [ writeApplicationCondition]
+    $ [writeLHS ruleName lhs, writeRHS ruleName rhs] ++  writeMappings morphisms ++ [ writeApplicationCondition]
+  where
+    lhs = getLHS rule
+    rhs = getRHS rule
+    morphisms = []
+
+getLHS :: GR.GraphRule a b -> ParsedTypedGraph
+getLHS rule = ("", nodes, edges)
+  where
+    l = GR.left rule
+    graphL = M.codomain l --typed graph --morphism
+    typn n = fromJust $ GM.applyNode graphL n
+    typed e = fromJust $ GM.applyEdge graphL e
+    nodes = map (\n -> ("N" ++ show n, "N" ++ show (typn n))) (G.nodes (M.domain graphL))
+    edges = map (\e -> ("E" ++ show e, "E" ++ show (typed e), "N" ++ show (src (M.domain graphL) e), "N" ++ show (tgt (M.domain graphL) e))) (G.edges $ M.domain graphL)
+
+getRHS :: GR.GraphRule a b -> ParsedTypedGraph
+getRHS rule = ("", nodes, edges)
+  where
+    r = GR.right rule
+    graphR = M.codomain r --typed graph --morphism
+    typn n = fromJust $ GM.applyNode graphR n
+    typed e = fromJust $ GM.applyEdge graphR e
+    nodes = map (\n -> ("N" ++ show n, "N" ++ show (typn n))) (G.nodes (M.domain graphR))
+    edges = map (\e -> ("E" ++ show e, "E" ++ show (typed e), "N" ++ show (src (M.domain graphR) e), "N" ++ show (tgt (M.domain graphR) e))) (G.edges $ M.domain graphR)
 
 writeLHS :: ArrowXml a => String -> ParsedTypedGraph -> a XmlTree XmlTree
-writeLHS ruleName (gid, nodes, edges) = writeGraph "graphId" "LHS" ("LeftOf_" ++ ruleName) nodes edges
+writeLHS ruleName (_, nodes, edges) = writeGraph ("LeftOf_" ++ ruleName) "LHS" ("LeftOf_" ++ ruleName) nodes edges
 
 writeRHS :: ArrowXml a => String -> ParsedTypedGraph -> a XmlTree XmlTree
-writeRHS ruleName (gid, nodes, edges)= writeGraph "graphId" "RHS" ("RightOf_" ++ ruleName) nodes edges
+writeRHS ruleName (_, nodes, edges)= writeGraph ("RightOf_" ++ ruleName) "RHS" ("RightOf_" ++ ruleName) nodes edges
 
 writeMorphism :: ArrowXml a => String -> [(String, String)]-> a XmlTree XmlTree
 writeMorphism name mappings =
@@ -155,12 +192,9 @@ writeMapping (image, orig) = mkelem "Mapping" [sattr "image" image, sattr "orig"
 writeApplicationCondition :: ArrowXml a => a XmlTree XmlTree
 writeApplicationCondition = mkelem "Graph" [] []
 
-writeMain :: ArrowXml a => a XmlTree XmlTree
-writeMain = writeRoot writeGts
+-- writeDown :: IOSLA (XIOState s) XmlTree XmlTree
+-- writeDown = root [] [writeRoot writeGts] >>> writeDocument [withIndent yes] "hellow.ggx
 
-writeDown :: IOSLA (XIOState s) XmlTree XmlTree
-writeDown = root [] [writeRoot writeGts] >>> writeDocument [withIndent yes] "hellow.ggx"
-
-main = do
-  runX writeDown
-  return ()
+-- main = do
+--   runX writeDown
+--   return ()
