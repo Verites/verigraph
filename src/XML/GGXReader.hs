@@ -3,51 +3,57 @@
 
 module XML.GGXReader where
 
-import qualified Data.Map.Strict as Map
+import           Data.Maybe
 import           Data.Tree.NTree.TypeDefs
+import qualified Graph.Graph as G
 import           Text.XML.HXT.Core
+import           XML.ParsedTypes
 import           XML.XMLUtilities
 
-parseTypeGraph :: ArrowXml cat => cat (NTree XNode) ([String],[(String, String, String)])
+parseTypeGraph :: ArrowXml cat => cat (NTree XNode) ([ParsedTypedNode],[ParsedTypedEdge])
 parseTypeGraph = atTag "Types" >>> atTag "Graph" >>>
   proc graph -> do
     nodes <- listA parseNode -< graph
     edges <- listA parseEdge -< graph
     returnA -< (nodes, edges)
 
-parseNode :: ArrowXml cat => cat (NTree XNode) String
+parseNode :: ArrowXml cat => cat (NTree XNode) ParsedTypedNode
 parseNode = atTag "Node" >>>
   proc node -> do
+    nodeId <- getAttrValue "ID" -< node
     nodeType <- getAttrValue "type" -< node
-    returnA -< nodeType
+    returnA -< (nodeId,nodeType)
 
-parseEdge :: ArrowXml cat => cat (NTree XNode) (String, String, String)
+parseEdge :: ArrowXml cat => cat (NTree XNode) ParsedTypedEdge
 parseEdge = atTag "Edge" >>>
   proc node -> do
+    edgeId <- getAttrValue "ID" -< node
     edgeType <- getAttrValue "type" -< node
     edgeSource <- getAttrValue "source" -< node
     edgeTarget <- getAttrValue "target" -< node
-    returnA -< (edgeType, edgeSource, edgeTarget)
-
-parseNodeType :: ArrowXml cat => cat (NTree XNode) (String, String)
-parseNodeType = atTag "Node" >>>
-  proc nodeType -> do
-    nodeId    <- getAttrValue "ID" -< nodeType
-    nodeType  <- getAttrValue "type" -< nodeType
-    returnA -< (nodeId, nodeType)
-
-parseNodeTypes :: ArrowXml cat => cat (NTree XNode) [(String, String)]
-parseNodeTypes = atTag "Types" >>> atTag "Graph" >>>
-  proc graph -> do
-    nodes <- listA parseNodeType -< graph
-    returnA -< nodes
+    returnA -< (edgeId, edgeType, edgeSource, edgeTarget)
 
 --readTypes :: String -> IO [Map.Map String String]
 --readTypes fileName = createMap $ runX (parseXML fileName >>> parseNodeTypes)
 
+main :: IO()
 main = do
-  a <- runX (parseXML "teste-conflito.ggx" >>> parseNodeType)
-  print a
+  a <- runX (parseXML "teste-conflito.ggx" >>> parseTypeGraph)
+  let (n,e) = head a
+  let tg = instatiateTypeGraph n e
+  print tg
+  --print (G.sourceOf tg (G.EdgeId 6))
   return ()
 
---instatiateTypeGraph :: ParsedGraph -> G.Graph a b
+instatiateTypeGraph :: [ParsedTypedNode] -> [ParsedTypedEdge] -> G.Graph a b
+instatiateTypeGraph nodes edges = graphWithEdges
+  where
+    getNodeId y = G.NodeId (read (tail y) :: Int)
+    getEdgeId y = G.EdgeId (read (tail y) :: Int)
+    lkup e l = fromJust $ lookup e l
+    getNodeType n = G.NodeId (read (tail (lkup n nodes)) :: Int)
+    nodesId = map (\(x,y) -> getNodeId y) nodes
+    graphWithNodes = foldr G.insertNode G.empty nodesId
+    edgesId = map (\(id, typ, src, tgt) -> (getEdgeId typ, getNodeType src, getNodeType tgt)) edges
+    graphWithEdges = foldr (\(id,src,tgt) g -> G.insertEdge id src tgt g) graphWithNodes edgesId
+
