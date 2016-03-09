@@ -86,17 +86,30 @@ writeRule :: ArrowXml a => (String, GR.GraphRule b c) -> a XmlTree XmlTree
 writeRule (ruleName, rule) =
   mkelem "Rule"
     [sattr "ID" ruleName, sattr "formula" "true", sattr "name" ruleName]
-    $ [writeLHS ruleName lhs, writeRHS ruleName rhs] ++ [writeMorphism ruleName morphisms] ++ [ writeApplicationCondition]
+    $ [writeLHS ruleName lhs, writeRHS ruleName rhs] ++ [writeMorphism ruleName morphism] ++ [writeConditions ruleName rule]
   where
     lhs = getLHS rule
     rhs = getRHS rule
-    morphisms = getMorphisms rule
+    morphism = getMappings rule
 
 getLHS :: GR.GraphRule a b -> ParsedTypedGraph
 getLHS rule = serializeGraph $ GR.left rule
 
 getRHS :: GR.GraphRule a b -> ParsedTypedGraph
 getRHS rule = serializeGraph $ GR.right rule
+
+getNacs :: String -> GR.GraphRule a b -> [(ParsedTypedGraph,[Mapping])]
+getNacs ruleName rule = map getNac nacsWithIds
+  where
+    zipIds = zip ([0..]::[Int]) (GR.nacs rule)
+    nacsWithIds = map (\(x,y) -> ("NAC_" ++ ruleName ++ "_" ++ show x, y)) zipIds
+
+getNac :: (String, TGM.TypedGraphMorphism a b) -> (ParsedTypedGraph, [Mapping])
+getNac (nacId,nac) = (graph, mappings)
+  where
+    (_,n,e) = serializeGraph nac
+    graph = (nacId, n, e)
+    mappings = getNacMappings nac
 
 serializeGraph :: TGM.TypedGraphMorphism a b -> ParsedTypedGraph
 serializeGraph morphism = ("", nodes, edges)
@@ -115,8 +128,8 @@ serializeEdge graph e = ("E" ++ show e, "E" ++ show (edgeType e), "N" ++ show (s
   where
     edgeType edge = fromJust $ GM.applyEdge graph edge
 
-getMorphisms :: GR.GraphRule a b -> [Morphism]
-getMorphisms rule = nodesMorph ++ edgesMorph
+getMappings :: GR.GraphRule a b -> [Mapping]
+getMappings rule = nodesMorph ++ edgesMorph
   where
     invL = TGM.invertTGM (GR.left rule)
     lr = M.compose invL (GR.right rule)
@@ -128,13 +141,22 @@ getMorphisms rule = nodesMorph ++ edgesMorph
     edges = filter (isJust . GM.applyEdge mapping) (G.edges (M.domain mapping))
     edgesMorph = map (\e -> ("E" ++ show (edgeMap e), "E" ++ show e)) edges
 
+getNacMappings :: TGM.TypedGraphMorphism a b -> [Mapping]
+getNacMappings nac = nodesMorph ++ edgesMorph
+  where
+    mapping = TGM.mapping nac
+    nodeMap n = fromJust $ GM.applyNode mapping n
+    edgeMap e = fromJust $ GM.applyEdge mapping e
+    nodesMorph = map (\n -> ("N" ++ show (nodeMap n), "N" ++ show n)) (G.nodes $ M.domain mapping)
+    edgesMorph = map (\e -> ("E" ++ show (edgeMap e), "E" ++ show e)) (G.edges $ M.domain mapping)
+
 writeLHS :: ArrowXml a => String -> ParsedTypedGraph -> a XmlTree XmlTree
 writeLHS ruleName (_, nodes, edges) = writeGraph ("LeftOf_" ++ ruleName) "LHS" ("LeftOf_" ++ ruleName) nodes edges
 
 writeRHS :: ArrowXml a => String -> ParsedTypedGraph -> a XmlTree XmlTree
 writeRHS ruleName (_, nodes, edges)= writeGraph ("RightOf_" ++ ruleName) "RHS" ("RightOf_" ++ ruleName) nodes edges
 
-writeMorphism :: ArrowXml a => String -> [Morphism] -> a XmlTree XmlTree
+writeMorphism :: ArrowXml a => String -> [Mapping] -> a XmlTree XmlTree
 writeMorphism name mappings =
   mkelem "Morphism"
   [sattr "comment" "Formula: true", sattr "name" name]
@@ -146,14 +168,18 @@ writeMappings = map writeMapping
 writeMapping :: ArrowXml a => (String, String) -> a XmlTree XmlTree
 writeMapping (image, orig) = mkelem "Mapping" [sattr "image" image, sattr "orig" orig] []
 
-writeApplicationCondition :: ArrowXml a => a XmlTree XmlTree
-writeApplicationCondition = mkelem "ApplCondition" [] $ writeNacs []
+writeConditions :: ArrowXml a => String -> GR.GraphRule b c -> a XmlTree XmlTree
+writeConditions ruleName rule = mkelem "ApplCondition" [] $ map writeNac (getNacs ruleName rule)
 
-writeNac :: ArrowXml a => b -> a XmlTree XmlTree
-writeNac _ = mkelem "NAC" [] []
+writeNac :: ArrowXml a => (ParsedTypedGraph, [Mapping]) -> a XmlTree XmlTree
+writeNac (nacGraph, nacMorphism) = mkelem "NAC" [] [writeNacGraph nacGraph, writeNacMorphism nacMorphism]
+  where
+    getId (nacId, _, _) = nacId
+    writeNacGraph (nacId, nodes, edges) = writeGraph nacId "NAC" nacId nodes edges
+    writeNacMorphism = writeMorphism (getId nacGraph)
 
-writeNacs :: ArrowXml a => [b] -> [a XmlTree XmlTree]
-writeNacs = map writeNac
+-- writeNacs :: ArrowXml a => [b] -> [a XmlTree XmlTree]
+-- writeNacs = map writeNac
 
 -- writeDown :: IOSLA (XIOState s) XmlTree XmlTree
 -- writeDown = root [] [writeRoot writeGts] >>> writeDocument [withIndent yes] "hellow.ggx
