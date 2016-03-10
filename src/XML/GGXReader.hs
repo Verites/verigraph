@@ -57,14 +57,14 @@ parseRule = atTag "Rule" >>>
 parseLHS :: ArrowXml cat => cat (NTree XNode) ParsedTypedGraph
 parseLHS = atTag "Graph" >>>
   proc graph -> do
-    kind <- isA ("LHS" ==) <<< getAttrValue "kind"-< graph
+    _ <- isA ("LHS" ==) <<< getAttrValue "kind"-< graph
     lhs <- parseGraph -< graph
     returnA -< lhs
 
 parseRHS :: ArrowXml cat => cat (NTree XNode) ParsedTypedGraph
 parseRHS = atTag "Graph" >>>
   proc graph -> do
-    kind <- isA ("RHS" ==) <<< getAttrValue "kind"-< graph
+    _ <- isA ("RHS" ==) <<< getAttrValue "kind"-< graph
     rhs <- parseGraph -< graph
     returnA -< rhs
 
@@ -81,6 +81,13 @@ parseMappings = atTag "Mapping" >>>
     orig <- getAttrValue "orig" -< mapping
     returnA -< (clearId image, clearId orig)
 
+parseNac :: ArrowXml cat => cat (NTree XNode) (ParsedTypedGraph,[Mapping])
+parseNac = atTag "NAC" >>>
+  proc nac -> do
+    graph <- parseGraph -< nac
+    mappings <- listA parseMappings -< nac
+    returnA -< (graph, mappings)
+
 main :: IO()
 main = do
   a <- runX (parseXML "teste-conflito.ggx" >>> parseTypeGraph)
@@ -94,7 +101,6 @@ main = do
   let lhs = instatiateTypedGraph h2 tg
   print lhs
   let k =  instatiateInterface h4 lhs
-  print k
   return ()
 
 instatiateTypeGraph :: [ParsedTypedNode] -> [ParsedTypedEdge] -> G.Graph a b
