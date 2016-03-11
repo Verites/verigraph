@@ -19,11 +19,12 @@ import System.Exit
 import Data.Matrix
 
 import qualified Abstract.Morphism as M
+import Abstract.Valid
 import Data.Maybe
 import CriticalPairs.Matches
 import CriticalPairs.GPToVeri
 
-import qualified XML.GTXLReader as XML
+import qualified XML.GGXReader as XML
 
 iN = insertNode
 iE = insertEdge
@@ -217,15 +218,25 @@ rulesTest2 = concat (replicate 16 rules2)
 --11.9s useDelete categorial diagram - nac matches total inj
 
 initGraph = GM.empty grafotipo grafotipo
-ggg = GG.graphGrammar initGraph [("sendMsg",sendMsg), ("getDATA", getDATA), ("receiveMsg", receiveMSG), ("deleteMsg", deleteMSG)]
+ggg = GG.graphGrammar initGraph [("sendMsg",sendMsg), ("getDATA", getDATA), ("receiveMsg", receiveMSG), ("deleteMsg", deleteMSG), ("teste", teste), ("wnac", wnac), ("wnac2", wnac2), ("tesetCreate", testeCreate)]
 
 writeDown :: HXT.IOSLA (HXT.XIOState s) HXT.XmlTree HXT.XmlTree
 writeDown = HXT.root [] [GW.writeRoot $ GW.writeGts ggg] HXT.>>> HXT.writeDocument [HXT.withIndent HXT.yes] "hellow.ggx"
 
-writeDeFato = do
-  HXT.runX writeDown
-  return ()
 
+
+-- writeDeFato = do
+--   HXT.runX writeDown
+--   return ()
+
+fileName = "teste-conflito.ggx"
+
+calculate = do
+  tg <- XML.readTypeGraph fileName
+  rs <- XML.readRules fileName
+  let r1 = XML.instantiateRule (head tg) (rs!!0)
+  print $ (criticalPairs r1 r1)
+  return (criticalPairs r1 r1)
 
 {-cpRT = criticalPairs receiveMSG teste
 mA = m1 (cpRT!!1)
