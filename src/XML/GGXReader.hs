@@ -70,7 +70,7 @@ parseRHS = atTag "Graph" >>>
     returnA -< rhs
 
 parseMorphism :: ArrowXml cat => cat (NTree XNode) [Mapping]
-parseMorphism = atTag "Morphism">>>
+parseMorphism = getChildren >>> isElem >>> hasName "Morphism" >>>
   proc morphism -> do
     maps <- listA parseMappings -< morphism
     returnA -< maps
@@ -93,6 +93,7 @@ main :: IO()
 main = do
   a <- runX (parseXML "teste-conflito.ggx" >>> parseTypeGraph)
   b <- runX (parseXML "teste-conflito.ggx" >>> parseRule)
+  print b
   --let ((h1,h2,h3,h4),h5) = b!!0
   --print h2
   --print h3
@@ -108,7 +109,6 @@ main = do
   --let lhs = instantiateLeft k l
   --print $ GR.graphRule lhs rhs nacs
   let rules = map (instantiateRule $ head a) b
-  print rules
   return ()
 
 readTypeGraph :: String -> IO[TypeGraph]
