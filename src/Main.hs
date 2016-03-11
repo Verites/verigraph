@@ -229,14 +229,25 @@ writeDown = HXT.root [] [GW.writeRoot $ GW.writeGts ggg] HXT.>>> HXT.writeDocume
 --   HXT.runX writeDown
 --   return ()
 
-fileName = "teste-conflito.ggx"
+-- fileName = "teste-conflito.ggx"
+
+--fileName = "elevator.ggx"
+
+fileName = "ev.ggx"
 
 calculate = do
   tg <- XML.readTypeGraph fileName
   rs <- XML.readRules fileName
-  let r1 = XML.instantiateRule (head tg) (rs!!0)
-  print $ (criticalPairs r1 r1)
-  return (criticalPairs r1 r1)
+  let rulesNames = map (\((x,_,_,_),_) -> x) rs
+  print rulesNames
+  let rles = map (XML.instantiateRule (head tg)) rs
+  print $ "Numero de regras: " ++ show (length rles)
+  print $ (m rles)-- + (mpf rles) + (mpe rles)
+  print $ (mpf rles)
+  print $ (mpe rles)
+  return ()
+
+
 
 {-cpRT = criticalPairs receiveMSG teste
 mA = m1 (cpRT!!1)
