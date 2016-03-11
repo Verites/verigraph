@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeFamilies #-}
+import qualified Text.XML.HXT.Core as HXT
 
 import CriticalPairs.VeriToGP
 --import CriticalPairs.GPToJPG
@@ -8,6 +9,8 @@ import Graph.Graph
 import qualified Graph.GraphMorphism as GM
 import qualified Graph.TypedGraphMorphism as TGM
 import qualified Graph.Rewriting as RW
+import qualified Graph.GraphGrammar as GG
+import qualified XML.GGXWriter as GW
 import Graph.GraphRule
 import System.Process
 import System.Environment
@@ -16,11 +19,12 @@ import System.Exit
 import Data.Matrix
 
 import qualified Abstract.Morphism as M
+import Abstract.Valid
 import Data.Maybe
 import CriticalPairs.Matches
 import CriticalPairs.GPToVeri
 
-import qualified XML.GTXLReader as XML
+import qualified XML.GGXReader as XML
 
 iN = insertNode
 iE = insertEdge
@@ -50,7 +54,7 @@ r1 = TGM.typedMorphism tkr1 trr1 kr1_rr1
 --nac
 nacGraph = build [501,502,503,504] [(501,503,501),(503,502,503)]
 nacType = GM.gmbuild nacGraph grafotipo [(501,1),(502,2),(503,3),(504,4)] [(501,1),(503,3)]
-nacMap = GM.gmbuild lr1 nacGraph [(11,501),(13,503),(14,504)] [(11,501)] 
+nacMap = GM.gmbuild lr1 nacGraph [(11,501),(13,503),(14,504)] [(11,501)]
 nacSendMsg = TGM.typedMorphism tlr1 nacType nacMap
 
 sendMsg = graphRule l1 r1 [nacSendMsg]
@@ -213,6 +217,38 @@ rulesTest2 = concat (replicate 16 rules2)
 --11.7s useDelete categorial diagram - nac matches part inj
 --11.9s useDelete categorial diagram - nac matches total inj
 
+initGraph = GM.empty grafotipo grafotipo
+ggg = GG.graphGrammar initGraph [("sendMsg",sendMsg), ("getDATA", getDATA), ("receiveMsg", receiveMSG), ("deleteMsg", deleteMSG), ("teste", teste), ("wnac", wnac), ("wnac2", wnac2), ("tesetCreate", testeCreate)]
+
+writeDown :: HXT.IOSLA (HXT.XIOState s) HXT.XmlTree HXT.XmlTree
+writeDown = HXT.root [] [GW.writeRoot $ GW.writeGts ggg] HXT.>>> HXT.writeDocument [HXT.withIndent HXT.yes] "hellow.ggx"
+
+
+
+-- writeDeFato = do
+--   HXT.runX writeDown
+--   return ()
+
+-- fileName = "teste-conflito.ggx"
+
+--fileName = "elevator.ggx"
+
+fileName = "ev.ggx"
+
+calculate = do
+  tg <- XML.readTypeGraph fileName
+  rs <- XML.readRules fileName
+  let rulesNames = map (\((x,_,_,_),_) -> x) rs
+  print rulesNames
+  let rles = map (XML.instantiateRule (head tg)) rs
+  print $ "Numero de regras: " ++ show (length rles)
+  print $ (m rles)-- + (mpf rles) + (mpe rles)
+  print $ (mpf rles)
+  print $ (mpe rles)
+  return ()
+
+
+
 {-cpRT = criticalPairs receiveMSG teste
 mA = m1 (cpRT!!1)
 mB = m2 (cpRT!!1)
@@ -277,17 +313,17 @@ kr = M.compose (TGM.invertTGM r) k                                 -- invert r a
 createdNodess = TGM.orphanNodesTyped r                                -- nodes in R to be created
 createdEdgess = TGM.orphanEdgesTyped r                                -- edges in R to be created
 nodeTable    = zip createdNodess (GM.newNodesTyped $ M.codomain kr) -- table mapping NodeIds in R to NodeIds in G'
-edgeTable    = zip createdEdgess (GM.newEdgesTyped $ M.codomain kr) -- table mapping EdgeIds in R to EdgeIds in G'   
+edgeTable    = zip createdEdgess (GM.newEdgesTyped $ M.codomain kr) -- table mapping EdgeIds in R to EdgeIds in G'
 
 -- generate new node instances in G', associating them to the "created" nodes in R
-kr'          = foldr (\(a,b) tgm -> let tp = fromJust $ GM.applyNode (M.domain kr) a 
+kr'          = foldr (\(a,b) tgm -> let tp = fromJust $ GM.applyNode (M.domain kr) a
  in TGM.updateNodeRelationTGM a b tp tgm)
- kr 
+ kr
  nodeTable
 
 -- query the instance graphs R
 typemor = M.domain         kr'                     -- typemor is the typed graph (R -> T)
-g2      = M.domain         typemor                 -- g  is the instance graph R 
+g2      = M.domain         typemor                 -- g  is the instance graph R
 mp      = TGM.mapping        kr'                     -- mp is the mapping of kr'  : (R -> D'), where D' = D + new nodes
 s1 e = fromJust $ sourceOf g2 e                    -- obtain source of e in R
 t1 e = fromJust $ targetOf g2 e                    -- obtain target of e in R
