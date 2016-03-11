@@ -1,3 +1,13 @@
+{-|
+Module      : CriticalPairs.CriticalPairs
+Description : CriticalPairs
+License     : GPL-3
+Maintainer  : acosta@inf.ufrgs.br
+Stability   : development
+
+This module provides a structure to calculate all Critical Pairs of two matches.
+It considers the DPO approach for graph transformation.
+-}
 module CriticalPairs.CriticalPairs
  (
    CP,
@@ -8,9 +18,12 @@ module CriticalPairs.CriticalPairs
    satsGluingCondBoth,
    satsNacs,
    createPairs,
-   delUse,
-   proFor,
-   proEdg
+   allDeleteUse,
+   allProduceForbid,
+   allProdEdgeDelNode,
+   getM1,
+   getM2,
+   getCP
    ) where
 
 import Graph.GraphRule
@@ -26,10 +39,10 @@ import qualified CriticalPairs.Matches as MT
 import Data.List.Utils (countElem)
 import Data.Maybe (mapMaybe)
 
+-- | Data representing the type of a 'CriticalPair'
 data CP = FOL | DeleteUse | ProduceForbid | ProduceEdgeDeleteNode deriving(Eq,Show)
 
--- | A Critical Pair is defined as two matches from the left side of their rules to a same graph
--- CP indicates the type of the Critical Pair
+-- | A Critical Pair is defined as two matches (m1,m2) from the left side of their rules to a same graph.
 -- It assumes that the derivation of the rule with match @m1@ causes a conflict with the rule with match @m2@
 data CriticalPair a b = CriticalPair {
     m1 :: TGM.TypedGraphMorphism a b,
@@ -37,21 +50,32 @@ data CriticalPair a b = CriticalPair {
     cp :: CP
     } deriving (Eq,Show)
 
+-- | Returns the left morphism of a 'CriticalPair'
+getM1 :: CriticalPair a b -> TGM.TypedGraphMorphism a b
+getM1 = m1
+
+-- | Returns the right morphism of a 'CriticalPair'
+getM2 :: CriticalPair a b -> TGM.TypedGraphMorphism a b
+getM2 = m2
+
+-- | Returns the type of a 'CriticalPair'
+getCP :: CriticalPair a b -> CP
+getCP = cp
+
 --instance Show (CriticalPair a b) where
 --  show (CriticalPair m1 m2 cp) = "{"++(show $ TGM.mapping m1)++(show $ TGM.mapping m2)++(show cp)++"}"
 
-delUse (x,_,_) = x
-proFor (_,x,_) = x
-proEdg (_,_,x) = x
 
 -- | Return a pair: amount of (DeleteUse, ProduceForbid, ProduceEdgeDeleteNode)
-countCP :: GraphRule a b -> GraphRule a b -> (Int,Int,Int)
+countCP :: GraphRule a b -- ^ left rule
+        -> GraphRule a b -- ^ right rule
+        -> (Int,Int,Int)
 countCP l r = (delUse,proFor,proEdg)
     where
         delUse = countElem DeleteUse             list
         proFor = countElem ProduceForbid         list
         proEdg = countElem ProduceEdgeDeleteNode list
-        list   = map cp (criticalPairs l r)
+        list   = map getCP (criticalPairs l r)
 
 -- | Create all jointly surjective pairs of @m1@ and @m2@
 createPairs :: TGM.TypedGraphMorphism a b
@@ -60,13 +84,17 @@ createPairs :: TGM.TypedGraphMorphism a b
 createPairs m1 m2 = map (mountTGMBoth m1 m2) (GP.genEqClass (mixTGM m1 m2))
 
 -- | All Critical Pairs
-criticalPairs :: GraphRule a b -> GraphRule a b -> [CriticalPair a b]
+criticalPairs :: GraphRule a b -- ^ left rule
+              -> GraphRule a b -- ^ right rule
+              -> [CriticalPair a b]
 criticalPairs l r = (allDeleteUse l r) ++ (allProduceForbid l r) ++ (allProdEdgeDelNode l r)
 
 ---- Delete-Use
 
 -- | All DeleteUse caused by the derivation of @l@ before @r@
-allDeleteUse :: GraphRule a b -> GraphRule a b -> [CriticalPair a b]
+allDeleteUse :: GraphRule a b -- ^ left rule
+             -> GraphRule a b -- ^ right rule
+             -> [CriticalPair a b]
 allDeleteUse l r = map (\(m1,m2) -> CriticalPair m1 m2 DeleteUse) delUse
     where
         pairs = createPairs (left l) (left r)                                --get all jointly surjective pairs of L1 and L2
@@ -74,17 +102,21 @@ allDeleteUse l r = map (\(m1,m2) -> CriticalPair m1 m2 DeleteUse) delUse
         delUse = filter (deleteUse l r) gluing                               --select just the pairs that are in DeleteUse conflict
 
 -- | DeleteUse using a most aproximated algorithm of the categorial diagram
--- missing that RW.poc returns the morsphism d2
-{-deleteUse :: GraphRule a b -> GraphRule a b -> (TGM.TypedGraphMorphism a b,TGM.TypedGraphMorphism a b) -> Bool
-deleteUse l r (m1,m2) = Prelude.null filt
+-- Verify the non existence of h21: L2 -> D1 such that d1 . h21 = m2
+deleteUse2 :: GraphRule a b -> GraphRule a b
+           -> (TGM.TypedGraphMorphism a b,TGM.TypedGraphMorphism a b)
+           -> Bool
+deleteUse2 l r (m1,m2) = Prelude.null filt
     where
-        (_,d2) = RW.poc m2 (left r)
+        (_,d2) = RW.poc m2 (left r) --get only the morphism D2 to G
         l1TOd2 = MT.matches (M.domain m1) (M.domain d2) MT.FREE
-        filt = filter (\x -> m1 == M.compose x d2) l1TOd2-}
+        filt = filter (\x -> m1 == M.compose x d2) l1TOd2
 
 -- | Rule @l@ causes a delete-use conflict with @r@ if rule @l@ deletes something that is used by @r@
 -- @(m1,m2)@ is a pair of matches on the same graph
-deleteUse :: GraphRule a b -> GraphRule a b -> (TGM.TypedGraphMorphism a b,TGM.TypedGraphMorphism a b) -> Bool
+deleteUse :: GraphRule a b -> GraphRule a b
+          -> (TGM.TypedGraphMorphism a b,TGM.TypedGraphMorphism a b)
+          -> Bool
 deleteUse l r (m1,m2) = True `elem` (nods ++ edgs)
     where
         nods = deleteUseAux l m1 m2 GM.applyNode TGM.nodesDomain TGM.nodesCodomain
@@ -105,7 +137,9 @@ deleteUseAux l m1 m2 apply dom cod = map (\x -> delByLeft x && isInMatchRight x)
 
 -- | All ProduceForbid caused by the derivation of @l@ before @r@
 -- rule @l@ causes a produce-forbid conflict with @r@ if some NAC in @r@ fails to be satisfied after the aplication of @l@
-allProduceForbid :: GraphRule a b -> GraphRule a b -> [CriticalPair a b]
+allProduceForbid :: GraphRule a b -- ^ left rule
+                 -> GraphRule a b -- ^ right rule
+                 -> [CriticalPair a b]
 allProduceForbid l r = concat (map (produceForbidOneNac l r) (nacs r))
 
 -- | Check ProduceForbid for a NAC @n@ in @r@
@@ -144,7 +178,9 @@ produceForbidOneNac l r n = let
 
 ---- Produce Edge Delete Node
 
-allProdEdgeDelNode :: GraphRule a b -> GraphRule a b -> [CriticalPair a b]
+allProdEdgeDelNode :: GraphRule a b -- ^ left rule
+                   -> GraphRule a b -- ^ right rule
+                   -> [CriticalPair a b]
 allProdEdgeDelNode l r = map (\(m1,m2) -> CriticalPair m1 m2 ProduceEdgeDeleteNode) conflictPairs
     where
         pairs = createPairs (left l) (left r)
@@ -230,16 +266,20 @@ satsNacs rule m = False `notElem` (map (satsOneNac m) (nacs rule))
 -- | Return True if the NAC @nac@ is satified by @m@
 -- Get all injective matches (q) from @nac@ to G (codomain of @m@)
 -- and check if some of them commutes: @m@ == q . @nac@
-{-satsOneNac :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b -> Bool
-satsOneNac m nac = True `notElem` checkCompose
+satsOneNac2 :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b -> Bool
+satsOneNac2 m nac = True `notElem` checkCompose
    where
       checkCompose = map (\x -> (M.compose nac x) == m) matches
       matches = MT.matches typeNac typeG MT.INJ
       typeNac = M.codomain nac
-      typeG   = M.codomain m-}
+      typeG   = M.codomain m
 
 -- | Return True if the NAC @nac@ is satified by @m@
-satsOneNac :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b -> Bool
+-- Check for all partial injective matches from @nac@ to G
+-- The Nac matches (N -> G) are injective only out of image of the rule match (L -> G)
+satsOneNac :: TGM.TypedGraphMorphism a b -- ^ m
+           -> TGM.TypedGraphMorphism a b -- ^ nac
+           -> Bool
 satsOneNac m nac = True `notElem` checkCompose
    where
       checkCompose = map (\x -> (M.compose nac x) == m) matches

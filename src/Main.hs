@@ -198,14 +198,20 @@ testeCreate = graphRule l8 r8 []
 
 -----
 
---rules = [sendMsg,getDATA,receiveMSG,deleteMSG]
-rules = [sendMsg,getDATA,receiveMSG,deleteMSG,teste,wnac,wnac2,testeCreate]
+rules = [sendMsg,getDATA,receiveMSG,deleteMSG]
+rules2 = [sendMsg,getDATA,receiveMSG,deleteMSG,teste,wnac,wnac2,testeCreate]
 
---rules = [sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG,sendMsg,getDATA,receiveMSG,deleteMSG]
---35.6s useDelete old - nac matches part inj
---36.3s useDelete old - nac matches total inj
---48.4s useDelete categorial diagram - nac matches part inj
---49.0s useDelete categorial diagram - nac matches total inj
+rulesTest = concat (replicate 32 rules)
+--27.9s useDelete old - nac matches part inj
+--28.5s useDelete old - nac matches total inj
+--33.6s useDelete categorial diagram - nac matches part inj
+--34.2s useDelete categorial diagram - nac matches total inj
+
+rulesTest2 = concat (replicate 16 rules2)
+-- 9.8s useDelete old - nac matches part inj
+-- 9.9s useDelete old - nac matches total inj
+--11.7s useDelete categorial diagram - nac matches part inj
+--11.9s useDelete categorial diagram - nac matches total inj
 
 {-cpRT = criticalPairs receiveMSG teste
 mA = m1 (cpRT!!1)
@@ -225,7 +231,7 @@ deleted = M.compose l (m2 cp0)
 created = M.compose r deleted
 ---------}
 
-ri = sendMsg
+{-ri = sendMsg
 le = sendMsg
 
 n = head (nacs ri)
@@ -260,7 +266,7 @@ len = length filtM2
 validH12 h12 q r' = filter (\h -> M.compose n q == M.compose h r') h12
 
 ajeita [] _ _ = []
-ajeita (h:hs) (m1:m1s) (l:ls) = (if Prelude.null h then [] else [(head h,m1,l)]) ++ (ajeita hs m1s ls)
+ajeita (h:hs) (m1:m1s) (l:ls) = (if Prelude.null h then [] else [(head h,m1,l)]) ++ (ajeita hs m1s ls)-}
 ---
 
 {-g = fst (head filtPairs)
@@ -315,14 +321,13 @@ kr''      = foldr (\(a,sa,ta,b,sb,tb,tp) tgm -> TGM.updateEdgeRelationTGM a b (T
 
 -----
 
-
 graphEqClass = map (\x -> GP.genEqClass (mixTGM (right getDATA) x)) (nacs sendMsg)
 --md = map (\x -> (map (mountTGMBoth (right getDATA) x graphEqClass))) (nacs sendMsg)
 ms = map (map (mountTGM (right getDATA) "Right")) (map(\x -> GP.genEqClass (mixTGM x (right getDATA))) (nacs sendMsg))
 
-m   = matrix (length rules) (length rules) (\y -> delUse $ countCP (rules!!((fst y)-1)) (rules!!((snd y)-1)))
-mpf = matrix (length rules) (length rules) (\y -> proFor $ countCP (rules!!((fst y)-1)) (rules!!((snd y)-1)))
-mpe = matrix (length rules) (length rules) (\y -> proEdg $ countCP (rules!!((fst y)-1)) (rules!!((snd y)-1)))
+m   r = matrix (length r) (length r) (\y -> length $ allDeleteUse       (r!!((fst y)-1)) (r!!((snd y)-1)))
+mpf r = matrix (length r) (length r) (\y -> length $ allProduceForbid   (r!!((fst y)-1)) (r!!((snd y)-1)))
+mpe r = matrix (length r) (length r) (\y -> length $ allProdEdgeDelNode (r!!((fst y)-1)) (r!!((snd y)-1)))
 
 --classes de equivalência dos lados esquerdos das regras
 --utilizado apenas no módulo toJPG
@@ -346,11 +351,12 @@ main = f2{-
 parse [] = error "Passe um arquivo, por favor"
 parse fs = XML.main2 $ head fs-}
 
+r = rulesTest2
+
 --apaga os .dot
 f2 =
    do
-      writeFile ("m.txt") ((show (length rules)) ++ "\n" ++ (show m))
-      writeFile ("mpf.txt") ((show (length rules)) ++ "\n" ++ (show mpf))
+      writeFile ("matrix.txt") (show ((m r) + (mpf r) + (mpe r)))
       return ()
 
 --cria os .dot e os .jpg
