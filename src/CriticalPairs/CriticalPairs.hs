@@ -149,7 +149,10 @@ produceForbidOneNac :: GraphRule a b -> GraphRule a b
 produceForbidOneNac l r n = let
         inverseRule = inverseGR l
         pairs = createPairs (right l) n
-        filtPairs = filter (\(m'1,_) -> satsGluingCond inverseRule m'1) pairs
+        
+        filtMono = filter (\(m'1,_) -> M.monomorphism m'1) pairs
+        
+        filtPairs = filter (\(m'1,_) -> satsGluingCond inverseRule m'1) filtMono
         
         kr' = map (\(m'1,_) -> RW.poc m'1 (left inverseRule)) filtPairs
         k = map fst kr'
