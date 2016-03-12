@@ -150,7 +150,7 @@ produceForbidOneNac l r n = let
         inverseRule = inverseGR l
         pairs = createPairs (right l) n
         
-        filtMono = filter (\(m'1,_) -> M.monomorphism m'1) pairs
+        filtMono = filter (\(_,q) -> M.monomorphism q) pairs
         
         filtPairs = filter (\(m'1,_) -> satsGluingCond inverseRule m'1) filtMono
         
