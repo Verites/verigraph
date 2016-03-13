@@ -229,11 +229,11 @@ writeDown = HXT.root [] [GW.writeRoot $ GW.writeGts ggg] HXT.>>> HXT.writeDocume
 --   HXT.runX writeDown
 --   return ()
 
--- fileName = "teste-conflito.ggx"
+fileName = "teste-conflito.ggx"
 
 --fileName = "elevator.ggx"
 
-fileName = "ev.ggx"
+-- fileName = "ev.ggx"
 
 calculate = do
   tg <- XML.readTypeGraph fileName
@@ -242,9 +242,19 @@ calculate = do
   print rulesNames
   let rles = map (XML.instantiateRule (head tg)) rs
   print $ "Numero de regras: " ++ show (length rles)
-  print $ (m rles)-- + (mpf rles) + (mpe rles)
-  print $ (mpf rles)
-  print $ (mpe rles)
+  print "Delete-Use"
+  let ud = m rles
+  print ud
+  print "Produce-Forbid"
+  let pf = mpf rles
+  print pf
+  print "Produce Edge Delete Node"
+  let pe = mpe rles
+  print pe
+  print "Matriz final"
+  print $ ud + pf + pe
+  --return (criticalPairs (rles!!0) (rles!!2))
+  --return (rles)
   return ()
 
 
@@ -374,8 +384,9 @@ gg = GP.genEqClass $ mixTGM (head (nacs sendMsg)) (right sendMsg)
 --classes de equivalencia em formato Text
 --ggs = gind (map GP.eqGraph gg)
 
-main :: IO ()
-main = f2{-
+--main :: IO ()
+main = calculate--f2
+{-
    do
       --f ((length ggs)-1)
       args <- getArgs
