@@ -229,9 +229,9 @@ writeDown = HXT.root [] [GW.writeRoot $ GW.writeGts ggg] HXT.>>> HXT.writeDocume
 --   HXT.runX writeDown
 --   return ()
 
-fileName = "teste-conflito.ggx"
+-- fileName = "teste-conflito.ggx"
 
---fileName = "elevator.ggx"
+fileName = "elevator.ggx"
 
 -- fileName = "ev.ggx"
 
@@ -254,10 +254,37 @@ calculate = do
   print "Matriz final"
   print $ ud + pf + pe
   --return (criticalPairs (rles!!0) (rles!!2))
-  --return (rles)
-  return ()
+  return (rles)
+  --return ()
 
+------
+filtMono x = filter (\(_,q) -> M.monomorphism q) x
 
+filtPairs inverseLeft x = filter (\(h1,_) -> satsGluingCond inverseLeft h1) x
+
+poc inverseLeft x = map (\(h1,q21) -> let (k,r') = RW.poc h1 (left inverseLeft) in
+ (h1,q21,k,r')) x
+
+po inverseLeft x = map (\(h1,q21,k,r') ->
+ let (m1,l') = RW.po k (right inverseLeft) in
+ (h1,q21,k,r',m1,l')) x
+
+filtM1 l x = filter (\(_,_,_,_,m1,_) -> satsNacs l m1) x
+
+h21 x n = concat
+ (map (\(h1,q21,k,r',m1,l') ->
+ let f = matches (M.domain n) (M.codomain k) FREE in
+ if Prelude.null f
+ then [] 
+ else [(h1,q21,k,r',m1,l',head f)])
+ x)
+
+validH21 n x = filter (\(h1,q21,k,r',m1,l',l2d1) -> M.compose l2d1 r' == M.compose n q21) x
+
+m1m2 x = map (\(h1,q21,k,r',m1,l',l2d1) -> (m1, M.compose l2d1 l')) x
+filtM2 r = filter (\(m1,m2) -> satsGluingCond r m2)
+
+------
 
 {-cpRT = criticalPairs receiveMSG teste
 mA = m1 (cpRT!!1)
@@ -367,9 +394,9 @@ kr''      = foldr (\(a,sa,ta,b,sb,tb,tp) tgm -> TGM.updateEdgeRelationTGM a b (T
 
 -----
 
-graphEqClass = map (\x -> GP.genEqClass (mixTGM (right getDATA) x)) (nacs sendMsg)
+--graphEqClass = map (\x -> GP.genEqClass (mixTGM (right getDATA) x)) (nacs sendMsg)
 --md = map (\x -> (map (mountTGMBoth (right getDATA) x graphEqClass))) (nacs sendMsg)
-ms = map (map (mountTGM (right getDATA) "Right")) (map(\x -> GP.genEqClass (mixTGM x (right getDATA))) (nacs sendMsg))
+--ms = map (map (mountTGM (right getDATA) "Right")) (map(\x -> GP.genEqClass (mixTGM x (right getDATA))) (nacs sendMsg))
 
 m   r = matrix (length r) (length r) (\y -> length $ allDeleteUse       (r!!((fst y)-1)) (r!!((snd y)-1)))
 mpf r = matrix (length r) (length r) (\y -> length $ allProduceForbid   (r!!((fst y)-1)) (r!!((snd y)-1)))
@@ -377,9 +404,9 @@ mpe r = matrix (length r) (length r) (\y -> length $ allProdEdgeDelNode (r!!((fs
 
 --classes de equivalência dos lados esquerdos das regras
 --utilizado apenas no módulo toJPG
-gg :: [GP.EqClassGraphMap]
+--gg :: [GP.EqClassGraphMap]
 --gg = GP.genEqClass $ mixLeftRule sendMsg sendMsg
-gg = GP.genEqClass $ mixTGM (head (nacs sendMsg)) (right sendMsg)
+--gg = GP.genEqClass $ mixTGM (head (nacs sendMsg)) (right sendMsg)
 
 --classes de equivalencia em formato Text
 --ggs = gind (map GP.eqGraph gg)
@@ -398,13 +425,13 @@ main = calculate--f2
 parse [] = error "Passe um arquivo, por favor"
 parse fs = XML.main2 $ head fs-}
 
-r = rulesTest2
+--r = rulesTest2
 
 --apaga os .dot
-f2 =
-   do
-      writeFile ("matrix.txt") (show ((m r) + (mpf r) + (mpe r)))
-      return ()
+--f2 =
+--  do
+--      writeFile ("matrix.txt") (show ((m r) + (mpf r) + (mpe r)))
+--      return ()
 
 --cria os .dot e os .jpg
 {-f 0 =

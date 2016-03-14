@@ -36,6 +36,7 @@ import CriticalPairs.VeriToGP
 import CriticalPairs.GPToVeri
 import Graph.Graph
 import qualified CriticalPairs.Matches as MT
+import Data.List (elemIndex)
 import Data.List.Utils (countElem)
 import Data.Maybe (mapMaybe)
 
@@ -171,13 +172,18 @@ produceForbidOneNac l r n = let
         --  Check existence of h21: L2 -> D1 st. e1 . h21 = q21 . n2
         h21 = concat
                  (map (\(h1,q21,k,r',m1,l') ->
-                         let f = MT.matches (M.domain n) (M.codomain k) MT.FREE in
-                           if Prelude.null f
+                         let hs = MT.matches (M.domain n) (M.codomain k) MT.FREE in
+                           if Prelude.null hs
                              then [] 
-                             else [(h1,q21,k,r',m1,l',head f)])
-                 filtM1) --(h1,q21,k,r',m1,l1,h21)
+                             else [(h1,q21,k,r',m1,l',hs)])
+                 filtM1) --(h1,q21,k,r',m1,l1,[hs])
         
-        validH21 = filter (\(h1,q21,k,r',m1,l',l2d1) -> M.compose l2d1 r' == M.compose n q21) h21
+        validH21 = concat $ map (\(h1,q21,k,r',m1,l',hs) ->
+                              let list = map (\h -> M.compose h r' == M.compose n q21) hs in
+                                case (elemIndex True list) of
+                                  Just ind -> [(h1,q21,k,r',m1,l',hs!!ind)]
+                                  Nothing -> [])
+                            h21
         
         m1m2 = map (\(h1,q21,k,r',m1,l',l2d1) -> (m1, M.compose l2d1 l')) validH21
         --filtM2 = filter (\(m1,m2) -> satsNacs r m2) m1m2
