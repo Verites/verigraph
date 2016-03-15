@@ -218,14 +218,18 @@ rulesTest2 = concat (replicate 16 rules2)
 --11.9s useDelete categorial diagram - nac matches total inj
 
 initGraph = GM.empty grafotipo grafotipo
-ggg = GG.graphGrammar initGraph [("sendMsg",sendMsg), ("getDATA", getDATA), ("receiveMsg", receiveMSG), ("deleteMsg", deleteMSG), ("teste", teste), ("wnac", wnac), ("wnac2", wnac2), ("tesetCreate", testeCreate)]
+ggg = GG.graphGrammar initGraph [("sendMsg",sendMsg), ("getDATA", getDATA), ("receiveMsg", receiveMSG), ("deleteMsg", deleteMSG), ("teste", teste), ("wnac", wnac), ("wnac2", wnac2), ("testeCreate", testeCreate)]
 
 writeDown :: HXT.IOSLA (HXT.XIOState s) HXT.XmlTree HXT.XmlTree
 writeDown = HXT.root [] [GW.writeRoot $ GW.writeGts ggg] HXT.>>> HXT.writeDocument [HXT.withIndent HXT.yes] "hellow.ggx"
 
--- writeDeFato = do
---   HXT.runX writeDown
---   return ()
+writeConf ::  HXT.IOSLA (HXT.XIOState s) HXT.XmlTree HXT.XmlTree
+writeConf =  HXT.root [] [GW.writeCpx ggg] HXT.>>> HXT.writeDocument [HXT.withIndent HXT.yes] "hellow.cpx"
+
+writeDeFato = do
+  --HXT.runX $ GW.writeConflicts $ GG.getRules ggg
+  HXT.runX $ writeConf
+  return ()
 
 -- fileName = "teste-conflito.ggx"
 
