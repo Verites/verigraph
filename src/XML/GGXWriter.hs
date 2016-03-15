@@ -3,6 +3,7 @@ module XML.GGXWriter where
 import           Data.Maybe
 import           Text.XML.HXT.Core
 import           XML.ParsedTypes
+import qualified CriticalPairs.CriticalPairs as CP
 import qualified Graph.Graph         as G
 import qualified Graph.GraphGrammar  as GG
 import qualified Graph.GraphMorphism as GM
@@ -12,6 +13,37 @@ import qualified Graph.TypedGraphMorphism as TGM
 
 writeGts :: ArrowXml a => GG.GraphGrammar b c -> a XmlTree XmlTree
 writeGts grammar = mkelem "GraphTransformationSystem" defaultGtsAttributes $ writeGrammar grammar
+
+writeCpaOptions :: ArrowXml a => a XmlTree XmlTree
+writeCpaOptions = mkelem "cpaOptions" cpaAttributes []
+
+writeCriticalPairAnalysis :: ArrowXml a => [(String,GR.GraphRule b c)] -> [a XmlTree XmlTree]
+writeCriticalPairAnalysis rules = [writeCpaOptions, writeConflictContainer rules, writeConflictFreeContainer rules]
+
+writeConflictContainer :: ArrowXml a => [(String,GR.GraphRule b c)] -> a XmlTree XmlTree
+writeConflictContainer rules = mkelem "conflictContainer" [sattr "kind" "exclude"] $ (writeRuleSets rules ++ writeConflictMatrix rules)
+
+writeConflictMatrix :: ArrowXml a => [(String,GR.GraphRule b c)] -> [a XmlTree XmlTree]
+writeConflictMatrix rules = map (\(name,rule) -> mkelem "Rule" [sattr "R1" name] (map (calculateCP rules) rules)) rules
+  where
+    calculateCP rules (ruleName,rule) = mkelem "Rule" [sattr "R2" ruleName, sattr "bool" "false", sattr "caIndx" "-1:", sattr "duIndx" "-1:", sattr "pfIndx" "-1:-1:"] []
+
+writeConflictFreeContainer :: ArrowXml a => [(String,GR.GraphRule b c)] -> a XmlTree XmlTree
+writeConflictFreeContainer rules = mkelem "conflictFreeContainer" [] $ writeConflictFreeMatrix rules
+
+writeConflictFreeMatrix :: ArrowXml a => [(String,GR.GraphRule b c)] -> [a XmlTree XmlTree]
+writeConflictFreeMatrix rules = map (\(name,rule) -> mkelem "Rule" [sattr "R1" name] (map (calculateCP rules) rules)) rules
+  where
+    calculateCP rules (ruleName,rule) = mkelem "Rule" [sattr "R2" ruleName, sattr "bool" "true"] []
+
+writeRuleSets :: ArrowXml a => [(String,GR.GraphRule b c)] -> [a XmlTree XmlTree]
+writeRuleSets rules = (mkelem "RuleSet" (somethingRules ++ rulesL) []) : (mkelem "RuleSet2" (somethingRules ++ rulesL) []) : []
+  where
+    somethingRules :: ArrowXml a => [a XmlTree XmlTree]
+    somethingRules = map (\(x,(ruleName,_)) -> sattr ("i" ++(show x)) ruleName) (zip [0..] rules)
+    rulesL :: ArrowXml a => [a XmlTree XmlTree]
+    rulesL = [sattr "size" (show $ length rules)]
+
 
 writeGrammar :: ArrowXml a => GG.GraphGrammar b c -> [a XmlTree XmlTree]
 writeGrammar grammar = writeAggProperties ++ [writeTypes (GG.typeGraph grammar)] ++ [writeHostGraph] ++ writeRules grammar
@@ -190,8 +222,11 @@ writeNac (nacGraph, nacMorphism) = mkelem "NAC" [] [writeNacGraph nacGraph, writ
 
 
 --Functions to deal with ggx format specificities
-writeRoot :: ArrowXml a => a XmlTree XmlTree -> a XmlTree XmlTree
-writeRoot makebody = mkelem "Document" [sattr "version" "1.0"] [ makebody ]
+writeRoot :: ArrowXml a => [a XmlTree XmlTree] -> a XmlTree XmlTree
+writeRoot makebody = mkelem "Document" [sattr "version" "1.0"] makebody
+
+writeCpx :: ArrowXml a => GG.GraphGrammar b c -> a XmlTree XmlTree
+writeCpx gg = mkelem "Document" [sattr "version" "1.0"] [mkelem "CriticalPairs" [sattr "ID" "I0"] ([writeGts gg] ++ writeCriticalPairAnalysis (GG.rules gg))]
 
 defaultGtsAttributes :: ArrowXml a => [a n XmlTree]
 defaultGtsAttributes = [ sattr "ID" "I1", sattr "directed" "true", sattr "name" "GraGra", sattr "parallel" "true" ]
@@ -215,6 +250,12 @@ writeAttrHandler :: ArrowXml a => a XmlTree XmlTree
 writeAttrHandler =
   mkelem "TaggedValue" [sattr "Tag" "AttrHandler", sattr "TagValue" "Java Expr"]
   $ writeTaggedValues [("Package", "java.lang"), ("Package", "java.util")]
+
+cpaAttributes :: ArrowXml a => [a n XmlTree]
+cpaAttributes = [sattr "complete" "true", sattr "consistent" "false", sattr "directlyStrictConfluent" "false",
+                sattr "directlyStrictConfluentUpToIso" "false", sattr "essential" "false",
+                sattr "ignoreSameMatch" "false", sattr "ignoreSameRule" "false", sattr "maxBoundOfCriticCause" "0",
+                sattr "namedObject" "false", sattr "strongAttrCheck" "false"]
 
 writeDefaultNodeLayout :: ArrowXml a => a XmlTree XmlTree
 writeDefaultNodeLayout =
