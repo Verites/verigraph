@@ -222,8 +222,8 @@ writeNac (nacGraph, nacMorphism) = mkelem "NAC" [] [writeNacGraph nacGraph, writ
 
 
 --Functions to deal with ggx format specificities
-writeRoot :: ArrowXml a => [a XmlTree XmlTree] -> a XmlTree XmlTree
-writeRoot makebody = mkelem "Document" [sattr "version" "1.0"] makebody
+writeRoot :: ArrowXml a => GG.GraphGrammar b c -> a XmlTree XmlTree
+writeRoot gg = mkelem "Document" [sattr "version" "1.0"] [writeGts gg]
 
 writeCpx :: ArrowXml a => GG.GraphGrammar b c -> a XmlTree XmlTree
 writeCpx gg = mkelem "Document" [sattr "version" "1.0"] [mkelem "CriticalPairs" [sattr "ID" "I0"] ([writeGts gg] ++ writeCriticalPairAnalysis (GG.rules gg))]

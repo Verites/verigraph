@@ -221,13 +221,13 @@ initGraph = GM.empty grafotipo grafotipo
 ggg = GG.graphGrammar initGraph [("sendMsg",sendMsg), ("getDATA", getDATA), ("receiveMsg", receiveMSG), ("deleteMsg", deleteMSG), ("teste", teste), ("wnac", wnac), ("wnac2", wnac2), ("testeCreate", testeCreate)]
 
 writeDown :: HXT.IOSLA (HXT.XIOState s) HXT.XmlTree HXT.XmlTree
-writeDown = HXT.root [] [GW.writeRoot $ GW.writeGts ggg] HXT.>>> HXT.writeDocument [HXT.withIndent HXT.yes] "hellow.ggx"
+writeDown = HXT.root [] [GW.writeRoot ggg] HXT.>>> HXT.writeDocument [HXT.withIndent HXT.yes] "hellow.ggx"
 
 writeConf ::  HXT.IOSLA (HXT.XIOState s) HXT.XmlTree HXT.XmlTree
 writeConf =  HXT.root [] [GW.writeCpx ggg] HXT.>>> HXT.writeDocument [HXT.withIndent HXT.yes] "hellow.cpx"
 
 writeDeFato = do
-  --HXT.runX $ GW.writeConflicts $ GG.getRules ggg
+  HXT.runX $ writeDown
   HXT.runX $ writeConf
   return ()
 
@@ -277,7 +277,7 @@ h21 x n = concat
  (map (\(h1,q21,k,r',m1,l') ->
  let f = matches (M.domain n) (M.codomain k) FREE in
  if Prelude.null f
- then [] 
+ then []
  else [(h1,q21,k,r',m1,l',head f)])
  x)
 
