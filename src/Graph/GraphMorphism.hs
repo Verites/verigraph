@@ -40,7 +40,7 @@ import Graph.Graph as G
 import Graph.Graph (Graph)
 import Abstract.Morphism
 import Abstract.Valid
-import Data.Maybe (isNothing)
+import Data.Maybe (isNothing,fromJust)
 
 data GraphMorphism a b = GraphMorphism {
                           getDomain    :: Graph a b
@@ -65,7 +65,9 @@ instance Show (GraphMorphism a b) where
         concatMap (\n -> (show n) ++ " --> " ++ (show (applyNode m n)) ++ "\n")
                   (G.nodes $ getDomain m) ++
         "\nEdge mappings: \n" ++
-        concatMap (\e -> (show e) ++ " --> " ++ (show (applyEdge m e)) ++ "\n")
+        concatMap (\e -> (show e) ++ " --> " ++ (show (applyEdge m e)) ++ " (from: " ++
+          (show (fromJust (G.sourceOf (domain m) e))) ++ " -> " ++
+          (show (fromJust (G.targetOf (domain m) e))) ++ ")\n")
                   (G.edges $ getDomain m)
 
 -- | Infinite list of new node instances of a typed graph

@@ -89,7 +89,7 @@ parseNac = atTag "NAC" >>>
     mappings <- listA parseMappings -< nac
     returnA -< (graph, mappings)
 
-main :: IO()
+{-main :: IO()
 main = do
   a <- runX (parseXML "teste-conflito.ggx" >>> parseTypeGraph)
   b <- runX (parseXML "teste-conflito.ggx" >>> parseRule)
@@ -109,7 +109,7 @@ main = do
   --let lhs = instantiateLeft k l
   --print $ GR.graphRule lhs rhs nacs
   let rules = map (instantiateRule $ head a) b
-  return ()
+  return ()-}
 
 readTypeGraph :: String -> IO[TypeGraph]
 readTypeGraph fileName = runX (parseXML fileName >>> parseTypeGraph)

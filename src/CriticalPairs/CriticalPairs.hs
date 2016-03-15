@@ -9,7 +9,7 @@ This module provides a structure to calculate all Critical Pairs of two matches.
 It considers the DPO approach for graph transformation.
 -}
 module CriticalPairs.CriticalPairs
- (
+ {-(
    CP,
    CriticalPair,
    criticalPairs,
@@ -24,7 +24,7 @@ module CriticalPairs.CriticalPairs
    getM1,
    getM2,
    getCP
-   ) where
+   ) -}where
 
 import Graph.GraphRule
 import qualified CriticalPairs.GraphPart as GP
@@ -36,6 +36,7 @@ import CriticalPairs.VeriToGP
 import CriticalPairs.GPToVeri
 import Graph.Graph
 import qualified CriticalPairs.Matches as MT
+import Data.List (elemIndex)
 import Data.List.Utils (countElem)
 import Data.Maybe (mapMaybe)
 
@@ -147,32 +148,50 @@ produceForbidOneNac :: GraphRule a b -> GraphRule a b
                     -> TGM.TypedGraphMorphism a b
                     -> [CriticalPair a b]
 produceForbidOneNac l r n = let
-        inverseRule = inverseGR l
+        inverseLeft = inverseGR l
+        
+        -- Consider for a NAC n (L2 -> N2) of r any jointly surjective
+        -- pair of morphisms (h1: R1 -> P1, q21: N2 -> P1) with q21 inj 
         pairs = createPairs (right l) n
-        filtPairs = filter (\(m'1,_) -> satsGluingCond inverseRule m'1) pairs
+        filtMono = filter (\(_,q) -> M.monomorphism q) pairs --(h1,q21)
         
-        kr' = map (\(m'1,_) -> RW.poc m'1 (left inverseRule)) filtPairs
-        k = map fst kr'
-        r' = map snd kr'
+        -- Check gluing cond for (h1,r1). Construct PO complement D1.
+        filtPairs = filter (\(h1,_) -> satsGluingCond inverseLeft h1) filtMono
         
-        ml' = map (\x -> RW.po x (right inverseRule)) k
-        m1 = map fst ml'
-        l' = map snd ml'
+        poc = map (\(h1,q21) -> let (k,r') = RW.poc h1 (left inverseLeft) in
+                                 (h1,q21,k,r'))
+                 filtPairs --(h1,q21,k,r')
         
-        m1k = zip m1 k
-        filtM1 = filter (\(m1,_) -> satsNacs l m1) m1k
+        -- Construct PO K and abort if m1 not sats NACs l
+        po = map (\(h1,q21,k,r') ->
+                   let (m1,l') = RW.po k (right inverseLeft) in
+                     (h1,q21,k,r',m1,l'))
+                 poc --(h1,q21,k,r',m1,l')
         
-        h12 = map (\(_,k) -> MT.matches (M.codomain (left r)) (M.codomain k) MT.FREE) filtM1
-        filtH12 = map (\(x,y,z) -> validH12 x y z) (zip3 h12 (map snd filtPairs) r')
-        adjH12 = zipIfNoEmpty filtH12 (map fst filtM1) l'
+        filtM1 = filter (\(_,_,_,_,m1,_) -> satsNacs l m1) po
         
-        m1m2 = map (\(h,m1,ls) -> (m1,M.compose h ls)) adjH12
+        --  Check existence of h21: L2 -> D1 st. e1 . h21 = q21 . n2
+        h21 = concat
+                 (map (\(h1,q21,k,r',m1,l') ->
+                         let hs = MT.matches (M.domain n) (M.codomain k) MT.FREE in
+                           if Prelude.null hs
+                             then [] 
+                             else [(h1,q21,k,r',m1,l',hs)])
+                 filtM1) --(h1,q21,k,r',m1,l1,[hs])
+        
+        validH21 = concat $ map (\(h1,q21,k,r',m1,l',hs) ->
+                              let list = map (\h -> M.compose h r' == M.compose n q21) hs in
+                                case (elemIndex True list) of
+                                  Just ind -> [(h1,q21,k,r',m1,l',hs!!ind)]
+                                  Nothing -> [])
+                            h21
+        
+        -- Define m2 = d1 . h21: L2 -> K and abort if m2 not sats NACs r
+        m1m2 = map (\(h1,q21,k,r',m1,l',l2d1) -> (m1, M.compose l2d1 l')) validH21
+        --filtM2 = filter (\(m1,m2) -> satsNacs r m2) m1m2
+        
+        -- Check gluing condition for m2 and r
         filtM2 = filter (\(m1,m2) -> satsGluingCond r m2) m1m2
-        
-        validH12 h12 q r' = filter (\h -> M.compose n q == M.compose h r') h12
-        
-        zipIfNoEmpty [] _ _ = []
-        zipIfNoEmpty (h:hs) (m1:m1s) (l:ls) = (if Prelude.null h then [] else [(head h,m1,l)]) ++ (zipIfNoEmpty hs m1s ls)
         
         in map (\(m1,m2) -> CriticalPair m1 m2 ProduceForbid) filtM2
 
