@@ -162,6 +162,7 @@ produceForbidOneNac l r n = let
                                  (h1,q21,k,r'))
                  filtPairs --(h1,q21,k,r')
         
+        -- Construct PO K and abort if m1 not sats NACs l
         po = map (\(h1,q21,k,r') ->
                    let (m1,l') = RW.po k (right inverseLeft) in
                      (h1,q21,k,r',m1,l'))
@@ -185,8 +186,11 @@ produceForbidOneNac l r n = let
                                   Nothing -> [])
                             h21
         
+        -- Define m2 = d1 . h21: L2 -> K and abort if m2 not sats NACs r
         m1m2 = map (\(h1,q21,k,r',m1,l',l2d1) -> (m1, M.compose l2d1 l')) validH21
         --filtM2 = filter (\(m1,m2) -> satsNacs r m2) m1m2
+        
+        -- Check gluing condition for m2 and r
         filtM2 = filter (\(m1,m2) -> satsGluingCond r m2) m1m2
         
         in map (\(m1,m2) -> CriticalPair m1 m2 ProduceForbid) filtM2

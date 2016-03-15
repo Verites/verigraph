@@ -203,7 +203,7 @@ testeCreate = graphRule l8 r8 []
 -----
 
 rules = [sendMsg,getDATA,receiveMSG,deleteMSG]
-rules2 = [sendMsg,getDATA,receiveMSG,deleteMSG,teste,wnac,wnac2,testeCreate]
+rules2 = rules ++ [teste,wnac,wnac2,testeCreate]
 
 rulesTest = concat (replicate 32 rules)
 --27.9s useDelete old - nac matches part inj
@@ -222,8 +222,6 @@ ggg = GG.graphGrammar initGraph [("sendMsg",sendMsg), ("getDATA", getDATA), ("re
 
 writeDown :: HXT.IOSLA (HXT.XIOState s) HXT.XmlTree HXT.XmlTree
 writeDown = HXT.root [] [GW.writeRoot $ GW.writeGts ggg] HXT.>>> HXT.writeDocument [HXT.withIndent HXT.yes] "hellow.ggx"
-
-
 
 -- writeDeFato = do
 --   HXT.runX writeDown
@@ -257,7 +255,7 @@ calculate = do
   return (rles)
   --return ()
 
-------
+{------
 filtMono x = filter (\(_,q) -> M.monomorphism q) x
 
 filtPairs inverseLeft x = filter (\(h1,_) -> satsGluingCond inverseLeft h1) x
@@ -284,7 +282,7 @@ validH21 n x = filter (\(h1,q21,k,r',m1,l',l2d1) -> M.compose l2d1 r' == M.compo
 m1m2 x = map (\(h1,q21,k,r',m1,l',l2d1) -> (m1, M.compose l2d1 l')) x
 filtM2 r = filter (\(m1,m2) -> satsGluingCond r m2)
 
-------
+------}
 
 {-cpRT = criticalPairs receiveMSG teste
 mA = m1 (cpRT!!1)
