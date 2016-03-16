@@ -39,7 +39,9 @@ writeConflictFreeContainer rules = mkelem "conflictFreeContainer" [] $ writeConf
 writeConflictFreeMatrix :: ArrowXml a => [(String,GR.GraphRule b c)] -> [a XmlTree XmlTree]
 writeConflictFreeMatrix rules = map (\r1@(name,rule) -> mkelem "Rule" [sattr "R1" name] (map (calculateCP r1) rules)) rules
   where
-    calculateCP (ruleName1,rule1) (ruleName2,rule2) = mkelem "Rule" [sattr "R2" ruleName2, sattr "bool" "true"] []
+    calculateCP (ruleName1,rule1) (ruleName2,rule2) = if null (CP.allDeleteUse rule1 rule2)
+                                                         then mkelem "Rule" [sattr "R2" ruleName2, sattr "bool" "true"] []
+                                                         else mkelem "Rule" [sattr "R2" ruleName2, sattr "bool" "false"] []
 
 writeRuleSets :: ArrowXml a => [(String,GR.GraphRule b c)] -> [a XmlTree XmlTree]
 writeRuleSets rules = (mkelem "RuleSet" (somethingRules ++ rulesL) []) : (mkelem "RuleSet2" (somethingRules ++ rulesL) []) : []
