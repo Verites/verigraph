@@ -115,9 +115,9 @@ deleteUse2 :: GraphRule a b -> GraphRule a b
            -> Bool
 deleteUse2 l r (m1,m2) = Prelude.null filt
     where
-        (_,d2) = RW.poc m2 (left r) --get only the morphism D2 to G
-        l1TOd2 = MT.matches (M.domain m1) (M.domain d2) MT.FREE
-        filt = filter (\x -> m1 == M.compose x d2) l1TOd2
+        (_,d1) = RW.poc m1 (left l) --get only the morphism D2 to G
+        l2TOd1 = MT.matches (M.domain m2) (M.domain d1) MT.FREE
+        filt = filter (\x -> m2 == M.compose x d1) l2TOd1
 
 -- | Rule @l@ causes a delete-use conflict with @r@ if rule @l@ deletes something that is used by @r@
 -- @(m1,m2)@ is a pair of matches on the same graph
@@ -178,20 +178,21 @@ produceForbidOneNac l r n = let
         filtM1 = filter (\(_,_,_,_,m1,_) -> satsNacs l m1) po
 
         --  Check existence of h21: L2 -> D1 st. e1 . h21 = q21 . n2
-        h21 = concat
-                 (map (\(h1,q21,k,r',m1,l') ->
-                         let hs = MT.matches (M.domain n) (M.codomain k) MT.FREE in
-                           if Prelude.null hs
-                             then []
-                             else [(h1,q21,k,r',m1,l',hs)])
-                 filtM1) --(h1,q21,k,r',m1,l1,[hs])
+        h21 = concat $
+                map (\(h1,q21,k,r',m1,l') ->
+                  let hs = MT.matches (M.domain n) (M.codomain k) MT.FREE in
+                    case Prelude.null hs of
+                      True  -> []
+                      False -> [(h1,q21,k,r',m1,l',hs)])
+                  filtM1 --(h1,q21,k,r',m1,l1,[hs])
 
-        validH21 = concat $ map (\(h1,q21,k,r',m1,l',hs) ->
-                              let list = map (\h -> M.compose h r' == M.compose n q21) hs in
-                                case (elemIndex True list) of
-                                  Just ind -> [(h1,q21,k,r',m1,l',hs!!ind)]
-                                  Nothing -> [])
-                            h21
+        validH21 = concat $
+                     map (\(h1,q21,k,r',m1,l',hs) ->
+                       let list = map (\h -> M.compose h r' == M.compose n q21) hs in
+                         case (elemIndex True list) of
+                           Just ind -> [(h1,q21,k,r',m1,l',hs!!ind)]
+                           Nothing  -> [])
+                       h21
 
         -- Define m2 = d1 . h21: L2 -> K and abort if m2 not sats NACs r
         m1m2 = map (\(h1,q21,k,r',m1,l',l2d1) -> (m1, M.compose l2d1 l')) validH21
