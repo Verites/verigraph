@@ -16,7 +16,7 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 executable verigraph
-  main-is:             Main.hs
+  main-is:             CLI/Cli.hs
   -- other-modules:       
   other-extensions:    TypeFamilies, MultiParamTypeClasses, FlexibleContexts
   build-depends:       base >=4.8 && <4.9,
@@ -33,6 +33,7 @@ executable verigraph
                        hxt >= 9.3.1.15,
                        hashable >= 1.2.3.3,
                        matrix >= 0.3,
-                       process >= 1.2
+                       process >= 1.2,
+                       optparse-applicative>=0.12 && < 0.13
   hs-source-dirs:      src/
   default-language:    Haskell98
