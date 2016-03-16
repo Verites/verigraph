@@ -154,7 +154,7 @@ produceForbidOneNac :: GraphRule a b -> GraphRule a b
                     -> TGM.TypedGraphMorphism a b
                     -> [CriticalPair a b]
 produceForbidOneNac l r n = let
-        inverseLeft = inverseGR l
+        inverseLeft = inverseWithoutNacs l
 
         -- Consider for a NAC n (L2 -> N2) of r any jointly surjective
         -- pair of morphisms (h1: R1 -> P1, q21: N2 -> P1) with q21 inj
@@ -312,4 +312,4 @@ satsOneNac :: TGM.TypedGraphMorphism a b -- ^ m
 satsOneNac m nac = True `notElem` checkCompose
    where
       checkCompose = map (\x -> (M.compose nac x) == m) matches
-      matches = MT.matches_nac nac m
+      matches = MT.partInjMatches nac m

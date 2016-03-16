@@ -2,14 +2,14 @@
 --LEONARDO MARQUES RODRIGUES
 --DEZEMBRO/2015
 
-module CriticalPairs.Matches(
-  matches,
-  PROP(..),
-  in_nac,
-  matches_nac
-  )
-       where
+{-# LANGUAGE FlexibleInstances #-}
 
+module CriticalPairs.Matches(
+      PROP(..)
+    , matches
+    , partInjMatches
+  )
+  where
 
 import qualified Graph.TypedGraphMorphism as TGM
 import qualified Graph.GraphMorphism as GM
@@ -18,8 +18,74 @@ import qualified Abstract.Morphism as M
 import Graph.GraphRule
 import Data.List
 import Data.Maybe
-import CriticalPairs.Estruturas
 
+--DATA DEFINITION 
+-----------------------------------------------------------------------------------------
+
+--DEFINIÇÃO DO TIPO DE DADOS PARA TYPED NODES
+data TNodes = TNode {
+                     name  :: Int, --Identificação de um Node
+                     typeN :: Int  --Tipo de um Node
+                    } deriving (Eq)
+
+--Instancia para exibição dos Nodes                             
+instance Show TNodes where
+  show (TNode name typ) = show name ++ "(" ++ show typ ++ ")"
+
+-----------------------------------------------------------------------------------------
+
+--DEFINIÇÃO DO TIPO DE DADOS PARA EDGES
+data TEdges = TEdge {
+                      label :: Int, --Identificação de uma Edge
+                      srce  :: TNodes, --Node de origem de uma Edge
+                      tagt  :: TNodes, --Node de destino de uma Edge
+                      typeE :: Int    --Tipo de um aresta
+                    } deriving (Eq)
+                             
+--Instancia para exibição das Edges
+instance Show TEdges where
+  show (TEdge lbl src tgt typ) = " "   ++ (show $ name src) ++
+                                 "--"  ++ show lbl ++"("++ show typ ++")"++
+                                 "-->" ++ (show $ name tgt) ++" "
+
+-----------------------------------------------------------------------------------------
+
+--DEFINIÇÃO DO TIPO DE DADOS PARA GRAPHS
+data TGraphs = TGraph {
+                        nodes :: [TNodes], --Nodes de um Grafo
+                        edges :: [TEdges]  --Edges de um Grafo
+                      } deriving (Show,Eq)
+                               
+-----------------------------------------------------------------------------------------
+--Flag para Escolha de tipos de Morfismo a ser calculado
+
+data PROP = FREE | INJ | SOB | ISO
+
+------------------------------------------------------------------------------------------
+--Mapeamento final de Nodes
+type TFN = [(TNodes,TNodes)]
+
+instance {-# OVERLAPPING #-} Show (TNodes,TNodes) where
+  show (src,tgt) ="{ " ++ (show src) ++ "/" ++ (show tgt) ++ " }"
+  
+--Mapeamento final de Edges
+type TFE = [(TEdges,TEdges)]
+
+instance {-# OVERLAPPING #-} Show (TEdges,TEdges) where
+  show (src,tgt) = "{" ++ (show src) ++ "/" ++ (show tgt) ++ "}"
+
+-----------------------------------------------------------------------------------------
+
+--Definição de dados para um morfismo (exibição dos Resultados em lista)
+data TMF = TMF {  --MF = morfismo
+                 end_n :: TFN, --Morfismo de nodos
+                 end_e :: TFE  --Morfismo de edges
+               } deriving (Eq)
+
+--Instancia para exibição dos Resultados em lista
+instance Show TMF where
+  show (TMF fn fe) = " MF " ++ (show fn) ++ " \n" ++
+                     "     " ++ (show fe) ++ " \n"
 
 ----------------------------------------------------------------------
 --INTERFACE--
@@ -98,8 +164,8 @@ updateMappingEdges  e1 e2 tgm =
     m = TGM.mapping tgm
 
 
-matches_nac :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b -> [TGM.TypedGraphMorphism a b]
-matches_nac nac m = do
+partInjMatches :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b -> [TGM.TypedGraphMorphism a b]
+partInjMatches nac m = do
   let
     (TGraph nodes_nac edges_nac) = toTGraph (M.codomain nac)
     (TGraph nodes_inst edges_inst) = toTGraph (M.codomain m)
@@ -294,180 +360,3 @@ update_edges_mapping :: (TEdges,TEdges) -> TFE -> Maybe TFE
     -- VERIFY IF THE TYPES OF e1 AND e2 ARE COMPATIBLES
 update_edges_mapping (e1,e2) l = if (typeE e1) == (typeE e2) then Just ((e1,e2):l)
                                  else Nothing
-
-
-
-
-
------------------
---TESTS--
-
-iN = G.insertNode
-iE = G.insertEdge
-uN = GM.updateNodes
-uE = GM.updateEdges
-
-gtn1 = G.NodeId 1
-gtn2 = G.NodeId 2
-gtn3 = G.NodeId 3
-gtn4 = G.NodeId 4
-gte1 = G.EdgeId 1
-gte2 = G.EdgeId 2
-gte3 = G.EdgeId 3
-gte4 = G.EdgeId 4
-gte5 = G.EdgeId 5
-
-grafotipo :: G.Graph a b
-grafotipo = iE gte5 gtn3 gtn4 $ iE gte4 gtn2 gtn4 $ iE gte3 gtn2 gtn3 $ iE gte2 gtn2 gtn1 $ iE gte1 gtn3 gtn1 $ iN gtn4 $ iN gtn3 $ iN gtn2 $ iN gtn1 G.empty
-
-
-n200 = G.NodeId 200
-n201 = G.NodeId 201
-
-n300 = G.NodeId 300
-
-n400 = G.NodeId 400
-
-lr5 :: G.Graph a b
-lr5 = iN n201 $ iN n200 G.empty
-
-kr5 :: G.Graph a b
-kr5 = iN n300 G.empty
-
-rr5 :: G.Graph a b
-rr5 = iN n400 G.empty
-
---tipagem
-tlr5 :: GM.GraphMorphism a b
-tlr5 = uN n201 gtn1 $ uN n200 gtn1 $ GM.empty lr5 grafotipo
-
-tkr5 :: GM.GraphMorphism a b
-tkr5 = uN n300 gtn1 $ GM.empty kr5 grafotipo
-
-trr5 :: GM.GraphMorphism a b
-trr5 = uN n400 gtn1 $ GM.empty rr5 grafotipo
-
---LR
-kr5_lr5 :: GM.GraphMorphism a b
-kr5_lr5 = uN n300 n200 $ GM.empty kr5 lr5
-
-l5 :: TGM.TypedGraphMorphism a b
-l5 = TGM.typedMorphism tkr5 tlr5 kr5_lr5
-
-kr5_rr5 :: GM.GraphMorphism a b
-kr5_rr5 = uN n300 n400 $ GM.empty kr5 rr5
-
-r5 :: TGM.TypedGraphMorphism a b
-r5 = TGM.typedMorphism tkr5 trr5 kr5_rr5
-
-teste :: GraphRule a b
-teste = graphRule l5 r5 []
-
-{-sendMSG-}
-n11 = G.NodeId 11
-n13 = G.NodeId 13
-n14 = G.NodeId 14
-e11 = G.EdgeId 11
-
-n21 = G.NodeId 21
-n23 = G.NodeId 23
-n24 = G.NodeId 24
-
-n31 = G.NodeId 31
-n33 = G.NodeId 33
-n34 = G.NodeId 34
-e35 = G.EdgeId 35
-
-lr1 :: G.Graph a b
-lr1 = iE e11 n13 n11 $ iN n14 $ iN n13 $ iN n11 G.empty
-
-kr1 :: G.Graph a b
-kr1 = iN n24 $ iN n23 $ iN n21 G.empty
-
-rr1 :: G.Graph a b
-rr1 = iE e35 n33 n34 $ iN n34 $ iN n33 $ iN n31 G.empty
-
---tipagem
-tlr1 :: GM.GraphMorphism a b
-tlr1 = uE e11 gte1 $ uN n14 gtn4 $ uN n13 gtn3 $ uN n11 gtn1 $ GM.empty lr1 grafotipo
-
-tkr1 :: GM.GraphMorphism a b
-tkr1 = uN n24 gtn4 $ uN n23 gtn3 $ uN n21 gtn1 $ GM.empty kr1 grafotipo
-
-trr1 :: GM.GraphMorphism a b
-trr1 = uE e35 gte5 $ uN n34 gtn4 $ uN n33 gtn3 $ uN n31 gtn1 $ GM.empty rr1 grafotipo
-
---LR
-kr1_lr1 :: GM.GraphMorphism a b
-kr1_lr1 = uN n24 n14 $ uN n23 n13 $ uN n21 n11 $ GM.empty kr1 lr1
-
-l1 :: TGM.TypedGraphMorphism a b
-l1 = TGM.typedMorphism tkr1 tlr1 kr1_lr1
-
-kr1_rr1 :: GM.GraphMorphism a b
-kr1_rr1 = uN n24 n34 $ uN n23 n33 $ uN n21 n31 $ GM.empty kr1 rr1
-
-r1 :: TGM.TypedGraphMorphism a b
-r1 = TGM.typedMorphism tkr1 trr1 kr1_rr1
-
-sendMsg :: GraphRule a b
-sendMsg = graphRule l1 r1 []
-
-{-receiveMSG-}
-n71 = G.NodeId 71
-n72 = G.NodeId 72
-n73 = G.NodeId 73
-n74 = G.NodeId 74
-e73 = G.EdgeId 73
-e75 = G.EdgeId 75
-
-n81 = G.NodeId 81
-n82 = G.NodeId 82
-n83 = G.NodeId 83
-n84 = G.NodeId 84
-e83 = G.EdgeId 83
-
-n91 = G.NodeId 91
-n92 = G.NodeId 92
-n93 = G.NodeId 93
-n94 = G.NodeId 94
-e93 = G.EdgeId 93
-e91 = G.EdgeId 91
-
-lr3 :: G.Graph a b
-lr3 = iE e75 n73 n74 $ iE e73 n72 n73 $ iN n71 $ iN n72 $ iN n73 $ iN n74 G.empty
-
-kr3 :: G.Graph a b
-kr3 = iE e83 n82 n83 $ iN n84 $ iN n83 $ iN n82 $ iN n81 G.empty
-
-rr3 :: G.Graph a b
-rr3 = iE e91 n93 n91 $ iE e93 n92 n93 $ iN n94 $ iN n93 $ iN n92 $ iN n91 G.empty
-
---tipagem
-tlr3 :: GM.GraphMorphism a b
-tlr3 = uE e75 gte5 $ uE e73 gte3 $ uN n74 gtn4 $ uN n73 gtn3 $ uN n72 gtn2 $ uN n71 gtn1 $ GM.empty lr3 grafotipo
-
-tkr3 :: GM.GraphMorphism a b
-tkr3 = uE e83 gte3 $ uN n84 gtn4 $ uN n83 gtn3 $ uN n82 gtn2 $ uN n81 gtn1 $ GM.empty kr3 grafotipo
-
-trr3 :: GM.GraphMorphism a b
-trr3 = uE e91 gte1 $ uE e93 gte3 $ uN n94 gtn4 $ uN n93 gtn3 $ uN n92 gtn2 $ uN n91 gtn1 $ GM.empty rr3 grafotipo
-
---LR
-kr3_lr3 :: GM.GraphMorphism a b
-kr3_lr3 = uE e83 e73 $ uN n81 n71 $ uN n82 n72 $ uN n83 n73 $ uN n84 n74 $ GM.empty kr3 lr3
-
-l3 :: TGM.TypedGraphMorphism a b
-l3 = TGM.typedMorphism tkr3 tlr3 kr3_lr3
-
-kr3_rr3 :: GM.GraphMorphism a b
-kr3_rr3 = uE e83 e93 $ uN n81 n91 $ uN n81 n91 $ uN n82 n92 $ uN n83 n93 $ uN n84 n94 $ GM.empty kr3 rr3
-
-r3 :: TGM.TypedGraphMorphism a b
-r3 = TGM.typedMorphism tkr3 trr3 kr3_rr3
-
-receiveMSG :: GraphRule a b
-receiveMSG = graphRule l3 r3 []
-
-l = M.codomain (left receiveMSG)
-r = M.codomain (right receiveMSG)
