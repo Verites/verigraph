@@ -54,11 +54,21 @@ invertTGM tgm =
       m   = mapping tgm
   in TypedGraphMorphism cod dom (GM.inverse m)
 
-nodesDomain x = nodes (M.domain (Graph.TypedGraphMorphism.getDomain x))
-edgesDomain x = edges (M.domain (Graph.TypedGraphMorphism.getDomain x))
+-- | Return the nodes in the domain of this TGM
+nodesDomain :: TypedGraphMorphism a b -> [NodeId]
+nodesDomain = nodes . M.domain . getDomain
 
-nodesCodomain x = nodes (M.domain (Graph.TypedGraphMorphism.getCodomain x))
-edgesCodomain x = edges (M.domain (Graph.TypedGraphMorphism.getCodomain x))
+-- | Return the edges in the domain of this TGM
+edgesDomain :: TypedGraphMorphism a b -> [EdgeId]
+edgesDomain = edges . M.domain . getDomain
+
+-- | Return the nodes in the codomain of this TGM
+nodesCodomain :: TypedGraphMorphism a b -> [NodeId]
+nodesCodomain = nodes . M.domain . getCodomain
+
+-- | Return the edges in the codomain of this TGM
+edgesCodomain :: TypedGraphMorphism a b -> [EdgeId]
+edgesCodomain = edges . M.domain . getCodomain
 
 -- | This function adds an edge e1 (with source s1, target t1 and type tp) to the domain of the typed graph morphism, and associate it to e2
 --   It assumes s1, t1, e2, tp already exist, and that e1 does not exist.
