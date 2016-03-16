@@ -31,6 +31,7 @@ module Graph.GraphMorphism (
     , orphanNodes
     , orphanEdges
     
+    , partialInjectiveGM
     , newNodesTyped
     , newEdgesTyped
     ) where
@@ -40,7 +41,7 @@ import Graph.Graph as G
 import Graph.Graph (Graph)
 import Abstract.Morphism
 import Abstract.Valid
-import Data.Maybe (isNothing,fromJust)
+import Data.Maybe (isNothing,fromJust,mapMaybe)
 
 data GraphMorphism a b = GraphMorphism {
                           getDomain    :: Graph a b
@@ -233,6 +234,15 @@ updateEdgeRelationGM e1 e2 gm =
       nm = nodeRelation gm
       em = edgeRelation gm
   in GraphMorphism g1 g2 nm (R.update e1 e2 em)
+
+-- | Test if a @nac@ is partial injective (injective out of @q@)
+partialInjectiveGM :: GraphMorphism a b -> GraphMorphism a b -> Bool
+partialInjectiveGM nac q = R.partInjectiveR nodes nodeR && R.partInjectiveR edges edgeR
+  where
+    nodeR = nodeRelation q
+    nodes = mapMaybe (applyNode nac) (G.nodes (domain nac))
+    edgeR = edgeRelation q
+    edges = mapMaybe (applyEdge nac) (G.edges (domain nac))
 
 instance Morphism (GraphMorphism a b) where
     type Obj (GraphMorphism a b) = Graph a b

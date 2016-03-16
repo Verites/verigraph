@@ -200,6 +200,15 @@ testeCreate = graphRule l8 r8 []
 
 {-Fim das Regras-}
 
+test1 = build [1] []
+test2 = build [1,2] []
+
+gm1 = GM.gmbuild test1 grafotipo [(1,1)] []
+gm2 = GM.gmbuild test2 grafotipo [(1,1),(2,1)] []
+
+t1 = GM.gmbuild test1 test2 [(1,1)] []
+t2 = GM.gmbuild test2 test1 [(1,1),(2,1)] []
+
 -----
 
 rules = [sendMsg,getDATA,receiveMSG,deleteMSG]
@@ -400,9 +409,9 @@ kr''      = foldr (\(a,sa,ta,b,sb,tb,tp) tgm -> TGM.updateEdgeRelationTGM a b (T
 --md = map (\x -> (map (mountTGMBoth (right getDATA) x graphEqClass))) (nacs sendMsg)
 --ms = map (map (mountTGM (right getDATA) "Right")) (map(\x -> GP.genEqClass (mixTGM x (right getDATA))) (nacs sendMsg))
 
-m   r = matrix (length r) (length r) (\y -> length $ allDeleteUse       (r!!((fst y)-1)) (r!!((snd y)-1)))
+m   r = matrix (length r) (length r) (\y -> length $ allDeleteUse       (r!!((fst y)-1)) (r!!((snd y)-1)) True)
 mpf r = matrix (length r) (length r) (\y -> length $ allProduceForbid   (r!!((fst y)-1)) (r!!((snd y)-1)))
-mpe r = matrix (length r) (length r) (\y -> length $ allProdEdgeDelNode (r!!((fst y)-1)) (r!!((snd y)-1)))
+mpe r = matrix (length r) (length r) (\y -> length $ allProdEdgeDelNode (r!!((fst y)-1)) (r!!((snd y)-1)) True)
 
 --classes de equivalência dos lados esquerdos das regras
 --utilizado apenas no módulo toJPG

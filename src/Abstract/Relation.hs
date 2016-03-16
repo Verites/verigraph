@@ -24,6 +24,7 @@ module Abstract.Relation (
     -- ** Predicates
     , functional
     , injective
+    , partInjectiveR
     , surjective
     , total
 ) where
@@ -140,6 +141,10 @@ functional r =
   where
     containsOne [x] = True
     containsOne _ = False
+
+-- | Test if @r@ is injective out of domain @list@
+partInjectiveR :: (Eq a, Ord a) => [a] -> Relation a -> Bool
+partInjectiveR list r = injective (foldr removeDom r list)
 
 -- | Test if @r@ is injective.
 injective :: (Ord a) => Relation a -> Bool

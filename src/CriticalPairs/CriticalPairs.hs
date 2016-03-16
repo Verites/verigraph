@@ -92,18 +92,20 @@ namedCriticalPairs (name1,l) (name2,r) = (name1,name2,allDeleteUse l r)
 criticalPairs :: GraphRule a b -- ^ left rule
               -> GraphRule a b -- ^ right rule
               -> [CriticalPair a b]
-criticalPairs l r = (allDeleteUse l r) ++ (allProduceForbid l r) ++ (allProdEdgeDelNode l r)
+criticalPairs l r = (allDeleteUse l r True) ++ (allProduceForbid l r) ++ (allProdEdgeDelNode l r True)
 
 ---- Delete-Use
 
 -- | All DeleteUse caused by the derivation of @l@ before @r@
 allDeleteUse :: GraphRule a b -- ^ left rule
              -> GraphRule a b -- ^ right rule
+             -> Bool          -- ^ injective match flag
              -> [CriticalPair a b]
-allDeleteUse l r = map (\(m1,m2) -> CriticalPair m1 m2 DeleteUse) delUse
+allDeleteUse l r i = map (\(m1,m2) -> CriticalPair m1 m2 DeleteUse) delUse
     where
         pairs = createPairs (left l) (left r)                                --get all jointly surjective pairs of L1 and L2
-        gluing = filter (\(m1,m2) -> satsGluingCondBoth (l,m1) (r,m2)) pairs --filter the pairs that not satisfie gluing conditions of L and R
+        inj = filter (\(m1,m2) -> M.monomorphism m1 && M.monomorphism m2) pairs --check injective
+        gluing = filter (\(m1,m2) -> satsGluingCondBoth (l,m1) (r,m2)) (if i then inj else pairs) --filter the pairs that not satisfie gluing conditions of L and R
         delUse = filter (deleteUse l r) gluing                               --select just the pairs that are in DeleteUse conflict
 
 -- | DeleteUse using a most aproximated algorithm of the categorial diagram
@@ -157,6 +159,7 @@ produceForbidOneNac l r n = let
         -- Consider for a NAC n (L2 -> N2) of r any jointly surjective
         -- pair of morphisms (h1: R1 -> P1, q21: N2 -> P1) with q21 inj
         pairs = createPairs (right l) n
+        --filtMono = filter (\(_,q) -> TGM.partialInjectiveTGM n q) pairs --(h1,q21)
         filtMono = filter (\(_,q) -> M.monomorphism q) pairs --(h1,q21)
 
         -- Check gluing cond for (h1,r1). Construct PO complement D1.
@@ -203,12 +206,14 @@ produceForbidOneNac l r n = let
 
 allProdEdgeDelNode :: GraphRule a b -- ^ left rule
                    -> GraphRule a b -- ^ right rule
+                   -> Bool          -- ^ injective match flag
                    -> [CriticalPair a b]
-allProdEdgeDelNode l r = map (\(m1,m2) -> CriticalPair m1 m2 ProduceEdgeDeleteNode) conflictPairs
+allProdEdgeDelNode l r i = map (\(m1,m2) -> CriticalPair m1 m2 ProduceEdgeDeleteNode) conflictPairs
     where
         pairs = createPairs (left l) (left r)
-        filteredPairs = filter (\(m1,m2) -> satsGluingCondBoth (l,m1) (r,m2)) pairs
-        conflictPairs = filter (prodEdgeDelNode l r) filteredPairs
+        inj = filter (\(m1,m2) -> M.monomorphism m1 && M.monomorphism m2) pairs --check injective
+        gluing = filter (\(m1,m2) -> satsGluingCondBoth (l,m1) (r,m2)) (if i then inj else pairs) --filter the pairs that not satisfie gluing conditions of L and R
+        conflictPairs = filter (prodEdgeDelNode l r) gluing
 
 prodEdgeDelNode :: GraphRule a b -> GraphRule a b -> (TGM.TypedGraphMorphism a b,TGM.TypedGraphMorphism a b) -> Bool
 prodEdgeDelNode l r (m1,m2) = not (satsIncEdges r lp)
