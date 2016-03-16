@@ -124,7 +124,7 @@ deleteUse2 l r (m1,m2) = Prelude.null filt
 deleteUse :: GraphRule a b -> GraphRule a b
           -> (TGM.TypedGraphMorphism a b,TGM.TypedGraphMorphism a b)
           -> Bool
-deleteUse l r (m1,m2) = True `elem` (nods ++ edgs)
+deleteUse l r (m1,m2) = any (==True) (nods ++ edgs)
     where
         nods = deleteUseAux l m1 m2 GM.applyNode TGM.nodesDomain TGM.nodesCodomain
         edgs = deleteUseAux l m1 m2 GM.applyEdge TGM.edgesDomain TGM.edgesCodomain
@@ -242,7 +242,7 @@ satsGluingCond rule m = identificationCondition && danglingCondition && nacsCond
 
 -- | Return True if the match @m@ satifies the identification condition
 satsDelItems :: GraphRule a b -> TGM.TypedGraphMorphism a b -> Bool
-satsDelItems rule m = False `notElem` (nodesDelPres ++ edgesDelPres)
+satsDelItems rule m = all (==True) (nodesDelPres ++ edgesDelPres)
     where
         nodesDelPres = map (satsDelItemsAux rule m TGM.nodesDomain GM.applyNode (TGM.nodesDomain m)) (TGM.nodesCodomain m)
         edgesDelPres = map (satsDelItemsAux rule m TGM.edgesDomain GM.applyEdge (TGM.edgesDomain m)) (TGM.edgesCodomain m)
@@ -259,16 +259,15 @@ satsDelItemsAux rule m dom apply l n = (length incident <= 1) || (not someIsDel)
     where
         incident = [a | a <- dom m, apply (TGM.mapping m) a == (Just n)]
         ruleDel = apply (GM.inverse (TGM.mapping (left rule)))
-        someIsDel = Nothing `elem` (map ruleDel incident)
+        someIsDel = any (==Nothing) (map ruleDel incident)
 
 -- | Return True if do not exist dangling edges by the derivation of @r@ with match @m@
 satsIncEdges :: GraphRule a b -> TGM.TypedGraphMorphism a b -> Bool
-satsIncEdges r m = False `notElem` (concat incidentEdgesDel)
+satsIncEdges r m = all (==True) (concat incidentEdgesDel)
     where
-        mapM = TGM.mapping m
-        l = M.domain mapM
-        g = M.codomain mapM
-        matchedLInG = mapMaybe (GM.applyNode mapM) (nodes l)
+        l = TGM.graphDomain m
+        g = TGM.graphCodomain m
+        matchedLInG = mapMaybe (TGM.applyNodeTGM m) (nodes l)
         delNodes = filter (ruleDeletes r m GM.applyNode TGM.nodesDomain) matchedLInG
         hasIncEdges = map (incidentEdges g) delNodes
         verEdgeDel = map (ruleDeletes r m GM.applyEdge TGM.edgesDomain)
@@ -290,13 +289,13 @@ ruleDeletes rule m apply list n = inL && (not isPreserv)
 
 -- | Return True if all NACs of @rule@ are satified by @m@
 satsNacs :: GraphRule a b -> TGM.TypedGraphMorphism a b -> Bool
-satsNacs rule m = False `notElem` (map (satsOneNac m) (nacs rule))
+satsNacs rule m = all (==True) (map (satsOneNac m) (nacs rule))
 
 -- | Return True if the NAC @nac@ is satified by @m@
 -- Get all injective matches (q) from @nac@ to G (codomain of @m@)
 -- and check if some of them commutes: @m@ == q . @nac@
 satsOneNac2 :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b -> Bool
-satsOneNac2 m nac = True `notElem` checkCompose
+satsOneNac2 m nac = all (==False) checkCompose
    where
       checkCompose = map (\x -> (M.compose nac x) == m) matches
       matches = MT.matches typeNac typeG MT.INJ
@@ -309,7 +308,7 @@ satsOneNac2 m nac = True `notElem` checkCompose
 satsOneNac :: TGM.TypedGraphMorphism a b -- ^ m
            -> TGM.TypedGraphMorphism a b -- ^ nac
            -> Bool
-satsOneNac m nac = True `notElem` checkCompose
+satsOneNac m nac = all (==False) checkCompose
    where
       checkCompose = map (\x -> (M.compose nac x) == m) matches
       matches = MT.partInjMatches nac m

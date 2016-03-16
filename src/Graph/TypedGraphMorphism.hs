@@ -8,7 +8,11 @@ module Graph.TypedGraphMorphism (
     , edgesDomain
     , nodesCodomain
     , edgesCodomain
+    , graphDomain
+    , graphCodomain
     , mapping
+    , applyNodeTGM
+    , applyEdgeTGM
     , typedMorphism
     , removeNodeDomTyped
     , removeEdgeDomTyped
@@ -24,19 +28,34 @@ module Graph.TypedGraphMorphism (
 
 import Graph.Graph (Graph,nodes,edges)
 import Graph.Graph as G
-import Graph.GraphMorphism
 import Graph.GraphMorphism as GM
 import Abstract.Morphism as M
 import Abstract.Valid
 
 data TypedGraphMorphism a b = TypedGraphMorphism {
-                              getDomain   :: GraphMorphism a b
-                            , getCodomain :: GraphMorphism a b
-                            , getMapping  :: GraphMorphism a b
+                              getDomain   :: GM.GraphMorphism a b
+                            , getCodomain :: GM.GraphMorphism a b
+                            , getMapping  :: GM.GraphMorphism a b
                          } deriving (Show, Read)
 
 typedMorphism = TypedGraphMorphism
 mapping = getMapping
+
+-- | Return the graph domain
+graphDomain :: TypedGraphMorphism a b -> Graph a b
+graphDomain = M.domain . M.domain
+
+-- | Return the graph codomain
+graphCodomain :: TypedGraphMorphism a b -> Graph a b
+graphCodomain = M.domain . M.codomain
+
+-- | Return the node to which @ln@ gets mapped.
+applyNodeTGM :: TypedGraphMorphism a b -> G.NodeId -> Maybe G.NodeId
+applyNodeTGM tgm ln = GM.applyNode (mapping tgm) ln
+
+-- | Return the edge to which @le@ gets mapped.
+applyEdgeTGM :: TypedGraphMorphism a b -> G.EdgeId -> Maybe G.EdgeId
+applyEdgeTGM tgm le = GM.applyEdge (mapping tgm) le
 
 -- | Return the orphan nodes in a typed graph morphism
 orphanNodesTyped :: TypedGraphMorphism a b -> [G.NodeId]
