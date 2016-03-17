@@ -233,7 +233,7 @@ writeDown :: HXT.IOSLA (HXT.XIOState s) HXT.XmlTree HXT.XmlTree
 writeDown = HXT.root [] [GW.writeRoot ggg] HXT.>>> HXT.writeDocument [HXT.withIndent HXT.yes] "hellow.ggx"
 
 writeConf ::  HXT.IOSLA (HXT.XIOState s) HXT.XmlTree HXT.XmlTree
-writeConf =  HXT.root [] [GW.writeCpx ggg] HXT.>>> HXT.writeDocument [HXT.withIndent HXT.yes] "hellow.cpx"
+writeConf =  HXT.root [] [GW.writeCpx ggg (getMatrix (GG.rules ggg))] HXT.>>> HXT.writeDocument [HXT.withIndent HXT.yes] "hellow.cpx"
 
 writeDeFato = do
   HXT.runX $ writeDown

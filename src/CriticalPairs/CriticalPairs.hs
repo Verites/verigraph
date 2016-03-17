@@ -39,6 +39,7 @@ import qualified CriticalPairs.Matches as MT
 import Data.List (elemIndex)
 import Data.List.Utils (countElem)
 import Data.Maybe (mapMaybe)
+import Data.Matrix
 
 -- | Data representing the type of a 'CriticalPair'
 data CP = FOL | DeleteUse | ProduceForbid | ProduceEdgeDeleteNode deriving(Eq,Show)
@@ -87,6 +88,9 @@ createPairs m1 m2 = map (mountTGMBoth m1 m2) (GP.genEqClass (mixTGM m1 m2))
 -- to do: return all critical pairs
 namedCriticalPairs :: (String, GraphRule a b) -> (String, GraphRule a b) -> Bool -> (String,String,[CriticalPair a b])
 namedCriticalPairs (name1,l) (name2,r) inj = (name1,name2,allDeleteUse l r inj)
+
+getMatrix :: [(String, GraphRule a b)] -> Matrix [CriticalPair a b]
+getMatrix r = matrix (length r) (length r) (\(x,y) -> allDeleteUse (snd(r!!(x-1))) (snd(r!!(y-1))) False)
 
 -- | All Critical Pairs
 criticalPairs :: GraphRule a b -- ^ left rule
