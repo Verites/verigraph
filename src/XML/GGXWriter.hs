@@ -29,7 +29,7 @@ writeConflictMatrix rules = map (\r1@(name,rule) -> mkelem "Rule" [sattr "R1" na
 calculateCP :: ArrowXml a => (String,GR.GraphRule b c) -> (String,GR.GraphRule b c) -> a XmlTree XmlTree
 calculateCP l@(ruleName1,rule1) r@(ruleName2,rule2) = if null analysis then false else true
   where
-    (n1,n2,analysis) = CP.namedCriticalPairs l r
+    (n1,n2,analysis) = CP.namedCriticalPairs l r False
     false = mkelem "Rule" [sattr "R2" ruleName2, sattr "bool" "false", sattr "caIndx" "-1:", sattr "duIndx" "-1:", sattr "pfIndx" "-1:-1:"] []
     true = mkelem "Rule" [sattr "R2" ruleName2, sattr "bool" "true", sattr "caIndx" "-1:", sattr "duIndx" "-1:", sattr "pfIndx" "-1:-1:"] $ writeOverlappings (parseCPGraph (n1,n2,analysis))
 
@@ -39,7 +39,7 @@ writeConflictFreeContainer rules = mkelem "conflictFreeContainer" [] $ writeConf
 writeConflictFreeMatrix :: ArrowXml a => [(String,GR.GraphRule b c)] -> [a XmlTree XmlTree]
 writeConflictFreeMatrix rules = map (\r1@(name,rule) -> mkelem "Rule" [sattr "R1" name] (map (calculateCP r1) rules)) rules
   where
-    calculateCP (ruleName1,rule1) (ruleName2,rule2) = if null (CP.allDeleteUse rule1 rule2)
+    calculateCP (ruleName1,rule1) (ruleName2,rule2) = if null (CP.allDeleteUse rule1 rule2 False)
                                                          then mkelem "Rule" [sattr "R2" ruleName2, sattr "bool" "true"] []
                                                          else mkelem "Rule" [sattr "R2" ruleName2, sattr "bool" "false"] []
 

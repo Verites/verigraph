@@ -85,8 +85,8 @@ createPairs :: TGM.TypedGraphMorphism a b
 createPairs m1 m2 = map (mountTGMBoth m1 m2) (GP.genEqClass (mixTGM m1 m2))
 
 -- to do: return all critical pairs
-namedCriticalPairs :: (String, GraphRule a b) -> (String, GraphRule a b) -> (String,String,[CriticalPair a b])
-namedCriticalPairs (name1,l) (name2,r) = (name1,name2,allDeleteUse l r)
+namedCriticalPairs :: (String, GraphRule a b) -> (String, GraphRule a b) -> Bool -> (String,String,[CriticalPair a b])
+namedCriticalPairs (name1,l) (name2,r) inj = (name1,name2,allDeleteUse l r inj)
 
 -- | All Critical Pairs
 criticalPairs :: GraphRule a b -- ^ left rule
