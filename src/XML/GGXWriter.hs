@@ -129,7 +129,7 @@ writeOverlappings (n1,n2, overlaps) = map (\((graph,map1,map2),idx) -> writeOver
         [writeOverGraph idx nodes edges,
          writeMorphism ("MorphOf_" ++ n1) "LHS" (mapAdjusted (graphId idx) map1),
          writeMorphism ("MorphOf_" ++ n2) "LHS" (mapAdjusted (graphId idx) map2)]
-    mapAdjusted idx = map (\(x,y) -> (idx++"_"++x,idx++"_"++y))
+    mapAdjusted idx = map (\(x,y) -> (idx++"_"++x,y))
 
 parseCPGraph :: (String,String,[CP.CriticalPair a b]) -> Overlappings
 parseCPGraph (name1,name2,cps) = (name1,name2,overlaps)
