@@ -11,6 +11,20 @@ import qualified Graph.GraphRule     as GR
 import qualified Abstract.Morphism   as M
 import qualified Graph.TypedGraphMorphism as TGM
 
+writeCpxFile :: Bool -> GG.GraphGrammar a b -> String -> IO ()
+writeCpxFile inj gg fileName = do
+  runX $ writeConf inj gg fileName
+  print $ "Saved in " ++ fileName
+  return ()
+
+-- | Writes only the grammar
+writeDown :: GG.GraphGrammar a b -> IOSLA (XIOState s) XmlTree XmlTree
+writeDown gg = root [] [writeRoot gg] >>> writeDocument [withIndent yes] "hellow.ggx"
+
+-- | Writes the grammar and the conflicts (.cpx)
+writeConf :: Bool -> GG.GraphGrammar a b -> String -> IOSLA (XIOState s) XmlTree XmlTree
+writeConf inj gg fileName = root [] [writeCpx gg (CP.namedCriticalPairs inj (GG.rules gg))] >>> writeDocument [withIndent yes] fileName
+
 writeGts :: ArrowXml a => GG.GraphGrammar b c -> a XmlTree XmlTree
 writeGts grammar = mkelem "GraphTransformationSystem" defaultGtsAttributes $ writeGrammar grammar
 

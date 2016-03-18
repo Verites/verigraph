@@ -229,17 +229,6 @@ rulesTest2 = concat (replicate 16 rules2)
 initGraph = GM.empty grafotipo grafotipo
 ggg = GG.graphGrammar initGraph [("sendMsg",sendMsg), ("getDATA", getDATA), ("receiveMsg", receiveMSG), ("deleteMsg", deleteMSG), ("teste", teste), ("wnac", wnac), ("wnac2", wnac2), ("testeCreate", testeCreate)]
 
-writeDown :: HXT.IOSLA (HXT.XIOState s) HXT.XmlTree HXT.XmlTree
-writeDown = HXT.root [] [GW.writeRoot ggg] HXT.>>> HXT.writeDocument [HXT.withIndent HXT.yes] "hellow.ggx"
-
-writeConf ::  HXT.IOSLA (HXT.XIOState s) HXT.XmlTree HXT.XmlTree
-writeConf = HXT.root [] [GW.writeCpx ggg (getMatrix injectiveMatches (GG.rules ggg))] HXT.>>> HXT.writeDocument [HXT.withIndent HXT.yes] "hellow.cpx"
-
-writeDeFato = do
-  HXT.runX $ writeDown
-  HXT.runX $ writeConf
-  return ()
-
 -- fileName = "teste-conflito.ggx"
 
 fileName = "elevator.ggx"
@@ -425,7 +414,7 @@ mpe r = matrix (length r) (length r) (\y -> length $ allProdEdgeDelNode injectiv
 --ggs = gind (map GP.eqGraph gg)
 
 --main :: IO ()
-main = calculate--f2
+--main = calculate--f2
 {-
    do
       --f ((length ggs)-1)

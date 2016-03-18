@@ -85,12 +85,8 @@ createPairs :: TGM.TypedGraphMorphism a b
      -> [(TGM.TypedGraphMorphism a b, TGM.TypedGraphMorphism a b)]
 createPairs m1 m2 = map (mountTGMBoth m1 m2) (GP.genEqClass (mixTGM m1 m2))
 
--- to do: return all critical pairs
-namedCriticalPairs :: Bool -> (String, GraphRule a b) -> (String, GraphRule a b) -> (String,String,[CriticalPair a b])
-namedCriticalPairs inj (name1,l) (name2,r) = (name1,name2,allDeleteUse inj l r)
-
-getMatrix :: Bool -> [(String, GraphRule a b)] -> [(String,String,[CriticalPair a b])]
-getMatrix inj r = map (\(x,y) -> getCPs inj x y) [(a,b) | a <- r, b <- r]
+namedCriticalPairs :: Bool -> [(String, GraphRule a b)] -> [(String,String,[CriticalPair a b])]
+namedCriticalPairs inj r = map (\(x,y) -> getCPs inj x y) [(a,b) | a <- r, b <- r]
   where
     getCPs inj (n1,r1) (n2,r2) = (n1, n2, allDeleteUse inj r1 r2)
 

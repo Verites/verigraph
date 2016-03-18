@@ -26,14 +26,6 @@ verigraphOpts = Opts
     ( long "injective-matches-only"
     <> help "Restrict the analysis to injective matches only")
 
-writeConf :: Bool -> GG.GraphGrammar a b -> HXT.IOSLA (HXT.XIOState s) HXT.XmlTree HXT.XmlTree
-writeConf inj gg = HXT.root [] [GW.writeCpx gg (CP.getMatrix inj (GG.rules gg))] HXT.>>> HXT.writeDocument [HXT.withIndent HXT.yes] "hellow.cpx"
-
-writeDeFato inj gg = do
-  HXT.runX $ writeConf inj gg
-  print "Saved in hellow.cpx"
-  return ()
-
 execute :: VerigraphOpts -> IO ()
 execute opts = do
     gg <- readGrammar (inputFile opts)
@@ -45,15 +37,15 @@ execute opts = do
         peMatrix = pairwiseCompare (allProdEdgeDelNode onlyInj) rules
         conflictsMatrix = liftMatrix3 (\x y z -> x ++ y ++ z) udMatrix pfMatrix peMatrix
 
-    print "Delete-Use"
-    print (length <$> udMatrix)
-    print "Produce-Forbid"
-    print (length <$> pfMatrix)
-    print "Produce Edge Delete Node"
-    print (length <$> peMatrix)
-    print "All Conflicts"
-    print (length <$> conflictsMatrix)
-    writeDeFato onlyInj gg
+    --print "Delete-Use"
+    --print (length <$> udMatrix)
+    --print "Produce-Forbid"
+    --print (length <$> pfMatrix)
+    --print "Produce Edge Delete Node"
+    --print (length <$> peMatrix)
+    --print "All Conflicts"
+    --print (length <$> conflictsMatrix)
+    GW.writeCpxFile onlyInj gg "hellow.cpx"
 
   where allDeleteUse onlyInj r1 r2 = CP.allDeleteUse onlyInj r1 r2 
         allProduceForbid _ r1 r2 = CP.allProduceForbid r1 r2
