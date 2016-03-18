@@ -5,6 +5,12 @@ import Graph.GraphRule (GraphRule)
 import CriticalPairs.CriticalPairs (CriticalPair)
 import qualified CriticalPairs.CriticalPairs as CP
 import qualified XML.GGXReader as XML
+import qualified Graph.GraphGrammar as GG
+import qualified Graph.GraphMorphism as GM
+import qualified Graph.GraphRule as GR
+import qualified Abstract.Morphism as M
+import qualified Text.XML.HXT.Core as HXT
+import qualified XML.GGXWriter as GW
 
 data VerigraphOpts = Opts
   { inputFile :: String
@@ -20,11 +26,20 @@ verigraphOpts = Opts
     ( long "injective-matches-only"
     <> help "Restrict the analysis to injective matches only")
 
+writeConf :: Bool -> GG.GraphGrammar a b -> HXT.IOSLA (HXT.XIOState s) HXT.XmlTree HXT.XmlTree
+writeConf inj gg = HXT.root [] [GW.writeCpx gg (CP.getMatrix inj (GG.rules gg))] HXT.>>> HXT.writeDocument [HXT.withIndent HXT.yes] "hellow.cpx"
+
+writeDeFato inj gg = do
+  HXT.runX $ writeConf inj gg
+  print "Saved in hellow.cpx"
+  return ()
+
 execute :: VerigraphOpts -> IO ()
 execute opts = do
-    rules <- readGrammar (inputFile opts)
+    gg <- readGrammar (inputFile opts)
 
     let onlyInj = injectiveMatchesOnly opts
+        rules = map snd (GG.rules gg)
         udMatrix = pairwiseCompare (allDeleteUse onlyInj) rules
         pfMatrix = pairwiseCompare (allProduceForbid onlyInj) rules
         peMatrix = pairwiseCompare (allProdEdgeDelNode onlyInj) rules
@@ -38,20 +53,24 @@ execute opts = do
     print (length <$> peMatrix)
     print "All Conflicts"
     print (length <$> conflictsMatrix)
+    writeDeFato onlyInj gg
 
   where allDeleteUse onlyInj r1 r2 = CP.allDeleteUse onlyInj r1 r2 
         allProduceForbid _ r1 r2 = CP.allProduceForbid r1 r2
         allProdEdgeDelNode onlyInj r1 r2 = CP.allProdEdgeDelNode onlyInj r1 r2 
 
-readGrammar :: String -> IO [GraphRule a b]
+readGrammar :: String -> IO (GG.GraphGrammar a b)
 readGrammar fileName = do
-  typeGraph <- XML.readTypeGraph fileName
-  rules <- XML.readRules fileName
-
-  let rulesNames = map (\((x,_,_,_),_) -> x) rules
+  parsedTypeGraph <- XML.readTypeGraph fileName
+  parsedRules <- XML.readRules fileName
+  let rulesNames = map (\((x,_,_,_),_) -> x) parsedRules
   print rulesNames
-
-  return $ map (XML.instantiateRule (head typeGraph)) rules
+  
+  let rules = map (XML.instantiateRule (head parsedTypeGraph)) parsedRules
+  let typeGraph = M.codomain $ M.domain $ GR.left $ (head rules)
+  
+  let initGraph = GM.empty typeGraph typeGraph  
+  return $ GG.graphGrammar initGraph (zip rulesNames rules)
 
 -- | Combine three matrices with the given function. All matrices _must_ have
 -- the same dimensions.
