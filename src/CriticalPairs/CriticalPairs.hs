@@ -86,26 +86,28 @@ createPairs :: TGM.TypedGraphMorphism a b
 createPairs m1 m2 = map (mountTGMBoth m1 m2) (GP.genEqClass (mixTGM m1 m2))
 
 -- to do: return all critical pairs
-namedCriticalPairs :: (String, GraphRule a b) -> (String, GraphRule a b) -> Bool -> (String,String,[CriticalPair a b])
-namedCriticalPairs (name1,l) (name2,r) inj = (name1,name2,allDeleteUse l r inj)
+namedCriticalPairs :: Bool -> (String, GraphRule a b) -> (String, GraphRule a b) -> (String,String,[CriticalPair a b])
+namedCriticalPairs inj (name1,l) (name2,r) = (name1,name2,allDeleteUse inj l r)
 
-getMatrix :: [(String, GraphRule a b)] -> Matrix [CriticalPair a b]
-getMatrix r = matrix (length r) (length r) (\(x,y) -> allDeleteUse (snd(r!!(x-1))) (snd(r!!(y-1))) False)
+getMatrix :: Bool -> [(String, GraphRule a b)] -> [(String,String,[CriticalPair a b])]
+getMatrix inj r = map (\(x,y) -> getCPs inj x y) [(a,b) | a <- r, b <- r]
+  where
+    getCPs inj (n1,r1) (n2,r2) = (n1, n2, allDeleteUse inj r1 r2)
 
 -- | All Critical Pairs
 criticalPairs :: GraphRule a b -- ^ left rule
               -> GraphRule a b -- ^ right rule
               -> [CriticalPair a b]
-criticalPairs l r = (allDeleteUse l r True) ++ (allProduceForbid l r) ++ (allProdEdgeDelNode l r True)
+criticalPairs l r = (allDeleteUse True l r) ++ (allProduceForbid l r) ++ (allProdEdgeDelNode True l r)
 
 ---- Delete-Use
 
 -- | All DeleteUse caused by the derivation of @l@ before @r@
-allDeleteUse :: GraphRule a b -- ^ left rule
+allDeleteUse :: Bool          -- ^ injective match flag
+             -> GraphRule a b -- ^ left rule
              -> GraphRule a b -- ^ right rule
-             -> Bool          -- ^ injective match flag
              -> [CriticalPair a b]
-allDeleteUse l r i = map (\(m1,m2) -> CriticalPair m1 m2 DeleteUse) delUse
+allDeleteUse i l r = map (\(m1,m2) -> CriticalPair m1 m2 DeleteUse) delUse
     where
         pairs = createPairs (left l) (left r)                                --get all jointly surjective pairs of L1 and L2
         inj = filter (\(m1,m2) -> M.monomorphism m1 && M.monomorphism m2) pairs --check injective
@@ -209,11 +211,11 @@ produceForbidOneNac l r n = let
 
 ---- Produce Edge Delete Node
 
-allProdEdgeDelNode :: GraphRule a b -- ^ left rule
+allProdEdgeDelNode :: Bool          -- ^ injective match flag
+                   -> GraphRule a b -- ^ left rule
                    -> GraphRule a b -- ^ right rule
-                   -> Bool          -- ^ injective match flag
                    -> [CriticalPair a b]
-allProdEdgeDelNode l r i = map (\(m1,m2) -> CriticalPair m1 m2 ProduceEdgeDeleteNode) conflictPairs
+allProdEdgeDelNode i l r = map (\(m1,m2) -> CriticalPair m1 m2 ProduceEdgeDeleteNode) conflictPairs
     where
         pairs = createPairs (left l) (left r)
         inj = filter (\(m1,m2) -> M.monomorphism m1 && M.monomorphism m2) pairs --check injective

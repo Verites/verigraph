@@ -39,9 +39,9 @@ execute opts = do
     print "All Conflicts"
     print (length <$> conflictsMatrix)
 
-  where allDeleteUse onlyInj r1 r2 = CP.allDeleteUse r1 r2 onlyInj
+  where allDeleteUse onlyInj r1 r2 = CP.allDeleteUse onlyInj r1 r2 
         allProduceForbid _ r1 r2 = CP.allProduceForbid r1 r2
-        allProdEdgeDelNode onlyInj r1 r2 = CP.allProdEdgeDelNode r1 r2 onlyInj
+        allProdEdgeDelNode onlyInj r1 r2 = CP.allProdEdgeDelNode onlyInj r1 r2 
 
 readGrammar :: String -> IO [GraphRule a b]
 readGrammar fileName = do

@@ -233,7 +233,7 @@ writeDown :: HXT.IOSLA (HXT.XIOState s) HXT.XmlTree HXT.XmlTree
 writeDown = HXT.root [] [GW.writeRoot ggg] HXT.>>> HXT.writeDocument [HXT.withIndent HXT.yes] "hellow.ggx"
 
 writeConf ::  HXT.IOSLA (HXT.XIOState s) HXT.XmlTree HXT.XmlTree
-writeConf =  HXT.root [] [GW.writeCpx ggg (getMatrix (GG.rules ggg))] HXT.>>> HXT.writeDocument [HXT.withIndent HXT.yes] "hellow.cpx"
+writeConf = HXT.root [] [GW.writeCpx ggg (getMatrix injectiveMatches (GG.rules ggg))] HXT.>>> HXT.writeDocument [HXT.withIndent HXT.yes] "hellow.cpx"
 
 writeDeFato = do
   HXT.runX $ writeDown
@@ -411,9 +411,9 @@ kr''      = foldr (\(a,sa,ta,b,sb,tb,tp) tgm -> TGM.updateEdgeRelationTGM a b (T
 
 injectiveMatches = True
 
-m   r = matrix (length r) (length r) (\y -> length $ allDeleteUse       (r!!((fst y)-1)) (r!!((snd y)-1)) injectiveMatches)
-mpf r = matrix (length r) (length r) (\y -> length $ allProduceForbid   (r!!((fst y)-1)) (r!!((snd y)-1)))
-mpe r = matrix (length r) (length r) (\y -> length $ allProdEdgeDelNode (r!!((fst y)-1)) (r!!((snd y)-1)) injectiveMatches)
+m   r = matrix (length r) (length r) (\y -> length $ allDeleteUse       injectiveMatches (r!!((fst y)-1)) (r!!((snd y)-1)))
+mpf r = matrix (length r) (length r) (\y -> length $ allProduceForbid                    (r!!((fst y)-1)) (r!!((snd y)-1)))
+mpe r = matrix (length r) (length r) (\y -> length $ allProdEdgeDelNode injectiveMatches (r!!((fst y)-1)) (r!!((snd y)-1)))
 
 --classes de equivalência dos lados esquerdos das regras
 --utilizado apenas no módulo toJPG
