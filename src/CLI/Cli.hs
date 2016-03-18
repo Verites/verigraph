@@ -1,27 +1,56 @@
+import Data.Matrix
 import Options.Applicative
 
-data Sample = Sample
-  { hello :: String
-  , quiet :: Bool }
+import Graph.GraphRule (GraphRule)
+import CriticalPairs.CriticalPairs
+import qualified XML.GGXReader as XML
 
-sample :: Parser Sample
-sample = Sample
+data VerigraphOpts = Opts
+  { inputFile :: String }
+
+verigraphOpts :: Parser VerigraphOpts
+verigraphOpts = Opts
   <$> strOption
-    ( long "hello"
-    <> metavar "TARGET"
-    <> help "Target for the greeting")
-  <*> switch
-    ( long "quiet"
-    <> help "Whether to be quiet")
+    ( long "input-file"
+    <> metavar "FILE"
+    <> help "GGX file defining the graph grammar")
 
-execute :: Sample -> IO()
-execute (Sample h False) = putStrLn $ "Hello, " ++ h
-execute _ = return ()
+execute :: VerigraphOpts -> IO ()
+execute opts = do
+  rules <- readGrammar (inputFile opts)
+  let udMatrix = conflictMatrix allDeleteUse rules
+      pfMatrix = conflictMatrix allProduceForbid rules
+      peMatrix = conflictMatrix allProdEdgeDelNode rules
+      conflictsMatrix = udMatrix + pfMatrix + peMatrix
+  print "Delete-Use"
+  print udMatrix
+  print "Produce-Forbid"
+  print pfMatrix
+  print "Produce Edge Delete Node"
+  print peMatrix
+  print "All Conflicts"
+  print conflictsMatrix
 
-main :: IO()
+readGrammar :: String -> IO [GraphRule a b]
+readGrammar fileName = do
+  typeGraph <- XML.readTypeGraph fileName
+  rules <- XML.readRules fileName
+
+  let rulesNames = map (\((x,_,_,_),_) -> x) rules
+  print rulesNames
+
+  return $ map (XML.instantiateRule (head typeGraph)) rules
+
+conflictMatrix :: (GraphRule a b -> GraphRule a b -> [c]) -> [GraphRule a b] -> Matrix Int
+conflictMatrix conflictsBetween rules =
+  matrix (length rules) (length rules) $ \(i,j) ->
+    let ruleI = rules !! (i-1)
+        ruleJ = rules !! (j-1)
+    in length (conflictsBetween ruleI ruleJ)
+
+main :: IO ()
 main = execParser opts >>= execute
   where
-    opts = info (helper <*> sample)
+    opts = info (helper <*> verigraphOpts)
       ( fullDesc
-      <> progDesc "Print a greeting for TARGET"
-      <> header "hello - a test for optparse-applicative" )
+      <> progDesc "Run critical pair analysis on a given graph grammar")
