@@ -6,7 +6,7 @@ module Graph.GraphRule (
     , left
     , right
     , nacs
-    , inverseGR
+    , inverseWithoutNacs
     , deletedNodes
     , deletedEdges
     , createdNodes
@@ -35,8 +35,8 @@ nacs  = getNacs
 graphRule = GraphRule
 
 -- | Revert a Rule
-inverseGR :: GraphRule a b -> GraphRule a b
-inverseGR x = GraphRule (right x) (left x) []--(nacs x)
+inverseWithoutNacs :: GraphRule a b -> GraphRule a b
+inverseWithoutNacs x = GraphRule (right x) (left x) []--(nacs x)
 
 -- | Return the nodes deleted by a rule
 deletedNodes :: GraphRule a b -> [G.NodeId]

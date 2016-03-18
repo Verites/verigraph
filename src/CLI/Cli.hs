@@ -2,7 +2,7 @@ import Data.Matrix
 import Options.Applicative
 
 import Graph.GraphRule (GraphRule)
-import CriticalPairs.CriticalPairs
+import qualified CriticalPairs.CriticalPairs as CP
 import qualified XML.GGXReader as XML
 
 data VerigraphOpts = Opts
@@ -17,19 +17,24 @@ verigraphOpts = Opts
 
 execute :: VerigraphOpts -> IO ()
 execute opts = do
-  rules <- readGrammar (inputFile opts)
-  let udMatrix = conflictMatrix allDeleteUse rules
-      pfMatrix = conflictMatrix allProduceForbid rules
-      peMatrix = conflictMatrix allProdEdgeDelNode rules
-      conflictsMatrix = udMatrix + pfMatrix + peMatrix
-  print "Delete-Use"
-  print udMatrix
-  print "Produce-Forbid"
-  print pfMatrix
-  print "Produce Edge Delete Node"
-  print peMatrix
-  print "All Conflicts"
-  print conflictsMatrix
+    rules <- readGrammar (inputFile opts)
+
+    let udMatrix = conflictMatrix (allDeleteUse False) rules
+        pfMatrix = conflictMatrix (allProduceForbid False) rules
+        peMatrix = conflictMatrix (allProdEdgeDelNode False) rules
+        conflictsMatrix = udMatrix + pfMatrix + peMatrix
+    print "Delete-Use"
+    print udMatrix
+    print "Produce-Forbid"
+    print pfMatrix
+    print "Produce Edge Delete Node"
+    print peMatrix
+    print "All Conflicts"
+    print conflictsMatrix
+
+  where allDeleteUse onlyInj r1 r2 = CP.allDeleteUse r1 r2 onlyInj
+        allProduceForbid onlyInj r1 r2 = CP.allProduceForbid r1 r2
+        allProdEdgeDelNode onlyInj r1 r2 = CP.allProdEdgeDelNode r1 r2 onlyInj
 
 readGrammar :: String -> IO [GraphRule a b]
 readGrammar fileName = do

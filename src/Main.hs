@@ -200,6 +200,15 @@ testeCreate = graphRule l8 r8 []
 
 {-Fim das Regras-}
 
+test1 = build [1] []
+test2 = build [1,2] []
+
+gm1 = GM.gmbuild test1 grafotipo [(1,1)] []
+gm2 = GM.gmbuild test2 grafotipo [(1,1),(2,1)] []
+
+t1 = GM.gmbuild test1 test2 [(1,1)] []
+t2 = GM.gmbuild test2 test1 [(1,1),(2,1)] []
+
 -----
 
 rules = [sendMsg,getDATA,receiveMSG,deleteMSG]
@@ -218,14 +227,18 @@ rulesTest2 = concat (replicate 16 rules2)
 --11.9s useDelete categorial diagram - nac matches total inj
 
 initGraph = GM.empty grafotipo grafotipo
-ggg = GG.graphGrammar initGraph [("sendMsg",sendMsg), ("getDATA", getDATA), ("receiveMsg", receiveMSG), ("deleteMsg", deleteMSG), ("teste", teste), ("wnac", wnac), ("wnac2", wnac2), ("tesetCreate", testeCreate)]
+ggg = GG.graphGrammar initGraph [("sendMsg",sendMsg), ("getDATA", getDATA), ("receiveMsg", receiveMSG), ("deleteMsg", deleteMSG), ("teste", teste), ("wnac", wnac), ("wnac2", wnac2), ("testeCreate", testeCreate)]
 
 writeDown :: HXT.IOSLA (HXT.XIOState s) HXT.XmlTree HXT.XmlTree
-writeDown = HXT.root [] [GW.writeRoot $ GW.writeGts ggg] HXT.>>> HXT.writeDocument [HXT.withIndent HXT.yes] "hellow.ggx"
+writeDown = HXT.root [] [GW.writeRoot ggg] HXT.>>> HXT.writeDocument [HXT.withIndent HXT.yes] "hellow.ggx"
 
--- writeDeFato = do
---   HXT.runX writeDown
---   return ()
+writeConf ::  HXT.IOSLA (HXT.XIOState s) HXT.XmlTree HXT.XmlTree
+writeConf =  HXT.root [] [GW.writeCpx ggg (getMatrix (GG.rules ggg))] HXT.>>> HXT.writeDocument [HXT.withIndent HXT.yes] "hellow.cpx"
+
+writeDeFato = do
+  HXT.runX $ writeDown
+  HXT.runX $ writeConf
+  return ()
 
 -- fileName = "teste-conflito.ggx"
 
@@ -273,7 +286,7 @@ h21 x n = concat
  (map (\(h1,q21,k,r',m1,l') ->
  let f = matches (M.domain n) (M.codomain k) FREE in
  if Prelude.null f
- then [] 
+ then []
  else [(h1,q21,k,r',m1,l',head f)])
  x)
 
@@ -396,9 +409,11 @@ kr''      = foldr (\(a,sa,ta,b,sb,tb,tp) tgm -> TGM.updateEdgeRelationTGM a b (T
 --md = map (\x -> (map (mountTGMBoth (right getDATA) x graphEqClass))) (nacs sendMsg)
 --ms = map (map (mountTGM (right getDATA) "Right")) (map(\x -> GP.genEqClass (mixTGM x (right getDATA))) (nacs sendMsg))
 
-m   r = matrix (length r) (length r) (\y -> length $ allDeleteUse       (r!!((fst y)-1)) (r!!((snd y)-1)))
+injectiveMatches = True
+
+m   r = matrix (length r) (length r) (\y -> length $ allDeleteUse       (r!!((fst y)-1)) (r!!((snd y)-1)) injectiveMatches)
 mpf r = matrix (length r) (length r) (\y -> length $ allProduceForbid   (r!!((fst y)-1)) (r!!((snd y)-1)))
-mpe r = matrix (length r) (length r) (\y -> length $ allProdEdgeDelNode (r!!((fst y)-1)) (r!!((snd y)-1)))
+mpe r = matrix (length r) (length r) (\y -> length $ allProdEdgeDelNode (r!!((fst y)-1)) (r!!((snd y)-1)) injectiveMatches)
 
 --classes de equivalência dos lados esquerdos das regras
 --utilizado apenas no módulo toJPG

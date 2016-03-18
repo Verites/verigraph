@@ -2,12 +2,17 @@
 
 module Graph.TypedGraphMorphism (
       TypedGraphMorphism
+    , partialInjectiveTGM
     , invertTGM
     , nodesDomain
     , edgesDomain
     , nodesCodomain
     , edgesCodomain
+    , graphDomain
+    , graphCodomain
     , mapping
+    , applyNodeTGM
+    , applyEdgeTGM
     , typedMorphism
     , removeNodeDomTyped
     , removeEdgeDomTyped
@@ -23,19 +28,34 @@ module Graph.TypedGraphMorphism (
 
 import Graph.Graph (Graph,nodes,edges)
 import Graph.Graph as G
-import Graph.GraphMorphism
 import Graph.GraphMorphism as GM
 import Abstract.Morphism as M
 import Abstract.Valid
 
 data TypedGraphMorphism a b = TypedGraphMorphism {
-                              getDomain   :: GraphMorphism a b
-                            , getCodomain :: GraphMorphism a b
-                            , getMapping  :: GraphMorphism a b
+                              getDomain   :: GM.GraphMorphism a b
+                            , getCodomain :: GM.GraphMorphism a b
+                            , getMapping  :: GM.GraphMorphism a b
                          } deriving (Show, Read)
 
 typedMorphism = TypedGraphMorphism
 mapping = getMapping
+
+-- | Return the graph domain
+graphDomain :: TypedGraphMorphism a b -> Graph a b
+graphDomain = M.domain . M.domain
+
+-- | Return the graph codomain
+graphCodomain :: TypedGraphMorphism a b -> Graph a b
+graphCodomain = M.domain . M.codomain
+
+-- | Return the node to which @ln@ gets mapped.
+applyNodeTGM :: TypedGraphMorphism a b -> G.NodeId -> Maybe G.NodeId
+applyNodeTGM tgm ln = GM.applyNode (mapping tgm) ln
+
+-- | Return the edge to which @le@ gets mapped.
+applyEdgeTGM :: TypedGraphMorphism a b -> G.EdgeId -> Maybe G.EdgeId
+applyEdgeTGM tgm le = GM.applyEdge (mapping tgm) le
 
 -- | Return the orphan nodes in a typed graph morphism
 orphanNodesTyped :: TypedGraphMorphism a b -> [G.NodeId]
@@ -53,11 +73,21 @@ invertTGM tgm =
       m   = mapping tgm
   in TypedGraphMorphism cod dom (GM.inverse m)
 
-nodesDomain x = nodes (M.domain (Graph.TypedGraphMorphism.getDomain x))
-edgesDomain x = edges (M.domain (Graph.TypedGraphMorphism.getDomain x))
+-- | Return the nodes in the domain of this TGM
+nodesDomain :: TypedGraphMorphism a b -> [NodeId]
+nodesDomain = nodes . M.domain . getDomain
 
-nodesCodomain x = nodes (M.domain (Graph.TypedGraphMorphism.getCodomain x))
-edgesCodomain x = edges (M.domain (Graph.TypedGraphMorphism.getCodomain x))
+-- | Return the edges in the domain of this TGM
+edgesDomain :: TypedGraphMorphism a b -> [EdgeId]
+edgesDomain = edges . M.domain . getDomain
+
+-- | Return the nodes in the codomain of this TGM
+nodesCodomain :: TypedGraphMorphism a b -> [NodeId]
+nodesCodomain = nodes . M.domain . getCodomain
+
+-- | Return the edges in the codomain of this TGM
+edgesCodomain :: TypedGraphMorphism a b -> [EdgeId]
+edgesCodomain = edges . M.domain . getCodomain
 
 -- | This function adds an edge e1 (with source s1, target t1 and type tp) to the domain of the typed graph morphism, and associate it to e2
 --   It assumes s1, t1, e2, tp already exist, and that e1 does not exist.
@@ -134,6 +164,10 @@ removeEdgeCodTyped e tgm =
       cod = M.codomain tgm 
       m   = mapping tgm
   in TypedGraphMorphism dom (GM.removeEdgeDom e cod) (GM.removeEdgeCod e m)  
+
+-- | Test if a @nac@ is partial injective (injective out of @q@)
+partialInjectiveTGM :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
+partialInjectiveTGM nac q = GM.partialInjectiveGM (getMapping nac) (getMapping q)
 
 instance Eq (TypedGraphMorphism a b) where
     (TypedGraphMorphism dom1 cod1 m1) == (TypedGraphMorphism dom2 cod2 m2) =
