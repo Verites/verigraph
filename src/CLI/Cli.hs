@@ -2,6 +2,7 @@ import Data.Matrix
 import Options.Applicative
 
 import Graph.GraphRule (GraphRule)
+import CriticalPairs.CriticalPairs (CriticalPair)
 import qualified CriticalPairs.CriticalPairs as CP
 import qualified XML.GGXReader as XML
 
@@ -22,19 +23,22 @@ verigraphOpts = Opts
 execute :: VerigraphOpts -> IO ()
 execute opts = do
     rules <- readGrammar (inputFile opts)
+
     let onlyInj = injectiveMatchesOnly opts
-        udMatrix = conflictMatrix (allDeleteUse onlyInj) rules
-        pfMatrix = conflictMatrix (allProduceForbid onlyInj) rules
-        peMatrix = conflictMatrix (allProdEdgeDelNode onlyInj) rules
-        conflictsMatrix = udMatrix + pfMatrix + peMatrix
+        udMatrix = pairwiseCompare (allDeleteUse onlyInj) rules
+        pfMatrix = pairwiseCompare (allProduceForbid onlyInj) rules
+        peMatrix = pairwiseCompare (allProdEdgeDelNode onlyInj) rules
+        conflictsMatrix = liftMatrix3 (\x y z -> x ++ y ++ z) udMatrix pfMatrix peMatrix
+
     print "Delete-Use"
-    print udMatrix
+    print (length <$> udMatrix)
     print "Produce-Forbid"
-    print pfMatrix
+    print (length <$> pfMatrix)
     print "Produce Edge Delete Node"
-    print peMatrix
+    print (length <$> peMatrix)
     print "All Conflicts"
-    print conflictsMatrix
+    print (length <$> conflictsMatrix)
+
   where allDeleteUse onlyInj r1 r2 = CP.allDeleteUse r1 r2 onlyInj
         allProduceForbid _ r1 r2 = CP.allProduceForbid r1 r2
         allProdEdgeDelNode onlyInj r1 r2 = CP.allProdEdgeDelNode r1 r2 onlyInj
@@ -49,12 +53,16 @@ readGrammar fileName = do
 
   return $ map (XML.instantiateRule (head typeGraph)) rules
 
-conflictMatrix :: (GraphRule a b -> GraphRule a b -> [c]) -> [GraphRule a b] -> Matrix Int
-conflictMatrix conflictsBetween rules =
-  matrix (length rules) (length rules) $ \(i,j) ->
-    let ruleI = rules !! (i-1)
-        ruleJ = rules !! (j-1)
-    in length (conflictsBetween ruleI ruleJ)
+-- | Combine three matrices with the given function. All matrices _must_ have
+-- the same dimensions.
+liftMatrix3 :: (a -> b -> c -> d) -> Matrix a -> Matrix b -> Matrix c -> Matrix d
+liftMatrix3 f ma mb mc = matrix (nrows ma) (ncols ma) $ \pos ->
+  f (ma!pos) (mb!pos) (mc!pos)
+
+pairwiseCompare :: (a -> a -> b) -> [a] -> Matrix b
+pairwiseCompare compare items =
+  matrix (length items) (length items) $ \(i,j) ->
+    compare (items !! (i-1)) (items !! (j-1))
 
 main :: IO ()
 main = execParser opts >>= execute
