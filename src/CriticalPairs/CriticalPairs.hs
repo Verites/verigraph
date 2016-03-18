@@ -69,15 +69,16 @@ getCP = cp
 
 
 -- | Return a pair: amount of (DeleteUse, ProduceForbid, ProduceEdgeDeleteNode)
-countCP :: GraphRule a b -- ^ left rule
+countCP :: Bool
+        -> GraphRule a b -- ^ left rule
         -> GraphRule a b -- ^ right rule
         -> (Int,Int,Int)
-countCP l r = (delUse,proFor,proEdg)
+countCP inj l r = (delUse,proFor,proEdg)
     where
         delUse = countElem DeleteUse             list
         proFor = countElem ProduceForbid         list
         proEdg = countElem ProduceEdgeDeleteNode list
-        list   = map getCP (criticalPairs l r)
+        list   = map getCP (criticalPairs inj l r)
 
 -- | Create all jointly surjective pairs of @m1@ and @m2@
 createPairs :: TGM.TypedGraphMorphism a b
@@ -88,13 +89,14 @@ createPairs m1 m2 = map (mountTGMBoth m1 m2) (GP.genEqClass (mixTGM m1 m2))
 namedCriticalPairs :: Bool -> [(String, GraphRule a b)] -> [(String,String,[CriticalPair a b])]
 namedCriticalPairs inj r = map (\(x,y) -> getCPs inj x y) [(a,b) | a <- r, b <- r]
   where
-    getCPs inj (n1,r1) (n2,r2) = (n1, n2, allDeleteUse inj r1 r2)
+    getCPs inj (n1,r1) (n2,r2) = (n1, n2, criticalPairs inj r1 r2)
 
 -- | All Critical Pairs
-criticalPairs :: GraphRule a b -- ^ left rule
+criticalPairs :: Bool
+              -> GraphRule a b -- ^ left rule
               -> GraphRule a b -- ^ right rule
               -> [CriticalPair a b]
-criticalPairs l r = (allDeleteUse True l r) ++ (allProduceForbid l r) ++ (allProdEdgeDelNode True l r)
+criticalPairs inj l r = (allDeleteUse inj l r) ++ (allProduceForbid l r) ++ (allProdEdgeDelNode inj l r)
 
 ---- Delete-Use
 

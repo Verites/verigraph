@@ -121,7 +121,42 @@ writeGraphOverlaping graphId kind name nodes edges =
     $ writeNodesConflict graphId nodes ++ writeEdgesConflict graphId edges
 
 writeOverlappings :: ArrowXml a => Overlappings -> [a XmlTree XmlTree]
-writeOverlappings (n1,n2, overlaps) = map (\((graph,map1,map2),idx) -> writeOver (graph,map1,map2,idx)) (zip overlaps [0..])
+writeOverlappings (n1, n2, overlaps) = map (\(x,y) -> writeOverlapping (n1,n2,x,y)) list
+  where
+    list = zip overlaps [0..]
+
+writeOverlapping :: ArrowXml a => Overlapping -> a XmlTree XmlTree
+writeOverlapping overlap@(_,_,(_,_,_,t),_) = case t of
+                                       "DeleteUse"             -> writeDeleteUse overlap
+                                       "ProduceEdgeDeleteNode" -> writeProdNode overlap
+                                       _         -> writeProdForbid overlap
+
+writeProdForbid :: ArrowXml a => Overlapping -> a XmlTree XmlTree
+writeProdForbid (n1, n2, (graph, map1, map2, _), n) = writeOver (graph,map1,map2,n)
+  where
+    writeOverGraph idx nodes edges = writeGraphOverlaping (graphId idx) "GRAPH" ("( "++show idx++ " ) " ++ "produce-forbid-conflict (NAC: "++"Nac"++")") nodes edges
+    graphId idx = n1 ++ n2 ++ (show idx)
+    writeOver ((_, nodes, edges), map1, map2, idx) =
+      mkelem "Overlapping_Pair" []
+        [writeOverGraph idx nodes edges,
+         writeMorphism ("MorphOf_" ++ n1) "RHS" (mapAdjusted (graphId idx) map1),
+         writeMorphism ("MorphOf_" ++ n2) "NAC+LHS" (mapAdjusted (graphId idx) map2)]
+    mapAdjusted idx = map (\(x,y) -> (idx++"_"++x,y))
+
+writeProdNode :: ArrowXml a => Overlapping -> a XmlTree XmlTree
+writeProdNode (n1, n2, (graph, map1, map2, _), n) = writeOver (graph,map1,map2,n)
+  where
+    writeOverGraph idx nodes edges = writeGraphOverlaping (graphId idx) "GRAPH" ("( "++show idx++ " ) " ++ "produceEdge-deleteNode-conflict") nodes edges
+    graphId idx = n1 ++ n2 ++ (show idx)
+    writeOver ((_, nodes, edges), map1, map2, idx) =
+      mkelem "Overlapping_Pair" []
+        [writeOverGraph idx nodes edges,
+         writeMorphism ("MorphOf_" ++ n1) "LHS" (mapAdjusted (graphId idx) map1),
+         writeMorphism ("MorphOf_" ++ n2) "LHS" (mapAdjusted (graphId idx) map2)]
+    mapAdjusted idx = map (\(x,y) -> (idx++"_"++x,y))
+
+writeDeleteUse :: ArrowXml a => Overlapping -> a XmlTree XmlTree
+writeDeleteUse (n1, n2, (graph, map1, map2, _), n) = writeOver (graph,map1,map2,n)
   where
     writeOverGraph idx nodes edges = writeGraphOverlaping (graphId idx) "GRAPH" ("( "++show idx++ " ) " ++ "delete-use-conflict") nodes edges
     graphId idx = n1 ++ n2 ++ (show idx)
@@ -135,7 +170,7 @@ writeOverlappings (n1,n2, overlaps) = map (\((graph,map1,map2),idx) -> writeOver
 parseCPGraph :: (String,String,[CP.CriticalPair a b]) -> Overlappings
 parseCPGraph (name1,name2,cps) = (name1,name2,overlaps)
   where
-    overlaps = map (\x -> (getGraph x,getMapM1 x,getMapM2 x)) cps
+    overlaps = map (\x -> (getGraph x,getMapM1 x,getMapM2 x,show (CP.getCP x))) cps
     getGraph x = serializeGraph (CP.getM1 x)
     getMapM1 x = getTgmMappings (CP.getM1 x)
     getMapM2 x = getTgmMappings (CP.getM2 x)

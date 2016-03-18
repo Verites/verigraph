@@ -16,4 +16,6 @@ type Rule = (String, ParsedTypedGraph, ParsedTypedGraph, [Mapping])
 type RuleWithNacs = (Rule,[Nac])
 type Mapping = (String, String) -- |(image, orig)A
 type Nac = (ParsedTypedGraph, [Mapping])
-type Overlappings = (String,String,[(ParsedTypedGraph,[Mapping],[Mapping])])
+type ConflictMorphism = (ParsedTypedGraph,[Mapping],[Mapping],String)
+type Overlappings = (String,String,[ConflictMorphism])
+type Overlapping = (String,String,ConflictMorphism,Int)
