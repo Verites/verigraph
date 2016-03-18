@@ -6,7 +6,8 @@ import qualified CriticalPairs.CriticalPairs as CP
 import qualified XML.GGXReader as XML
 
 data VerigraphOpts = Opts
-  { inputFile :: String }
+  { inputFile :: String
+  , injectiveMatchesOnly :: Bool }
 
 verigraphOpts :: Parser VerigraphOpts
 verigraphOpts = Opts
@@ -14,14 +15,17 @@ verigraphOpts = Opts
     ( long "input-file"
     <> metavar "FILE"
     <> help "GGX file defining the graph grammar")
+  <*> flag False True
+    ( long "injective-matches-only"
+    <> help "Restrict the analysis to injective matches only")
 
 execute :: VerigraphOpts -> IO ()
 execute opts = do
     rules <- readGrammar (inputFile opts)
-
-    let udMatrix = conflictMatrix (allDeleteUse False) rules
-        pfMatrix = conflictMatrix (allProduceForbid False) rules
-        peMatrix = conflictMatrix (allProdEdgeDelNode False) rules
+    let onlyInj = injectiveMatchesOnly opts
+        udMatrix = conflictMatrix (allDeleteUse onlyInj) rules
+        pfMatrix = conflictMatrix (allProduceForbid onlyInj) rules
+        peMatrix = conflictMatrix (allProdEdgeDelNode onlyInj) rules
         conflictsMatrix = udMatrix + pfMatrix + peMatrix
     print "Delete-Use"
     print udMatrix
@@ -31,9 +35,8 @@ execute opts = do
     print peMatrix
     print "All Conflicts"
     print conflictsMatrix
-
   where allDeleteUse onlyInj r1 r2 = CP.allDeleteUse r1 r2 onlyInj
-        allProduceForbid onlyInj r1 r2 = CP.allProduceForbid r1 r2
+        allProduceForbid _ r1 r2 = CP.allProduceForbid r1 r2
         allProdEdgeDelNode onlyInj r1 r2 = CP.allProdEdgeDelNode r1 r2 onlyInj
 
 readGrammar :: String -> IO [GraphRule a b]
