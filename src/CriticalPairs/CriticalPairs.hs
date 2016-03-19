@@ -49,7 +49,7 @@ data CP = FOL | DeleteUse | ProduceForbid | ProduceEdgeDeleteNode deriving(Eq,Sh
 data CriticalPair a b = CriticalPair {
     m1 :: TGM.TypedGraphMorphism a b,
     m2 :: TGM.TypedGraphMorphism a b,
-    nac :: String,
+    nac :: String, --if is ProduceForbid, here is the index of the nac
     cp :: CP
     } deriving (Eq,Show)
 
