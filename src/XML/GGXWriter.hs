@@ -38,12 +38,17 @@ writeConflictContainer :: ArrowXml a => [(String,GR.GraphRule b c)] -> [Overlapp
 writeConflictContainer rules overlappings = mkelem "conflictContainer" [sattr "kind" "exclude"] $ (writeRuleSets rules ++ writeConflictMatrix rules overlappings)
 
 writeConflictMatrix :: ArrowXml a => [(String,GR.GraphRule b c)] -> [Overlappings] -> [a XmlTree XmlTree]
-writeConflictMatrix rules overlappings = map (\r1@(name,rule) -> mkelem "Rule" [sattr "R1" name] (map calculateCP (overlappingsR2 name))) rules
-  where
-    overlappingsR2 r1 = filter (\(n1,_,_) -> n1 == r1) overlappings
+writeConflictMatrix rules overlappings =
+  map (\r1@(name,rule) ->
+         mkelem "Rule"
+           [sattr "R1" name]
+           (map getCPs (overlappingsR2 name)))
+      rules
+    where
+      overlappingsR2 r1 = filter (\(n1,_,_) -> n1 == r1) overlappings
 
-calculateCP :: ArrowXml a => Overlappings -> a XmlTree XmlTree
-calculateCP (n1,n2,overlappings) = if null overlappings then false else true
+getCPs :: ArrowXml a => Overlappings -> a XmlTree XmlTree
+getCPs (n1,n2,overlappings) = if null overlappings then false else true
   where
     r2 = sattr "R2" n2
     attribs = [sattr "caIndx" "-1:", sattr "duIndx" "-1:", sattr "pfIndx" "-1:-1:"]
@@ -54,12 +59,15 @@ writeConflictFreeContainer :: ArrowXml a => [(String,GR.GraphRule b c)] -> [Over
 writeConflictFreeContainer rules overlappings = mkelem "conflictFreeContainer" [] $ writeConflictFreeMatrix rules overlappings
 
 writeConflictFreeMatrix :: ArrowXml a => [(String,GR.GraphRule b c)] -> [Overlappings] -> [a XmlTree XmlTree]
-writeConflictFreeMatrix rules overlappings = map (\r1@(name,rule) -> mkelem "Rule" [sattr "R1" name] (map calculateCP (overlappingsR2 name))) rules
-  where
-    overlappingsR2 r1 = filter (\(n1,_,_) -> n1 == r1) overlappings
-    calculateCP (n1,n2,list) = if null list
-                                 then mkelem "Rule" [sattr "R2" n2, sattr "bool" "true"] []
-                                 else mkelem "Rule" [sattr "R2" n2, sattr "bool" "false"] []
+writeConflictFreeMatrix rules overlappings =
+  map (\r1@(name,rule) -> mkelem "Rule"
+                            [sattr "R1" name]
+                            (map getCPs (overlappingsR2 name))) rules
+    where
+      overlappingsR2 r1 = filter (\(n1,_,_) -> n1 == r1) overlappings
+      getCPs (_,n2,list) = if null list
+                             then mkelem "Rule" [sattr "R2" n2, sattr "bool" "true"] []
+                             else mkelem "Rule" [sattr "R2" n2, sattr "bool" "false"] []
 
 writeRuleSets :: ArrowXml a => [(String,GR.GraphRule b c)] -> [a XmlTree XmlTree]
 writeRuleSets rules = (mkelem "RuleSet" (somethingRules ++ rulesL) []) : (mkelem "RuleSet2" (somethingRules ++ rulesL) []) : []
@@ -117,7 +125,7 @@ writeGraphOverlaping :: ArrowXml a => String -> String -> String -> String -> [(
               -> [(String, String, String, String)] -> a XmlTree XmlTree
 writeGraphOverlaping graphId info kind name nodes edges =
   mkelem "Graph"
-    ([sattr "ID" graphId] ++ attrInfo ++ [sattr "kind" kind, sattr "name" name])
+    ((sattr "ID" graphId) : attrInfo ++ [sattr "kind" kind, sattr "name" name])
     (writeNodesConflict graphId nodes ++ writeEdgesConflict graphId edges)
   where
     attrInfo = if info == "" then [] else [sattr "info" ("NAC:"++info)]
@@ -128,10 +136,12 @@ writeOverlappings (n1, n2, overlaps) = map (\(x,y) -> writeOverlapping (n1,n2,x,
     list = zip overlaps [0..]
 
 writeOverlapping :: ArrowXml a => Overlapping -> a XmlTree XmlTree
-writeOverlapping overlap@(_,_,(_,_,_,_,t),_) = case t of
-                                       "DeleteUse"             -> writeDeleteUse overlap
-                                       "ProduceEdgeDeleteNode" -> writeProdNode overlap
-                                       "ProduceForbid"         -> writeProdForbid overlap
+writeOverlapping overlap@(_,_,(_,_,_,_,t),_) =
+  (case t of
+    "DeleteUse"             -> writeDeleteUse
+    "ProduceEdgeDeleteNode" -> writeProdNode
+    "ProduceForbid"         -> writeProdForbid)
+  overlap
 
 writeProdForbid :: ArrowXml a => Overlapping -> a XmlTree XmlTree
 writeProdForbid (n1, n2, ((_, nodes, edges), map1, map2, nacName, _), idx) =
@@ -169,11 +179,17 @@ writeDeleteUse (n1, n2, ((_, nodes, edges), map1, map2, _, _), idx) =
 parseCPGraph :: (String,String,[CP.CriticalPair a b]) -> Overlappings
 parseCPGraph (name1,name2,cps) = (name1,name2,overlaps)
   where
-    overlaps = map (\x -> (getGraph x, getMapM1 x, getMapM2 x, nacName x, show (CP.getCP x))) cps
-    nacName x = "NAC_" ++ name2 ++ "_" ++ (CP.getNac x)
-    getGraph x = serializeGraph (CP.getM1 x)
-    getMapM1 x = getTgmMappings (CP.getM1 x)
-    getMapM2 x = getTgmMappings (CP.getM2 x)
+    overlaps = map (\x -> (getGraph x, getMapM1 x, getMapM2 x, nacName x, cpType x)) cps
+    getGraph = serializeGraph . CP.getM1 
+    getMapM1 = getTgmMappings . CP.getM1 
+    getMapM2 = getTgmMappings . CP.getM2
+    nacName = parseNacName name2
+    cpType = show . CP.getCP
+
+parseNacName :: String -> CP.CriticalPair a b -> String
+parseNacName ruleName x = case CP.getNac x of
+                   Just n  -> "NAC_" ++ ruleName ++ "_" ++ n
+                   Nothing -> ""
 
 writeHostGraph :: ArrowXml a => a XmlTree XmlTree
 writeHostGraph = writeGraph "Graph" "HOST" "Graph" [] []

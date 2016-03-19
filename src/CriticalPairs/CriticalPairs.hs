@@ -49,7 +49,7 @@ data CP = FOL | DeleteUse | ProduceForbid | ProduceEdgeDeleteNode deriving(Eq,Sh
 data CriticalPair a b = CriticalPair {
     m1 :: TGM.TypedGraphMorphism a b,
     m2 :: TGM.TypedGraphMorphism a b,
-    nac :: String, --if is ProduceForbid, here is the index of the nac
+    nac :: Maybe String, --if is ProduceForbid, here is the index of the nac
     cp :: CP
     } deriving (Eq,Show)
 
@@ -65,8 +65,8 @@ getM2 = m2
 getCP :: CriticalPair a b -> CP
 getCP = cp
 
--- | Returns the nac of a 'CriticalPair'
-getNac :: CriticalPair a b -> String
+-- | Returns the nac number of a 'CriticalPair'
+getNac :: CriticalPair a b -> Maybe String
 getNac = nac
 
 --instance Show (CriticalPair a b) where
@@ -110,7 +110,7 @@ allDeleteUse :: Bool          -- ^ injective match flag
              -> GraphRule a b -- ^ left rule
              -> GraphRule a b -- ^ right rule
              -> [CriticalPair a b]
-allDeleteUse i l r = map (\(m1,m2) -> CriticalPair m1 m2 "" DeleteUse) delUse
+allDeleteUse i l r = map (\(m1,m2) -> CriticalPair m1 m2 Nothing DeleteUse) delUse
     where
         pairs = createPairs (left l) (left r)                                --get all jointly surjective pairs of L1 and L2
         inj = filter (\(m1,m2) -> M.monomorphism m1 && M.monomorphism m2) pairs --check injective
@@ -210,11 +210,10 @@ produceForbidOneNac l r n = let
         -- Check gluing condition for m2 and r
         filtM2 = filter (\(m1,m2) -> satsGluingCond r m2) m1m2
         
-        number = case elemIndex n (nacs r) of
-                   Just idx -> idx
-                   Nothing -> -1
+        toString (Just n) = Just (show n)
+        idx = toString (elemIndex n (nacs r))
         
-        in map (\(m1,m2) -> CriticalPair m1 m2 (show number) ProduceForbid) filtM2
+        in map (\(m1,m2) -> CriticalPair m1 m2 idx ProduceForbid) filtM2
 
 ---- Produce Edge Delete Node
 
@@ -222,7 +221,7 @@ allProdEdgeDelNode :: Bool          -- ^ injective match flag
                    -> GraphRule a b -- ^ left rule
                    -> GraphRule a b -- ^ right rule
                    -> [CriticalPair a b]
-allProdEdgeDelNode i l r = map (\(m1,m2) -> CriticalPair m1 m2 "" ProduceEdgeDeleteNode) conflictPairs
+allProdEdgeDelNode i l r = map (\(m1,m2) -> CriticalPair m1 m2 Nothing ProduceEdgeDeleteNode) conflictPairs
     where
         pairs = createPairs (left l) (left r)
         inj = filter (\(m1,m2) -> M.monomorphism m1 && M.monomorphism m2) pairs --check injective
