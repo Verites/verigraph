@@ -49,6 +49,7 @@ data CP = FOL | DeleteUse | ProduceForbid | ProduceEdgeDeleteNode deriving(Eq,Sh
 data CriticalPair a b = CriticalPair {
     m1 :: TGM.TypedGraphMorphism a b,
     m2 :: TGM.TypedGraphMorphism a b,
+    nac :: String,
     cp :: CP
     } deriving (Eq,Show)
 
@@ -63,6 +64,10 @@ getM2 = m2
 -- | Returns the type of a 'CriticalPair'
 getCP :: CriticalPair a b -> CP
 getCP = cp
+
+-- | Returns the nac of a 'CriticalPair'
+getNac :: CriticalPair a b -> String
+getNac = nac
 
 --instance Show (CriticalPair a b) where
 --  show (CriticalPair m1 m2 cp) = "{"++(show $ TGM.mapping m1)++(show $ TGM.mapping m2)++(show cp)++"}"
@@ -87,9 +92,9 @@ createPairs :: TGM.TypedGraphMorphism a b
 createPairs m1 m2 = map (mountTGMBoth m1 m2) (GP.genEqClass (mixTGM m1 m2))
 
 namedCriticalPairs :: Bool -> [(String, GraphRule a b)] -> [(String,String,[CriticalPair a b])]
-namedCriticalPairs inj r = map (\(x,y) -> getCPs inj x y) [(a,b) | a <- r, b <- r]
+namedCriticalPairs inj r = map (\(x,y) -> getCPs x y) [(a,b) | a <- r, b <- r]
   where
-    getCPs inj (n1,r1) (n2,r2) = (n1, n2, criticalPairs inj r1 r2)
+    getCPs (n1,r1) (n2,r2) = (n1, n2, criticalPairs inj r1 r2)
 
 -- | All Critical Pairs
 criticalPairs :: Bool
@@ -105,7 +110,7 @@ allDeleteUse :: Bool          -- ^ injective match flag
              -> GraphRule a b -- ^ left rule
              -> GraphRule a b -- ^ right rule
              -> [CriticalPair a b]
-allDeleteUse i l r = map (\(m1,m2) -> CriticalPair m1 m2 DeleteUse) delUse
+allDeleteUse i l r = map (\(m1,m2) -> CriticalPair m1 m2 "" DeleteUse) delUse
     where
         pairs = createPairs (left l) (left r)                                --get all jointly surjective pairs of L1 and L2
         inj = filter (\(m1,m2) -> M.monomorphism m1 && M.monomorphism m2) pairs --check injective
@@ -204,8 +209,12 @@ produceForbidOneNac l r n = let
 
         -- Check gluing condition for m2 and r
         filtM2 = filter (\(m1,m2) -> satsGluingCond r m2) m1m2
-
-        in map (\(m1,m2) -> CriticalPair m1 m2 ProduceForbid) filtM2
+        
+        number = case elemIndex n (nacs r) of
+                   Just idx -> idx
+                   Nothing -> -1
+        
+        in map (\(m1,m2) -> CriticalPair m1 m2 (show number) ProduceForbid) filtM2
 
 ---- Produce Edge Delete Node
 
@@ -213,7 +222,7 @@ allProdEdgeDelNode :: Bool          -- ^ injective match flag
                    -> GraphRule a b -- ^ left rule
                    -> GraphRule a b -- ^ right rule
                    -> [CriticalPair a b]
-allProdEdgeDelNode i l r = map (\(m1,m2) -> CriticalPair m1 m2 ProduceEdgeDeleteNode) conflictPairs
+allProdEdgeDelNode i l r = map (\(m1,m2) -> CriticalPair m1 m2 "" ProduceEdgeDeleteNode) conflictPairs
     where
         pairs = createPairs (left l) (left r)
         inj = filter (\(m1,m2) -> M.monomorphism m1 && M.monomorphism m2) pairs --check injective
