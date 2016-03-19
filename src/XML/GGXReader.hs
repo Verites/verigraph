@@ -13,6 +13,7 @@ import qualified Abstract.Morphism as M
 import           Text.XML.HXT.Core
 import           XML.ParsedTypes
 import           XML.XMLUtilities
+import           Data.String.Utils
 
 parseTypeGraph :: ArrowXml cat => cat (NTree XNode) TypeGraph
 parseTypeGraph = atTag "Types" >>> atTag "Graph" >>>
@@ -20,6 +21,30 @@ parseTypeGraph = atTag "Types" >>> atTag "Graph" >>>
     nodes <- listA parseNode -< graph
     edges <- listA parseEdge -< graph
     returnA -< (nodes, edges)
+
+parseNames :: ArrowXml cat => cat (NTree XNode) [(String,String)]
+parseNames = atTag "Types" >>>
+  proc graph -> do
+    nodes <- listA parseNodeNames -< graph
+    edges <- listA parseEdgeNames -< graph
+    returnA -< (nodes ++ edges)
+
+parseNodeNames :: ArrowXml cat => cat (NTree XNode) (String,String)
+parseNodeNames = atTag "NodeType" >>>
+  proc nodeName -> do
+    nodeId <- getAttrValue "ID" -< nodeName
+    nodeNam <- getAttrValue "name" -< nodeName
+    returnA -< (nodeId, parseName nodeNam)
+
+parseEdgeNames :: ArrowXml cat => cat (NTree XNode) (String,String)
+parseEdgeNames = atTag "EdgeType" >>>
+  proc edgeName -> do
+    edgeId <- getAttrValue "ID" -< edgeName
+    edgeNam <- getAttrValue "name" -< edgeName
+    returnA -< (edgeId, parseName edgeNam)
+
+parseName :: String -> String
+parseName = head . (split "%")
 
 parseNode :: ArrowXml cat => cat (NTree XNode) ParsedTypedNode
 parseNode = atTag "Node" >>>
@@ -114,9 +139,11 @@ main = do
 readTypeGraph :: String -> IO[TypeGraph]
 readTypeGraph fileName = runX (parseXML fileName >>> parseTypeGraph)
 
+--readNames :: String -> IO [(String,String)]
+readNames fileName = runX (parseXML fileName >>> parseNames)
+
 readRules :: String -> IO[RuleWithNacs]
 readRules fileName = runX (parseXML fileName >>> parseRule)
-
 
 instantiateRule :: TypeGraph -> RuleWithNacs -> GR.GraphRule a b
 instantiateRule typeGraph ((_, lhs, rhs, mappings), nacs) = GR.graphRule lhsTgm rhsTgm nacsTgm

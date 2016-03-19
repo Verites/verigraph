@@ -11,22 +11,22 @@ import qualified Graph.GraphRule     as GR
 import qualified Abstract.Morphism   as M
 import qualified Graph.TypedGraphMorphism as TGM
 
-writeCpxFile :: Bool -> GG.GraphGrammar a b -> String -> IO ()
-writeCpxFile inj gg fileName = do
-  runX $ writeConf inj gg fileName
+writeCpxFile :: Bool -> GG.GraphGrammar a b -> [(String,String)] -> String -> IO ()
+writeCpxFile inj gg names fileName = do
+  runX $ writeConf inj gg names fileName
   print $ "Saved in " ++ fileName
   return ()
 
 -- | Writes only the grammar
-writeDown :: GG.GraphGrammar a b -> IOSLA (XIOState s) XmlTree XmlTree
-writeDown gg = root [] [writeRoot gg] >>> writeDocument [withIndent yes] "hellow.ggx"
+--writeDown :: GG.GraphGrammar a b -> IOSLA (XIOState s) XmlTree XmlTree
+--writeDown gg = root [] [writeRoot gg] >>> writeDocument [withIndent yes] "hellow.ggx"
 
 -- | Writes the grammar and the conflicts (.cpx)
-writeConf :: Bool -> GG.GraphGrammar a b -> String -> IOSLA (XIOState s) XmlTree XmlTree
-writeConf inj gg fileName = root [] [writeCpx gg (CP.namedCriticalPairs inj (GG.rules gg))] >>> writeDocument [withIndent yes] fileName
+writeConf :: Bool -> GG.GraphGrammar a b -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
+writeConf inj gg names fileName = root [] [writeCpx gg (CP.namedCriticalPairs inj (GG.rules gg)) names] >>> writeDocument [withIndent yes] fileName
 
-writeGts :: ArrowXml a => GG.GraphGrammar b c -> a XmlTree XmlTree
-writeGts grammar = mkelem "GraphTransformationSystem" defaultGtsAttributes $ writeGrammar grammar
+writeGts :: ArrowXml a => GG.GraphGrammar b c -> [(String,String)] -> a XmlTree XmlTree
+writeGts grammar names = mkelem "GraphTransformationSystem" defaultGtsAttributes $ writeGrammar grammar names
 
 writeCpaOptions :: ArrowXml a => a XmlTree XmlTree
 writeCpaOptions = mkelem "cpaOptions" cpaAttributes []
@@ -77,12 +77,12 @@ writeRuleSets rules = (mkelem "RuleSet" (somethingRules ++ rulesL) []) : (mkelem
     rulesL :: ArrowXml a => [a XmlTree XmlTree]
     rulesL = [sattr "size" (show $ length rules)]
 
-writeGrammar :: ArrowXml a => GG.GraphGrammar b c -> [a XmlTree XmlTree]
-writeGrammar grammar = writeAggProperties ++ [writeTypes (GG.typeGraph grammar)] ++ [writeHostGraph] ++ writeRules grammar
+writeGrammar :: ArrowXml a => GG.GraphGrammar b c -> [(String,String)] -> [a XmlTree XmlTree]
+writeGrammar grammar names = writeAggProperties ++ [writeTypes (GG.typeGraph grammar) names] ++ [writeHostGraph] ++ writeRules grammar
 
-writeTypes :: ArrowXml a => G.Graph b c -> a XmlTree XmlTree
-writeTypes graph = mkelem "Types" []
-  $ writeNodeTypes nodeTypeList ++ writeEdgeTypes edgeTypeList
+writeTypes :: ArrowXml a => G.Graph b c -> [(String,String)] -> a XmlTree XmlTree
+writeTypes graph names = mkelem "Types" []
+  $ writeNodeTypes names nodeTypeList ++ writeEdgeTypes names edgeTypeList
   ++ [writeTypeGraph graph]
     where
       nodeTypeList = map (\n -> ("N" ++ show n, show n)) (G.nodes graph)
@@ -100,19 +100,29 @@ src g e = fromJust $ G.sourceOf g e
 tgt :: G.Graph a b -> G.EdgeId -> G.NodeId
 tgt g e = fromJust $ G.targetOf g e
 
-writeNodeTypes :: ArrowXml a => [(String,String)] -> [a XmlTree XmlTree]
-writeNodeTypes = map writeNodeType
+writeNodeTypes :: ArrowXml a => [(String,String)] -> [(String,String)] -> [a XmlTree XmlTree]
+writeNodeTypes names = map (writeNodeType names)
 
-writeNodeType :: ArrowXml a => (String,String) -> a XmlTree XmlTree
-writeNodeType (nodeId,nodeType) = mkelem "NodeType" [sattr "ID" nodeId,
-  sattr"abstract" "false", sattr "name" $ completeNodeName nodeType] []
+writeNodeType :: ArrowXml a => [(String,String)] -> (String,String) -> a XmlTree XmlTree
+writeNodeType names (nodeId,nodeType) =
+  mkelem "NodeType"
+    [sattr "ID" nodeId, sattr "abstract" "false", sattr "name" $ completeNodeName name] []
+  where
+    name = case lookup ("I"++nodeType) names of
+             Just n -> n
+             Nothing ->nodeType 
 
-writeEdgeTypes :: ArrowXml a => [(String,String)] -> [a XmlTree XmlTree]
-writeEdgeTypes = map writeEdgeType
+writeEdgeTypes :: ArrowXml a => [(String,String)] -> [(String,String)] -> [a XmlTree XmlTree]
+writeEdgeTypes names = map (writeEdgeType names)
 
-writeEdgeType :: ArrowXml a => (String,String) -> a XmlTree XmlTree
-writeEdgeType (edgeId,edgeType) = mkelem "EdgeType" [sattr "ID" edgeId,
-  sattr "abstract" "false", sattr "name" $ completeEdgeName edgeType] []
+writeEdgeType :: ArrowXml a => [(String,String)] -> (String,String) -> a XmlTree XmlTree
+writeEdgeType names (edgeId,edgeType) =
+  mkelem "EdgeType"
+    [sattr "ID" edgeId, sattr "abstract" "false", sattr "name" $ completeEdgeName name] []
+  where
+    name = case lookup ("I"++edgeType) names of
+             Just n -> n
+             Nothing -> edgeType 
 
 writeGraph :: ArrowXml a => String -> String -> String -> [(String,String)]
               -> [(String, String, String, String)] -> a XmlTree XmlTree
@@ -333,15 +343,15 @@ writeNac (nacGraph, nacMorphism) = mkelem "NAC" [] [writeNacGraph nacGraph, writ
     writeNacMorphism = writeMorphism (getId nacGraph) ""
 
 --Functions to deal with ggx format specificities
-writeRoot :: ArrowXml a => GG.GraphGrammar b c -> a XmlTree XmlTree
-writeRoot gg = mkelem "Document" [sattr "version" "1.0"] [writeGts gg]
+--writeRoot :: ArrowXml a => GG.GraphGrammar b c -> a XmlTree XmlTree
+--writeRoot gg = mkelem "Document" [sattr "version" "1.0"] [writeGts gg]
 
-writeCpx :: ArrowXml a => GG.GraphGrammar b c -> [(String,String,[CP.CriticalPair b c])] -> a XmlTree XmlTree
-writeCpx gg cp = mkelem "Document"
-                   [sattr "version" "1.0"]
-                   [mkelem "CriticalPairs"
-                     [sattr "ID" "I0"]
-                     ((writeGts gg) : writeCriticalPairAnalysis (GG.rules gg) parsedCP)]
+writeCpx :: ArrowXml a => GG.GraphGrammar b c -> [(String,String,[CP.CriticalPair b c])] -> [(String,String)] -> a XmlTree XmlTree
+writeCpx gg cp names = mkelem "Document"
+                        [sattr "version" "1.0"]
+                        [mkelem "CriticalPairs"
+                        [sattr "ID" "I0"]
+                          ((writeGts gg names) : writeCriticalPairAnalysis (GG.rules gg) parsedCP)]
   where
     parsedCP = map parseCPGraph cp
 

@@ -45,7 +45,10 @@ execute opts = do
     --print (length <$> peMatrix)
     --print "All Conflicts"
     --print (length <$> conflictsMatrix)
-    GW.writeCpxFile onlyInj gg "hellow.cpx"
+    p <- XML.readNames (inputFile opts)
+    print (head p)
+    
+    GW.writeCpxFile onlyInj gg (head p) "hellow.cpx"
 
   where allDeleteUse onlyInj r1 r2 = CP.allDeleteUse onlyInj r1 r2 
         allProduceForbid _ r1 r2 = CP.allProduceForbid r1 r2
