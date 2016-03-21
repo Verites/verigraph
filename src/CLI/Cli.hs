@@ -1,4 +1,6 @@
+import Control.Monad (when, forM_)
 import Data.Matrix
+import qualified Data.List as L
 import Options.Applicative
 
 import Graph.GraphRule (GraphRule)
@@ -15,7 +17,8 @@ import qualified XML.GGXWriter as GW
 data VerigraphOpts = Opts
   { inputFile :: String
   , outputFile :: Maybe String
-  , injectiveMatchesOnly :: Bool }
+  , injectiveMatchesOnly :: Bool
+  , verbose :: Bool }
 
 verigraphOpts :: Parser VerigraphOpts
 verigraphOpts = Opts
@@ -31,11 +34,18 @@ verigraphOpts = Opts
   <*> flag False True
     ( long "injective-matches-only"
     <> help "Restrict the analysis to injective matches only")
+  <*> flag False True
+    ( long "verbose"
+    <> short 'v'
+    <> help "Print detailed information")
 
 execute :: VerigraphOpts -> IO ()
 execute opts = do
-    gg <- readGrammar (inputFile opts)
+    gg <- readGrammar opts
     names <- getNames (inputFile opts)
+
+    putStrLn "Analyzing the graph grammar..."
+    putStrLn ""
 
     let onlyInj = injectiveMatchesOnly opts
         rules = map snd (GG.rules gg)
@@ -46,15 +56,20 @@ execute opts = do
 
     case outputFile opts of
       Just file -> GW.writeCpxFile onlyInj gg names file
-      Nothing -> do
-        print "Delete-Use"
-        print (length <$> udMatrix)
-        print "Produce-Forbid"
-        print (length <$> pfMatrix)
-        print "Produce Edge Delete Node"
-        print (length <$> peMatrix)
-        print "All Conflicts"
-        print (length <$> conflictsMatrix)
+      Nothing -> mapM_ putStrLn
+        [ "Delete-Use:"
+        , show (length <$> udMatrix)
+        , ""
+        , "Produce-Forbid:"
+        , show (length <$> pfMatrix)
+        , ""
+        , "Produce Edge Delete Node:"
+        , show (length <$> peMatrix)
+        , "All Conflicts:"
+        , show (length <$> conflictsMatrix)
+        , ""
+        , "Done!"
+        ]
 
 
 getNames :: String -> IO [(String,String)]
@@ -63,12 +78,18 @@ getNames fileName = do
   nacNames <- XML.readNacNames fileName
   return (head names ++ concat nacNames)
 
-readGrammar :: String -> IO (GG.GraphGrammar a b)
-readGrammar fileName = do
+readGrammar :: VerigraphOpts -> IO (GG.GraphGrammar a b)
+readGrammar conf = do
+  let fileName = inputFile conf
   parsedTypeGraph <- XML.readTypeGraph fileName
   parsedRules <- XML.readRules fileName
+
   let rulesNames = map (\((x,_,_,_),_) -> x) parsedRules
-  print rulesNames
+  when (verbose conf) $ do
+    putStrLn "\nRules:"
+    forM_ rulesNames $ \name ->
+      putStrLn ('\t' : name)
+    putStrLn ""
 
   let rules = map (XML.instantiateRule (head parsedTypeGraph)) parsedRules
   let typeGraph = M.codomain . M.domain . GR.left $ head rules

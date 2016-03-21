@@ -15,7 +15,7 @@ import Data.List.Utils
 writeCpxFile :: Bool -> GG.GraphGrammar a b -> [(String,String)] -> String -> IO ()
 writeCpxFile inj gg names fileName = do
   runX $ writeConf inj gg names fileName
-  print $ "Saved in " ++ fileName
+  putStrLn $ "Saved in " ++ fileName
   return ()
 
 -- | Writes only the grammar
