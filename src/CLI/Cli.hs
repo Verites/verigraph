@@ -33,9 +33,9 @@ execute opts = do
 
     let onlyInj = injectiveMatchesOnly opts
         rules = map snd (GG.rules gg)
-        udMatrix = pairwiseCompare (allDeleteUse onlyInj) rules
-        pfMatrix = pairwiseCompare (allProduceForbid onlyInj) rules
-        peMatrix = pairwiseCompare (allProdEdgeDelNode onlyInj) rules
+        udMatrix = pairwiseCompare (CP.allDeleteUse onlyInj) rules
+        pfMatrix = pairwiseCompare (CP.allProduceForbid onlyInj) rules
+        peMatrix = pairwiseCompare (CP.allProdEdgeDelNode onlyInj) rules
         conflictsMatrix = liftMatrix3 (\x y z -> x ++ y ++ z) udMatrix pfMatrix peMatrix
 
     --print "Delete-Use"
@@ -46,18 +46,14 @@ execute opts = do
     --print (length <$> peMatrix)
     --print "All Conflicts"
     --print (length <$> conflictsMatrix)
-    
-    GW.writeCpxFile onlyInj gg names "hellow.cpx"
 
-  where allDeleteUse onlyInj r1 r2 = CP.allDeleteUse onlyInj r1 r2 
-        allProduceForbid onlyInj r1 r2 = CP.allProduceForbid onlyInj r1 r2
-        allProdEdgeDelNode onlyInj r1 r2 = CP.allProdEdgeDelNode onlyInj r1 r2 
+    GW.writeCpxFile onlyInj gg names "hellow.cpx"
 
 getNames :: String -> IO [(String,String)]
 getNames fileName = do
   names <- XML.readNames fileName
   nacNames <- XML.readNacNames fileName
-  return $ (head names) ++ (concat nacNames)
+  return (head names ++ concat nacNames)
 
 readGrammar :: String -> IO (GG.GraphGrammar a b)
 readGrammar fileName = do
@@ -65,11 +61,11 @@ readGrammar fileName = do
   parsedRules <- XML.readRules fileName
   let rulesNames = map (\((x,_,_,_),_) -> x) parsedRules
   print rulesNames
-  
+
   let rules = map (XML.instantiateRule (head parsedTypeGraph)) parsedRules
-  let typeGraph = M.codomain $ M.domain $ GR.left $ (head rules)
-  
-  let initGraph = GM.empty typeGraph typeGraph  
+  let typeGraph = M.codomain . M.domain . GR.left $ head rules
+
+  let initGraph = GM.empty typeGraph typeGraph
   return $ GG.graphGrammar initGraph (zip rulesNames rules)
 
 -- | Combine three matrices with the given function. All matrices _must_ have
