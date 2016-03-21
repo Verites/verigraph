@@ -22,12 +22,12 @@ data VerigraphOpts = Opts
 
 verigraphOpts :: Parser VerigraphOpts
 verigraphOpts = Opts
-  <$> strOption
-    ( long "input-file"
-    <> metavar "FILE"
+  <$> strArgument
+    ( metavar "INPUT_FILE"
     <> help "GGX file defining the graph grammar")
   <*> optional (strOption
     ( long "output-file"
+    <> short 'o'
     <> metavar "FILE"
     <> help ("CPX file that will receive the critical pairs of the grammar " ++
              "(if absent, the numbers of conflicts will be printed to stdout)")))
