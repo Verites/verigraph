@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeFamilies #-}
-import qualified Text.XML.HXT.Core as HXT
+
+{-import qualified Text.XML.HXT.Core as HXT
 
 import CriticalPairs.VeriToGP
 --import CriticalPairs.GPToJPG
@@ -196,46 +197,46 @@ l8 = TGM.typedMorphism tkr8 tlr8 kr8_lr8
 kr8_rr8 = GM.gmbuild kr8 rr8 [] []
 r8 = TGM.typedMorphism tkr8 trr8 kr8_rr8
 
-testeCreate = graphRule l8 r8 []
+testeCreate = graphRule l8 r8 []-}
 
 {-Fim das Regras-}
 
-test1 = build [1] []
-test2 = build [1,2] []
+--test1 = build [1] []
+--test2 = build [1,2] []
 
-gm1 = GM.gmbuild test1 grafotipo [(1,1)] []
-gm2 = GM.gmbuild test2 grafotipo [(1,1),(2,1)] []
+--gm1 = GM.gmbuild test1 grafotipo [(1,1)] []
+--gm2 = GM.gmbuild test2 grafotipo [(1,1),(2,1)] []
 
-t1 = GM.gmbuild test1 test2 [(1,1)] []
-t2 = GM.gmbuild test2 test1 [(1,1),(2,1)] []
+--t1 = GM.gmbuild test1 test2 [(1,1)] []
+--t2 = GM.gmbuild test2 test1 [(1,1),(2,1)] []
 
 -----
 
-rules = [sendMsg,getDATA,receiveMSG,deleteMSG]
-rules2 = rules ++ [teste,wnac,wnac2,testeCreate]
+--rules = [sendMsg,getDATA,receiveMSG,deleteMSG]
+--rules2 = rules ++ [teste,wnac,wnac2,testeCreate]
 
-rulesTest = concat (replicate 32 rules)
+--rulesTest = concat (replicate 32 rules)
 --27.9s useDelete old - nac matches part inj
 --28.5s useDelete old - nac matches total inj
 --33.6s useDelete categorial diagram - nac matches part inj
 --34.2s useDelete categorial diagram - nac matches total inj
 
-rulesTest2 = concat (replicate 16 rules2)
+--rulesTest2 = concat (replicate 16 rules2)
 -- 9.8s useDelete old - nac matches part inj
 -- 9.9s useDelete old - nac matches total inj
 --11.7s useDelete categorial diagram - nac matches part inj
 --11.9s useDelete categorial diagram - nac matches total inj
 
-initGraph = GM.empty grafotipo grafotipo
-ggg = GG.graphGrammar initGraph [("sendMsg",sendMsg), ("getDATA", getDATA), ("receiveMsg", receiveMSG), ("deleteMsg", deleteMSG), ("teste", teste), ("wnac", wnac), ("wnac2", wnac2), ("testeCreate", testeCreate)]
+--initGraph = GM.empty grafotipo grafotipo
+--ggg = GG.graphGrammar initGraph [("sendMsg",sendMsg), ("getDATA", getDATA), ("receiveMsg", receiveMSG), ("deleteMsg", deleteMSG), ("teste", teste), ("wnac", wnac), ("wnac2", wnac2), ("testeCreate", testeCreate)]
 
 -- fileName = "teste-conflito.ggx"
 
-fileName = "elevator.ggx"
+--fileName = "elevator.ggx"
 
 -- fileName = "ev.ggx"
 
-calculate = do
+{-calculate = do
   tg <- XML.readTypeGraph fileName
   rs <- XML.readRules fileName
   let rulesNames = map (\((x,_,_,_),_) -> x) rs
@@ -256,7 +257,7 @@ calculate = do
   --return (criticalPairs (rles!!0) (rles!!2))
   return (rles)
   --return ()
-
+-}
 {------
 filtMono x = filter (\(_,q) -> M.monomorphism q) x
 
@@ -398,11 +399,11 @@ kr''      = foldr (\(a,sa,ta,b,sb,tb,tp) tgm -> TGM.updateEdgeRelationTGM a b (T
 --md = map (\x -> (map (mountTGMBoth (right getDATA) x graphEqClass))) (nacs sendMsg)
 --ms = map (map (mountTGM (right getDATA) "Right")) (map(\x -> GP.genEqClass (mixTGM x (right getDATA))) (nacs sendMsg))
 
-injectiveMatches = True
+--injectiveMatches = True
 
-m   r = matrix (length r) (length r) (\y -> length $ allDeleteUse       injectiveMatches (r!!((fst y)-1)) (r!!((snd y)-1)))
-mpf r = matrix (length r) (length r) (\y -> length $ allProduceForbid                    (r!!((fst y)-1)) (r!!((snd y)-1)))
-mpe r = matrix (length r) (length r) (\y -> length $ allProdEdgeDelNode injectiveMatches (r!!((fst y)-1)) (r!!((snd y)-1)))
+--m   r = matrix (length r) (length r) (\y -> length $ allDeleteUse       injectiveMatches (r!!((fst y)-1)) (r!!((snd y)-1)))
+--mpf r = matrix (length r) (length r) (\y -> length $ allProduceForbid   injectiveMatches (r!!((fst y)-1)) (r!!((snd y)-1)))
+--mpe r = matrix (length r) (length r) (\y -> length $ allProdEdgeDelNode injectiveMatches (r!!((fst y)-1)) (r!!((snd y)-1)))
 
 --classes de equivalência dos lados esquerdos das regras
 --utilizado apenas no módulo toJPG

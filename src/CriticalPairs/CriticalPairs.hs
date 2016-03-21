@@ -101,7 +101,7 @@ criticalPairs :: Bool
               -> GraphRule a b -- ^ left rule
               -> GraphRule a b -- ^ right rule
               -> [CriticalPair a b]
-criticalPairs inj l r = (allDeleteUse inj l r) ++ (allProduceForbid l r) ++ (allProdEdgeDelNode inj l r)
+criticalPairs inj l r = (allDeleteUse inj l r) ++ (allProduceForbid inj l r) ++ (allProdEdgeDelNode inj l r)
 
 ---- Delete-Use
 
@@ -153,16 +153,18 @@ deleteUseAux l m1 m2 apply dom cod = map (\x -> delByLeft x && isInMatchRight x)
 
 -- | All ProduceForbid caused by the derivation of @l@ before @r@
 -- rule @l@ causes a produce-forbid conflict with @r@ if some NAC in @r@ fails to be satisfied after the aplication of @l@
-allProduceForbid :: GraphRule a b -- ^ left rule
+allProduceForbid :: Bool
+                 -> GraphRule a b -- ^ left rule
                  -> GraphRule a b -- ^ right rule
                  -> [CriticalPair a b]
-allProduceForbid l r = concat (map (produceForbidOneNac l r) (nacs r))
+allProduceForbid inj l r = concat (map (produceForbidOneNac inj l r) (nacs r))
 
 -- | Check ProduceForbid for a NAC @n@ in @r@
-produceForbidOneNac :: GraphRule a b -> GraphRule a b
+produceForbidOneNac :: Bool
+                    -> GraphRule a b -> GraphRule a b
                     -> TGM.TypedGraphMorphism a b
                     -> [CriticalPair a b]
-produceForbidOneNac l r n = let
+produceForbidOneNac inj l r n = let
         inverseLeft = inverseWithoutNacs l
 
         -- Consider for a NAC n (L2 -> N2) of r any jointly surjective
@@ -210,10 +212,12 @@ produceForbidOneNac l r n = let
         -- Check gluing condition for m2 and r
         filtM2 = filter (\(m1,m2) -> satsGluingCond r m2) m1m2
         
+        filtInj = filter (\(m1,m2) -> M.monomorphism m1 && M.monomorphism m2) filtM2
+        
         toString (Just n) = Just (show n)
         idx = toString (elemIndex n (nacs r))
         
-        in map (\(m1,m2) -> CriticalPair m1 m2 idx ProduceForbid) filtM2
+        in map (\(m1,m2) -> CriticalPair m1 m2 idx ProduceForbid) (if inj then filtInj else filtM2)
 
 ---- Produce Edge Delete Node
 

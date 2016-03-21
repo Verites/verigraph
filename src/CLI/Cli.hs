@@ -29,6 +29,7 @@ verigraphOpts = Opts
 execute :: VerigraphOpts -> IO ()
 execute opts = do
     gg <- readGrammar (inputFile opts)
+    names <- getNames (inputFile opts)
 
     let onlyInj = injectiveMatchesOnly opts
         rules = map snd (GG.rules gg)
@@ -45,14 +46,17 @@ execute opts = do
     --print (length <$> peMatrix)
     --print "All Conflicts"
     --print (length <$> conflictsMatrix)
-    p <- XML.readNames (inputFile opts)
-    print (head p)
     
-    GW.writeCpxFile onlyInj gg (head p) "hellow.cpx"
+    GW.writeCpxFile onlyInj gg names "hellow.cpx"
 
   where allDeleteUse onlyInj r1 r2 = CP.allDeleteUse onlyInj r1 r2 
-        allProduceForbid _ r1 r2 = CP.allProduceForbid r1 r2
+        allProduceForbid onlyInj r1 r2 = CP.allProduceForbid onlyInj r1 r2
         allProdEdgeDelNode onlyInj r1 r2 = CP.allProdEdgeDelNode onlyInj r1 r2 
+
+getNames :: String -> IO [(String,String)]
+getNames fileName = do
+  names <- XML.readNames fileName
+  return $ head names
 
 readGrammar :: String -> IO (GG.GraphGrammar a b)
 readGrammar fileName = do
