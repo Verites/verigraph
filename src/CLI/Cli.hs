@@ -14,6 +14,7 @@ import qualified XML.GGXWriter as GW
 
 data VerigraphOpts = Opts
   { inputFile :: String
+  , outputFile :: Maybe String
   , injectiveMatchesOnly :: Bool }
 
 verigraphOpts :: Parser VerigraphOpts
@@ -22,6 +23,11 @@ verigraphOpts = Opts
     ( long "input-file"
     <> metavar "FILE"
     <> help "GGX file defining the graph grammar")
+  <*> optional (strOption
+    ( long "output-file"
+    <> metavar "FILE"
+    <> help ("CPX file that will receive the critical pairs of the grammar " ++
+             "(if absent, the numbers of conflicts will be printed to stdout)")))
   <*> flag False True
     ( long "injective-matches-only"
     <> help "Restrict the analysis to injective matches only")
@@ -38,16 +44,18 @@ execute opts = do
         peMatrix = pairwiseCompare (CP.allProdEdgeDelNode onlyInj) rules
         conflictsMatrix = liftMatrix3 (\x y z -> x ++ y ++ z) udMatrix pfMatrix peMatrix
 
-    --print "Delete-Use"
-    --print (length <$> udMatrix)
-    --print "Produce-Forbid"
-    --print (length <$> pfMatrix)
-    --print "Produce Edge Delete Node"
-    --print (length <$> peMatrix)
-    --print "All Conflicts"
-    --print (length <$> conflictsMatrix)
+    case outputFile opts of
+      Just file -> GW.writeCpxFile onlyInj gg names file
+      Nothing -> do
+        print "Delete-Use"
+        print (length <$> udMatrix)
+        print "Produce-Forbid"
+        print (length <$> pfMatrix)
+        print "Produce Edge Delete Node"
+        print (length <$> peMatrix)
+        print "All Conflicts"
+        print (length <$> conflictsMatrix)
 
-    GW.writeCpxFile onlyInj gg names "hellow.cpx"
 
 getNames :: String -> IO [(String,String)]
 getNames fileName = do
