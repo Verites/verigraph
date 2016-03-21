@@ -22,6 +22,28 @@ parseTypeGraph = atTag "Types" >>> atTag "Graph" >>>
     edges <- listA parseEdge -< graph
     returnA -< (nodes, edges)
 
+parseNacNames :: ArrowXml cat => cat (NTree XNode) [(String,String)]
+parseNacNames = atTag "Rule" >>>
+  proc graph -> do
+    ruleName <- getAttrValue "name" -< graph
+    nacNames <- listA parseNacNamess -< graph
+    let l = map (\(x,y) -> ("NAC_"++ruleName++"_"++x,y)) (concat nacNames)
+    returnA -< l
+
+parseNacNamess :: ArrowXml cat => cat (NTree XNode) [(String,String)]
+parseNacNamess = atTag "ApplCondition" >>>
+  proc graph -> do
+    let l = map show [0..]
+    nacNames <- listA parseNacName -< graph
+    let a = zip l nacNames
+    returnA -< a
+
+parseNacName :: ArrowXml cat => cat (NTree XNode) String
+parseNacName = atTag "NAC" >>> atTag "Graph" >>>
+  proc nacName -> do
+    nacNam <- getAttrValue "name" -< nacName
+    returnA -< nacNam
+
 parseNames :: ArrowXml cat => cat (NTree XNode) [(String,String)]
 parseNames = atTag "Types" >>>
   proc graph -> do
@@ -139,7 +161,10 @@ main = do
 readTypeGraph :: String -> IO[TypeGraph]
 readTypeGraph fileName = runX (parseXML fileName >>> parseTypeGraph)
 
---readNames :: String -> IO [(String,String)]
+readNacNames :: String -> IO [[(String,String)]]
+readNacNames fileName = runX (parseXML fileName >>> parseNacNames)
+
+readNames :: String -> IO [[(String,String)]]
 readNames fileName = runX (parseXML fileName >>> parseNames)
 
 readRules :: String -> IO[RuleWithNacs]

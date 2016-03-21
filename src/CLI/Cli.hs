@@ -56,7 +56,8 @@ execute opts = do
 getNames :: String -> IO [(String,String)]
 getNames fileName = do
   names <- XML.readNames fileName
-  return $ head names
+  nacNames <- XML.readNacNames fileName
+  return $ (head names) ++ (concat nacNames)
 
 readGrammar :: String -> IO (GG.GraphGrammar a b)
 readGrammar fileName = do
