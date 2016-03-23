@@ -1,7 +1,6 @@
 {-|
 Module      : CriticalPairs.CriticalPairs
 Description : CriticalPairs
-License     : GPL-3
 Maintainer  : acosta@inf.ufrgs.br
 Stability   : development
 
@@ -75,8 +74,8 @@ getNac = nac
 
 -- | Return a pair: amount of (DeleteUse, ProduceForbid, ProduceEdgeDeleteNode)
 countCP :: Bool -> Bool
-        -> GraphRule a b -- ^ left rule
-        -> GraphRule a b -- ^ right rule
+        -> GraphRule a b
+        -> GraphRule a b
         -> (Int,Int,Int)
 countCP nacInj inj l r = (delUse,proFor,proEdg)
     where
@@ -98,17 +97,34 @@ namedCriticalPairs nacInj inj r = map (\(x,y) -> getCPs x y) [(a,b) | a <- r, b 
 
 -- | All Critical Pairs
 criticalPairs :: Bool -> Bool
-              -> GraphRule a b -- ^ left rule
-              -> GraphRule a b -- ^ right rule
+              -> GraphRule a b
+              -> GraphRule a b
               -> [CriticalPair a b]
-criticalPairs nacInj inj l r = (allDeleteUse nacInj inj l r) ++ (allProduceForbid nacInj inj l r) ++ (allProdEdgeDelNode nacInj inj l r)
+--criticalPairs nacInj inj l r = (allDeleteUse nacInj inj l r) ++ (allProduceForbid nacInj inj l r) ++ (allProdEdgeDelNode nacInj inj l r)
+criticalPairs nacInj inj l r = (allDeleteUseAndProdEdgeDelNode nacInj inj l r) ++ (allProduceForbid nacInj inj l r)
 
 ---- Delete-Use
 
+-- | Tests DeleteUse and ProdEdgeDelNode for the same pairs
+-- more efficient than deal separately
+allDeleteUseAndProdEdgeDelNode :: Bool -> Bool
+                               -> GraphRule a b
+                               -> GraphRule a b
+                               -> [CriticalPair a b]
+allDeleteUseAndProdEdgeDelNode nacInj i l r = deleteUseCPs ++ prodEdgeCPs
+  where
+    pairs = createPairs (left l) (left r)                                --get all jointly surjective pairs of L1 and L2
+    inj = filter (\(m1,m2) -> M.monomorphism m1 && M.monomorphism m2) pairs --check injective
+    gluing = filter (\(m1,m2) -> satsGluingCondBoth nacInj (l,m1) (r,m2)) (if i then inj else pairs) --filter the pairs that not satisfie gluing conditions of L and R
+    deleteUseList = filter (deleteUse l r) gluing                               --select just the pairs that are in DeleteUse conflict
+    deleteUseCPs = map (\(m1,m2) -> CriticalPair m1 m2 Nothing DeleteUse) deleteUseList
+    prodEdgeList = filter (prodEdgeDelNode l r) gluing
+    prodEdgeCPs = map (\(m1,m2) -> CriticalPair m1 m2 Nothing ProduceEdgeDeleteNode) prodEdgeList
+
 -- | All DeleteUse caused by the derivation of @l@ before @r@
-allDeleteUse :: Bool -> Bool  -- ^ injective match flag
-             -> GraphRule a b -- ^ left rule
-             -> GraphRule a b -- ^ right rule
+allDeleteUse :: Bool -> Bool
+             -> GraphRule a b
+             -> GraphRule a b
              -> [CriticalPair a b]
 allDeleteUse nacInj i l r = map (\(m1,m2) -> CriticalPair m1 m2 Nothing DeleteUse) delUse
     where
@@ -154,8 +170,8 @@ deleteUseAux l m1 m2 apply dom cod = map (\x -> delByLeft x && isInMatchRight x)
 -- | All ProduceForbid caused by the derivation of @l@ before @r@
 -- rule @l@ causes a produce-forbid conflict with @r@ if some NAC in @r@ fails to be satisfied after the aplication of @l@
 allProduceForbid :: Bool -> Bool
-                 -> GraphRule a b -- ^ left rule
-                 -> GraphRule a b -- ^ right rule
+                 -> GraphRule a b
+                 -> GraphRule a b
                  -> [CriticalPair a b]
 allProduceForbid nacInj inj l r = concat (map (produceForbidOneNac nacInj inj l r) (nacs r))
 
@@ -221,9 +237,9 @@ produceForbidOneNac nacInj inj l r n = let
 
 ---- Produce Edge Delete Node
 
-allProdEdgeDelNode :: Bool -> Bool  -- ^ injective match flag
-                   -> GraphRule a b -- ^ left rule
-                   -> GraphRule a b -- ^ right rule
+allProdEdgeDelNode :: Bool -> Bool
+                   -> GraphRule a b
+                   -> GraphRule a b
                    -> [CriticalPair a b]
 allProdEdgeDelNode nacInj i l r = map (\(m1,m2) -> CriticalPair m1 m2 Nothing ProduceEdgeDeleteNode) conflictPairs
     where
