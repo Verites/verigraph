@@ -237,21 +237,19 @@ updateEdgeRelationGM e1 e2 gm =
   in GraphMorphism g1 g2 nm (R.update e1 e2 em)
 
 -- | Test if a @nac@ is partial injective (injective out of @q@)
--- needs refactoring
 partialInjectiveGM :: GraphMorphism a b -> GraphMorphism a b -> Bool
-partialInjectiveGM nac q = disjointCodomain && R.partInjectiveR nodes nodeR && R.partInjectiveR edges edgeR
+partialInjectiveGM nac q = disjointCodomain && injective
   where
-    nodeR = nodeRelation q
     nodes = mapMaybe (applyNode nac) (G.nodes (domain nac))
     nodesI = (G.nodes (codomain nac)) \\ nodes
-    codN1 = mapMaybe (applyNode q) nodes
-    codN2 = mapMaybe (applyNode q) nodesI
-    edgeR = edgeRelation q
+    codN = mapMaybe (applyNode q)
     edges = mapMaybe (applyEdge nac) (G.edges (domain nac))
     edgesI = (G.edges (codomain nac)) \\ edges
-    codE1 = mapMaybe (applyEdge q) edges
-    codE2 = mapMaybe (applyEdge q) edgesI
-    disjointCodomain = Prelude.null (intersect codN1 codN2) && Prelude.null (intersect codE1 codE2)
+    codE = mapMaybe (applyEdge q)
+    disjointNodes = Prelude.null (intersect (codN nodes) (codN nodesI))
+    disjointEdges = Prelude.null (intersect (codE edges) (codE edgesI))
+    disjointCodomain = disjointNodes && disjointEdges
+    injective = R.partInjectiveR nodes (nodeRelation q) && R.partInjectiveR edges (edgeRelation q)
 
 instance Morphism (GraphMorphism a b) where
     type Obj (GraphMorphism a b) = Graph a b
