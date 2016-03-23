@@ -30,14 +30,15 @@ verigraphOpts = Opts
     ( long "output-file"
     <> short 'o'
     <> metavar "FILE"
-    <> help ("CPX file that will receive the critical pairs of the grammar " ++
-             "(if absent, the numbers of conflicts will be printed to stdout)")))
+    <> help ("CPX file that will be written, receiving the critical pairs " ++
+             "for the grammar (if absent, a summary will be printed to stdout)")))
   <*> flag False True
-    ( long "injective-matches-only"
+    ( long "inj-matches-only"
     <> help "Restrict the analysis to injective matches only")
   <*> flag False True
-    ( long "injective-nac-satisfaction"
-    <> help "Restrict the analysis of NAC satisfaction to injective morphisms between the NAC graph and the instance graph")
+    ( long "inj-nac-satisfaction"
+    <> help ("Restrict the analysis of NAC satisfaction to injective " ++
+            "morphisms between the NAC graph and the instance graph"))
   <*> flag False True
     ( long "verbose"
     <> short 'v'
@@ -118,4 +119,4 @@ main = execParser opts >>= execute
   where
     opts = info (helper <*> verigraphOpts)
       ( fullDesc
-      <> progDesc "Run critical pair analysis on a given graph grammar")
+      <> progDesc "Run critical pair analysis on a given graph grammar.")
