@@ -208,7 +208,7 @@ parseCPGraph (name1,name2,cps) = (name1,name2,overlaps)
 
 parseNacName :: String -> CP.CriticalPair a b -> String
 parseNacName ruleName x = case CP.getNac x of
-                   Just n  -> "NAC_" ++ ruleName ++ "_" ++ n
+                   Just n  -> "NAC_" ++ ruleName ++ "_" ++ (show n)
                    Nothing -> ""
 
 writeHostGraph :: ArrowXml a => a XmlTree XmlTree

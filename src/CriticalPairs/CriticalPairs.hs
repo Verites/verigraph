@@ -49,7 +49,7 @@ data CP = FOL | DeleteUse | ProduceForbid | ProduceEdgeDeleteNode deriving(Eq,Sh
 data CriticalPair a b = CriticalPair {
     m1 :: TGM.TypedGraphMorphism a b,
     m2 :: TGM.TypedGraphMorphism a b,
-    nac :: Maybe String, --if is ProduceForbid, here is the index of the nac
+    nac :: Maybe Int, --if is ProduceForbid, here is the index of the nac
     cp :: CP
     } deriving (Eq,Show)
 
@@ -66,7 +66,7 @@ getCP :: CriticalPair a b -> CP
 getCP = cp
 
 -- | Returns the nac number of a 'CriticalPair'
-getNac :: CriticalPair a b -> Maybe String
+getNac :: CriticalPair a b -> Maybe Int
 getNac = nac
 
 --instance Show (CriticalPair a b) where
@@ -214,8 +214,7 @@ produceForbidOneNac inj l r n = let
         
         filtInj = filter (\(m1,m2) -> M.monomorphism m1 && M.monomorphism m2) filtM2
         
-        toString (Just n) = Just (show n)
-        idx = toString (elemIndex n (nacs r))
+        idx = elemIndex n (nacs r)
         
         in map (\(m1,m2) -> CriticalPair m1 m2 idx ProduceForbid) (if inj then filtInj else filtM2)
 
