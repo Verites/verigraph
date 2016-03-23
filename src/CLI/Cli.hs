@@ -6,6 +6,7 @@ import Options.Applicative
 import Graph.GraphRule (GraphRule)
 import CriticalPairs.CriticalPairs (CriticalPair)
 import qualified CriticalPairs.CriticalPairs as CP
+import qualified CriticalPairs.CriticalSequence as CS
 import qualified XML.GGXReader as XML
 import qualified Graph.GraphGrammar as GG
 import qualified Graph.GraphMorphism as GM
@@ -57,11 +58,13 @@ execute opts = do
     let nacInj = injectiveNacSatisfaction opts
         onlyInj = injectiveMatchesOnly opts
         rules = map snd (GG.rules gg)
+        puMatrix = pairwiseCompare (CS.allProduceUse nacInj onlyInj) rules
+        ddMatrix = pairwiseCompare (CS.allDeliverDelete nacInj onlyInj) rules
         udMatrix = pairwiseCompare (CP.allDeleteUse nacInj onlyInj) rules
         pfMatrix = pairwiseCompare (CP.allProduceForbid nacInj onlyInj) rules
         peMatrix = pairwiseCompare (CP.allProdEdgeDelNode nacInj onlyInj) rules
         conflictsMatrix = liftMatrix3 (\x y z -> x ++ y ++ z) udMatrix pfMatrix peMatrix
-
+    
     case outputFile opts of
       Just file -> GW.writeCpxFile nacInj onlyInj gg names file
       Nothing -> mapM_ putStrLn
@@ -75,6 +78,10 @@ execute opts = do
         , show (length <$> peMatrix)
         , "All Conflicts:"
         , show (length <$> conflictsMatrix)
+        , "Produce Use Dependency:"
+        , show (length <$> puMatrix)
+        , "Deliver Delete Dependency:"
+        , show (length <$> ddMatrix)
         , ""
         , "Done!"
         ]
