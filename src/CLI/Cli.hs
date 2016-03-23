@@ -18,6 +18,7 @@ data VerigraphOpts = Opts
   { inputFile :: String
   , outputFile :: Maybe String
   , injectiveMatchesOnly :: Bool
+  , injectiveNacSatisfaction :: Bool
   , verbose :: Bool }
 
 verigraphOpts :: Parser VerigraphOpts
@@ -35,6 +36,9 @@ verigraphOpts = Opts
     ( long "injective-matches-only"
     <> help "Restrict the analysis to injective matches only")
   <*> flag False True
+    ( long "injective-nac-satisfaction"
+    <> help "Restrict the analysis of NAC satisfaction to injective morphisms between the NAC graph and the instance graph")
+  <*> flag False True
     ( long "verbose"
     <> short 'v'
     <> help "Print detailed information")
@@ -47,7 +51,7 @@ execute opts = do
     putStrLn "Analyzing the graph grammar..."
     putStrLn ""
 
-    let nacInj = False
+    let nacInj = injectiveNacSatisfaction opts
         onlyInj = injectiveMatchesOnly opts
         rules = map snd (GG.rules gg)
         udMatrix = pairwiseCompare (CP.allDeleteUse nacInj onlyInj) rules
