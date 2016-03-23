@@ -42,6 +42,7 @@ import Graph.Graph (Graph)
 import Abstract.Morphism
 import Abstract.Valid
 import Data.Maybe (isNothing,fromJust,mapMaybe)
+import Data.List
 
 data GraphMorphism a b = GraphMorphism {
                           getDomain    :: Graph a b
@@ -236,13 +237,21 @@ updateEdgeRelationGM e1 e2 gm =
   in GraphMorphism g1 g2 nm (R.update e1 e2 em)
 
 -- | Test if a @nac@ is partial injective (injective out of @q@)
+-- needs refactoring
 partialInjectiveGM :: GraphMorphism a b -> GraphMorphism a b -> Bool
-partialInjectiveGM nac q = R.partInjectiveR nodes nodeR && R.partInjectiveR edges edgeR
+partialInjectiveGM nac q = disjointCodomain && R.partInjectiveR nodes nodeR && R.partInjectiveR edges edgeR
   where
     nodeR = nodeRelation q
     nodes = mapMaybe (applyNode nac) (G.nodes (domain nac))
+    nodesI = (G.nodes (codomain nac)) \\ nodes
+    codN1 = mapMaybe (applyNode q) nodes
+    codN2 = mapMaybe (applyNode q) nodesI
     edgeR = edgeRelation q
     edges = mapMaybe (applyEdge nac) (G.edges (domain nac))
+    edgesI = (G.edges (codomain nac)) \\ edges
+    codE1 = mapMaybe (applyEdge q) edges
+    codE2 = mapMaybe (applyEdge q) edgesI
+    disjointCodomain = Prelude.null (intersect codN1 codN2) && Prelude.null (intersect codE1 codE2)
 
 instance Morphism (GraphMorphism a b) where
     type Obj (GraphMorphism a b) = Graph a b

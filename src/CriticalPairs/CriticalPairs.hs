@@ -168,10 +168,10 @@ produceForbidOneNac inj l r n = let
         inverseLeft = inverseWithoutNacs l
 
         -- Consider for a NAC n (L2 -> N2) of r any jointly surjective
-        -- pair of morphisms (h1: R1 -> P1, q21: N2 -> P1) with q21 inj
+        -- pair of morphisms (h1: R1 -> P1, q21: N2 -> P1) with q21 (part)inj
         pairs = createPairs (right l) n
-        --filtMono = filter (\(_,q) -> TGM.partialInjectiveTGM n q) pairs --(h1,q21)
-        filtMono = filter (\(_,q) -> M.monomorphism q) pairs --(h1,q21)
+        filtFun = if inj then M.monomorphism else TGM.partialInjectiveTGM n
+        filtMono = filter (\(_,q) -> filtFun q) pairs --(h1,q21)
 
         -- Check gluing cond for (h1,r1). Construct PO complement D1.
         filtPairs = filter (\(h1,_) -> satsGluingCond inverseLeft h1) filtMono
@@ -305,13 +305,13 @@ ruleDeletes rule m apply list n = inL && (not isPreserv)
 
 -- | Return True if all NACs of @rule@ are satified by @m@
 satsNacs :: GraphRule a b -> TGM.TypedGraphMorphism a b -> Bool
-satsNacs rule m = all (==True) (map (satsOneNac m) (nacs rule))
+satsNacs rule m = all (==True) (map (satsOneNacPartInj m) (nacs rule))
 
 -- | Return True if the NAC @nac@ is satified by @m@
 -- Get all injective matches (q) from @nac@ to G (codomain of @m@)
 -- and check if some of them commutes: @m@ == q . @nac@
-satsOneNac2 :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b -> Bool
-satsOneNac2 m nac = all (==False) checkCompose
+satsOneNacInj :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b -> Bool
+satsOneNacInj m nac = all (==False) checkCompose
    where
       checkCompose = map (\x -> (M.compose nac x) == m) matches
       matches = MT.matches typeNac typeG MT.INJ
@@ -321,10 +321,10 @@ satsOneNac2 m nac = all (==False) checkCompose
 -- | Return True if the NAC @nac@ is satified by @m@
 -- Check for all partial injective matches from @nac@ to G
 -- The Nac matches (N -> G) are injective only out of image of the rule match (L -> G)
-satsOneNac :: TGM.TypedGraphMorphism a b -- ^ m
+satsOneNacPartInj :: TGM.TypedGraphMorphism a b -- ^ m
            -> TGM.TypedGraphMorphism a b -- ^ nac
            -> Bool
-satsOneNac m nac = all (==False) checkCompose
+satsOneNacPartInj m nac = all (==False) checkCompose
    where
       checkCompose = map (\x -> (M.compose nac x) == m) matches
       matches = MT.partInjMatches nac m
