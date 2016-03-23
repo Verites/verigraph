@@ -12,9 +12,9 @@ import qualified Abstract.Morphism   as M
 import qualified Graph.TypedGraphMorphism as TGM
 import Data.List.Utils
 
-writeCpxFile :: Bool -> GG.GraphGrammar a b -> [(String,String)] -> String -> IO ()
-writeCpxFile inj gg names fileName = do
-  runX $ writeConf inj gg names fileName
+writeCpxFile :: Bool -> Bool -> GG.GraphGrammar a b -> [(String,String)] -> String -> IO ()
+writeCpxFile nacInj inj gg names fileName = do
+  runX $ writeConf nacInj inj gg names fileName
   putStrLn $ "Saved in " ++ fileName
   return ()
 
@@ -23,10 +23,10 @@ writeCpxFile inj gg names fileName = do
 --writeDown gg = root [] [writeRoot gg] >>> writeDocument [withIndent yes] "hellow.ggx"
 
 -- | Writes the grammar and the conflicts (.cpx)
-writeConf :: Bool -> GG.GraphGrammar a b -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
-writeConf inj gg names fileName = root [] [writeCpx gg cps names] >>> writeDocument [withIndent yes] fileName
+writeConf :: Bool -> Bool -> GG.GraphGrammar a b -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
+writeConf nacInj inj gg names fileName = root [] [writeCpx gg cps names] >>> writeDocument [withIndent yes] fileName
   where
-    cps = CP.namedCriticalPairs inj (GG.rules gg)
+    cps = CP.namedCriticalPairs nacInj inj (GG.rules gg)
 
 writeGts :: ArrowXml a => GG.GraphGrammar b c -> [(String,String)] -> a XmlTree XmlTree
 writeGts grammar names = mkelem "GraphTransformationSystem" defaultGtsAttributes $ writeGrammar grammar names

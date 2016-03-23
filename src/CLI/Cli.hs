@@ -47,15 +47,16 @@ execute opts = do
     putStrLn "Analyzing the graph grammar..."
     putStrLn ""
 
-    let onlyInj = injectiveMatchesOnly opts
+    let nacInj = False
+        onlyInj = injectiveMatchesOnly opts
         rules = map snd (GG.rules gg)
-        udMatrix = pairwiseCompare (CP.allDeleteUse onlyInj) rules
-        pfMatrix = pairwiseCompare (CP.allProduceForbid onlyInj) rules
-        peMatrix = pairwiseCompare (CP.allProdEdgeDelNode onlyInj) rules
+        udMatrix = pairwiseCompare (CP.allDeleteUse nacInj onlyInj) rules
+        pfMatrix = pairwiseCompare (CP.allProduceForbid nacInj onlyInj) rules
+        peMatrix = pairwiseCompare (CP.allProdEdgeDelNode nacInj onlyInj) rules
         conflictsMatrix = liftMatrix3 (\x y z -> x ++ y ++ z) udMatrix pfMatrix peMatrix
 
     case outputFile opts of
-      Just file -> GW.writeCpxFile onlyInj gg names file
+      Just file -> GW.writeCpxFile nacInj onlyInj gg names file
       Nothing -> mapM_ putStrLn
         [ "Delete-Use:"
         , show (length <$> udMatrix)
