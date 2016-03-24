@@ -96,6 +96,7 @@ parseRule :: ArrowXml cat => cat (NTree XNode) RuleWithNacs
 parseRule = atTag "Rule" >>>
   proc rule -> do
     ruleName <- getAttrValue "name" -< rule
+    _  <- isA (\str -> str == "" || str == "true") <<< getAttrValue "enabled" -< rule
     lhs <- parseLHS -< rule
     rhs <- parseRHS -< rule
     morphism <- parseMorphism -< rule
