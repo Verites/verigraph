@@ -12,6 +12,19 @@ data CriticalSequence a b = CriticalSequence {
     m2 :: TGM.TypedGraphMorphism a b
     } deriving (Eq,Show)
 
+-- | Returns the left morphism of a 'CriticalSequence'
+getM1 :: CriticalSequence a b -> TGM.TypedGraphMorphism a b
+getM1 = m1
+
+-- | Returns the right morphism of a 'CriticalSequence'
+getM2 :: CriticalSequence a b -> TGM.TypedGraphMorphism a b
+getM2 = m2
+
+namedCriticalSequence :: Bool -> Bool -> [(String, GR.GraphRule a b)] -> [(String,String,[CriticalSequence a b])]
+namedCriticalSequence nacInj inj r = map (\(x,y) -> getCPs x y) [(a,b) | a <- r, b <- r]
+  where
+    getCPs (n1,r1) (n2,r2) = (n1, n2, allProduceUse nacInj inj r1 r2)
+
 -- | Revert a Rule shifting NACs
 -- stay here until do not resolve cycle imports
 inverse :: Bool -> GR.GraphRule a b -> GR.GraphRule a b

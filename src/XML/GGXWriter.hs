@@ -4,6 +4,7 @@ import           Data.Maybe
 import           Text.XML.HXT.Core
 import           XML.ParsedTypes
 import qualified CriticalPairs.CriticalPairs as CP
+import qualified CriticalPairs.CriticalSequence as CS
 import qualified Graph.Graph         as G
 import qualified Graph.GraphGrammar  as GG
 import qualified Graph.GraphMorphism as GM
@@ -12,9 +13,17 @@ import qualified Abstract.Morphism   as M
 import qualified Graph.TypedGraphMorphism as TGM
 import Data.List.Utils
 
-writeCpxFile :: Bool -> Bool -> GG.GraphGrammar a b -> [(String,String)] -> String -> IO ()
-writeCpxFile nacInj inj gg names fileName = do
+-- | Writes the grammar and the conflicts (.cpx)
+writeConflictsFile :: Bool -> Bool -> GG.GraphGrammar a b -> [(String,String)] -> String -> IO ()
+writeConflictsFile nacInj inj gg names fileName = do
   runX $ writeConf nacInj inj gg names fileName
+  putStrLn $ "Saved in " ++ fileName
+  return ()
+
+-- | Writes the grammar and the dependencies (.cpx)
+writeDependenciesFile :: Bool -> Bool -> GG.GraphGrammar a b -> [(String,String)] -> String -> IO ()
+writeDependenciesFile nacInj inj gg names fileName = do
+  runX $ writeDep nacInj inj gg names fileName
   putStrLn $ "Saved in " ++ fileName
   return ()
 
@@ -22,11 +31,37 @@ writeCpxFile nacInj inj gg names fileName = do
 --writeDown :: GG.GraphGrammar a b -> IOSLA (XIOState s) XmlTree XmlTree
 --writeDown gg = root [] [writeRoot gg] >>> writeDocument [withIndent yes] "hellow.ggx"
 
--- | Writes the grammar and the conflicts (.cpx)
 writeConf :: Bool -> Bool -> GG.GraphGrammar a b -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
-writeConf nacInj inj gg names fileName = root [] [writeCpx gg cps names] >>> writeDocument [withIndent yes] fileName
+writeConf nacInj inj gg names fileName = root [] [writeCpxCon gg cps names] >>> writeDocument [withIndent yes] fileName
   where
     cps = CP.namedCriticalPairs nacInj inj (GG.rules gg)
+
+writeDep :: Bool -> Bool -> GG.GraphGrammar a b -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
+writeDep nacInj inj gg names fileName = root [] [writeCpxDep gg cps names] >>> writeDocument [withIndent yes] fileName
+  where
+    cps = CS.namedCriticalSequence nacInj inj (GG.rules gg)
+
+--Functions to deal with ggx format specificities
+--writeRoot :: ArrowXml a => GG.GraphGrammar b c -> a XmlTree XmlTree
+--writeRoot gg = mkelem "Document" [sattr "version" "1.0"] [writeGts gg]
+
+writeCpxCon :: ArrowXml a => GG.GraphGrammar b c -> [(String,String,[CP.CriticalPair b c])] -> [(String,String)] -> a XmlTree XmlTree
+writeCpxCon gg cp names = mkelem "Document"
+                        [sattr "version" "1.0"]
+                        [mkelem "CriticalPairs"
+                        [sattr "ID" "I0"]
+                          ((writeGts gg names) : writeCriticalPairAnalysis "exclude" names (GG.rules gg) parsedCP)]
+  where
+    parsedCP = map parseCPGraph cp
+
+writeCpxDep :: ArrowXml a => GG.GraphGrammar b c -> [(String,String,[CS.CriticalSequence b c])] -> [(String,String)] -> a XmlTree XmlTree
+writeCpxDep gg cp names = mkelem "Document"
+                        [sattr "version" "1.0"]
+                        [mkelem "CriticalPairs"
+                        [sattr "ID" "I0"]
+                          ((writeGts gg names) : writeCriticalPairAnalysis "trigger_dependency" names (GG.rules gg) parsedCS)]
+  where
+    parsedCS = map parseCSGraph cp
 
 writeGts :: ArrowXml a => GG.GraphGrammar b c -> [(String,String)] -> a XmlTree XmlTree
 writeGts grammar names = mkelem "GraphTransformationSystem" defaultGtsAttributes $ writeGrammar grammar names
@@ -34,13 +69,15 @@ writeGts grammar names = mkelem "GraphTransformationSystem" defaultGtsAttributes
 writeCpaOptions :: ArrowXml a => a XmlTree XmlTree
 writeCpaOptions = mkelem "cpaOptions" cpaAttributes []
 
-writeCriticalPairAnalysis :: ArrowXml a => [(String,String)] -> [(String,GR.GraphRule b c)] -> [Overlappings] -> [a XmlTree XmlTree]
-writeCriticalPairAnalysis names rules overlappings = [writeCpaOptions, writeConflictContainer nacNames rules overlappings, writeConflictFreeContainer rules overlappings]
+writeCriticalPairAnalysis :: ArrowXml a => String -> [(String,String)] -> [(String,GR.GraphRule b c)] -> [Overlappings] -> [a XmlTree XmlTree]
+writeCriticalPairAnalysis kind names rules overlappings = [writeCpaOptions, writeConflictContainer kind nacNames rules overlappings, writeConflictFreeContainer rules overlappings]
   where
     nacNames = filter (\(x,y) -> startswith "NAC" x) names
 
-writeConflictContainer :: ArrowXml a => [(String,String)] -> [(String,GR.GraphRule b c)] -> [Overlappings] ->  a XmlTree XmlTree
-writeConflictContainer nacNames rules overlappings = mkelem "conflictContainer" [sattr "kind" "exclude"] $ (writeRuleSets rules ++ writeConflictMatrix nacNames rules overlappings)
+writeConflictContainer :: ArrowXml a => String -> [(String,String)] -> [(String,GR.GraphRule b c)] -> [Overlappings] ->  a XmlTree XmlTree
+writeConflictContainer kind nacNames rules overlappings = mkelem elem [sattr "kind" kind] $ (writeRuleSets rules ++ writeConflictMatrix nacNames rules overlappings)
+  where
+    elem = if kind == "exclude" then "conflictContainer" else "dependencyContainer"
 
 writeConflictMatrix :: ArrowXml a => [(String,String)] -> [(String,GR.GraphRule b c)] -> [Overlappings] -> [a XmlTree XmlTree]
 writeConflictMatrix nacNames rules overlappings =
@@ -157,7 +194,8 @@ writeOverlapping nacNames overlap@(_,_,(_,_,_,_,t),_) =
   (case t of
     "DeleteUse"             -> writeDeleteUse
     "ProduceEdgeDeleteNode" -> writeProdNode
-    "ProduceForbid"         -> writeProdForbid nacNames)
+    "ProduceForbid"         -> writeProdForbid nacNames
+    "ProduceUse"            -> writeProdUse)
   overlap
 
 writeProdForbid :: ArrowXml a => [(String,String)] -> Overlapping -> a XmlTree XmlTree
@@ -196,15 +234,36 @@ writeDeleteUse (n1, n2, ((_, nodes, edges), map1, map2, _, _), idx) =
     graphId idx = n1 ++ n2 ++ (show idx)
     mapAdjusted idx = map (\(x,y) -> (idx++"_"++x,y))
 
+writeProdUse :: ArrowXml a => Overlapping -> a XmlTree XmlTree
+writeProdUse (n1, n2, ((_, nodes, edges), map1, map2, _, _), idx) =
+  mkelem "Overlapping_Pair" []
+    [writeGraphOverlaping (graphId idx) "" "GRAPH" msg nodes edges,
+     writeMorphism ("MorphOf_" ++ n1) "RHS" (mapAdjusted (graphId idx) map1),
+     writeMorphism ("MorphOf_" ++ n2) "LHS" (mapAdjusted (graphId idx) map2)]
+  where
+    msg = "( "++show idx++ " ) " ++ "produce-use-dependency"
+    graphId idx = n1 ++ n2 ++ (show idx)
+    mapAdjusted idx = map (\(x,y) -> (idx++"_"++x,y))
+
 parseCPGraph :: (String,String,[CP.CriticalPair a b]) -> Overlappings
 parseCPGraph (name1,name2,cps) = (name1,name2,overlaps)
   where
     overlaps = map (\x -> (getGraph x, getMapM1 x, getMapM2 x, nacName x, cpType x)) cps
-    getGraph = serializeGraph . CP.getM1 
-    getMapM1 = getTgmMappings . CP.getM1 
+    getGraph = serializeGraph . CP.getM1
+    getMapM1 = getTgmMappings . CP.getM1
     getMapM2 = getTgmMappings . CP.getM2
     nacName = parseNacName name2
     cpType = show . CP.getCP
+
+parseCSGraph :: (String,String,[CS.CriticalSequence a b]) -> Overlappings
+parseCSGraph (name1,name2,cps) = (name1,name2,overlaps)
+  where
+    overlaps = map (\x -> (getGraph x, getMapM1 x, getMapM2 x, nacName, cpType)) cps
+    getGraph = serializeGraph . CS.getM1
+    getMapM1 = getTgmMappings . CS.getM1
+    getMapM2 = getTgmMappings . CS.getM2
+    nacName = ""
+    cpType = "ProduceUse"
 
 parseNacName :: String -> CP.CriticalPair a b -> String
 parseNacName ruleName x = case CP.getNac x of
@@ -352,19 +411,6 @@ writeNac ((nacGraph, nacMorphism),nacName) = mkelem "NAC" [] [writeNacGraph nacG
   where
     writeNacGraph (nacId, nodes, edges) = writeGraph nacId "NAC" nacName nodes edges
     writeNacMorphism = writeMorphism nacName ""
-
---Functions to deal with ggx format specificities
---writeRoot :: ArrowXml a => GG.GraphGrammar b c -> a XmlTree XmlTree
---writeRoot gg = mkelem "Document" [sattr "version" "1.0"] [writeGts gg]
-
-writeCpx :: ArrowXml a => GG.GraphGrammar b c -> [(String,String,[CP.CriticalPair b c])] -> [(String,String)] -> a XmlTree XmlTree
-writeCpx gg cp names = mkelem "Document"
-                        [sattr "version" "1.0"]
-                        [mkelem "CriticalPairs"
-                        [sattr "ID" "I0"]
-                          ((writeGts gg names) : writeCriticalPairAnalysis names (GG.rules gg) parsedCP)]
-  where
-    parsedCP = map parseCPGraph cp
 
 defaultGtsAttributes :: ArrowXml a => [a n XmlTree]
 defaultGtsAttributes = [ sattr "ID" "I1", sattr "directed" "true", sattr "name" "GraGra", sattr "parallel" "true" ]
