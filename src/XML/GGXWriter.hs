@@ -27,9 +27,12 @@ writeDependenciesFile nacInj inj gg names fileName = do
   putStrLn $ "Saved in " ++ fileName
   return ()
 
--- | Writes only the grammar
---writeDown :: GG.GraphGrammar a b -> IOSLA (XIOState s) XmlTree XmlTree
---writeDown gg = root [] [writeRoot gg] >>> writeDocument [withIndent yes] "hellow.ggx"
+-- | Writes only the grammar (.ggx)
+writeGrammarFile :: GG.GraphGrammar a b -> [(String,String)] -> String -> IO ()
+writeGrammarFile gg names fileName = do
+  runX $ root [] [writeRoot gg names] >>> writeDocument [withIndent yes] fileName
+  putStrLn $ "Saved in " ++ fileName
+  return ()
 
 writeConf :: Bool -> Bool -> GG.GraphGrammar a b -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
 writeConf nacInj inj gg names fileName = root [] [writeCpxCon gg cps names] >>> writeDocument [withIndent yes] fileName
@@ -42,8 +45,8 @@ writeDep nacInj inj gg names fileName = root [] [writeCpxDep gg cps names] >>> w
     cps = CS.namedCriticalSequence nacInj inj (GG.rules gg)
 
 --Functions to deal with ggx format specificities
---writeRoot :: ArrowXml a => GG.GraphGrammar b c -> a XmlTree XmlTree
---writeRoot gg = mkelem "Document" [sattr "version" "1.0"] [writeGts gg]
+writeRoot :: ArrowXml a => GG.GraphGrammar b c -> [(String,String)] -> a XmlTree XmlTree
+writeRoot gg names = mkelem "Document" [sattr "version" "1.0"] [writeGts gg names]
 
 writeCpxCon :: ArrowXml a => GG.GraphGrammar b c -> [(String,String,[CP.CriticalPair b c])] -> [(String,String)] -> a XmlTree XmlTree
 writeCpxCon gg cp names = mkelem "Document"
@@ -195,7 +198,8 @@ writeOverlapping nacNames overlap@(_,_,(_,_,_,_,t),_) =
     "DeleteUse"             -> writeDeleteUse
     "ProduceEdgeDeleteNode" -> writeProdNode
     "ProduceForbid"         -> writeProdForbid nacNames
-    "ProduceUse"            -> writeProdUse)
+    "ProduceUse"            -> writeProdUse
+    "DeliverDelete"         -> writeDelDel nacNames)
   overlap
 
 writeProdForbid :: ArrowXml a => [(String,String)] -> Overlapping -> a XmlTree XmlTree
@@ -245,6 +249,20 @@ writeProdUse (n1, n2, ((_, nodes, edges), map1, map2, _, _), idx) =
     graphId idx = n1 ++ n2 ++ (show idx)
     mapAdjusted idx = map (\(x,y) -> (idx++"_"++x,y))
 
+writeDelDel :: ArrowXml a => [(String,String)] -> Overlapping -> a XmlTree XmlTree
+writeDelDel nacNames (n1, n2, ((_, nodes, edges), map1, map2, nacName, _), idx) =
+  mkelem "Overlapping_Pair" []
+    [writeGraphOverlaping (graphId idx) nacCorrectName "GRAPH" msg nodes edges,
+     writeMorphism ("MorphOf_" ++ n1) "LHS" (mapAdjusted (graphId idx) map1),
+     writeMorphism ("MorphOf_" ++ n2) "LHS" (mapAdjusted (graphId idx) map2)]
+  where
+    msg = "( "++show idx++ " ) " ++ "delete-forbid-conflict (NAC: "++nacCorrectName++")"
+    graphId idx = n1 ++ n2 ++ (show idx)
+    mapAdjusted idx = map (\(x,y) -> (idx++"_"++x,y))
+    nacCorrectName = case lookup nacName nacNames of
+                       Just n -> n
+                       Nothing -> nacName
+
 parseCPGraph :: (String,String,[CP.CriticalPair a b]) -> Overlappings
 parseCPGraph (name1,name2,cps) = (name1,name2,overlaps)
   where
@@ -252,21 +270,21 @@ parseCPGraph (name1,name2,cps) = (name1,name2,overlaps)
     getGraph = serializeGraph . CP.getM1
     getMapM1 = getTgmMappings . CP.getM1
     getMapM2 = getTgmMappings . CP.getM2
-    nacName = parseNacName name2
+    nacName = parseNacName name2 CP.getCPNac
     cpType = show . CP.getCP
 
 parseCSGraph :: (String,String,[CS.CriticalSequence a b]) -> Overlappings
 parseCSGraph (name1,name2,cps) = (name1,name2,overlaps)
   where
-    overlaps = map (\x -> (getGraph x, getMapM1 x, getMapM2 x, nacName, cpType)) cps
+    overlaps = map (\x -> (getGraph x, getMapM1 x, getMapM2 x, nacName x, csType x)) cps
     getGraph = serializeGraph . CS.getM1
     getMapM1 = getTgmMappings . CS.getM1
     getMapM2 = getTgmMappings . CS.getM2
-    nacName = ""
-    cpType = "ProduceUse"
+    nacName = parseNacName name2 CS.getCSNac
+    csType = show . CS.getCS
 
-parseNacName :: String -> CP.CriticalPair a b -> String
-parseNacName ruleName x = case CP.getNac x of
+parseNacName :: String -> (t -> Maybe Int) -> t -> String
+parseNacName ruleName f x = case f x of
                    Just n  -> "NAC_" ++ ruleName ++ "_" ++ (show n)
                    Nothing -> ""
 

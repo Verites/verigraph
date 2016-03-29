@@ -68,17 +68,18 @@ execute opts = do
     case outputFile opts of
       --Just file -> GW.writeConflictsFile nacInj onlyInj gg names file
       Just file -> GW.writeDependenciesFile nacInj onlyInj gg names file
+      --Just file -> GW.writeGrammarFile gg names file
       Nothing -> mapM_ putStrLn
         [ "Delete-Use:"
-        --, show (length <$> udMatrix)
+        , show (length <$> udMatrix)
         , ""
         , "Produce-Forbid:"
-        --, show (length <$> pfMatrix)
+        , show (length <$> pfMatrix)
         , ""
         , "Produce Edge Delete Node:"
-        --, show (length <$> peMatrix)
+        , show (length <$> peMatrix)
         , "All Conflicts:"
-        --, show (length <$> conflictsMatrix)
+        , show (length <$> conflictsMatrix)
         , "Produce Use Dependency:"
         , show (length <$> puMatrix)
         , "Deliver Delete Dependency:"

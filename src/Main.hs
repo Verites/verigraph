@@ -1,4 +1,14 @@
-{-# LANGUAGE TypeFamilies #-}
+--{-# LANGUAGE TypeFamilies #-}
+
+{-import qualified XML.GGXReader as XML
+import qualified CriticalPairs.CriticalSequence as CS
+import qualified CriticalPairs.CriticalPairs as CP
+
+a fn = do
+      prls <- XML.readRules fn
+      ptg <- XML.readTypeGraph fn
+      let rs = map (XML.instantiateRule (head ptg)) prls
+      return rs-}
 
 {-import qualified Text.XML.HXT.Core as HXT
 

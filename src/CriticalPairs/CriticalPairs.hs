@@ -65,8 +65,8 @@ getCP :: CriticalPair a b -> CP
 getCP = cp
 
 -- | Returns the nac number of a 'CriticalPair'
-getNac :: CriticalPair a b -> Maybe Int
-getNac = nac
+getCPNac :: CriticalPair a b -> Maybe Int
+getCPNac = nac
 
 --instance Show (CriticalPair a b) where
 --  show (CriticalPair m1 m2 cp) = "{"++(show $ TGM.mapping m1)++(show $ TGM.mapping m2)++(show cp)++"}"
