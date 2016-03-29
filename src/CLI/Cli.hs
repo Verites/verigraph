@@ -66,7 +66,9 @@ execute opts = do
         conflictsMatrix = liftMatrix3 (\x y z -> x ++ y ++ z) udMatrix pfMatrix peMatrix
     
     case outputFile opts of
-      Just file -> GW.writeCpxFile nacInj onlyInj gg names file
+      --Just file -> GW.writeConflictsFile nacInj onlyInj gg names file
+      Just file -> GW.writeDependenciesFile nacInj onlyInj gg names file
+      --Just file -> GW.writeGrammarFile gg names file
       Nothing -> mapM_ putStrLn
         [ "Delete-Use:"
         , show (length <$> udMatrix)

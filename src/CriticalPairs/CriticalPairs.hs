@@ -65,8 +65,8 @@ getCP :: CriticalPair a b -> CP
 getCP = cp
 
 -- | Returns the nac number of a 'CriticalPair'
-getNac :: CriticalPair a b -> Maybe Int
-getNac = nac
+getCPNac :: CriticalPair a b -> Maybe Int
+getCPNac = nac
 
 --instance Show (CriticalPair a b) where
 --  show (CriticalPair m1 m2 cp) = "{"++(show $ TGM.mapping m1)++(show $ TGM.mapping m2)++(show cp)++"}"
@@ -343,7 +343,8 @@ satsOneNacInj m nac = all (==False) checkCompose
 satsOneNacPartInj :: TGM.TypedGraphMorphism a b -- ^ m
            -> TGM.TypedGraphMorphism a b -- ^ nac
            -> Bool
-satsOneNacPartInj m nac = all (==False) checkCompose
+satsOneNacPartInj m nac = all (==False) check
    where
-      checkCompose = map (\x -> (M.compose nac x) == m) matches
-      matches = MT.partInjMatches nac m
+      check = map (TGM.partialInjectiveTGM nac) checkCompose
+      checkCompose = filter (\x -> (M.compose nac x) == m) matches
+      matches = MT.partInjMatches nac m --generating some non partial injective matches
