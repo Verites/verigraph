@@ -343,7 +343,8 @@ satsOneNacInj m nac = all (==False) checkCompose
 satsOneNacPartInj :: TGM.TypedGraphMorphism a b -- ^ m
            -> TGM.TypedGraphMorphism a b -- ^ nac
            -> Bool
-satsOneNacPartInj m nac = all (==False) checkCompose
+satsOneNacPartInj m nac = all (==False) check
    where
-      checkCompose = map (\x -> (M.compose nac x) == m) matches
-      matches = MT.partInjMatches nac m
+      check = map (TGM.partialInjectiveTGM nac) checkCompose
+      checkCompose = filter (\x -> (M.compose nac x) == m) matches
+      matches = MT.partInjMatches nac m --generating some non partial injective matches
