@@ -27,8 +27,8 @@ namedCriticalSequence nacInj inj r = map (\(x,y) -> getCPs x y) [(a,b) | a <- r,
 
 -- | Revert a Rule shifting NACs
 -- stay here until do not resolve cycle imports
-inverse :: Bool -> GR.GraphRule a b -> GR.GraphRule a b
-inverse nacInj r = GR.graphRule (GR.right r) (GR.left r) (concat (map (invNac nacInj r) (GR.nacs r)))
+inverse :: GR.GraphRule a b -> GR.GraphRule a b
+inverse r = GR.graphRule (GR.right r) (GR.left r) (concat (map (invNac r) (GR.nacs r)))
 
 satsGluingCondWithoutNac :: GR.GraphRule a b -> TGM.TypedGraphMorphism a b -> Bool
 satsGluingCondWithoutNac rule m = identificationCondition && danglingCondition
@@ -36,13 +36,13 @@ satsGluingCondWithoutNac rule m = identificationCondition && danglingCondition
         identificationCondition = CP.satsDelItems rule m
         danglingCondition       = CP.satsIncEdges rule m
 
-invNac :: Bool -> GR.GraphRule a b -> TGM.TypedGraphMorphism a b -> [TGM.TypedGraphMorphism a b]
-invNac nacInj rule n = if satsGluingCondWithoutNac rule n then [RW.comatch n rule] else []
+invNac :: GR.GraphRule a b -> TGM.TypedGraphMorphism a b -> [TGM.TypedGraphMorphism a b]
+invNac rule n = if satsGluingCondWithoutNac rule n then [RW.comatch n rule] else []
 
 allProduceUse :: Bool -> Bool -> GR.GraphRule a b -> GR.GraphRule a b -> [CriticalSequence a b]
 allProduceUse nacInj i l r = map (\(m1,m2) -> CriticalSequence m1 m2) prodUse
   where
-    invLeft = inverse nacInj l
+    invLeft = inverse l
     pairs = CP.createPairs (GR.left invLeft) (GR.left r)
     inj = filter (\(m1,m2) -> M.monomorphism m1 && M.monomorphism m2) pairs
     gluing = filter (\(m1,m2) -> CP.satsGluingCondBoth nacInj (invLeft,m1) (r,m2)) (if i then inj else pairs)
@@ -60,7 +60,7 @@ produceUse l r (m1',m2) = Prelude.null filt
 allDeliverDelete :: Bool -> Bool -> GR.GraphRule a b -> GR.GraphRule a b -> [CriticalSequence a b]
 allDeliverDelete nacInj i l r = map (\(m1,m2) -> CriticalSequence m1 m2) delDel
   where
-    invLeft = inverse nacInj l
+    invLeft = inverse l
     pairs = CP.createPairs (GR.left invLeft) (GR.left r)
     inj = filter (\(m1',m2) -> M.monomorphism m1' && M.monomorphism m2) pairs
     gluing = filter (\(m1',m2) -> CP.satsGluingCondBoth nacInj (invLeft,m1') (r,m2)) (if i then inj else pairs)
