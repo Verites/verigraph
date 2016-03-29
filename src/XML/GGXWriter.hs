@@ -253,7 +253,7 @@ writeDelDel :: ArrowXml a => [(String,String)] -> Overlapping -> a XmlTree XmlTr
 writeDelDel nacNames (n1, n2, ((_, nodes, edges), map1, map2, nacName, _), idx) =
   mkelem "Overlapping_Pair" []
     [writeGraphOverlaping (graphId idx) nacCorrectName "GRAPH" msg nodes edges,
-     writeMorphism ("MorphOf_" ++ n1) "LHS" (mapAdjusted (graphId idx) map1),
+     writeMorphism ("MorphOf_" ++ n1) "RHS" (mapAdjusted (graphId idx) map1),
      writeMorphism ("MorphOf_" ++ n2) "LHS" (mapAdjusted (graphId idx) map2)]
   where
     msg = "( "++show idx++ " ) " ++ "delete-forbid-conflict (NAC: "++nacCorrectName++")"
