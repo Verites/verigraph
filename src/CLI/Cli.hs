@@ -64,6 +64,7 @@ calculateDependencies flag = flag `elem` [Both,Dependencies]
 execute :: VerigraphOpts -> IO ()
 execute opts = do
     gg <- readGrammar opts
+    ggName <- readGGName (inputFile opts)
     names <- getNames (inputFile opts)
 
     putStrLn "Analyzing the graph grammar..."
@@ -108,12 +109,20 @@ execute opts = do
                    , ""]
     
     case outputFile opts of
-      Just file -> writer nacInj onlyInj gg names file
+      Just file -> writer nacInj onlyInj gg ggName names file
       Nothing -> mapM_
                  putStrLn $
                  (if calculateConflicts calc then conflicts else [])
                  ++ (if calculateDependencies calc then dependencies else [])
                  ++ ["Done!"]
+
+readGGName :: String -> IO (String)
+readGGName fileName = do
+  name <- XML.readName fileName
+  let ret = case name of
+              n:_ -> n
+              _   -> "GraGra"
+  return ret
 
 getNames :: String -> IO [(String,String)]
 getNames fileName = do

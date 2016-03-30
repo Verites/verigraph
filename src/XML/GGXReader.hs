@@ -15,6 +15,12 @@ import           XML.ParsedTypes
 import           XML.XMLUtilities
 import           Data.String.Utils
 
+parseGGName :: ArrowXml cat => cat (NTree XNode) String
+parseGGName = atTag "GraphTransformationSystem" >>>
+  proc ggname -> do
+    name <- getAttrValue "name" -< ggname
+    returnA -< name
+
 parseTypeGraph :: ArrowXml cat => cat (NTree XNode) TypeGraph
 parseTypeGraph = atTag "Types" >>> atTag "Graph" >>>
   proc graph -> do
@@ -158,6 +164,9 @@ main = do
   --print $ GR.graphRule lhs rhs nacs
   let rules = map (instantiateRule $ head a) b
   return ()-}
+
+readName :: String -> IO [String]
+readName fileName = runX (parseXML fileName >>> parseGGName)
 
 readTypeGraph :: String -> IO[TypeGraph]
 readTypeGraph fileName = runX (parseXML fileName >>> parseTypeGraph)

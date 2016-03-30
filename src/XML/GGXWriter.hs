@@ -14,65 +14,65 @@ import qualified Graph.TypedGraphMorphism as TGM
 import Data.List.Utils
 
 -- | Writes grammar, conflicts and dependencies (.cpx)
-writeConfDepFile :: Bool -> Bool -> GG.GraphGrammar a b -> [(String,String)] -> String -> IO ()
-writeConfDepFile nacInj inj gg names fileName = do
-  runX $ writeConfDep nacInj inj gg names fileName
+writeConfDepFile :: Bool -> Bool -> GG.GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
+writeConfDepFile nacInj inj gg name names fileName = do
+  runX $ writeConfDep nacInj inj gg name names fileName
   putStrLn $ "Saved in " ++ fileName
   return ()
 
 -- | Writes the grammar and the conflicts (.cpx)
-writeConflictsFile :: Bool -> Bool -> GG.GraphGrammar a b -> [(String,String)] -> String -> IO ()
-writeConflictsFile nacInj inj gg names fileName = do
-  runX $ writeConf nacInj inj gg names fileName
+writeConflictsFile :: Bool -> Bool -> GG.GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
+writeConflictsFile nacInj inj gg name names fileName = do
+  runX $ writeConf nacInj inj gg name names fileName
   putStrLn $ "Saved in " ++ fileName
   return ()
 
 -- | Writes the grammar and the dependencies (.cpx)
-writeDependenciesFile :: Bool -> Bool -> GG.GraphGrammar a b -> [(String,String)] -> String -> IO ()
-writeDependenciesFile nacInj inj gg names fileName = do
-  runX $ writeDep nacInj inj gg names fileName
+writeDependenciesFile :: Bool -> Bool -> GG.GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
+writeDependenciesFile nacInj inj gg name names fileName = do
+  runX $ writeDep nacInj inj gg name names fileName
   putStrLn $ "Saved in " ++ fileName
   return ()
 
 -- | Writes only the grammar (.ggx)
-writeGrammarFile :: GG.GraphGrammar a b -> [(String,String)] -> String -> IO ()
-writeGrammarFile gg names fileName = do
-  runX $ root [] [writeRoot gg names] >>> writeDocument [withIndent yes] fileName
+writeGrammarFile :: GG.GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
+writeGrammarFile gg name names fileName = do
+  runX $ root [] [writeRoot gg name names] >>> writeDocument [withIndent yes] fileName
   putStrLn $ "Saved in " ++ fileName
   return ()
 
-writeConfDep :: Bool -> Bool -> GG.GraphGrammar a b -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
-writeConfDep nacInj inj gg names fileName = root [] [writeCpx gg cps css names] >>> writeDocument [withIndent yes] fileName
+writeConfDep :: Bool -> Bool -> GG.GraphGrammar a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
+writeConfDep nacInj inj gg name names fileName = root [] [writeCpx gg cps css name names] >>> writeDocument [withIndent yes] fileName
   where
     cps = CP.namedCriticalPairs nacInj inj (GG.rules gg)
     css = CS.namedCriticalSequence nacInj inj (GG.rules gg)
 
-writeConf :: Bool -> Bool -> GG.GraphGrammar a b -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
-writeConf nacInj inj gg names fileName = root [] [writeCpx gg cps [] names] >>> writeDocument [withIndent yes] fileName
+writeConf :: Bool -> Bool -> GG.GraphGrammar a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
+writeConf nacInj inj gg name names fileName = root [] [writeCpx gg cps [] name names] >>> writeDocument [withIndent yes] fileName
   where
     cps = CP.namedCriticalPairs nacInj inj (GG.rules gg)
 
-writeDep :: Bool -> Bool -> GG.GraphGrammar a b -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
-writeDep nacInj inj gg names fileName = root [] [writeCpx gg [] cps names] >>> writeDocument [withIndent yes] fileName
+writeDep :: Bool -> Bool -> GG.GraphGrammar a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
+writeDep nacInj inj gg name names fileName = root [] [writeCpx gg [] cps name names] >>> writeDocument [withIndent yes] fileName
   where
     cps = CS.namedCriticalSequence nacInj inj (GG.rules gg)
 
 --Functions to deal with ggx format specificities
-writeRoot :: ArrowXml a => GG.GraphGrammar b c -> [(String,String)] -> a XmlTree XmlTree
-writeRoot gg names = mkelem "Document" [sattr "version" "1.0"] [writeGts gg names]
+writeRoot :: ArrowXml a => GG.GraphGrammar b c -> String -> [(String,String)] -> a XmlTree XmlTree
+writeRoot gg name names = mkelem "Document" [sattr "version" "1.0"] [writeGts gg name names]
 
-writeCpx :: ArrowXml a => GG.GraphGrammar b c -> [(String,String,[CP.CriticalPair b c])] -> [(String,String,[CS.CriticalSequence b c])] -> [(String,String)] -> a XmlTree XmlTree
-writeCpx gg cp cs names = mkelem "Document"
+writeCpx :: ArrowXml a => GG.GraphGrammar b c -> [(String,String,[CP.CriticalPair b c])] -> [(String,String,[CS.CriticalSequence b c])] -> String -> [(String,String)] -> a XmlTree XmlTree
+writeCpx gg cp cs name names = mkelem "Document"
                         [sattr "version" "1.0"]
                         [mkelem "CriticalPairs"
                         [sattr "ID" "I0"]
-                          ((writeGts gg names) : (writeCriticalPairAnalysis names (GG.rules gg) parsedCP parsedCS))]
+                          ((writeGts gg name names) : (writeCriticalPairAnalysis names (GG.rules gg) parsedCP parsedCS))]
   where
     parsedCP = map parseCPGraph cp
     parsedCS = map parseCSGraph cs
 
-writeGts :: ArrowXml a => GG.GraphGrammar b c -> [(String,String)] -> a XmlTree XmlTree
-writeGts grammar names = mkelem "GraphTransformationSystem" defaultGtsAttributes $ writeGrammar grammar names
+writeGts :: ArrowXml a => GG.GraphGrammar b c -> String -> [(String,String)] -> a XmlTree XmlTree
+writeGts grammar name names = mkelem "GraphTransformationSystem" (sattr "name" name : defaultGtsAttributes) $ writeGrammar grammar names
 
 writeCpaOptions :: ArrowXml a => a XmlTree XmlTree
 writeCpaOptions = mkelem "cpaOptions" cpaAttributes []
@@ -444,7 +444,7 @@ writeNac ((nacGraph, nacMorphism),nacName) = mkelem "NAC" [] [writeNacGraph nacG
     writeNacMorphism = writeMorphism nacName ""
 
 defaultGtsAttributes :: ArrowXml a => [a n XmlTree]
-defaultGtsAttributes = [ sattr "ID" "I1", sattr "directed" "true", sattr "name" "GraGra", sattr "parallel" "true" ]
+defaultGtsAttributes = [ sattr "ID" "I1", sattr "directed" "true", sattr "parallel" "true" ]
 
 writeAggProperties :: ArrowXml a => [a XmlTree XmlTree]
 writeAggProperties = writeAttrHandler : writeTaggedValues defaultProperties
