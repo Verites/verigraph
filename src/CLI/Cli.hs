@@ -67,7 +67,8 @@ execute opts = do
     
     case outputFile opts of
       --Just file -> GW.writeConflictsFile nacInj onlyInj gg names file
-      Just file -> GW.writeDependenciesFile nacInj onlyInj gg names file
+      --Just file -> GW.writeDependenciesFile nacInj onlyInj gg names file
+      Just file -> GW.writeConfDepFile nacInj onlyInj gg names file
       --Just file -> GW.writeGrammarFile gg names file
       Nothing -> mapM_ putStrLn
         [ "Delete-Use:"
