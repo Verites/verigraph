@@ -223,7 +223,7 @@ writeProdForbid nacNames (n1, n2, ((_, nodes, edges), map1, map2, nacName, _), i
      writeMorphism ("MorphOf_" ++ n2) "LHS" (mapAdjusted (graphId idx) map2)]
   where
     msg = "( "++show idx++ " ) " ++ "produce-forbid-conflict (NAC: "++nacCorrectName++")"
-    graphId idx = n1 ++ n2 ++ (show idx)
+    graphId idx = n1 ++ n2 ++ (show idx) ++ "_proforcon"
     mapAdjusted idx = map (\(x,y) -> (idx++"_"++x,y))
     nacCorrectName = case lookup nacName nacNames of
                        Just n -> n
@@ -237,7 +237,7 @@ writeProdNode (n1, n2, ((_, nodes, edges), map1, map2, _, _), idx) =
      writeMorphism ("MorphOf_" ++ n2) "LHS" (mapAdjusted (graphId idx) map2)]
   where
     msg = "( "++show idx++ " ) " ++ "produceEdge-deleteNode-conflict"
-    graphId idx = n1 ++ n2 ++ (show idx)
+    graphId idx = n1 ++ n2 ++ (show idx) ++ "_prodelcon"
     mapAdjusted idx = map (\(x,y) -> (idx++"_"++x,y))
 
 writeDeleteUse :: ArrowXml a => Overlapping -> a XmlTree XmlTree
@@ -248,7 +248,7 @@ writeDeleteUse (n1, n2, ((_, nodes, edges), map1, map2, _, _), idx) =
      writeMorphism ("MorphOf_" ++ n2) "LHS" (mapAdjusted (graphId idx) map2)]
   where
     msg = "( "++show idx++ " ) " ++ "delete-use-conflict"
-    graphId idx = n1 ++ n2 ++ (show idx)
+    graphId idx = n1 ++ n2 ++ (show idx) ++ "_delusecon"
     mapAdjusted idx = map (\(x,y) -> (idx++"_"++x,y))
 
 writeProdUse :: ArrowXml a => Overlapping -> a XmlTree XmlTree
@@ -259,7 +259,7 @@ writeProdUse (n1, n2, ((_, nodes, edges), map1, map2, _, _), idx) =
      writeMorphism ("MorphOf_" ++ n2) "LHS" (mapAdjusted (graphId idx) map2)]
   where
     msg = "( "++show idx++ " ) " ++ "produce-use-dependency"
-    graphId idx = n1 ++ n2 ++ (show idx)
+    graphId idx = n1 ++ n2 ++ (show idx) ++ "_prousedep"
     mapAdjusted idx = map (\(x,y) -> (idx++"_"++x,y))
 
 writeDelDel :: ArrowXml a => [(String,String)] -> Overlapping -> a XmlTree XmlTree
@@ -270,7 +270,7 @@ writeDelDel nacNames (n1, n2, ((_, nodes, edges), map1, map2, nacName, _), idx) 
      writeMorphism ("MorphOf_" ++ n2) "LHS" (mapAdjusted (graphId idx) map2)]
   where
     msg = "( "++show idx++ " ) " ++ "delete-forbid-conflict (NAC: "++nacCorrectName++")"
-    graphId idx = n1 ++ n2 ++ (show idx)
+    graphId idx = n1 ++ n2 ++ (show idx) ++ "_delfordep"
     mapAdjusted idx = map (\(x,y) -> (idx++"_"++x,y))
     nacCorrectName = case lookup nacName nacNames of
                        Just n -> n

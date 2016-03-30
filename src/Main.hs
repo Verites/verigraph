@@ -3,6 +3,12 @@
 {-import qualified XML.GGXReader as XML
 import qualified CriticalPairs.CriticalSequence as CS
 import qualified CriticalPairs.CriticalPairs as CP
+import qualified Graph.Graph as G
+import qualified Graph.GraphRule as GR
+import qualified Graph.GraphMorphism as GM
+import qualified Graph.TypedGraphMorphism as TGM
+import qualified Graph.Rewriting as RW
+import qualified Graph.GraphGrammar as GG
 
 a fn = do
       prls <- XML.readRules fn
