@@ -1,7 +1,8 @@
 import Control.Monad (when, forM_)
-import Data.Matrix
+import Data.Matrix hiding ((<|>))
 import qualified Data.List as L
 import Options.Applicative
+import Abstract.Valid
 
 import Graph.GraphRule (GraphRule)
 import CriticalPairs.CriticalPairs (CriticalPair)
@@ -20,7 +21,10 @@ data VerigraphOpts = Opts
   , outputFile :: Maybe String
   , injectiveMatchesOnly :: Bool
   , injectiveNacSatisfaction :: Bool
+  , analysis :: Analysis
   , verbose :: Bool }
+
+data Analysis = Both | Conflicts | Dependencies deriving (Eq)
 
 verigraphOpts :: Parser VerigraphOpts
 verigraphOpts = Opts
@@ -42,10 +46,20 @@ verigraphOpts = Opts
     ( long "inj-nac-satisfaction"
     <> help ("Restrict the analysis of NAC satisfaction to injective " ++
             "morphisms between the NAC graph and the instance graph"))
+  <*> (flag' Conflicts
+    ( long "conflicts-only"
+    <> help "Restrict to Critical Pair analysis")
+      <|> flag' Dependencies
+        ( long "dependencies-only"
+        <> help "Restrict to Critical Sequence analysis")
+        <|> pure Both)
   <*> flag False True
     ( long "verbose"
     <> short 'v'
     <> help "Print detailed information")
+
+calculateConflicts flag = flag `elem` [Both,Conflicts]
+calculateDependencies flag = flag `elem` [Both,Dependencies]
 
 execute :: VerigraphOpts -> IO ()
 execute opts = do
@@ -57,6 +71,11 @@ execute opts = do
 
     let nacInj = injectiveNacSatisfaction opts
         onlyInj = injectiveMatchesOnly opts
+        calc = analysis opts
+        writer = case calc of
+                   Conflicts    -> GW.writeConflictsFile
+                   Dependencies -> GW.writeDependenciesFile
+                   Both         -> GW.writeConfDepFile
         rules = map snd (GG.rules gg)
         puMatrix = pairwiseCompare (CS.allProduceUse nacInj onlyInj) rules
         ddMatrix = pairwiseCompare (CS.allDeliverDelete nacInj onlyInj) rules
@@ -66,32 +85,35 @@ execute opts = do
         conflictsMatrix = liftMatrix3 (\x y z -> x ++ y ++ z) udMatrix pfMatrix peMatrix
         dependenciesMatrix = liftMatrix2 (\x y -> x ++ y) puMatrix ddMatrix
     
+        conflicts = [ "Delete-Use:"
+                , show (length <$> udMatrix)
+                , ""
+                , "Produce-Forbid:"
+                , show (length <$> pfMatrix)
+                , ""
+                , "Produce Edge Delete Node:"
+                , show (length <$> peMatrix)
+                , "All Conflicts:"
+                , show (length <$> conflictsMatrix)
+                , ""]
+    
+        dependencies = [ "Produce Use Dependency:"
+                   , show (length <$> puMatrix)
+                   , ""
+                   , "Deliver Delete Dependency:"
+                   , show (length <$> ddMatrix)
+                   , ""
+                   , "All Dependencies:"
+                   , show (length <$> dependenciesMatrix)
+                   , ""]
+    
     case outputFile opts of
-      --Just file -> GW.writeConflictsFile nacInj onlyInj gg names file
-      --Just file -> GW.writeDependenciesFile nacInj onlyInj gg names file
-      Just file -> GW.writeConfDepFile nacInj onlyInj gg names file
-      --Just file -> GW.writeGrammarFile gg names file
-      Nothing -> mapM_ putStrLn
-        [ "Delete-Use:"
-        , show (length <$> udMatrix)
-        , ""
-        , "Produce-Forbid:"
-        , show (length <$> pfMatrix)
-        , ""
-        , "Produce Edge Delete Node:"
-        , show (length <$> peMatrix)
-        , "All Conflicts:"
-        , show (length <$> conflictsMatrix)
-        , "Produce Use Dependency:"
-        , show (length <$> puMatrix)
-        , "Deliver Delete Dependency:"
-        , show (length <$> ddMatrix)
-        , "All Dependencies:"
-        , show (length <$> dependenciesMatrix)
-        , ""
-        , "Done!"
-        ]
-
+      Just file -> writer nacInj onlyInj gg names file
+      Nothing -> mapM_
+                 putStrLn $
+                 (if calculateConflicts calc then conflicts else [])
+                 ++ (if calculateDependencies calc then dependencies else [])
+                 ++ ["Done!"]
 
 getNames :: String -> IO [(String,String)]
 getNames fileName = do
@@ -102,7 +124,13 @@ getNames fileName = do
 readGrammar :: VerigraphOpts -> IO (GG.GraphGrammar a b)
 readGrammar conf = do
   let fileName = inputFile conf
-  parsedTypeGraph <- XML.readTypeGraph fileName
+  
+  parsedTypeGraphs <- XML.readTypeGraph fileName
+  let parsedTypeGraph = case parsedTypeGraphs of
+                         []    -> error "error, type graph not found"
+                         ptg:_ -> ptg
+  _ <- parsedTypeGraph `seq` return ()
+  
   parsedRules <- XML.readRules fileName
 
   let rulesNames = map (\((x,_,_,_),_) -> x) parsedRules
@@ -111,11 +139,16 @@ readGrammar conf = do
     forM_ rulesNames $ \name ->
       putStrLn ('\t' : name)
     putStrLn ""
-
-  let rules = map (XML.instantiateRule (head parsedTypeGraph)) parsedRules
+  
+  let rules = map (XML.instantiateRule parsedTypeGraph) parsedRules
+  
+  _ <- (case False `elem` (map valid rules) of
+          True  -> error "some rule is not valid"
+          False -> []) `seq` return ()       
+  
   let typeGraph = M.codomain . M.domain . GR.left $ head rules
-
-  let initGraph = GM.empty typeGraph typeGraph
+      initGraph = GM.empty typeGraph typeGraph
+  
   return $ GG.graphGrammar initGraph (zip rulesNames rules)
 
 -- | Combine three matrices with the given function. All matrices _must_ have
