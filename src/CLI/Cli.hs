@@ -64,6 +64,7 @@ execute opts = do
         pfMatrix = pairwiseCompare (CP.allProduceForbid nacInj onlyInj) rules
         peMatrix = pairwiseCompare (CP.allProdEdgeDelNode nacInj onlyInj) rules
         conflictsMatrix = liftMatrix3 (\x y z -> x ++ y ++ z) udMatrix pfMatrix peMatrix
+        dependenciesMatrix = liftMatrix2 (\x y -> x ++ y) puMatrix ddMatrix
     
     case outputFile opts of
       --Just file -> GW.writeConflictsFile nacInj onlyInj gg names file
@@ -85,6 +86,8 @@ execute opts = do
         , show (length <$> puMatrix)
         , "Deliver Delete Dependency:"
         , show (length <$> ddMatrix)
+        , "All Dependencies:"
+        , show (length <$> dependenciesMatrix)
         , ""
         , "Done!"
         ]
@@ -120,6 +123,12 @@ readGrammar conf = do
 liftMatrix3 :: (a -> b -> c -> d) -> Matrix a -> Matrix b -> Matrix c -> Matrix d
 liftMatrix3 f ma mb mc = matrix (nrows ma) (ncols ma) $ \pos ->
   f (ma!pos) (mb!pos) (mc!pos)
+
+-- | Combine two matrices with the given function. All matrices _must_ have
+-- the same dimensions.
+liftMatrix2 :: (a -> b -> c) -> Matrix a -> Matrix b -> Matrix c
+liftMatrix2 f ma mb = matrix (nrows ma) (ncols ma) $ \pos ->
+  f (ma!pos) (mb!pos)
 
 pairwiseCompare :: (a -> a -> b) -> [a] -> Matrix b
 pairwiseCompare compare items =
