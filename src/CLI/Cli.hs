@@ -5,9 +5,9 @@ import Options.Applicative
 import Abstract.Valid
 
 import Graph.GraphRule (GraphRule)
-import CriticalPairs.CriticalPairs (CriticalPair)
-import qualified CriticalPairs.CriticalPairs as CP
-import qualified CriticalPairs.CriticalSequence as CS
+import Analysis.CriticalPairs (CriticalPair)
+import qualified Analysis.CriticalPairs as CP
+import qualified Analysis.CriticalSequence as CS
 import qualified XML.GGXReader as XML
 import qualified Graph.GraphGrammar as GG
 import qualified Graph.GraphMorphism as GM

@@ -1,5 +1,5 @@
 {-|
-Module      : CriticalPairs.CriticalPairs
+Module      : Analysis.CriticalPairs
 Description : CriticalPairs
 Maintainer  : acosta@inf.ufrgs.br
 Stability   : development
@@ -7,7 +7,7 @@ Stability   : development
 This module provides a structure to calculate all Critical Pairs of two matches.
 It considers the DPO approach for graph transformation.
 -}
-module CriticalPairs.CriticalPairs
+module Analysis.CriticalPairs
  {-(
    CP,
    CriticalPair,
@@ -26,15 +26,15 @@ module CriticalPairs.CriticalPairs
    ) -}where
 
 import Graph.GraphRule
-import qualified CriticalPairs.GraphPart as GP
+import qualified Analysis.GraphPart as GP
 import qualified Graph.GraphMorphism as GM
 import qualified Graph.TypedGraphMorphism as TGM
 import qualified Graph.Rewriting as RW
 import qualified Abstract.Morphism as M
-import CriticalPairs.VeriToGP
-import CriticalPairs.GPToVeri
+import Analysis.VeriToGP
+import Analysis.GPToVeri
 import Graph.Graph
-import qualified CriticalPairs.Matches as MT
+import qualified Analysis.Matches as MT
 import Data.List (elemIndex)
 import Data.List.Utils (countElem)
 import Data.Maybe (mapMaybe)

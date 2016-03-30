@@ -1,11 +1,11 @@
-module CriticalPairs.CriticalSequence where
+module Analysis.CriticalSequence where
 
 import qualified Graph.GraphRule as GR 
 import qualified Graph.TypedGraphMorphism as TGM
 import qualified Graph.Rewriting as RW
 import qualified Abstract.Morphism as M
-import qualified CriticalPairs.Matches as MT
-import qualified CriticalPairs.CriticalPairs as CP
+import qualified Analysis.Matches as MT
+import qualified Analysis.CriticalPairs as CP
 
 import Data.List (elemIndex)
 import Data.List.Utils (countElem)

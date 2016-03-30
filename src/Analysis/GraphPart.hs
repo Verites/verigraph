@@ -1,4 +1,4 @@
-module CriticalPairs.GraphPart (
+module Analysis.GraphPart (
    DelType (..),
    Node (..),
    Edge (..),

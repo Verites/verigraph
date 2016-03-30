@@ -4,7 +4,7 @@
 
 {-# LANGUAGE FlexibleInstances #-}
 
-module CriticalPairs.Matches(
+module Analysis.Matches(
       PROP(..)
     , matches
     , partInjMatches

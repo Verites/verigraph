@@ -1,10 +1,10 @@
-module CriticalPairs.VeriToGP (
+module Analysis.VeriToGP (
    mixLeftRule,
    mixTGM
    ) where
 
 import Graph.Graph
-import qualified CriticalPairs.GraphPart as GP
+import qualified Analysis.GraphPart as GP
 import qualified Graph.GraphMorphism as GM
 import qualified Graph.TypedGraphMorphism as TGM
 import Graph.GraphRule

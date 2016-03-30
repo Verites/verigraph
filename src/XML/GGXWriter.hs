@@ -3,8 +3,8 @@ module XML.GGXWriter where
 import           Data.Maybe
 import           Text.XML.HXT.Core
 import           XML.ParsedTypes
-import qualified CriticalPairs.CriticalPairs as CP
-import qualified CriticalPairs.CriticalSequence as CS
+import qualified Analysis.CriticalPairs as CP
+import qualified Analysis.CriticalSequence as CS
 import qualified Graph.Graph         as G
 import qualified Graph.GraphGrammar  as GG
 import qualified Graph.GraphMorphism as GM

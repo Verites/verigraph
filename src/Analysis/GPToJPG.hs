@@ -1,6 +1,6 @@
-module CriticalPairs.GPToJPG (gind,write) where
+module Analysis.GPToJPG (gind,write) where
 
-import CriticalPairs.GraphPart
+import Analysis.GraphPart
 
 import Data.Text.Lazy (Text, pack, unpack)
 import Data.Graph.Inductive (Gr, mkGraph)
