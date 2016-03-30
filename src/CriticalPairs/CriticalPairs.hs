@@ -223,17 +223,17 @@ produceForbidOneNac nacInj inj l r n = let
                        h21
 
         -- Define m2 = d1 . h21: L2 -> K and abort if m2 not sats NACs r
-        m1m2 = map (\(h1,q21,k,r',m1,l',l2d1) -> (m1, M.compose l2d1 l')) validH21
+        m1m2 = map (\(h1,q21,k,r',m1,l',l2d1) -> (h1,m1, M.compose l2d1 l')) validH21
         --filtM2 = filter (\(m1,m2) -> satsNacs r m2) m1m2
 
         -- Check gluing condition for m2 and r
-        filtM2 = filter (\(m1,m2) -> satsGluingCond nacInj r m2) m1m2
+        filtM2 = filter (\(_,m1,m2) -> satsGluingCond nacInj r m2) m1m2
         
-        filtInj = filter (\(m1,m2) -> M.monomorphism m1 && M.monomorphism m2) filtM2
+        filtInj = filter (\(_,m1,m2) -> M.monomorphism m1 && M.monomorphism m2) filtM2
         
         idx = elemIndex n (nacs r)
         
-        in map (\(m1,m2) -> CriticalPair m1 m2 idx ProduceForbid) (if inj then filtInj else filtM2)
+        in map (\(h1,m1,m2) -> CriticalPair h1 m2 idx ProduceForbid) (if inj then filtInj else filtM2)
 
 ---- Produce Edge Delete Node
 
