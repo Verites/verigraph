@@ -20,10 +20,11 @@ import qualified Graph.GraphRule as GR
 idMap :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b
 idMap m k = TGM.typedMorphism (Mor.codomain k) (Mor.codomain m) edgesUpdate
     where
-        graph = Mor.domain (Mor.codomain m)
-        init = GM.empty graph graph
-        nodes = G.nodes graph
-        edges = G.edges graph
+        graphG = Mor.domain (Mor.codomain m)
+        graphK = Mor.domain (Mor.codomain k)
+        init = GM.empty graphK graphG
+        nodes = G.nodes graphK
+        edges = G.edges graphK
         nodesUpdate = foldl (\gm n -> GM.updateNodes n n gm) init nodes
         edgesUpdate = foldl (\gm e -> GM.updateEdges e e gm) nodesUpdate edges
 
