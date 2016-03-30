@@ -1,77 +1,83 @@
-module XML.GGXWriter where
+module XML.GGXWriter 
+ (
+   writeConfDepFile,
+   writeConflictsFile,
+   writeDependenciesFile,
+   writeGrammarFile
+ ) where
 
+import qualified Abstract.Morphism as M
+import           Data.List.Utils (startswith)
 import           Data.Maybe
 import           Text.XML.HXT.Core
-import           XML.ParsedTypes
 import qualified Analysis.CriticalPairs as CP
 import qualified Analysis.CriticalSequence as CS
-import qualified Graph.Graph         as G
-import qualified Graph.GraphGrammar  as GG
+import qualified Graph.Graph as G
+import           Graph.GraphGrammar
 import qualified Graph.GraphMorphism as GM
-import qualified Graph.GraphRule     as GR
-import qualified Abstract.Morphism   as M
-import qualified Graph.TypedGraphMorphism as TGM
-import Data.List.Utils
+import qualified Graph.GraphRule as GR
+import           Graph.TypedGraphMorphism
+import           XML.ParsedTypes
 
 -- | Writes grammar, conflicts and dependencies (.cpx)
-writeConfDepFile :: Bool -> Bool -> GG.GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
+writeConfDepFile :: Bool -> Bool -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
 writeConfDepFile nacInj inj gg name names fileName = do
   runX $ writeConfDep nacInj inj gg name names fileName
   putStrLn $ "Saved in " ++ fileName
   return ()
 
 -- | Writes the grammar and the conflicts (.cpx)
-writeConflictsFile :: Bool -> Bool -> GG.GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
+writeConflictsFile :: Bool -> Bool -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
 writeConflictsFile nacInj inj gg name names fileName = do
   runX $ writeConf nacInj inj gg name names fileName
   putStrLn $ "Saved in " ++ fileName
   return ()
 
 -- | Writes the grammar and the dependencies (.cpx)
-writeDependenciesFile :: Bool -> Bool -> GG.GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
+writeDependenciesFile :: Bool -> Bool -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
 writeDependenciesFile nacInj inj gg name names fileName = do
   runX $ writeDep nacInj inj gg name names fileName
   putStrLn $ "Saved in " ++ fileName
   return ()
 
 -- | Writes only the grammar (.ggx)
-writeGrammarFile :: GG.GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
+writeGrammarFile :: GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
 writeGrammarFile gg name names fileName = do
   runX $ root [] [writeRoot gg name names] >>> writeDocument [withIndent yes] fileName
   putStrLn $ "Saved in " ++ fileName
   return ()
 
-writeConfDep :: Bool -> Bool -> GG.GraphGrammar a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
+writeConfDep :: Bool -> Bool -> GraphGrammar a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
 writeConfDep nacInj inj gg name names fileName = root [] [writeCpx gg cps css name names] >>> writeDocument [withIndent yes] fileName
   where
-    cps = CP.namedCriticalPairs nacInj inj (GG.rules gg)
-    css = CS.namedCriticalSequence nacInj inj (GG.rules gg)
+    cps = CP.namedCriticalPairs nacInj inj (rules gg)
+    css = CS.namedCriticalSequence nacInj inj (rules gg)
 
-writeConf :: Bool -> Bool -> GG.GraphGrammar a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
+writeConf :: Bool -> Bool -> GraphGrammar a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
 writeConf nacInj inj gg name names fileName = root [] [writeCpx gg cps [] name names] >>> writeDocument [withIndent yes] fileName
   where
-    cps = CP.namedCriticalPairs nacInj inj (GG.rules gg)
+    cps = CP.namedCriticalPairs nacInj inj (rules gg)
 
-writeDep :: Bool -> Bool -> GG.GraphGrammar a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
+writeDep :: Bool -> Bool -> GraphGrammar a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
 writeDep nacInj inj gg name names fileName = root [] [writeCpx gg [] cps name names] >>> writeDocument [withIndent yes] fileName
   where
-    cps = CS.namedCriticalSequence nacInj inj (GG.rules gg)
+    cps = CS.namedCriticalSequence nacInj inj (rules gg)
 
 --Functions to deal with ggx format specificities
-writeRoot :: ArrowXml a => GG.GraphGrammar b c -> String -> [(String,String)] -> a XmlTree XmlTree
+writeRoot :: ArrowXml a => GraphGrammar b c -> String -> [(String,String)] -> a XmlTree XmlTree
 writeRoot gg name names = mkelem "Document" [sattr "version" "1.0"] [writeGts gg name names]
 
-writeCpx :: ArrowXml a => GG.GraphGrammar b c -> [(String,String,[CP.CriticalPair b c])] -> [(String,String,[CS.CriticalSequence b c])] -> String -> [(String,String)] -> a XmlTree XmlTree
+writeCpx :: ArrowXml a => GraphGrammar b c -> [(String,String,[CP.CriticalPair b c])] -> [(String,String,[CS.CriticalSequence b c])] -> String -> [(String,String)] -> a XmlTree XmlTree
 writeCpx gg cp cs name names = mkelem "Document"
                         [sattr "version" "1.0"]
                         [mkelem "CriticalPairs"
                         [sattr "ID" "I0"]
-                          ((writeGts gg name names) : (writeCriticalPairAnalysis names (GG.rules gg) parsedCP parsedCS))]
+                          ((writeGts gg name names) : (writeCriticalPairAnalysis names (rules gg) parsedCP parsedCS))]
   where
     parsedCP = map parseCPGraph cp
     parsedCS = map parseCSGraph cs
 
-writeGts :: ArrowXml a => GG.GraphGrammar b c -> String -> [(String,String)] -> a XmlTree XmlTree
+writeGts :: ArrowXml a => GraphGrammar b c -> String -> [(String,String)] -> a XmlTree XmlTree
 writeGts grammar name names = mkelem "GraphTransformationSystem" (sattr "name" name : defaultGtsAttributes) $ writeGrammar grammar names
 
 writeCpaOptions :: ArrowXml a => a XmlTree XmlTree
@@ -135,8 +141,8 @@ writeRuleSets rules = (mkelem "RuleSet" (somethingRules ++ rulesL) []) : (mkelem
     rulesL :: ArrowXml a => [a XmlTree XmlTree]
     rulesL = [sattr "size" (show $ length rules)]
 
-writeGrammar :: ArrowXml a => GG.GraphGrammar b c -> [(String,String)] -> [a XmlTree XmlTree]
-writeGrammar grammar names = writeAggProperties ++ [writeTypes (GG.typeGraph grammar) names] ++ [writeHostGraph] ++ (writeRules grammar nacNames)
+writeGrammar :: ArrowXml a => GraphGrammar b c -> [(String,String)] -> [a XmlTree XmlTree]
+writeGrammar grammar names = writeAggProperties ++ [writeTypes (typeGraph grammar) names] ++ [writeHostGraph] ++ (writeRules grammar nacNames)
   where
     nacNames = filter (\(x,_) -> startswith "NAC" x) names
 
@@ -203,7 +209,7 @@ writeGraphOverlaping graphId info kind name nodes edges =
 writeOverlappings :: ArrowXml a => [(String,String)] -> Overlappings -> [a XmlTree XmlTree]
 writeOverlappings nacNames (n1, n2, overlaps) = map (\(x,y) -> writeOverlapping nacNames (n1,n2,x,y)) list
   where
-    list = zip overlaps [0..]
+    list = zip overlaps [1..]
 
 writeOverlapping :: ArrowXml a => [(String,String)] -> Overlapping -> a XmlTree XmlTree
 writeOverlapping nacNames overlap@(_,_,(_,_,_,_,t),_) =
@@ -344,8 +350,8 @@ writeEdgeConflict graphId (edgeId, edgeType, source, target) =
       sattr "target" (graphId++"_"++target),
       sattr "type" edgeType] []
 
-writeRules :: ArrowXml a => GG.GraphGrammar b c -> [(String,String)] -> [a XmlTree XmlTree]
-writeRules grammar nacNames = map (writeRule nacNames) (GG.rules grammar)
+writeRules :: ArrowXml a => GraphGrammar b c -> [(String,String)] -> [a XmlTree XmlTree]
+writeRules grammar nacNames = map (writeRule nacNames) (rules grammar)
 
 writeRule :: ArrowXml a => [(String,String)] -> (String, GR.GraphRule b c) -> a XmlTree XmlTree
 writeRule nacNames (ruleName, rule) =
@@ -369,14 +375,14 @@ getNacs ruleName rule = map getNac nacsWithIds
     zipIds = zip ([0..]::[Int]) (GR.nacs rule)
     nacsWithIds = map (\(x,y) -> ("NAC_" ++ ruleName ++ "_" ++ show x, y)) zipIds
 
-getNac :: (String, TGM.TypedGraphMorphism a b) -> (ParsedTypedGraph, [Mapping])
+getNac :: (String, TypedGraphMorphism a b) -> (ParsedTypedGraph, [Mapping])
 getNac (nacId,nac) = (graph, mappings)
   where
     (_,n,e) = serializeGraph nac
     graph = (nacId, n, e)
     mappings = getTgmMappings nac
 
-serializeGraph :: TGM.TypedGraphMorphism a b -> ParsedTypedGraph
+serializeGraph :: TypedGraphMorphism a b -> ParsedTypedGraph
 serializeGraph morphism = ("", nodes, edges)
   where
     graph = M.codomain morphism
@@ -396,22 +402,22 @@ serializeEdge graph e = ("E" ++ show e, "E" ++ show (edgeType e), "N" ++ show (s
 getMappings :: GR.GraphRule a b -> [Mapping]
 getMappings rule = nodesMorph ++ edgesMorph
   where
-    invL = TGM.invertTGM (GR.left rule)
+    invL = invertTGM (GR.left rule)
     lr = M.compose invL (GR.right rule)
-    nodeMap n = fromJust $ TGM.applyNodeTGM lr n
-    nodes = filter (isJust . TGM.applyNodeTGM lr) (TGM.nodesDomain lr)
+    nodeMap n = fromJust $ applyNodeTGM lr n
+    nodes = filter (isJust . applyNodeTGM lr) (nodesDomain lr)
     nodesMorph = map (\n -> ("N" ++ show (nodeMap n), "N" ++ show n)) nodes
-    edgeMap e = fromJust $ TGM.applyEdgeTGM lr e
-    edges = filter (isJust . TGM.applyEdgeTGM lr) (TGM.edgesDomain lr)
+    edgeMap e = fromJust $ applyEdgeTGM lr e
+    edges = filter (isJust . applyEdgeTGM lr) (edgesDomain lr)
     edgesMorph = map (\e -> ("E" ++ show (edgeMap e), "E" ++ show e)) edges
 
-getTgmMappings :: TGM.TypedGraphMorphism a b -> [Mapping]
+getTgmMappings :: TypedGraphMorphism a b -> [Mapping]
 getTgmMappings nac = nodesMorph ++ edgesMorph
   where
-    nodeMap n = fromJust $ TGM.applyNodeTGM nac n
-    edgeMap e = fromJust $ TGM.applyEdgeTGM nac e
-    nodesMorph = map (\n -> ("N" ++ show (nodeMap n), "N" ++ show n)) (TGM.nodesDomain nac)
-    edgesMorph = map (\e -> ("E" ++ show (edgeMap e), "E" ++ show e)) (TGM.edgesDomain nac)
+    nodeMap n = fromJust $ applyNodeTGM nac n
+    edgeMap e = fromJust $ applyEdgeTGM nac e
+    nodesMorph = map (\n -> ("N" ++ show (nodeMap n), "N" ++ show n)) (nodesDomain nac)
+    edgesMorph = map (\e -> ("E" ++ show (edgeMap e), "E" ++ show e)) (edgesDomain nac)
 
 writeLHS :: ArrowXml a => String -> ParsedTypedGraph -> a XmlTree XmlTree
 writeLHS ruleName (_, nodes, edges) = writeGraph ("LeftOf_" ++ ruleName) "LHS" ("LeftOf_" ++ ruleName) nodes edges

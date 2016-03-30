@@ -3,19 +3,19 @@ module Graph.NacOperations
 , leftShiftNac
 ) where
 
-import qualified Abstract.Morphism as M
-import qualified CriticalPairs.CriticalPairs as CP
-import qualified Graph.TypedGraphMorphism as TGM
+import qualified Abstract.Morphism
+import qualified Analysis.CriticalPairs
+import qualified Graph.TypedGraphMorphism
 import qualified Graph.GraphRule as GR
 import qualified Graph.Rewriting as RW
 
 -- | Given a morphism @m : A -> B@ and a NAC @n : A -> N@, it shifts the NAC over the morphism resulting in a morphism list of type @n' : B -> N'@
-downwardShift :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b -> [TGM.TypedGraphMorphism a b]
+downwardShift :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
 downwardShift m n' = newNacs
   where
-    pairs = CP.createPairs n' m
-    injectiveMorphisms = filter (\(e,_) -> M.monomorphism e) pairs
-    validPO = filter (\(e,n) -> M.compose n' e == M.compose m n) injectiveMorphisms
+    pairs = createPairs n' m
+    injectiveMorphisms = filter (\(e,_) -> monomorphism e) pairs
+    validPO = filter (\(e,n) -> compose n' e == compose m n) injectiveMorphisms
     newNacs = map snd validPO
 
 -- | Given a rule @L <-l- K -r-> R@ and a Right NAC morphism @n : R -> N@, it shifts the NAC over the rule resulting in a list of Left NAC morphisms of type @n': L -> N'@

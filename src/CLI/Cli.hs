@@ -1,19 +1,16 @@
-import Control.Monad (when, forM_)
-import Data.Matrix hiding ((<|>))
+import           Abstract.Morphism
+import           Abstract.Valid
+import           Analysis.CriticalPairs
+import           Analysis.CriticalSequence
+import           Control.Monad (when, forM_)
 import qualified Data.List as L
-import Options.Applicative
-import Abstract.Valid
-
-import Graph.GraphRule (GraphRule)
-import Analysis.CriticalPairs (CriticalPair)
-import qualified Analysis.CriticalPairs as CP
-import qualified Analysis.CriticalSequence as CS
-import qualified XML.GGXReader as XML
+import           Data.Matrix hiding ((<|>))
 import qualified Graph.GraphGrammar as GG
 import qualified Graph.GraphMorphism as GM
-import qualified Graph.GraphRule as GR
-import qualified Abstract.Morphism as M
+import           Graph.GraphRule
+import           Options.Applicative
 import qualified Text.XML.HXT.Core as HXT
+import qualified XML.GGXReader as XML
 import qualified XML.GGXWriter as GW
 
 data VerigraphOpts = Opts
@@ -72,17 +69,14 @@ execute opts = do
 
     let nacInj = injectiveNacSatisfaction opts
         onlyInj = injectiveMatchesOnly opts
-        calc = analysis opts
-        writer = case calc of
-                   Conflicts    -> GW.writeConflictsFile
-                   Dependencies -> GW.writeDependenciesFile
-                   Both         -> GW.writeConfDepFile
+        action = analysis opts
+        writer = defWriterFun action
         rules = map snd (GG.rules gg)
-        puMatrix = pairwiseCompare (CS.allProduceUse nacInj onlyInj) rules
-        ddMatrix = pairwiseCompare (CS.allDeliverDelete nacInj onlyInj) rules
-        udMatrix = pairwiseCompare (CP.allDeleteUse nacInj onlyInj) rules
-        pfMatrix = pairwiseCompare (CP.allProduceForbid nacInj onlyInj) rules
-        peMatrix = pairwiseCompare (CP.allProdEdgeDelNode nacInj onlyInj) rules
+        puMatrix = pairwiseCompare (allProduceUse nacInj onlyInj) rules
+        ddMatrix = pairwiseCompare (allDeliverDelete nacInj onlyInj) rules
+        udMatrix = pairwiseCompare (allDeleteUse nacInj onlyInj) rules
+        pfMatrix = pairwiseCompare (allProduceForbid nacInj onlyInj) rules
+        peMatrix = pairwiseCompare (allProdEdgeDelNode nacInj onlyInj) rules
         conflictsMatrix = liftMatrix3 (\x y z -> x ++ y ++ z) udMatrix pfMatrix peMatrix
         dependenciesMatrix = liftMatrix2 (\x y -> x ++ y) puMatrix ddMatrix
     
@@ -112,9 +106,17 @@ execute opts = do
       Just file -> writer nacInj onlyInj gg ggName names file
       Nothing -> mapM_
                  putStrLn $
-                 (if calculateConflicts calc then conflicts else [])
-                 ++ (if calculateDependencies calc then dependencies else [])
+                 (if calculateConflicts action then conflicts else [])
+                 ++ (if calculateDependencies action then dependencies else [])
                  ++ ["Done!"]
+
+--defWriterFun :: Analysis ->
+--  (-> Bool -> Bool -> GG.GraphGrammar a b
+--   -> String -> [(String, String)] -> String -> IO ())
+defWriterFun t = case t of
+                   Conflicts    -> GW.writeConflictsFile
+                   Dependencies -> GW.writeDependenciesFile
+                   Both         -> GW.writeConfDepFile
 
 readGGName :: String -> IO (String)
 readGGName fileName = do
@@ -155,7 +157,7 @@ readGrammar conf = do
           True  -> error "some rule is not valid"
           False -> []) `seq` return ()       
   
-  let typeGraph = M.codomain . M.domain . GR.left $ head rules
+  let typeGraph = codomain . domain . left $ head rules
       initGraph = GM.empty typeGraph typeGraph
   
   return $ GG.graphGrammar initGraph (zip rulesNames rules)
