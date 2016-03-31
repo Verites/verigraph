@@ -16,6 +16,7 @@ import           Graph.GraphGrammar
 import qualified Graph.GraphMorphism as GM
 import qualified Graph.GraphRule as GR
 import           Graph.TypedGraphMorphism
+import           XML.GGXParseOut
 import           XML.ParsedTypes
 
 -- | Writes grammar, conflicts and dependencies (.cpx)
@@ -159,12 +160,6 @@ writeTypeGraph graph = writeGraph "TypeGraph" "TG" "TypeGraph" nodeList edgeList
     nodeList = map (\n -> ("n" ++ show n, "N" ++ show n)) (G.nodes graph)
     edgeList = map (\e -> ("e" ++ show e, "E" ++ show e, "n" ++ show (src graph e), "n" ++ show (tgt graph e))) (G.edges graph)
 
-src :: G.Graph a b -> G.EdgeId -> G.NodeId
-src g e = fromJust $ G.sourceOf g e
-
-tgt :: G.Graph a b -> G.EdgeId -> G.NodeId
-tgt g e = fromJust $ G.targetOf g e
-
 writeNodeTypes :: ArrowXml a => [(String,String)] -> [(String,String)] -> [a XmlTree XmlTree]
 writeNodeTypes names = map (writeNodeType names)
 
@@ -281,31 +276,6 @@ writeDelDel nacNames (n1, n2, ((_, nodes, edges), map1, map2, nacName, _), idx) 
                        Just n -> n
                        Nothing -> nacName
 
-parseCPGraph :: (String,String,[CP.CriticalPair a b]) -> Overlappings
-parseCPGraph (name1,name2,cps) = (name1,name2,overlaps)
-  where
-    overlaps = map (\x -> (getGraph x, getMapM1 x, getMapM2 x, nacName x, cpType x)) cps
-    getGraph = serializeGraph . CP.getM1
-    getMapM1 = getTgmMappings . CP.getM1
-    getMapM2 = getTgmMappings . CP.getM2
-    nacName = parseNacName name2 CP.getCPNac
-    cpType = show . CP.getCP
-
-parseCSGraph :: (String,String,[CS.CriticalSequence a b]) -> Overlappings
-parseCSGraph (name1,name2,cps) = (name1,name2,overlaps)
-  where
-    overlaps = map (\x -> (getGraph x, getMapM1 x, getMapM2 x, nacName x, csType x)) cps
-    getGraph = serializeGraph . CS.getM1
-    getMapM1 = getTgmMappings . CS.getM1
-    getMapM2 = getTgmMappings . CS.getM2
-    nacName = parseNacName name2 CS.getCSNac
-    csType = show . CS.getCS
-
-parseNacName :: String -> (t -> Maybe Int) -> t -> String
-parseNacName ruleName f x = case f x of
-                   Just n  -> "NAC_" ++ ruleName ++ "_" ++ (show n)
-                   Nothing -> ""
-
 writeHostGraph :: ArrowXml a => a XmlTree XmlTree
 writeHostGraph = writeGraph "Graph" "HOST" "Graph" [] []
 
@@ -362,62 +332,6 @@ writeRule nacNames (ruleName, rule) =
     rhs = getRHS rule
     morphism = getMappings rule
 
-getLHS :: GR.GraphRule a b -> ParsedTypedGraph
-getLHS rule = serializeGraph $ GR.left rule
-
-getRHS :: GR.GraphRule a b -> ParsedTypedGraph
-getRHS rule = serializeGraph $ GR.right rule
-
-getNacs :: String -> GR.GraphRule a b -> [(ParsedTypedGraph,[Mapping])]
-getNacs ruleName rule = map getNac nacsWithIds
-  where
-    zipIds = zip ([0..]::[Int]) (GR.nacs rule)
-    nacsWithIds = map (\(x,y) -> ("NAC_" ++ ruleName ++ "_" ++ show x, y)) zipIds
-
-getNac :: (String, TypedGraphMorphism a b) -> (ParsedTypedGraph, [Mapping])
-getNac (nacId,nac) = (graph, mappings)
-  where
-    (_,n,e) = serializeGraph nac
-    graph = (nacId, n, e)
-    mappings = getTgmMappings nac
-
-serializeGraph :: TypedGraphMorphism a b -> ParsedTypedGraph
-serializeGraph morphism = ("", nodes, edges)
-  where
-    graph = M.codomain morphism
-    nodes = map (serializeNode graph) (G.nodes $ M.domain graph)
-    edges = map (serializeEdge graph) (G.edges $ M.domain graph)
-
-serializeNode :: GM.GraphMorphism a b -> G.NodeId -> ParsedTypedNode
-serializeNode graph n = ("N" ++ show n, "N" ++ show (nodeType n))
-  where
-    nodeType node = fromJust $ GM.applyNode graph node
-
-serializeEdge :: GM.GraphMorphism a b -> G.EdgeId -> ParsedTypedEdge
-serializeEdge graph e = ("E" ++ show e, "E" ++ show (edgeType e), "N" ++ show (src (M.domain graph) e), "N" ++ show (tgt (M.domain graph) e))
-  where
-    edgeType edge = fromJust $ GM.applyEdge graph edge
-
-getMappings :: GR.GraphRule a b -> [Mapping]
-getMappings rule = nodesMorph ++ edgesMorph
-  where
-    invL = invertTGM (GR.left rule)
-    lr = M.compose invL (GR.right rule)
-    nodeMap n = fromJust $ applyNodeTGM lr n
-    nodes = filter (isJust . applyNodeTGM lr) (nodesDomain lr)
-    nodesMorph = map (\n -> ("N" ++ show (nodeMap n), "N" ++ show n)) nodes
-    edgeMap e = fromJust $ applyEdgeTGM lr e
-    edges = filter (isJust . applyEdgeTGM lr) (edgesDomain lr)
-    edgesMorph = map (\e -> ("E" ++ show (edgeMap e), "E" ++ show e)) edges
-
-getTgmMappings :: TypedGraphMorphism a b -> [Mapping]
-getTgmMappings nac = nodesMorph ++ edgesMorph
-  where
-    nodeMap n = fromJust $ applyNodeTGM nac n
-    edgeMap e = fromJust $ applyEdgeTGM nac e
-    nodesMorph = map (\n -> ("N" ++ show (nodeMap n), "N" ++ show n)) (nodesDomain nac)
-    edgesMorph = map (\e -> ("E" ++ show (edgeMap e), "E" ++ show e)) (edgesDomain nac)
-
 writeLHS :: ArrowXml a => String -> ParsedTypedGraph -> a XmlTree XmlTree
 writeLHS ruleName (_, nodes, edges) = writeGraph ("LeftOf_" ++ ruleName) "LHS" ("LeftOf_" ++ ruleName) nodes edges
 
@@ -447,6 +361,12 @@ writeNac ((nacGraph, nacMorphism),nacName) = mkelem "NAC" [] [writeNacGraph nacG
   where
     writeNacGraph (nacId, nodes, edges) = writeGraph nacId "NAC" nacName nodes edges
     writeNacMorphism = writeMorphism nacName ""
+
+src :: G.Graph a b -> G.EdgeId -> G.NodeId
+src g e = fromJust $ G.sourceOf g e
+
+tgt :: G.Graph a b -> G.EdgeId -> G.NodeId
+tgt g e = fromJust $ G.targetOf g e
 
 defaultGtsAttributes :: ArrowXml a => [a n XmlTree]
 defaultGtsAttributes = [ sattr "ID" "I1", sattr "directed" "true", sattr "parallel" "true" ]
@@ -500,3 +420,4 @@ writeAdditionalEdgeLayout :: ArrowXml a => a XmlTree XmlTree
 writeAdditionalEdgeLayout =
   mkelem "additionalLayout"
   [ sattr "aktlength" "200", sattr "force" "10", sattr "preflength" "200" ] []
+
