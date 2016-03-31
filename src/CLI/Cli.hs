@@ -5,6 +5,7 @@ import           Analysis.CriticalSequence
 import           Control.Monad (when, forM_)
 import qualified Data.List as L
 import           Data.Matrix hiding ((<|>))
+import           Graph.ConcurrentRules
 import qualified Graph.GraphGrammar as GG
 import qualified Graph.GraphMorphism as GM
 import           Graph.GraphRule

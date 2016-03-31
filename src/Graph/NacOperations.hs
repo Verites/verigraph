@@ -3,9 +3,11 @@ module Graph.NacOperations
 , leftShiftNac
 ) where
 
-import qualified Abstract.Morphism
-import qualified Analysis.CriticalPairs
-import qualified Graph.TypedGraphMorphism
+import           Abstract.Morphism
+import           Analysis.CriticalPairs
+import           Analysis.EpiPairs
+import           Analysis.GluingConditions
+import           Graph.TypedGraphMorphism
 import qualified Graph.GraphRule as GR
 import qualified Graph.Rewriting as RW
 
@@ -19,14 +21,8 @@ downwardShift m n' = newNacs
     newNacs = map snd validPO
 
 -- | Given a rule @L <-l- K -r-> R@ and a Right NAC morphism @n : R -> N@, it shifts the NAC over the rule resulting in a list of Left NAC morphisms of type @n': L -> N'@
-leftShiftNac :: GR.GraphRule a b -> TGM.TypedGraphMorphism a b -> [TGM.TypedGraphMorphism a b]
+leftShiftNac :: GR.GraphRule a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
 leftShiftNac rule n = if satsGluingCondWithoutNac rule n then [RW.comatch n rule] else []
-
-satsGluingCondWithoutNac :: GR.GraphRule a b -> TGM.TypedGraphMorphism a b -> Bool
-satsGluingCondWithoutNac rule m = identificationCondition && danglingCondition
-    where
-        identificationCondition = CP.satsDelItems rule m
-        danglingCondition       = CP.satsIncEdges rule m
 
 {- Some tests
 tg = G.build [1,2] [(1,1,2),(2,2,2),(3,2,2)]

@@ -4,7 +4,8 @@ module Graph.ConcurrentRules
 ) where
 
 import qualified Abstract.Morphism as M
-import qualified CriticalPairs.CriticalPairs as CP
+import qualified Analysis.CriticalPairs as CP
+import           Analysis.EpiPairs
 import           Data.List
 import           Graph.GraphRule
 import           Graph.NacOperations
@@ -30,7 +31,7 @@ concurrentRules :: GraphRule a b -> GraphRule a b -> [GraphRule a b]
 concurrentRules c n = map (concurrentRuleForPair c n) $ pairs c n
 
 pairs :: GraphRule a b -> GraphRule a b -> [EpiPair a b]
-pairs c n = CP.createPairs (right c) (left n)
+pairs c n = createPairs (right c) (left n)
 
 maxConcurrentRuleForLastPair :: GraphRule a b -> GraphRule a b -> GraphRule a b
 maxConcurrentRuleForLastPair c n = concurrentRuleForPair c n (last $ pairs c n)
