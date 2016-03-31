@@ -1,4 +1,4 @@
-module CriticalPairs.GPToVeri (
+module Analysis.GPToVeri (
    setType,
    mountTGM,
    mountTGMBoth,
@@ -6,7 +6,7 @@ module CriticalPairs.GPToVeri (
    ) where
 
 import Graph.GraphRule
-import qualified CriticalPairs.GraphPart as GP
+import qualified Analysis.GraphPart as GP
 import qualified Graph.GraphMorphism as GM
 import qualified Graph.TypedGraphMorphism as TGM
 import qualified Abstract.Morphism as M

@@ -14,7 +14,7 @@ type ParsedNAC = ([ParsedTypedNode], [ParsedTypedEdge])
 type TypeGraph = ([ParsedTypedNode], [ParsedTypedEdge])
 type Rule = (String, ParsedTypedGraph, ParsedTypedGraph, [Mapping])
 type RuleWithNacs = (Rule,[Nac])
-type Mapping = (String, String) -- |(image, orig)A
+type Mapping = (String, String) -- (image, orig)A
 type Nac = (ParsedTypedGraph, [Mapping])
 
 type ConflictMorphism = (ParsedTypedGraph,[Mapping],[Mapping],String,String)

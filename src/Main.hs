@@ -1,21 +1,19 @@
 --{-# LANGUAGE TypeFamilies #-}
 
-{-import qualified XML.GGXReader as XML
-import qualified CriticalPairs.CriticalSequence as CS
-import qualified CriticalPairs.CriticalPairs as CP
+{-import Graph.ConcurrentRules
 
-a fn = do
-      prls <- XML.readRules fn
-      ptg <- XML.readTypeGraph fn
-      let rs = map (XML.instantiateRule (head ptg)) prls
-      return rs-}
+import qualified XML.GGXReader as XML
+import qualified Analysis.CriticalSequence as CS
+import qualified Analysis.CriticalPairs as CP
+import qualified Graph.Graph as G
+import qualified Graph.GraphRule as GR
+import qualified Graph.GraphMorphism as GM
+import qualified Graph.TypedGraphMorphism as TGM
+import qualified Graph.Rewriting as RW
+import qualified Graph.GraphGrammar as GG
 
-{-import qualified Text.XML.HXT.Core as HXT
 
-import CriticalPairs.VeriToGP
---import CriticalPairs.GPToJPG
-import CriticalPairs.CriticalPairs
-import qualified CriticalPairs.GraphPart as GP
+
 import Graph.Graph
 import qualified Graph.GraphMorphism as GM
 import qualified Graph.TypedGraphMorphism as TGM
@@ -32,10 +30,14 @@ import Data.Matrix
 import qualified Abstract.Morphism as M
 import Abstract.Valid
 import Data.Maybe
-import CriticalPairs.Matches
-import CriticalPairs.GPToVeri
 
 import qualified XML.GGXReader as XML
+
+a fn = do
+      prls <- XML.readRules fn
+      ptg <- XML.readTypeGraph fn
+      let rs = map (XML.instantiateRule (head ptg)) prls
+      return rs
 
 iN = insertNode
 iE = insertEdge
