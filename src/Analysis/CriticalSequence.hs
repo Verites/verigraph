@@ -1,6 +1,5 @@
 module Analysis.CriticalSequence
- (
-   CS,
+ ( CS,
    CriticalSequence,
    namedCriticalSequence,
    allProduceUse,

@@ -1,6 +1,5 @@
 module Analysis.CriticalPairs
- (
-   CP,
+ ( CP,
    CriticalPair,
    criticalPairs,
    namedCriticalPairs,

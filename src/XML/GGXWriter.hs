@@ -1,6 +1,5 @@
 module XML.GGXWriter 
- (
-   writeConfDepFile,
+ ( writeConfDepFile,
    writeConflictsFile,
    writeDependenciesFile,
    writeGrammarFile
@@ -172,7 +171,7 @@ writeNodeTypes names = map (writeNodeType names)
 writeNodeType :: ArrowXml a => [(String,String)] -> (String,String) -> a XmlTree XmlTree
 writeNodeType names (nodeId,nodeType) =
   mkelem "NodeType"
-    [sattr "ID" nodeId, sattr "abstract" "false", sattr "name" $ completeNodeName name] []
+    [sattr "ID" nodeId, sattr "abstract" "false", sattr "name" name] []
   where
     name = case lookup ("I"++nodeType) names of
              Just n -> n
@@ -184,7 +183,7 @@ writeEdgeTypes names = map (writeEdgeType names)
 writeEdgeType :: ArrowXml a => [(String,String)] -> (String,String) -> a XmlTree XmlTree
 writeEdgeType names (edgeId,edgeType) =
   mkelem "EdgeType"
-    [sattr "ID" edgeId, sattr "abstract" "false", sattr "name" $ completeEdgeName name] []
+    [sattr "ID" edgeId, sattr "abstract" "false", sattr "name" name] []
   where
     name = case lookup ("I"++edgeType) names of
              Just n -> n
@@ -501,15 +500,3 @@ writeAdditionalEdgeLayout :: ArrowXml a => a XmlTree XmlTree
 writeAdditionalEdgeLayout =
   mkelem "additionalLayout"
   [ sattr "aktlength" "200", sattr "force" "10", sattr "preflength" "200" ] []
-
-completeNodeName :: String -> String
-completeNodeName a = a ++ defaultNodeNameComplement
-
-completeEdgeName :: String -> String
-completeEdgeName a = a ++ defaultEdgeNameComplement
-
-defaultNodeNameComplement :: String
-defaultNodeNameComplement = "%:RECT:java.awt.Color[r=0,g=0,b=0]:[NODE]:"
-
-defaultEdgeNameComplement :: String
-defaultEdgeNameComplement = "%:SOLID_LINE:java.awt.Color[r=0,g=0,b=0]:[EDGE]:"

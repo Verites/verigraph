@@ -1,6 +1,5 @@
 module Analysis.GluingConditions
- (
-   satsGluingCond,
+ ( satsGluingCond,
    satsGluingCondBoth,
    satsGluingCondWithoutNac,
    satsNacs,
