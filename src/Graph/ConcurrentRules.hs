@@ -1,4 +1,7 @@
-module Graph.ConcurrentRules where
+module Graph.ConcurrentRules
+( allConcurrentRules,
+  maxConcurrentRule
+) where
 
 import qualified Abstract.Morphism as M
 import qualified CriticalPairs.CriticalPairs as CP
@@ -10,11 +13,27 @@ import qualified Graph.Rewriting as R
 
 type EpiPair a b = (TGM.TypedGraphMorphism a b, TGM.TypedGraphMorphism a b)
 
+allConcurrentRules :: [GraphRule a b] -> [GraphRule a b]
+allConcurrentRules [] = []
+allConcurrentRules (x:[]) = [x]
+allConcurrentRules (x:xs) = concat $ (map (concurrentRules x)) $ allConcurrentRules xs
+
+maxConcurrentRule :: [GraphRule a b] -> GraphRule a b
+maxConcurrentRule rules = head $ maxConcurrentRules rules
+
+maxConcurrentRules :: [GraphRule a b] -> [GraphRule a b]
+maxConcurrentRules [] = []
+maxConcurrentRules (x:[]) = [x]
+maxConcurrentRules (x:xs) = map (maxConcurrentRuleForLastPair x) (maxConcurrentRules xs)
+
 concurrentRules :: GraphRule a b -> GraphRule a b -> [GraphRule a b]
 concurrentRules c n = map (concurrentRuleForPair c n) $ pairs c n
 
 pairs :: GraphRule a b -> GraphRule a b -> [EpiPair a b]
 pairs c n = CP.createPairs (right c) (left n)
+
+maxConcurrentRuleForLastPair :: GraphRule a b -> GraphRule a b -> GraphRule a b
+maxConcurrentRuleForLastPair c n = concurrentRuleForPair c n (last $ pairs c n)
 
 concurrentRuleForPair :: GraphRule a b -> GraphRule a b -> EpiPair a b -> GraphRule a b
 concurrentRuleForPair c n pair = graphRule l r (dmc ++ lp)
