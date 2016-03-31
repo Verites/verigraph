@@ -5,6 +5,7 @@ import qualified CriticalPairs.CriticalPairs as CP
 import           Data.List
 import qualified Graph.Graph as G
 import           Graph.GraphRule
+import           Graph.NacOperations
 import qualified Graph.TypedGraphMorphism as TGM
 import qualified Graph.Rewriting as R
 
@@ -17,7 +18,7 @@ pairs :: GraphRule a b -> GraphRule a b -> [EpiPair a b]
 pairs c n = CP.createPairs (right c) (left n)
 
 concurrentRuleForPair :: GraphRule a b -> GraphRule a b -> EpiPair a b -> GraphRule a b
-concurrentRuleForPair c n pair = graphRule l r []
+concurrentRuleForPair c n pair = graphRule l r dmc
   where
     pocC = R.poc (fst pair) (right c)
     pocN = R.poc (snd pair) (left n)
@@ -26,6 +27,7 @@ concurrentRuleForPair c n pair = graphRule l r []
     pb = injectivePullback (snd pocC) (snd pocN)
     l = M.compose (fst pb) (snd poC)
     r = M.compose (snd pb) (snd poN)
+    dmc = concat $ map (downwardShift (fst poC)) (nacs c)
 
 injectivePullback :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b -> (TGM.TypedGraphMorphism a b, TGM.TypedGraphMorphism a b)
 injectivePullback f g = (delNodesFromF', delNodesFromG')

@@ -1,12 +1,16 @@
-module Graph.NacOperations where
+module Graph.NacOperations
+( downwardShift
+) where
 
 import qualified Abstract.Morphism as M
 import qualified CriticalPairs.CriticalPairs as CP
 import qualified Graph.TypedGraphMorphism as TGM
+import qualified Graph.GraphMorphism as GM
+import qualified Graph.Graph as G
 
--- | Shifts a NAC @n : A -> N@ over a morphism @m : A -> B@
+-- | Guven a morphism @m : A -> B@ and a NAC @n : A -> N@, it shifts the NAC over the morphism resulting in a morphism list of type @n' : B -> N'@
 downwardShift :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b -> [TGM.TypedGraphMorphism a b]
-downwardShift n' m = newNacs
+downwardShift m n' = newNacs
   where
     pairs = CP.createPairs n' m
     injectiveMorphisms = filter (\(e,_) -> M.monomorphism e) pairs
@@ -30,4 +34,4 @@ mapM' = GM.gmbuild graphA graphB [(1,2)] []
 n' = TGM.typedMorphism tgA tgN mapN'
 m = TGM.typedMorphism tgA tgB mapM'
 
-resp = NO.downwardShift n' m -}
+resp = downwardShift m n' -}
