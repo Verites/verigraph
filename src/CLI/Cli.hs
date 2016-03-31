@@ -21,7 +21,7 @@ data VerigraphOpts = Opts
   , analysis :: Analysis
   , verbose :: Bool }
 
-data Analysis = Both | Conflicts | Dependencies deriving (Eq)
+data Analysis = Both | Conflicts | Dependencies | None deriving (Eq)
 
 verigraphOpts :: Parser VerigraphOpts
 verigraphOpts = Opts
@@ -55,7 +55,10 @@ verigraphOpts = Opts
     <> short 'v'
     <> help "Print detailed information")
 
+calculateConflicts :: Analysis -> Bool
 calculateConflicts flag = flag `elem` [Both,Conflicts]
+
+calculateDependencies :: Analysis -> Bool
 calculateDependencies flag = flag `elem` [Both,Dependencies]
 
 execute :: VerigraphOpts -> IO ()
@@ -70,7 +73,7 @@ execute opts = do
     let nacInj = injectiveNacSatisfaction opts
         onlyInj = injectiveMatchesOnly opts
         action = analysis opts
-        writer = defWriterFun action
+        writer = defWriterFun nacInj onlyInj action
         rules = map snd (GG.rules gg)
         puMatrix = pairwiseCompare (allProduceUse nacInj onlyInj) rules
         ddMatrix = pairwiseCompare (allDeliverDelete nacInj onlyInj) rules
@@ -103,20 +106,21 @@ execute opts = do
                    , ""]
     
     case outputFile opts of
-      Just file -> writer nacInj onlyInj gg ggName names file
+      Just file -> writer gg ggName names file
       Nothing -> mapM_
                  putStrLn $
                  (if calculateConflicts action then conflicts else [])
                  ++ (if calculateDependencies action then dependencies else [])
                  ++ ["Done!"]
 
---defWriterFun :: Analysis ->
---  (-> Bool -> Bool -> GG.GraphGrammar a b
---   -> String -> [(String, String)] -> String -> IO ())
-defWriterFun t = case t of
-                   Conflicts    -> GW.writeConflictsFile
-                   Dependencies -> GW.writeDependenciesFile
-                   Both         -> GW.writeConfDepFile
+defWriterFun :: Bool -> Bool -> Analysis
+             ->(GG.GraphGrammar a b -> String
+             -> [(String,String)] -> String -> IO ())
+defWriterFun nacInj inj t = case t of
+                   Conflicts    -> GW.writeConflictsFile nacInj inj
+                   Dependencies -> GW.writeDependenciesFile nacInj inj
+                   Both         -> GW.writeConfDepFile nacInj inj
+                   None         -> GW.writeGrammarFile
 
 readGGName :: String -> IO (String)
 readGGName fileName = do
@@ -153,9 +157,11 @@ readGrammar conf = do
   
   let rules = map (XML.instantiateRule parsedTypeGraph) parsedRules
   
-  _ <- (case False `elem` (map valid rules) of
-          True  -> error "some rule is not valid"
-          False -> []) `seq` return ()       
+  _ <- (case L.elemIndices False (map valid rules) of
+          []  -> []
+          [a] -> error $ "Rule " ++ (show a) ++ " is not valid"
+          l   -> error $ "Rules " ++ (show l) ++ " are not valid"
+          ) `seq` return ()       
   
   let typeGraph = codomain . domain . left $ head rules
       initGraph = GM.empty typeGraph typeGraph
