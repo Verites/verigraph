@@ -2,9 +2,10 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
 module XML.GGXReader
- ( readName,
+ ( readGrammar,
+   readGGName,
+   readName,
    readNames,
-   readNacNames,
    readTypeGraph,
    readRules,
    readSequences,
@@ -12,16 +13,55 @@ module XML.GGXReader
    ) where
 
 import           Abstract.Morphism
-import           Data.Maybe (fromJust)
+import           Abstract.Valid
+import           Data.Maybe (fromJust, catMaybes)
 import           Data.Tree.NTree.TypeDefs
+import qualified Data.List as L
 import qualified Graph.Graph as G
-import           Graph.GraphMorphism
+import           Graph.GraphMorphism as GM
 import           Graph.TypedGraphMorphism
-import           Graph.GraphRule
+import           Graph.GraphRule as GR
+import qualified Graph.GraphGrammar as GG
 import           Text.XML.HXT.Core
 import           XML.GGXParseIn
 import           XML.ParsedTypes
 import           XML.XMLUtilities
+
+readGrammar :: String -> IO (GG.GraphGrammar a b)
+readGrammar fileName = do
+  parsedTypeGraphs <- readTypeGraph fileName
+  let parsedTypeGraph = case parsedTypeGraphs of
+                         []    -> error "error, type graph not found"
+                         ptg:_ -> ptg
+  _ <- parsedTypeGraph `seq` return ()
+
+  parsedRules <- readRules fileName
+
+  let rulesNames = map (\((x,_,_,_),_) -> x) parsedRules
+      rules = map (instantiateRule parsedTypeGraph) parsedRules
+
+  _ <- (case L.elemIndices False (map valid rules) of
+          []  -> []
+          [a] -> error $ "Rule " ++ (show a) ++ " is not valid"
+          l   -> error $ "Rules " ++ (show l) ++ " are not valid"
+          ) `seq` return ()
+
+  let typeGraph = codomain . domain . GR.left $ head rules
+      initGraph = GM.empty typeGraph typeGraph
+
+  return $ GG.graphGrammar initGraph (zip rulesNames rules)
+
+readGGName :: String -> IO (String)
+readGGName fileName = do
+  name <- readName fileName
+  let ret = case name of
+              n:_ -> n
+              _   -> "GraGra"
+  return ret
+
+-- | Reads the names of node/edge types and NACs, which are necessary when reexporting this grammar.
+readNames :: String -> IO [(String,String)]
+readNames fileName = (++) <$> readTypeNames fileName <*> readNacNames fileName
 
 readName :: String -> IO [String]
 readName fileName = runX (parseXML fileName >>> parseGGName)
@@ -29,11 +69,11 @@ readName fileName = runX (parseXML fileName >>> parseGGName)
 readTypeGraph :: String -> IO[TypeGraph]
 readTypeGraph fileName = runX (parseXML fileName >>> parseTypeGraph)
 
-readNacNames :: String -> IO [[(String,String)]]
-readNacNames fileName = runX (parseXML fileName >>> parseNacNames)
+readNacNames :: String -> IO [(String,String)]
+readNacNames fileName = concat <$> runX (parseXML fileName >>> parseNacNames)
 
-readNames :: String -> IO [[(String,String)]]
-readNames fileName = runX (parseXML fileName >>> parseNames)
+readTypeNames :: String -> IO [(String,String)]
+readTypeNames fileName = concat <$> runX (parseXML fileName >>> parseNames)
 
 readRules :: String -> IO[RuleWithNacs]
 readRules fileName = runX (parseXML fileName >>> parseRule)

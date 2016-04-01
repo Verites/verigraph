@@ -64,9 +64,9 @@ calculateDependencies flag = flag `elem` [Both,Dependencies]
 
 execute :: VerigraphOpts -> IO ()
 execute opts = do
-    gg <- readGrammar opts
-    ggName <- readGGName (inputFile opts)
-    names <- getNames (inputFile opts)
+    gg <- XML.readGrammar (inputFile opts)
+    ggName <- XML.readGGName (inputFile opts)
+    names <- XML.readNames (inputFile opts)
 
     putStrLn "Analyzing the graph grammar..."
     putStrLn ""
@@ -83,7 +83,7 @@ execute opts = do
         peMatrix = pairwiseCompare (allProdEdgeDelNode nacInj onlyInj) rules
         conflictsMatrix = liftMatrix3 (\x y z -> x ++ y ++ z) udMatrix pfMatrix peMatrix
         dependenciesMatrix = liftMatrix2 (\x y -> x ++ y) puMatrix ddMatrix
-    
+
         conflicts = [ "Delete-Use:"
                 , show (length <$> udMatrix)
                 , ""
@@ -95,7 +95,7 @@ execute opts = do
                 , "All Conflicts:"
                 , show (length <$> conflictsMatrix)
                 , ""]
-    
+
         dependencies = [ "Produce Use Dependency:"
                    , show (length <$> puMatrix)
                    , ""
@@ -105,7 +105,7 @@ execute opts = do
                    , "All Dependencies:"
                    , show (length <$> dependenciesMatrix)
                    , ""]
-    
+
     case outputFile opts of
       Just file -> writer gg ggName names file
       Nothing -> mapM_
@@ -122,52 +122,6 @@ defWriterFun nacInj inj t = case t of
                    Dependencies -> GW.writeDependenciesFile nacInj inj
                    Both         -> GW.writeConfDepFile nacInj inj
                    None         -> GW.writeGrammarFile
-
-readGGName :: String -> IO (String)
-readGGName fileName = do
-  name <- XML.readName fileName
-  let ret = case name of
-              n:_ -> n
-              _   -> "GraGra"
-  return ret
-
-getNames :: String -> IO [(String,String)]
-getNames fileName = do
-  names <- XML.readNames fileName
-  nacNames <- XML.readNacNames fileName
-  return (head names ++ concat nacNames)
-
-readGrammar :: VerigraphOpts -> IO (GG.GraphGrammar a b)
-readGrammar conf = do
-  let fileName = inputFile conf
-  
-  parsedTypeGraphs <- XML.readTypeGraph fileName
-  let parsedTypeGraph = case parsedTypeGraphs of
-                         []    -> error "error, type graph not found"
-                         ptg:_ -> ptg
-  _ <- parsedTypeGraph `seq` return ()
-  
-  parsedRules <- XML.readRules fileName
-
-  let rulesNames = map (\((x,_,_,_),_) -> x) parsedRules
-  when (verbose conf) $ do
-    putStrLn "\nRules:"
-    forM_ rulesNames $ \name ->
-      putStrLn ('\t' : name)
-    putStrLn ""
-  
-  let rules = map (XML.instantiateRule parsedTypeGraph) parsedRules
-  
-  _ <- (case L.elemIndices False (map valid rules) of
-          []  -> []
-          [a] -> error $ "Rule " ++ (show a) ++ " is not valid"
-          l   -> error $ "Rules " ++ (show l) ++ " are not valid"
-          ) `seq` return ()       
-  
-  let typeGraph = codomain . domain . left $ head rules
-      initGraph = GM.empty typeGraph typeGraph
-  
-  return $ GG.graphGrammar initGraph (zip rulesNames rules)
 
 -- | Combine three matrices with the given function. All matrices _must_ have
 -- the same dimensions.
