@@ -1,4 +1,4 @@
-module XML.GGXWriter 
+module XML.GGXWriter
  ( writeConfDepFile,
    writeConflictsFile,
    writeDependenciesFile,
@@ -97,7 +97,7 @@ writeCriticalPairAnalysis names rules cpOL csOL = writeCpaOptions : conflictCont
 writeConflictContainer :: ArrowXml a => String -> [(String,String)] -> [(String,GR.GraphRule b c)] -> [Overlappings] ->  a XmlTree XmlTree
 writeConflictContainer kind nacNames rules overlappings = mkelem elem [sattr "kind" kind] $ (writeRuleSets rules ++ writeConflictMatrix nacNames rules overlappings)
   where
-    elem = case kind of 
+    elem = case kind of
              "exclude"            -> "conflictContainer"
              "trigger_dependency" -> "dependencyContainer"
 
@@ -170,7 +170,7 @@ writeNodeType names (nodeId,nodeType) =
   where
     name = case lookup ("I"++nodeType) names of
              Just n -> n
-             Nothing ->nodeType 
+             Nothing ->nodeType
 
 writeEdgeTypes :: ArrowXml a => [(String,String)] -> [(String,String)] -> [a XmlTree XmlTree]
 writeEdgeTypes names = map (writeEdgeType names)
@@ -182,14 +182,14 @@ writeEdgeType names (edgeId,edgeType) =
   where
     name = case lookup ("I"++edgeType) names of
              Just n -> n
-             Nothing -> edgeType 
+             Nothing -> edgeType
 
 writeGraph :: ArrowXml a => String -> String -> String -> [(String,String)]
               -> [(String, String, String, String)] -> a XmlTree XmlTree
 writeGraph graphId kind name nodes edges =
   mkelem "Graph"
     [ sattr "ID" graphId, sattr "kind" kind, sattr "name" name ]
-    $ writeNodes nodes ++ writeEdges edges
+    $ writeNodes graphId nodes ++ writeEdges graphId edges
 
 writeGraphOverlaping :: ArrowXml a => String -> String -> String -> String -> [(String,String)]
               -> [(String, String, String, String)] -> a XmlTree XmlTree
@@ -219,8 +219,8 @@ writeProdForbid :: ArrowXml a => [(String,String)] -> Overlapping -> a XmlTree X
 writeProdForbid nacNames (n1, n2, ((_, nodes, edges), map1, map2, nacName, _), idx) =
   mkelem "Overlapping_Pair" []
     [writeGraphOverlaping (graphId idx) nacCorrectName "GRAPH" msg nodes edges,
-     writeMorphism ("MorphOf_" ++ n1) "RHS" (mapAdjusted (graphId idx) map1),
-     writeMorphism ("MorphOf_" ++ n2) "LHS" (mapAdjusted (graphId idx) map2)]
+     writeMorphism (graphId idx, "RightOf_"++n1) ("MorphOf_" ++ n1) "RHS" (mapAdjusted (graphId idx) map1),
+     writeMorphism (graphId idx, "LeftOf_"++n2) ("MorphOf_" ++ n2) "LHS" (mapAdjusted (graphId idx) map2)]
   where
     msg = "( "++show idx++ " ) " ++ "produce-forbid-conflict (NAC: "++nacCorrectName++")"
     graphId idx = n1 ++ n2 ++ (show idx) ++ "_proforcon"
@@ -233,8 +233,8 @@ writeProdNode :: ArrowXml a => Overlapping -> a XmlTree XmlTree
 writeProdNode (n1, n2, ((_, nodes, edges), map1, map2, _, _), idx) =
   mkelem "Overlapping_Pair" []
     [writeGraphOverlaping (graphId idx) "" "GRAPH" msg nodes edges,
-     writeMorphism ("MorphOf_" ++ n1) "LHS" (mapAdjusted (graphId idx) map1),
-     writeMorphism ("MorphOf_" ++ n2) "LHS" (mapAdjusted (graphId idx) map2)]
+     writeMorphism (graphId idx, "LeftOf_"++n1) ("MorphOf_" ++ n1) "LHS" (mapAdjusted (graphId idx) map1),
+     writeMorphism (graphId idx, "LeftOf_"++n2) ("MorphOf_" ++ n2) "LHS" (mapAdjusted (graphId idx) map2)]
   where
     msg = "( "++show idx++ " ) " ++ "produceEdge-deleteNode-conflict"
     graphId idx = n1 ++ n2 ++ (show idx) ++ "_prodelcon"
@@ -244,8 +244,8 @@ writeDeleteUse :: ArrowXml a => Overlapping -> a XmlTree XmlTree
 writeDeleteUse (n1, n2, ((_, nodes, edges), map1, map2, _, _), idx) =
   mkelem "Overlapping_Pair" []
     [writeGraphOverlaping (graphId idx) "" "GRAPH" msg nodes edges,
-     writeMorphism ("MorphOf_" ++ n1) "LHS" (mapAdjusted (graphId idx) map1),
-     writeMorphism ("MorphOf_" ++ n2) "LHS" (mapAdjusted (graphId idx) map2)]
+     writeMorphism (graphId idx, "LeftOf_"++n1) ("MorphOf_" ++ n1) "LHS" (mapAdjusted (graphId idx) map1),
+     writeMorphism (graphId idx, "LeftOf_"++n2) ("MorphOf_" ++ n2) "LHS" (mapAdjusted (graphId idx) map2)]
   where
     msg = "( "++show idx++ " ) " ++ "delete-use-conflict"
     graphId idx = n1 ++ n2 ++ (show idx) ++ "_delusecon"
@@ -255,8 +255,8 @@ writeProdUse :: ArrowXml a => Overlapping -> a XmlTree XmlTree
 writeProdUse (n1, n2, ((_, nodes, edges), map1, map2, _, _), idx) =
   mkelem "Overlapping_Pair" []
     [writeGraphOverlaping (graphId idx) "" "GRAPH" msg nodes edges,
-     writeMorphism ("MorphOf_" ++ n1) "RHS" (mapAdjusted (graphId idx) map1),
-     writeMorphism ("MorphOf_" ++ n2) "LHS" (mapAdjusted (graphId idx) map2)]
+     writeMorphism (graphId idx, "RightOf_"++n1) ("MorphOf_" ++ n1) "RHS" (mapAdjusted (graphId idx) map1),
+     writeMorphism (graphId idx, "LeftOf_"++n2) ("MorphOf_" ++ n2) "LHS" (mapAdjusted (graphId idx) map2)]
   where
     msg = "( "++show idx++ " ) " ++ "produce-use-dependency"
     graphId idx = n1 ++ n2 ++ (show idx) ++ "_prousedep"
@@ -266,8 +266,8 @@ writeDelDel :: ArrowXml a => [(String,String)] -> Overlapping -> a XmlTree XmlTr
 writeDelDel nacNames (n1, n2, ((_, nodes, edges), map1, map2, nacName, _), idx) =
   mkelem "Overlapping_Pair" []
     [writeGraphOverlaping (graphId idx) nacCorrectName "GRAPH" msg nodes edges,
-     writeMorphism ("MorphOf_" ++ n1) "RHS" (mapAdjusted (graphId idx) map1),
-     writeMorphism ("MorphOf_" ++ n2) "LHS" (mapAdjusted (graphId idx) map2)]
+     writeMorphism (graphId idx, "RightOf_"++n1) ("MorphOf_" ++ n1) "RHS" (mapAdjusted (graphId idx) map1),
+     writeMorphism (graphId idx, "LeftOf_"++n2) ("MorphOf_" ++ n2) "LHS" (mapAdjusted (graphId idx) map2)]
   where
     msg = "( "++show idx++ " ) " ++ "delete-forbid-conflict (NAC: "++nacCorrectName++")"
     graphId idx = n1 ++ n2 ++ (show idx) ++ "_delfordep"
@@ -279,13 +279,13 @@ writeDelDel nacNames (n1, n2, ((_, nodes, edges), map1, map2, nacName, _), idx) 
 writeHostGraph :: ArrowXml a => a XmlTree XmlTree
 writeHostGraph = writeGraph "Graph" "HOST" "Graph" [] []
 
-writeNodes :: ArrowXml a => [(String,String)] -> [a XmlTree XmlTree]
-writeNodes = map writeNode
+writeNodes :: ArrowXml a => String -> [(String,String)] -> [a XmlTree XmlTree]
+writeNodes graphId = map (writeNode graphId)
 
-writeNode :: ArrowXml a => (String,String) -> a XmlTree XmlTree
-writeNode (nodeId, nodeType) =
+writeNode :: ArrowXml a => String -> (String,String) -> a XmlTree XmlTree
+writeNode graphId (nodeId, nodeType) =
   mkelem "Node"
-    [ sattr "ID" nodeId, sattr "type" nodeType ]
+    [ sattr "ID" (graphId++"_"++nodeId), sattr "type" nodeType ]
     [ writeDefaultNodeLayout, writeAdditionalNodeLayout ]
 
 writeNodesConflict :: ArrowXml a => String -> [(String,String)] -> [a XmlTree XmlTree]
@@ -296,15 +296,15 @@ writeNodeConflict graphId (nodeId, nodeType) =
   mkelem "Node"
     [sattr "ID" (graphId++"_"++nodeId), sattr "type" nodeType] []
 
-writeEdges :: ArrowXml a => [(String,String,String,String)] -> [a XmlTree XmlTree]
-writeEdges = map writeEdge
+writeEdges :: ArrowXml a => String -> [(String,String,String,String)] -> [a XmlTree XmlTree]
+writeEdges prefix = map (writeEdge prefix)
 
-writeEdge :: ArrowXml a => (String,String,String,String) -> a XmlTree XmlTree
-writeEdge (edgeId, edgeType, source, target) =
+writeEdge :: ArrowXml a => String -> (String,String,String,String) -> a XmlTree XmlTree
+writeEdge prefix (edgeId, edgeType, source, target) =
   mkelem "Edge"
-    [ sattr "ID" edgeId,
-      sattr "source" source,
-      sattr "target" target,
+    [ sattr "ID" (prefix++"_"++edgeId),
+      sattr "source" (prefix++"_"++source),
+      sattr "target" (prefix++"_"++target),
       sattr "type" edgeType]
     [ writeDefaultEdgeLayout, writeAdditionalEdgeLayout ]
 
@@ -326,7 +326,7 @@ writeRule :: ArrowXml a => [(String,String)] -> (String, GR.GraphRule b c) -> a 
 writeRule nacNames (ruleName, rule) =
   mkelem "Rule"
     [sattr "ID" ruleName, sattr "formula" "true", sattr "name" ruleName]
-    $ [writeLHS ruleName lhs, writeRHS ruleName rhs] ++ [writeMorphism ruleName "" morphism] ++ [writeConditions nacNames ruleName rule]
+    $ [writeLHS ruleName lhs, writeRHS ruleName rhs] ++ [writeMorphism ("RightOf_"++ruleName, "LeftOf_"++ruleName) ruleName "" morphism] ++ [writeConditions nacNames ruleName rule]
   where
     lhs = getLHS rule
     rhs = getRHS rule
@@ -338,12 +338,12 @@ writeLHS ruleName (_, nodes, edges) = writeGraph ("LeftOf_" ++ ruleName) "LHS" (
 writeRHS :: ArrowXml a => String -> ParsedTypedGraph -> a XmlTree XmlTree
 writeRHS ruleName (_, nodes, edges)= writeGraph ("RightOf_" ++ ruleName) "RHS" ("RightOf_" ++ ruleName) nodes edges
 
-writeMorphism :: ArrowXml a => String -> String -> [Mapping] -> a XmlTree XmlTree
-writeMorphism name source mappings =
+writeMorphism :: ArrowXml a => (String, String) -> String -> String -> [Mapping] -> a XmlTree XmlTree
+writeMorphism (tgtPrefix, srcPrefix) name source mappings =
   mkelem "Morphism"
   ([sattr "name" name] ++
   (if source /= "" then [sattr "source" source] else []))
-  $ writeMappings mappings
+  $ writeMappings (map (\(tgt,src) -> (tgtPrefix++"_"++tgt, srcPrefix++"_"++src)) mappings)
 
 writeMappings :: ArrowXml a => [(String, String)] -> [a XmlTree XmlTree]
 writeMappings = map writeMapping
@@ -352,15 +352,16 @@ writeMapping :: ArrowXml a => (String, String) -> a XmlTree XmlTree
 writeMapping (image, orig) = mkelem "Mapping" [sattr "image" image, sattr "orig" orig] []
 
 writeConditions :: ArrowXml a => [(String, String)] -> String -> GR.GraphRule b c -> a XmlTree XmlTree
-writeConditions nacNames ruleName rule = mkelem "ApplCondition" [] $ map writeNac (zip (getNacs ruleName rule) (map snd nacsRule))
+writeConditions nacNames ruleName rule = mkelem "ApplCondition" [] $ map (writeNac ruleName) (zip (getNacs ruleName rule) ((map snd nacsRule)++nacsNoName))
   where
+    nacsNoName = map show [158..]
     nacsRule = filter (\(x,_) -> startswith ("NAC_"++ruleName) x) nacNames
 
-writeNac :: ArrowXml a => ((ParsedTypedGraph, [Mapping]),String) -> a XmlTree XmlTree
-writeNac ((nacGraph, nacMorphism),nacName) = mkelem "NAC" [] [writeNacGraph nacGraph, writeNacMorphism nacMorphism]
+writeNac :: ArrowXml a => String -> ((ParsedTypedGraph, [Mapping]),String) -> a XmlTree XmlTree
+writeNac ruleName ((nacGraph@(nacId,_,_), nacMorphism),nacName) = mkelem "NAC" [] [writeNacGraph nacGraph, writeNacMorphism nacMorphism]
   where
     writeNacGraph (nacId, nodes, edges) = writeGraph nacId "NAC" nacName nodes edges
-    writeNacMorphism = writeMorphism nacName ""
+    writeNacMorphism = writeMorphism (nacId, "LeftOf_"++ruleName) nacName ""
 
 src :: G.Graph a b -> G.EdgeId -> G.NodeId
 src g e = fromJust $ G.sourceOf g e
