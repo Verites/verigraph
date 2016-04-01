@@ -78,14 +78,15 @@ readTypeNames fileName = concat <$> runX (parseXML fileName >>> parseNames)
 readRules :: String -> IO[RuleWithNacs]
 readRules fileName = runX (parseXML fileName >>> parseRule)
 
-readSequences :: String -> IO[Sequence]
-readSequences fileName = runX (parseXML fileName >>> parseRuleSequence)
+readSequences :: GG.GraphGrammar a b -> String -> IO [(String, [GR.GraphRule a b])]
+readSequences grammar fileName = map (expandSequence grammar) <$> runX (parseXML fileName >>> parseRuleSequence)
 
-expandSequence :: Sequence -> [String]
-expandSequence (_,s) = concat $ map expandSub s
+expandSequence :: GG.GraphGrammar a b -> Sequence -> (String, [GR.GraphRule a b])
+expandSequence grammar (name,s) = (name, catMaybes . map lookupRule . concat $ map expandSub s)
   where
     expandSub (i, s) = concat $ replicate i $ concat $ (map expandItens) s
     expandItens (i, r) = replicate i r
+    lookupRule name = L.lookup name (GG.rules grammar)
 
 instantiateRule :: TypeGraph -> RuleWithNacs -> GraphRule a b
 instantiateRule typeGraph ((_, lhs, rhs, mappings), nacs) = graphRule lhsTgm rhsTgm nacsTgm

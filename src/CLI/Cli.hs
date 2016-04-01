@@ -106,6 +106,14 @@ execute opts = do
                    , show (length <$> dependenciesMatrix)
                    , ""]
 
+    -- FIXME handle concurrent rules properly
+    sequences <- XML.readSequences gg (inputFile opts)
+    let newRules = map (\(name, rules) -> (name, maxConcurrentRule rules)) sequences
+        gg' = GG.graphGrammar (GG.initialGraph gg) (GG.rules gg ++ newRules)
+    print $ map (fst) newRules
+    print $ map (nacs . snd) newRules
+    GW.writeGrammarFile gg' ggName names "concurrent.ggx"
+
     case outputFile opts of
       Just file -> writer gg ggName names file
       Nothing -> mapM_
