@@ -450,5 +450,25 @@
             <TaggedValue Tag="layer" TagValue="0"/>
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
+        <RuleSequences>
+            <Sequence name="RuleSequence">
+                <Graph id="I21"/>
+                <Subsequence iterations="1">
+                    <Item iterations="1" rule="sendMsg"/>
+                    <Item iterations="1" rule="getData"/>
+                </Subsequence>
+            </Sequence>
+            <Sequence name="RuleSequence1">
+                <Graph id="I21"/>
+                <Subsequence iterations="1">
+                    <Item iterations="1" rule="sendMsg"/>
+                    <Item iterations="1" rule="getData"/>
+                </Subsequence>
+                <Subsequence iterations="1">
+                    <Item iterations="1" rule="receiveMsg"/>
+                    <Item iterations="1" rule="deleteMsg"/>
+                </Subsequence>
+            </Sequence>
+        </RuleSequences>
     </GraphTransformationSystem>
 </Document>

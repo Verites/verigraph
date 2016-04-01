@@ -7,6 +7,7 @@ module XML.GGXReader
    readNacNames,
    readTypeGraph,
    readRules,
+   readSequences,
    instantiateRule
    ) where
 
@@ -36,6 +37,15 @@ readNames fileName = runX (parseXML fileName >>> parseNames)
 
 readRules :: String -> IO[RuleWithNacs]
 readRules fileName = runX (parseXML fileName >>> parseRule)
+
+readSequences :: String -> IO[Sequence]
+readSequences fileName = runX (parseXML fileName >>> parseRuleSequence)
+
+expandSequence :: Sequence -> [String]
+expandSequence (_,s) = concat $ map expandSub s
+  where
+    expandSub (i, s) = concat $ replicate i $ concat $ (map expandItens) s
+    expandItens (i, r) = replicate i r
 
 instantiateRule :: TypeGraph -> RuleWithNacs -> GraphRule a b
 instantiateRule typeGraph ((_, lhs, rhs, mappings), nacs) = graphRule lhsTgm rhsTgm nacsTgm

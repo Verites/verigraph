@@ -7,6 +7,7 @@ module XML.GGXParseIn
  , parseTypeGraph
  , parseNacNames
  , parseRule
+ , parseRuleSequence
  ) where
 
 import Data.String.Utils (split)
@@ -151,6 +152,29 @@ parseNac = atTag "NAC" >>>
     _  <- isA (\str -> str == "" || str == "true") <<< getAttrValue "enabled" -< nac
     mappings <- listA parseMappings -< nac
     returnA -< (graph, mappings)
+
+parseRuleSequence :: ArrowXml cat => cat (NTree XNode) Sequence
+parseRuleSequence = atTag "Sequence" >>>
+   proc s -> do
+     name <- getAttrValue "name" -< s
+     subs <- listA parseSubSequence -< s
+     returnA -< (name, subs)
+
+parseSubSequence :: ArrowXml cat => cat (NTree XNode) SubSequence
+parseSubSequence = atTag "Subsequence" >>>
+  proc sub -> do
+    iterations <- getAttrValue "iterations" -< sub
+    rules <- listA parseSequenceItem -< sub
+    let i = (read iterations)::Int
+    returnA -< (i, rules)
+
+parseSequenceItem :: ArrowXml cat => cat (NTree XNode) SequenceItem
+parseSequenceItem = atTag "Item" >>>
+  proc item -> do
+    iterations <- getAttrValue "iterations" -< item
+    ruleName <- getAttrValue "rule" -< item
+    let i = (read iterations)::Int
+    returnA -< (i, ruleName)
 
 clearId :: String -> String
 clearId = tail

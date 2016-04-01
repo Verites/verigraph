@@ -21,3 +21,9 @@ type ConflictMorphism = (ParsedTypedGraph,[Mapping],[Mapping],String,String)
 type Overlappings = (String,String,[ConflictMorphism])
 -- name rule1, name rule2, morphism, index
 type Overlapping = (String,String,ConflictMorphism,Int)
+
+type Sequence = (String, [SubSequence])
+type SubSequence = (Int, [SequenceItem])
+type SequenceItem = (Int, String)
+
+
