@@ -1,4 +1,4 @@
-{-# LANGUAGE Arrows                    #-}
+
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
 module XML.GGXReader
@@ -14,14 +14,14 @@ module XML.GGXReader
 
 import           Abstract.Morphism
 import           Abstract.Valid
-import           Data.Maybe (fromJust, catMaybes)
+import qualified Data.List                as L
+import           Data.Maybe               (catMaybes, fromJust, mapMaybe)
 import           Data.Tree.NTree.TypeDefs
-import qualified Data.List as L
-import qualified Graph.Graph as G
-import           Graph.GraphMorphism as GM
+import qualified Graph.Graph              as G
+import qualified Graph.GraphGrammar       as GG
+import           Graph.GraphMorphism      as GM
+import           Graph.GraphRule          as GR
 import           Graph.TypedGraphMorphism
-import           Graph.GraphRule as GR
-import qualified Graph.GraphGrammar as GG
 import           Text.XML.HXT.Core
 import           XML.GGXParseIn
 import           XML.ParsedTypes
@@ -42,8 +42,8 @@ readGrammar fileName = do
 
   _ <- (case L.elemIndices False (map valid rules) of
           []  -> []
-          [a] -> error $ "Rule " ++ (show a) ++ " is not valid"
-          l   -> error $ "Rules " ++ (show l) ++ " are not valid"
+          [a] -> error $ "Rule " ++ show a ++ " is not valid"
+          l   -> error $ "Rules " ++ show l ++ " are not valid"
           ) `seq` return ()
 
   let typeGraph = codomain . domain . GR.left $ head rules
@@ -51,7 +51,7 @@ readGrammar fileName = do
 
   return $ GG.graphGrammar initGraph (zip rulesNames rules)
 
-readGGName :: String -> IO (String)
+readGGName :: String -> IO String
 readGGName fileName = do
   name <- readName fileName
   let ret = case name of
@@ -82,9 +82,9 @@ readSequences :: GG.GraphGrammar a b -> String -> IO [(String, [GR.GraphRule a b
 readSequences grammar fileName = map (expandSequence grammar) <$> runX (parseXML fileName >>> parseRuleSequence)
 
 expandSequence :: GG.GraphGrammar a b -> Sequence -> (String, [GR.GraphRule a b])
-expandSequence grammar (name,s) = (name, catMaybes . map lookupRule . concat $ map expandSub s)
+expandSequence grammar (name,s) = (name, mapMaybe lookupRule . concat $ map expandSub s)
   where
-    expandSub (i, s) = concat $ replicate i $ concat $ (map expandItens) s
+    expandSub (i, s) = concat $ replicate i $ concatMap expandItens s
     expandItens (i, r) = replicate i r
     lookupRule name = L.lookup name (GG.rules grammar)
 

@@ -4,26 +4,26 @@ module CLI.CriticalPairAnalysis
   , runCPAnalysis
   ) where
 
-import CLI.GlobalOptions
+import           CLI.GlobalOptions
 
 import           Abstract.Morphism
 import           Abstract.Valid
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
-import           Control.Monad (when, forM_)
-import qualified Data.List as L
-import           Data.Matrix hiding ((<|>))
+import           Control.Monad             (forM_, when)
+import qualified Data.List                 as L
+import           Data.Matrix               hiding ((<|>))
 import           Graph.ConcurrentRules
-import qualified Graph.GraphGrammar as GG
-import qualified Graph.GraphMorphism as GM
+import qualified Graph.GraphGrammar        as GG
+import qualified Graph.GraphMorphism       as GM
 import           Graph.GraphRule
 import           Options.Applicative
-import qualified Text.XML.HXT.Core as HXT
-import qualified XML.GGXReader as XML
-import qualified XML.GGXWriter as GW
+import qualified Text.XML.HXT.Core         as HXT
+import qualified XML.GGXReader             as XML
+import qualified XML.GGXWriter             as GW
 
 data CPOpts = CPOpts
-  { outputFile :: Maybe String
+  { outputFile   :: Maybe String
   , analysisType :: CPAnalysisType
   }
 
@@ -77,7 +77,7 @@ runCPAnalysis globalOpts opts = do
         pfMatrix = pairwiseCompare (allProduceForbid nacInj onlyInj) rules
         peMatrix = pairwiseCompare (allProdEdgeDelNode nacInj onlyInj) rules
         conflictsMatrix = liftMatrix3 (\x y z -> x ++ y ++ z) udMatrix pfMatrix peMatrix
-        dependenciesMatrix = liftMatrix2 (\x y -> x ++ y) puMatrix ddMatrix
+        dependenciesMatrix = liftMatrix2 (++) puMatrix ddMatrix
 
         conflicts = [ "Delete-Use:"
                 , show (length <$> udMatrix)

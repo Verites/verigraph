@@ -1,4 +1,4 @@
-{-# LANGUAGE TemplateHaskell #-} -- fclabels
+ -- fclabels
 
 module GUI.Render (
       renderColor
@@ -9,22 +9,22 @@ module GUI.Render (
     , defRadius
     ) where
 
-import Control.Monad (guard)
-import Data.AdditiveGroup ((^+^), (^-^))
-import Data.AffineSpace ((.-.))
-import Data.Cross (cross2)
-import Data.Label -- fclabels
-import Data.Maybe (fromJust)
-import Data.VectorSpace (normalized, (^*))
+import           Control.Monad            (guard)
+import           Data.AdditiveGroup       ((^+^), (^-^))
+import           Data.AffineSpace         ((.-.))
+import           Data.Cross               (cross2)
+import           Data.Label
+import           Data.Maybe               (fromJust)
+import           Data.VectorSpace         (normalized, (^*))
 --import GUI.Editing (State (..), GraphEditState (..))
-import GUI.Editing
-import Graphics.Rendering.Cairo as Gtk
-import Graphics.UI.Gtk (Color (..))
-import qualified Graph.Graph as G
-import qualified Abstract.Relation as R
-import Prelude hiding ((.))
-import Control.Category
-import Debug.Trace (trace)
+import qualified Abstract.Relation        as R
+import           Control.Category
+import           Debug.Trace              (trace)
+import qualified Graph.Graph              as G
+import           Graphics.Rendering.Cairo as Gtk
+import           Graphics.UI.Gtk          (Color (..))
+import           GUI.Editing
+import           Prelude                  hiding ((.))
 
 
 defRadius = 20 :: Double
@@ -47,10 +47,10 @@ class Renderable a where
 instance Renderable RNode where
     render (RNode state gstate n) =
         case G.nodePayload g n of
-            Just p -> do 
-                (get nodeRender p) state gstate n
+            Just p -> do
+                get nodeRender p state gstate n
                 drawNodeLabel p
-            otherwise -> return ()
+            _ -> return ()
       where
         g = _getGraph gstate
 
@@ -59,8 +59,8 @@ instance Renderable REdge where
         let gr = get getGraph gstate
             coords = do
                 (src, tgt) <- G.nodesConnectedTo gr e
-                srcC <- fmap (get nodeCoords) $ G.nodePayload gr src
-                tgtC <- fmap (get nodeCoords) $ G.nodePayload gr tgt
+                srcC <- get nodeCoords Control.Applicative.<$> G.nodePayload gr src
+                tgtC <- get nodeCoords Control.Applicative.<$> G.nodePayload gr tgt
                 p <- G.edgePayload gr e
                 return (srcC, tgtC, get ctrlP1 p, get ctrlP2 p, p)
         in case coords of
@@ -77,10 +77,10 @@ instance Renderable REdge where
                 lineTo x' y'
                 stroke
                 -- control point's drawing
-                if ctrlPntSelected 0 
+                if ctrlPntSelected 0
                     then renderColor defSelColor
                     else renderColor ctrlPointColor
-                drawCtrlPoint ctrlX ctrlY 
+                drawCtrlPoint ctrlX ctrlY
                 fill
                 if ctrlPntSelected 1
                     then renderColor defSelColor
@@ -96,7 +96,7 @@ instance Renderable REdge where
 --                let (dx, dy) = directionVect ctrlP2 tgtC
                 -- move to node borders
 --                relMoveTo (- defRadius * dx) (- defRadius * dy)
-                rotate $ 
+                rotate $
                     angle . normalized $ tgtC ^-^ ctrlP2
 {-
                 rotate $
@@ -108,14 +108,10 @@ instance Renderable REdge where
                 drawHead $ defRadius * 1.5
                 fill
                 identityMatrix
-                if sel p
-                    then
-                       do --let (cx, cy) = edgeCenter srcC tgtC ctrlP1 ctrlP2
-                          --drawCtrlPoint cx cy
+                Control.Monad.when (sel p)
                           fill
-                    else return ()
                 identityMatrix
-            otherwise -> return ()
+            _ -> return ()
         where
             selected = get selObjects gstate
             ctrlPntSelected id = any (\o -> case o of
@@ -166,7 +162,7 @@ drawCircle color state gstate n =
             renderColor color
             if sel then fillPreserve >> highlight >> fill else fill
             return ()
-        otherwise -> return ()
+        _ -> return ()
   where
     highlight = setSourceRGBA 0 0 0 0.4
     p = G.nodePayload (_getGraph gstate) n
@@ -187,7 +183,7 @@ drawSquare color state gstate n =
             renderColor color
             if sel then fillPreserve >> highlight >> fill else fill
             return ()
-        otherwise -> return ()
+        _ -> return ()
   where
     highlight = setSourceRGBA 0 0 0 0.4
     p = G.nodePayload (_getGraph gstate) n
@@ -205,13 +201,13 @@ drawNodeLabel p = do
   where
     (x, y) = get nodeCoords p
     label = get nodeLabel p
-    offset = fromIntegral $ - (length label `div` 2) * 4
-   
+    offset = fromIntegral $  (length label `div` 2) * 4
+
 
 nodeRenderType :: GramState -> GraphEditState -> G.NodeId -> Render ()
 nodeRenderType state gstate n =
     case newP of
-        Just p -> (get nodeRender p) state gstate n
+        Just p -> get nodeRender p state gstate n
         _ -> return ()
   where
     nodeTypes = R.apply (_getNodeRelation gstate) n

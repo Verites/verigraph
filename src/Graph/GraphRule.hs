@@ -13,11 +13,11 @@ module Graph.GraphRule (
     , createdEdges
 ) where
 
-import Graph.TypedGraphMorphism (TypedGraphMorphism)
-import Graph.TypedGraphMorphism as TGM
-import Graph.Graph as G
-import Abstract.Morphism
-import Abstract.Valid
+import           Abstract.Morphism
+import           Abstract.Valid
+import           Graph.Graph              as G
+import           Graph.TypedGraphMorphism (TypedGraphMorphism)
+import           Graph.TypedGraphMorphism as TGM
 
 data GraphRule a b = GraphRule {
                           leftSide  :: TypedGraphMorphism a b
@@ -59,4 +59,4 @@ instance Valid (GraphRule a b) where
         valid lside &&
         valid rside &&
         all valid nacs &&
-        (domain lside) == (domain rside)
+        domain lside == domain rside

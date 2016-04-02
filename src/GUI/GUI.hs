@@ -60,7 +60,7 @@ onEdge srcC@(x, y) tgtC@(x', y') coords cp1 cp2
     | distance coords cp1 <= radius = Just 0
     | distance coords cp2 <= radius = Just 1
     | otherwise = Nothing
-  where 
+  where
 --    eCenter = edgeCenter src tgt ctrlP1 ctrlP2
     radius = 2 * defRadius -- defRadius is arbitrary, meant as a test
 
@@ -96,12 +96,12 @@ createGUI state = do
     newItem <- menuItemNewWithLabel "New"
     openItem <- menuItemNewWithLabel "Open"
     saveItem <- menuItemNewWithLabel "Save"
-    menuAttach fileMenu newItem 0 1 0 1 
-    menuAttach fileMenu openItem 0 1 1 2 
-    menuAttach fileMenu saveItem 0 1 2 3 
+    menuAttach fileMenu newItem 0 1 0 1
+    menuAttach fileMenu openItem 0 1 1 2
+    menuAttach fileMenu saveItem 0 1 2 3
 
     openItem `on` menuItemActivate $ openFileDialog
-    
+
     canvas <- drawingAreaNew
     store <- createModel state
     view <- createView store
@@ -114,7 +114,7 @@ createGUI state = do
 
     boxPackStart vBox1 canvas PackGrow 1
 
-    return $ GUI store view window canvas 
+    return $ GUI store view window canvas
 
 addMainCallbacks :: GUI -> IORef GramState -> IO ()
 addMainCallbacks gui stateRef = do
@@ -146,7 +146,7 @@ rowSelected gui store stateRef view = do
                         set canvasMode TGraphMode state
                     Just (T.Node (TNRule _ s) _) ->
                         set canvasMode (RuleMode s) state
-                    otherwise -> state
+                    _ -> state
 
     writeIORef stateRef state'
     widgetQueueDraw $ _getCanvas gui
@@ -194,7 +194,7 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
             ([], SingleClick) ->
                 -- unselect nodes
                 return $ set selObjects [] gstate
-            ((x:_), SingleClick) -> 
+            (x:_, SingleClick) ->
                 -- select object
                 return $
                     set refCoords coords $
@@ -202,26 +202,26 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
                           (False, False) -> set selObjects [x]
                           (True, False) -> modify selObjects (x:)
                           (True, True) -> modify selObjects (L.delete x)
-                          _ -> id) $
+                          _ -> id)
                     gstate
-            ((n@(Node k p):_), DoubleClick) ->
+            (n@(Node k p):_, DoubleClick) ->
                 -- open editing dialog
                 case _canvasMode state of
                     TGraphMode -> typeEditDialog k p state gstate
-                    otherwise -> nodeEditDialog k p state gstate
-            otherwise -> return gstate
+                    _ -> nodeEditDialog k p state gstate
+            _ -> return gstate
         RightButton ->
             return $
             case (objects, click) of
-            ((Node n p:_), SingleClick) -> do
+            (Node n p:_, SingleClick) ->
                 case _mouseMode gstate of
                     EdgeCreation src srcP ->
-                        modify getGraph (addEdge src srcP n p) $ 
+                        modify getGraph (addEdge src srcP n p) $
                         modify freeEdgeId (\(G.EdgeId i) -> G.EdgeId (i + 1)) gstate
-                    otherwise -> set mouseMode (EdgeCreation n p) $
+                    _ -> set mouseMode (EdgeCreation n p)
                                  gstate
-            otherwise -> gstate
-        otherwise -> return gstate
+            _ -> gstate
+        _ -> return gstate
   where
     objects = nodeObjects ++ edgeObjects
     edgeObjects =
@@ -235,15 +235,15 @@ chooseMouseAction state gstate coords@(x, y) button click multiSel =
                         cf srcC tgtC coords ctrlP1 ctrlP2
                     in case res of
                         Just cp -> p >>= (\p' -> Just $ Edge k p' [cp])
-                        otherwise -> Nothing)
+                        _ -> Nothing)
                $ G.edgesWithPayload g
     nodeObjects =
         -- the Node constructor transforms NodeId into an Obj
         -- No payload-less nodes pass filtering
-        map (\(k, Just p) -> Node k p) $ 
+        map (\(k, Just p) -> Node k p) $
         filter (\(_, p) -> case p of
-                          Just p -> (get nodeCheck p) (get nodeCoords p) coords
-                          otherwise -> False)
+                          Just p -> get nodeCheck p (get nodeCoords p) coords
+                          _ -> False)
                (G.nodesWithPayload g)
     g = _getGraph gstate
     (p', graph') =
@@ -275,10 +275,10 @@ addNode gstate coords renderFunc checkFunc =
     graph' =
         G.insertNodeWithPayload newId p graph
 
-typeEditDialog :: G.NodeId -> NodePayload -> GramState -> GraphEditState -> IO (GraphEditState)
+typeEditDialog :: G.NodeId -> NodePayload -> GramState -> GraphEditState -> IO GraphEditState
 typeEditDialog n p@(NodePayload nid label coords renderFunc checkFunc) state gstate = do
     dial <- dialogNew
-    cArea <- return . castToBox =<< dialogGetUpper dial
+    cArea <- fmap castToBox (dialogGetUpper dial)
     entry <- entryNew
     entrySetText entry label
     colorButton <- colorButtonNewWithColor neutralColor
@@ -289,17 +289,17 @@ typeEditDialog n p@(NodePayload nid label coords renderFunc checkFunc) state gst
 --    boxPackStart cArea colorSel PackNatural 1
     -- box to group all radio buttons according to available shapes
     nodeShapeBox <- vBoxNew False 2
-    circleButton <- radioButtonNewWithLabel "Circle" 
-    squareButton <- radioButtonNewWithLabelFromWidget circleButton "Square" 
+    circleButton <- radioButtonNewWithLabel "Circle"
+    squareButton <- radioButtonNewWithLabelFromWidget circleButton "Square"
     boxPackStart nodeShapeBox circleButton PackGrow 2
     boxPackStart nodeShapeBox squareButton PackGrow 2
     boxPackStart cArea nodeShapeBox PackGrow 2
-    
+
     dialogAddButton dial "Apply" ResponseApply
     dialogAddButton dial "Cancel" ResponseCancel
     widgetShowAll dial
     response <- dialogRun dial
-    case response of 
+    case response of
         ResponseApply -> do
             color <- colorButtonGetColor colorButton
             shapeButtons <- radioButtonGetGroup circleButton
@@ -319,18 +319,18 @@ typeEditDialog n p@(NodePayload nid label coords renderFunc checkFunc) state gst
         ResponseCancel -> do
             widgetDestroy dial
             return gstate
-        otherwise -> return gstate
+        _ -> return gstate
 
-nodeEditDialog :: G.NodeId -> NodePayload -> GramState -> GraphEditState -> IO (GraphEditState)
+nodeEditDialog :: G.NodeId -> NodePayload -> GramState -> GraphEditState -> IO GraphEditState
 nodeEditDialog n p@(NodePayload _ label coords renderFunc checkFunc) state gstate = do
     dial <- dialogNew
-    cArea <- return . castToBox =<< dialogGetUpper dial
+    cArea <- fmap castToBox (dialogGetUpper dial)
     entry <- entryNew
     entrySetText entry label
     boxPackStart cArea entry PackNatural 1
 
     let nodeList = G.nodesWithPayload $ get (getGraph . getTypeGraph) state
-        nodesWithLabels = map (\(k, p) -> case p of 
+        nodesWithLabels = map (\(k, p) -> case p of
                                     Just p -> (k, get nodeLabel p)
                                     _ -> (k, ""))
                               nodeList
@@ -372,7 +372,7 @@ nodeEditDialog n p@(NodePayload _ label coords renderFunc checkFunc) state gstat
                 p'' = if tid == G.NodeId (-1) then p' -- unchanged
                       else set nodeRender nodeRenderType p'
                 updateRenderFunc g =
-                    G.updateNodePayload n g (\_ -> p'')
+                    G.updateNodePayload n g (const p'')
             widgetDestroy dial
             return $ modify getGraph updateRenderFunc gstate'
         _ -> do
@@ -388,15 +388,15 @@ mouseMove canvas stateRef = do
         refC = _refCoords gstate
         deltaC = coords ^-^ refC
         updateCoords n g =
-            G.updateNodePayload n g (modify nodeCoords (\coords -> coords ^+^ deltaC))
+            G.updateNodePayload n g (modify nodeCoords (^+^ deltaC))
         -- updates all selected control points from g
         updateCtrlP e ctrlPts g =
             foldr (\ctrlP g ->
                     case ctrlP of
                     0 -> G.updateEdgePayload
-                            e g (modify ctrlP1 (\baseC -> baseC ^+^ deltaC))
+                            e g (modify ctrlP1 (^+^ deltaC))
                     1 -> G.updateEdgePayload
-                            e g (modify ctrlP2 (\baseC -> baseC ^+^ deltaC))
+                            e g (modify ctrlP2 (^+^ deltaC))
                     _ -> g)
 
                   g
@@ -432,7 +432,7 @@ keyPress canvas stateRef = do
         _ -> return ()
     liftIO $ widgetQueueDraw canvas
   where
-    isEdge (Edge _ _ _) = True
+    isEdge Edge{} = True
     isEdge _ = False
     deleteEdges edges gr = foldr G.removeEdge gr edges
     deleteNodes nodes gr = foldr G.removeNode gr nodes
@@ -440,8 +440,8 @@ keyPress canvas stateRef = do
         let selEdges = map (\(Edge e _ _) -> e) $ fst sel
             selNodes = map (\(Node n _) -> n) $ snd sel
         in deleteNodes selNodes . deleteEdges selEdges
-        
-        
+
+
 
 updateCanvas :: IORef GramState -> Render ()
 updateCanvas stateRef = do
@@ -459,7 +459,7 @@ openFileDialog = do
     buttons = [ ("Cancel", ResponseCancel), ("Open", ResponseOk) ]
 
 createModel :: GramState -> IO (TreeStore TreeNode)
-createModel state = stateToModel state
+createModel = stateToModel
 
 createView :: TreeStore TreeNode -> IO TreeView
 createView store = do

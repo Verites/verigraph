@@ -5,13 +5,13 @@ module Analysis.GPToVeri (
    toMorphism
    ) where
 
-import Graph.GraphRule
-import qualified Analysis.GraphPart as GP
-import qualified Graph.GraphMorphism as GM
+import qualified Abstract.Morphism        as M
+import qualified Analysis.GraphPart       as GP
+import           Data.Maybe               (fromJust)
+import           Graph.Graph
+import qualified Graph.GraphMorphism      as GM
+import           Graph.GraphRule
 import qualified Graph.TypedGraphMorphism as TGM
-import qualified Abstract.Morphism as M
-import Graph.Graph
-import Data.Maybe (fromJust)
 
 {-Conversão para as estruturas do Verigraph-}
 
@@ -51,7 +51,7 @@ setTypeEdges g (e:es) m = setTypeEdges g es (GM.updateEdges edgeid typeid m)
 toMorphism :: GP.EqClassGraphMap -> String -> GM.GraphMorphism a b
 toMorphism g@(GP.EqClassGraphMap (nodes,edges) nM eM) s = setEdges
   where
-     setNodes = toMorphismNodes s g nodes (GM.empty (Graph.Graph.empty) (toGraph g))
+     setNodes = toMorphismNodes s g nodes (GM.empty Graph.Graph.empty (toGraph g))
      setEdges = toMorphismEdges s g edges setNodes
 
 toGraph :: GP.EqClassGraphMap -> Graph a b
@@ -76,9 +76,9 @@ toMorphismNodes s g (x:xs) m = toMorphismNodes s g xs (addNodes s eqnodeid x m)
 
 addNodes :: String -> NodeId -> [GP.Node] -> GM.GraphMorphism a b -> GM.GraphMorphism a b
 addNodes s eqnodeid []     m = m
-addNodes s eqnodeid (x:xs) m = (addNodes s eqnodeid xs) (if sideEqualNodeSide then newGM else m)
+addNodes s eqnodeid (x:xs) m = addNodes s eqnodeid xs (if sideEqualNodeSide then newGM else m)
   where
-    sideEqualNodeSide = s == (GP.ngsource x)
+    sideEqualNodeSide = s == GP.ngsource x
     nodeid            = NodeId (GP.nname x)
     newDomain         = insertNode nodeid (M.domain m)
     newDomainGM       = GM.updateDomain newDomain m
@@ -97,7 +97,7 @@ addEdges :: String -> EdgeId -> GP.EqClassGraphMap -> [GP.Edge] -> GM.GraphMorph
 addEdges s eqedgeid g []     m = m
 addEdges s eqedgeid g (x:xs) m = if sideEqualEdgeSide then addEdges s eqedgeid g xs newGM else addEdges s eqedgeid g xs m
   where
-    sideEqualEdgeSide = s == (GP.egsource x)
+    sideEqualEdgeSide = s == GP.egsource x
     edgeid            = EdgeId (GP.label x)
     nodeIdSrc         = NodeId (GP.nname (GP.source x))
     nodeIdTgt         = NodeId (GP.nname (GP.target x))

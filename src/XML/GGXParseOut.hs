@@ -8,17 +8,17 @@ module XML.GGXParseOut
  , getMappings
  ) where
 
-import qualified Abstract.Morphism as M
-import           Data.List.Utils (startswith)
-import           Data.Maybe
-import           Text.XML.HXT.Core
-import qualified Analysis.CriticalPairs as CP
+import qualified Abstract.Morphism         as M
+import qualified Analysis.CriticalPairs    as CP
 import qualified Analysis.CriticalSequence as CS
-import qualified Graph.Graph as G
+import           Data.List.Utils           (startswith)
+import           Data.Maybe
+import qualified Graph.Graph               as G
 import           Graph.GraphGrammar
-import qualified Graph.GraphMorphism as GM
-import qualified Graph.GraphRule as GR
+import qualified Graph.GraphMorphism       as GM
+import qualified Graph.GraphRule           as GR
 import           Graph.TypedGraphMorphism
+import           Text.XML.HXT.Core
 import           XML.ParsedTypes
 
 parseCPGraph :: (String,String,[CP.CriticalPair a b]) -> Overlappings
@@ -82,7 +82,7 @@ getMappings rule = nodesMorph ++ edgesMorph
 
 parseNacName :: String -> (t -> Maybe Int) -> t -> String
 parseNacName ruleName f x = case f x of
-                   Just n  -> "NAC_" ++ ruleName ++ "_" ++ (show n)
+                   Just n  -> "NAC_" ++ ruleName ++ "_" ++ show n
                    Nothing -> ""
 
 serializeGraph :: TypedGraphMorphism a b -> ParsedTypedGraph

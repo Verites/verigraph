@@ -1,10 +1,12 @@
-{-# LANGUAGE TypeFamilies, MultiParamTypeClasses, FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Abstract.Morphism where
 
 class (Eq m) => Morphism m where
     type Obj m :: *
-    compose  :: m -> m -> m 
+    compose  :: m -> m -> m
     domain   :: m -> Obj m
     codomain :: m -> Obj m
     id       :: Obj m -> m

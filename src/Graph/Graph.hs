@@ -47,16 +47,16 @@ module Graph.Graph (
     , isNodeOf
     , isAdjacentTo
     , isIncidentTo
-    
+
     --
     , newNodes
     , newEdges
 ) where
 
-import Control.Applicative ((<$>))
-import Abstract.Valid
-import Data.List
-import Data.List.Utils
+import           Abstract.Valid
+import           Control.Applicative ((<$>))
+import           Data.List
+import           Data.List.Utils
 
 data Node a = Node { getNodePayload :: Maybe a
               } deriving (Show, Read)
@@ -64,8 +64,8 @@ data Node a = Node { getNodePayload :: Maybe a
 instance Eq (Node a) where
     n == n' = True -- Simplifies all Eq instances that depend upon Node
 
-data Edge a = Edge { getSource   :: NodeId
-                   , getTarget   :: NodeId
+data Edge a = Edge { getSource      :: NodeId
+                   , getTarget      :: NodeId
                    , getEdgePayload :: Maybe a
               } deriving (Show, Read)
 
@@ -87,7 +87,7 @@ eq :: (Eq t1, Eq t2) => [(t1, t2)] -> [(t1, t2)] -> Bool
 eq a b = contained a b && contained b a
 
 contained :: Eq t => [t] -> [t] -> Bool
-contained a b = False `notElem` (map (\x -> x `elem` b) a)
+contained a b = False `notElem` map (`elem` b) a
 
 instance Eq (Graph a b) where
     (Graph nodeMap1 edgeMap1) == (Graph nodeMap2 edgeMap2) =
@@ -112,20 +112,20 @@ instance Show EdgeId where
     show (EdgeId i) = show i
 
 ---- Convenient instances of Number and Enum classes for NodeId and EdgeId
-instance Num (NodeId) where
+instance Num NodeId where
   (NodeId x)  +  (NodeId y) = NodeId (x+y)
   (NodeId x)  *  (NodeId y) = NodeId (x*y)
   (NodeId x)  -  (NodeId y) = NodeId (x-y)
   negate (NodeId x) = NodeId (negate x)
   signum (NodeId x) = NodeId (signum x)
-  fromInteger x       = (NodeId $ fromIntegral x)
+  fromInteger x       = NodeId $ fromIntegral x
   abs (NodeId x)    = NodeId (abs x)
 
-instance Enum (NodeId) where
-  toEnum x = NodeId x
-  fromEnum (NodeId x) = x 
+instance Enum NodeId where
+  toEnum = NodeId
+  fromEnum (NodeId x) = x
 
-instance Num (EdgeId) where
+instance Num EdgeId where
   (EdgeId x)  +  (EdgeId y) = EdgeId (x+y)
   (EdgeId x)  *  (EdgeId y) = EdgeId (x*y)
   (EdgeId x)  -  (EdgeId y) = EdgeId (x-y)
@@ -134,9 +134,9 @@ instance Num (EdgeId) where
   fromInteger x       = EdgeId $ fromIntegral x
   abs (EdgeId x)    = EdgeId (abs x)
 
-instance Enum (EdgeId) where
-  toEnum x = EdgeId x
-  fromEnum (EdgeId x) = x 
+instance Enum EdgeId where
+  toEnum = EdgeId
+  fromEnum (EdgeId x) = x
 
 -- | Infinite list of new node instances of a graph
 newNodes :: Graph a b -> [NodeId]
@@ -154,9 +154,9 @@ empty = Graph [] []
 
 -- | Build a Graph
 build :: [Int] -> [(Int,Int,Int)] -> Graph a b
-build n e = foldr (\(a,b,c) -> insertEdge a b c) g (map (\(a,b,c) -> (EdgeId a,NodeId b,NodeId c)) e)
+build n   = foldr ((\(a,b,c) -> insertEdge a b c) . (\(a,b,c) -> (EdgeId a, NodeId b, NodeId c))) g
     where
-        g = foldr insertNode empty (map NodeId n)
+        g = foldr (insertNode . NodeId) empty n
 
 -- | Insert a node @n@ in a graph @g@, without payload.
 insertNode :: NodeId -> Graph a b -> Graph a b
@@ -171,14 +171,14 @@ insertNodeWithPayload n p g@(Graph ns es) =
 -- | Insert an edge @e@ from @src@ to @tgt@ in graph @g@, without payload.
 insertEdge :: EdgeId -> NodeId -> NodeId -> Graph a b -> Graph a b
 insertEdge e src tgt g@(Graph ns es)
-    | src `elem` (keysAL ns) && tgt `elem` (keysAL ns) =
+    | src `elem` keysAL ns && tgt `elem` keysAL ns =
         Graph ns (addToAL es e (Edge src tgt Nothing))
     | otherwise = g
 
 -- | Insert an edge @e@ from @src@ to @tgt@ in graph @g@ with payload @p@.
 insertEdgeWithPayload :: EdgeId -> NodeId -> NodeId -> b -> Graph a b -> Graph a b
 insertEdgeWithPayload e src tgt p g@(Graph ns es)
-    | src `elem` (keysAL ns) && tgt `elem` (keysAL ns) =
+    | src `elem` keysAL ns && tgt `elem` keysAL ns =
         Graph ns (addToAL es e (Edge src tgt (Just p)))
     | otherwise = g
 
@@ -200,10 +200,10 @@ updateNodePayload n g@(Graph ns es) f =
         Nothing -> g
         Just n' ->
             Graph
-            (addToAL ns n $ n' { getNodePayload = f <$> (p n') }) es
+            (addToAL ns n $ n' { getNodePayload = f <$> p n' }) es
   where
     nd = lookup n ns
-    p n = getNodePayload n
+    p = getNodePayload
 
 -- | Update @e@'s payload, applying @f@ on it.
 updateEdgePayload :: EdgeId -> Graph a b -> (b -> b) -> Graph a b
@@ -212,10 +212,10 @@ updateEdgePayload e g@(Graph ns es) f =
         Nothing -> g
         Just e' ->
             Graph
-            ns (addToAL es e $ e' { getEdgePayload = f <$> (p e') })
+            ns (addToAL es e $ e' { getEdgePayload = f <$> p e' })
   where
     ed = lookup e es
-    p e = getEdgePayload e
+    p = getEdgePayload
 
 -- | Return a list of all node id's from from @g@.
 nodes :: Graph a b -> [NodeId]
@@ -235,7 +235,7 @@ edgesIntoNode g n = filter (\e -> targetOf g e == Just n) (edges g)
 
 -- | Return a list of all nodes that are target of any edge going out from @n@.
 nodesFromNode :: Graph a b -> NodeId -> [NodeId]
-nodesFromNode g n = filter (\v -> isAdjacentTo g n v) (nodes g)
+nodesFromNode g n = filter (isAdjacentTo g n) (nodes g)
 
 -- | Return a list of all nodes that are source of any edge going into @n@.
 nodesIntoNode :: Graph a b -> NodeId -> [NodeId]
@@ -247,7 +247,7 @@ neighbourNodes g n = nub $ nodesIntoNode g n ++ nodesFromNode g n
 
 -- | Return @n@'s payload.
 nodePayload :: Graph a b -> NodeId -> Maybe a
-nodePayload g n = (lookup n $ nodeMap g) >>= getNodePayload
+nodePayload g n = lookup n (nodeMap g) >>= getNodePayload
 
 -- | Return a list of all node id's, together with their payloads.
 nodesWithPayload :: Graph a b -> [(NodeId, Maybe a)]
@@ -256,7 +256,7 @@ nodesWithPayload (Graph nodeMap _) =
 
 -- | Return @e@'s payload.
 edgePayload :: Graph a b -> EdgeId -> Maybe b
-edgePayload g e = (lookup e $ edgeMap g) >>= getEdgePayload
+edgePayload g e = lookup e (edgeMap g) >>= getEdgePayload
 
 -- | Return a list of all edge id's, together with their payloads.
 edgesWithPayload :: Graph a b -> [(EdgeId, Maybe b)]
@@ -269,7 +269,7 @@ nodesConnectedTo g@(Graph _ es) e =
     let ed = lookup e es
     in case ed of
         Just (Edge src tgt _) -> Just (src, tgt)
-        otherwise -> Nothing
+        _ -> Nothing
 
 -- | Return @e@'s source.
 sourceOf :: Graph a b -> EdgeId -> Maybe NodeId
@@ -285,7 +285,7 @@ targetOf :: Graph a b -> EdgeId -> Maybe NodeId
 targetOf (Graph _ es) e =
     case res of
         (Just ed) -> Just $ getTarget ed
-        otherwise -> Nothing
+        _ -> Nothing
   where
     res = lookup e es
 
@@ -296,11 +296,11 @@ null _ = False
 
 -- | Test if @n@ is a node from graph @g@.
 isNodeOf :: Graph a b -> NodeId -> Bool
-isNodeOf g n  = n `elem` (nodes g)
+isNodeOf g n  = n `elem` nodes g
 
 -- | Test if @e@ is an edge from graph @g@.
 isEdgeOf :: Graph a b -> EdgeId -> Bool
-isEdgeOf g e  = e `elem` (edges g)
+isEdgeOf g e  = e `elem` edges g
 
 -- | Test if @n1@ and @n2@ are adjacent.
 isAdjacentTo :: Graph a b -> NodeId -> NodeId -> Bool
@@ -312,7 +312,7 @@ isIncidentTo :: Graph a b -> NodeId -> EdgeId -> Bool
 isIncidentTo g n e =
     case res of
         Just (s, t) -> n == s || n == t
-        otherwise   -> False
+        _ -> False
   where
     res = nodesConnectedTo g e
 
@@ -327,5 +327,5 @@ instance Valid (Graph a b) where
                     tgt = targetOf g e
                 in case (src, tgt) of
                     (Just s, Just t) -> isNodeOf g s && isNodeOf g t
-                    otherwise -> False)
+                    _ -> False)
             (edges g)

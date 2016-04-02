@@ -13,15 +13,16 @@ module Analysis.CriticalPairs
    ) where
 
 import           Abstract.Morphism
+import           Analysis.EpiPairs         (createPairs)
 import           Analysis.GluingConditions
-import           Analysis.EpiPairs (createPairs)
-import qualified Analysis.Matches as MT
-import qualified Graph.GraphMorphism as GM
+import qualified Analysis.Matches          as MT
+import           Data.List                 (elemIndex)
+import           Data.List.Utils           (countElem)
+import           Data.Maybe                (isJust)
+import qualified Graph.GraphMorphism       as GM
 import           Graph.GraphRule
+import qualified Graph.Rewriting           as RW
 import           Graph.TypedGraphMorphism
-import qualified Graph.Rewriting as RW
-import           Data.List (elemIndex)
-import           Data.List.Utils (countElem)
 
 -- | Data representing the type of a 'CriticalPair'
 data CP = FOL | DeleteUse | ProduceForbid | ProduceEdgeDeleteNode deriving(Eq,Show)
@@ -29,10 +30,10 @@ data CP = FOL | DeleteUse | ProduceForbid | ProduceEdgeDeleteNode deriving(Eq,Sh
 -- | A Critical Pair is defined as two matches (m1,m2) from the left side of their rules to a same graph.
 -- It assumes that the derivation of the rule with match @m1@ causes a conflict with the rule with match @m2@
 data CriticalPair a b = CriticalPair {
-    m1 :: TypedGraphMorphism a b,
-    m2 :: TypedGraphMorphism a b,
+    m1  :: TypedGraphMorphism a b,
+    m2  :: TypedGraphMorphism a b,
     nac :: Maybe Int, --if is ProduceForbid, here is the index of the nac
-    cp :: CP
+    cp  :: CP
     } deriving (Eq,Show)
 
 -- | Returns the left morphism of a 'CriticalPair'
@@ -55,7 +56,7 @@ getCPNac = nac
 --  show (CriticalPair m1 m2 cp) = "{"++(show $ TGM.mapping m1)++(show $ TGM.mapping m2)++(show cp)++"}"
 
 namedCriticalPairs :: Bool -> Bool -> [(String, GraphRule a b)] -> [(String,String,[CriticalPair a b])]
-namedCriticalPairs nacInj inj r = map (\(x,y) -> getCPs x y) [(a,b) | a <- r, b <- r]
+namedCriticalPairs nacInj inj r = map (uncurry getCPs) [(a,b) | a <- r, b <- r]
   where
     getCPs (n1,r1) (n2,r2) = (n1, n2, criticalPairs nacInj inj r1 r2)
 
@@ -65,7 +66,7 @@ criticalPairs :: Bool -> Bool
               -> GraphRule a b
               -> [CriticalPair a b]
 --criticalPairs nacInj inj l r = (allDeleteUse nacInj inj l r) ++ (allProduceForbid nacInj inj l r) ++ (allProdEdgeDelNode nacInj inj l r)
-criticalPairs nacInj inj l r = (allDeleteUseAndProdEdgeDelNode nacInj inj l r) ++ (allProduceForbid nacInj inj l r)
+criticalPairs nacInj inj l r = allDeleteUseAndProdEdgeDelNode nacInj inj l r ++ allProduceForbid nacInj inj l r
 
 ---- Delete-Use
 
@@ -113,7 +114,7 @@ deleteUse2 l r (m1,m2) = null filt
 deleteUse :: GraphRule a b -> GraphRule a b
           -> (TypedGraphMorphism a b,TypedGraphMorphism a b)
           -> Bool
-deleteUse l r (m1,m2) = any (==True) (nods ++ edgs)
+deleteUse l r (m1,m2) = True `elem` (nods ++ edgs)
     where
         nods = deleteUseAux l m1 m2 GM.applyNode nodesDomain nodesCodomain
         edgs = deleteUseAux l m1 m2 GM.applyEdge edgesDomain edgesCodomain
@@ -127,7 +128,7 @@ deleteUseAux :: Eq t => GraphRule a b -> TypedGraphMorphism a b -> TypedGraphMor
 deleteUseAux l m1 m2 apply dom cod = map (\x -> delByLeft x && isInMatchRight x) (cod m1)
     where
         delByLeft = ruleDeletes l m1 apply dom
-        isInMatchRight n = apply (GM.inverse $ mapping m2) n /= Nothing
+        isInMatchRight n = Data.Maybe.isJust (apply (GM.inverse $ mapping m2) n)
 
 ---- Produce Edge Delete Node
 
@@ -158,7 +159,7 @@ allProduceForbid :: Bool -> Bool
                  -> GraphRule a b
                  -> GraphRule a b
                  -> [CriticalPair a b]
-allProduceForbid nacInj inj l r = concat (map (produceForbidOneNac nacInj inj l r) (nacs r))
+allProduceForbid nacInj inj l r = concatMap (produceForbidOneNac nacInj inj l r) (nacs r)
 
 -- | Check ProduceForbid for a NAC @n@ in @r@
 produceForbidOneNac :: Bool -> Bool
@@ -171,7 +172,7 @@ produceForbidOneNac nacInj inj l r n = let
         -- Consider for a NAC n (L2 -> N2) of r any jointly surjective
         -- pair of morphisms (h1: R1 -> P1, q21: N2 -> P1) with q21 (part)inj
         pairs = createPairs (right l) n
-        
+
         filtFun = if nacInj then monomorphism else partialInjectiveTGM n
         filtMono = filter (\(_,q) -> filtFun q) pairs --(h1,q21)
 
@@ -191,18 +192,14 @@ produceForbidOneNac nacInj inj l r n = let
         filtM1 = filter (\(_,_,_,_,m1,_) -> satsNacs nacInj l m1) po
 
         --  Check existence of h21: L2 -> D1 st. e1 . h21 = q21 . n2
-        h21 = concat $
-                map (\(h1,q21,k,r',m1,l') ->
+        h21 = concatMap (\(h1,q21,k,r',m1,l') ->
                   let hs = MT.matches (domain n) (codomain k) MT.FREE in
-                    case null hs of
-                      True  -> []
-                      False -> [(h1,q21,k,r',m1,l',hs)])
+                    if null hs then [] else [(h1,q21,k,r',m1,l',hs)])
                   filtM1 --(h1,q21,k,r',m1,l1,[hs])
 
-        validH21 = concat $
-                     map (\(h1,q21,k,r',m1,l',hs) ->
+        validH21 = concatMap (\(h1,q21,k,r',m1,l',hs) ->
                        let list = map (\h -> compose h r' == compose n q21) hs in
-                         case (elemIndex True list) of
+                         case elemIndex True list of
                            Just ind -> [(h1,q21,k,r',m1,l',hs!!ind)]
                            Nothing  -> [])
                        h21
@@ -213,9 +210,9 @@ produceForbidOneNac nacInj inj l r n = let
 
         -- Check gluing condition for m2 and r
         filtM2 = filter (\(_,m1,m2) -> satsGluingCond nacInj r m2) m1m2
-        
+
         filtInj = filter (\(_,m1,m2) -> monomorphism m1 && monomorphism m2) filtM2
-        
+
         idx = elemIndex n (nacs r)
-        
+
         in map (\(h1,m1,m2) -> CriticalPair h1 m2 idx ProduceForbid) (if inj then filtInj else filtM2)

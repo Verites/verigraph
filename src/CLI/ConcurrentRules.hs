@@ -4,26 +4,26 @@ module CLI.ConcurrentRules
   , runConcurrentRules
   ) where
 
-import CLI.GlobalOptions
+import           CLI.GlobalOptions
 
 import           Abstract.Morphism
 import           Abstract.Valid
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
-import           Control.Monad (when, forM_)
-import qualified Data.List as L
-import           Data.Matrix hiding ((<|>))
+import           Control.Monad             (forM_, when)
+import qualified Data.List                 as L
+import           Data.Matrix               hiding ((<|>))
 import           Graph.ConcurrentRules
-import qualified Graph.GraphGrammar as GG
-import qualified Graph.GraphMorphism as GM
+import qualified Graph.GraphGrammar        as GG
+import qualified Graph.GraphMorphism       as GM
 import           Graph.GraphRule
 import           Options.Applicative
-import qualified Text.XML.HXT.Core as HXT
-import qualified XML.GGXReader as XML
-import qualified XML.GGXWriter as GW
+import qualified Text.XML.HXT.Core         as HXT
+import qualified XML.GGXReader             as XML
+import qualified XML.GGXWriter             as GW
 
 data CROpts = CROpts
-  { outputFile :: String
+  { outputFile     :: String
   , generationType :: CRGenerationType
   }
 
@@ -59,7 +59,7 @@ runConcurrentRules globalOpts opts = do
     let makeConcurrentRules = case generationType opts of
                                 MaxConcurrentRule -> makeMaxConcurrentRule
                                 AllConcurrentRules -> makeAllConcurrentRules
-        newRules = concat $ map makeConcurrentRules sequences
+        newRules = concatMap makeConcurrentRules sequences
         gg' = GG.graphGrammar (GG.initialGraph gg) (GG.rules gg ++ newRules)
     GW.writeGrammarFile gg' ggName names (outputFile opts)
 
