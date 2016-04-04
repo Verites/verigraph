@@ -7,13 +7,13 @@ synopsis:            Software specification and verification tool based on graph
 -- description:         
 license:             GPL-3
 license-file:        LICENSE
-author:              Rodrigo Machado / Ricardo G. Herdt
+author:              Jonas S. Bezerra / Andrei Costa / Guilherme Azzi / Leonardo M. Rodrigues / Rodrigo Machado / Ricardo G. Herdt
 maintainer:          rma@inf.ufrgs.br
 -- copyright:           
 category:            Data
 build-type:          Simple
 -- extra-source-files:  
-cabal-version:       >=1.10
+cabal-version:       >=1.22
 
 executable verigraph
   main-is:             CLI/Cli.hs

@@ -98,9 +98,10 @@ deliverDelete nacInj inj l r n = let
         pairs = createPairs (right inverseLeft) n
 
         filtFun = if nacInj then M.monomorphism else partialInjectiveTGM n
-        filtMono = filter (\(_,q) -> filtFun q) pairs
-
-        filtPairs = filter (\(m1,_) -> satsGluingCond nacInj l m1) filtMono
+        filtPairs = filter (\(m1,q) -> (if inj then M.monomorphism m1 else True)
+                                    && filtFun q
+                                    && satsGluingCond nacInj l m1
+                                    ) pairs
 
         poc = map (\(m1,q21) -> let (k,d1) = RW.poc m1 (right inverseLeft) in
                                  (m1,q21,k,d1))
@@ -127,10 +128,9 @@ deliverDelete nacInj inj l r n = let
 
         m1m2 = map (\(_,_,_,_,m1',e1,l2d1) -> (m1', M.compose l2d1 e1)) validH21
 
-        filtM2 = filter (\(m1,m2) -> satsGluingCond nacInj r m2) m1m2
-
-        filtInj = filter (\(m1,m2) -> M.monomorphism m1 && M.monomorphism m2) filtM2
+        filtM2 = filter (\(m1,m2) -> (if inj then M.monomorphism m2 else True)
+                                   && satsGluingCond nacInj r m2) m1m2
 
         idx = elemIndex n (nacs r)
 
-        in map (\(m1,m2) -> CriticalSequence m1 m2 idx DeliverDelete) (if inj then filtInj else filtM2)
+        in map (\(m1,m2) -> CriticalSequence m1 m2 idx DeliverDelete) filtM2
