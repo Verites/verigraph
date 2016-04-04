@@ -92,7 +92,7 @@ deleteUseDangling :: GraphRule a b -> GraphRule a b
 deleteUseDangling l r (m1,m2) = cp
   where
     (k,l') = RW.poc m1 (left l)
-    lTOd = MT.matches (domain m2) (domain l') MT.FREE
+    lTOd = MT.matches MT.FREE (domain m2) (domain l')
     matchD = filter (\x -> m2 == compose x l') lTOd
     (m1',r') = RW.po k (right l)
     m2' = compose (head matchD) r'
@@ -122,7 +122,7 @@ deleteUse :: GraphRule a b -> GraphRule a b
 deleteUse l r (m1,m2) = null matchD
     where
         (_,d1) = RW.poc m1 (left l) --get only the morphism D2 to G
-        l2TOd1 = MT.matches (domain m2) (domain d1) MT.FREE
+        l2TOd1 = MT.matches MT.FREE (domain m2) (domain d1)
         matchD = filter (\x -> m2 == compose x d1) l2TOd1
 
 -- | Rule @l@ causes a delete-use conflict with @r@ if rule @l@ deletes something that is used by @r@
@@ -164,7 +164,7 @@ prodEdgeDelNode :: GraphRule a b -> GraphRule a b -> (TypedGraphMorphism a b,Typ
 prodEdgeDelNode l r (m1,m2) = not (null matchD) && not (satsIncEdges r m2')
     where
         (k,d1) = RW.poc m1 (left l)
-        l2TOd1 = MT.matches (domain m2) (domain d1) MT.FREE
+        l2TOd1 = MT.matches MT.FREE (domain m2) (domain d1)
         matchD = filter (\x -> m2 == compose x d1) l2TOd1
         (m1',r') = RW.po k (right l)
         m2' = compose (head matchD) r' --matchD is unique if exists
@@ -209,7 +209,7 @@ produceForbidOneNac nacInj inj l r n = let
 
         --  Check existence of h21: L2 -> D1 st. e1 . h21 = q21 . n2
         h21 = concatMap (\(h1,q21,k,r',m1,l') ->
-                  let hs = MT.matches (domain n) (codomain k) MT.FREE
+                  let hs = MT.matches MT.FREE (domain n) (codomain k) in
                       list = map (\h -> compose h r' == compose n q21) hs in
                        case elemIndex True list of
                            Just ind -> [(h1,q21,k,r',m1,l',hs!!ind)]

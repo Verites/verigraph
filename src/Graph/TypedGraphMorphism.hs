@@ -166,7 +166,7 @@ removeEdgeCodTyped e tgm =
       m   = mapping tgm
   in TypedGraphMorphism dom (GM.removeEdgeDom e cod) (GM.removeEdgeCod e m)
 
--- | Test if a @nac@ is partial injective (injective out of @q@)
+-- | Test if a @nac@ is partial injective (injective out of @m@)
 partialInjectiveTGM :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
 partialInjectiveTGM nac q = GM.partialInjectiveGM (getMapping nac) (getMapping q)
 
