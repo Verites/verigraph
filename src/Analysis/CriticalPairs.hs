@@ -141,7 +141,7 @@ deleteUseAux :: Eq t => GraphRule a b -> TypedGraphMorphism a b -> TypedGraphMor
 deleteUseAux l m1 m2 apply dom cod = map (\x -> delByLeft x && isInMatchRight x) (cod m1)
     where
         delByLeft = ruleDeletes l m1 apply dom
-        isInMatchRight n = Data.Maybe.isJust (apply (GM.inverse $ mapping m2) n)
+        isInMatchRight n = Data.Maybe.isJust (apply (GM.inverse $ mapping m2) n)-}
 
 ---- Produce Edge Delete Node
 
@@ -226,8 +226,6 @@ produceForbidOneNac nacInj inj l r n = let
         -- Check gluing condition for m2 and r
         filtM2 = filter (\(_,m1,m2) -> (if inj then monomorphism m2 else True)
                                     && satsGluingCond nacInj r m2) m1m2
-
-        --filtInj = filter (\(_,m1,m2) -> monomorphism m1 && monomorphism m2) filtM2
 
         idx = elemIndex n (nacs r)
 
