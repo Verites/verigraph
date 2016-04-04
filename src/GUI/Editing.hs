@@ -1,4 +1,4 @@
-{-# LANGUAGE TemplateHaskell #-} -- fclabels
+{-# LANGUAGE TemplateHaskell #-}
 
 {-
 module GUI.Editing (
@@ -17,24 +17,25 @@ module GUI.Editing (
     , stateToModel
     , modCurGraphState
     , getGraph
-    , getTypeGraph 
+    , getTypeGraph
     , TreeNode (..)
     ) where
 -}
 
 module GUI.Editing where
 
-    
-import qualified Graph.Graph as G
-import qualified Graph.GraphMorphism as GM
-import qualified Graph.GraphGrammar as GG
-import qualified Graph.GraphRule as GR
-import qualified Abstract.Morphism as M
-import qualified Abstract.Relation as R
-import Graphics.Rendering.Cairo (Render)
-import Graphics.UI.Gtk (Color, TreeStore, treeStoreNew, treeStoreInsert)
-import Data.Label -- fclabels
-import Data.List.Utils
+
+import qualified Abstract.Morphism        as M
+import qualified Abstract.Relation        as R
+import           Data.Label
+import           Data.List.Utils
+import qualified Graph.Graph              as G
+import qualified Graph.GraphGrammar       as GG
+import qualified Graph.GraphMorphism      as GM
+import qualified Graph.GraphRule          as GR
+import           Graphics.Rendering.Cairo (Render)
+import           Graphics.UI.Gtk          (Color, TreeStore, treeStoreInsert,
+                                           treeStoreNew)
 
 defGraphName = "g0"
 type Grammar = GG.GraphGrammar NodePayload EdgePayload
@@ -43,20 +44,20 @@ type GraphMorphism = GM.GraphMorphism NodePayload EdgePayload
 type Rule = GR.GraphRule NodePayload EdgePayload
 type Coords = (Double, Double)
 data NodePayload = NodePayload {
-      _nodeId :: G.NodeId
-    , _nodeLabel :: String
+      _nodeId     :: G.NodeId
+    , _nodeLabel  :: String
     , _nodeCoords :: Coords
     , _nodeRender :: GramState -> GraphEditState -> G.NodeId -> Render ()
-    , _nodeCheck :: Coords -> Coords -> Bool
+    , _nodeCheck  :: Coords -> Coords -> Bool
     }
 
 data EdgePayload = EdgePayload {
-      _edgeId :: G.EdgeId
+      _edgeId    :: G.EdgeId
     , _edgeLabel :: String
-    , _edgeSrc :: G.NodeId -- ^ source
-    , _edgeTgt :: G.NodeId -- ^ target
-    , _ctrlP1 :: Coords -- ^ center displacement vector
-    , _ctrlP2 :: Coords -- ^ center displacement vector
+    , _edgeSrc   :: G.NodeId -- ^ source
+    , _edgeTgt   :: G.NodeId -- ^ target
+    , _ctrlP1    :: Coords -- ^ center displacement vector
+    , _ctrlP2    :: Coords -- ^ center displacement vector
     , _edgeCheck :: Coords -> Coords -> Coords -> Coords -> Coords -> Maybe CtrlPoint -- ^ check function
     }
 
@@ -94,18 +95,18 @@ instance Show TreeNode where
 data GramState = GramState
     { _canvasMode       :: CanvasMode
     , _getInitialGraphs :: [(Key, GraphEditState)]
-    , _getTypeGraph    :: GraphEditState
+    , _getTypeGraph     :: GraphEditState
     , _getRules         :: [(Key, GraphEditState)]
     }
 
 data GraphEditState = GraphEditState
-    { _freeNodeId :: G.NodeId
-    , _freeEdgeId :: G.EdgeId
-    , _getStatus :: RowStatus
-    , _selObjects :: [Obj]
-    , _mouseMode :: MouseMode
-    , _refCoords :: Coords
-    , _getGraph :: Graph
+    { _freeNodeId      :: G.NodeId
+    , _freeEdgeId      :: G.EdgeId
+    , _getStatus       :: RowStatus
+    , _selObjects      :: [Obj]
+    , _mouseMode       :: MouseMode
+    , _refCoords       :: Coords
+    , _getGraph        :: Graph
     , _getNodeRelation :: R.Relation G.NodeId
     , _getEdgeRelation :: R.Relation G.EdgeId
     }
@@ -155,7 +156,7 @@ setCurGraphState gstate' state =
                    state
         TGraphMode ->
             set getTypeGraph gstate' state
-        otherwise -> state
+        _ -> state
 
 modCurGraphState :: (GraphEditState -> GraphEditState) -> GramState -> GramState
 modCurGraphState f state =
@@ -163,7 +164,7 @@ modCurGraphState f state =
         Just gstate' -> setCurGraphState gstate' state
         Nothing -> state
   where
-    gstate' = fmap f $ currentGraphState state
+    gstate' = f Control.Applicative.<$> currentGraphState state
 
 grammarToState :: Grammar -> GramState
 grammarToState gg =
@@ -187,20 +188,20 @@ grammarToState gg =
     tMaxNodeId = G.NodeId . length . G.nodes $ tGraph
     tMaxEdgeId = G.EdgeId . length . G.edges $ tGraph
 --    rules  = GG.rules gg
---    ruleToGraphEditState 
+--    ruleToGraphEditState
 --    rulesMap = foldr (\(s, r) acc -> M.insert s r acc) M.empty rules
 
 stateToModel :: GramState -> IO (TreeStore TreeNode)
 stateToModel state = do
     tree <- treeStoreNew [] :: IO (TreeStore TreeNode)
     treeStoreInsert tree [] 0 $ TNInitialGraph Active defGraphName
-    treeStoreInsert tree [] 2 $ TNTypeGraph
+    treeStoreInsert tree [] 2 TNTypeGraph
 --    treeStoreInsertTree tree [] 2 ruleTree
     return tree
   where
     rules = _getRules state
     tGraph = _getTypeGraph state
-    
+
 
 grammarToModel :: Grammar -> IO (TreeStore TreeNode)
 grammarToModel = stateToModel . grammarToState

@@ -11,10 +11,10 @@ module CLI.GlobalOptions
 import           Options.Applicative
 
 data GlobalOptions = GOpts
-  { injectiveMatchesOnly :: Bool
+  { injectiveMatchesOnly     :: Bool
   , injectiveNacSatisfaction :: Bool
-  , verbose :: Bool
-  , inputFile :: String
+  , verbose                  :: Bool
+  , inputFile                :: String
   }
 
 globalOpts :: Parser GlobalOptions

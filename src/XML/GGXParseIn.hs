@@ -10,11 +10,11 @@ module XML.GGXParseIn
  , parseRuleSequence
  ) where
 
-import Data.String.Utils (split)
-import Data.Tree.NTree.TypeDefs
-import Text.XML.HXT.Core
-import XML.ParsedTypes
-import XML.XMLUtilities
+import           Data.String.Utils        (split)
+import           Data.Tree.NTree.TypeDefs
+import           Text.XML.HXT.Core
+import           XML.ParsedTypes
+import           XML.XMLUtilities
 
 -- | Parse the name of the Grammar
 parseGGName :: ArrowXml cat => cat (NTree XNode) String
@@ -165,7 +165,7 @@ parseSubSequence = atTag "Subsequence" >>>
   proc sub -> do
     iterations <- getAttrValue "iterations" -< sub
     rules <- listA parseSequenceItem -< sub
-    let i = (read iterations)::Int
+    let i = read iterations::Int
     returnA -< (i, rules)
 
 parseSequenceItem :: ArrowXml cat => cat (NTree XNode) SequenceItem
@@ -173,7 +173,7 @@ parseSequenceItem = atTag "Item" >>>
   proc item -> do
     iterations <- getAttrValue "iterations" -< item
     ruleName <- getAttrValue "rule" -< item
-    let i = (read iterations)::Int
+    let i = read iterations::Int
     returnA -< (i, ruleName)
 
 clearId :: String -> String

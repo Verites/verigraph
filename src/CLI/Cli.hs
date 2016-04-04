@@ -2,21 +2,21 @@ import           Abstract.Morphism
 import           Abstract.Valid
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
-import           Control.Monad (when, forM_)
-import qualified Data.List as L
-import           Data.Matrix hiding ((<|>))
+import           Control.Monad             (forM_, when)
+import qualified Data.List                 as L
+import           Data.Matrix               hiding ((<|>))
 import           Graph.ConcurrentRules
-import qualified Graph.GraphGrammar as GG
-import qualified Graph.GraphMorphism as GM
+import qualified Graph.GraphGrammar        as GG
+import qualified Graph.GraphMorphism       as GM
 import           Graph.GraphRule
 import           Options.Applicative
-import qualified Text.XML.HXT.Core as HXT
-import qualified XML.GGXReader as XML
-import qualified XML.GGXWriter as GW
+import qualified Text.XML.HXT.Core         as HXT
+import qualified XML.GGXReader             as XML
+import qualified XML.GGXWriter             as GW
 
-import CLI.GlobalOptions
-import qualified CLI.CriticalPairAnalysis as CPA
-import qualified CLI.ConcurrentRules as CR
+import qualified CLI.ConcurrentRules       as CR
+import qualified CLI.CriticalPairAnalysis  as CPA
+import           CLI.GlobalOptions
 
 main :: IO ()
 main = execParser opts >>= execute

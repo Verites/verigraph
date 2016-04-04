@@ -7,14 +7,14 @@ module Analysis.GluingConditions
    satsIncEdges
  ) where
 
-import qualified Abstract.Morphism as M
-import qualified Analysis.Matches as MT
-import           Data.Maybe (mapMaybe)
-import           Graph.Graph (nodes,incidentEdges)
-import qualified Graph.GraphMorphism as GM
+import qualified Abstract.Morphism        as M
+import qualified Analysis.Matches         as MT
+import           Data.Maybe               (mapMaybe)
+import           Graph.Graph              (incidentEdges, nodes)
+import qualified Graph.GraphMorphism      as GM
 import           Graph.GraphRule
+import qualified Graph.Rewriting          as RW
 import           Graph.TypedGraphMorphism
-import qualified Graph.Rewriting as RW
 
 ---- Gluing Conditions
 
@@ -23,7 +23,7 @@ satsGluingCondBoth :: Bool ->
                       (GraphRule a b, TypedGraphMorphism a b) ->
                       (GraphRule a b, TypedGraphMorphism a b) ->
                       Bool
-satsGluingCondBoth nacInj (l,m1) (r,m2) = (satsGluingCond nacInj l m1) && (satsGluingCond nacInj r m2)
+satsGluingCondBoth nacInj (l,m1) (r,m2) = satsGluingCond nacInj l m1 && satsGluingCond nacInj r m2
 
 -- | Check gluing conditions for a match
 satsGluingCond :: Bool -> GraphRule a b -> TypedGraphMorphism a b -> Bool
@@ -54,11 +54,11 @@ satsDelItemsAux :: Eq t => GraphRule a b -> TypedGraphMorphism a b
 -- if just one element is incident in @n@, so it is not deleted and preserved at same match
 -- otherwise, is needed to verify if in the list of incident elements, if some is deleting @n@
 -- if two or more incident elements delete the element @n@ return False
-satsDelItemsAux rule m dom apply l n = (length incident <= 1) || (not someIsDel)
+satsDelItemsAux rule m dom apply l n = (length incident <= 1) || not someIsDel
     where
-        incident = [a | a <- dom m, apply (mapping m) a == (Just n)]
+        incident = [a | a <- dom m, apply (mapping m) a == Just n]
         ruleDel = apply (GM.inverse (mapping (left rule)))
-        someIsDel = any (==Nothing) (map ruleDel incident)
+        someIsDel = Nothing `elem` map ruleDel incident
 
 -- | Return True if do not exist dangling edges by the derivation of @r@ with match @m@
 satsIncEdges :: GraphRule a b -> TypedGraphMorphism a b -> Bool
@@ -80,11 +80,11 @@ ruleDeletes :: Eq t => GraphRule a b -> TypedGraphMorphism a b
                   -> (GM.GraphMorphism a b -> t -> Maybe t)
                   -> (TypedGraphMorphism a b -> [t])
                   -> t -> Bool
-ruleDeletes rule m apply list n = inL && (not isPreserv)
+ruleDeletes rule m apply list n = inL && not isPreserv
     where
-        inL = any (\x -> apply (mapping m) x == (Just n)) (list m)
+        inL = any (\x -> apply (mapping m) x == Just n) (list m)
         kToG = M.compose (left rule) m
-        isPreserv = any (\x -> apply (mapping kToG) x == (Just n)) (list kToG)
+        isPreserv = any (\x -> apply (mapping kToG) x == Just n) (list kToG)
 
 -- | Return True if all NACs of @rule@ are satified by @m@
 satsNacs :: Bool -> GraphRule a b -> TypedGraphMorphism a b -> Bool
@@ -98,7 +98,7 @@ satsNacs nacInj rule m = all (==True) (map (satsFun m) (nacs rule))
 satsOneNacInj :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
 satsOneNacInj m nac = all (==False) checkCompose
    where
-      checkCompose = map (\x -> (M.compose nac x) == m) matches
+      checkCompose = map (\x -> M.compose nac x == m) matches
       matches = MT.matches typeNac typeG MT.INJ
       typeNac = M.codomain nac
       typeG   = M.codomain m
@@ -112,5 +112,5 @@ satsOneNacPartInj :: TypedGraphMorphism a b -- ^ m
 satsOneNacPartInj m nac = all (==False) check
    where
       check = map (partialInjectiveTGM nac) checkCompose
-      checkCompose = filter (\x -> (M.compose nac x) == m) matches
+      checkCompose = filter (\x -> M.compose nac x == m) matches
       matches = MT.partInjMatches nac m --generating some non partial injective matches

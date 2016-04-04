@@ -1,4 +1,6 @@
-{-# LANGUAGE TypeFamilies, MultiParamTypeClasses, FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Abstract.Relation (
     -- * Types
@@ -30,16 +32,16 @@ module Abstract.Relation (
 ) where
 
 
-import Data.List as L
-import qualified Data.Map as Map 
+import           Data.List as L
+import qualified Data.Map  as Map
 
 -- datatype for endorelations on a
-data Relation a = 
-   Relation { 
+data Relation a =
+   Relation {
        domain   :: [a],
        codomain :: [a],
        mapping  :: Map.Map a [a]
-   } deriving (Ord,Show,Read)                
+   } deriving (Ord,Show,Read)
 
 instance (Eq a, Ord a) => Eq (Relation a) where
     r1 == r2 = sort(domain r1) == sort(domain r2) &&
@@ -71,9 +73,9 @@ orphans r = (L.\\) (codomain r) (image r)
 
 -- | Add a mapping between @x@ and @y@ to the relation. If @x@ already exists,
 -- @y@ is joined to the corresponding elements.
-update :: (Eq a, Ord a) => a -> a -> Relation a -> Relation a 
-update x y (Relation dom cod m) = 
-    Relation ([x] `union` dom) ([y] `union` cod) (Map.insertWith insertUniquely x [y] m)  
+update :: (Eq a, Ord a) => a -> a -> Relation a -> Relation a
+update x y (Relation dom cod m) =
+    Relation ([x] `union` dom) ([y] `union` cod) (Map.insertWith insertUniquely x [y] m)
   where
     insertUniquely y y'
         | null $ y `L.intersect` y' = y ++ y'
@@ -87,14 +89,14 @@ inverse (Relation dom cod m) =
     m' = Map.foldWithKey
         (\x ys m -> foldr (\y mp -> Map.insertWith (++) y [x] mp) m ys)
         Map.empty
-        m        
+        m
 -- | Return a list of all elements that @x@ gets mapped into.
 apply :: (Ord a) => Relation a -> a -> [a]
 apply (Relation dom cod m) x =
     case Map.lookup x m of
         Just l    -> l
-        otherwise -> []
-                          
+        _ -> []
+
 -- | Compose @r1@ and @r2@.
 compose :: (Ord a) => Relation a -> Relation a -> Relation a
 compose r1@(Relation dom cod m) r2@(Relation dom' cod' m') =
@@ -104,15 +106,14 @@ compose r1@(Relation dom cod m) r2@(Relation dom' cod' m') =
         foldr
             (\a m -> let im = do
                               b <- apply r1 a
-                              c <- apply r2 b
-                              return c
+                              apply r2 b
                      in Map.insert a im m)
             Map.empty
             $ defDomain r1
 
--- | Remove an element from the domain of the relation 
+-- | Remove an element from the domain of the relation
 removeDom :: (Eq a, Ord a) => a -> Relation a -> Relation a
-removeDom x r = 
+removeDom x r =
  let d = domain r
      c = codomain r
      m = mapping r
@@ -120,7 +121,7 @@ removeDom x r =
 
 -- | Remove an element from the codomain of the relation
 removeCod :: (Eq a,Ord a) => a -> Relation a -> Relation a
-removeCod x r = 
+removeCod x r =
  let d = domain r
      c = codomain r
      m = mapping r
@@ -128,11 +129,11 @@ removeCod x r =
 
 -- | Insert an element on the codomain of the relation
 insertCod :: (Eq a,Ord a) => a -> Relation a -> Relation a
-insertCod x r = 
+insertCod x r =
  let d = domain r
      c = codomain r
      m = mapping r
-  in Relation d (L.union [x] c) m
+  in Relation d ([x] `union` c) m
 
 -- | Test if @r@ is functional.
 functional :: (Ord a) => Relation a -> Bool
@@ -158,4 +159,4 @@ surjective = total . inverse
 total :: (Ord a) => Relation a -> Bool
 total r =
     sort (domain r) == sort (defDomain r)
-                              
+

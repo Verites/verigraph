@@ -5,17 +5,17 @@ module XML.GGXWriter
    writeGrammarFile
  ) where
 
-import qualified Abstract.Morphism as M
-import           Data.List.Utils (startswith)
-import           Data.Maybe
-import           Text.XML.HXT.Core
-import qualified Analysis.CriticalPairs as CP
+import qualified Abstract.Morphism         as M
+import qualified Analysis.CriticalPairs    as CP
 import qualified Analysis.CriticalSequence as CS
-import qualified Graph.Graph as G
+import           Data.List.Utils           (startswith)
+import           Data.Maybe
+import qualified Graph.Graph               as G
 import           Graph.GraphGrammar
-import qualified Graph.GraphMorphism as GM
-import qualified Graph.GraphRule as GR
+import qualified Graph.GraphMorphism       as GM
+import qualified Graph.GraphRule           as GR
 import           Graph.TypedGraphMorphism
+import           Text.XML.HXT.Core
 import           XML.GGXParseOut
 import           XML.ParsedTypes
 
@@ -72,7 +72,7 @@ writeCpx gg cp cs name names = mkelem "Document"
                         [sattr "version" "1.0"]
                         [mkelem "CriticalPairs"
                         [sattr "ID" "I0"]
-                          ((writeGts gg name names) : (writeCriticalPairAnalysis names (rules gg) parsedCP parsedCS))]
+                          (writeGts gg name names : writeCriticalPairAnalysis names (rules gg) parsedCP parsedCS)]
   where
     parsedCP = map parseCPGraph cp
     parsedCS = map parseCSGraph cs
@@ -95,11 +95,12 @@ writeCriticalPairAnalysis names rules cpOL csOL = writeCpaOptions : conflictCont
     nacNames = filter (\(x,y) -> startswith "NAC" x) names
 
 writeConflictContainer :: ArrowXml a => String -> [(String,String)] -> [(String,GR.GraphRule b c)] -> [Overlappings] ->  a XmlTree XmlTree
-writeConflictContainer kind nacNames rules overlappings = mkelem elem [sattr "kind" kind] $ (writeRuleSets rules ++ writeConflictMatrix nacNames rules overlappings)
-  where
-    elem = case kind of
-             "exclude"            -> "conflictContainer"
-             "trigger_dependency" -> "dependencyContainer"
+writeConflictContainer kind nacNames rules overlappings =
+  mkelem elem [sattr "kind" kind] (writeRuleSets rules ++ writeConflictMatrix nacNames rules overlappings)
+    where
+      elem = case kind of
+               "exclude"            -> "conflictContainer"
+               "trigger_dependency" -> "dependencyContainer"
 
 writeConflictMatrix :: ArrowXml a => [(String,String)] -> [(String,GR.GraphRule b c)] -> [Overlappings] -> [a XmlTree XmlTree]
 writeConflictMatrix nacNames rules overlappings =
@@ -116,8 +117,8 @@ getCPs nacNames (n1,n2,overlappings) = if null overlappings then false else true
   where
     r2 = sattr "R2" n2
     attribs = [sattr "caIndx" "-1:", sattr "duIndx" "-1:", sattr "pfIndx" "-1:-1:"]
-    false = mkelem "Rule" (r2 : (sattr "bool" "false") : attribs) []
-    true  = mkelem "Rule" (r2 : (sattr "bool" "true")  : attribs) $ writeOverlappings nacNames (n1,n2,overlappings)
+    false = mkelem "Rule" (r2 : sattr "bool" "false" : attribs) []
+    true  = mkelem "Rule" (r2 : sattr "bool" "true"  : attribs) $ writeOverlappings nacNames (n1,n2,overlappings)
 
 writeConflictFreeContainer :: ArrowXml a => [(String,GR.GraphRule b c)] -> [Overlappings] -> a XmlTree XmlTree
 writeConflictFreeContainer rules overlappings = mkelem "conflictFreeContainer" [] $ writeConflictFreeMatrix rules overlappings
@@ -134,15 +135,16 @@ writeConflictFreeMatrix rules overlappings =
                              else mkelem "Rule" [sattr "R2" n2, sattr "bool" "false"] []
 
 writeRuleSets :: ArrowXml a => [(String,GR.GraphRule b c)] -> [a XmlTree XmlTree]
-writeRuleSets rules = (mkelem "RuleSet" (somethingRules ++ rulesL) []) : (mkelem "RuleSet2" (somethingRules ++ rulesL) []) : []
-  where
-    somethingRules :: ArrowXml a => [a XmlTree XmlTree]
-    somethingRules = map (\(x,(ruleName,_)) -> sattr ("i" ++(show x)) ruleName) (zip [0..] rules)
-    rulesL :: ArrowXml a => [a XmlTree XmlTree]
-    rulesL = [sattr "size" (show $ length rules)]
+writeRuleSets rules =
+  [mkelem "RuleSet" (somethingRules ++ rulesL) [], mkelem "RuleSet2" (somethingRules ++ rulesL) []]
+    where
+      somethingRules :: ArrowXml a => [a XmlTree XmlTree]
+      somethingRules = map (\(x,(ruleName,_)) -> sattr ("i" ++ show x) ruleName) (zip [0..] rules)
+      rulesL :: ArrowXml a => [a XmlTree XmlTree]
+      rulesL = [sattr "size" (show $ length rules)]
 
 writeGrammar :: ArrowXml a => GraphGrammar b c -> [(String,String)] -> [a XmlTree XmlTree]
-writeGrammar grammar names = writeAggProperties ++ [writeTypes (typeGraph grammar) names] ++ [writeHostGraph] ++ (writeRules grammar nacNames)
+writeGrammar grammar names = writeAggProperties ++ [writeTypes (typeGraph grammar) names] ++ [writeHostGraph] ++ writeRules grammar nacNames
   where
     nacNames = filter (\(x,_) -> startswith "NAC" x) names
 
@@ -168,9 +170,7 @@ writeNodeType names (nodeId,nodeType) =
   mkelem "NodeType"
     [sattr "ID" nodeId, sattr "abstract" "false", sattr "name" name] []
   where
-    name = case lookup ("I"++nodeType) names of
-             Just n -> n
-             Nothing ->nodeType
+    name = fromMaybe nodeType (lookup ("I" ++ nodeType) names)
 
 writeEdgeTypes :: ArrowXml a => [(String,String)] -> [(String,String)] -> [a XmlTree XmlTree]
 writeEdgeTypes names = map (writeEdgeType names)
@@ -180,9 +180,7 @@ writeEdgeType names (edgeId,edgeType) =
   mkelem "EdgeType"
     [sattr "ID" edgeId, sattr "abstract" "false", sattr "name" name] []
   where
-    name = case lookup ("I"++edgeType) names of
-             Just n -> n
-             Nothing -> edgeType
+    name = fromMaybe edgeType (lookup ("I" ++ edgeType) names)
 
 writeGraph :: ArrowXml a => String -> String -> String -> [(String,String)]
               -> [(String, String, String, String)] -> a XmlTree XmlTree
@@ -195,7 +193,7 @@ writeGraphOverlaping :: ArrowXml a => String -> String -> String -> String -> [(
               -> [(String, String, String, String)] -> a XmlTree XmlTree
 writeGraphOverlaping graphId info kind name nodes edges =
   mkelem "Graph"
-    ((sattr "ID" graphId) : attrInfo ++ [sattr "kind" kind, sattr "name" name])
+    (sattr "ID" graphId : attrInfo ++ [sattr "kind" kind, sattr "name" name])
     (writeNodesConflict graphId nodes ++ writeEdgesConflict graphId edges)
   where
     attrInfo = if info == "" then [] else [sattr "info" ("NAC:"++info)]
@@ -223,11 +221,9 @@ writeProdForbid nacNames (n1, n2, ((_, nodes, edges), map1, map2, nacName, _), i
      writeMorphism (graphId idx, "LeftOf_"++n2) ("MorphOf_" ++ n2) "LHS" (mapAdjusted (graphId idx) map2)]
   where
     msg = "( "++show idx++ " ) " ++ "produce-forbid-conflict (NAC: "++nacCorrectName++")"
-    graphId idx = n1 ++ n2 ++ (show idx) ++ "_proforcon"
+    graphId idx = n1 ++ n2 ++ show idx ++ "_proforcon"
     mapAdjusted idx = map (\(x,y) -> (idx++"_"++x,y))
-    nacCorrectName = case lookup nacName nacNames of
-                       Just n -> n
-                       Nothing -> nacName
+    nacCorrectName = fromMaybe nacName (lookup nacName nacNames)
 
 writeProdNode :: ArrowXml a => Overlapping -> a XmlTree XmlTree
 writeProdNode (n1, n2, ((_, nodes, edges), map1, map2, _, _), idx) =
@@ -237,7 +233,7 @@ writeProdNode (n1, n2, ((_, nodes, edges), map1, map2, _, _), idx) =
      writeMorphism (graphId idx, "LeftOf_"++n2) ("MorphOf_" ++ n2) "LHS" (mapAdjusted (graphId idx) map2)]
   where
     msg = "( "++show idx++ " ) " ++ "produceEdge-deleteNode-conflict"
-    graphId idx = n1 ++ n2 ++ (show idx) ++ "_prodelcon"
+    graphId idx = n1 ++ n2 ++ show idx ++ "_prodelcon"
     mapAdjusted idx = map (\(x,y) -> (idx++"_"++x,y))
 
 writeDeleteUse :: ArrowXml a => Overlapping -> a XmlTree XmlTree
@@ -248,7 +244,7 @@ writeDeleteUse (n1, n2, ((_, nodes, edges), map1, map2, _, _), idx) =
      writeMorphism (graphId idx, "LeftOf_"++n2) ("MorphOf_" ++ n2) "LHS" (mapAdjusted (graphId idx) map2)]
   where
     msg = "( "++show idx++ " ) " ++ "delete-use-conflict"
-    graphId idx = n1 ++ n2 ++ (show idx) ++ "_delusecon"
+    graphId idx = n1 ++ n2 ++ show idx ++ "_delusecon"
     mapAdjusted idx = map (\(x,y) -> (idx++"_"++x,y))
 
 writeProdUse :: ArrowXml a => Overlapping -> a XmlTree XmlTree
@@ -259,7 +255,7 @@ writeProdUse (n1, n2, ((_, nodes, edges), map1, map2, _, _), idx) =
      writeMorphism (graphId idx, "LeftOf_"++n2) ("MorphOf_" ++ n2) "LHS" (mapAdjusted (graphId idx) map2)]
   where
     msg = "( "++show idx++ " ) " ++ "produce-use-dependency"
-    graphId idx = n1 ++ n2 ++ (show idx) ++ "_prousedep"
+    graphId idx = n1 ++ n2 ++ show idx ++ "_prousedep"
     mapAdjusted idx = map (\(x,y) -> (idx++"_"++x,y))
 
 writeDelDel :: ArrowXml a => [(String,String)] -> Overlapping -> a XmlTree XmlTree
@@ -270,11 +266,9 @@ writeDelDel nacNames (n1, n2, ((_, nodes, edges), map1, map2, nacName, _), idx) 
      writeMorphism (graphId idx, "LeftOf_"++n2) ("MorphOf_" ++ n2) "LHS" (mapAdjusted (graphId idx) map2)]
   where
     msg = "( "++show idx++ " ) " ++ "delete-forbid-conflict (NAC: "++nacCorrectName++")"
-    graphId idx = n1 ++ n2 ++ (show idx) ++ "_delfordep"
+    graphId idx = n1 ++ n2 ++ show idx ++ "_delfordep"
     mapAdjusted idx = map (\(x,y) -> (idx++"_"++x,y))
-    nacCorrectName = case lookup nacName nacNames of
-                       Just n -> n
-                       Nothing -> nacName
+    nacCorrectName = fromMaybe nacName (lookup nacName nacNames)
 
 writeHostGraph :: ArrowXml a => a XmlTree XmlTree
 writeHostGraph = writeGraph "Graph" "HOST" "Graph" [] []
@@ -340,10 +334,8 @@ writeRHS ruleName (_, nodes, edges)= writeGraph ("RightOf_" ++ ruleName) "RHS" (
 
 writeMorphism :: ArrowXml a => (String, String) -> String -> String -> [Mapping] -> a XmlTree XmlTree
 writeMorphism (tgtPrefix, srcPrefix) name source mappings =
-  mkelem "Morphism"
-  ([sattr "name" name] ++
-  (if source /= "" then [sattr "source" source] else []))
-  $ writeMappings (map (\(tgt,src) -> (tgtPrefix++"_"++tgt, srcPrefix++"_"++src)) mappings)
+  mkelem "Morphism" (sattr "name" name : [sattr "source" source | source /= ""])
+    $ writeMappings (map (\(tgt,src) -> (tgtPrefix++"_"++tgt, srcPrefix++"_"++src)) mappings)
 
 writeMappings :: ArrowXml a => [(String, String)] -> [a XmlTree XmlTree]
 writeMappings = map writeMapping
@@ -352,10 +344,11 @@ writeMapping :: ArrowXml a => (String, String) -> a XmlTree XmlTree
 writeMapping (image, orig) = mkelem "Mapping" [sattr "image" image, sattr "orig" orig] []
 
 writeConditions :: ArrowXml a => [(String, String)] -> String -> GR.GraphRule b c -> a XmlTree XmlTree
-writeConditions nacNames ruleName rule = mkelem "ApplCondition" [] $ map (writeNac ruleName) (zip (getNacs ruleName rule) ((map snd nacsRule)++nacsNoName))
-  where
-    nacsNoName = map show [158..]
-    nacsRule = filter (\(x,_) -> startswith ("NAC_"++ruleName) x) nacNames
+writeConditions nacNames ruleName rule =
+  mkelem "ApplCondition" [] $ map (writeNac ruleName) (zip (getNacs ruleName rule) (map snd nacsRule++nacsNoName))
+    where
+      nacsNoName = map show [158..]
+      nacsRule = filter (\(x,_) -> startswith ("NAC_"++ruleName) x) nacNames
 
 writeNac :: ArrowXml a => String -> ((ParsedTypedGraph, [Mapping]),String) -> a XmlTree XmlTree
 writeNac ruleName ((nacGraph@(nacId,_,_), nacMorphism),nacName) = mkelem "NAC" [] [writeNacGraph nacGraph, writeNacMorphism nacMorphism]

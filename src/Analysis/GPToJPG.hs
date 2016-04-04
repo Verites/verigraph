@@ -1,50 +1,25 @@
 module Analysis.GPToJPG (gind,write) where
 
-import Analysis.GraphPart
+import           Analysis.GraphPart
 
-import Data.Text.Lazy (Text, pack, unpack)
-import Data.Graph.Inductive (Gr, mkGraph)
-import Data.GraphViz (
-  GraphvizParams,
-  GlobalAttributes(
-    GraphAttrs,
-    NodeAttrs
-    ),
-  X11Color(Transparent, White),
-  nonClusteredParams,
-  globalAttributes,
-  fmtNode,
-  fmtEdge,
-  graphToDot
-  )
-import Data.GraphViz.Printing (toDot, renderDot)
-import Data.GraphViz.Attributes.Complete (
-  DPoint(DVal),
-  Attribute(
-    Margin,
-    Pad,
-    Center,
-    BgColor,
-    FontSize,
-    Shape,
-    Label,
-    ViewPort,
-    RankDir,
-    Style,
-    FillColor
-    ),
-  Shape(Circle, BoxShape),
-  Label(StrLabel),
-  ViewPort(VP),
-  RankDir(FromLeft),
-  StyleName(Filled),
-  StyleItem(SItem),
-  toWColor,
-  wVal,
-  hVal,
-  zVal,
-  focus
-  )
+import           Data.Graph.Inductive              (Gr, mkGraph)
+import           Data.GraphViz                     (GlobalAttributes (GraphAttrs, NodeAttrs),
+                                                    GraphvizParams, X11Color (Transparent, White),
+                                                    fmtEdge, fmtNode,
+                                                    globalAttributes,
+                                                    graphToDot,
+                                                    nonClusteredParams)
+import           Data.GraphViz.Attributes.Complete (Attribute (Margin, Pad, Center, BgColor, FontSize, Shape, Label, ViewPort, RankDir, Style, FillColor),
+                                                    DPoint (DVal),
+                                                    Label (StrLabel),
+                                                    RankDir (FromLeft),
+                                                    Shape (Circle, BoxShape),
+                                                    StyleItem (SItem),
+                                                    StyleName (Filled),
+                                                    ViewPort (VP), focus, hVal,
+                                                    toWColor, wVal, zVal)
+import           Data.GraphViz.Printing            (renderDot, toDot)
+import           Data.Text.Lazy                    (Text, pack, unpack)
 
 gnomeParams :: GraphvizParams n Text Text () Text
 gnomeParams = nonClusteredParams {
@@ -77,31 +52,39 @@ gind gr = getGraphs gr gr 0
 enter a = if a == "" then "" else "\n"
 
 mergeNameNodes :: [Node] -> String -> String
-mergeNameNodes []     a = a
-mergeNameNodes (x:xs) a = mergeNameNodes xs (a++(enter a)++(show $ nname x)++"{"++(ngsource x)++"}")
+mergeNameNodes xs a
+  = foldl
+      (\ a x ->
+         a ++ enter a ++ show (nname x) ++ "{" ++ ngsource x ++ "}")
+      a
+      xs
 
 getNodesPart :: [[Node]] -> [Node] -> Int -> (Int, Text)
-getNodesPart orig x  n = (getInd orig (head x) 0, pack ((mergeNameNodes x "")++"\nTipo: "++(show $ ntype $ head x)))
+getNodesPart orig x  n = (getInd orig (head x) 0, pack (mergeNameNodes x ""++"\nTipo: "++show (ntype $ head x)))
 
 getNodes :: [[Node]] -> [[Node]] -> Int -> [(Int, Text)]
 getNodes _    []     _ = []
-getNodes orig (x:xs) n = (getNodesPart orig x n):(getNodes orig xs (n+1))
+getNodes orig (x:xs) n = getNodesPart orig x n:getNodes orig xs (n+1)
 
 mergeNameEdges :: [Edge] -> String -> String
-mergeNameEdges []     a = a
-mergeNameEdges (x:xs) a = mergeNameEdges xs (a++(enter a)++(show $ label x)++"{"++(egsource x)++"}")
+mergeNameEdges xs a
+  = foldl
+      (\ a x ->
+         a ++ enter a ++ show (label x) ++ "{" ++ egsource x ++ "}")
+      a
+      xs
 
 getEdgesPart :: [[Node]] -> [Edge] -> (Int, Int, Text)
-getEdgesPart a x = ((getInd a (source $ head x) 0), (getInd a (target $ head x) 0), pack (mergeNameEdges x ""++"\nTipo: "++(show $ etype $ head x)))
+getEdgesPart a x = (getInd a (source $ head x) 0, getInd a (target $ head x) 0, pack (mergeNameEdges x ""++"\nTipo: "++show (etype $ head x)))
 
 getEdges :: [[Node]] -> [[Edge]] -> [(Int, Int, Text)]
 getEdges _ []     = []
-getEdges a (x:xs) = (getEdgesPart a x) : (getEdges a xs)
+getEdges a (x:xs) = getEdgesPart a x : getEdges a xs
 
 --recebe um grafo do GraphPart e transforma para o formato .dot
 getGraphs :: [EqClassGraph] -> [EqClassGraph] -> Int -> [Gr Text Text]
 getGraphs _  []     _ = []
-getGraphs gr (x:xs) n = (mkGraph (getNodes nods nods 1) edgs):(getGraphs gr xs (n+1))
+getGraphs gr (x:xs) n = mkGraph (getNodes nods nods 1) edgs:getGraphs gr xs (n+1)
     where
-       edgs = if (snd $ gr!!n) == [[]] then [] else (getEdges nods (snd $ gr!!n))
+       edgs = if snd (gr!!n) == [[]] then [] else getEdges nods (snd $ gr!!n)
        nods = fst $ gr!!n

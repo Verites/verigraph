@@ -6,10 +6,10 @@ module Graph.GraphGrammar (
     , typeGraph
 ) where
 
-import Graph.Graph (Graph)
-import Graph.GraphMorphism
-import Graph.GraphRule (GraphRule)
-import qualified Abstract.Morphism as M
+import qualified Abstract.Morphism   as M
+import           Graph.Graph         (Graph)
+import           Graph.GraphMorphism
+import           Graph.GraphRule     (GraphRule)
 
 data GraphGrammar a b = GraphGrammar {
                             getInitialGraph :: GraphMorphism a b

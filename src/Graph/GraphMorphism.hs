@@ -30,19 +30,19 @@ module Graph.GraphMorphism (
     , Graph.GraphMorphism.null
     , orphanNodes
     , orphanEdges
-    
+
     , partialInjectiveGM
     , newNodesTyped
     , newEdgesTyped
     ) where
 
+import           Abstract.Morphism
 import qualified Abstract.Relation as R
-import Graph.Graph as G
-import Graph.Graph (Graph)
-import Abstract.Morphism
-import Abstract.Valid
-import Data.Maybe (isNothing,fromJust,mapMaybe)
-import Data.List
+import           Abstract.Valid
+import           Data.List
+import           Data.Maybe        (fromJust, isNothing, mapMaybe)
+import           Graph.Graph       as G
+import           Graph.Graph       (Graph)
 
 data GraphMorphism a b = GraphMorphism {
                           getDomain    :: Graph a b
@@ -64,18 +64,18 @@ instance Show (GraphMorphism a b) where
 --        "Domain: " ++ (show $ getDomain m) ++
 --        "\nCodomain: " ++ (show $ getCodomain m) ++
         "\nNode mappings: \n" ++
-        concatMap (\n -> (show n) ++ " --> " ++ (show (applyNode m n)) ++ "\n")
+        concatMap (\n -> show n ++ " --> " ++ show (applyNode m n) ++ "\n")
                   (G.nodes $ getDomain m) ++
         "\nEdge mappings: \n" ++
-        concatMap (\e -> (show e) ++ " --> " ++ (show (applyEdge m e)) ++ " (from: " ++
-          (show (fromJust (G.sourceOf (domain m) e))) ++ " -> " ++
-          (show (fromJust (G.targetOf (domain m) e))) ++ ")\n")
+        concatMap (\e -> show e ++ " --> " ++ show (applyEdge m e) ++ " (from: " ++
+          show (fromJust (G.sourceOf (domain m) e)) ++ " -> " ++
+          show (fromJust (G.targetOf (domain m) e)) ++ ")\n")
                   (G.edges $ getDomain m)
 
 -- | Infinite list of new node instances of a typed graph
 newNodesTyped :: TypedGraph a b -> [G.NodeId]
 newNodesTyped tg = G.newNodes $ domain tg
- 
+
 -- | Infinite list of new edge instances of a typed graph
 newEdgesTyped :: TypedGraph a b -> [G.EdgeId]
 newEdgesTyped tg = G.newEdges $ domain tg
@@ -108,9 +108,9 @@ empty gA gB = GraphMorphism gA gB (R.empty (nodes gA) (nodes gB)) (R.empty (edge
 
 -- | Construct a graph morphism
 gmbuild :: Graph a b -> Graph a b -> [(Int,Int)] -> [(Int,Int)] -> GraphMorphism a b
-gmbuild gA gB n e = foldr (\(a,b) -> updateEdges a b) g (map (\(x,y) -> (EdgeId x,EdgeId y)) e)
+gmbuild gA gB n = foldr (uncurry updateEdges . (\(x,y) -> (EdgeId x,EdgeId y))) g
     where
-        g = foldr (\(a,b) -> updateNodes a b) (Graph.GraphMorphism.empty gA gB) (map (\(x,y) -> (NodeId x,NodeId y)) n)
+        g = foldr (uncurry updateNodes . (\(x,y) -> (NodeId x,NodeId y))) (Graph.GraphMorphism.empty gA gB) n
 
 -- | Construct a graph morphism based on domain, codomain and both node and
 -- edge relations.
@@ -156,7 +156,7 @@ updateEdges le ge morphism@(GraphMorphism l g nm em)
 
 -- | Remove an edge from the domain of the morphism
 removeEdgeDom :: G.EdgeId -> GraphMorphism a b -> GraphMorphism a b
-removeEdgeDom e gm = 
+removeEdgeDom e gm =
   let g1 = domain gm
       g2 = codomain gm
       nm = nodeRelation gm
@@ -166,7 +166,7 @@ removeEdgeDom e gm =
 
 -- | Remove an edge from the codomain of the morphism
 removeEdgeCod :: G.EdgeId -> GraphMorphism a b -> GraphMorphism a b
-removeEdgeCod e gm = 
+removeEdgeCod e gm =
   let g1 = domain gm
       g2 = codomain gm
       nm = nodeRelation gm
@@ -176,17 +176,17 @@ removeEdgeCod e gm =
 
 -- | Remove a node from the domain of the morphism
 removeNodeDom :: G.NodeId -> GraphMorphism a b -> GraphMorphism a b
-removeNodeDom n gm = 
+removeNodeDom n gm =
   let g1 = domain gm
       g2 = codomain gm
       nm = nodeRelation gm
       em = edgeRelation gm
-  in GraphMorphism (removeNode n g1) g2 (R.removeDom n nm) em 
+  in GraphMorphism (removeNode n g1) g2 (R.removeDom n nm) em
 
 
 -- | Remove a node from the codomain of the morphism
 removeNodeCod :: G.NodeId -> GraphMorphism a b -> GraphMorphism a b
-removeNodeCod n gm = 
+removeNodeCod n gm =
   let g1 = domain gm
       g2 = codomain gm
       nm = nodeRelation gm
@@ -196,7 +196,7 @@ removeNodeCod n gm =
 ---- Insertion of nodes in graph morphisms
 -- verificar se nao é o mesmo q já existe
 updateNodeRelationGM :: G.NodeId -> G.NodeId -> GraphMorphism a b -> GraphMorphism a b
-updateNodeRelationGM n1 n2 gm = 
+updateNodeRelationGM n1 n2 gm =
   let g1 = domain gm
       g2 = codomain gm
       nm = nodeRelation gm
@@ -206,17 +206,17 @@ updateNodeRelationGM n1 n2 gm =
 -- | This function adds an edge e1 (with source s1 and target t1) to the domain of the morphism, and associate it to e2
 --   It assumes s1, t1, e2 already exist, and that e1 does not exist.
 createEdgeDom :: G.EdgeId -> G.NodeId -> G.NodeId -> G.EdgeId -> GraphMorphism a b -> GraphMorphism a b
-createEdgeDom e1 s1 t1 e2 gm = 
+createEdgeDom e1 s1 t1 e2 gm =
   let g1 = domain gm
       g2 = codomain gm
       nm = nodeRelation gm
       em = edgeRelation gm
   in GraphMorphism (G.insertEdge e1 s1 t1 g1) g2 nm (R.update e1 e2 em)
 
--- | This function adds an edge e2 (with source s2 and target t2) to the codomain of the morphism. 
+-- | This function adds an edge e2 (with source s2 and target t2) to the codomain of the morphism.
 --   It assumes that s2,t2 exist, and that e2 does not exist
 createEdgeCod :: G.EdgeId -> G.NodeId -> G.NodeId -> GraphMorphism a b -> GraphMorphism a b
-createEdgeCod e2 s2 t2 gm = 
+createEdgeCod e2 s2 t2 gm =
   let g1 = domain gm
       g2 = codomain gm
       nm = nodeRelation gm
@@ -229,7 +229,7 @@ createEdgeCod e2 s2 t2 gm =
 
 -- | modifies a graph morphism, mapping edge e1 to edge e2. It assumes both edges already exist.
 updateEdgeRelationGM :: G.EdgeId -> G.EdgeId -> GraphMorphism a b -> GraphMorphism a b
-updateEdgeRelationGM e1 e2 gm = 
+updateEdgeRelationGM e1 e2 gm =
   let g1 = domain gm
       g2 = codomain gm
       nm = nodeRelation gm
@@ -241,13 +241,13 @@ partialInjectiveGM :: GraphMorphism a b -> GraphMorphism a b -> Bool
 partialInjectiveGM nac q = disjointCodomain && injective
   where
     nodes = mapMaybe (applyNode nac) (G.nodes (domain nac))
-    nodesI = (G.nodes (codomain nac)) \\ nodes
+    nodesI = G.nodes (codomain nac) \\ nodes
     codN = mapMaybe (applyNode q)
     edges = mapMaybe (applyEdge nac) (G.edges (domain nac))
-    edgesI = (G.edges (codomain nac)) \\ edges
+    edgesI = G.edges (codomain nac) \\ edges
     codE = mapMaybe (applyEdge q)
-    disjointNodes = Prelude.null (intersect (codN nodes) (codN nodesI))
-    disjointEdges = Prelude.null (intersect (codE edges) (codE edgesI))
+    disjointNodes = Prelude.null (codN nodes `intersect` codN nodesI)
+    disjointEdges = Prelude.null (codE edges `intersect` codE edgesI)
     disjointCodomain = disjointNodes && disjointEdges
     injective = R.partInjectiveR nodes (nodeRelation q) && R.partInjectiveR edges (edgeRelation q)
 

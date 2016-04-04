@@ -3,28 +3,29 @@ module Graph.ConcurrentRules
   maxConcurrentRule
 ) where
 
-import qualified Abstract.Morphism as M
-import qualified Analysis.CriticalPairs as CP
+import qualified Abstract.Morphism        as M
+import qualified Analysis.CriticalPairs   as CP
 import           Analysis.EpiPairs
 import           Data.List
+import           Data.Maybe               (isJust)
 import           Graph.GraphRule
 import           Graph.NacOperations
+import qualified Graph.Rewriting          as R
 import qualified Graph.TypedGraphMorphism as TGM
-import qualified Graph.Rewriting as R
 
 type EpiPair a b = (TGM.TypedGraphMorphism a b, TGM.TypedGraphMorphism a b)
 
 allConcurrentRules :: [GraphRule a b] -> [GraphRule a b]
 allConcurrentRules [] = []
-allConcurrentRules (x:[]) = [x]
-allConcurrentRules (x:xs) = concat $ (map (concurrentRules x)) $ allConcurrentRules xs
+allConcurrentRules [x] = [x]
+allConcurrentRules (x:xs) = concatMap (concurrentRules x) (allConcurrentRules xs)
 
 maxConcurrentRule :: [GraphRule a b] -> GraphRule a b
 maxConcurrentRule rules = head $ maxConcurrentRules rules
 
 maxConcurrentRules :: [GraphRule a b] -> [GraphRule a b]
 maxConcurrentRules [] = []
-maxConcurrentRules (x:[]) = [x]
+maxConcurrentRules [x] = [x]
 maxConcurrentRules (x:xs) = map (maxConcurrentRuleForLastPair x) (maxConcurrentRules xs)
 
 concurrentRules :: GraphRule a b -> GraphRule a b -> [GraphRule a b]
@@ -46,10 +47,10 @@ concurrentRuleForPair c n pair = graphRule l r (dmc ++ lp)
     pb = injectivePullback (snd pocC) (snd pocN)
     l = M.compose (fst pb) (snd poC)
     r = M.compose (snd pb) (snd poN)
-    dmc = concat $ map (downwardShift (fst poC)) (nacs c)
+    dmc = concatMap (downwardShift (fst poC)) (nacs c)
     p = graphRule (snd poC) (snd pocC) []
-    den = concat $ map (downwardShift (snd pair)) (nacs n)
-    lp = concat $ map (leftShiftNac p) den
+    den = concatMap (downwardShift (snd pair)) (nacs n)
+    lp = concatMap (leftShiftNac p) den
 
 injectivePullback :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b -> (TGM.TypedGraphMorphism a b, TGM.TypedGraphMorphism a b)
 injectivePullback f g = (delNodesFromF', delNodesFromG')
@@ -58,8 +59,8 @@ injectivePullback f g = (delNodesFromF', delNodesFromG')
     g' = TGM.invertTGM g
     nodes = TGM.nodesDomain f'
     edges = TGM.edgesDomain f'
-    knodes = filter (\n -> TGM.applyNodeTGM f' n /= Nothing && TGM.applyNodeTGM g' n /= Nothing) nodes
-    kedges = filter (\e -> TGM.applyEdgeTGM f' e /= Nothing && TGM.applyEdgeTGM g' e /= Nothing) edges
+    knodes = filter (\n -> isJust (TGM.applyNodeTGM f' n) && isJust (TGM.applyNodeTGM g' n)) nodes
+    kedges = filter (\e -> isJust (TGM.applyEdgeTGM f' e) && isJust (TGM.applyEdgeTGM g' e)) edges
     delNodes = nodes \\ knodes
     delEdges = edges \\ kedges
     delEdgesFromF' = foldr TGM.removeEdgeDomTyped f' delEdges
