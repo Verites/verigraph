@@ -4,8 +4,9 @@ module Graph.ConcurrentRules
 ) where
 
 import qualified Abstract.Morphism        as M
-import qualified Analysis.CriticalPairs   as CP
+import qualified Analysis.CriticalPairs
 import           Analysis.EpiPairs
+import           Analysis.GluingConditions
 import           Data.List
 import           Data.Maybe               (isJust)
 import           Graph.GraphRule
@@ -32,7 +33,10 @@ concurrentRules :: GraphRule a b -> GraphRule a b -> [GraphRule a b]
 concurrentRules c n = map (concurrentRuleForPair c n) $ pairs c n
 
 pairs :: GraphRule a b -> GraphRule a b -> [EpiPair a b]
-pairs c n = createPairs (right c) (left n)
+pairs c n = filteredPairs
+  where
+    allPairs  = createPairs (right c) (left n)
+    filteredPairs = filter (\(lp, rp) -> satsGluingCondWithoutNac (inverseWithoutNacs c) lp && satsGluingCondWithoutNac n rp) allPairs
 
 maxConcurrentRuleForLastPair :: GraphRule a b -> GraphRule a b -> GraphRule a b
 maxConcurrentRuleForLastPair c n = concurrentRuleForPair c n (last $ pairs c n)
