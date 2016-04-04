@@ -203,7 +203,8 @@ produceForbidOneNac nacInj inj l r n = let
                      (h1,q21,k,r',m1,l'))
                  poc --(h1,q21,k,r',m1,l')
 
-        filtM1 = filter (\(_,_,_,_,m1,_) -> satsNacs nacInj l m1) po
+        filtM1 = filter (\(_,_,_,_,m1,_) -> (if inj then monomorphism m1 else True)
+                                          && satsNacs nacInj l m1) po
 
         --  Check existence of h21: L2 -> D1 st. e1 . h21 = q21 . n2
         h21 = concatMap (\(h1,q21,k,r',m1,l') ->
@@ -223,10 +224,11 @@ produceForbidOneNac nacInj inj l r n = let
         --filtM2 = filter (\(m1,m2) -> satsNacs r m2) m1m2
 
         -- Check gluing condition for m2 and r
-        filtM2 = filter (\(_,m1,m2) -> satsGluingCond nacInj r m2) m1m2
+        filtM2 = filter (\(_,m1,m2) -> (if inj then monomorphism m2 else True)
+                                    && satsGluingCond nacInj r m2) m1m2
 
-        filtInj = filter (\(_,m1,m2) -> monomorphism m1 && monomorphism m2) filtM2
+        --filtInj = filter (\(_,m1,m2) -> monomorphism m1 && monomorphism m2) filtM2
 
         idx = elemIndex n (nacs r)
 
-        in map (\(h1,m1,m2) -> CriticalPair h1 m2 idx ProduceForbid) (if inj then filtInj else filtM2)
+        in map (\(h1,m1,m2) -> CriticalPair h1 m2 idx ProduceForbid) filtM2
