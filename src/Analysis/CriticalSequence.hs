@@ -58,19 +58,19 @@ criticalSequences nacInj inj l r = allProduceUse nacInj inj l r ++ allDeliverDel
 
 -- | Revert a Rule shifting NACs
 -- stay here until do not resolve cycle imports
-inverse :: GraphRule a b -> GraphRule a b
-inverse r = graphRule (right r) (left r) (concatMap (invNac r) (nacs r))
+inverse :: Bool -> GraphRule a b -> GraphRule a b
+inverse inj r = graphRule (right r) (left r) (concatMap (invNac inj r) (nacs r))
 
-invNac :: GraphRule a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
-invNac rule n = [RW.comatch n rule | satsGluingCondWithoutNac rule n]
+invNac :: Bool -> GraphRule a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
+invNac inj rule n = [RW.comatch n rule | satsGluingCondWithoutNac inj rule n]
 
 allProduceUse :: Bool -> Bool -> GraphRule a b -> GraphRule a b -> [CriticalSequence a b]
 allProduceUse nacInj i l r = map (\(m1,m2) -> CriticalSequence m1 m2 Nothing ProduceUse) prodUse
   where
-    invLeft = inverse l
+    invLeft = inverse i l
     pairs = createPairs (left invLeft) (left r)
     inj = filter (\(m1,m2) -> M.monomorphism m1 && M.monomorphism m2) pairs
-    gluing = filter (\(m1,m2) -> satsGluingCondBoth nacInj (invLeft,m1) (r,m2)) (if i then inj else pairs)
+    gluing = filter (\(m1,m2) -> satsGluingCondBoth nacInj i  (invLeft,m1) (r,m2)) (if i then inj else pairs)
     prodUse = filter (produceUse invLeft r) gluing
 
 produceUse :: GraphRule a b -> GraphRule a b
@@ -93,43 +93,36 @@ deliverDelete :: Bool -> Bool
                       -> TypedGraphMorphism a b
                       -> [CriticalSequence a b]
 deliverDelete nacInj inj l r n = let
-        inverseLeft = inverse l
+        inverseLeft = inverse inj l
 
         pairs = createPairs (right inverseLeft) n
 
         filtFun = if nacInj then M.monomorphism else partialInjectiveTGM n
-        filtPairs = filter (\(m1,q) -> (if inj then M.monomorphism m1 else True)
+        filtPairs = filter (\(m1,q) -> (not inj || M.monomorphism m1)
                                     && filtFun q
-                                    && satsGluingCond nacInj l m1
+                                    && satsGluingCond nacInj inj l m1
                                     ) pairs
 
-        poc = map (\(m1,q21) -> let (k,d1) = RW.poc m1 (right inverseLeft) in
-                                 (m1,q21,k,d1))
-                 filtPairs
+        dpo = map (\(m1,q21) ->
+                    let (k,d1) = RW.poc m1 (right inverseLeft)
+                        (m1',e1) = RW.po k (left inverseLeft) in
+                      (m1,q21,k,d1,m1',e1))
+                  filtPairs
 
-        po = map (\(m1,q21,k,d1) ->
-                   let (m1',e1) = RW.po k (left inverseLeft) in
-                     (m1,q21,k,d1,m1',e1))
-                 poc
-
-        filtM1 = filter (\(_,_,_,_,m1',_) -> satsNacs nacInj inverseLeft m1') po
+        filtM1 = filter (\(_,_,_,_,m1',_) -> satsNacs nacInj inverseLeft m1') dpo
 
         h21 = concatMap (\(m1,q21,k,d1,m1',e1) ->
-                  let hs = MT.matches (M.domain n) (M.codomain k) MT.FREE in
-                    if Prelude.null hs then [] else [(m1,q21,k,d1,m1',e1,hs)])
-                  filtM1
-
-        validH21 = concatMap (\(m1,q21,k,d1,m1',e1,hs) ->
-                       let list = map (\h -> M.compose h d1 == M.compose n q21) hs in
-                         case elemIndex True list of
+                  let hs = MT.matches (M.domain n) (M.codomain k) MT.FREE
+                      list = map (\h -> M.compose h d1 == M.compose n q21) hs in
+                    case elemIndex True list of
                            Just ind -> [(m1,q21,k,d1,m1',e1,hs!!ind)]
                            Nothing  -> [])
-                       h21
+                  filtM1
+        
+        m1m2 = map (\(_,_,_,_,m1',e1,l2d1) -> (m1', M.compose l2d1 e1)) h21
 
-        m1m2 = map (\(_,_,_,_,m1',e1,l2d1) -> (m1', M.compose l2d1 e1)) validH21
-
-        filtM2 = filter (\(m1,m2) -> (if inj then M.monomorphism m2 else True)
-                                   && satsGluingCond nacInj r m2) m1m2
+        filtM2 = filter (\(_,m2) -> (not inj || M.monomorphism m2)
+                                 && satsGluingCond nacInj inj r m2) m1m2
 
         idx = elemIndex n (nacs r)
 

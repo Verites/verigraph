@@ -22,7 +22,7 @@ downwardShift m n' = newNacs
 
 -- | Given a rule @L <-l- K -r-> R@ and a Right NAC morphism @n : R -> N@, it shifts the NAC over the rule resulting in a list of Left NAC morphisms of type @n': L -> N'@
 leftShiftNac :: GR.GraphRule a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
-leftShiftNac rule n = [RW.comatch n rule | satsGluingCondWithoutNac rule n]
+leftShiftNac rule n = [RW.comatch n rule | satsGluingCondWithoutNac False rule n]
 
 {- Some tests
 tg = G.build [1,2] [(1,1,2),(2,2,2),(3,2,2)]

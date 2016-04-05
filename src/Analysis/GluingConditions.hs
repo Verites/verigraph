@@ -4,6 +4,7 @@ module Analysis.GluingConditions
    satsGluingCondWithoutNac,
    satsNacs,
    ruleDeletes,
+   satsDelItems,
    satsIncEdges
  ) where
 
@@ -19,22 +20,25 @@ import           Graph.TypedGraphMorphism
 ---- Gluing Conditions
 
 -- | Check gluing conditions for a pair of matches
-satsGluingCondBoth :: Bool ->
+satsGluingCondBoth :: Bool -> Bool ->
                       (GraphRule a b, TypedGraphMorphism a b) ->
                       (GraphRule a b, TypedGraphMorphism a b) ->
                       Bool
-satsGluingCondBoth nacInj (l,m1) (r,m2) = satsGluingCond nacInj l m1 && satsGluingCond nacInj r m2
+satsGluingCondBoth nacInj inj (l,m1) (r,m2) = satsGluingCond nacInj inj l m1
+                                           && satsGluingCond nacInj inj r m2
 
 -- | Check gluing conditions for a match
-satsGluingCond :: Bool -> GraphRule a b -> TypedGraphMorphism a b -> Bool
-satsGluingCond nacInj rule m = identificationCondition && danglingCondition && nacsCondition
+satsGluingCond :: Bool -> Bool -> GraphRule a b -> TypedGraphMorphism a b -> Bool
+satsGluingCond nacInj inj rule m = (inj || identificationCondition)
+                                && danglingCondition
+                                && nacsCondition
     where
         identificationCondition = satsDelItems        rule m
         danglingCondition       = satsIncEdges        rule m
         nacsCondition           = satsNacs     nacInj rule m
 
-satsGluingCondWithoutNac :: GraphRule a b -> TypedGraphMorphism a b -> Bool
-satsGluingCondWithoutNac rule m = identificationCondition && danglingCondition
+satsGluingCondWithoutNac :: Bool -> GraphRule a b -> TypedGraphMorphism a b -> Bool
+satsGluingCondWithoutNac inj rule m = (inj || identificationCondition) && danglingCondition
     where
         identificationCondition = satsDelItems rule m
         danglingCondition       = satsIncEdges rule m
