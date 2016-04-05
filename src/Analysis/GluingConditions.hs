@@ -1,7 +1,7 @@
 module Analysis.GluingConditions
- ( satsGluingCond,
-   satsGluingCondBoth,
-   satsGluingCondWithoutNac,
+ ( satsGluingAndNacs,
+   satsGluingNacsBoth,
+   satsGluing,
    satsNacs,
    ruleDeletes,
    satsDelItems,
@@ -19,26 +19,23 @@ import           Graph.TypedGraphMorphism
 
 ---- Gluing Conditions
 
--- | Check gluing conditions for a pair of matches
-satsGluingCondBoth :: Bool -> Bool ->
+-- | Check gluing conditions and the NACs satisfability for a pair of matches
+satsGluingNacsBoth :: Bool -> Bool ->
                       (GraphRule a b, TypedGraphMorphism a b) ->
                       (GraphRule a b, TypedGraphMorphism a b) ->
                       Bool
-satsGluingCondBoth nacInj inj (l,m1) (r,m2) = satsGluingCond nacInj inj l m1
-                                           && satsGluingCond nacInj inj r m2
+satsGluingNacsBoth nacInj inj (l,m1) (r,m2) =
+  satsGluingAndNacs nacInj inj l m1 && satsGluingAndNacs nacInj inj r m2
 
--- | Check gluing conditions for a match
-satsGluingCond :: Bool -> Bool -> GraphRule a b -> TypedGraphMorphism a b -> Bool
-satsGluingCond nacInj inj rule m = (inj || identificationCondition)
-                                && danglingCondition
-                                && nacsCondition
+-- | Check gluing conditions and the NACs satisfability for a match
+satsGluingAndNacs :: Bool -> Bool -> GraphRule a b -> TypedGraphMorphism a b -> Bool
+satsGluingAndNacs nacInj inj rule m = gluingCond && nacsCondition
     where
-        identificationCondition = satsDelItems        rule m
-        danglingCondition       = satsIncEdges        rule m
-        nacsCondition           = satsNacs     nacInj rule m
+        gluingCond    = satsGluing inj rule m
+        nacsCondition = satsNacs nacInj rule m
 
-satsGluingCondWithoutNac :: Bool -> GraphRule a b -> TypedGraphMorphism a b -> Bool
-satsGluingCondWithoutNac inj rule m = (inj || identificationCondition) && danglingCondition
+satsGluing :: Bool -> GraphRule a b -> TypedGraphMorphism a b -> Bool
+satsGluing inj rule m = (inj || identificationCondition) && danglingCondition
     where
         identificationCondition = satsDelItems rule m
         danglingCondition       = satsIncEdges rule m

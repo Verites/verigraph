@@ -84,7 +84,7 @@ allDeleteUseAndDangling nacInj i l r = mapMaybe (deleteUseDangling l r) gluing
   where
     pairs = createPairs (left l) (left r)
     inj = filter checkMono pairs
-    gluing = filter (\(m1,m2) -> satsGluingCondBoth nacInj i (l,m1) (r,m2)) (if i then inj else pairs)
+    gluing = filter (\(m1,m2) -> satsGluingNacsBoth nacInj i (l,m1) (r,m2)) (if i then inj else pairs)
 
 deleteUseDangling :: GraphRule a b -> GraphRule a b
                   -> (TypedGraphMorphism a b,TypedGraphMorphism a b)
@@ -111,7 +111,7 @@ allDeleteUse nacInj i l r = map (\(m1,m2) -> CriticalPair m1 m2 Nothing DeleteUs
     where
         pairs = createPairs (left l) (left r)                                --get all jointly surjective pairs of L1 and L2
         inj = filter checkMono pairs
-        gluing = filter (\(m1,m2) -> satsGluingCondBoth nacInj i (l,m1) (r,m2)) (if i then inj else pairs) --filter the pairs that not satisfie gluing conditions of L and R
+        gluing = filter (\(m1,m2) -> satsGluingNacsBoth nacInj i (l,m1) (r,m2)) (if i then inj else pairs) --filter the pairs that not satisfie gluing conditions of L and R
         delUse = filter (deleteUse l r) gluing                               --select just the pairs that are in DeleteUse conflict
 
 -- | DeleteUse using a most aproximated algorithm of the categorial diagram
@@ -156,7 +156,7 @@ allProdEdgeDelNode nacInj i l r = map (\(m1,m2) -> CriticalPair m1 m2 Nothing Pr
     where
         pairs = createPairs (left l) (left r)
         inj = filter checkMono pairs --check injective
-        gluing = filter (\(m1,m2) -> satsGluingCondBoth nacInj i (l,m1) (r,m2)) (if i then inj else pairs) --filter the pairs that not satisfie gluing conditions of L and R
+        gluing = filter (\(m1,m2) -> satsGluingNacsBoth nacInj i (l,m1) (r,m2)) (if i then inj else pairs) --filter the pairs that not satisfie gluing conditions of L and R
         conflictPairs = filter (prodEdgeDelNode l r) gluing
 
 prodEdgeDelNode :: GraphRule a b -> GraphRule a b -> (TypedGraphMorphism a b,TypedGraphMorphism a b) -> Bool
@@ -196,7 +196,7 @@ produceForbidOneNac nacInj inj l r n = let
 
         -- Check gluing cond for (h1,r1). Construct PO complement D1.
         -- Construct PO K and abort if m1 not sats NACs l
-        filtPairs = filter (\(h1,_) -> satsGluingCond nacInj False inverseLeft h1) filtMono
+        filtPairs = filter (\(h1,_) -> satsGluingAndNacs nacInj False inverseLeft h1) filtMono
         
         dpo = map (\(h1,q21) ->
                     let (k,r') = RW.poc h1 (left inverseLeft)
@@ -230,7 +230,7 @@ produceForbidOneNac nacInj inj l r n = let
 
         -- Check gluing condition for m2 and r
         filtM2 = filter (\(_,_,m2) -> (not inj || monomorphism m2)
-                                    && satsGluingCond nacInj inj r m2) m1m2
+                                    && satsGluingAndNacs nacInj inj r m2) m1m2
 
         idx = elemIndex n (nacs r)
 

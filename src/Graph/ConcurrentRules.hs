@@ -36,7 +36,7 @@ pairs :: GraphRule a b -> GraphRule a b -> [EpiPair a b]
 pairs c n = filteredPairs
   where
     allPairs  = createPairs (right c) (left n)
-    filteredPairs = filter (\(lp, rp) -> satsGluingCondWithoutNac (inverseWithoutNacs c) lp && satsGluingCondWithoutNac n rp) allPairs
+    filteredPairs = filter (\(lp, rp) -> satsGluing False (inverseWithoutNacs c) lp && satsGluing False n rp) allPairs --this new flag on satsG... indicates injective match
 
 maxConcurrentRuleForLastPair :: GraphRule a b -> GraphRule a b -> GraphRule a b
 maxConcurrentRuleForLastPair c n = concurrentRuleForPair c n (last $ pairs c n)

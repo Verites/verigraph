@@ -62,7 +62,7 @@ inverse :: Bool -> GraphRule a b -> GraphRule a b
 inverse inj r = graphRule (right r) (left r) (concatMap (invNac inj r) (nacs r))
 
 invNac :: Bool -> GraphRule a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
-invNac inj rule n = [RW.comatch n rule | satsGluingCondWithoutNac inj rule n]
+invNac inj rule n = [RW.comatch n rule | satsGluing inj rule n]
 
 allProduceUse :: Bool -> Bool -> GraphRule a b -> GraphRule a b -> [CriticalSequence a b]
 allProduceUse nacInj i l r = map (\(m1,m2) -> CriticalSequence m1 m2 Nothing ProduceUse) prodUse
@@ -70,7 +70,7 @@ allProduceUse nacInj i l r = map (\(m1,m2) -> CriticalSequence m1 m2 Nothing Pro
     invLeft = inverse i l
     pairs = createPairs (left invLeft) (left r)
     inj = filter (\(m1,m2) -> M.monomorphism m1 && M.monomorphism m2) pairs
-    gluing = filter (\(m1,m2) -> satsGluingCondBoth nacInj i  (invLeft,m1) (r,m2)) (if i then inj else pairs)
+    gluing = filter (\(m1,m2) -> satsGluingNacsBoth nacInj i  (invLeft,m1) (r,m2)) (if i then inj else pairs)
     prodUse = filter (produceUse invLeft r) gluing
 
 produceUse :: GraphRule a b -> GraphRule a b
@@ -100,7 +100,7 @@ deliverDelete nacInj inj l r n = let
         filtFun = if nacInj then M.monomorphism else partialInjectiveTGM n
         filtPairs = filter (\(m1,q) -> (not inj || M.monomorphism m1)
                                     && filtFun q
-                                    && satsGluingCond nacInj inj l m1
+                                    && satsGluingAndNacs nacInj inj l m1
                                     ) pairs
 
         dpo = map (\(m1,q21) ->
@@ -122,7 +122,7 @@ deliverDelete nacInj inj l r n = let
         m1m2 = map (\(_,_,_,_,m1',e1,l2d1) -> (m1', M.compose l2d1 e1)) h21
 
         filtM2 = filter (\(_,m2) -> (not inj || M.monomorphism m2)
-                                 && satsGluingCond nacInj inj r m2) m1m2
+                                 && satsGluingAndNacs nacInj inj r m2) m1m2
 
         idx = elemIndex n (nacs r)
 
