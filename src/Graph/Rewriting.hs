@@ -16,18 +16,6 @@ import qualified Graph.GraphMorphism      as GM
 import qualified Graph.GraphRule          as GR
 import qualified Graph.TypedGraphMorphism as TGM
 
--- | Maps elements on themselves
-idMap :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b
-idMap m k = TGM.typedMorphism (Mor.codomain k) (Mor.codomain m) edgesUpdate
-    where
-        graphG = Mor.domain (Mor.codomain m)
-        graphK = Mor.domain (Mor.codomain k)
-        init = GM.empty graphK graphG
-        nodes = G.nodes graphK
-        edges = G.edges graphK
-        nodesUpdate = foldl (\gm n -> GM.updateNodes n n gm) init nodes
-        edgesUpdate = foldl (\gm e -> GM.updateEdges e e gm) nodesUpdate edges
-
 ------------ Pushout Complement -------------
 {-
    algorithm:
@@ -49,9 +37,7 @@ poc m l =
       k        = foldr TGM.removeNodeCodTyped                                          -- delete all edges, then all nodes from ml
                      (foldr TGM.removeEdgeCodTyped ml delEdges)
                          delNodes
-  in (k, idMap m k)
-
-
+  in (k, TGM.idMap k m)
 
 ------------ Pushout  ------------------------
 
@@ -99,7 +85,7 @@ po k r =
       kr''      = foldr (\(a,sa,ta,b,sb,tb,tp) tgm -> TGM.updateEdgeRelationTGM a b (TGM.createEdgeCodTGM b sb tb tp tgm) )
                         kr'
                         edgeTable'
-  in (kr'', idMap kr'' k)
+  in (kr'', TGM.idMap k kr'')
 
 
 -- | Pushout

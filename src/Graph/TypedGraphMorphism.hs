@@ -2,6 +2,7 @@
 
 module Graph.TypedGraphMorphism (
       TypedGraphMorphism
+    , idMap
     , partialInjectiveTGM
     , invertTGM
     , nodesDomain
@@ -168,6 +169,15 @@ removeEdgeCodTyped e tgm =
 -- | Test if a @nac@ is partial injective (injective out of @q@)
 partialInjectiveTGM :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
 partialInjectiveTGM nac q = GM.partialInjectiveGM (getMapping nac) (getMapping q)
+
+-- | Creates a TGM mapping the same elements of theirs codomains, from @tgm1@ to @tgm2@
+idMap :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+idMap tgm1@(TypedGraphMorphism _ cod1 _) tgm2@(TypedGraphMorphism _ cod2 _) =
+  typedMorphism cod1 cod2 edgesUpdate
+    where
+      init = GM.empty (M.domain cod1) (M.domain cod2)
+      nodesUpdate = foldr (\n -> GM.updateNodes n n) init (G.nodes (M.domain cod1))
+      edgesUpdate = foldr (\e -> GM.updateEdges e e) nodesUpdate (G.edges (M.domain cod1))
 
 instance Eq (TypedGraphMorphism a b) where
     (TypedGraphMorphism dom1 cod1 m1) == (TypedGraphMorphism dom2 cod2 m2) =
