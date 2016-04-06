@@ -1,56 +1,39 @@
 module Analysis.GraphPart (
-   DelType (..),
    Node (..),
    Edge (..),
    Graph (..),
-   EqClassGraph (..),
    EqClassGraphMap (..),
    getListNode,
-   getInd,
-   nRight,
-   nLeft,
-   eRight,
-   eLeft,
    genEqClass
    ) where
 
 import           Data.List
 
-data DelType = Undefined | Not | Right | Left | Both deriving (Eq, Show)
-
 data Node = Node {
     ntype    :: Int,
     nname    :: Int,
-    ngsource :: String, --"Left" xor "Right"
-    ndel     :: DelType
+    ngsource :: String --"Left" xor "Right"
     }
 
-nRight x = ngsource x == "Right"
-nLeft x = ngsource x == "Left"
-
 instance Eq Node where
-  (Node t1 n1 s1 d1) == (Node t2 n2 s2 d2) =
+  (Node t1 n1 s1) == (Node t2 n2 s2) =
      t1 == t2 &&
      n1 == n2 &&
      s1 == s2
 
 instance Show Node where
-  show (Node a b c _) = show b ++ ":" ++ show a ++ ":" ++ c
+  show (Node a b c) = show b ++ ":" ++ show a ++ ":" ++ c
 
 data Edge = Edge {
     etype    :: Int,
     label    :: Int,
     source   :: Node, --do not access delType from here
     target   :: Node, --do not access delType from here
-    egsource :: String, --"Left" xor "Right"
-    edel     :: DelType
+    egsource :: String --"Left" xor "Right"
     }
 
-eRight x = egsource x == "Right"
-eLeft x = egsource x == "Left"
-
 instance Eq Edge where
-  (Edge t1 l1 sr1 tg1 s1 d1) == (Edge t2 l2 sr2 tg2 s2 d2) =
+  (Edge t1 l1 sr1 tg1 s1) == (Edge t2 l2 sr2 tg2 s2) =
      t1 == t2 &&
      l1 == l2 &&
      sr1 == sr2 &&
@@ -58,7 +41,7 @@ instance Eq Edge where
      s1 == s2
 
 instance Show Edge where
-  show (Edge t a (Node b1 b2 b3 _) (Node c1 c2 c3 _) s _) = show a ++ ":" ++ show t ++ "(" ++ show b2 ++ "->" ++ show c2 ++ ")" ++ s
+  show (Edge t a (Node b1 b2 b3) (Node c1 c2 c3) s) = show a ++ ":" ++ show t ++ "(" ++ show b2 ++ "->" ++ show c2 ++ ")" ++ s
 
 data Graph = Graph {
     nodes :: [Node],
@@ -121,7 +104,7 @@ findTypeList (x:xs) t = if ntype (head $ head x) == t then x else findTypeList x
 
 --critério para o agrupamento dos edges
 checkST :: [[[Node]]] -> Edge -> Edge -> Bool
-checkST a (Edge type1 _ s1 t1 _ _) (Edge type2 _ s2 t2 _ _) = exp1 && exp2 && exp3
+checkST a (Edge type1 _ s1 t1 _) (Edge type2 _ s2 t2 _) = exp1 && exp2 && exp3
     where
         exp1 = type1 == type2
         exp2 = ntype s1 == ntype s2 && ntype t1 == ntype t2
@@ -131,7 +114,7 @@ checkST a (Edge type1 _ s1 t1 _ _) (Edge type2 _ s2 t2 _ _) = exp1 && exp2 && ex
 
 --critério para o agrupamento dos nodes
 checkNode :: Node -> Node -> Bool
-checkNode (Node a1 _ _ _) (Node a2 _ _ _) = a1 == a2
+checkNode (Node a1 _ _) (Node a2 _ _) = a1 == a2
 
 --função auxiliar que adiciona o elemento na sua classe de equivalência
 insr :: (a -> a -> Bool) -> [[a]] -> a -> [[a]]
