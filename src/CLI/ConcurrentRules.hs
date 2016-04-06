@@ -25,9 +25,12 @@ import qualified XML.GGXWriter             as GW
 data CROpts = CROpts
   { outputFile     :: String
   , generationType :: CRGenerationType
+  , epiPairsType   :: CREpiPairsType
   }
 
 data CRGenerationType = MaxConcurrentRule | AllConcurrentRules
+
+data CREpiPairsType = AllEpiPairs | OnlyInjectiveEpiPairs deriving (Eq)
 
 crOpts :: Parser CROpts
 crOpts = CROpts
@@ -38,6 +41,7 @@ crOpts = CROpts
     <> action "file"
     <> help "GGX file that will be written, adding the concurrent rules to the original graph grammar")
   <*> crGenerationType
+  <*> crEpiPairsType
 
 crGenerationType :: Parser CRGenerationType
 crGenerationType =
@@ -47,6 +51,19 @@ crGenerationType =
   <|> flag' AllConcurrentRules
         ( long "all-rules"
           <> help "Generate concurrent rules for all possible overlaps between comatch and match")
+
+crEpiPairsType :: Parser CREpiPairsType
+crEpiPairsType =
+      flag' AllEpiPairs
+        ( long "all-epairs"
+          <> help "Calculate rule(s) for all types of EpiPairs")
+  <|> flag' OnlyInjectiveEpiPairs
+        ( long "injective-epairs"
+          <> help "Restrict to use only injective EpiPairs")
+  <|> pure OnlyInjectiveEpiPairs
+
+injectiveEpiPairsOnly :: CREpiPairsType -> Bool
+injectiveEpiPairsOnly flag = flag `elem` [OnlyInjectiveEpiPairs]
 
 runConcurrentRules :: GlobalOptions -> CROpts -> IO ()
 runConcurrentRules globalOpts opts = do
@@ -59,13 +76,14 @@ runConcurrentRules globalOpts opts = do
     let makeConcurrentRules = case generationType opts of
                                 MaxConcurrentRule -> makeMaxConcurrentRule
                                 AllConcurrentRules -> makeAllConcurrentRules
-        newRules = concatMap makeConcurrentRules sequences
+        injectiveOnly = injectiveEpiPairsOnly $ epiPairsType opts
+        newRules = concatMap (makeConcurrentRules injectiveOnly) sequences
         gg' = GG.graphGrammar (GG.initialGraph gg) (GG.rules gg ++ newRules)
     GW.writeGrammarFile gg' ggName names (outputFile opts)
 
-makeAllConcurrentRules :: (String, [GraphRule a b]) -> [(String, GraphRule a b)]
-makeAllConcurrentRules (baseName, sequence) = zipWith makeName (allConcurrentRules sequence) [0..]
+makeAllConcurrentRules :: Bool -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
+makeAllConcurrentRules injectiveOnly (baseName, sequence) = zipWith makeName (allConcurrentRules injectiveOnly sequence) [0..]
   where makeName rule idx = (baseName++"_"++show idx, rule)
 
-makeMaxConcurrentRule :: (String, [GraphRule a b]) -> [(String, GraphRule a b)]
-makeMaxConcurrentRule (baseName, sequence) = [(baseName, maxConcurrentRule sequence)]
+makeMaxConcurrentRule :: Bool -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
+makeMaxConcurrentRule injectiveOnly (baseName, sequence) = [(baseName, maxConcurrentRule injectiveOnly sequence)]
