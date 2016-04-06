@@ -12,17 +12,17 @@ import Graph.GraphRule
 import Data.List
 import Data.Maybe
 
+
 -- | Data type definition to choose specifics propertys of a morphism
 --
 --     [@ALL@]  Finds all possible matches
 --     [@MONO@] Finds only monomorphics matches
 --     [@EPI@]  Finds only epimorphics matches
 --     [@ISO@]  Finds only isomorphics matches
-
 data PROP = ALL | MONO | EPI | ISO
 
---ALIAS OF MOST USED FUNCTIONS --
 
+--ALIAS OF MOST USED FUNCTIONS --
 nodes g = G.nodes g --NODES OF A GRAPH
 edges g = G.edges g --EDGES OF A GRAPH
 
@@ -41,7 +41,6 @@ orphanNodes = TGM.orphanNodesTyped --GET ORPHANS NODES OF A TYPEDGRAPHMORPHISM
 orphanEdges = TGM.orphanEdgesTyped --GET ORPHANS EDGES OF A TYPEDGRAPHMORPHISM
 
 
-
 --  updates a typed graph morphism, mapping node n1 to node n2. It assumes both nodes already exist.
 updateNodeRelation :: G.NodeId -> G.NodeId -> TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b
 updateNodeRelation n1 n2 tgm =
@@ -58,12 +57,10 @@ updateEdgeRelation e1 e2 tgm =
       m   = mapping tgm
   in TGM.typedMorphism dom cod (GM.updateEdges e1 e2 m)
 
-
 ---------------------------------------------------------------------------------
 -- | Finds matches __/q/__ .
 --
 --   Partially injective. (Injective out of __/m/__)
-
 partInjMatches :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b -> [TGM.TypedGraphMorphism a b]
 partInjMatches n m =
   do
@@ -91,20 +88,26 @@ partInjMatches n m =
           
       composeEdgeMapping :: TGM.TypedGraphMorphism a b -> G.EdgeId
                          -> TGM.TypedGraphMorphism a b
-      composeEdgeMapping tgm edge = updateEdgeRelation x y tgm
+      composeEdgeMapping tgm edge =
+        if isNothing x || isNothing y
+        then tgm
+        else updateEdgeRelation (fromJust x) (fromJust y) tgm
         where
-          Just x = edgeMapping n edge
-          Just y = edgeMapping m edge
+          x = edgeMapping n edge
+          y = edgeMapping m edge
 
       --BUILD NODES MAPPING OF @q@
       q''    = foldl composeNodeMapping q' nodesL
     
       composeNodeMapping :: TGM.TypedGraphMorphism a b -> G.NodeId
                          -> TGM.TypedGraphMorphism a b
-      composeNodeMapping tgm node = updateNodeRelation x y tgm
+      composeNodeMapping tgm node =
+        if isNothing x || isNothing y
+        then tgm
+        else updateNodeRelation (fromJust x) (fromJust y) tgm
         where
-          Just x = nodeMapping n node
-          Just y = nodeMapping m node
+          x = nodeMapping n node
+          y = nodeMapping m node
 
       --DELETE FROM QUEUE ALREADY MAPPED SOURCE NODES (NODES FROM NAC)
       nodesSrc = filter (notMappedNodes q'') (nodes $ domain domQ)
@@ -128,7 +131,6 @@ partInjMatches n m =
 -- | Finds matches __/m/__
 --
 --   Injective, surjective, isomorphic or all possible matches
-
 matches :: PROP -> GM.GraphMorphism a b-> GM.GraphMorphism a b-> [TGM.TypedGraphMorphism a b]
 matches prop graph1 graph2 = buildMappings prop nodesSrc edgesSrc nodesTgt edgesTgt tgm
   where
@@ -143,6 +145,10 @@ matches prop graph1 graph2 = buildMappings prop nodesSrc edgesSrc nodesTgt edges
     tgm = TGM.typedMorphism d c m
 
 ---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+---------------------------------------------------------------------------------
+
 buildMappings :: PROP -> [G.NodeId] -> [G.EdgeId] -> [G.NodeId] -> [G.EdgeId]
               -> TGM.TypedGraphMorphism a b -> [TGM.TypedGraphMorphism a b]
 
@@ -161,6 +167,8 @@ buildMappings prop [] [] nodesT edgesT tgm =
 
         epimorphism | null (orphanNodes tgm) && null (orphanEdges tgm) = return tgm
                     | otherwise = []
+
+---------------------------------------------------------------------------------
 
 --IF HAS FREE NODES, MAP ALL FREE NODES TO ALL DESTINATION NODES
 buildMappings prop nodes@(h:t) [] nodesT edgesT tgm
@@ -189,6 +197,8 @@ buildMappings prop nodes@(h:t) [] nodesT edgesT tgm
             --REMOVE THE TARGET NODES MAPPED (INJECTIVE MODULE) 
             nodesT'   = delete y nodesT
         Nothing  -> []
+
+---------------------------------------------------------------------------------
 
 --IF HAS FREE NODES, AND FREE EDGES, VERIFY THE CURRENT STATUS
 buildMappings prop nodes edges@(h:t) nodesT edgesT tgm
@@ -232,6 +242,7 @@ buildMappings prop nodes edges@(h:t) nodesT edgesT tgm
             ISO  -> monomorphism
         Nothing  -> []
 
+---------------------------------------------------------------------------------
 
 -- VALIDATION OF A NODE MAPPING
 -- VERIFY IF THE TYPES OF n1 AND n2 ARE COMPATIBLE AND UPDATE MAPPING
@@ -246,7 +257,9 @@ updateNodesMapping n1 n2 tgm =
        (isNothing (nodeMapping tgm n1) || (nodeMapping tgm n1 == Just n2))
       then Just $ TGM.typedMorphism d c (GM.updateNodes n1 n2 m)
       else Nothing
-  
+
+---------------------------------------------------------------------------------
+
 -- VALIDATION OF A EDGE MAPPING
 -- VERIFY IF THE TYPES OF e1 AND e2 ARE COMPATIBLE AND UPDATE MAPPING
 updateEdgesMapping :: G.EdgeId -> G.EdgeId -> TGM.TypedGraphMorphism a b -> Maybe (TGM.TypedGraphMorphism a b)
@@ -260,6 +273,10 @@ updateEdgesMapping e1 e2 tgm =
        (isNothing (edgeMapping tgm e1) || (edgeMapping tgm e1 == Just e2))
       then Just $ TGM.typedMorphism d c (GM.updateEdges e1 e2 m)
       else Nothing
+
+
+
+
 
 
 

@@ -112,7 +112,7 @@ deliverDelete nacInj inj l r n = let
         filtM1 = filter (\(_,_,_,_,m1',_) -> satsNacs nacInj inverseLeft m1') dpo
 
         h21 = concatMap (\(m1,q21,k,d1,m1',e1) ->
-                  let hs = MT.matches MT.ALL (M.domain n) (M.codomain k) in
+                  let hs = MT.matches MT.ALL (M.domain n) (M.codomain k)
                       list = map (\h -> M.compose h d1 == M.compose n q21) hs in
                     case elemIndex True list of
                            Just ind -> [(m1,q21,k,d1,m1',e1,hs!!ind)]

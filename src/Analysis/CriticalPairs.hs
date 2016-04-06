@@ -209,7 +209,7 @@ produceForbidOneNac nacInj inj l r n = let
 
         --  Check existence of h21: L2 -> D1 st. e1 . h21 = q21 . n2
         h21 = concatMap (\(h1,q21,k,r',m1,l') ->
-                  let hs = MT.matches MT.ALL (domain n) (codomain k) in
+                  let hs = MT.matches MT.ALL (domain n) (codomain k)
                       list = map (\h -> compose h r' == compose n q21) hs in
                        case elemIndex True list of
                            Just ind -> [(h1,q21,k,r',m1,l',hs!!ind)]
