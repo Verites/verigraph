@@ -100,7 +100,7 @@ satsOneNacInj :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
 satsOneNacInj m nac = all (==False) checkCompose
    where
       checkCompose = map (\x -> M.compose nac x == m) matches
-      matches = MT.matches MT.INJ typeNac typeG 
+      matches = MT.matches MT.MONO typeNac typeG 
       typeNac = M.codomain nac
       typeG   = M.codomain m
 
