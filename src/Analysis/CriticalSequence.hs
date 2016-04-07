@@ -16,7 +16,7 @@ import           Analysis.GluingConditions
 import qualified Analysis.Matches          as MT
 import           Data.List                 (elemIndex)
 import           Graph.GraphRule
-import           Graph.InvertNac
+import           Graph.NacOperations
 import qualified Graph.Rewriting           as RW
 import           Graph.TypedGraphMorphism
 
@@ -79,13 +79,13 @@ allDeliverDelete :: Bool -> Bool
                  -> GraphRule a b
                  -> GraphRule a b
                  -> [CriticalSequence a b]
-allDeliverDelete nacInj inj l r = concatMap (deliverDelete nacInj inj l r) (nacs r)
+allDeliverDelete nacInj inj l r = concatMap (deliverDelete nacInj inj l r) (zip (nacs r) [0..])
 
 deliverDelete :: Bool -> Bool
                       -> GraphRule a b -> GraphRule a b
-                      -> TypedGraphMorphism a b
+                      -> (TypedGraphMorphism a b, Int)
                       -> [CriticalSequence a b]
-deliverDelete nacInj inj l r n = let
+deliverDelete nacInj inj l r (n,idx) = let
         inverseLeft = inverse inj l
 
         pairs = createPairs (right inverseLeft) n
@@ -117,6 +117,4 @@ deliverDelete nacInj inj l r n = let
         filtM2 = filter (\(_,m2) -> (not inj || M.monomorphism m2)
                                  && satsGluingAndNacs nacInj inj r m2) m1m2
 
-        idx = elemIndex n (nacs r)
-
-        in map (\(m1,m2) -> CriticalSequence m1 m2 idx DeliverDelete) filtM2
+        in map (\(m1,m2) -> CriticalSequence m1 m2 (Just idx) DeliverDelete) filtM2

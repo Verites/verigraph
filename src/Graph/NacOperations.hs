@@ -1,16 +1,24 @@
 module Graph.NacOperations
-( downwardShift
-, leftShiftNac
+(  downwardShift
+ , leftShiftNac
+ , inverse
 ) where
 
 import           Abstract.Morphism
 import           Analysis.CriticalPairs
 import           Analysis.EpiPairs
 import           Analysis.GluingConditions
-import qualified Graph.GraphRule           as GR
-import           Graph.InvertNac
+import           Graph.GraphRule
 import qualified Graph.Rewriting           as RW
 import           Graph.TypedGraphMorphism
+
+-- | Revert a Rule shifting NACs
+inverse :: Bool -> GraphRule a b -> GraphRule a b
+inverse inj r = graphRule (right r) (left r) (concatMap (leftShiftNac inj r) (nacs r))
+
+-- | Given a rule @L <-l- K -r-> R@ and a Right NAC morphism @n : R -> N@, it shifts the NAC over the rule resulting in a list of Left NAC morphisms of type @n': L -> N'@
+leftShiftNac :: Bool -> GraphRule a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
+leftShiftNac inj rule n = [RW.comatch n rule | satsGluing inj (left rule) n]
 
 -- | Given a morphism @m : A -> B@ and a NAC @n : A -> N@, it shifts the NAC over the morphism resulting in a morphism list of type @n' : B -> N'@
 downwardShift :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
@@ -20,7 +28,6 @@ downwardShift m n' = newNacs
     injectiveMorphisms = filter (\(e,_) -> monomorphism e) pairs
     validPO = filter (\(e,n) -> compose n' e == compose m n) injectiveMorphisms
     newNacs = map snd validPO
-
 
 
 {- Some tests
