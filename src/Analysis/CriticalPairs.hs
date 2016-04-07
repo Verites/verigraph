@@ -96,7 +96,7 @@ deleteUseDangling l r (m1,m2) = cp
     matchD = filter (\x -> m2 == compose x l') lTOd
     (m1',r') = RW.po k (right l)
     m2' = compose (head matchD) r'
-    dang = not (satsIncEdges r m2')
+    dang = not (satsIncEdges (left r) m2')
     cp = case (null matchD, dang) of
            (True,_)     -> Just (CriticalPair m1 m2 Nothing DeleteUse)
            (False,True) -> Just (CriticalPair m1 m2 Nothing ProduceEdgeDeleteNode)
@@ -161,7 +161,7 @@ allProdEdgeDelNode nacInj i l r = map (\(m1,m2) -> CriticalPair m1 m2 Nothing Pr
 
 prodEdgeDelNode :: GraphRule a b -> GraphRule a b -> (TypedGraphMorphism a b,TypedGraphMorphism a b) -> Bool
 --prodEdgeDelNode l r (m1,m2) = (not (null matchD)) && (not (satsIncEdges r m2') || not (satsDelItems r m2'))
-prodEdgeDelNode l r (m1,m2) = not (null matchD) && not (satsIncEdges r m2')
+prodEdgeDelNode l r (m1,m2) = not (null matchD) && not (satsIncEdges (left r) m2')
     where
         (k,d1) = RW.poc m1 (left l)
         l2TOd1 = MT.matches MT.ALL (domain m2) (domain d1)

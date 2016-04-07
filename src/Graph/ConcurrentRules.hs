@@ -44,7 +44,7 @@ pairs :: Bool -> GraphRule a b -> GraphRule a b -> [EpiPair a b]
 pairs isInjective c n = if isInjective then injectivePairs else validDpoPairs
   where
     allPairs  = createPairs (right c) (left n)
-    validDpoPairs = filter (\(lp, rp) -> satsGluing True (inverseWithoutNacs c) lp && satsGluing True n rp) allPairs
+    validDpoPairs = filter (\(lp, rp) -> satsGluing True (right c) lp && satsGluing True (left n) rp) allPairs
     injectivePairs = filter (\(lp, rp) -> (M.monomorphism lp) && (M.monomorphism rp)) validDpoPairs
 
 maxConcurrentRuleForLastPair :: Bool -> GraphRule a b -> GraphRule a b -> GraphRule a b
@@ -63,7 +63,7 @@ concurrentRuleForPair c n pair = graphRule l r (dmc ++ lp)
     dmc = concatMap (downwardShift (fst poC)) (nacs c)
     p = graphRule (snd poC) (snd pocC) []
     den = concatMap (downwardShift (snd pair)) (nacs n)
-    lp = concatMap (leftShiftNac p) den
+    lp = concatMap (leftShiftNac False p) den
 
 injectivePullback :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b -> (TGM.TypedGraphMorphism a b, TGM.TypedGraphMorphism a b)
 injectivePullback f g = (delNodesFromF', delNodesFromG')
