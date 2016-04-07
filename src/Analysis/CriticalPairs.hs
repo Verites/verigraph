@@ -55,6 +55,7 @@ getCPNac = nac
 --instance Show (CriticalPair a b) where
 --  show (CriticalPair m1 m2 cp) = "{"++(show $ TGM.mapping m1)++(show $ TGM.mapping m2)++(show cp)++"}"
 
+-- | Returns the Critical Pairs with rule names
 namedCriticalPairs :: Bool -> Bool -> [(String, GraphRule a b)] -> [(String,String,[CriticalPair a b])]
 namedCriticalPairs nacInj inj r = map (uncurry getCPs) [(a,b) | a <- r, b <- r]
   where
@@ -114,7 +115,8 @@ allDeleteUse nacInj i l r = map (\(m1,m2) -> CriticalPair m1 m2 Nothing DeleteUs
         gluing = filter (\(m1,m2) -> satsGluingNacsBoth nacInj i (l,m1) (r,m2)) (if i then inj else pairs) --filter the pairs that not satisfie gluing conditions of L and R
         delUse = filter (deleteUse l r) gluing                               --select just the pairs that are in DeleteUse conflict
 
--- | DeleteUse using a most aproximated algorithm of the categorial diagram
+-- | Rule @l@ causes a delete-use conflict with @r@ if rule @l@ deletes something that is used by @r@
+-- DeleteUse using a most aproximated algorithm of the categorial diagram
 -- Verify the non existence of h21: L2 -> D1 such that d1 . h21 = m2
 deleteUse :: GraphRule a b -> GraphRule a b
            -> (TypedGraphMorphism a b,TypedGraphMorphism a b)
