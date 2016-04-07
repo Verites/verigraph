@@ -8,6 +8,7 @@ import           Analysis.CriticalPairs
 import           Analysis.EpiPairs
 import           Analysis.GluingConditions
 import qualified Graph.GraphRule           as GR
+import           Graph.InvertNac
 import qualified Graph.Rewriting           as RW
 import           Graph.TypedGraphMorphism
 
@@ -20,9 +21,7 @@ downwardShift m n' = newNacs
     validPO = filter (\(e,n) -> compose n' e == compose m n) injectiveMorphisms
     newNacs = map snd validPO
 
--- | Given a rule @L <-l- K -r-> R@ and a Right NAC morphism @n : R -> N@, it shifts the NAC over the rule resulting in a list of Left NAC morphisms of type @n': L -> N'@
-leftShiftNac :: GR.GraphRule a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
-leftShiftNac rule n = [RW.comatch n rule | satsGluing False rule n]
+
 
 {- Some tests
 tg = G.build [1,2] [(1,1,2),(2,2,2),(3,2,2)]

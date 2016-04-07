@@ -16,6 +16,7 @@ import           Analysis.GluingConditions
 import qualified Analysis.Matches          as MT
 import           Data.List                 (elemIndex)
 import           Graph.GraphRule
+import           Graph.InvertNac
 import qualified Graph.Rewriting           as RW
 import           Graph.TypedGraphMorphism
 
@@ -55,14 +56,6 @@ criticalSequences :: Bool -> Bool
                   -> GraphRule a b
                   -> [CriticalSequence a b]
 criticalSequences nacInj inj l r = allProduceUse nacInj inj l r ++ allDeliverDelete nacInj inj l r
-
--- | Revert a Rule shifting NACs
--- stay here until do not resolve cycle imports
-inverse :: Bool -> GraphRule a b -> GraphRule a b
-inverse inj r = graphRule (right r) (left r) (concatMap (invNac inj r) (nacs r))
-
-invNac :: Bool -> GraphRule a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
-invNac inj rule n = [RW.comatch n rule | satsGluing inj rule n]
 
 allProduceUse :: Bool -> Bool -> GraphRule a b -> GraphRule a b -> [CriticalSequence a b]
 allProduceUse nacInj i l r = map (\(m1,m2) -> CriticalSequence m1 m2 Nothing ProduceUse) prodUse
