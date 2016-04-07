@@ -132,19 +132,19 @@ deleteUse l r (m1,m2) = null matchD
           -> Bool
 deleteUse l r (m1,m2) = True `elem` (nods ++ edgs)
     where
-        nods = deleteUseAux l m1 m2 GM.applyNode nodesDomain nodesCodomain
-        edgs = deleteUseAux l m1 m2 GM.applyEdge edgesDomain edgesCodomain
+        nods = deleteUseAux l m1 m2 applyNodeTGM nodesDomain nodesCodomain
+        edgs = deleteUseAux l m1 m2 applyEdgeTGM edgesDomain edgesCodomain
 
 -- | Verify if some element in a graph is deleted by @l@ and is in the match of @r@
 deleteUseAux :: Eq t => GraphRule a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
-                     -> (GM.GraphMorphism a b -> t -> Maybe t)
+                     -> (TypedGraphMorphism a b -> t -> Maybe t)
                      -> (TypedGraphMorphism a b -> [t]) --domain
                      -> (TypedGraphMorphism a b -> [t]) --codomain
                      -> [Bool]
 deleteUseAux l m1 m2 apply dom cod = map (\x -> delByLeft x && isInMatchRight x) (cod m1)
     where
-        delByLeft = ruleDeletes l m1 apply dom
-        isInMatchRight n = Data.Maybe.isJust (apply (GM.inverse $ mapping m2) n)-}
+        delByLeft = ruleDeletes (left l) m1 apply dom
+        isInMatchRight n = Data.Maybe.isJust (apply (invertTGM m2) n)-}
 
 ---- Produce Edge Delete Node
 
@@ -177,14 +177,14 @@ allProduceForbid :: Bool -> Bool
                  -> GraphRule a b
                  -> GraphRule a b
                  -> [CriticalPair a b]
-allProduceForbid nacInj inj l r = concatMap (produceForbidOneNac nacInj inj l r) (nacs r)
+allProduceForbid nacInj inj l r = concatMap (produceForbidOneNac nacInj inj l r) (zip (nacs r) [0..])
 
 -- | Check ProduceForbid for a NAC @n@ in @r@
 produceForbidOneNac :: Bool -> Bool
                     -> GraphRule a b -> GraphRule a b
-                    -> TypedGraphMorphism a b
+                    -> (TypedGraphMorphism a b,Int)
                     -> [CriticalPair a b]
-produceForbidOneNac nacInj inj l r n = let
+produceForbidOneNac nacInj inj l r (n,idx) = let
         inverseLeft = inverseWithoutNacs l
 
         -- Consider for a NAC n (L2 -> N2) of r any jointly surjective
@@ -217,13 +217,6 @@ produceForbidOneNac nacInj inj l r n = let
                     --if null hs then [] else [(h1,q21,k,r',m1,l',hs)])
                   filtM1 --(h1,q21,k,r',m1,l1,[hs])
 
-       {- validH21 = concatMap (\(h1,q21,k,r',m1,l',hs) ->
-                       let  in
-                         case elemIndex True list of
-                           Just ind -> [(h1,q21,k,r',m1,l',hs!!ind)]
-                           Nothing  -> [])
-                       h21-}
-
         -- Define m2 = d1 . h21: L2 -> K and abort if m2 not sats NACs r
         m1m2 = map (\(h1,q21,k,r',m1,l',l2d1) -> (h1,m1, compose l2d1 l')) h21
         --filtM2 = filter (\(m1,m2) -> satsNacs r m2) m1m2
@@ -232,6 +225,4 @@ produceForbidOneNac nacInj inj l r n = let
         filtM2 = filter (\(_,_,m2) -> (not inj || monomorphism m2)
                                     && satsGluingAndNacs nacInj inj r m2) m1m2
 
-        idx = elemIndex n (nacs r)
-
-        in map (\(h1,m1,m2) -> CriticalPair h1 m2 idx ProduceForbid) filtM2
+        in map (\(h1,m1,m2) -> CriticalPair h1 m2 (Just idx) ProduceForbid) filtM2
