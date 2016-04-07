@@ -15,16 +15,16 @@ import qualified Graph.TypedGraphMorphism as TGM
 
 {-Conversão para as estruturas do Verigraph-}
 
-mountTGMBoth :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b
+mountTGMBoth :: GM.GraphMorphism a b -> GM.GraphMorphism a b
              -> GP.EqClassGraphMap
              -> (TGM.TypedGraphMorphism a b, TGM.TypedGraphMorphism a b)
 mountTGMBoth l r g = (mountTGM l "Left" g, mountTGM r "Right" g)
 
-mountTGM :: TGM.TypedGraphMorphism a b -> String -> GP.EqClassGraphMap -> TGM.TypedGraphMorphism a b
-mountTGM morph side g = TGM.typedMorphism (M.codomain morph) typeMorphism morphism
+mountTGM :: GM.GraphMorphism a b -> String -> GP.EqClassGraphMap -> TGM.TypedGraphMorphism a b
+mountTGM morph side g = TGM.typedMorphism morph typeMorphism morphism
     where
-        m = TGM.typedMorphism (M.codomain morph) typeMorphism morphism
-        typeMorphism = setType g (GM.empty (M.codomain morphism) (M.codomain $ M.domain morph))
+        m = TGM.typedMorphism morph typeMorphism morphism
+        typeMorphism = setType g (GM.empty (M.codomain morphism) (M.codomain morph))
         morphism = toMorphism g side
 
 {-Cria o morfismo que tipa o grafo G criado-}

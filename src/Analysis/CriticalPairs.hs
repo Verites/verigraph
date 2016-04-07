@@ -13,7 +13,7 @@ module Analysis.CriticalPairs
    ) where
 
 import           Abstract.Morphism
-import           Analysis.EpiPairs         (createPairs)
+import           Analysis.EpiPairs         (createPairsCodomain)
 import           Analysis.GluingConditions
 import qualified Analysis.Matches          as MT
 import           Data.List                 (elemIndex)
@@ -55,6 +55,7 @@ getCPNac = nac
 --instance Show (CriticalPair a b) where
 --  show (CriticalPair m1 m2 cp) = "{"++(show $ TGM.mapping m1)++(show $ TGM.mapping m2)++(show cp)++"}"
 
+-- | Returns the Critical Pairs with rule names
 namedCriticalPairs :: Bool -> Bool -> [(String, GraphRule a b)] -> [(String,String,[CriticalPair a b])]
 namedCriticalPairs nacInj inj r = map (uncurry getCPs) [(a,b) | a <- r, b <- r]
   where
@@ -82,7 +83,7 @@ allDeleteUseAndDangling :: Bool -> Bool
                         -> [CriticalPair a b]
 allDeleteUseAndDangling nacInj i l r = mapMaybe (deleteUseDangling l r) gluing
   where
-    pairs = createPairs (left l) (left r)
+    pairs = createPairsCodomain (left l) (left r)
     inj = filter checkMono pairs
     gluing = filter (\(m1,m2) -> satsGluingNacsBoth nacInj i (l,m1) (r,m2)) (if i then inj else pairs)
 
@@ -109,12 +110,13 @@ allDeleteUse :: Bool -> Bool
              -> [CriticalPair a b]
 allDeleteUse nacInj i l r = map (\(m1,m2) -> CriticalPair m1 m2 Nothing DeleteUse) delUse
     where
-        pairs = createPairs (left l) (left r)                                --get all jointly surjective pairs of L1 and L2
+        pairs = createPairsCodomain (left l) (left r)                                --get all jointly surjective pairs of L1 and L2
         inj = filter checkMono pairs
         gluing = filter (\(m1,m2) -> satsGluingNacsBoth nacInj i (l,m1) (r,m2)) (if i then inj else pairs) --filter the pairs that not satisfie gluing conditions of L and R
         delUse = filter (deleteUse l r) gluing                               --select just the pairs that are in DeleteUse conflict
 
--- | DeleteUse using a most aproximated algorithm of the categorial diagram
+-- | Rule @l@ causes a delete-use conflict with @r@ if rule @l@ deletes something that is used by @r@
+-- DeleteUse using a most aproximated algorithm of the categorial diagram
 -- Verify the non existence of h21: L2 -> D1 such that d1 . h21 = m2
 deleteUse :: GraphRule a b -> GraphRule a b
            -> (TypedGraphMorphism a b,TypedGraphMorphism a b)
@@ -154,7 +156,7 @@ allProdEdgeDelNode :: Bool -> Bool
                    -> [CriticalPair a b]
 allProdEdgeDelNode nacInj i l r = map (\(m1,m2) -> CriticalPair m1 m2 Nothing ProduceEdgeDeleteNode) conflictPairs
     where
-        pairs = createPairs (left l) (left r)
+        pairs = createPairsCodomain (left l) (left r)
         inj = filter checkMono pairs --check injective
         gluing = filter (\(m1,m2) -> satsGluingNacsBoth nacInj i (l,m1) (r,m2)) (if i then inj else pairs) --filter the pairs that not satisfie gluing conditions of L and R
         conflictPairs = filter (prodEdgeDelNode l r) gluing
@@ -189,7 +191,7 @@ produceForbidOneNac nacInj inj l r (n,idx) = let
 
         -- Consider for a NAC n (L2 -> N2) of r any jointly surjective
         -- pair of morphisms (h1: R1 -> P1, q21: N2 -> P1) with q21 (part)inj
-        pairs = createPairs (right l) n
+        pairs = createPairsCodomain (right l) n
 
         filtFun = if nacInj then monomorphism else partialInjectiveTGM n
         filtMono = filter (\(_,q) -> filtFun q) pairs --(h1,q21)
