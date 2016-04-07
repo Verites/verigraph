@@ -43,7 +43,7 @@ concurrentRules isInjective c n = map (concurrentRuleForPair c n) $ pairs isInje
 pairs :: Bool -> GraphRule a b -> GraphRule a b -> [EpiPair a b]
 pairs isInjective c n = if isInjective then injectivePairs else validDpoPairs
   where
-    allPairs  = createPairs (right c) (left n)
+    allPairs  = createPairsCodomain (right c) (left n)
     validDpoPairs = filter (\(lp, rp) -> satsGluing True (right c) lp && satsGluing True (left n) rp) allPairs
     injectivePairs = filter (\(lp, rp) -> (M.monomorphism lp) && (M.monomorphism rp)) validDpoPairs
 

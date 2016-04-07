@@ -24,7 +24,7 @@ leftShiftNac inj rule n = [RW.comatch n rule | satsGluing inj (left rule) n]
 downwardShift :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
 downwardShift m n' = newNacs
   where
-    pairs = createPairs n' m
+    pairs = createPairsCodomain n' m
     injectiveMorphisms = filter (\(e,_) -> monomorphism e) pairs
     validPO = filter (\(e,n) -> compose n' e == compose m n) injectiveMorphisms
     newNacs = map snd validPO

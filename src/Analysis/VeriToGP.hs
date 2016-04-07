@@ -13,19 +13,18 @@ import qualified Abstract.Morphism        as M
 --from verigraph to GraphPart
 
 mixLeftRule :: GraphRule a b -> GraphRule a b -> GP.Graph
-mixLeftRule l r = mixTGM (left l) (left r)
+mixLeftRule l r = mixTGM (M.codomain (left l)) (M.codomain (left r))
 
-mixTGM :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> GP.Graph
+mixTGM :: GM.GraphMorphism a b -> GM.GraphMorphism a b -> GP.Graph
 mixTGM l r = disjUnionGraphs (tgmToGP l "Left") (tgmToGP r "Right")
    where
       disjUnionGraphs a b = GP.Graph (GP.nodes a ++ GP.nodes b) (GP.edges a ++ GP.edges b)
 
-tgmToGP :: TypedGraphMorphism a b -> String -> GP.Graph
-tgmToGP tgm side = GP.Graph nods edgs
+tgmToGP :: GM.GraphMorphism a b -> String -> GP.Graph
+tgmToGP morfL side = GP.Graph nods edgs
    where
       nods   = nodesToGP morfL side $ nodes graphL
       edgs   = edgesToGP morfL side graphL $ edges graphL
-      morfL  = M.codomain tgm
       graphL = M.domain morfL
 
 nodesToGP :: GM.TypedGraph a b -> String -> [NodeId] -> [GP.Node]

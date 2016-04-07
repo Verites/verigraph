@@ -11,7 +11,7 @@ module Analysis.CriticalSequence
    ) where
 
 import qualified Abstract.Morphism         as M
-import           Analysis.EpiPairs         (createPairs)
+import           Analysis.EpiPairs         (createPairsCodomain)
 import           Analysis.GluingConditions
 import qualified Analysis.Matches          as MT
 import           Data.List                 (elemIndex)
@@ -61,7 +61,7 @@ allProduceUse :: Bool -> Bool -> GraphRule a b -> GraphRule a b -> [CriticalSequ
 allProduceUse nacInj i l r = map (\(m1,m2) -> CriticalSequence m1 m2 Nothing ProduceUse) prodUse
   where
     invLeft = inverse i l
-    pairs = createPairs (left invLeft) (left r)
+    pairs = createPairsCodomain (left invLeft) (left r)
     inj = filter (\(m1,m2) -> M.monomorphism m1 && M.monomorphism m2) pairs
     gluing = filter (\(m1,m2) -> satsGluingNacsBoth nacInj i  (invLeft,m1) (r,m2)) (if i then inj else pairs)
     prodUse = filter (produceUse invLeft r) gluing
@@ -88,7 +88,7 @@ deliverDelete :: Bool -> Bool
 deliverDelete nacInj inj l r (n,idx) = let
         inverseLeft = inverse inj l
 
-        pairs = createPairs (right inverseLeft) n
+        pairs = createPairsCodomain (right inverseLeft) n
 
         filtFun = if nacInj then M.monomorphism else partialInjectiveTGM n
         filtPairs = filter (\(m1,q) -> (not inj || M.monomorphism m1)
