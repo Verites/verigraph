@@ -1,11 +1,11 @@
-module Analysis.GraphPart {-(
+module Analysis.GraphPart (
    Node (..),
    Edge (..),
    Graph (..),
    EqClassGraph (..),
    getListNode,
    genEqClass
-   ) -}where
+   ) where
 
 import           Data.List
 
@@ -70,13 +70,13 @@ checkNode (Node type1 _ _ _) (Node type2 _ _ _) = type1 == type2
 
 -- | Checks if two edges are in the same equivalence class
 checkST :: [[[Node]]] -> Edge -> Edge -> Bool
-checkST a (Edge type1 _ _ s1 t1 _) (Edge type2 _ _ s2 t2 _) = exp1 && exp2 && exp3
+checkST nodes (Edge type1 _ _ s1 t1 _) (Edge type2 _ _ s2 t2 _) = exp1 && exp2 && exp3
     where
         exp1 = type1 == type2
         exp2 = ntype s1 == ntype s2 && ntype t1 == ntype t2
         exp3 = (getInd l1 s1 0 == getInd l1 s2 0) && (getInd l2 t1 0 == getInd l2 t2 0)
-        l1   = findTypeList a (ntype s1)
-        l2   = findTypeList a (ntype t1)
+        l1   = findTypeList nodes (ntype s1)
+        l2   = findTypeList nodes (ntype t1)
 
 -- | Adds elements in their eq class, creates a new if does not exists
 insr :: (a -> Bool) -> a -> [[a]] -> [[a]]
@@ -95,28 +95,13 @@ genEqClass gra = [(concat a, concat b) |
 
 -- | Returns the index of @a@ in [[Node]]
 getInd :: [[Node]] -> Node -> Int -> Int
-getInd (x:xs) a n = if a `elem` x then n else getInd xs a (n+1)
+getInd (x:xs) a n = if any (\n -> nname n == nname a && ngsource n == ngsource a) x then n else getInd xs a (n+1)
 getInd [] _ _ = error "error when generating overlapping pairs (getInd)"
 
 -- | Returns the list which Node is in [[Node]]
 getListNode :: [[Node]] -> Node -> [Node]
-getListNode (x:xs) a = if a `elem` x then x else getListNode xs a
+getListNode (x:xs) a = if any (\n -> nname n == nname a && ngsource n == ngsource a) x then x else getListNode xs a
 getListNode [] _ = error "error when generating overlapping pairs (getListNode)"
-
--- | Returns the list which Node is in [[Node]]
-getListNodeName :: String -> [[Node]] -> Int -> [Node]
-getListNodeName side (x:xs) a = if any (\(Node _ name _ src) -> name == a && src == side) x then x else getListNodeName side xs a
-getListNodeName [] _ _ = error "error when generating overlapping pairs (getListNodeName)"
-
--- | Returns the list which Edge is in [[Edge]]
-getListEdgeName :: String -> [[Edge]] -> Int -> [Edge]
-getListEdgeName side (x:xs) a = if any (\e -> (label e == a) && (egsource e == side)) x then x else getListEdgeName side xs a
-getListEdgeName [] _ _ = error "error when generating overlapping pairs (getListNodeEdge)"
-
--- | Returns the index of @a@ in [[[Node]]]
-getIndList :: [[[Node]]] -> Node -> Int -> Int
-getIndList (x:xs) a n = if ntype (head $ head x) == ntype a then getInd x a n else getIndList xs a (n + sum (map length x))
-getIndList [] _ _ = error "error when generating overlapping pairs (getIndList)"
 
 findTypeList :: [[[Node]]] -> Int -> [[Node]]
 findTypeList (x:xs) t = if ntype (head $ head x) == t then x else findTypeList xs t

@@ -1,4 +1,4 @@
-module Analysis.CriticalPairs{-
+module Analysis.CriticalPairs
  ( CP,
    CriticalPair,
    criticalPairs,
@@ -10,7 +10,7 @@ module Analysis.CriticalPairs{-
    getM2,
    getCPNac,
    getCP
-   ) -}where
+   ) where
 
 import           Abstract.Morphism
 import           Analysis.EpiPairs         (createPairsCodomain)
