@@ -1,20 +1,20 @@
 --{-# LANGUAGE TypeFamilies #-}
 
-{-import Graph.ConcurrentRules
+import Graph.ConcurrentRules
 
 import qualified XML.GGXReader as XML
+import qualified Abstract.Morphism as M
+import Abstract.Valid
 import qualified Analysis.CriticalSequence as CS
 import qualified Analysis.CriticalPairs as CP
-import qualified Graph.Graph as G
+import qualified Analysis.Matches as MT
+import           Analysis.EpiPairs
+import           Analysis.GluingConditions
+import           Analysis.GPToVeri
+import           Analysis.GraphPart
+import           Analysis.VeriToGP
+import           Graph.Graph as G
 import qualified Graph.GraphRule as GR
-import qualified Graph.GraphMorphism as GM
-import qualified Graph.TypedGraphMorphism as TGM
-import qualified Graph.Rewriting as RW
-import qualified Graph.GraphGrammar as GG
-
-
-
-import Graph.Graph
 import qualified Graph.GraphMorphism as GM
 import qualified Graph.TypedGraphMorphism as TGM
 import qualified Graph.Rewriting as RW
@@ -26,18 +26,41 @@ import System.Environment
 import System.Exit
 
 import Data.Matrix
-
-import qualified Abstract.Morphism as M
-import Abstract.Valid
 import Data.Maybe
 
 import qualified XML.GGXReader as XML
+
+fn = "test/teseRodrigo.ggx"
 
 a fn = do
       prls <- XML.readRules fn
       ptg <- XML.readTypeGraph fn
       let rs = map (XML.instantiateRule (head ptg)) prls
-      return rs
+          rul = rs!!0
+          cps = createPairsCodomain (GR.left rul) (GR.left rul)
+          cp = cps!!8
+          m = fst cp
+          l = left rul
+          pairs = createPairsCodomain l l
+          inj = filter (\(m1,m2) -> M.monomorphism m1 && M.monomorphism m2) pairs
+          gluing = filter (\(m1,m2) -> satsGluingNacsBoth False True (rul,m1) (rul,m2)) inj
+          delUse = filter (deleteUse rul rul) gluing
+      --print (fst cp)
+      --print k
+      --print d1
+      return (length delUse)
+  
+-- | Rule @l@ causes a delete-use conflict with @r@ if rule @l@ deletes something that is used by @r@
+-- DeleteUse using a most aproximated algorithm of the categorial diagram
+-- Verify the non existence of h21: L2 -> D1 such that d1 . h21 = m2
+deleteUse :: GraphRule a b -> GraphRule a b
+           -> (TGM.TypedGraphMorphism a b,TGM.TypedGraphMorphism a b)
+           -> Bool
+deleteUse l r (m1,m2) = Prelude.null matchD
+    where
+        (_,d1) = RW.poc m1 (left l) --get only the morphism D2 to G
+        l2TOd1 = MT.matches MT.ALL (M.domain m2) (M.domain d1)
+        matchD = filter (\x -> m2 == M.compose x d1) l2TOd1
 
 iN = insertNode
 iE = insertEdge
@@ -209,7 +232,7 @@ l8 = TGM.typedMorphism tkr8 tlr8 kr8_lr8
 kr8_rr8 = GM.gmbuild kr8 rr8 [] []
 r8 = TGM.typedMorphism tkr8 trr8 kr8_rr8
 
-testeCreate = graphRule l8 r8 []-}
+testeCreate = graphRule l8 r8 []
 
 {-Fim das Regras-}
 
