@@ -4,7 +4,6 @@ module Graph.ConcurrentRules
 ) where
 
 import qualified Abstract.Morphism        as M
-import qualified Analysis.CriticalPairs
 import           Analysis.EpiPairs
 import           Analysis.GluingConditions
 import           Data.List
@@ -44,7 +43,7 @@ pairs :: Bool -> GraphRule a b -> GraphRule a b -> [EpiPair a b]
 pairs isInjective c n = if isInjective then injectivePairs else validDpoPairs
   where
     allPairs  = createPairsCodomain (right c) (left n)
-    validDpoPairs = filter (\(lp, rp) -> satsGluing True (right c) lp && satsGluing True (left n) rp) allPairs
+    validDpoPairs = filter (\(lp, rp) -> satsGluing False (right c) lp && satsGluing False (left n) rp) allPairs
     injectivePairs = filter (\(lp, rp) -> (M.monomorphism lp) && (M.monomorphism rp)) validDpoPairs
 
 maxConcurrentRuleForLastPair :: Bool -> GraphRule a b -> GraphRule a b -> GraphRule a b
