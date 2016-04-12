@@ -60,9 +60,9 @@ concurrentRuleForPair c n pair = graphRule l r (dmc ++ lp)
     l = M.compose (fst pb) (snd poC)
     r = M.compose (snd pb) (snd poN)
     dmc = concatMap (downwardShift (fst poC)) (nacs c)
-    p = graphRule (snd poC) (snd pocC) []
+    inverseP = graphRule (snd pocC) (snd poC) []
     den = concatMap (downwardShift (snd pair)) (nacs n)
-    lp = concatMap (leftShiftNac False p) den
+    lp = concatMap (shiftLeftNac False inverseP) den
 
 injectivePullback :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b -> (TGM.TypedGraphMorphism a b, TGM.TypedGraphMorphism a b)
 injectivePullback f g = (delNodesFromF', delNodesFromG')

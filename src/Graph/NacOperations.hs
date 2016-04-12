@@ -1,7 +1,7 @@
 module Graph.NacOperations
 (  downwardShift
 , injectiveDownwardShift
-, leftShiftNac
+, shiftLeftNac
 , inverse
 ) where
 
@@ -14,20 +14,19 @@ import           Graph.TypedGraphMorphism
 
 -- | Revert a Rule shifting NACs
 inverse :: Bool -> GraphRule a b -> GraphRule a b
-inverse inj r = graphRule (right r) (left r) (concatMap (leftShiftNac inj r) (nacs r))
+inverse inj r = graphRule (right r) (left r) (concatMap (shiftLeftNac inj r) (nacs r))
 
--- | Given a rule @L <-l- K -r-> R@ and a Right NAC morphism @n : R -> N@, it shifts the NAC over the rule resulting in a list of Left NAC morphisms of type @n': L -> N'@
-leftShiftNac :: Bool -> GraphRule a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
-leftShiftNac inj rule n = [RW.comatch n rule | satsGluing inj (left rule) n]
+-- | Given a rule @L <-l- K -r-> R@ and a Left NAC morphism @n : L -> N@, it shifts the NAC over the rule resulting in a list of Right NAC morphisms of type @n': R -> N'@
+shiftLeftNac :: Bool -> GraphRule a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
+shiftLeftNac inj rule n = [RW.comatch n rule | satsGluing inj (left rule) n]
 
 -- | Given a morphism @m : A -> B@ and a NAC @n : A -> N@, it shifts the NAC over the morphism resulting in a morphism list of type @n' : B -> N'@
 downwardShift :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
 downwardShift m n' = newNacs
   where
-    pairs = createPairsCodomain n' m
+    pairs = commutingPairs n' m
     injectiveMorphisms = filter (\(e,_) -> monomorphism e) pairs
-    validCoproduct = filter (\(e,n) -> compose n' e == compose m n) injectiveMorphisms
-    newNacs = map snd validCoproduct
+    newNacs = map snd injectiveMorphisms
 
 injectiveDownwardShift :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
 injectiveDownwardShift m n' = [fst $ RW.po n' m]
