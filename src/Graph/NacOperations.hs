@@ -1,11 +1,11 @@
 module Graph.NacOperations
 (  downwardShift
- , leftShiftNac
- , inverse
+, injectiveDownwardShift
+, leftShiftNac
+, inverse
 ) where
 
 import           Abstract.Morphism
-import           Analysis.CriticalPairs
 import           Analysis.EpiPairs
 import           Analysis.GluingConditions
 import           Graph.GraphRule
@@ -26,8 +26,11 @@ downwardShift m n' = newNacs
   where
     pairs = createPairsCodomain n' m
     injectiveMorphisms = filter (\(e,_) -> monomorphism e) pairs
-    validPO = filter (\(e,n) -> compose n' e == compose m n) injectiveMorphisms
-    newNacs = map snd validPO
+    validCoproduct = filter (\(e,n) -> compose n' e == compose m n) injectiveMorphisms
+    newNacs = map snd validCoproduct
+
+injectiveDownwardShift :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
+injectiveDownwardShift m n' = [fst $ RW.po n' m]
 
 
 {- Some tests
