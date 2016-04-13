@@ -9,6 +9,7 @@ module Analysis.GraphPart (
 
 import           Data.List
 
+-- | A Node with the needed informations for the generating equivalence classes algorithm
 data Node = Node {
     ntype    :: Int,
     nname    :: Int,
@@ -25,6 +26,7 @@ instance Eq Node where
     b1 == b2 &&
     d1 == d2
 
+-- | An Edge with the needed informations for the generating equivalence classes algorithm
 data Edge = Edge {
     etype    :: Int,
     label    :: Int,
@@ -37,11 +39,13 @@ data Edge = Edge {
 instance Show Edge where
   show (Edge t a id (Node b1 b2 _ b3) (Node c1 c2 _ c3) s) = show a ++ ":" ++ show t ++ "(" ++ show b2 ++ "->" ++ show c2 ++ ")" ++ s ++ " (id:" ++ show id ++")"
 
+-- | Graph for the generating equivalence classes algorithm
 data Graph = Graph {
     nodes :: [Node],
     edges :: [Edge]
     } deriving (Show, Eq)
 
+-- | An equivalence class of a 'Graph'
 type EqClassGraph = ([[Node]],[[Edge]])
 
 {-partitions-}
@@ -88,6 +92,7 @@ partBy :: (a -> a -> Bool) -> [a] -> [[a]]
 partBy f [] = [[]]
 partBy f l = foldr (\a -> insr (f a) a) [[head l]] (tail l)
 
+-- | Generates all equivalence class graphs
 genEqClass :: Graph -> [EqClassGraph]
 genEqClass gra = [(concat a, concat b) |
                    a <- mapM partitions (partBy checkNode (nodes gra)),
