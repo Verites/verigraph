@@ -7,7 +7,6 @@ module Graph.NacOperations
 
 import           Abstract.Morphism
 import           Analysis.EpiPairs
-import           Analysis.GluingConditions
 import           Graph.GraphRule
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO

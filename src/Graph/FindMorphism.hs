@@ -5,7 +5,6 @@ import           Data.List
 import           Data.Maybe
 import qualified Graph.Graph              as G
 import qualified Graph.GraphMorphism      as GM
-import           Graph.GraphRule
 import qualified Graph.TypedGraphMorphism as TGM
 
 instance FindMorphism (TGM.TypedGraphMorphism a b) where

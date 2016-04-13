@@ -12,7 +12,6 @@ module Analysis.CriticalSequence
 
 import qualified Abstract.Morphism         as M
 import           Analysis.EpiPairs         (createPairsCodomain)
-import           Analysis.GluingConditions
 import           Data.List                 (elemIndex)
 import           Graph.GraphRule
 import           Graph.NacOperations

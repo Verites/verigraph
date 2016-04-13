@@ -5,7 +5,6 @@ module Graph.ConcurrentRules
 
 import qualified Abstract.Morphism        as M
 import           Analysis.EpiPairs
-import           Analysis.GluingConditions
 import           Data.List
 import           Data.Maybe               (isJust)
 import           Graph.GraphRule
