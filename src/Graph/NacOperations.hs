@@ -6,8 +6,8 @@ module Graph.NacOperations
 ) where
 
 import           Abstract.Morphism
-import           Analysis.EpiPairs
 import           Graph.GraphRule
+import           Graph.EpiPairs
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Graph.TypedGraphMorphism

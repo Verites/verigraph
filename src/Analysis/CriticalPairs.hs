@@ -13,7 +13,7 @@ module Analysis.CriticalPairs
    ) where
 
 import           Abstract.Morphism
-import           Analysis.EpiPairs         (createPairsCodomain)
+import           Abstract.AdhesiveHLR      (createPairsCodomain)
 import           Data.List                 (elemIndex)
 import           Data.List.Utils           (countElem)
 import           Data.Maybe                (isJust,mapMaybe)

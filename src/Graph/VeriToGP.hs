@@ -1,12 +1,12 @@
-module Analysis.VeriToGP (
+module Graph.VeriToGP (
    mixLeftRule,
    mixTGM
    ) where
 
-import qualified Analysis.GraphPart       as GP
+import qualified Graph.GraphPart       as GP
 import           Graph.Graph
-import qualified Graph.GraphMorphism      as GM
 import           Graph.GraphRule
+import qualified Graph.GraphMorphism      as GM
 import           Graph.TypedGraphMorphism
 import qualified Abstract.Morphism        as M
 

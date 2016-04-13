@@ -4,7 +4,7 @@ module Graph.ConcurrentRules
 ) where
 
 import qualified Abstract.Morphism        as M
-import           Analysis.EpiPairs
+import           Abstract.AdhesiveHLR
 import           Data.List
 import           Data.Maybe               (isJust)
 import           Graph.GraphRule

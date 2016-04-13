@@ -1,4 +1,4 @@
-module Analysis.GraphPart (
+module Graph.GraphPart (
    Node (..),
    Edge (..),
    Graph (..),

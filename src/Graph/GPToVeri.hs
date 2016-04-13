@@ -1,15 +1,14 @@
-module Analysis.GPToVeri (
+module Graph.GPToVeri (
    mountTGMBoth
    ) where
 
 {-Converts from GraphPart to Verigraph structures-}
 
 import qualified Abstract.Morphism        as M
-import           Analysis.GraphPart       as GP
+import           Graph.GraphPart       as GP
 import           Data.Maybe               (fromJust)
 import qualified Graph.Graph              as G
 import qualified Graph.GraphMorphism      as GM
-import           Graph.GraphRule
 import qualified Graph.TypedGraphMorphism as TGM
 
 -- | For two typed graphs and a EpiPair (in GraphPart format) return two TypedGraphMorphism for the graph in verigraph format

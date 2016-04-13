@@ -11,7 +11,7 @@ module Analysis.CriticalSequence
    ) where
 
 import qualified Abstract.Morphism         as M
-import           Analysis.EpiPairs         (createPairsCodomain)
+import           Abstract.AdhesiveHLR      (createPairsCodomain)
 import           Data.List                 (elemIndex)
 import           Graph.GraphRule
 import           Graph.NacOperations
