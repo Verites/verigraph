@@ -13,13 +13,13 @@ module Analysis.CriticalSequence
 import qualified Abstract.Morphism         as M
 import           Analysis.EpiPairs         (createPairsCodomain)
 import           Analysis.GluingConditions
-import qualified Analysis.Matches          as MT
 import           Data.List                 (elemIndex)
 import           Graph.GraphRule
 import           Graph.NacOperations
 import           Abstract.AdhesiveHLR      as RW
 import           Abstract.DPO              as RW
 import           Graph.TypedGraphMorphism
+import           Graph.FindMorphism
 
 -- | Data representing the type of a 'CriticalPair'
 data CS = ProduceUse | DeliverDelete deriving(Eq,Show)
@@ -78,7 +78,7 @@ produceUse :: GraphRule a b -> GraphRule a b
 produceUse l r (m1',m2) = Prelude.null filt
     where
         (_,e1) = RW.poc m1' (left l)
-        l2TOd1 = MT.matches MT.ALL (M.domain m2) (M.domain e1)
+        l2TOd1 = M.matches M.ALL (M.domain m2) (M.domain e1)
         filt = filter (\h -> M.compose h e1 == m2) l2TOd1
 
 -- | All DeliverDelete caused by the derivation of @l@ before @r@
@@ -114,7 +114,7 @@ deliverDelete nacInj inj l inverseLeft r (n,idx) = let
         filtM1 = filter (\(_,_,_,_,m1',_) -> satsNacs nacInj inverseLeft m1') dpo
 
         h21 = concatMap (\(m1,q21,k,d1,m1',e1) ->
-                  let hs = MT.matches MT.ALL (M.domain n) (M.codomain k)
+                  let hs = M.matches M.ALL (M.domain n) (M.codomain k)
                       list = map (\h -> M.compose h d1 == M.compose n q21) hs in
                     case elemIndex True list of
                            Just ind -> [(m1,q21,k,d1,m1',e1,hs!!ind)]

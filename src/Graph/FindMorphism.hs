@@ -1,8 +1,4 @@
-module Analysis.Matches (
-  PROP(..)
-  , matches
-  , partInjMatches
-  ) where
+module Graph.FindMorphism () where
 
 import           Abstract.Morphism
 import           Data.List
@@ -12,16 +8,9 @@ import qualified Graph.GraphMorphism      as GM
 import           Graph.GraphRule
 import qualified Graph.TypedGraphMorphism as TGM
 
--- | Data type definition to choose specifics propertys of a morphism
---
---     [@ALL@]  Finds all possible matches
---     [@MONO@] Finds only monomorphics matches
---     [@EPI@]  Finds only epimorphics matches
---     [@ISO@]  Finds only isomorphics matches
-data PROP = ALL | MONO | EPI | ISO
-
-
-
+instance FindMorphism (TGM.TypedGraphMorphism a b) where
+  matches = matches'
+  partInjMatches = partInjMatches'
 
 --ALIAS OF MOST USED FUNCTIONS --
 nodes g = G.nodes g --NODES OF A GRAPH
@@ -53,9 +42,9 @@ orphanEdges = TGM.orphanEdgesTyped --GET ORPHANS EDGES OF A TYPEDGRAPHMORPHISM
 -- | Finds matches __/q/__ .
 --
 --   Partially injective. (Injective out of __/m/__)
-partInjMatches :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b
+partInjMatches' :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b
                -> [TGM.TypedGraphMorphism a b]
-partInjMatches nac match =
+partInjMatches' nac match =
   do
     let
       --NODES AND EDGES FROM NAC
@@ -161,9 +150,9 @@ partInjMatches nac match =
 -- | Finds matches __/m/__
 --
 --   Injective, surjective, isomorphic or all possible matches
-matches :: PROP -> GM.GraphMorphism a b-> GM.GraphMorphism a b
+matches' :: PROP -> GM.GraphMorphism a b-> GM.GraphMorphism a b
         -> [TGM.TypedGraphMorphism a b]
-matches prop graph1 graph2 =
+matches' prop graph1 graph2 =
   buildMappings prop nodesSrc edgesSrc nodesTgt edgesTgt tgm
   where
     nodesSrc = nodes $ domain graph1
@@ -308,10 +297,3 @@ updateEdgesMapping e1 e2 tgm =
        (isNothing (edgeMapping tgm e1) || (edgeMapping tgm e1 == Just e2))
       then Just $ TGM.typedMorphism d c (GM.updateEdges e1 e2 m)
       else Nothing
-
-
-
-
-
-
-

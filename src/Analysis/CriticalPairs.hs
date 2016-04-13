@@ -15,7 +15,6 @@ module Analysis.CriticalPairs
 import           Abstract.Morphism
 import           Analysis.EpiPairs         (createPairsCodomain)
 import           Analysis.GluingConditions
-import qualified Analysis.Matches          as MT
 import           Data.List                 (elemIndex)
 import           Data.List.Utils           (countElem)
 import           Data.Maybe                (isJust,mapMaybe)
@@ -25,6 +24,7 @@ import           Graph.NacOperations
 import           Abstract.AdhesiveHLR      as RW
 import           Abstract.DPO              as RW
 import           Graph.TypedGraphMorphism
+import           Graph.FindMorphism
 
 -- | Data representing the type of a 'CriticalPair'
 data CP = FOL | DeleteUse | ProduceForbid | ProduceEdgeDeleteNode deriving(Eq,Show)
@@ -95,7 +95,7 @@ deleteUseDangling :: GraphRule a b -> GraphRule a b
 deleteUseDangling l r (m1,m2) = cp
   where
     (k,l') = RW.poc m1 (left l)
-    lTOd = MT.matches MT.ALL (domain m2) (domain l')
+    lTOd = matches ALL (domain m2) (domain l')
     matchD = filter (\x -> m2 == compose x l') lTOd
     (m1',r') = RW.po k (right l)
     m2' = compose (head matchD) r'
@@ -126,7 +126,7 @@ deleteUse :: GraphRule a b -> GraphRule a b
 deleteUse l r (m1,m2) = null matchD
     where
         (_,d1) = RW.poc m1 (left l) --get only the morphism D2 to G
-        l2TOd1 = MT.matches MT.ALL (domain m2) (domain d1)
+        l2TOd1 = matches ALL (domain m2) (domain d1)
         matchD = filter (\x -> m2 == compose x d1) l2TOd1
 
 -- | Rule @l@ causes a delete-use conflict with @r@ if rule @l@ deletes something that is used by @r@
@@ -168,7 +168,7 @@ prodEdgeDelNode :: GraphRule a b -> GraphRule a b -> (TypedGraphMorphism a b,Typ
 prodEdgeDelNode l r (m1,m2) = not (null matchD) && not (satsIncEdges (left r) m2')
     where
         (k,d1) = RW.poc m1 (left l)
-        l2TOd1 = MT.matches MT.ALL (domain m2) (domain d1)
+        l2TOd1 = matches ALL (domain m2) (domain d1)
         matchD = filter (\x -> m2 == compose x d1) l2TOd1
         (m1',r') = RW.po k (right l)
         m2' = compose (head matchD) r' --matchD is unique if exists
@@ -213,7 +213,7 @@ produceForbidOneNac nacInj inj l inverseLeft r (n,idx) = let
 
         --  Check existence of h21: L2 -> D1 st. e1 . h21 = q21 . n2
         h21 = concatMap (\(h1,q21,k,r',m1,l') ->
-                  let hs = MT.matches MT.ALL (domain n) (codomain k)
+                  let hs = matches ALL (domain n) (codomain k)
                       list = map (\h -> compose h r' == compose n q21) hs in
                        case elemIndex True list of
                            Just ind -> [(h1,q21,k,r',m1,l',hs!!ind)]

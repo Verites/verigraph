@@ -12,12 +12,12 @@ import Abstract.AdhesiveHLR
 import Abstract.DPO
 
 import qualified Abstract.Morphism        as M
-import qualified Analysis.Matches         as MT
 import           Data.Maybe               (mapMaybe)
 import           Graph.Graph              (incidentEdges, nodes)
 import qualified Graph.GraphMorphism      as GM
 import           Graph.GraphRule
 import           Graph.TypedGraphMorphism
+import           Graph.FindMorphism
 
 
 instance DPO (TypedGraphMorphism a b) where
@@ -108,7 +108,7 @@ satsOneNacInj :: TypedGraphMorphism a b -- ^ m
 satsOneNacInj m nac = all (==False) checkCompose
    where
       checkCompose = map (\x -> M.compose nac x == m) matches
-      matches = MT.matches MT.MONO typeNac typeG
+      matches = M.matches M.MONO typeNac typeG
       typeNac = M.codomain nac
       typeG   = M.codomain m
 
@@ -122,4 +122,4 @@ satsOneNacPartInj m nac = all (==False) check
    where
       check = map (partialInjectiveTGM nac) checkCompose
       checkCompose = filter (\x -> M.compose nac x == m) matches
-      matches = MT.partInjMatches nac m --generating some non partial injective matches
+      matches = M.partInjMatches nac m --generating some non partial injective matches
