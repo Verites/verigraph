@@ -5,7 +5,6 @@ import           Analysis.CriticalSequence
 import           Control.Monad             (forM_, when)
 import qualified Data.List                 as L
 import           Data.Matrix               hiding ((<|>))
-import           Graph.ConcurrentRules
 import qualified Graph.GraphGrammar        as GG
 import qualified Graph.GraphMorphism       as GM
 import           Graph.GraphRule
@@ -44,4 +43,3 @@ commands = subparser (cpAnalysis <> concurrentRule)
 
     concurrentRule = command "concurrent-rule" . fmap ConcurrentRules $ info (helper <*> CR.crOpts)
       ( fullDesc <> progDesc "Generate concurrent rules for the input grammar and rule sequences")
-

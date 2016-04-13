@@ -31,6 +31,7 @@ import           Abstract.Morphism   as M
 import           Abstract.AdhesiveHLR
 import           Abstract.Valid
 import           Data.Maybe
+import           Data.List           ((\\))
 import           Graph.Graph         (Graph, edges, nodes)
 import           Graph.Graph         as G
 import           Graph.GraphMorphism as GM
@@ -270,3 +271,18 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
                        (foldr removeEdgeCodTyped ml delEdges)
                            delNodes
     in (k, idMap k m)
+
+  injectivePullback f g = (delNodesFromF', delNodesFromG')
+    where
+      f' = invertTGM f
+      g' = invertTGM g
+      nodes = nodesDomain f'
+      edges = edgesDomain f'
+      knodes = filter (\n -> isJust (applyNodeTGM f' n) && isJust (applyNodeTGM g' n)) nodes
+      kedges = filter (\e -> isJust (applyEdgeTGM f' e) && isJust (applyEdgeTGM g' e)) edges
+      delNodes = nodes \\ knodes
+      delEdges = edges \\ kedges
+      delEdgesFromF' = foldr removeEdgeDomTyped f' delEdges
+      delNodesFromF' = foldr removeNodeDomTyped delEdgesFromF' delNodes
+      delEdgesFromG' = foldr removeEdgeDomTyped g' delEdges
+      delNodesFromG' = foldr removeNodeDomTyped delEdgesFromG' delNodes

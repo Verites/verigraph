@@ -48,6 +48,23 @@ class (Morphism m) => AdhesiveHLR m where
   -- TODO: what if it doesn't exist??
   poc :: m -> m -> (m, m)
 
+  -- | Calculate the pullback between the two given morphisms
+  --
+  -- Given the morphisms /f : A -> C/ and /g : B -> C/, respectively, returns
+  -- the pair of morphisms /f' : X -> B/ and /g': X -> A/ such that the
+  -- following square is a pullback.
+  --
+  -- @
+  --        g'
+  --     X──────▶A
+  --     │       │
+  --  f' │       │ f
+  --     ▼       ▼
+  --     B──────▶C
+  --        g
+  -- @
+  injectivePullback :: m -> m -> (m, m)
+
 class Morphism m => EpiPairs m where
   -- | Create all jointly epimorphic pairs of morphisms from the given objects.
   createPairs :: Obj m -> Obj m -> [(m, m)]

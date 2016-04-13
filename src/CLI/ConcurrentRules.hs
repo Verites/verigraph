@@ -6,7 +6,7 @@ module CLI.ConcurrentRules
 
 import           CLI.GlobalOptions
 
-import           Graph.ConcurrentRules
+import           Analysis.ConcurrentRules
 import qualified Graph.GraphGrammar        as GG
 import           Graph.GraphRule
 import           Options.Applicative
