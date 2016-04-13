@@ -15,9 +15,6 @@ import qualified Abstract.Morphism        as M
 type Map a = [(a,Int)]
 type Maps = (Map GP.Node, Map GP.Edge)
 
-uniqueId :: [GP.Node] -> [GP.Edge] -> Maps
-uniqueId nodes edges = (zip nodes [0..], zip edges [0..])
-
 setUniqueId :: GP.Graph -> GP.Graph
 setUniqueId (GP.Graph nodes edges) = GP.Graph n e
   where

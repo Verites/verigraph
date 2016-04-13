@@ -12,6 +12,7 @@ import qualified Graph.GraphMorphism      as GM
 import           Graph.GraphRule
 import qualified Graph.TypedGraphMorphism as TGM
 
+-- | For two typed graphs and a EpiPair (in GraphPart format) return two TypedGraphMorphism for the graph in verigraph format
 mountTGMBoth :: GM.GraphMorphism a b -> GM.GraphMorphism a b
              -> GP.EqClassGraph
              -> (TGM.TypedGraphMorphism a b, TGM.TypedGraphMorphism a b)

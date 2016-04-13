@@ -1,7 +1,6 @@
 module CLI.GlobalOptions
   ( GlobalOptions
   , globalOpts
-
   , injectiveMatchesOnly
   , injectiveNacSatisfaction
   , verbose
