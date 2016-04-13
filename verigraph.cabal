@@ -17,6 +17,7 @@ cabal-version:       >=1.22
 
 executable verigraph
   main-is:             CLI/Cli.hs
+  ghc-options:         -O2
   -- other-modules:       
   other-extensions:    TypeFamilies, MultiParamTypeClasses, FlexibleContexts
   build-depends:       base >=4.8 && <4.9,

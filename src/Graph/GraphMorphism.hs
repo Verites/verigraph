@@ -191,10 +191,8 @@ removeNodeCod n gm =
       em = edgeRelation gm
   in GraphMorphism g1 (removeNode n g2) (R.removeCod n nm) em
 
----- Insertion of nodes in graph morphisms
--- verificar se nao é o mesmo q já existe
--- ESTA INSERE OS NODOS QUE NÃO EXISTEM AINDA
-
+-- | Insertion of nodes in graph morphisms
+-- if the node do not exists, it is created
 updateNodeRelationGM :: G.NodeId -> G.NodeId -> GraphMorphism a b -> GraphMorphism a b
 updateNodeRelationGM n1 n2 gm =
   let g1 = domain gm

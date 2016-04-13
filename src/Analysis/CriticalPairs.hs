@@ -21,6 +21,7 @@ import           Data.List.Utils           (countElem)
 import           Data.Maybe                (isJust,mapMaybe)
 import qualified Graph.GraphMorphism       as GM
 import           Graph.GraphRule
+import           Graph.NacOperations
 import qualified Graph.Rewriting           as RW
 import           Graph.TypedGraphMorphism
 
@@ -179,16 +180,16 @@ allProduceForbid :: Bool -> Bool
                  -> GraphRule a b
                  -> GraphRule a b
                  -> [CriticalPair a b]
-allProduceForbid nacInj inj l r = concatMap (produceForbidOneNac nacInj inj l r) (zip (nacs r) [0..])
+allProduceForbid nacInj inj l r = concatMap (produceForbidOneNac nacInj inj l inverseLeft r) (zip (nacs r) [0..])
+  where
+    inverseLeft = inverse inj l
 
 -- | Check ProduceForbid for a NAC @n@ in @r@
 produceForbidOneNac :: Bool -> Bool
-                    -> GraphRule a b -> GraphRule a b
+                    -> GraphRule a b -> GraphRule a b -> GraphRule a b
                     -> (TypedGraphMorphism a b,Int)
                     -> [CriticalPair a b]
-produceForbidOneNac nacInj inj l r (n,idx) = let
-        inverseLeft = inverseWithoutNacs l
-
+produceForbidOneNac nacInj inj l inverseLeft r (n,idx) = let
         -- Consider for a NAC n (L2 -> N2) of r any jointly surjective
         -- pair of morphisms (h1: R1 -> P1, q21: N2 -> P1) with q21 (part)inj
         pairs = createPairsCodomain (right l) n
@@ -201,8 +202,8 @@ produceForbidOneNac nacInj inj l r (n,idx) = let
         filtPairs = filter (\(h1,_) -> satsGluingAndNacs nacInj False inverseLeft h1) filtMono
         
         dpo = map (\(h1,q21) ->
-                    let (k,r') = RW.poc h1 (left inverseLeft)
-                        (m1,l') = RW.po k (right inverseLeft) in
+                    let (k,r') = RW.poc h1 (right l)
+                        (m1,l') = RW.po k (left l) in
                       (h1,q21,k,r',m1,l'))
                   filtPairs --(h1,q21,k,r',m1,l')
 
