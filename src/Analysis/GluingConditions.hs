@@ -8,6 +8,9 @@ module Analysis.GluingConditions
    satsIncEdges
  ) where
 
+import Abstract.AdhesiveHLR
+import Abstract.DPO
+
 import qualified Abstract.Morphism        as M
 import qualified Analysis.Matches         as MT
 import           Data.Maybe               (mapMaybe)
@@ -15,6 +18,14 @@ import           Graph.Graph              (incidentEdges, nodes)
 import qualified Graph.GraphMorphism      as GM
 import           Graph.GraphRule
 import           Graph.TypedGraphMorphism
+
+
+instance DPO (TypedGraphMorphism a b) where
+  satsGluing inj m prod = (inj || identificationCondition) && danglingCondition
+    where
+        identificationCondition = satsDelItems (left prod) m
+        danglingCondition       = satsIncEdges (left prod) m
+
 
 ---- Gluing Conditions
 
@@ -32,16 +43,8 @@ satsGluingNacsBoth nacInj inj (l,m1) (r,m2) =
 satsGluingAndNacs :: Bool -> Bool -> GraphRule a b -> TypedGraphMorphism a b -> Bool
 satsGluingAndNacs nacInj inj rule m = gluingCond && nacsCondition
     where
-        gluingCond    = satsGluing inj (left rule) m
+        gluingCond    = satsGluing inj m rule
         nacsCondition = satsNacs nacInj rule m
-
--- | Check just the gluing conditions for a match
--- @inj@ only indicates the match, this function does not checks if the match is injective
-satsGluing :: Bool -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
-satsGluing inj l m = (inj || identificationCondition) && danglingCondition
-    where
-        identificationCondition = satsDelItems l m
-        danglingCondition       = satsIncEdges l m
 
 -- | Return True if the match @m@ satifies the identification condition
 satsDelItems :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool

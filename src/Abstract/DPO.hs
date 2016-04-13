@@ -10,7 +10,9 @@ module Abstract.DPO
   , right
   , nacs
 
-  -- ** Applying
+  -- ** Application
+  , DPO(..)
+
   , dpo
   , comatch
 
@@ -47,3 +49,8 @@ comatch m prod = let (_,m',_,_) = dpo m prod in m'
 
 inverseWithoutNacs :: Production m -> Production m
 inverseWithoutNacs p = Production (right p) (left p) []
+
+class AdhesiveHLR m => DPO m where
+  -- | Check just the gluing conditions for a match
+  -- @inj@ only indicates the match, this function does not checks if the match is injective
+  satsGluing :: Bool -> m -> Production m -> Bool
