@@ -14,15 +14,14 @@ class (Eq m) => Morphism m where
     epimorphism :: m -> Bool
     isomorphism :: m -> Bool
 
--- | Data type definition to choose specifics propertys of a morphism
---
---     [@ALL@]  Finds all possible matches
---     [@MONO@] Finds only monomorphics matches
---     [@EPI@]  Finds only epimorphics matches
---     [@ISO@]  Finds only isomorphics matches
+-- | Restriction to morphisms that may be considered when searching for them.
 --
 -- TODO: rename following Haskell naming conventions (not all caps)
-data PROP = ALL | MONO | EPI | ISO
+data PROP
+  = ALL   -- ^ Finds all possible matches
+  | MONO  -- ^ Finds only monomorphic matches
+  | EPI   -- ^ Finds only epimorphic matches
+  | ISO   -- ^ Finds only isomorphic matches
 
 class Morphism m => FindMorphism m where
   -- | Finds matches __/m/__
@@ -37,5 +36,8 @@ class Morphism m => FindMorphism m where
   --   Partially injective. (Injective out of __/m/__)
   --
   -- TODO: replace by data constructor @PartMono :: m -> PROP@?
+  --
   -- TODO: what is the second argument??
+  --
+  -- TODO: properly explain partial injectivity
   partInjMatches :: m -> m -> [m]
