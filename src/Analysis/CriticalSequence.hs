@@ -14,7 +14,7 @@ import qualified Abstract.Morphism         as M
 import           Abstract.AdhesiveHLR      (createPairsCodomain)
 import           Data.List                 (elemIndex)
 import           Graph.GraphRule
-import           Graph.NacOperations
+import           Graph.EpiPairs
 import           Abstract.AdhesiveHLR      as RW
 import           Abstract.DPO              as RW
 import           Graph.TypedGraphMorphism

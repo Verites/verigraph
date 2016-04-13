@@ -5,10 +5,11 @@ module Graph.ConcurrentRules
 
 import qualified Abstract.Morphism        as M
 import           Abstract.AdhesiveHLR
+import           Abstract.DPO
 import           Data.List
 import           Data.Maybe               (isJust)
 import           Graph.GraphRule
-import           Graph.NacOperations
+import           Graph.EpiPairs
 import           Abstract.AdhesiveHLR     as R
 import           Abstract.DPO             as R
 import qualified Graph.TypedGraphMorphism as TGM

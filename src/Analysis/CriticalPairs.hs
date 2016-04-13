@@ -19,7 +19,7 @@ import           Data.List.Utils           (countElem)
 import           Data.Maybe                (isJust,mapMaybe)
 import qualified Graph.GraphMorphism       as GM
 import           Graph.GraphRule
-import           Graph.NacOperations
+import           Graph.EpiPairs
 import           Abstract.AdhesiveHLR      as RW
 import           Abstract.DPO              as RW
 import           Graph.TypedGraphMorphism
