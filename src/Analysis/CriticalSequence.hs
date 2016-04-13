@@ -86,17 +86,17 @@ allDeliverDelete :: Bool -> Bool
                  -> GraphRule a b
                  -> GraphRule a b
                  -> [CriticalSequence a b]
-allDeliverDelete nacInj inj l r = concatMap (deliverDelete nacInj inj l r) (zip (nacs r) [0..])
+allDeliverDelete nacInj inj l r = concatMap (deliverDelete nacInj inj l inverseLeft r) (zip (nacs r) [0..])
+  where
+    inverseLeft = inverse inj l
 
 -- | Check DeliverDelete for a NAC @n@ in @r@
 deliverDelete :: Bool -> Bool
-                      -> GraphRule a b -> GraphRule a b
+                      -> GraphRule a b -> GraphRule a b -> GraphRule a b
                       -> (TypedGraphMorphism a b, Int)
                       -> [CriticalSequence a b]
-deliverDelete nacInj inj l r (n,idx) = let
-        inverseLeft = inverse inj l
-
-        pairs = createPairsCodomain (right inverseLeft) n
+deliverDelete nacInj inj l inverseLeft r (n,idx) = let
+        pairs = createPairsCodomain (left l) n
 
         filtFun = if nacInj then M.monomorphism else partialInjectiveTGM n
         filtPairs = filter (\(m1,q) -> (not inj || M.monomorphism m1)
@@ -105,8 +105,8 @@ deliverDelete nacInj inj l r (n,idx) = let
                                     ) pairs
 
         dpo = map (\(m1,q21) ->
-                    let (k,d1) = RW.poc m1 (right inverseLeft)
-                        (m1',e1) = RW.po k (left inverseLeft) in
+                    let (k,d1) = RW.poc m1 (left l)
+                        (m1',e1) = RW.po k (right l) in
                       (m1,q21,k,d1,m1',e1))
                   filtPairs
 
