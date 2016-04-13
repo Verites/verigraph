@@ -22,7 +22,8 @@ import           Data.Maybe                (isJust,mapMaybe)
 import qualified Graph.GraphMorphism       as GM
 import           Graph.GraphRule
 import           Graph.NacOperations
-import qualified Graph.Rewriting           as RW
+import           Abstract.AdhesiveHLR      as RW
+import           Abstract.DPO              as RW
 import           Graph.TypedGraphMorphism
 
 -- | Data representing the type of a 'CriticalPair'
@@ -200,7 +201,7 @@ produceForbidOneNac nacInj inj l inverseLeft r (n,idx) = let
         -- Check gluing cond for (h1,r1). Construct PO complement D1.
         -- Construct PO K and abort if m1 not sats NACs l
         filtPairs = filter (\(h1,_) -> satsGluingAndNacs nacInj False inverseLeft h1) filtMono
-        
+
         dpo = map (\(h1,q21) ->
                     let (k,r') = RW.poc h1 (right l)
                         (m1,l') = RW.po k (left l) in

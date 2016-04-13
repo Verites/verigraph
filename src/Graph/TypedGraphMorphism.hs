@@ -28,7 +28,9 @@ module Graph.TypedGraphMorphism (
 ) where
 
 import           Abstract.Morphism   as M
+import           Abstract.AdhesiveHLR
 import           Abstract.Valid
+import           Data.Maybe
 import           Graph.Graph         (Graph, edges, nodes)
 import           Graph.Graph         as G
 import           Graph.GraphMorphism as GM
@@ -207,3 +209,64 @@ instance Valid (TypedGraphMorphism a b) where
         valid cod &&
         dom == compose m cod
 
+instance AdhesiveHLR (TypedGraphMorphism a b) where
+
+  {-
+     PO algorithm:
+     1. invert r
+     2. compose k and r^-1
+     3. create node table  (R -> G')
+     5. create edge table  (R -> G')
+     4. associate nodes
+     6. associate edges
+  -}
+
+  po k r =
+    let
+        kr = M.compose (invertTGM r) k                                 -- invert r and compose with k, obtain kr : R -> D
+        createdNodes = orphanNodesTyped r                                -- nodes in R to be created
+        createdEdges = orphanEdgesTyped r                                -- edges in R to be created
+        nodeTable    = zip createdNodes (GM.newNodesTyped $ M.codomain kr) -- table mapping NodeIds in R to NodeIds in G'
+        edgeTable    = zip createdEdges (GM.newEdgesTyped $ M.codomain kr) -- table mapping EdgeIds in R to EdgeIds in G'
+
+        -- generate new node instances in G', associating them to the "created" nodes in R
+        kr'          = foldr (\(a,b) tgm -> let tp = fromJust $ GM.applyNode (M.domain kr) a
+                                            in updateNodeRelationTGM a b tp tgm)
+                             kr
+                             nodeTable
+
+        -- query the instance graphs R
+        typemor = M.domain         kr'                     -- typemor is the typed graph (R -> T)
+        g       = M.domain         typemor                 -- g  is the instance graph R
+        mp      = mapping        kr'                     -- mp is the mapping of kr'  : (R -> D'), where D' = D + new nodes
+        s1 e = fromJust $ G.sourceOf g e                     -- obtain source of e in R
+        t1 e = fromJust $ G.targetOf g e                     -- obtain target of e in R
+        s2 e = fromJust $ GM.applyNode mp (s1 e)             -- obtain source of m'(e) in G'
+        t2 e = fromJust $ GM.applyNode mp (t1 e)             -- obtain target of m'(e) in G'
+        tp e = fromJust $ GM.applyEdge typemor e             -- obtain type of e in R
+
+        -- generate new edge table with new information
+        edgeTable' = map (\(e,e2) -> (e, s1 e, t1 e, e2, s2 e, t2 e, tp e)) edgeTable
+
+        -- create new morphism adding all edges
+        kr''      = foldr (\(a,sa,ta,b,sb,tb,tp) tgm -> updateEdgeRelationTGM a b (createEdgeCodTGM b sb tb tp tgm) )
+                          kr'
+                          edgeTable'
+    in (kr'', idMap k kr'')
+
+  {-
+     PO complement algorithm:
+     1. compose l and m generating ml
+     2. query edges for deletion in the codomain of ml
+     2. query nodes for deletion in the codomain of ml
+     3. delete all edges
+     4. delete all nodes
+  -}
+  poc m l =
+    let ml       = M.compose l m                                                         -- compose l and m obtaining ml
+        delEdges = mapMaybe (GM.applyEdge $ mapping m) (orphanEdgesTyped l) -- obtain list of edges to be deleted in G
+        delNodes = mapMaybe (GM.applyNode $ mapping m) (orphanNodesTyped l) -- obtain list of nodes to be deleted in G
+        k        = foldr removeNodeCodTyped                                          -- delete all edges, then all nodes from ml
+                       (foldr removeEdgeCodTyped ml delEdges)
+                           delNodes
+    in (k, idMap k m)

@@ -17,7 +17,8 @@ import qualified Analysis.Matches          as MT
 import           Data.List                 (elemIndex)
 import           Graph.GraphRule
 import           Graph.NacOperations
-import qualified Graph.Rewriting           as RW
+import           Abstract.AdhesiveHLR      as RW
+import           Abstract.DPO              as RW
 import           Graph.TypedGraphMorphism
 
 -- | Data representing the type of a 'CriticalPair'
@@ -119,7 +120,7 @@ deliverDelete nacInj inj l inverseLeft r (n,idx) = let
                            Just ind -> [(m1,q21,k,d1,m1',e1,hs!!ind)]
                            Nothing  -> [])
                   filtM1
-        
+
         m1m2 = map (\(_,_,_,_,m1',e1,l2d1) -> (m1', M.compose l2d1 e1)) h21
 
         filtM2 = filter (\(_,m2) -> (not inj || M.monomorphism m2)

@@ -9,7 +9,8 @@ import           Abstract.Morphism
 import           Analysis.EpiPairs
 import           Analysis.GluingConditions
 import           Graph.GraphRule
-import qualified Graph.Rewriting           as RW
+import           Abstract.AdhesiveHLR
+import           Abstract.DPO
 import           Graph.TypedGraphMorphism
 
 -- | Revert a Rule shifting NACs
@@ -18,7 +19,7 @@ inverse inj r = graphRule (right r) (left r) (concatMap (shiftLeftNac inj r) (na
 
 -- | Given a rule @L <-l- K -r-> R@ and a Left NAC morphism @n : L -> N@, it shifts the NAC over the rule resulting in a list of Right NAC morphisms of type @n': R -> N'@
 shiftLeftNac :: Bool -> GraphRule a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
-shiftLeftNac inj rule n = [RW.comatch n rule | satsGluing inj (left rule) n]
+shiftLeftNac inj rule n = [comatch n rule | satsGluing inj (left rule) n]
 
 -- | Given a morphism @m : A -> B@ and a NAC @n : A -> N@, it shifts the NAC over the morphism resulting in a morphism list of type @n' : B -> N'@
 downwardShift :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
@@ -29,7 +30,7 @@ downwardShift m n' = newNacs
     newNacs = map snd injectiveMorphisms
 
 injectiveDownwardShift :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
-injectiveDownwardShift m n' = [fst $ RW.po n' m]
+injectiveDownwardShift m n' = [fst $ po n' m]
 
 
 {- Some tests

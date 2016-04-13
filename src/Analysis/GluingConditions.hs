@@ -14,7 +14,6 @@ import           Data.Maybe               (mapMaybe)
 import           Graph.Graph              (incidentEdges, nodes)
 import qualified Graph.GraphMorphism      as GM
 import           Graph.GraphRule
-import qualified Graph.Rewriting          as RW
 import           Graph.TypedGraphMorphism
 
 ---- Gluing Conditions
@@ -106,7 +105,7 @@ satsOneNacInj :: TypedGraphMorphism a b -- ^ m
 satsOneNacInj m nac = all (==False) checkCompose
    where
       checkCompose = map (\x -> M.compose nac x == m) matches
-      matches = MT.matches MT.MONO typeNac typeG 
+      matches = MT.matches MT.MONO typeNac typeG
       typeNac = M.codomain nac
       typeG   = M.codomain m
 

@@ -10,7 +10,8 @@ import           Data.List
 import           Data.Maybe               (isJust)
 import           Graph.GraphRule
 import           Graph.NacOperations
-import qualified Graph.Rewriting          as R
+import           Abstract.AdhesiveHLR     as R
+import           Abstract.DPO             as R
 import qualified Graph.TypedGraphMorphism as TGM
 
 type EpiPair a b = (TGM.TypedGraphMorphism a b, TGM.TypedGraphMorphism a b)
@@ -79,4 +80,3 @@ injectivePullback f g = (delNodesFromF', delNodesFromG')
     delNodesFromF' = foldr TGM.removeNodeDomTyped delEdgesFromF' delNodes
     delEdgesFromG' = foldr TGM.removeEdgeDomTyped g' delEdges
     delNodesFromG' = foldr TGM.removeNodeDomTyped delEdgesFromG' delNodes
-
