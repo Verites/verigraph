@@ -92,14 +92,14 @@ inverse (Relation dom cod m) =
         m
 -- | Return a list of all elements that @x@ gets mapped into.
 apply :: (Ord a) => Relation a -> a -> [a]
-apply (Relation dom cod m) x =
+apply (Relation _ _ m) x =
     case Map.lookup x m of
         Just l    -> l
         _ -> []
 
 -- | Compose @r1@ and @r2@.
 compose :: (Ord a) => Relation a -> Relation a -> Relation a
-compose r1@(Relation dom cod m) r2@(Relation dom' cod' m') =
+compose r1@(Relation dom _ _) r2@(Relation _ cod' _) =
     Relation dom cod' m''
   where
     m'' =
@@ -113,34 +113,26 @@ compose r1@(Relation dom cod m) r2@(Relation dom' cod' m') =
 
 -- | Remove an element from the domain of the relation
 removeDom :: (Eq a, Ord a) => a -> Relation a -> Relation a
-removeDom x r =
- let d = domain r
-     c = codomain r
-     m = mapping r
- in  Relation (L.delete x d) c (Map.delete x m)
+removeDom x r = r { domain = L.delete x (domain r)
+                  , mapping = Map.delete x (mapping r)
+                  }
+
 
 -- | Remove an element from the codomain of the relation
 removeCod :: (Eq a,Ord a) => a -> Relation a -> Relation a
-removeCod x r =
- let d = domain r
-     c = codomain r
-     m = mapping r
-  in Relation d (L.delete x c) (Map.map (L.delete x) m)
+removeCod x r = r { codomain = L.delete x (codomain r)
+                  , mapping = Map.map (L.delete x) (mapping r)
+                  }
 
 -- | Insert an element on the codomain of the relation
 insertCod :: (Eq a,Ord a) => a -> Relation a -> Relation a
-insertCod x r =
- let d = domain r
-     c = codomain r
-     m = mapping r
-  in Relation d ([x] `union` c) m
+insertCod x r = r { codomain = [x] `union` codomain r }
 
 -- | Test if @r@ is functional.
 functional :: (Ord a) => Relation a -> Bool
-functional r =
-    all containsOne $ map (apply r) (defDomain r)
+functional r = all containsOne $ Map.elems (mapping r)
   where
-    containsOne [x] = True
+    containsOne [_] = True
     containsOne _ = False
 
 -- | Test if @r@ is injective out of domain @list@
@@ -159,4 +151,3 @@ surjective = total . inverse
 total :: (Ord a) => Relation a -> Bool
 total r =
     sort (domain r) == sort (defDomain r)
-

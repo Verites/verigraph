@@ -1,25 +1,21 @@
-module Analysis.VeriToGP (
+module Graph.VeriToGP (
    mixLeftRule,
    mixTGM
    ) where
 
-import qualified Analysis.GraphPart       as GP
+import qualified Graph.GraphPart       as GP
 import           Graph.Graph
-import qualified Graph.GraphMorphism      as GM
 import           Graph.GraphRule
-import           Graph.TypedGraphMorphism
+import qualified Graph.GraphMorphism      as GM
 import qualified Abstract.Morphism        as M
 
 --from verigraph to GraphPart
 
-type Map a = [(a,Int)]
-type Maps = (Map GP.Node, Map GP.Edge)
-
 setUniqueId :: GP.Graph -> GP.Graph
 setUniqueId (GP.Graph nodes edges) = GP.Graph n e
   where
-    n = map (\(id,(GP.Node a b _ d)) -> (GP.Node a b id d)) (zip [0..] nodes)
-    e = map (\(id,(GP.Edge a b _ d e f)) -> (GP.Edge a b id d e f)) (zip [0..] edges)
+    n = map (\(id, GP.Node a b _ d) -> (GP.Node a b id d)) (zip [0..] nodes)
+    e = map (\(id, GP.Edge a b _ d e f) -> (GP.Edge a b id d e f)) (zip [0..] edges)
 
 mixLeftRule :: GraphRule a b -> GraphRule a b -> GP.Graph
 mixLeftRule l r = setUniqueId $ mixTGM (M.codomain (left l)) (M.codomain (left r))
@@ -38,13 +34,13 @@ tgmToGP morfL side = GP.Graph nods edgs
 
 nodesToGP :: GM.TypedGraph a b -> String -> [NodeId] -> [GP.Node]
 nodesToGP _  _    []            = []
-nodesToGP tg side (NodeId b:xs) = GP.Node n b 0 side : (nodesToGP tg side xs)
+nodesToGP tg side (NodeId b:xs) = GP.Node n b 0 side : nodesToGP tg side xs
    where
      Just (NodeId n) = GM.applyNode tg (NodeId b)
 
 edgesToGP :: GM.TypedGraph a b -> String -> Graph a b -> [EdgeId] -> [GP.Edge]
 edgesToGP _  _    _ []            = []
-edgesToGP tg side g (EdgeId b:xs) = (GP.Edge typ b 0 src tgt side) : edgesToGP tg side g xs
+edgesToGP tg side g (EdgeId b:xs) = GP.Edge typ b 0 src tgt side : edgesToGP tg side g xs
    where
       Just (EdgeId typ) = GM.applyEdge tg (EdgeId b)
       Just (NodeId src_) = sourceOf g (EdgeId b)

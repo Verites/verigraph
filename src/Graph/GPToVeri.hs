@@ -1,15 +1,13 @@
-module Analysis.GPToVeri (
+module Graph.GPToVeri (
    mountTGMBoth
    ) where
 
 {-Converts from GraphPart to Verigraph structures-}
 
 import qualified Abstract.Morphism        as M
-import           Analysis.GraphPart       as GP
-import           Data.Maybe               (fromJust)
+import           Graph.GraphPart          as GP
 import qualified Graph.Graph              as G
 import qualified Graph.GraphMorphism      as GM
-import           Graph.GraphRule
 import qualified Graph.TypedGraphMorphism as TGM
 
 -- | For two typed graphs and a EpiPair (in GraphPart format) return two TypedGraphMorphism for the graph in verigraph format
@@ -47,9 +45,12 @@ mountMapping side g@(nodes,edges) m = GM.gmbuild (M.domain m) (mountG g) nods ed
 -- | Returns the list which Node is in [[Node]]
 getListNodeName :: String -> [[Node]] -> Int -> [Node]
 getListNodeName side (x:xs) a = if any (\(Node _ name _ src) -> name == a && src == side) x then x else getListNodeName side xs a
-getListNodeName [] _ _ = error "error when mounting overlapping pairs (getListNodeName)"
+getListNodeName [] _ _ = error "error when mounting overlapping pairs (getListNodeName)" -- The name must not be empty
+getListNodeName _ [] _ = error "error when mounting overlapping pairs (getListNodeName)" -- There must be at least one equivalence class of nodes
+
 
 -- | Returns the list which Edge is in [[Edge]]
 getListEdgeName :: String -> [[Edge]] -> Int -> [Edge]
 getListEdgeName side (x:xs) a = if any (\e -> (label e == a) && (egsource e == side)) x then x else getListEdgeName side xs a
-getListEdgeName [] _ _ = error "error when mounting overlapping pairs (getListNodeEdge)"
+getListEdgeName [] _ _ = error "error when mounting overlapping pairs (getListNodeEdge)" -- The name must not be empty
+getListEdgeName _ [] _ = error "error when mounting overlapping pairs (getListNodeName)" -- There must be at least one equivalence class of edges

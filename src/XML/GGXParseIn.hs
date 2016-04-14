@@ -10,7 +10,6 @@ module XML.GGXParseIn
  , parseRuleSequence
  ) where
 
-import           Data.String.Utils        (split)
 import           Data.Tree.NTree.TypeDefs
 import           Text.XML.HXT.Core
 import           XML.ParsedTypes
@@ -43,11 +42,12 @@ parseNacNames = atTag "Rule" >>>
 parseNacNamess :: ArrowXml cat => cat (NTree XNode) [(String,String)]
 parseNacNamess = atTag "ApplCondition" >>>
   proc graph -> do
-    let l = map show [0..]
+    let l = map show [0::Int ..]
     nacNames <- listA parseNacIfEnabled -< graph
     let a = zip l nacNames
     returnA -< a
 
+parseNacIfEnabled :: ArrowXml cat => cat (NTree XNode) String
 parseNacIfEnabled = atTag "NAC" >>>
   proc nac -> do
     _  <- isA (\str -> str == "" || str == "true") <<< getAttrValue "enabled" -< nac

@@ -1,71 +1,42 @@
-module Analysis.Matches (
-  PROP(..)
-  , matches
-  , partInjMatches
-  ) where
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+module Graph.FindMorphism () where
 
 import           Abstract.Morphism
-import           Data.List
+import           Data.List                as L
 import           Data.Maybe
-import qualified Graph.Graph              as G
+import           Graph.Graph              as G
 import qualified Graph.GraphMorphism      as GM
-import           Graph.GraphRule
-import qualified Graph.TypedGraphMorphism as TGM
+import           Graph.TypedGraphMorphism as TGM
 
--- | Data type definition to choose specifics propertys of a morphism
---
---     [@ALL@]  Finds all possible matches
---     [@MONO@] Finds only monomorphics matches
---     [@EPI@]  Finds only epimorphics matches
---     [@ISO@]  Finds only isomorphics matches
-data PROP = ALL | MONO | EPI | ISO
-
-
-
+instance FindMorphism (TGM.TypedGraphMorphism a b) where
+  matches = matches'
+  partInjMatches = partInjMatches'
 
 --ALIAS OF MOST USED FUNCTIONS --
-nodes g = G.nodes g --NODES OF A GRAPH
-edges g = G.edges g --EDGES OF A GRAPH
 
-tgtE gm e = fromJust $ G.targetOf gm e --TARGET OF A EDGE
-srcE gm e = fromJust $ G.sourceOf gm e --SOURCE OF A EDGE
+-- TODO: following functions should be part of the Graph interface
+srcE, tgtE :: Graph a b -> EdgeId -> NodeId
+srcE gm e = fromJust $ G.sourceOf gm e
+tgtE gm e = fromJust $ G.targetOf gm e
 
---TYPE OF A NODE
+-- TODO: following function should be part of TypedGraph interface
+typeN :: GM.GraphMorphism a b -> NodeId -> NodeId
 typeN gm n = fromMaybe (error "NODE NOT TYPED") $ GM.applyNode gm n
 
---TYPE OF A EDGE
+-- TODO: following function should be part of TypedGraph interface
+typeE :: GM.GraphMorphism a b -> EdgeId -> EdgeId
 typeE gm e = fromMaybe (error "EDGE NOT TYPED") $ GM.applyEdge gm e
-
-
-mapping  tgm = TGM.mapping tgm --MAPPING OF A TYPEDGRAPHMORPHISM
-
-nodeMapping = TGM.applyNodeTGM --GET A MAPPING BETWEEN TWO NODES OF TYPEDGRAPH
-edgeMapping = TGM.applyEdgeTGM --GET A MAPPING BETWEEN TWO EDGES OF TYPEDGRAPH
-
-orphanNodes = TGM.orphanNodesTyped --GET ORPHANS NODES OF A TYPEDGRAPHMORPHISM
-orphanEdges = TGM.orphanEdgesTyped --GET ORPHANS EDGES OF A TYPEDGRAPHMORPHISM
-
-
-
 
 ---------------------------------------------------------------------------------
 
 -- | Finds matches __/q/__ .
 --
 --   Partially injective. (Injective out of __/m/__)
-partInjMatches :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b
+partInjMatches' :: TGM.TypedGraphMorphism a b -> TGM.TypedGraphMorphism a b
                -> [TGM.TypedGraphMorphism a b]
-partInjMatches nac match =
+partInjMatches' nac match =
   do
     let
-      --NODES AND EDGES FROM NAC
-      nodesN = nodes $ domain $ codomain nac
-      edgesN = edges $ domain $ codomain nac
-
-      --NODES AND EDGES FROM INSTANCE GRAPH
-      nodesG = nodes $ domain $ codomain match
-      edgesG = edges $ domain $ codomain match
-
       --NODES AND EDGES FROM lhs OF A RULE
       nodesL = nodes $ domain $ domain match
       edgesL = edges $ domain $ domain match
@@ -81,22 +52,21 @@ partInjMatches nac match =
       composeEdges :: TGM.TypedGraphMorphism a b -> [G.EdgeId]
                    -> Maybe (TGM.TypedGraphMorphism a b)
       composeEdges tgm [] = Just tgm
-      composeEdges tgm edge@(h:t) =
+      composeEdges tgm (h:t) =
         do
           let edgeNac = fromMaybe (error "EDGE NOT MAPPING L -> N") $
-                                  edgeMapping nac h
+                                  applyEdgeTGM nac h
               edgeG   = fromMaybe (error "EDGE NOT MAPPING L -> G") $
-                                  edgeMapping match h
+                                  applyEdgeTGM match h
 
               dom     = domain tgm
               cod     = codomain tgm
-              m       = mapping tgm
 
               tgm' = if (typeE dom edgeNac == typeE cod edgeG) &&
-                        (isNothing (edgeMapping tgm edgeNac) ||
-                         (edgeMapping tgm edgeNac == Just edgeG))
+                        (isNothing (applyEdgeTGM tgm edgeNac) ||
+                         (applyEdgeTGM tgm edgeNac == Just edgeG))
                      then Just $ TGM.typedMorphism dom cod
-                                 (GM.updateEdges edgeNac edgeG m)
+                                 (GM.updateEdges edgeNac edgeG $ mapping tgm)
                      else Nothing
 
           case tgm' of
@@ -108,20 +78,20 @@ partInjMatches nac match =
       composeNodes :: TGM.TypedGraphMorphism a b -> [G.NodeId]
                    -> Maybe (TGM.TypedGraphMorphism a b)
       composeNodes tgm [] = Just tgm
-      composeNodes tgm node@(h:t) =
+      composeNodes tgm (h:t) =
         do
           let nodeNac = fromMaybe (error "NODE NOT MAPPED L->N") $
-                        nodeMapping nac h
+                        applyNodeTGM nac h
               nodeG   = fromMaybe (error "NODE NOT MAPPED L->G") $
-                        nodeMapping match h
+                        applyNodeTGM match h
 
               dom     = domain tgm
               cod     = codomain tgm
               m       = mapping tgm
 
               tgm' = if (typeN dom nodeNac == typeN cod nodeG) &&
-                        (isNothing (nodeMapping tgm nodeNac) ||
-                         (nodeMapping tgm nodeNac == Just nodeG))
+                        (isNothing (applyNodeTGM tgm nodeNac) ||
+                         (applyNodeTGM tgm nodeNac == Just nodeG))
                      then Just $ TGM.typedMorphism dom cod
                                  (GM.updateNodes nodeNac nodeG m)
                      else Nothing
@@ -144,26 +114,26 @@ partInjMatches nac match =
           --DELETE FROM QUEUE ALREADY MAPPED SOURCE NODES (NODES FROM NAC)
           nodesSrc = filter (notMappedNodes q2) (nodes $ domain domQ)
             where
-              notMappedNodes tgm node = isNothing $ nodeMapping tgm node
+              notMappedNodes tgm node = isNothing $ applyNodeTGM tgm node
           --DELETE FROM QUEUE ALREADY MAPPED SOURCE EDGES (EDGES FROM NAC)
           edgesSrc = filter (notMappedEdges q2) (edges $ domain domQ)
             where
-              notMappedEdges tgm edge = isNothing $ edgeMapping tgm edge
+              notMappedEdges tgm edge = isNothing $ applyEdgeTGM tgm edge
 
           --REMOVE FROM TARGET LIST NODES ALREADY MAPPED (NODES FROM G)
-          nodesTgt = orphanNodes q2
+          nodesTgt = orphanNodesTyped q2
 
           --REMOVE FROM TARGET LIST EDGES ALREADY MAPPED (EDGES FROM G)
-          edgesTgt = orphanEdges q2
+          edgesTgt = orphanEdgesTyped q2
 
 ---------------------------------------------------------------------------------
 
 -- | Finds matches __/m/__
 --
 --   Injective, surjective, isomorphic or all possible matches
-matches :: PROP -> GM.GraphMorphism a b-> GM.GraphMorphism a b
+matches' :: PROP -> GM.GraphMorphism a b-> GM.GraphMorphism a b
         -> [TGM.TypedGraphMorphism a b]
-matches prop graph1 graph2 =
+matches' prop graph1 graph2 =
   buildMappings prop nodesSrc edgesSrc nodesTgt edgesTgt tgm
   where
     nodesSrc = nodes $ domain graph1
@@ -194,18 +164,18 @@ buildMappings prop [] [] nodesT edgesT tgm =
       where
         all = return tgm
 
-        isomorphism | null nodesT && null edgesT = return tgm
+        isomorphism | L.null nodesT && L.null edgesT = return tgm
                     | otherwise = []
 
-        epimorphism | null (orphanNodes tgm) &&
-                      null (orphanEdges tgm) = return tgm
+        epimorphism | L.null (orphanNodesTyped tgm) &&
+                      L.null (orphanEdgesTyped tgm) = return tgm
                     | otherwise = []
 
 ---------------------------------------------------------------------------------
 
 --IF HAS FREE NODES, MAP ALL FREE NODES TO ALL DESTINATION NODES
-buildMappings prop nodes@(h:t) [] nodesT edgesT tgm
-  | null nodesT = []
+buildMappings prop (h:t) [] nodesT edgesT tgm
+  | L.null nodesT = []
   | otherwise  = do
       y <- nodesT
 
@@ -234,8 +204,8 @@ buildMappings prop nodes@(h:t) [] nodesT edgesT tgm
 ---------------------------------------------------------------------------------
 
 --IF HAS FREE NODES, AND FREE EDGES, VERIFY THE CURRENT STATUS
-buildMappings prop nodes edges@(h:t) nodesT edgesT tgm
-  | null edgesT = []
+buildMappings prop nodes (h:t) nodesT edgesT tgm
+  | L.null edgesT = []
   | otherwise  =
     do  --VERIFY THE POSSIBILITY OF A MAPPING BETWEEN h AND THE DESTINATION EDGES
       y <- edgesT
@@ -288,7 +258,7 @@ updateNodesMapping n1 n2 tgm =
         m = mapping tgm
 
     if (typeN d n1 == typeN c n2) &&
-       (isNothing (nodeMapping tgm n1) || (nodeMapping tgm n1 == Just n2))
+       (isNothing (applyNodeTGM tgm n1) || (applyNodeTGM tgm n1 == Just n2))
       then Just $ TGM.typedMorphism d c (GM.updateNodes n1 n2 m)
       else Nothing
 
@@ -305,13 +275,6 @@ updateEdgesMapping e1 e2 tgm =
         m = mapping tgm
 
     if (typeE d e1 == typeE c e2) &&
-       (isNothing (edgeMapping tgm e1) || (edgeMapping tgm e1 == Just e2))
+       (isNothing (applyEdgeTGM tgm e1) || (applyEdgeTGM tgm e1 == Just e2))
       then Just $ TGM.typedMorphism d c (GM.updateEdges e1 e2 m)
       else Nothing
-
-
-
-
-
-
-

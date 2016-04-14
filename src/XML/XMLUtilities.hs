@@ -9,13 +9,17 @@ module XML.XMLUtilities
 
 where
 
-import           Data.Char
 import           Text.XML.HXT.Core
+import           Data.Tree.NTree.TypeDefs
 
+atTag :: ArrowXml cat => String -> cat (NTree XNode) XmlTree
 atTag tag = deep (isElem >>> hasName tag)
 
+text :: ArrowXml cat => cat (NTree XNode) String
 text = getChildren >>> getText
 
+textAtTag :: ArrowXml cat => String -> cat (Data.Tree.NTree.TypeDefs.NTree XNode) String
 textAtTag tag = atTag tag >>> text
 
+parseXML :: String -> IOStateArrow s b XmlTree
 parseXML = readDocument [withValidate no, withRemoveWS yes]

@@ -1,19 +1,19 @@
 module CLI.ConcurrentRules
-  ( CROpts
-  , crOpts
-  , runConcurrentRules
+  ( Options
+  , options
+  , execute
   ) where
 
 import           CLI.GlobalOptions
 
-import           Graph.ConcurrentRules
+import           Analysis.ConcurrentRules
 import qualified Graph.GraphGrammar        as GG
 import           Graph.GraphRule
 import           Options.Applicative
 import qualified XML.GGXReader             as XML
 import qualified XML.GGXWriter             as GW
 
-data CROpts = CROpts
+data Options = Options
   { outputFile     :: String
   , generationType :: CRGenerationType
   }
@@ -22,8 +22,8 @@ data CRGenerationType = MaxConcurrentRule | AllConcurrentRules
 
 data CREpiPairsType = AllEpiPairs | OnlyInjectiveEpiPairs deriving (Eq)
 
-crOpts :: Parser CROpts
-crOpts = CROpts
+options :: Parser Options
+options = Options
   <$> strOption
     ( long "output-file"
     <> short 'o'
@@ -41,8 +41,8 @@ crGenerationType =
         ( long "all-rules"
           <> help "Generate concurrent rules for all possible overlaps between comatch and match")
 
-runConcurrentRules :: GlobalOptions -> CROpts -> IO ()
-runConcurrentRules globalOpts opts = do
+execute :: GlobalOptions -> Options -> IO ()
+execute globalOpts opts = do
     gg <- XML.readGrammar (inputFile globalOpts)
     ggName <- XML.readGGName (inputFile globalOpts)
     names <- XML.readNames (inputFile globalOpts)
@@ -56,7 +56,7 @@ runConcurrentRules globalOpts opts = do
     GW.writeGrammarFile gg' ggName names (outputFile opts)
 
 makeAllConcurrentRules :: Bool -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
-makeAllConcurrentRules injectiveOnly (baseName, sequence) = zipWith makeName (allConcurrentRules injectiveOnly sequence) [0..]
+makeAllConcurrentRules injectiveOnly (baseName, sequence) = zipWith makeName (allConcurrentRules injectiveOnly sequence) [0::Int ..]
   where makeName rule idx = (baseName++"_"++show idx, rule)
 
 makeMaxConcurrentRule :: Bool -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]

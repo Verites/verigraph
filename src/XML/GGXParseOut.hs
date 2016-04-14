@@ -11,14 +11,11 @@ module XML.GGXParseOut
 import qualified Abstract.Morphism         as M
 import qualified Analysis.CriticalPairs    as CP
 import qualified Analysis.CriticalSequence as CS
-import           Data.List.Utils           (startswith)
 import           Data.Maybe
 import qualified Graph.Graph               as G
-import           Graph.GraphGrammar
 import qualified Graph.GraphMorphism       as GM
 import qualified Graph.GraphRule           as GR
 import           Graph.TypedGraphMorphism
-import           Text.XML.HXT.Core
 import           XML.ParsedTypes
 
 parseCPGraph :: (String,String,[CP.CriticalPair a b]) -> Overlappings

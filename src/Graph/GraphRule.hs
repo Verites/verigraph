@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Graph.GraphRule (
     -- * Types
       GraphRule
@@ -11,32 +12,24 @@ module Graph.GraphRule (
     , deletedEdges
     , createdNodes
     , createdEdges
+
+    -- * Gluing condition
+    , satsDelItems
+    , satsIncEdges
 ) where
 
+import           Data.Maybe               (mapMaybe)
 import           Abstract.Morphism
-import           Abstract.Valid
+import           Abstract.DPO
 import           Graph.Graph              as G
-import           Graph.TypedGraphMorphism (TypedGraphMorphism)
 import           Graph.TypedGraphMorphism as TGM
+import           Graph.FindMorphism       ()
 
-data GraphRule a b = GraphRule {
-                          leftSide  :: TypedGraphMorphism a b
-                        , rightSide :: TypedGraphMorphism a b
-                        , getNacs   :: [TypedGraphMorphism a b]
-                     } deriving (Show, Read)
+type GraphRule a b = Production (TypedGraphMorphism a b)
 
--- | Return the left-side (deletion) typed graph morphism of the rule.
-left  = leftSide
--- | Return the right-side (creation) typed graph morphism of the rule.
-right = rightSide
--- | Return a list of all NAC's.
-nacs  = getNacs
 -- | Create a rule based on both typed graph morphisms and a list of NAC's.
-graphRule = GraphRule
-
--- | Revert a Rule
-inverseWithoutNacs :: GraphRule a b -> GraphRule a b
-inverseWithoutNacs x = GraphRule (right x) (left x) []--(nacs x)
+graphRule :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b] -> GraphRule a b
+graphRule = production
 
 -- | Return the nodes deleted by a rule
 deletedNodes :: GraphRule a b -> [G.NodeId]
@@ -54,9 +47,59 @@ deletedEdges r = TGM.orphanEdgesTyped (left r)
 createdEdges :: GraphRule a b -> [G.EdgeId]
 createdEdges r = TGM.orphanEdgesTyped (right r)
 
-instance Valid (GraphRule a b) where
-    valid (GraphRule lside rside nacs) =
-        valid lside &&
-        valid rside &&
-        all valid nacs &&
-        domain lside == domain rside
+instance DPO (TypedGraphMorphism a b) where
+  satsGluing inj m prod = (inj || identificationCondition) && danglingCondition
+    where
+        identificationCondition = satsDelItems (left prod) m
+        danglingCondition       = satsIncEdges (left prod) m
+
+  partiallyMonomorphic = partialInjectiveTGM
+
+---- Gluing Conditions
+
+-- | Return True if the match @m@ satifies the identification condition
+satsDelItems :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
+satsDelItems l m = all (==True) (nodesDelPres ++ edgesDelPres)
+    where
+        nodesDelPres = map (satsDelItemsAux l m nodesDomain applyNodeTGM) (nodesCodomain m)
+        edgesDelPres = map (satsDelItemsAux l m edgesDomain applyEdgeTGM) (edgesCodomain m)
+
+-- | Check if in the match @m@, a element @n@ is deleted and at same time have another incident element on himself
+satsDelItemsAux :: Eq t => TypedGraphMorphism a b -> TypedGraphMorphism a b
+                         -> (TypedGraphMorphism a b -> [t])
+                         -> (TypedGraphMorphism a b -> t -> Maybe t)
+                         -> t -> Bool
+-- if just one element is incident in @n@, so it is not deleted and preserved at same match
+-- otherwise, is needed to verify if in the list of incident elements, if some is deleting @n@
+-- if two or more incident elements delete the element @n@ return False
+satsDelItemsAux l m dom apply n = (length incident <= 1) || not someIsDel
+    where
+        incident = [a | a <- dom m, apply m a == Just n]
+        ruleDel = apply (invertTGM l)
+        someIsDel = any (==Nothing) (map ruleDel incident)
+
+-- | Return True if do not exist dangling edges by the derivation of @r@ with match @m@
+satsIncEdges :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
+satsIncEdges leftR m = all (==True) (concat incidentEdgesDel)
+    where
+        l = graphDomain m
+        g = graphCodomain m
+        matchedLInG = mapMaybe (applyNodeTGM m) (nodes l)
+        delNodes = filter (ruleDeletes leftR m applyNodeTGM nodesDomain) matchedLInG
+        hasIncEdges = map (incidentEdges g) delNodes
+        verEdgeDel = map (ruleDeletes leftR m applyEdgeTGM edgesDomain)
+        incidentEdgesDel = map verEdgeDel hasIncEdges
+
+-- | Return True if the element @n@ is deleted by the rule @rule@ with match @m@
+-- assumes that @n@ has type NodeId or EdgeId
+-- @n@ not is necessarily element of G (the graph matched by @m@), in this case return False
+-- @list@ must get all element in the domain of @m@
+ruleDeletes :: Eq t => TypedGraphMorphism a b -> TypedGraphMorphism a b
+                  -> (TypedGraphMorphism a b -> t -> Maybe t)
+                  -> (TypedGraphMorphism a b -> [t])
+                  -> t -> Bool
+ruleDeletes l m apply list n = inL && not isPreserv
+    where
+        inL = any (\x -> apply m x == Just n) (list m)
+        kToG = compose l m
+        isPreserv = any (\x -> apply kToG x == Just n) (list kToG)

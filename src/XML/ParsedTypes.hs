@@ -25,5 +25,3 @@ type Overlapping = (String,String,ConflictMorphism,Int)
 type Sequence = (String, [SubSequence])
 type SubSequence = (Int, [SequenceItem])
 type SequenceItem = (Int, String)
-
-

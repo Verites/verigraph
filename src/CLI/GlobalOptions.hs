@@ -31,5 +31,3 @@ globalOpts = GOpts
     ( metavar "INPUT_FILE"
     <> action "file"
     <> help "GGX file defining the graph grammar")
-
-

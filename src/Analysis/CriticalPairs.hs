@@ -13,16 +13,12 @@ module Analysis.CriticalPairs
    ) where
 
 import           Abstract.Morphism
-import           Analysis.EpiPairs         (createPairsCodomain)
-import           Analysis.GluingConditions
-import qualified Analysis.Matches          as MT
 import           Data.List                 (elemIndex)
-import           Data.List.Utils           (countElem)
-import           Data.Maybe                (isJust,mapMaybe)
-import qualified Graph.GraphMorphism       as GM
+import           Data.Maybe                (mapMaybe)
 import           Graph.GraphRule
-import           Graph.NacOperations
-import qualified Graph.Rewriting           as RW
+import           Graph.EpiPairs            ()
+import           Abstract.AdhesiveHLR      as RW
+import           Abstract.DPO              as RW
 import           Graph.TypedGraphMorphism
 
 -- | Data representing the type of a 'CriticalPair'
@@ -94,9 +90,9 @@ deleteUseDangling :: GraphRule a b -> GraphRule a b
 deleteUseDangling l r (m1,m2) = cp
   where
     (k,l') = RW.poc m1 (left l)
-    lTOd = MT.matches MT.ALL (domain m2) (domain l')
+    lTOd = matches ALL (domain m2) (domain l')
     matchD = filter (\x -> m2 == compose x l') lTOd
-    (m1',r') = RW.po k (right l)
+    (_,r') = RW.po k (right l)
     m2' = compose (head matchD) r'
     dang = not (satsIncEdges (left r) m2')
     cp = case (null matchD, dang) of
@@ -122,10 +118,10 @@ allDeleteUse nacInj i l r = map (\(m1,m2) -> CriticalPair m1 m2 Nothing DeleteUs
 deleteUse :: GraphRule a b -> GraphRule a b
            -> (TypedGraphMorphism a b,TypedGraphMorphism a b)
            -> Bool
-deleteUse l r (m1,m2) = null matchD
+deleteUse l _ (m1,m2) = null matchD
     where
         (_,d1) = RW.poc m1 (left l) --get only the morphism D2 to G
-        l2TOd1 = MT.matches MT.ALL (domain m2) (domain d1)
+        l2TOd1 = matches ALL (domain m2) (domain d1)
         matchD = filter (\x -> m2 == compose x d1) l2TOd1
 
 -- | Rule @l@ causes a delete-use conflict with @r@ if rule @l@ deletes something that is used by @r@
@@ -167,9 +163,9 @@ prodEdgeDelNode :: GraphRule a b -> GraphRule a b -> (TypedGraphMorphism a b,Typ
 prodEdgeDelNode l r (m1,m2) = not (null matchD) && not (satsIncEdges (left r) m2')
     where
         (k,d1) = RW.poc m1 (left l)
-        l2TOd1 = MT.matches MT.ALL (domain m2) (domain d1)
+        l2TOd1 = matches ALL (domain m2) (domain d1)
         matchD = filter (\x -> m2 == compose x d1) l2TOd1
-        (m1',r') = RW.po k (right l)
+        (_,r') = RW.po k (right l)
         m2' = compose (head matchD) r' --matchD is unique if exists
 
 ---- Produce-Forbid
@@ -200,7 +196,7 @@ produceForbidOneNac nacInj inj l inverseLeft r (n,idx) = let
         -- Check gluing cond for (h1,r1). Construct PO complement D1.
         -- Construct PO K and abort if m1 not sats NACs l
         filtPairs = filter (\(h1,_) -> satsGluingAndNacs nacInj False inverseLeft h1) filtMono
-        
+
         dpo = map (\(h1,q21) ->
                     let (k,r') = RW.poc h1 (right l)
                         (m1,l') = RW.po k (left l) in
@@ -212,7 +208,7 @@ produceForbidOneNac nacInj inj l inverseLeft r (n,idx) = let
 
         --  Check existence of h21: L2 -> D1 st. e1 . h21 = q21 . n2
         h21 = concatMap (\(h1,q21,k,r',m1,l') ->
-                  let hs = MT.matches MT.ALL (domain n) (codomain k)
+                  let hs = matches ALL (domain n) (codomain k)
                       list = map (\h -> compose h r' == compose n q21) hs in
                        case elemIndex True list of
                            Just ind -> [(h1,q21,k,r',m1,l',hs!!ind)]
@@ -221,11 +217,11 @@ produceForbidOneNac nacInj inj l inverseLeft r (n,idx) = let
                   filtM1 --(h1,q21,k,r',m1,l1,[hs])
 
         -- Define m2 = d1 . h21: L2 -> K and abort if m2 not sats NACs r
-        m1m2 = map (\(h1,q21,k,r',m1,l',l2d1) -> (h1,m1, compose l2d1 l')) h21
+        m1m2 = map (\(h1,_,_,_,m1,l',l2d1) -> (h1,m1, compose l2d1 l')) h21
         --filtM2 = filter (\(m1,m2) -> satsNacs r m2) m1m2
 
         -- Check gluing condition for m2 and r
         filtM2 = filter (\(_,_,m2) -> (not inj || monomorphism m2)
                                     && satsGluingAndNacs nacInj inj r m2) m1m2
 
-        in map (\(h1,m1,m2) -> CriticalPair h1 m2 (Just idx) ProduceForbid) filtM2
+        in map (\(h1,_,m2) -> CriticalPair h1 m2 (Just idx) ProduceForbid) filtM2
