@@ -125,7 +125,7 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
   --
   -- TODO: what does the following line mean?
   --
-  -- @inj@ only indicates the match, this function does not checks if the match is injective
+  -- @inj@ only indicates if the match is injective, this function does not checks it
   satsGluing :: Bool -> m -> Production m -> Bool
 
   -- | Check if the second morphism is monomorphic outside the image of the
@@ -135,15 +135,16 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
 
 -- | True if the given match satisfies all NACs of the given production.
 --
--- If the first argument is true, only considers injective morphisms /Ni -> G/.
--- Otherwise, considers partially injective morphisms.
-satsNacs :: DPO m => Bool -> Production m -> m -> Bool
-satsNacs nacInj rule m = all (==True) (map (satsFun m) (nacs rule))
+-- If the first and second arguments are false, only considers partially injective morphisms.
+-- Otherwise, considers injective morphisms /Ni -> G/.
+satsNacs :: DPO m => Bool -> Bool -> Production m -> m -> Bool
+satsNacs nacInj inj rule m = all (==True) (map (satsFun m) (nacs rule))
   where
-    satsFun = if nacInj then satsOneNacInj else satsOneNacPartInj
+    --satsFun = if not nacInj && not inj then satsOneNacPartInj else satsOneNacInj
+    satsFun = satsOneNacPartInj
 
 -- | Check gluing conditions and the NACs satisfaction for a pair of matches
--- @inj@ only indicates the match, this function does not checks if the pair is injective
+-- @inj@ only indicates if the match is injective, this function does not checks it
 --
 -- TODO: deprecate? why do we need this __here__?
 satsGluingNacsBoth :: DPO m => Bool -> Bool -> (Production m, m) -> (Production m, m) -> Bool
@@ -161,7 +162,7 @@ satsGluingAndNacs :: DPO m => Bool -> Bool -> Production m -> m -> Bool
 satsGluingAndNacs nacInj inj rule m = gluingCond && nacsCondition
     where
         gluingCond    = satsGluing inj m rule
-        nacsCondition = satsNacs nacInj rule m
+        nacsCondition = satsNacs nacInj inj rule m
 
 satsOneNacInj :: FindMorphism m => m -> m -> Bool
 satsOneNacInj m nac = all (==False) checkCompose

@@ -204,7 +204,7 @@ produceForbidOneNac nacInj inj l inverseLeft r (n,idx) = let
                   filtPairs --(h1,q21,k,r',m1,l')
 
         filtM1 = filter (\(_,_,_,_,m1,_) -> (not inj || monomorphism m1)
-                                          && satsNacs nacInj l m1) dpo
+                                          && satsNacs nacInj inj l m1) dpo
 
         --  Check existence of h21: L2 -> D1 st. e1 . h21 = q21 . n2
         h21 = concatMap (\(h1,q21,k,r',m1,l') ->

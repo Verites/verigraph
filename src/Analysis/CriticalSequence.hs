@@ -109,7 +109,7 @@ deliverDelete nacInj inj l inverseLeft r (n,idx) = let
                       (m1,q21,k,d1,m1',e1))
                   filtPairs
 
-        filtM1 = filter (\(_,_,_,_,m1',_) -> satsNacs nacInj inverseLeft m1') dpo
+        filtM1 = filter (\(_,_,_,_,m1',_) -> satsNacs nacInj inj inverseLeft m1') dpo
 
         h21 = concatMap (\(m1,q21,k,d1,m1',e1) ->
                   let hs = M.matches M.ALL (M.domain n) (M.codomain k)
