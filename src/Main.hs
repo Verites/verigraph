@@ -1,6 +1,6 @@
 --{-# LANGUAGE TypeFamilies #-}
 
-{-import Analysis.ConcurrentRules
+import Graph.ConcurrentRules
 import qualified XML.GGXReader as XML
 import           Abstract.Valid
 import qualified Analysis.CriticalSequence as CS
@@ -30,25 +30,40 @@ import           Abstract.DPO              as RW
 import           Graph.TypedGraphMorphism
 import Data.Matrix
 import Data.Maybe
+import Data.List
 
 import qualified XML.GGXReader as XML
 
-fn = "test/teseRodrigo.ggx"
+fn = "test/elevator2.ggx"
 
 a fn = do
       prls <- XML.readRules fn
       ptg <- XML.readTypeGraph fn
       let rs = map (XML.instantiateRule (head ptg)) prls
-          --r = rs!!7
-          --n = head (nacs r)
-          --inv = GR.inverseWithoutNacs r
-          --mix = mixGM (codomain (right r)) (codomain n)
-          --mix2 = mixNac (codomain (right r)) n
-          --m = mapM partitions (partBy checkNode (Partitions.GraphPart.nodes mix2))
-          --dgs = Partitions.GraphPart.edges mix2
           r1 = rs!!0
           r2 = rs!!1
+          pairs = createPairsCodomain (left r1) (left r2)
+          --dgs = Partitions.GraphPart.edges mix2
+          inj = filter (\(m1,m2) -> M.monomorphism m1 && M.monomorphism m2) pairs
+          gluing = filter (\(m1,m2) -> satsGluing True (left r1) m1 && satsGluing True (left r2) m2) inj
+          delUse = filter (deleteUse r1 r2) gluing
       return (r1,r2)
+      --print (fst cp)
+      --print k
+      --print d1
+      return (M.codomain (head (nacs r1)), M.codomain (fst (delUse!!1)))
+  
+-- | Rule @l@ causes a delete-use conflict with @r@ if rule @l@ deletes something that is used by @r@
+-- DeleteUse using a most aproximated algorithm of the categorial diagram
+-- Verify the non existence of h21: L2 -> D1 such that d1 . h21 = m2
+deleteUse :: GraphRule a b -> GraphRule a b
+           -> (TGM.TypedGraphMorphism a b,TGM.TypedGraphMorphism a b)
+           -> Bool
+deleteUse l r (m1,m2) = Prelude.null matchD
+    where
+        (_,d1) = RW.poc m1 (left l) --get only the morphism D2 to G
+        l2TOd1 = MT.matches MT.ALL (M.domain m2) (M.domain d1)
+        matchD = filter (\x -> m2 == M.compose x d1) l2TOd1
 
 iN = insertNode
 iE = insertEdge
@@ -220,7 +235,7 @@ l8 = TGM.typedMorphism tkr8 tlr8 kr8_lr8
 kr8_rr8 = GM.gmbuild kr8 rr8 [] []
 r8 = TGM.typedMorphism tkr8 trr8 kr8_rr8
 
-testeCreate = graphRule l8 r8 []-}
+testeCreate = graphRule l8 r8 []
 
 {-Fim das Regras-}
 
