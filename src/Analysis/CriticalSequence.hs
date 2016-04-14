@@ -11,14 +11,13 @@ module Analysis.CriticalSequence
    ) where
 
 import qualified Abstract.Morphism         as M
-import           Abstract.AdhesiveHLR      (createPairsCodomain)
 import           Data.List                 (elemIndex)
 import           Graph.GraphRule
-import           Graph.EpiPairs
+import           Graph.EpiPairs            ()
 import           Abstract.AdhesiveHLR      as RW
 import           Abstract.DPO              as RW
 import           Graph.TypedGraphMorphism
-import           Graph.FindMorphism
+import           Graph.FindMorphism        ()
 
 -- | Data representing the type of a 'CriticalPair'
 data CS = ProduceUse | DeliverDelete deriving(Eq,Show)
@@ -74,7 +73,7 @@ allProduceUse nacInj i l r = map (\(m1,m2) -> CriticalSequence m1 m2 Nothing Pro
 produceUse :: GraphRule a b -> GraphRule a b
            -> (TypedGraphMorphism a b,TypedGraphMorphism a b)
            -> Bool
-produceUse l r (m1',m2) = Prelude.null filt
+produceUse l _ (m1',m2) = Prelude.null filt
     where
         (_,e1) = RW.poc m1' (left l)
         l2TOd1 = M.matches M.ALL (M.domain m2) (M.domain e1)

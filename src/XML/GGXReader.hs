@@ -15,8 +15,7 @@ module XML.GGXReader
 import           Abstract.Morphism
 import           Abstract.Valid
 import qualified Data.List                as L
-import           Data.Maybe               (catMaybes, fromJust, mapMaybe)
-import           Data.Tree.NTree.TypeDefs
+import           Data.Maybe               (fromJust, mapMaybe)
 import qualified Graph.Graph              as G
 import qualified Graph.GraphGrammar       as GG
 import           Graph.GraphMorphism      as GM

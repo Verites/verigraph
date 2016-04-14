@@ -2,12 +2,10 @@ module Graph.GraphPart (
    Node (..),
    Edge (..),
    Graph (..),
-   EqClassGraph (..),
+   EqClassGraph,
    getListNode,
    genEqClass
    ) where
-
-import           Data.List
 
 -- | A Node with the needed informations for the generating equivalence classes algorithm
 data Node = Node {
@@ -37,7 +35,7 @@ data Edge = Edge {
     } deriving (Eq)
 
 instance Show Edge where
-  show (Edge t a id (Node b1 b2 _ b3) (Node c1 c2 _ c3) s) = show a ++ ":" ++ show t ++ "(" ++ show b2 ++ "->" ++ show c2 ++ ")" ++ s ++ " (id:" ++ show id ++")"
+  show (Edge t a id (Node _ b2 _ _) (Node _ c2 _ _) s) = show a ++ ":" ++ show t ++ "(" ++ show b2 ++ "->" ++ show c2 ++ ")" ++ s ++ " (id:" ++ show id ++")"
 
 -- | Graph for the generating equivalence classes algorithm
 data Graph = Graph {
@@ -46,21 +44,25 @@ data Graph = Graph {
     } deriving (Show, Eq)
 
 -- | An equivalence class of a 'Graph'
+
+-- | TODO: use Data.Set?
 type EqClassGraph = ([[Node]],[[Edge]])
 
 {-partitions-}
 
 replace :: Eq t => [t] -> [t] -> [[t]] -> [[t]]
-replace old new [] = []
-replace old new (l:ls) = if l == old then new:ls else l:(replace old new ls)
+replace _ _ [] = []
+replace old new (l:ls)
+  | l == old  = new : ls
+  | otherwise = l : replace old new ls
 
 h :: Eq t => t -> [[t]] -> [[[t]]]
-h x list = ([[x]:list]) ++ map (\l -> replace l (x:l) list) list
+h x list = ([x]:list) : map (\l -> replace l (x:l) list) list
 --h x list = ([[x]:list]) ++ map (\l -> (x:l):(list\\[l])) list
 
 -- dont call g _ [[[]]]
 g :: Eq t => t -> [[[t]]] -> [[[t]]]
-g x list = concatMap (h x) list
+g x = concatMap (h x)
 
 -- | Creates equivalence classes of [t]
 partitions :: Eq t => [t] -> [[[t]]]
@@ -84,12 +86,12 @@ checkST nodes (Edge type1 _ _ s1 t1 _) (Edge type2 _ _ s2 t2 _) = exp1 && exp2 &
 
 -- | Adds elements in their eq class, creates a new if does not exists
 insr :: (a -> Bool) -> a -> [[a]] -> [[a]]
-insr f e []     = [[e]]
+insr _ e []     = [[e]]
 insr f e (x:xs) = if f (head x) then (e:x):xs else x:insr f e xs
 
 -- | Separates elements by his eq class
 partBy :: (a -> a -> Bool) -> [a] -> [[a]]
-partBy f [] = [[]]
+partBy _ [] = [[]]
 partBy f l = foldr (\a -> insr (f a) a) [[head l]] (tail l)
 
 -- | Generates all equivalence class graphs

@@ -4,7 +4,7 @@ module Analysis.ConcurrentRules
   maxConcurrentRule
 ) where
 
-import qualified Abstract.Morphism
+import           Abstract.Morphism
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 

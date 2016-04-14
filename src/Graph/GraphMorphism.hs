@@ -42,7 +42,6 @@ import           Abstract.Valid
 import           Data.List
 import           Data.Maybe        (fromJust, isNothing, mapMaybe)
 import           Graph.Graph       as G
-import           Graph.Graph       (Graph)
 
 data GraphMorphism a b = GraphMorphism {
                           getDomain    :: Graph a b
@@ -92,14 +91,14 @@ orphanEdges gm = R.orphans (edgeRelation gm)
 applyNode :: GraphMorphism a b -> G.NodeId -> Maybe G.NodeId
 applyNode m ln =
     case R.apply (nodeRelation m) ln of
-        (x:xs) -> Just x
+        (x:_) -> Just x
         _ -> Nothing
 
 -- | Return the edge to which @le@ gets mapped.
 applyEdge :: GraphMorphism a b -> G.EdgeId -> Maybe G.EdgeId
 applyEdge m le =
     case R.apply (edgeRelation m) le of
-        (x:xs) -> Just x
+        (x:_) -> Just x
         _ -> Nothing
 
 -- | An empty morphism between two graphs.
@@ -114,9 +113,11 @@ gmbuild gA gB n = foldr (uncurry updateEdges . (\(x,y) -> (EdgeId x,EdgeId y))) 
 
 -- | Construct a graph morphism based on domain, codomain and both node and
 -- edge relations.
+graphMorphism :: Graph a b -> Graph a b -> R.Relation NodeId -> R.Relation EdgeId -> GraphMorphism a b
 graphMorphism = GraphMorphism
 
 -- | The inverse graph morphism.
+inverse :: GraphMorphism a b -> GraphMorphism a b
 inverse (GraphMorphism dom cod nm em) =
     GraphMorphism cod dom (R.inverse nm) (R.inverse em)
 
@@ -155,84 +156,63 @@ updateEdges le ge morphism@(GraphMorphism l g nm em)
 -- | Remove an edge from the domain of the morphism
 removeEdgeDom :: G.EdgeId -> GraphMorphism a b -> GraphMorphism a b
 removeEdgeDom e gm =
-  let g1 = domain gm
-      g2 = codomain gm
-      nm = nodeRelation gm
-      em = edgeRelation gm
-  in  GraphMorphism (G.removeEdge e g1) g2 nm (R.removeDom e em)
-
+  gm { getDomain = removeEdge e (domain gm)
+     , edgeRelation = R.removeDom e (edgeRelation gm)
+     }
 
 -- | Remove an edge from the codomain of the morphism
 removeEdgeCod :: G.EdgeId -> GraphMorphism a b -> GraphMorphism a b
 removeEdgeCod e gm =
-  let g1 = domain gm
-      g2 = codomain gm
-      nm = nodeRelation gm
-      em = edgeRelation gm
-  in  GraphMorphism g1 (G.removeEdge e g2) nm (R.removeCod e em)
-
+  gm { getCodomain = G.removeEdge e (codomain gm)
+     , edgeRelation = R.removeCod e (edgeRelation gm)
+     }
 
 -- | Remove a node from the domain of the morphism
+--
+-- TODO: what happens if there were edges incident to the node?
 removeNodeDom :: G.NodeId -> GraphMorphism a b -> GraphMorphism a b
 removeNodeDom n gm =
-  let g1 = domain gm
-      g2 = codomain gm
-      nm = nodeRelation gm
-      em = edgeRelation gm
-  in GraphMorphism (removeNode n g1) g2 (R.removeDom n nm) em
-
+  gm { getDomain = removeNode n (domain gm)
+     , nodeRelation = R.removeDom n (nodeRelation gm) }
 
 -- | Remove a node from the codomain of the morphism
+--
+-- TODO: what happens if there were edges incident to the node?
 removeNodeCod :: G.NodeId -> GraphMorphism a b -> GraphMorphism a b
 removeNodeCod n gm =
-  let g1 = domain gm
-      g2 = codomain gm
-      nm = nodeRelation gm
-      em = edgeRelation gm
-  in GraphMorphism g1 (removeNode n g2) (R.removeCod n nm) em
+  gm { getCodomain = removeNode n (codomain gm)
+     , nodeRelation = R.removeCod n (nodeRelation gm)
+     }
 
 -- | Insertion of nodes in graph morphisms
 -- if the node do not exists, it is created
 updateNodeRelationGM :: G.NodeId -> G.NodeId -> GraphMorphism a b -> GraphMorphism a b
 updateNodeRelationGM n1 n2 gm =
-  let g1 = domain gm
-      g2 = codomain gm
-      nm = nodeRelation gm
-      em = edgeRelation gm
-  in GraphMorphism (G.insertNode n1 g1) (G.insertNode n2 g2) (R.update n1 n2 nm) em
+  gm { getDomain = G.insertNode n1 (domain gm)
+     , getCodomain = G.insertNode n2 (codomain gm)
+     , nodeRelation = R.update n1 n2 (nodeRelation gm)
+     }
 
 -- | This function adds an edge e1 (with source s1 and target t1) to the domain of the morphism, and associate it to e2
 --   It assumes s1, t1, e2 already exist, and that e1 does not exist.
 createEdgeDom :: G.EdgeId -> G.NodeId -> G.NodeId -> G.EdgeId -> GraphMorphism a b -> GraphMorphism a b
 createEdgeDom e1 s1 t1 e2 gm =
-  let g1 = domain gm
-      g2 = codomain gm
-      nm = nodeRelation gm
-      em = edgeRelation gm
-  in GraphMorphism (G.insertEdge e1 s1 t1 g1) g2 nm (R.update e1 e2 em)
+  gm { getDomain = G.insertEdge e1 s1 t1 (domain gm)
+     , edgeRelation = R.update e1 e2 (edgeRelation gm)
+     }
 
 -- | This function adds an edge e2 (with source s2 and target t2) to the codomain of the morphism.
 --   It assumes that s2,t2 exist, and that e2 does not exist
 createEdgeCod :: G.EdgeId -> G.NodeId -> G.NodeId -> GraphMorphism a b -> GraphMorphism a b
 createEdgeCod e2 s2 t2 gm =
-  let g1 = domain gm
-      g2 = codomain gm
-      nm = nodeRelation gm
-      em = edgeRelation gm
-      dom = R.domain em
-      cod = R.codomain em
-      m   = R.mapping em
-  in GraphMorphism g1 (G.insertEdge e2 s2 t2 g2) nm (R.insertCod e2 em)
-
+  gm { getCodomain = G.insertEdge e2 s2 t2 (codomain gm)
+     , edgeRelation = R.insertCod e2 (edgeRelation gm)
+     }
 
 -- | modifies a graph morphism, mapping edge e1 to edge e2. It assumes both edges already exist.
 updateEdgeRelationGM :: G.EdgeId -> G.EdgeId -> GraphMorphism a b -> GraphMorphism a b
 updateEdgeRelationGM e1 e2 gm =
-  let g1 = domain gm
-      g2 = codomain gm
-      nm = nodeRelation gm
-      em = edgeRelation gm
-  in GraphMorphism g1 g2 nm (R.update e1 e2 em)
+  gm { edgeRelation = R.update e1 e2 (edgeRelation gm) }
 
 -- | Test if a @nac@ is partial injective (injective out of @q@)
 partialInjectiveGM :: GraphMorphism a b -> GraphMorphism a b -> Bool

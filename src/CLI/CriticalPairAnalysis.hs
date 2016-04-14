@@ -1,35 +1,28 @@
 module CLI.CriticalPairAnalysis
-  ( CPOpts
-  , cpOpts
-  , runCPAnalysis
+  ( Options
+  , options
+  , execute
   ) where
 
 import           CLI.GlobalOptions
 
-import           Abstract.Morphism
-import           Abstract.Valid
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
-import           Control.Monad             (forM_, when)
-import qualified Data.List                 as L
 import           Data.Matrix               hiding ((<|>))
 import qualified Graph.GraphGrammar        as GG
-import qualified Graph.GraphMorphism       as GM
-import           Graph.GraphRule
 import           Options.Applicative
-import qualified Text.XML.HXT.Core         as HXT
 import qualified XML.GGXReader             as XML
 import qualified XML.GGXWriter             as GW
 
-data CPOpts = CPOpts
+data Options = Options
   { outputFile   :: Maybe String
-  , analysisType :: CPAnalysisType
+  , analysisType :: AnalysisType
   }
 
-data CPAnalysisType = Both | Conflicts | Dependencies | None deriving (Eq)
+data AnalysisType = Both | Conflicts | Dependencies | None deriving (Eq)
 
-cpOpts :: Parser CPOpts
-cpOpts = CPOpts
+options :: Parser Options
+options = Options
   <$> optional (strOption
     ( long "output-file"
     <> short 'o'
@@ -39,7 +32,7 @@ cpOpts = CPOpts
              "for the grammar (if absent, a summary will be printed to stdout)")))
   <*> cpAnalysisType
 
-cpAnalysisType :: Parser CPAnalysisType
+cpAnalysisType :: Parser AnalysisType
 cpAnalysisType =
       flag' Conflicts
         ( long "conflicts-only"
@@ -50,14 +43,14 @@ cpAnalysisType =
   <|> pure Both
 
 
-calculateConflicts :: CPAnalysisType -> Bool
+calculateConflicts :: AnalysisType -> Bool
 calculateConflicts flag = flag `elem` [Both,Conflicts]
 
-calculateDependencies :: CPAnalysisType -> Bool
+calculateDependencies :: AnalysisType -> Bool
 calculateDependencies flag = flag `elem` [Both,Dependencies]
 
-runCPAnalysis :: GlobalOptions -> CPOpts -> IO ()
-runCPAnalysis globalOpts opts = do
+execute :: GlobalOptions -> Options -> IO ()
+execute globalOpts opts = do
     gg <- XML.readGrammar (inputFile globalOpts)
     ggName <- XML.readGGName (inputFile globalOpts)
     names <- XML.readNames (inputFile globalOpts)
@@ -108,7 +101,7 @@ runCPAnalysis globalOpts opts = do
                  ++ (if calculateDependencies action then dependencies else [])
                  ++ ["Done!"]
 
-defWriterFun :: Bool -> Bool -> CPAnalysisType
+defWriterFun :: Bool -> Bool -> AnalysisType
              ->(GG.GraphGrammar a b -> String
              -> [(String,String)] -> String -> IO ())
 defWriterFun nacInj inj t = case t of

@@ -11,14 +11,14 @@ import           Graph.Graph         (Graph)
 import           Graph.GraphMorphism
 import           Graph.GraphRule     (GraphRule)
 
+-- TODO: extract as DPO grammar?
 data GraphGrammar a b = GraphGrammar {
-                            getInitialGraph :: GraphMorphism a b
-                          , getRules        :: [(String, GraphRule a b)]
+                            initialGraph :: GraphMorphism a b
+                          , rules        :: [(String, GraphRule a b)]
                         } deriving (Show, Read)
 
+graphGrammar :: GraphMorphism a b -> [(String, GraphRule a b)] -> GraphGrammar a b
 graphGrammar = GraphGrammar
-initialGraph = getInitialGraph
-rules        = getRules
-typeGraph :: GraphGrammar a b -> Graph a b
-typeGraph    = M.codomain . getInitialGraph
 
+typeGraph :: GraphGrammar a b -> Graph a b
+typeGraph    = M.codomain . initialGraph

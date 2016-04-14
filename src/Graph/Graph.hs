@@ -54,15 +54,15 @@ module Graph.Graph (
 ) where
 
 import           Abstract.Valid
-import           Control.Applicative ((<$>))
 import           Data.List
 import           Data.List.Utils
 
 data Node a = Node { getNodePayload :: Maybe a
               } deriving (Show, Read)
 
+-- | TODO: why do we need Eq instance for Node? How are **all nodes equal**??
 instance Eq (Node a) where
-    n == n' = True -- Simplifies all Eq instances that depend upon Node
+    _ == _ = True -- Simplifies all Eq instances that depend upon Node
 
 data Edge a = Edge { getSource      :: NodeId
                    , getTarget      :: NodeId
@@ -95,11 +95,11 @@ instance Eq (Graph a b) where
          eq edgeMap1 edgeMap2
 
 instance Show (Graph a b) where
-    show gr@(Graph nm em) =
+    show (Graph nm em) =
               "Nodes:\n" ++
               concatMap (\(n, _) -> "\t" ++ show n ++ "\n") nm ++
               "Edges:\n" ++
-              concatMap (\(eid, e) -> "\t" ++ show eid ++ "\n") em
+              concatMap (\(eid, _) -> "\t" ++ show eid ++ "\n") em
 
 
 newtype NodeId = NodeId Int deriving (Eq, Ord, Read)
@@ -160,12 +160,12 @@ build n   = foldr ((\(a,b,c) -> insertEdge a b c) . (\(a,b,c) -> (EdgeId a, Node
 
 -- | Insert a node @n@ in a graph @g@, without payload.
 insertNode :: NodeId -> Graph a b -> Graph a b
-insertNode n g@(Graph ns es) =
+insertNode n (Graph ns es) =
     Graph (addToAL ns n (Node Nothing)) es
 
 -- | Insert a node @n@ in a graph @g@ with payload @p@.
 insertNodeWithPayload :: NodeId -> a -> Graph a b -> Graph a b
-insertNodeWithPayload n p g@(Graph ns es) =
+insertNodeWithPayload n p (Graph ns es) =
     Graph (addToAL ns n (Node (Just p))) es
 
 -- | Insert an edge @e@ from @src@ to @tgt@ in graph @g@, without payload.
@@ -265,7 +265,7 @@ edgesWithPayload (Graph _ edgeMap) =
 
 -- | Return a pair containing @e@'s source and target nodes.
 nodesConnectedTo :: Graph a b -> EdgeId -> Maybe (NodeId, NodeId)
-nodesConnectedTo g@(Graph _ es) e =
+nodesConnectedTo (Graph _ es) e =
     let ed = lookup e es
     in case ed of
         Just (Edge src tgt _) -> Just (src, tgt)

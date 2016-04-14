@@ -1,12 +1,11 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Graph.EpiPairs () where
 
-import           Abstract.Morphism        (Morphism, Obj, codomain, compose)
 import           Abstract.AdhesiveHLR
 import           Graph.GPToVeri        (mountTGMBoth)
 import           Graph.GraphPart       (genEqClass)
 import           Graph.VeriToGP        (mixTGM)
 import           Graph.TypedGraphMorphism (TypedGraphMorphism)
-import           Graph.GraphMorphism      (TypedGraph)
 
 instance EpiPairs (TypedGraphMorphism a b) where
   -- | Create all jointly surjective pairs of @m1@ and @m2@

@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Graph.GraphRule (
     -- * Types
       GraphRule
@@ -20,11 +21,9 @@ module Graph.GraphRule (
 import           Data.Maybe               (mapMaybe)
 import           Abstract.Morphism
 import           Abstract.DPO
-import           Abstract.Valid
 import           Graph.Graph              as G
-import           Graph.TypedGraphMorphism (TypedGraphMorphism)
 import           Graph.TypedGraphMorphism as TGM
-import           Graph.FindMorphism
+import           Graph.FindMorphism       ()
 
 type GraphRule a b = Production (TypedGraphMorphism a b)
 

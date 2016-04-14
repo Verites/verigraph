@@ -5,16 +5,13 @@ module XML.GGXWriter
    writeGrammarFile
  ) where
 
-import qualified Abstract.Morphism         as M
 import qualified Analysis.CriticalPairs    as CP
 import qualified Analysis.CriticalSequence as CS
 import           Data.List.Utils           (startswith)
 import           Data.Maybe
 import qualified Graph.Graph               as G
 import           Graph.GraphGrammar
-import qualified Graph.GraphMorphism       as GM
 import qualified Graph.GraphRule           as GR
-import           Graph.TypedGraphMorphism
 import           Text.XML.HXT.Core
 import           XML.GGXParseOut
 import           XML.ParsedTypes
@@ -92,7 +89,7 @@ writeCriticalPairAnalysis names rules cpOL csOL = writeCpaOptions : conflictCont
     dependenceContainer = if null csOL then [] else
                            [writeConflictContainer "trigger_dependency" nacNames rules csOL,
                             writeConflictFreeContainer rules csOL]
-    nacNames = filter (\(x,y) -> startswith "NAC" x) names
+    nacNames = filter (\(x,_) -> startswith "NAC" x) names
 
 writeConflictContainer :: ArrowXml a => String -> [(String,String)] -> [(String,GR.GraphRule b c)] -> [Overlappings] ->  a XmlTree XmlTree
 writeConflictContainer kind nacNames rules overlappings =
@@ -101,10 +98,11 @@ writeConflictContainer kind nacNames rules overlappings =
       elem = case kind of
                "exclude"            -> "conflictContainer"
                "trigger_dependency" -> "dependencyContainer"
+               _ -> error $ "Unexpected kind of conflict/dependency: " ++ kind
 
 writeConflictMatrix :: ArrowXml a => [(String,String)] -> [(String,GR.GraphRule b c)] -> [Overlappings] -> [a XmlTree XmlTree]
 writeConflictMatrix nacNames rules overlappings =
-  map (\r1@(name,rule) ->
+  map (\(name,_) ->
          mkelem "Rule"
            [sattr "R1" name]
            (map (getCPs nacNames) (overlappingsR2 name)))
@@ -125,7 +123,7 @@ writeConflictFreeContainer rules overlappings = mkelem "conflictFreeContainer" [
 
 writeConflictFreeMatrix :: ArrowXml a => [(String,GR.GraphRule b c)] -> [Overlappings] -> [a XmlTree XmlTree]
 writeConflictFreeMatrix rules overlappings =
-  map (\r1@(name,rule) -> mkelem "Rule"
+  map (\(name,_) -> mkelem "Rule"
                             [sattr "R1" name]
                             (map getCPs (overlappingsR2 name))) rules
     where
@@ -139,7 +137,7 @@ writeRuleSets rules =
   [mkelem "RuleSet" (somethingRules ++ rulesL) [], mkelem "RuleSet2" (somethingRules ++ rulesL) []]
     where
       somethingRules :: ArrowXml a => [a XmlTree XmlTree]
-      somethingRules = map (\(x,(ruleName,_)) -> sattr ("i" ++ show x) ruleName) (zip [0..] rules)
+      somethingRules = map (\(x,(ruleName,_)) -> sattr ("i" ++ show x) ruleName) (zip [0::Int ..] rules)
       rulesL :: ArrowXml a => [a XmlTree XmlTree]
       rulesL = [sattr "size" (show $ length rules)]
 
@@ -210,7 +208,8 @@ writeOverlapping nacNames overlap@(_,_,(_,_,_,_,t),_) =
     "ProduceEdgeDeleteNode" -> writeProdNode
     "ProduceForbid"         -> writeProdForbid nacNames
     "ProduceUse"            -> writeProdUse
-    "DeliverDelete"         -> writeDelDel nacNames)
+    "DeliverDelete"         -> writeDelDel nacNames
+    _ -> error $ "Unexpected type of overlapping: " ++ t)
   overlap
 
 writeProdForbid :: ArrowXml a => [(String,String)] -> Overlapping -> a XmlTree XmlTree
@@ -342,7 +341,7 @@ writeConditions :: ArrowXml a => [(String, String)] -> String -> GR.GraphRule b 
 writeConditions nacNames ruleName rule =
   mkelem "ApplCondition" [] $ map (writeNac ruleName) (zip (getNacs ruleName rule) (map snd nacsRule++nacsNoName))
     where
-      nacsNoName = map show [158..]
+      nacsNoName = map show [158::Int ..]
       nacsRule = filter (\(x,_) -> startswith ("NAC_"++ruleName) x) nacNames
 
 writeNac :: ArrowXml a => String -> ((ParsedTypedGraph, [Mapping]),String) -> a XmlTree XmlTree
@@ -409,4 +408,3 @@ writeAdditionalEdgeLayout :: ArrowXml a => a XmlTree XmlTree
 writeAdditionalEdgeLayout =
   mkelem "additionalLayout"
   [ sattr "aktlength" "200", sattr "force" "10", sattr "preflength" "200" ] []
-
