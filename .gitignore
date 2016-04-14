@@ -1,4 +1,7 @@
 dist/
+.stack-work/
+*.hp
+*.prof
 *.xsl
 *.orig
 m.txt
