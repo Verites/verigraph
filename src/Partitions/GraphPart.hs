@@ -1,10 +1,10 @@
-module Graph.GraphPart (
+module Partitions.GraphPart (
    Node (..),
    Edge (..),
    Graph (..),
    EqClassGraph,
    getListNode,
-   genEqClass
+   genGraphEqClass
    ) where
 
 -- | A Node with the needed informations for the generating equivalence classes algorithm
@@ -80,9 +80,11 @@ checkST nodes (Edge type1 _ _ s1 t1 _) (Edge type2 _ _ s2 t2 _) = exp1 && exp2 &
     where
         exp1 = type1 == type2
         exp2 = ntype s1 == ntype s2 && ntype t1 == ntype t2
-        exp3 = (getInd l1 s1 0 == getInd l1 s2 0) && (getInd l2 t1 0 == getInd l2 t2 0)
-        l1   = findTypeList nodes (ntype s1)
-        l2   = findTypeList nodes (ntype t1)
+        exp3 = (getIdx (nameAndSrc s1) l1 == getIdx (nameAndSrc s2) l1) &&
+               (getIdx (nameAndSrc t1) l2 == getIdx (nameAndSrc t2) l2)
+        l1   = findTypeList (ntype s1) nodes
+        l2   = findTypeList (ntype t1) nodes
+        nameAndSrc node = (nname node, ngsource node)
 
 -- | Adds elements in their eq class, creates a new if does not exists
 insr :: (a -> Bool) -> a -> [[a]] -> [[a]]
@@ -95,21 +97,22 @@ partBy _ [] = [[]]
 partBy f l = foldr (\a -> insr (f a) a) [[head l]] (tail l)
 
 -- | Generates all equivalence class graphs
-genEqClass :: Graph -> [EqClassGraph]
-genEqClass gra = [(concat a, concat b) |
+genGraphEqClass :: Graph -> [EqClassGraph]
+genGraphEqClass gra = [(concat a, concat b) |
                    a <- mapM partitions (partBy checkNode (nodes gra)),
                    b <- mapM partitions (partBy (checkST a) (edges gra))]
 
 -- | Returns the index of @a@ in [[Node]]
-getInd :: [[Node]] -> Node -> Int -> Int
-getInd (x:xs) a n = if any (\n -> nname n == nname a && ngsource n == ngsource a) x then n else getInd xs a (n+1)
-getInd [] _ _ = error "error when generating overlapping pairs (getInd)"
+getIdx :: (Int,String) -> [[Node]] -> Int
+getIdx p@(name,source) (x:xs) = if any (\node -> nname node == name && ngsource node == source) x then 0 else 1 + (getIdx p xs)
+getIdx _ [] = error "error when generating overlapping pairs (getInd)"
 
 -- | Returns the list which Node is in [[Node]]
-getListNode :: [[Node]] -> Node -> [Node]
-getListNode (x:xs) a = if any (\n -> nname n == nname a && ngsource n == ngsource a) x then x else getListNode xs a
-getListNode [] _ = error "error when generating overlapping pairs (getListNode)"
+getListNode :: (Int,String) -> [[Node]] -> [Node]
+getListNode p@(name,source) (x:xs) = if any (\node -> nname node == name && ngsource node == source) x then x else getListNode p xs
+getListNode _ [] = error "error when generating overlapping pairs (getListNode)"
 
-findTypeList :: [[[Node]]] -> Int -> [[Node]]
-findTypeList (x:xs) t = if ntype (head $ head x) == t then x else findTypeList xs t
-findTypeList [] _ = error "error when generating overlapping pairs (findTypeList)"
+-- | Returns the list that contains elements with @t@ type
+findTypeList :: Int -> [[[Node]]] -> [[Node]]
+findTypeList t (x:xs) = if ntype (head $ head x) == t then x else findTypeList t xs
+findTypeList _ [] = error "error when generating overlapping pairs (findTypeList)"

@@ -141,7 +141,7 @@ satsNacs :: DPO m => Bool -> Bool -> Production m -> m -> Bool
 satsNacs nacInj inj rule m = all (==True) (map (satsFun m) (nacs rule))
   where
     --satsFun = if not nacInj && not inj then satsOneNacPartInj else satsOneNacInj
-    satsFun = satsOneNacPartInj
+    satsFun = satsOneNacPartInj --waiting for fix injective matches bug
 
 -- | Check gluing conditions and the NACs satisfaction for a pair of matches
 -- @inj@ only indicates if the match is injective, this function does not checks it
