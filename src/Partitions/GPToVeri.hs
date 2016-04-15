@@ -45,7 +45,7 @@ mountMapping side g@(nodes,edges) m = GM.gmbuild (M.domain m) (mountG g) nods ed
 
 -- | Returns the list which Node is in [[Node]]
 getListNodeName :: (String,Int) -> [[Node]] -> [Node]
-getListNodeName p@(side,a) (x:xs) = if any (\(Node _ name _ src) -> name == a && src == side) x then x else getListNodeName p xs
+getListNodeName p@(side,a) (x:xs) = if any (\(Node _ name _ _ src) -> name == a && src == side) x then x else getListNodeName p xs
 getListNodeName _ [] = error "error when mounting overlapping pairs (getListNodeName)" -- There must be at least one equivalence class of nodes
 
 

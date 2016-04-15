@@ -12,14 +12,15 @@ data Node = Node {
     ntype    :: Int,
     nname    :: Int,
     nid      :: Int,
+    npart    :: Bool,
     ngsource :: String --"Left" xor "Right"
     }
 
 instance Show Node where
-  show (Node a b id c) = show b ++ ":" ++ show a ++ ":" ++ c ++ " (id:" ++ show id ++")"
+  show (Node a b id _ c) = show b ++ ":" ++ show a ++ ":" ++ c ++ " (id:" ++ show id ++")"
 
 instance Eq Node where
-  (Node a1 b1 _ d1) == (Node a2 b2 _ d2) =
+  (Node a1 b1 _ _ d1) == (Node a2 b2 _ _ d2) =
     a1 == a2 &&
     b1 == b2 &&
     d1 == d2
@@ -31,11 +32,12 @@ data Edge = Edge {
     eid      :: Int,
     source   :: Node,
     target   :: Node,
+    epart    :: Bool,
     egsource :: String --"Left" xor "Right"
     } deriving (Eq)
 
 instance Show Edge where
-  show (Edge t a id (Node _ b2 _ _) (Node _ c2 _ _) s) = show a ++ ":" ++ show t ++ "(" ++ show b2 ++ "->" ++ show c2 ++ ")" ++ s ++ " (id:" ++ show id ++")"
+  show (Edge t a id (Node _ b2 _ _ _) (Node _ c2 _ _ _) _ s) = show a ++ ":" ++ show t ++ "(" ++ show b2 ++ "->" ++ show c2 ++ ")" ++ s ++ " (id:" ++ show id ++")"
 
 -- | Graph for the generating equivalence classes algorithm
 data Graph = Graph {
@@ -72,13 +74,15 @@ partitions a = foldr g [[[head a]]] (tail a)
 
 -- | Checks if two nodes are in the same equivalence class
 checkNode :: Node -> Node -> Bool
-checkNode (Node type1 _ _ _) (Node type2 _ _ _) = type1 == type2
+checkNode (Node type1 _ _ npart1 _) (Node type2 _ _ npart2 _) =
+  type1 == type2 &&
+  npart1 && npart2
 
 -- | Checks if two edges are in the same equivalence class
 checkST :: [[[Node]]] -> Edge -> Edge -> Bool
-checkST nodes (Edge type1 _ _ s1 t1 _) (Edge type2 _ _ s2 t2 _) = exp1 && exp2 && exp3
+checkST nodes (Edge type1 _ _ s1 t1 epart1 _) (Edge type2 _ _ s2 t2 epart2 _) = exp1 && exp2 && exp3
     where
-        exp1 = type1 == type2
+        exp1 = epart1 && epart2 && type1 == type2
         exp2 = ntype s1 == ntype s2 && ntype t1 == ntype t2
         exp3 = (getIdx (nameAndSrc s1) l1 == getIdx (nameAndSrc s2) l1) &&
                (getIdx (nameAndSrc t1) l2 == getIdx (nameAndSrc t2) l2)
