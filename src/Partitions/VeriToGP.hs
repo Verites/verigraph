@@ -21,8 +21,8 @@ mixLeftRule l r = mixGM (M.codomain (left l)) (M.codomain (left r))
 mixGM :: GraphMorphism a b -> GraphMorphism a b -> GP.Graph
 mixGM l r = disjUnionGraphs left right
    where
-     (left,id) = tgmToGP Nothing l "Left" 0
-     (right,_) = tgmToGP Nothing r "Right" id
+     (left,id) = tgmToGP Nothing l True 0
+     (right,_) = tgmToGP Nothing r False id
      nodes = fst
      edges = snd
      disjUnionGraphs a b = ((nodes a ++ nodes b),(edges a ++ edges b))
@@ -31,14 +31,14 @@ mixGM l r = disjUnionGraphs left right
 mixNac :: GraphMorphism a b -> TGM.TypedGraphMorphism a b -> GP.Graph
 mixNac r nac = disjUnionGraphs left right
    where
-     (left,id) = tgmToGP Nothing r "Left" 0
+     (left,id) = tgmToGP Nothing r True 0
      inac = TGM.invertTGM nac
-     (right,_) = tgmToGP (Just inac) (M.codomain nac) "Right" id
+     (right,_) = tgmToGP (Just inac) (M.codomain nac) False id
      nodes = fst
      edges = snd
      disjUnionGraphs a b = ((nodes a ++ nodes b),(edges a ++ edges b))
 
-tgmToGP :: Maybe (TGM.TypedGraphMorphism a b) -> GraphMorphism a b -> String -> Int -> (GP.Graph,Int)
+tgmToGP :: Maybe (TGM.TypedGraphMorphism a b) -> GraphMorphism a b -> Bool -> Int -> (GP.Graph,Int)
 tgmToGP inac morfL side id = ((nods,edgs), nextId)
    where
       nods   = nodesToGP inac morfL side id $ nodes graphL
@@ -46,7 +46,7 @@ tgmToGP inac morfL side id = ((nods,edgs), nextId)
       graphL = M.domain morfL
       nextId = max (length nods) (length edgs)
 
-nodesToGP :: Maybe (TGM.TypedGraphMorphism a b) -> TypedGraph a b -> String -> Int -> [NodeId] -> [GP.Node]
+nodesToGP :: Maybe (TGM.TypedGraphMorphism a b) -> TypedGraph a b -> Bool -> Int -> [NodeId] -> [GP.Node]
 nodesToGP _    _  _    _  []            = []
 nodesToGP inac tg side id (NodeId b:xs) = GP.Node n b id flag side : nodesToGP inac tg side (id+1) xs
    where
@@ -55,7 +55,7 @@ nodesToGP inac tg side id (NodeId b:xs) = GP.Node n b id flag side : nodesToGP i
               Just tgm -> checkNodeMix tgm (NodeId n)
               Nothing -> True
 
-edgesToGP :: Maybe (TGM.TypedGraphMorphism a b) -> TypedGraph a b -> String -> Graph a b -> Int -> [EdgeId] -> [GP.Edge]
+edgesToGP :: Maybe (TGM.TypedGraphMorphism a b) -> TypedGraph a b -> Bool -> Graph a b -> Int -> [EdgeId] -> [GP.Edge]
 edgesToGP _    _  _    _ _  []            = []
 edgesToGP inac tg side g id (EdgeId b:xs) = GP.Edge typ b id src tgt flag side : edgesToGP inac tg side g (id+1) xs
    where

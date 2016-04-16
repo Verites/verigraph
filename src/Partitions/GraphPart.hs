@@ -3,7 +3,7 @@ module Partitions.GraphPart (
    Edge (..),
    Graph,
    EqClassGraph,
-   getListNode,
+   getNode,
    genGraphEqClass
    ) where
 
@@ -14,12 +14,12 @@ data Node = Node {
     ntype    :: Int,
     nname    :: Int,
     nid      :: Int,
-    injn     :: Bool,
-    ngsource :: String --"Left" xor "Right"
+    injn     :: Bool, --injective flag
+    inLeftn   :: Bool
     }
 
 instance Show Node where
-  show (Node a b id f c) = show b ++ ":" ++ show a ++ ":" ++ c ++ " (id:" ++ show id ++") {"++ show f ++"}"
+  show (Node a b id f c) = show b ++ ":" ++ show a ++ ":" ++ (if c then "Left" else "Right") ++ " (id:" ++ show id ++") {"++ show f ++"}"
 
 instance Eq Node where
   (Node a1 b1 _ _ d1) == (Node a2 b2 _ _ d2) =
@@ -34,8 +34,8 @@ data Edge = Edge {
     eid      :: Int,
     source   :: Node,
     target   :: Node,
-    inje     :: Bool,
-    egsource :: String --"Left" xor "Right"
+    inje     :: Bool, --injective flag
+    inLefte  :: Bool
     } deriving (Eq)
 
 instance Show Edge where
@@ -44,7 +44,7 @@ instance Show Edge where
     show t ++ "(" ++
     show b2 ++ "->" ++
     show c2 ++ ")" ++
-    s ++
+    (if s then "Left" else "Right") ++
     " (id:" ++ show id ++") {"++ show f ++"}"
 
 -- | Graph for the generating equivalence classes algorithm
@@ -57,37 +57,33 @@ type EqClassGraph = ([[Node]],[[Edge]])
 
 {-partitions-}
 
-replace :: Eq t => [t] -> [t] -> [[t]] -> [[t]]
-replace _ _ [] = []
-replace old new (l:ls)
-  | l == old  = new : ls
-  | otherwise = l : replace old new ls
-
 -- | Checks if two nodes are in the same equivalence class
 checkNode :: Node -> [Node] -> Bool
-checkNode _ [] = error "checkNode"
+checkNode _ [] = error "error checkNode in GraphPart"
 checkNode (Node type1 _ _ inj _) l@((Node type2 _ _ _ _):_) =
-  (inj || checkInj) && 
-  type1 == type2
+  type1 == type2 &&
+  (inj || checkInj) --checks if another inj node is in this list
   where
     checkInj = all (\(Node _ _ _ inj _) -> inj) l
 
 -- | Checks if two edges are in the same equivalence class
+-- Needs @nodes@ to know if a source or target was collapsed
 checkEdge :: [[Node]] -> Edge -> [Edge] -> Bool
-checkEdge _ _ [] = error "checkEdge"
+checkEdge _ _ [] = error "error checkEdge in GraphPart"
 checkEdge nodes (Edge type1 _ _ s1 t1 inj _) l@((Edge type2 _ _ s2 t2 _ _):_) = exp1 && exp2 && exp3
   where
     checkInj = all (\(Edge _ _ _ _ _ inj _) -> inj) l
-    exp1 = (inj || checkInj)
-           && type1 == type2
-    nameAndSrc node = (nname node, ngsource node)
-    l1   = getListNode (nameAndSrc s1) nodes
-    l2   = getListNode (nameAndSrc s2) nodes
+    exp1 = type1 == type2
+           && (inj || checkInj) --checks if another inj edge is in this list
+    nameAndSrc node = (nname node, inLeftn node)
+    l1   = getNode (nameAndSrc s1) nodes
+    l2   = getNode (nameAndSrc s2) nodes
     exp2 = l1 == l2
-    l3   = getListNode (nameAndSrc t1) nodes
-    l4   = getListNode (nameAndSrc t2) nodes
+    l3   = getNode (nameAndSrc t1) nodes
+    l4   = getNode (nameAndSrc t2) nodes
     exp3 = l3 == l4
 
+-- | Runs generator of partitions for nodes, and after for edges according to the nodes generated
 genGraphEqClass :: Graph -> [EqClassGraph]
 genGraphEqClass gra = concatMap f a
   where
@@ -98,29 +94,44 @@ genGraphEqClass gra = concatMap f a
     f :: [[Node]] -> [([[Node]],[[Edge]])]
     f a = zip (replicate (length (b a)) a) (b a)
 
-part :: Eq a => (a -> [a] -> Bool) -> [a] -> [[[a]]]
-part f l = if l == [] then [[]] else bt f l []
+-- | Interface function to run the algorithm that generates the partitions
+part :: (a -> [a] -> Bool) -> [a] -> [[[a]]]
+part f l = if null l then [[]] else bt f l []
 
-bt :: Eq a => (a -> [a] -> Bool) -> [a] -> [[a]] -> [[[a]]]
+-- | Runs a backtracking algorithm to create all partitions
+-- receives a function of restriction, to know when a element can be combined with other
+bt :: (a -> [a] -> Bool) -> [a] -> [[a]] -> [[[a]]]
 bt f toAdd [] = bt f (init toAdd) [[last toAdd]]
 bt _ [] actual = [actual]
-bt f toAdd actual = (bt f initAdd ([ad]:actual)) ++ 
-                    concat
-                      (mapMaybe
-                        (\n -> if f ad n
-                                 then
-                                   Just (bt f initAdd (replace n (ad:n) actual))
-                                 else
-                                   Nothing)
-                        actual)
+bt f toAdd actual =
+  (bt f initAdd ([ad]:actual)) ++ 
+    concat
+      (mapMaybe
+        (\(n,id) -> if f ad n
+                      then
+                        Just (bt f initAdd (replace id (ad:n) actual))
+                      else
+                        Nothing)
+      (zip actual [0..]))
   where
     initAdd = init toAdd
     ad = last toAdd
 
--- | Returns the list which Node is in [[Node]]
-getListNode :: (Int,String) -> [[Node]] -> [Node]
-getListNode p@(name,source) (x:xs) = if any (\node -> nname node == name && ngsource node == source) x then x else getListNode p xs
-getListNode _ [] = error "error when generating overlapping pairs (getListNode)"
+-- | Replaces the @idx@-th element by @new@ in the list @l@ 
+replace :: Int -> a -> [a] -> [a]
+replace idx new l = (take idx l) ++ [new] ++ (drop (idx+1) l)
+
+-- | Returns the node that this @p@ was collapsed in partitions
+-- Used to compare if an edge can be mixed with another
+-- GPToVeri use to discover source and target of edges
+getNode :: (Int,Bool) -> [[Node]] -> Node
+getNode p@(name,source) (x:xs) =
+  if any (\n -> nname n == name && inLeftn n == source) x
+    then
+      head x
+    else
+      getNode p xs
+getNode _ [] = error "error when generating overlapping pairs (getListNode)"
 
 
 {- TESTS
@@ -162,4 +173,10 @@ insr f e (x:xs) = if f (head x) then (e:x):xs else x:insr f e xs
 -- | Separates elements by his eq class
 partBy :: (a -> a -> Bool) -> [a] -> [[a]]
 partBy _ [] = [[]]
-partBy f l = foldr (\a -> insr (f a) a) [[head l]] (tail l)-}
+partBy f l = foldr (\a -> insr (f a) a) [[head l]] (tail l)
+
+replace :: Int -> [t] -> [[t]] -> [[t]]
+replace _ _ [] = []
+replace old new (l:ls)
+  | l == old  = new : ls
+  | otherwise = l : replace old new ls-}
