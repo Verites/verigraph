@@ -95,7 +95,7 @@ deliverDelete :: Bool -> Bool
                       -> (TypedGraphMorphism a b, Int)
                       -> [CriticalSequence a b]
 deliverDelete nacInj inj l inverseLeft r (n,idx) = let
-        pairs = createPairsCodomain (left l) n
+        pairs = createPairsNac (codomain (left l)) n
 
         filtFun = if nacInj then M.monomorphism else partialInjectiveTGM n
         filtPairs = filter (\(m1,q) -> (not inj || M.monomorphism m1)

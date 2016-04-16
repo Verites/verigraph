@@ -14,7 +14,7 @@ data Node = Node {
     ntype    :: Int,
     nname    :: Int,
     nid      :: Int,
-    npart    :: Bool,
+    injn     :: Bool,
     ngsource :: String --"Left" xor "Right"
     }
 
@@ -34,7 +34,7 @@ data Edge = Edge {
     eid      :: Int,
     source   :: Node,
     target   :: Node,
-    epart    :: Bool,
+    inje     :: Bool,
     egsource :: String --"Left" xor "Right"
     } deriving (Eq)
 
@@ -66,24 +66,20 @@ replace old new (l:ls)
 -- | Checks if two nodes are in the same equivalence class
 checkNode :: Node -> [Node] -> Bool
 checkNode _ [] = error "checkNode"
-checkNode (Node type1 _ _ npart _) l@((Node type2 _ _ _ _):_) =
-  (npart || (countNotPartNode l <= 1)) && 
+checkNode (Node type1 _ _ inj _) l@((Node type2 _ _ _ _):_) =
+  (inj || checkInj) && 
   type1 == type2
-
-countNotPartNode :: [Node] -> Int
-countNotPartNode [] = 0
-countNotPartNode ((Node _ _ _ part _):xs) = (if part then 0 else 1) + (countNotPartNode xs)
-
-countNotPartEdge :: [Edge] -> Int
-countNotPartEdge [] = 0
-countNotPartEdge ((Edge _ _ _ _ _ part _):xs) = (if part then 0 else 1) + (countNotPartEdge xs)
+  where
+    checkInj = all (\(Node _ _ _ inj _) -> inj) l
 
 -- | Checks if two edges are in the same equivalence class
 checkEdge :: [[Node]] -> Edge -> [Edge] -> Bool
 checkEdge _ _ [] = error "checkEdge"
-checkEdge nodes (Edge type1 _ _ s1 t1 epart _) l@((Edge type2 _ _ s2 t2 _ _):_) = exp1 && exp2 && exp3
+checkEdge nodes (Edge type1 _ _ s1 t1 inj _) l@((Edge type2 _ _ s2 t2 _ _):_) = exp1 && exp2 && exp3
   where
-    exp1 = (epart || (countNotPartEdge l <= 1)) && type1 == type2
+    checkInj = all (\(Edge _ _ _ _ _ inj _) -> inj) l
+    exp1 = (inj || checkInj)
+           && type1 == type2
     nameAndSrc node = (nname node, ngsource node)
     l1   = getListNode (nameAndSrc s1) nodes
     l2   = getListNode (nameAndSrc s2) nodes
