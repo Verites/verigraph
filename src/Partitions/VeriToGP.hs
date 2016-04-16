@@ -38,8 +38,12 @@ mixNac r nac = disjUnionGraphs left rightNac
 setNotChange :: TGM.TypedGraphMorphism a b -> GP.Graph -> GP.Graph
 setNotChange nac (GP.Graph nodes edges) = GP.Graph nods edgs
   where
-    nods = map (\(GP.Node a n c _ e) -> (GP.Node a n c (TGM.applyNodeTGM nac (NodeId n) == Nothing) e)) nodes
-    edgs = map (\(GP.Edge a n c d e _ g) -> (GP.Edge a n c d e (TGM.applyEdgeTGM nac (EdgeId n) == Nothing) g)) edges
+    inv = TGM.invertTGM nac
+    fNode n = n `elem` (Graph.Graph.nodes (M.domain (M.domain inv))) && (TGM.applyNodeTGM inv n == Nothing)
+    fEdge n = n `elem` (Graph.Graph.edges (M.domain (M.domain inv))) && (TGM.applyEdgeTGM inv n == Nothing)
+    nods = map (\(GP.Node a n c _ e) -> (GP.Node a n c (fNode (NodeId n)) e)) nodes
+    edgs = map (\(GP.Edge a n c src tgt _ g) -> (GP.Edge a n c (f src) (f tgt) (fEdge (EdgeId n)) g)) edges
+    f = \(GP.Node a n c _ e) -> (GP.Node a n c (fNode (NodeId n)) e)
 
 tgmToGP :: GraphMorphism a b -> String -> Int -> (GP.Graph,Int)
 tgmToGP morfL side id = (GP.Graph nods edgs, nextId)
