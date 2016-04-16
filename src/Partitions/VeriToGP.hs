@@ -5,8 +5,7 @@ module Partitions.VeriToGP (
    ) where
 
 import qualified Abstract.Morphism        as M
-import           Data.List                (partition)
-import           Graph.Graph
+import           Graph.Graph              as G
 import           Graph.GraphRule
 import           Graph.GraphMorphism
 import           Graph.TypedGraphMorphism as TGM
@@ -22,51 +21,63 @@ mixLeftRule l r = mixGM (M.codomain (left l)) (M.codomain (left r))
 mixGM :: GraphMorphism a b -> GraphMorphism a b -> GP.Graph
 mixGM l r = disjUnionGraphs left right
    where
-     (left,id) = tgmToGP l "Left" 0
-     (right,_) = tgmToGP r "Right" id
-     disjUnionGraphs a b = GP.Graph (GP.nodes a ++ GP.nodes b) (GP.edges a ++ GP.edges b)
+     (left,id) = tgmToGP Nothing l "Left" 0
+     (right,_) = tgmToGP Nothing r "Right" id
+     nodes = fst
+     edges = snd
+     disjUnionGraphs a b = ((nodes a ++ nodes b),(edges a ++ edges b))
 
 -- | Creates the disjoint union of two verigraph graphs in 'GraphPart' format, with restriction to @nac@
 mixNac :: GraphMorphism a b -> TGM.TypedGraphMorphism a b -> GP.Graph
-mixNac r nac = disjUnionGraphs left rightNac
+mixNac r nac = disjUnionGraphs left right
    where
-     (left,id) = tgmToGP r "Left" 0
-     (right,_) = tgmToGP (M.codomain nac) "Right" id
-     rightNac = setNotChange nac right
-     disjUnionGraphs a b = GP.Graph (GP.nodes a ++ GP.nodes b) (GP.edges a ++ GP.edges b)
+     (left,id) = tgmToGP Nothing r "Left" 0
+     inac = TGM.invertTGM nac
+     (right,_) = tgmToGP (Just inac) (M.codomain nac) "Right" id
+     nodes = fst
+     edges = snd
+     disjUnionGraphs a b = ((nodes a ++ nodes b),(edges a ++ edges b))
 
-setNotChange :: TGM.TypedGraphMorphism a b -> GP.Graph -> GP.Graph
-setNotChange nac (GP.Graph nodes edges) = GP.Graph nods edgs
-  where
-    inv = TGM.invertTGM nac
-    fNode n = n `elem` (Graph.Graph.nodes (M.domain (M.domain inv))) && (TGM.applyNodeTGM inv n == Nothing)
-    fEdge n = n `elem` (Graph.Graph.edges (M.domain (M.domain inv))) && (TGM.applyEdgeTGM inv n == Nothing)
-    nods = map (\(GP.Node a n c _ e) -> (GP.Node a n c (fNode (NodeId n)) e)) nodes
-    edgs = map (\(GP.Edge a n c src tgt _ g) -> (GP.Edge a n c (f src) (f tgt) (fEdge (EdgeId n)) g)) edges
-    f = \(GP.Node a n c _ e) -> (GP.Node a n c (fNode (NodeId n)) e)
-
-tgmToGP :: GraphMorphism a b -> String -> Int -> (GP.Graph,Int)
-tgmToGP morfL side id = (GP.Graph nods edgs, nextId)
+tgmToGP :: Maybe (TGM.TypedGraphMorphism a b) -> GraphMorphism a b -> String -> Int -> (GP.Graph,Int)
+tgmToGP inac morfL side id = ((nods,edgs), nextId)
    where
-      nods   = nodesToGP morfL side id $ nodes graphL
-      edgs   = edgesToGP morfL side graphL id $ edges graphL
+      nods   = nodesToGP inac morfL side id $ nodes graphL
+      edgs   = edgesToGP inac morfL side graphL id $ edges graphL
       graphL = M.domain morfL
       nextId = max (length nods) (length edgs)
 
-nodesToGP :: TypedGraph a b -> String -> Int -> [NodeId] -> [GP.Node]
-nodesToGP _  _    _  []            = []
-nodesToGP tg side id (NodeId b:xs) = GP.Node n b id True side : nodesToGP tg side (id+1) xs
+nodesToGP :: Maybe (TGM.TypedGraphMorphism a b) -> TypedGraph a b -> String -> Int -> [NodeId] -> [GP.Node]
+nodesToGP _    _  _    _  []            = []
+nodesToGP inac tg side id (NodeId b:xs) = GP.Node n b id flag side : nodesToGP inac tg side (id+1) xs
    where
      Just (NodeId n) = applyNode tg (NodeId b)
+     flag = case inac of
+              Just tgm -> checkNodeMix tgm (NodeId n)
+              Nothing -> True
 
-edgesToGP :: TypedGraph a b -> String -> Graph a b -> Int -> [EdgeId] -> [GP.Edge]
-edgesToGP _  _    _ _  []            = []
-edgesToGP tg side g id (EdgeId b:xs) = GP.Edge typ b id src tgt True side : edgesToGP tg side g (id+1) xs
+edgesToGP :: Maybe (TGM.TypedGraphMorphism a b) -> TypedGraph a b -> String -> Graph a b -> Int -> [EdgeId] -> [GP.Edge]
+edgesToGP _    _  _    _ _  []            = []
+edgesToGP inac tg side g id (EdgeId b:xs) = GP.Edge typ b id src tgt flag side : edgesToGP inac tg side g (id+1) xs
    where
       Just (EdgeId typ) = applyEdge tg (EdgeId b)
       Just (NodeId src_) = sourceOf g (EdgeId b)
-      src = GP.Node n1 src_ (-1) True side
+      src = GP.Node n1 src_ (-1) flagSrc side
       Just (NodeId tgt_) = targetOf g (EdgeId b)
-      tgt = GP.Node n2 tgt_ (-1) True side
+      tgt = GP.Node n2 tgt_ (-1) flagTgt side
       Just (NodeId n1) = applyNode tg (NodeId src_)
       Just (NodeId n2) = applyNode tg (NodeId tgt_)
+      flag = case inac of
+               Just tgm -> checkEdgeMix tgm (EdgeId b)
+               Nothing -> True
+      flagSrc = case inac of
+                  Just tgm -> checkNodeMix tgm (NodeId n1)
+                  Nothing -> True
+      flagTgt = case inac of
+                  Just tgm -> checkNodeMix tgm (NodeId n2)
+                  Nothing -> True
+
+checkNodeMix :: TGM.TypedGraphMorphism a b -> NodeId -> Bool
+checkNodeMix tgm n = n `elem` (G.nodes (M.domain (M.domain tgm))) && (TGM.applyNodeTGM tgm n == Nothing)
+
+checkEdgeMix :: TGM.TypedGraphMorphism a b -> EdgeId -> Bool
+checkEdgeMix tgm e = e `elem` (G.edges (M.domain (M.domain tgm))) && (TGM.applyEdgeTGM tgm e == Nothing)

@@ -33,20 +33,22 @@ import Data.Maybe
 
 import qualified XML.GGXReader as XML
 
-fn = "test/elevator.ggx"
+fn = "test/teseRodrigo.ggx"
 
 a fn = do
       prls <- XML.readRules fn
       ptg <- XML.readTypeGraph fn
       let rs = map (XML.instantiateRule (head ptg)) prls
-          r = rs!!7
-          n = head (nacs r)
-          inv = GR.inverseWithoutNacs r
-          mix = mixGM (codomain (right r)) (codomain n)
-          mix2 = mixNac (codomain (right r)) n
-          m = mapM partitions (partBy checkNode (Partitions.GraphPart.nodes mix2))
-          dgs = Partitions.GraphPart.edges mix2
-      return (m,dgs)
+          --r = rs!!7
+          --n = head (nacs r)
+          --inv = GR.inverseWithoutNacs r
+          --mix = mixGM (codomain (right r)) (codomain n)
+          --mix2 = mixNac (codomain (right r)) n
+          --m = mapM partitions (partBy checkNode (Partitions.GraphPart.nodes mix2))
+          --dgs = Partitions.GraphPart.edges mix2
+          r1 = rs!!0
+          r2 = rs!!1
+      return (CS.allProduceUse False True r2 r1)
 
 iN = insertNode
 iE = insertEdge
