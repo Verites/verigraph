@@ -60,21 +60,20 @@ type EqClassGraph = ([[Node]],[[Edge]])
 -- | Checks if two nodes are in the same equivalence class
 checkNode :: Node -> [Node] -> Bool
 checkNode _ [] = error "error checkNode in GraphPart"
-checkNode (Node type1 _ _ inj _) l@((Node type2 _ _ _ _):_) =
-  type1 == type2 &&
-  (inj || checkInj) --checks if another inj node is in this list
-  where
-    checkInj = all (\(Node _ _ _ inj _) -> inj) l
+checkNode (Node type1 _ _ inj side) l@((Node type2 _ _ _ _):_) =
+  type1 == type2 && (not inj || not checkInj)
+  where --checks if another inj node is in this list
+    checkInj = any (\(Node _ _ _ inj side2) -> inj && side == side2) l
 
 -- | Checks if two edges are in the same equivalence class
 -- Needs @nodes@ to know if a source or target was collapsed
 checkEdge :: [[Node]] -> Edge -> [Edge] -> Bool
 checkEdge _ _ [] = error "error checkEdge in GraphPart"
-checkEdge nodes (Edge type1 _ _ s1 t1 inj _) l@((Edge type2 _ _ s2 t2 _ _):_) = exp1 && exp2 && exp3
+checkEdge nodes (Edge type1 _ _ s1 t1 inj side) l@((Edge type2 _ _ s2 t2 _ _):_) = exp1 && exp2 && exp3
   where
-    checkInj = all (\(Edge _ _ _ _ _ inj _) -> inj) l
-    exp1 = type1 == type2
-           && (inj || checkInj) --checks if another inj edge is in this list
+    exp1 = type1 == type2 && (not inj || not checkInj)
+    --checks if another inj edge is in this list
+    checkInj = any (\(Edge _ _ _ _ _ inj side2) -> inj && side == side2) l
     nameAndSrc node = (nname node, inLeftn node)
     l1   = getNode (nameAndSrc s1) nodes
     l2   = getNode (nameAndSrc s2) nodes

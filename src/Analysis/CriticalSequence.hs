@@ -63,9 +63,8 @@ allProduceUse :: Bool -> Bool -> GraphRule a b -> GraphRule a b -> [CriticalSequ
 allProduceUse nacInj i l r = map (\(m1,m2) -> CriticalSequence m1 m2 Nothing ProduceUse) prodUse
   where
     invLeft = inverse i l
-    pairs = createPairsCodomain (left invLeft) (left r)
-    inj = filter (\(m1,m2) -> M.monomorphism m1 && M.monomorphism m2) pairs
-    gluing = filter (\(m1,m2) -> satsGluingNacsBoth nacInj i  (invLeft,m1) (r,m2)) (if i then inj else pairs)
+    pairs = createPairsCodomain i (left invLeft) (left r)
+    gluing = filter (\(m1,m2) -> satsGluingNacsBoth nacInj i  (invLeft,m1) (r,m2)) pairs
     prodUse = filter (produceUse invLeft r) gluing
 
 -- | Rule @l@ causes a produce-use dependency with @r@ if rule @l@ creates something that is used by @r@
@@ -95,13 +94,12 @@ deliverDelete :: Bool -> Bool
                       -> (TypedGraphMorphism a b, Int)
                       -> [CriticalSequence a b]
 deliverDelete nacInj inj l inverseLeft r (n,idx) = let
-        pairs = createPairsNac (codomain (left l)) n
-
-        filtFun = if nacInj then M.monomorphism else partialInjectiveTGM n
-        filtPairs = filter (\(m1,q) -> (not inj || M.monomorphism m1)
-                                    && filtFun q
-                                    && satsGluingAndNacs nacInj inj l m1
-                                    ) pairs
+        pairs = createPairsNac nacInj inj (codomain (left l)) n
+        
+        --filtFun = if nacInj then M.monomorphism else partialInjectiveTGM n
+        filtPairs = filter (\(m1,_) -> {-(not inj || M.monomorphism m1) && filtFun q &&-}
+                                       satsGluingAndNacs nacInj inj l m1
+                                       ) pairs
 
         dpo = map (\(m1,q21) ->
                     let (k,d1) = RW.poc m1 (left l)
@@ -121,7 +119,7 @@ deliverDelete nacInj inj l inverseLeft r (n,idx) = let
 
         m1m2 = map (\(_,_,_,_,m1',e1,l2d1) -> (m1', M.compose l2d1 e1)) h21
 
-        filtM2 = filter (\(_,m2) -> (not inj || M.monomorphism m2)
-                                 && satsGluingAndNacs nacInj inj r m2) m1m2
+        filtM2 = filter (\(_,m2) -> {-(not inj || M.monomorphism m2) &&-}
+                                      satsGluingAndNacs nacInj inj r m2) m1m2
 
         in map (\(m1,m2) -> CriticalSequence m1 m2 (Just idx) DeliverDelete) filtM2
