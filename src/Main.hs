@@ -1,6 +1,6 @@
 --{-# LANGUAGE TypeFamilies #-}
 
-import Analysis.ConcurrentRules
+{-import Analysis.ConcurrentRules
 import qualified XML.GGXReader as XML
 import           Abstract.Valid
 import qualified Analysis.CriticalSequence as CS
@@ -48,7 +48,7 @@ a fn = do
           --dgs = Partitions.GraphPart.edges mix2
           r1 = rs!!0
           r2 = rs!!1
-      return (CS.allProduceUse False True r2 r1)
+      return (r1,r2)
 
 iN = insertNode
 iE = insertEdge
@@ -220,7 +220,7 @@ l8 = TGM.typedMorphism tkr8 tlr8 kr8_lr8
 kr8_rr8 = GM.gmbuild kr8 rr8 [] []
 r8 = TGM.typedMorphism tkr8 trr8 kr8_rr8
 
-testeCreate = graphRule l8 r8 []
+testeCreate = graphRule l8 r8 []-}
 
 {-Fim das Regras-}
 

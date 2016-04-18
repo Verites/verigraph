@@ -140,8 +140,7 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
 satsNacs :: DPO m => Bool -> Bool -> Production m -> m -> Bool
 satsNacs nacInj inj rule m = all (==True) (map (satsFun m) (nacs rule))
   where
-    --satsFun = if not nacInj && not inj then satsOneNacPartInj else satsOneNacInj
-    satsFun = satsOneNacPartInj --waiting for fix injective matches bug
+    satsFun = if not nacInj && not inj then satsOneNacPartInj else satsOneNacInj
 
 -- | Check gluing conditions and the NACs satisfaction for a pair of matches
 -- @inj@ only indicates if the match is injective, this function does not checks it
@@ -165,10 +164,11 @@ satsGluingAndNacs nacInj inj rule m = gluingCond && nacsCondition
         nacsCondition = satsNacs nacInj inj rule m
 
 satsOneNacInj :: FindMorphism m => m -> m -> Bool
-satsOneNacInj m nac = all (==False) checkCompose
+satsOneNacInj m nac = all (==False) check
    where
-      checkCompose = map (\x -> compose nac x == m) nacMatches
-      nacMatches = matches MONO typeNac typeG
+      check = map monomorphism checkCompose --waiting for fix findMorphism
+      checkCompose = filter (\x -> compose nac x == m) nacMatches
+      nacMatches = matches ALL typeNac typeG
       typeNac = codomain nac
       typeG   = codomain m
 

@@ -77,7 +77,7 @@ edgesToGP inac tg side g id (EdgeId b:xs) = GP.Edge typ b id src tgt flag side :
                   Nothing -> True
 
 checkNodeMix :: TGM.TypedGraphMorphism a b -> NodeId -> Bool
-checkNodeMix tgm n = n `elem` (G.nodes (M.domain (M.domain tgm))) && (TGM.applyNodeTGM tgm n == Nothing)
+checkNodeMix tgm n = n `elem` (TGM.nodesDomain tgm) && (TGM.applyNodeTGM tgm n == Nothing)
 
 checkEdgeMix :: TGM.TypedGraphMorphism a b -> EdgeId -> Bool
-checkEdgeMix tgm e = e `elem` (G.edges (M.domain (M.domain tgm))) && (TGM.applyEdgeTGM tgm e == Nothing)
+checkEdgeMix tgm e = e `elem` (TGM.edgesDomain tgm) && (TGM.applyEdgeTGM tgm e == Nothing)
