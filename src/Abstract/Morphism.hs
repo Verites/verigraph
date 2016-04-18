@@ -5,7 +5,7 @@ module Abstract.Morphism where
 
 class (Eq m) => Morphism m where
     type Obj m :: *
-    -- | TODO: what is the order of composition???
+    -- | Apply the first argument first (compose f g = g . f)
     compose  :: m -> m -> m
     domain   :: m -> Obj m
     codomain :: m -> Obj m

@@ -68,6 +68,8 @@ class (Morphism m) => AdhesiveHLR m where
 class Morphism m => EpiPairs m where
   -- | Create all jointly epimorphic pairs of morphisms from the given objects.
   createPairs :: Obj m -> Obj m -> [(m, m)]
+  
+  createPairsNac :: Obj m -> m -> [(m, m)]
 
   -- | Create all jointly epimorphic pairs of morphisms from the codomains of
   -- the given morphisms.

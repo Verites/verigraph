@@ -188,7 +188,7 @@ produceForbidOneNac :: Bool -> Bool
 produceForbidOneNac nacInj inj l inverseLeft r (n,idx) = let
         -- Consider for a NAC n (L2 -> N2) of r any jointly surjective
         -- pair of morphisms (h1: R1 -> P1, q21: N2 -> P1) with q21 (part)inj
-        pairs = createPairsCodomain (right l) n
+        pairs = createPairsNac (codomain (right l)) n
 
         filtFun = if nacInj then monomorphism else partialInjectiveTGM n
         filtMono = filter (\(_,q) -> filtFun q) pairs --(h1,q21)
@@ -204,7 +204,7 @@ produceForbidOneNac nacInj inj l inverseLeft r (n,idx) = let
                   filtPairs --(h1,q21,k,r',m1,l')
 
         filtM1 = filter (\(_,_,_,_,m1,_) -> (not inj || monomorphism m1)
-                                          && satsNacs nacInj l m1) dpo
+                                          && satsNacs nacInj inj l m1) dpo
 
         --  Check existence of h21: L2 -> D1 st. e1 . h21 = q21 . n2
         h21 = concatMap (\(h1,q21,k,r',m1,l') ->
