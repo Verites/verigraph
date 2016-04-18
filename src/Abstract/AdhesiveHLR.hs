@@ -67,14 +67,19 @@ class (Morphism m) => AdhesiveHLR m where
 
 class Morphism m => EpiPairs m where
   -- | Create all jointly epimorphic pairs of morphisms from the given objects.
-  createPairs :: Obj m -> Obj m -> [(m, m)]
+  -- The flag indicates only monomorphic morphisms.
+  createPairs :: Bool -> Obj m -> Obj m -> [(m, m)]
   
-  createPairsNac :: Obj m -> m -> [(m, m)]
+  -- | Create a special case of jointly epimorphic pairs, where the second morphism is a Nac
+  -- The first flag indicates Nac satisfability with a monomorphic morphism
+  -- The second flag indicates that the other morphism is monomorphic
+  createPairsNac :: Bool -> Bool -> Obj m -> m -> [(m, m)]
 
   -- | Create all jointly epimorphic pairs of morphisms from the codomains of
   -- the given morphisms.
-  createPairsCodomain :: m -> m -> [(m, m)]
-  createPairsCodomain m1 m2 = createPairs (codomain m1) (codomain m2)
+  -- The flag indicates only monomorphic morphisms.
+  createPairsCodomain :: Bool -> m -> m -> [(m, m)]
+  createPairsCodomain inj m1 m2 = createPairs inj (codomain m1) (codomain m2)
 
   -- | Given two morphisms from the same domain, create all jointly epimorphic
   -- pairs of morphisms from their codomains, such that the square formed by

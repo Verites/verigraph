@@ -35,7 +35,7 @@ concurrentRules isInjective c n = map (concurrentRuleForPair c n) $ pairs isInje
 pairs :: (EpiPairs m, DPO m) => Bool -> Production m -> Production m -> [(m, m)]
 pairs isInjective c n = if isInjective then injectivePairs else validDpoPairs
   where
-    allPairs  = createPairsCodomain (right c) (left n)
+    allPairs  = createPairsCodomain False (right c) (left n) --Added flag as False to get same behavior, but change if the pair of morphism is injective
     validDpoPairs = filter (\(lp, rp) -> satsGluing False lp (inverseWithoutNacs c) && satsGluing False rp n) allPairs
     injectivePairs = filter (\(lp, rp) -> monomorphism lp && monomorphism rp) validDpoPairs
 

@@ -66,10 +66,6 @@ criticalPairs :: Bool -> Bool
 --criticalPairs nacInj inj l r = (allDeleteUse nacInj inj l r) ++ (allProduceForbid nacInj inj l r) ++ (allProdEdgeDelNode nacInj inj l r)
 criticalPairs nacInj inj l r = allDeleteUseAndDangling nacInj inj l r ++ allProduceForbid nacInj inj l r
 
--- Checks if a pair of morphisms is injective
-checkMono :: (TypedGraphMorphism a b, TypedGraphMorphism a b) -> Bool
-checkMono (m1,m2) = monomorphism m1 && monomorphism m2
-
 ---- Delete-Use
 
 -- | Tests DeleteUse and ProdEdgeDelNode for the same pairs
@@ -80,9 +76,8 @@ allDeleteUseAndDangling :: Bool -> Bool
                         -> [CriticalPair a b]
 allDeleteUseAndDangling nacInj i l r = mapMaybe (deleteUseDangling l r) gluing
   where
-    pairs = createPairsCodomain (left l) (left r)
-    inj = filter checkMono pairs
-    gluing = filter (\(m1,m2) -> satsGluingNacsBoth nacInj i (l,m1) (r,m2)) (if i then inj else pairs)
+    pairs = createPairsCodomain i (left l) (left r)
+    gluing = filter (\(m1,m2) -> satsGluingNacsBoth nacInj i (l,m1) (r,m2)) pairs
 
 deleteUseDangling :: GraphRule a b -> GraphRule a b
                   -> (TypedGraphMorphism a b,TypedGraphMorphism a b)
@@ -107,9 +102,8 @@ allDeleteUse :: Bool -> Bool
              -> [CriticalPair a b]
 allDeleteUse nacInj i l r = map (\(m1,m2) -> CriticalPair m1 m2 Nothing DeleteUse) delUse
     where
-        pairs = createPairsCodomain (left l) (left r)                                --get all jointly surjective pairs of L1 and L2
-        inj = filter checkMono pairs
-        gluing = filter (\(m1,m2) -> satsGluingNacsBoth nacInj i (l,m1) (r,m2)) (if i then inj else pairs) --filter the pairs that not satisfie gluing conditions of L and R
+        pairs = createPairsCodomain i (left l) (left r)
+        gluing = filter (\(m1,m2) -> satsGluingNacsBoth nacInj i (l,m1) (r,m2)) pairs--(if i then inj else pairs) --filter the pairs that not satisfie gluing conditions of L and R
         delUse = filter (deleteUse l r) gluing                               --select just the pairs that are in DeleteUse conflict
 
 -- | Rule @l@ causes a delete-use conflict with @r@ if rule @l@ deletes something that is used by @r@
@@ -153,9 +147,8 @@ allProdEdgeDelNode :: Bool -> Bool
                    -> [CriticalPair a b]
 allProdEdgeDelNode nacInj i l r = map (\(m1,m2) -> CriticalPair m1 m2 Nothing ProduceEdgeDeleteNode) conflictPairs
     where
-        pairs = createPairsCodomain (left l) (left r)
-        inj = filter checkMono pairs --check injective
-        gluing = filter (\(m1,m2) -> satsGluingNacsBoth nacInj i (l,m1) (r,m2)) (if i then inj else pairs) --filter the pairs that not satisfie gluing conditions of L and R
+        pairs = createPairsCodomain i (left l) (left r)
+        gluing = filter (\(m1,m2) -> satsGluingNacsBoth nacInj i (l,m1) (r,m2)) pairs
         conflictPairs = filter (prodEdgeDelNode l r) gluing
 
 prodEdgeDelNode :: GraphRule a b -> GraphRule a b -> (TypedGraphMorphism a b,TypedGraphMorphism a b) -> Bool
@@ -188,14 +181,14 @@ produceForbidOneNac :: Bool -> Bool
 produceForbidOneNac nacInj inj l inverseLeft r (n,idx) = let
         -- Consider for a NAC n (L2 -> N2) of r any jointly surjective
         -- pair of morphisms (h1: R1 -> P1, q21: N2 -> P1) with q21 (part)inj
-        pairs = createPairsNac (codomain (right l)) n
+        pairs = createPairsNac nacInj inj (codomain (right l)) n
 
-        filtFun = if nacInj then monomorphism else partialInjectiveTGM n
-        filtMono = filter (\(_,q) -> filtFun q) pairs --(h1,q21)
+        --filtFun = if nacInj then monomorphism else partialInjectiveTGM n
+        --filtMono = filter (\(_,q) -> filtFun q) pairs --(h1,q21)
 
         -- Check gluing cond for (h1,r1). Construct PO complement D1.
         -- Construct PO K and abort if m1 not sats NACs l
-        filtPairs = filter (\(h1,_) -> satsGluingAndNacs nacInj False inverseLeft h1) filtMono
+        filtPairs = filter (\(h1,_) -> satsGluingAndNacs nacInj False inverseLeft h1) pairs
 
         dpo = map (\(h1,q21) ->
                     let (k,r') = RW.poc h1 (right l)
@@ -203,8 +196,8 @@ produceForbidOneNac nacInj inj l inverseLeft r (n,idx) = let
                       (h1,q21,k,r',m1,l'))
                   filtPairs --(h1,q21,k,r',m1,l')
 
-        filtM1 = filter (\(_,_,_,_,m1,_) -> (not inj || monomorphism m1)
-                                          && satsNacs nacInj inj l m1) dpo
+        filtM1 = filter (\(_,_,_,_,m1,_) -> {-(not inj || monomorphism m1) &&-}
+                                            satsNacs nacInj inj l m1) dpo
 
         --  Check existence of h21: L2 -> D1 st. e1 . h21 = q21 . n2
         h21 = concatMap (\(h1,q21,k,r',m1,l') ->
@@ -213,15 +206,14 @@ produceForbidOneNac nacInj inj l inverseLeft r (n,idx) = let
                        case elemIndex True list of
                            Just ind -> [(h1,q21,k,r',m1,l',hs!!ind)]
                            Nothing  -> [])
-                    --if null hs then [] else [(h1,q21,k,r',m1,l',hs)])
-                  filtM1 --(h1,q21,k,r',m1,l1,[hs])
+                  filtM1
 
         -- Define m2 = d1 . h21: L2 -> K and abort if m2 not sats NACs r
         m1m2 = map (\(h1,_,_,_,m1,l',l2d1) -> (h1,m1, compose l2d1 l')) h21
         --filtM2 = filter (\(m1,m2) -> satsNacs r m2) m1m2
 
         -- Check gluing condition for m2 and r
-        filtM2 = filter (\(_,_,m2) -> (not inj || monomorphism m2)
-                                    && satsGluingAndNacs nacInj inj r m2) m1m2
+        filtM2 = filter (\(_,_,m2) -> {-(not inj || monomorphism m2) &&-}
+                                      satsGluingAndNacs nacInj inj r m2) m1m2
 
         in map (\(h1,_,m2) -> CriticalPair h1 m2 (Just idx) ProduceForbid) filtM2
