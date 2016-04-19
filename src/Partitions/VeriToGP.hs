@@ -6,7 +6,6 @@ module Partitions.VeriToGP (
 
 import qualified Abstract.Morphism        as M
 import           Data.List.Utils          (countElem)
-import           Data.Maybe               (mapMaybe)
 import           Graph.Graph              as G
 import           Graph.GraphRule
 import           Graph.GraphMorphism
