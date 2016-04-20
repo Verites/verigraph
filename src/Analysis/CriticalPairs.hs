@@ -74,22 +74,22 @@ allDeleteUseAndDangling :: Bool -> Bool
                         -> GraphRule a b
                         -> GraphRule a b
                         -> [CriticalPair a b]
-allDeleteUseAndDangling nacInj i l r = mapMaybe (deleteUseDangling l r) gluing
+allDeleteUseAndDangling nacInj i l r = mapMaybe (deleteUseDangling nacInj i l r) gluing
   where
     pairs = createPairsCodomain i (left l) (left r)
     gluing = filter (\(m1,m2) -> satsGluingNacsBoth nacInj i (l,m1) (r,m2)) pairs
 
-deleteUseDangling :: GraphRule a b -> GraphRule a b
+deleteUseDangling :: Bool -> Bool -> GraphRule a b -> GraphRule a b
                   -> (TypedGraphMorphism a b,TypedGraphMorphism a b)
                   -> Maybe (CriticalPair a b)
-deleteUseDangling l r (m1,m2) = cp
+deleteUseDangling nacInj inj l r (m1,m2) = cp
   where
     (k,l') = RW.poc m1 (left l)
     lTOd = matches ALL (domain m2) (domain l')
     matchD = filter (\x -> m2 == compose x l') lTOd
     (_,r') = RW.po k (right l)
     m2' = compose (head matchD) r'
-    dang = not (satsIncEdges (left r) m2')
+    dang = not (satsIncEdges (left r) m2') && (satsNacs nacInj inj r m2')
     cp = case (null matchD, dang) of
            (True,_)     -> Just (CriticalPair m1 m2 Nothing DeleteUse)
            (False,True) -> Just (CriticalPair m1 m2 Nothing ProduceEdgeDeleteNode)
@@ -149,11 +149,10 @@ allProdEdgeDelNode nacInj i l r = map (\(m1,m2) -> CriticalPair m1 m2 Nothing Pr
     where
         pairs = createPairsCodomain i (left l) (left r)
         gluing = filter (\(m1,m2) -> satsGluingNacsBoth nacInj i (l,m1) (r,m2)) pairs
-        conflictPairs = filter (prodEdgeDelNode l r) gluing
+        conflictPairs = filter (prodEdgeDelNode nacInj i l r) gluing
 
-prodEdgeDelNode :: GraphRule a b -> GraphRule a b -> (TypedGraphMorphism a b,TypedGraphMorphism a b) -> Bool
---prodEdgeDelNode l r (m1,m2) = (not (null matchD)) && (not (satsIncEdges r m2') || not (satsDelItems r m2'))
-prodEdgeDelNode l r (m1,m2) = not (null matchD) && not (satsIncEdges (left r) m2')
+prodEdgeDelNode :: Bool -> Bool -> GraphRule a b -> GraphRule a b -> (TypedGraphMorphism a b,TypedGraphMorphism a b) -> Bool
+prodEdgeDelNode nacInj inj l r (m1,m2) = not (null matchD) && not (satsIncEdges (left r) m2') && (satsNacs nacInj inj r m2')
     where
         (k,d1) = RW.poc m1 (left l)
         l2TOd1 = matches ALL (domain m2) (domain d1)
