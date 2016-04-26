@@ -30,20 +30,20 @@ maxConcurrentRules injectiveOnly (x:xs) = map (singleCR x) (maxCRs xs)
     maxCRs = maxConcurrentRules injectiveOnly
 
 concurrentRules :: (DPO m, EpiPairs m, Eq (Obj m)) => Bool -> Production m -> Production m -> [Production m]
-concurrentRules isInjective c n = map (concurrentRuleForPair c n) $ pairs isInjective c n
+concurrentRules isInjective c n = map (concurrentRuleForPair isInjective c n) $ pairs isInjective c n
 
 pairs :: (EpiPairs m, DPO m) => Bool -> Production m -> Production m -> [(m, m)]
-pairs isInjective c n = if isInjective then injectivePairs else validDpoPairs
+pairs isInjective c n = validDpoPairs--if isInjective then injectivePairs else validDpoPairs
   where
-    allPairs  = createPairsCodomain False (right c) (left n) --Added flag as False to get same behavior, but change if the pair of morphism is injective
-    validDpoPairs = filter (\(lp, rp) -> satsGluing False lp (inverseWithoutNacs c) && satsGluing False rp n) allPairs
-    injectivePairs = filter (\(lp, rp) -> monomorphism lp && monomorphism rp) validDpoPairs
+    allPairs  = createPairsCodomain isInjective (right c) (left n) --Added flag as False to get same behavior, but change if the pair of morphism is injective
+    validDpoPairs = filter (\(lp, rp) -> satsGluing isInjective lp (inverseWithoutNacs c) && satsGluing isInjective rp n) allPairs
+    --injectivePairs = filter (\(lp, rp) -> monomorphism lp && monomorphism rp) validDpoPairs
 
 maxConcurrentRuleForLastPair :: (DPO m, EpiPairs m, Eq (Obj m)) => Bool -> Production m -> Production m -> Production m
-maxConcurrentRuleForLastPair isInjective c n = concurrentRuleForPair c n (last $ pairs isInjective c n)
+maxConcurrentRuleForLastPair isInjective c n = concurrentRuleForPair isInjective c n (last $ pairs isInjective c n)
 
-concurrentRuleForPair :: (DPO m, EpiPairs m, Eq (Obj m)) => Production m -> Production m -> (m, m) -> Production m
-concurrentRuleForPair c n pair = production l r (dmc ++ lp)
+concurrentRuleForPair :: (DPO m, EpiPairs m, Eq (Obj m)) => Bool -> Production m -> Production m -> (m, m) -> Production m
+concurrentRuleForPair inj c n pair = production l r (dmc ++ lp)
   where
     pocC = poc (fst pair) (right c)
     pocN = poc (snd pair) (left n)
@@ -55,4 +55,4 @@ concurrentRuleForPair c n pair = production l r (dmc ++ lp)
     dmc = concatMap (downwardShift (fst poC)) (nacs c)
     inverseP = production (snd pocC) (snd poC) []
     den = concatMap (downwardShift (snd pair)) (nacs n)
-    lp = concatMap (shiftLeftNac False inverseP) den
+    lp = concatMap (shiftLeftNac inj inverseP) den
