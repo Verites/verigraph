@@ -97,4 +97,9 @@ class Morphism m => EpiPairs m where
   --    A----->Y
   --       g'
   -- @
-  commutingPairs :: m -> m -> [(m, m)]
+  --
+  -- Bool indicates injective
+  commutingPairs :: Bool -> m -> m -> [(m, m)]
+  
+  -- Similar to commutingPairs but indicating which morphism is injective
+  commutingPairsAlt :: (m,Bool) -> (m,Bool) -> [(m, m)]

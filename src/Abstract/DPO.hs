@@ -198,6 +198,5 @@ shiftLeftNac inj rule n = [comatch n rule | satsGluing inj n rule]
 downwardShift :: EpiPairs m => m -> m -> [m]
 downwardShift m n = newNacs
   where
-    pairs = commutingPairs n m
-    injectiveMorphisms = filter (\(e,_) -> monomorphism e) pairs
-    newNacs = map snd injectiveMorphisms
+    pairs = commutingPairsAlt (n,True) (m,False) --Bool indicates injective
+    newNacs = map snd pairs
