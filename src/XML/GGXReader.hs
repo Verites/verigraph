@@ -21,6 +21,7 @@ import qualified Graph.GraphGrammar       as GG
 import           Graph.GraphMorphism      as GM
 import           Graph.GraphRule          as GR
 import           Graph.TypedGraphMorphism
+import           Text.Read                (readMaybe)
 import           Text.XML.HXT.Core
 import           XML.GGXParseIn
 import           XML.ParsedTypes
@@ -167,4 +168,6 @@ instantiateTgm s t maps = typedMorphism s t gmMap
       initGm listInt
 
 toN :: String -> Int
-toN x = read x :: Int
+toN x = case readMaybe x :: Maybe Int of
+          Just n -> n
+          Nothing -> error $ "Error converting id (" ++ x ++ ") to number"
