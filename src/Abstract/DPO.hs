@@ -195,8 +195,8 @@ shiftLeftNac inj rule n = [comatch n rule | satsGluing inj n rule]
 -- | Given a morphism /m : L -> L'/ and a NAC /n : L -> N/, obtains
 -- an equivalent set of NACs /n'i : L' -> N'i/ that is equivalent to the
 -- original NAC.
-downwardShift :: EpiPairs m => m -> m -> [m]
-downwardShift m n = newNacs
+downwardShift :: EpiPairs m => Bool -> m -> m -> [m]
+downwardShift inj m n = newNacs
   where
-    pairs = commutingPairsAlt (n,True) (m,False) --Bool indicates injective
+    pairs = commutingPairsAlt (n,True) (m,inj) --Bool indicates injective
     newNacs = map snd pairs
