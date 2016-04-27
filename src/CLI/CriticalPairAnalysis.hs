@@ -59,7 +59,7 @@ execute globalOpts opts = do
     putStrLn ""
 
     let nacInj = injectiveNacSatisfaction globalOpts
-        onlyInj = injectiveMatchesOnly globalOpts
+        onlyInj = not $ injectiveMatchesOnly globalOpts
         action = analysisType opts
         writer = defWriterFun nacInj onlyInj action
         rules = map snd (GG.rules gg)

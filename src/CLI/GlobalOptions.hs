@@ -19,8 +19,8 @@ data GlobalOptions = GOpts
 globalOpts :: Parser GlobalOptions
 globalOpts = GOpts
   <$> flag False True
-    ( long "inj-matches-only"
-    <> help "Restrict the analysis to injective matches only")
+    ( long "all-matches"
+    <> help "Set the analysis to arbitrary matches morphisms")
   <*> flag False True
     ( long "inj-nac-satisfaction"
     <> help ("Restrict the analysis of NAC satisfaction to injective " ++
