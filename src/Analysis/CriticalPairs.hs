@@ -1,13 +1,13 @@
 module Analysis.CriticalPairs
- ( CP,
+ ( CP (..),
    CriticalPair,
    criticalPairs,
    namedCriticalPairs,
    allDeleteUse,
    allProduceForbid,
    allProdEdgeDelNode,
-   getM1,
-   getM2,
+   getMatch,
+   getComatch,
    getCPNac,
    getCP
    ) where
@@ -18,7 +18,7 @@ import           Data.Maybe                (mapMaybe)
 import           Graph.GraphRule
 import           Graph.EpiPairs            ()
 import           Abstract.AdhesiveHLR      as RW
-import           Abstract.DPO              as RW
+import           Abstract.DPO              as RW hiding (comatch)
 import           Graph.TypedGraphMorphism
 
 -- | Data representing the type of a 'CriticalPair'
@@ -26,20 +26,27 @@ data CP = FOL | DeleteUse | ProduceForbid | ProduceEdgeDeleteNode deriving(Eq,Sh
 
 -- | A Critical Pair is defined as two matches (m1,m2) from the left side of their rules to a same graph.
 -- It assumes that the derivation of the rule with match @m1@ causes a conflict with the rule with match @m2@
+-- @
+--     R1◀─────K1────▶L1    L2◀────K2─────▶R2
+--     │       │       \   /       │       │
+--  m1'│       │      m1\ /m2      │       │
+--     ▼       ▼         ▼         ▼       ▼
+--     P1◀─────D1───────▶G◀───────D2──────▶P2
+-- @
 data CriticalPair a b = CriticalPair {
-    m1  :: TypedGraphMorphism a b,
-    m2  :: TypedGraphMorphism a b,
+    match  :: (TypedGraphMorphism a b, TypedGraphMorphism a b),
+    comatch :: Maybe (TypedGraphMorphism a b, TypedGraphMorphism a b),
     nac :: Maybe Int, --if is ProduceForbid, here is the index of the nac
     cp  :: CP
     } deriving (Eq,Show)
 
--- | Returns the left morphism of a 'CriticalPair'
-getM1 :: CriticalPair a b -> TypedGraphMorphism a b
-getM1 = m1
+-- | Returns the matches (m1,m2)
+getMatch :: CriticalPair a b -> (TypedGraphMorphism a b, TypedGraphMorphism a b)
+getMatch = match
 
--- | Returns the right morphism of a 'CriticalPair'
-getM2 :: CriticalPair a b -> TypedGraphMorphism a b
-getM2 = m2
+-- | Returns the comatches (m1',m2' (from L2 to P1))
+getComatch :: CriticalPair a b -> Maybe (TypedGraphMorphism a b, TypedGraphMorphism a b)
+getComatch = comatch
 
 -- | Returns the type of a 'CriticalPair'
 getCP :: CriticalPair a b -> CP
@@ -91,8 +98,8 @@ deleteUseDangling nacInj inj l r (m1,m2) = cp
     m2' = compose (head matchD) r'
     dang = not (satsIncEdges (left r) m2') && (satsNacs nacInj inj r m2')
     cp = case (null matchD, dang) of
-           (True,_)     -> Just (CriticalPair m1 m2 Nothing DeleteUse)
-           (False,True) -> Just (CriticalPair m1 m2 Nothing ProduceEdgeDeleteNode)
+           (True,_)     -> Just (CriticalPair (m1,m2) Nothing Nothing DeleteUse)
+           (False,True) -> Just (CriticalPair (m1,m2) Nothing Nothing ProduceEdgeDeleteNode)
            _            -> Nothing
 
 -- | All DeleteUse caused by the derivation of @l@ before @r@
@@ -100,7 +107,7 @@ allDeleteUse :: Bool -> Bool
              -> GraphRule a b
              -> GraphRule a b
              -> [CriticalPair a b]
-allDeleteUse nacInj i l r = map (\(m1,m2) -> CriticalPair m1 m2 Nothing DeleteUse) delUse
+allDeleteUse nacInj i l r = map (\match -> CriticalPair match Nothing Nothing DeleteUse) delUse
     where
         pairs = createPairsCodomain i (left l) (left r)
         gluing = filter (\(m1,m2) -> satsGluingNacsBoth nacInj i (l,m1) (r,m2)) pairs--(if i then inj else pairs) --filter the pairs that not satisfie gluing conditions of L and R
@@ -145,7 +152,7 @@ allProdEdgeDelNode :: Bool -> Bool
                    -> GraphRule a b
                    -> GraphRule a b
                    -> [CriticalPair a b]
-allProdEdgeDelNode nacInj i l r = map (\(m1,m2) -> CriticalPair m1 m2 Nothing ProduceEdgeDeleteNode) conflictPairs
+allProdEdgeDelNode nacInj i l r = map (\(m1,m2) -> CriticalPair (m1,m2) Nothing Nothing ProduceEdgeDeleteNode) conflictPairs
     where
         pairs = createPairsCodomain i (left l) (left r)
         gluing = filter (\(m1,m2) -> satsGluingNacsBoth nacInj i (l,m1) (r,m2)) pairs
@@ -208,11 +215,11 @@ produceForbidOneNac nacInj inj l inverseLeft r (n,idx) = let
                   filtM1
 
         -- Define m2 = d1 . h21: L2 -> K and abort if m2 not sats NACs r
-        m1m2 = map (\(h1,_,_,_,m1,l',l2d1) -> (h1,m1, compose l2d1 l')) h21
+        m1m2 = map (\(h1,_,_,r',m1,l',l2d1) -> (h1, compose l2d1 r', m1, compose l2d1 l')) h21
         --filtM2 = filter (\(m1,m2) -> satsNacs r m2) m1m2
 
         -- Check gluing condition for m2 and r
-        filtM2 = filter (\(_,_,m2) -> {-(not inj || monomorphism m2) &&-}
-                                      satsGluingAndNacs nacInj inj r m2) m1m2
+        filtM2 = filter (\(_,_,_,m2) -> {-(not inj || monomorphism m2) &&-}
+                                        satsGluingAndNacs nacInj inj r m2) m1m2
 
-        in map (\(h1,_,m2) -> CriticalPair h1 m2 (Just idx) ProduceForbid) filtM2
+        in map (\(h1,m2',m1,m2) -> CriticalPair (m1,m2) (Just (h1,m2')) (Just idx) ProduceForbid) filtM2

@@ -21,20 +21,34 @@ import           XML.ParsedTypes
 parseCPGraph :: (String,String,[CP.CriticalPair a b]) -> Overlappings
 parseCPGraph (name1,name2,cps) = (name1,name2,overlaps)
   where
-    overlaps = map (\x -> (getGraph x, getMapM1 x, getMapM2 x, nacName x, cpType x)) cps
-    getGraph = serializeGraph . CP.getM1
-    getMapM1 = getTgmMappings . CP.getM1
-    getMapM2 = getTgmMappings . CP.getM2
+    overlaps = map (overlapsCP name2) cps
+
+overlapsCP :: String -> CP.CriticalPair a b -> (ParsedTypedGraph, [Mapping], [Mapping], String, String)
+overlapsCP name2 cs = (graph, mapM1, mapM2, nacName cs, csType cs)
+  where
+    (m1,m2) = case CP.getCP cs of
+                CP.ProduceForbid -> fromMaybe (error "Error when exporting ProduceForbid") (CP.getComatch cs)
+                _ -> CP.getMatch cs
+    graph = serializeGraph m1
+    mapM1 = getTgmMappings m1
+    mapM2 = getTgmMappings m2
     nacName = parseNacName name2 CP.getCPNac
-    cpType = show . CP.getCP
+    csType = show . CP.getCP
 
 parseCSGraph :: (String,String,[CS.CriticalSequence a b]) -> Overlappings
 parseCSGraph (name1,name2,cps) = (name1,name2,overlaps)
   where
-    overlaps = map (\x -> (getGraph x, getMapM1 x, getMapM2 x, nacName x, csType x)) cps
-    getGraph = serializeGraph . CS.getM1
-    getMapM1 = getTgmMappings . CS.getM1
-    getMapM2 = getTgmMappings . CS.getM2
+    overlaps = map (overlapsCS name2) cps
+
+overlapsCS :: String -> CS.CriticalSequence a b -> (ParsedTypedGraph, [Mapping], [Mapping], String, String)
+overlapsCS name2 cs = (graph, mapM1, mapM2, nacName cs, csType cs)
+  where
+    (m1,m2) = case CS.getCS cs of
+                CS.DeliverDelete -> fromMaybe (error "Error when exporting DeliverDelete") (CS.getMatch cs)
+                _ -> CS.getComatch cs
+    graph = serializeGraph m1
+    mapM1 = getTgmMappings m1
+    mapM2 = getTgmMappings m2
     nacName = parseNacName name2 CS.getCSNac
     csType = show . CS.getCS
 
