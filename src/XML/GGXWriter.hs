@@ -341,7 +341,7 @@ writeConditions :: ArrowXml a => [(String, String)] -> String -> GR.GraphRule b 
 writeConditions nacNames ruleName rule =
   mkelem "ApplCondition" [] $ map (writeNac ruleName) (zip (getNacs ruleName rule) (map snd nacsRule++nacsNoName))
     where
-      nacsNoName = map show [158::Int ..]
+      nacsNoName = [a++b | a <- ["Nac_"], b <- map show [0::Int ..]]
       nacsRule = filter (\(x,_) -> startswith ("NAC_"++ruleName) x) nacNames
 
 writeNac :: ArrowXml a => String -> ((ParsedTypedGraph, [Mapping]),String) -> a XmlTree XmlTree
