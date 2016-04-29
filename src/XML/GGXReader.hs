@@ -129,7 +129,8 @@ instantiateTypedGraph (_,b,c) tg = gmbuild g tg nodeTyping edgeTyping
 instantiateInterface :: [Mapping] -> GraphMorphism a b -> GraphMorphism a b
 instantiateInterface mapping l = gmbuild graphK (codomain l) nodeType edgeType
   where
-    listMap = map (toN . snd) mapping
+    third (_,_,x) = x
+    listMap = map (toN . third) mapping
     nodesK = filter (\(G.NodeId x) -> x `elem` listMap) (G.nodes (domain l))
     nodesK2 = map (\(G.NodeId x) -> x) nodesK
     edgesK = filter (\(G.EdgeId x) -> x `elem` listMap) (G.edges (domain l))
@@ -160,7 +161,7 @@ instantiateTgm s t maps = typedMorphism s t gmMap
     graphS = domain s
     initGm = empty graphS (domain t)
     listNodes = map (\(G.NodeId x) -> x) (G.nodes graphS)
-    listInt = map (\(x,y) -> (toN x, toN y)) maps
+    listInt = map (\(x,_,y) -> (toN x, toN y)) maps
     gmMap = foldr (\(imag,orig) gm ->
       if orig `elem` listNodes
          then updateNodes (G.NodeId orig) (G.NodeId imag) gm

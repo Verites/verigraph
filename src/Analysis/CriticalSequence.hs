@@ -8,6 +8,7 @@ module Analysis.CriticalSequence
    getMatch,
    getComatch,
    getCSNac,
+   getCSNacIdx,
    getCS
    ) where
 
@@ -34,7 +35,7 @@ data CS = ProduceUse | DeliverDelete deriving(Eq,Show)
 data CriticalSequence a b = CriticalSequence {
     match :: Maybe (TypedGraphMorphism a b, TypedGraphMorphism a b),
     comatch :: (TypedGraphMorphism a b, TypedGraphMorphism a b),
-    nac :: Maybe Int, --if is DeliverDelete, here is the index of the nac
+    nac :: Maybe (TypedGraphMorphism a b, Int), --if is DeliverDelete, here is the index of the nac
     cs  :: CS
     } deriving (Eq,Show)
 
@@ -50,9 +51,17 @@ getComatch = comatch
 getCS :: CriticalSequence a b -> CS
 getCS = cs
 
--- | Returns the nac number of a 'CriticalSequence'
-getCSNac :: CriticalSequence a b -> Maybe Int
-getCSNac = nac
+-- | Returns the nac match of a 'CriticalSequence'
+getCSNac :: CriticalSequence a b -> Maybe (TypedGraphMorphism a b)
+getCSNac cs = case nac cs of
+                Just (nac,_) -> Just nac
+                Nothing -> Nothing
+
+-- | Returns the nac index of a 'CriticalSequence'
+getCSNacIdx :: CriticalSequence a b -> Maybe Int
+getCSNacIdx cs = case nac cs of
+                   Just (_,idx) -> Just idx
+                   Nothing -> Nothing
 
 -- | Returns the Critical Sequences with rule names
 namedCriticalSequence :: Bool -> Bool -> [(String, GraphRule a b)] -> [(String,String,[CriticalSequence a b])]
@@ -126,9 +135,9 @@ deliverDelete nacInj inj l inverseLeft r (n,idx) = let
                            Nothing  -> [])
                   filtM1
 
-        defineM2 = map (\(m1,_,_,d1,m1',e1,l2d1) -> (m1, compose l2d1 d1, m1', compose l2d1 e1)) h21
+        defineM2 = map (\(m1,q21,_,d1,m1',e1,l2d1) -> (q21, m1, compose l2d1 d1, m1', compose l2d1 e1)) h21
 
-        filtM2 = filter (\(_,_,_,m2') -> {-(not inj || M.monomorphism m2) &&-}
+        filtM2 = filter (\(_,_,_,_,m2') -> {-(not inj || M.monomorphism m2) &&-}
                                       satsGluingAndNacs nacInj inj r m2') defineM2
 
-        in map (\(m1,m2,m1',m2') -> CriticalSequence (Just (m1,m2)) (m1',m2') (Just idx) DeliverDelete) filtM2
+        in map (\(q21,m1,m2,m1',m2') -> CriticalSequence (Just (m1,m2)) (m1',m2') (Just (q21,idx)) DeliverDelete) filtM2

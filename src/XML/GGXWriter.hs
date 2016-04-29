@@ -142,7 +142,10 @@ writeRuleSets rules =
       rulesL = [sattr "size" (show $ length rules)]
 
 writeGrammar :: ArrowXml a => GraphGrammar b c -> [(String,String)] -> [a XmlTree XmlTree]
-writeGrammar grammar names = writeAggProperties ++ [writeTypes (typeGraph grammar) names] ++ [writeHostGraph] ++ writeRules grammar nacNames
+writeGrammar grammar names = writeAggProperties ++
+                             [writeTypes (typeGraph grammar) names] ++
+                             [writeHostGraph] ++
+                             writeRules grammar nacNames
   where
     nacNames = filter (\(x,_) -> startswith "NAC" x) names
 
@@ -314,7 +317,9 @@ writeRule :: ArrowXml a => [(String,String)] -> (String, GR.GraphRule b c) -> a 
 writeRule nacNames (ruleName, rule) =
   mkelem "Rule"
     [sattr "ID" ruleName, sattr "formula" "true", sattr "name" ruleName]
-    $ [writeLHS ruleName lhs, writeRHS ruleName rhs] ++ [writeMorphism ("RightOf_"++ruleName, "LeftOf_"++ruleName) ruleName "" morphism] ++ [writeConditions nacNames ruleName rule]
+    $ [writeLHS ruleName lhs, writeRHS ruleName rhs] ++
+      [writeMorphism ("RightOf_"++ruleName, "LeftOf_"++ruleName) ruleName "" morphism] ++
+      [writeConditions nacNames ruleName rule]
   where
     lhs = getLHS rule
     rhs = getRHS rule
@@ -329,7 +334,11 @@ writeRHS ruleName (_, nodes, edges)= writeGraph ("RightOf_" ++ ruleName) "RHS" (
 writeMorphism :: ArrowXml a => (String, String) -> String -> String -> [Mapping] -> a XmlTree XmlTree
 writeMorphism (tgtPrefix, srcPrefix) name source mappings =
   mkelem "Morphism" (sattr "name" name : [sattr "source" source | source /= ""])
-    $ writeMappings (map (\(tgt,src) -> (tgtPrefix++"_"++tgt, srcPrefix++"_"++src)) mappings)
+    $ writeMappings (map (\(tgt,elemSrcPrefix,src) ->
+                           (tgtPrefix ++"_"++tgt,
+                            (chooseSrcPrefix elemSrcPrefix)++"_"++src)) mappings)
+  where
+    chooseSrcPrefix = fromMaybe srcPrefix
 
 writeMappings :: ArrowXml a => [(String, String)] -> [a XmlTree XmlTree]
 writeMappings = map writeMapping
@@ -341,8 +350,10 @@ writeConditions :: ArrowXml a => [(String, String)] -> String -> GR.GraphRule b 
 writeConditions nacNames ruleName rule =
   mkelem "ApplCondition" [] $ map (writeNac ruleName) (zip (getNacs ruleName rule) (map snd nacsRule++nacsNoName))
     where
-      nacsNoName = [a++b | a <- ["Nac_"], b <- map show [0::Int ..]]
+      -- filter the name of the nacs of this rule
       nacsRule = filter (\(x,_) -> startswith ("NAC_"++ruleName) x) nacNames
+      -- in the case of do not find, writes Nac_0,Nac_1,...
+      nacsNoName = [a++b | a <- ["Nac_"], b <- map show [0::Int ..]]
 
 writeNac :: ArrowXml a => String -> ((ParsedTypedGraph, [Mapping]),String) -> a XmlTree XmlTree
 writeNac ruleName ((nacGraph@(nacId,_,_), nacMorphism),nacName) = mkelem "NAC" [] [writeNacGraph nacGraph, writeNacMorphism nacMorphism]

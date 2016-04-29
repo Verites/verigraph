@@ -8,6 +8,7 @@ module Analysis.CriticalPairs
    allProdEdgeDelNode,
    getMatch,
    getComatch,
+   getCPNacIdx,
    getCPNac,
    getCP
    ) where
@@ -36,7 +37,7 @@ data CP = FOL | DeleteUse | ProduceForbid | ProduceEdgeDeleteNode deriving(Eq,Sh
 data CriticalPair a b = CriticalPair {
     match  :: (TypedGraphMorphism a b, TypedGraphMorphism a b),
     comatch :: Maybe (TypedGraphMorphism a b, TypedGraphMorphism a b),
-    nac :: Maybe Int, --if is ProduceForbid, here is the index of the nac
+    nac :: Maybe (TypedGraphMorphism a b, Int), --if is ProduceForbid, here is the index of the nac
     cp  :: CP
     } deriving (Eq,Show)
 
@@ -52,9 +53,17 @@ getComatch = comatch
 getCP :: CriticalPair a b -> CP
 getCP = cp
 
--- | Returns the nac number of a 'CriticalPair'
-getCPNac :: CriticalPair a b -> Maybe Int
-getCPNac = nac
+-- | Returns the nac match of a 'CriticalPair'
+getCPNac :: CriticalPair a b -> Maybe (TypedGraphMorphism a b)
+getCPNac cp = case nac cp of
+                Just (nac,_) -> Just nac
+                Nothing -> Nothing
+
+-- | Returns the nac index of a 'CriticalPair'
+getCPNacIdx :: CriticalPair a b -> Maybe Int
+getCPNacIdx cp = case nac cp of
+                   Just (_,idx) -> Just idx
+                   Nothing -> Nothing
 
 --instance Show (CriticalPair a b) where
 --  show (CriticalPair m1 m2 cp) = "{"++(show $ TGM.mapping m1)++(show $ TGM.mapping m2)++(show cp)++"}"
@@ -215,11 +224,11 @@ produceForbidOneNac nacInj inj l inverseLeft r (n,idx) = let
                   filtM1
 
         -- Define m2 = d1 . h21: L2 -> K and abort if m2 not sats NACs r
-        m1m2 = map (\(h1,_,_,r',m1,l',l2d1) -> (h1, compose l2d1 r', m1, compose l2d1 l')) h21
+        m1m2 = map (\(h1,q21,_,r',m1,l',l2d1) -> (q21, h1, compose l2d1 r', m1, compose l2d1 l')) h21
         --filtM2 = filter (\(m1,m2) -> satsNacs r m2) m1m2
 
         -- Check gluing condition for m2 and r
-        filtM2 = filter (\(_,_,_,m2) -> {-(not inj || monomorphism m2) &&-}
+        filtM2 = filter (\(_,_,_,_,m2) -> {-(not inj || monomorphism m2) &&-}
                                         satsGluingAndNacs nacInj inj r m2) m1m2
 
-        in map (\(h1,m2',m1,m2) -> CriticalPair (m1,m2) (Just (h1,m2')) (Just idx) ProduceForbid) filtM2
+        in map (\(q21,h1,m2',m1,m2) -> CriticalPair (m1,m2) (Just (h1,m2')) (Just (q21,idx)) ProduceForbid) filtM2

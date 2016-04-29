@@ -24,15 +24,20 @@ parseCPGraph (name1,name2,cps) = (name1,name2,overlaps)
     overlaps = map (overlapsCP name2) cps
 
 overlapsCP :: String -> CP.CriticalPair a b -> (ParsedTypedGraph, [Mapping], [Mapping], String, String)
-overlapsCP name2 cs = (graph, mapM1, mapM2, nacName cs, csType cs)
+overlapsCP name2 cs = (graph, mapM1, mapM2 ++ mapM2WithNac, nacName cs, csType cs)
   where
     (m1,m2) = case CP.getCP cs of
                 CP.ProduceForbid -> fromMaybe (error "Error when exporting ProduceForbid") (CP.getComatch cs)
                 _ -> CP.getMatch cs
     graph = serializeGraph m1
-    mapM1 = getTgmMappings m1
-    mapM2 = getTgmMappings m2
-    nacName = parseNacName name2 CP.getCPNac
+    mapM1 = getTgmMappings Nothing m1
+    mapM2 = getTgmMappings Nothing m2
+    mapM2WithNac = case CP.getCP cs of
+                     CP.ProduceForbid -> addNacMap
+                     _ -> []
+    nacMatch = fromMaybe (error "Error when exporting ProduceForbid") (CP.getCPNac cs)
+    addNacMap = getTgmMappings (Just (nacName cs)) nacMatch
+    nacName = parseNacName name2 CP.getCPNacIdx
     csType = show . CP.getCP
 
 parseCSGraph :: (String,String,[CS.CriticalSequence a b]) -> Overlappings
@@ -41,24 +46,29 @@ parseCSGraph (name1,name2,cps) = (name1,name2,overlaps)
     overlaps = map (overlapsCS name2) cps
 
 overlapsCS :: String -> CS.CriticalSequence a b -> (ParsedTypedGraph, [Mapping], [Mapping], String, String)
-overlapsCS name2 cs = (graph, mapM1, mapM2, nacName cs, csType cs)
+overlapsCS name2 cs = (graph, mapM1, mapM2 ++ mapM2WithNac, nacName cs, csType cs)
   where
     (m1,m2) = case CS.getCS cs of
                 CS.DeliverDelete -> fromMaybe (error "Error when exporting DeliverDelete") (CS.getMatch cs)
                 _ -> CS.getComatch cs
     graph = serializeGraph m1
-    mapM1 = getTgmMappings m1
-    mapM2 = getTgmMappings m2
-    nacName = parseNacName name2 CS.getCSNac
+    mapM1 = getTgmMappings Nothing m1
+    mapM2 = getTgmMappings Nothing m2
+    mapM2WithNac = case CS.getCS cs of
+                     CS.DeliverDelete -> addNacMap
+                     _ -> []
+    nacMatch = fromMaybe (error "Error when exporting DeliverDelete") (CS.getCSNac cs)
+    addNacMap = getTgmMappings (Just (nacName cs)) nacMatch
+    nacName = parseNacName name2 CS.getCSNacIdx
     csType = show . CS.getCS
 
-getTgmMappings :: TypedGraphMorphism a b -> [Mapping]
-getTgmMappings nac = nodesMorph ++ edgesMorph
+getTgmMappings :: Maybe String -> TypedGraphMorphism a b -> [Mapping]
+getTgmMappings prefix tgm = nodesMorph ++ edgesMorph
   where
-    nodeMap n = fromJust $ applyNodeTGM nac n
-    edgeMap e = fromJust $ applyEdgeTGM nac e
-    nodesMorph = map (\n -> ("N" ++ show (nodeMap n), "N" ++ show n)) (nodesDomain nac)
-    edgesMorph = map (\e -> ("E" ++ show (edgeMap e), "E" ++ show e)) (edgesDomain nac)
+    nodeMap n = fromJust $ applyNodeTGM tgm n
+    edgeMap e = fromJust $ applyEdgeTGM tgm e
+    nodesMorph = map (\n -> ("N" ++ show (nodeMap n), prefix, "N" ++ show n)) (nodesDomain tgm)
+    edgesMorph = map (\e -> ("E" ++ show (edgeMap e), prefix, "E" ++ show e)) (edgesDomain tgm)
 
 getLHS :: GR.GraphRule a b -> ParsedTypedGraph
 getLHS rule = serializeGraph $ GR.left rule
@@ -77,19 +87,20 @@ getNac (nacId,nac) = (graph, mappings)
   where
     (_,n,e) = serializeGraph nac
     graph = (nacId, n, e)
-    mappings = getTgmMappings nac
+    mappings = getTgmMappings Nothing nac
 
 getMappings :: GR.GraphRule a b -> [Mapping]
 getMappings rule = nodesMorph ++ edgesMorph
   where
+    no = Nothing
     invL = invertTGM (GR.left rule)
     lr = M.compose invL (GR.right rule)
     nodeMap n = fromJust $ applyNodeTGM lr n
     nodes = filter (isJust . applyNodeTGM lr) (nodesDomain lr)
-    nodesMorph = map (\n -> ("N" ++ show (nodeMap n), "N" ++ show n)) nodes
+    nodesMorph = map (\n -> ("N" ++ show (nodeMap n), no, "N" ++ show n)) nodes
     edgeMap e = fromJust $ applyEdgeTGM lr e
     edges = filter (isJust . applyEdgeTGM lr) (edgesDomain lr)
-    edgesMorph = map (\e -> ("E" ++ show (edgeMap e), "E" ++ show e)) edges
+    edgesMorph = map (\e -> ("E" ++ show (edgeMap e), no, "E" ++ show e)) edges
 
 parseNacName :: String -> (t -> Maybe Int) -> t -> String
 parseNacName ruleName f x = case f x of

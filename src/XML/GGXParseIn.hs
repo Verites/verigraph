@@ -143,7 +143,7 @@ parseMappings = atTag "Mapping" >>>
   proc mapping -> do
     image <- getAttrValue "image" -< mapping
     orig <- getAttrValue "orig" -< mapping
-    returnA -< (clearId image, clearId orig)
+    returnA -< (clearId image, Nothing, clearId orig)
 
 parseNac :: ArrowXml cat => cat (NTree XNode) (ParsedTypedGraph,[Mapping])
 parseNac = atTag "NAC" >>>
