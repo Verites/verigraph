@@ -153,13 +153,13 @@ partialInjectiveTGM :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
 partialInjectiveTGM nac q = GM.partialInjectiveGM (mapping nac) (mapping q)
 
 -- | Creates a TGM mapping the same elements of theirs codomains, from @tgm1@ to @tgm2@
-idMap :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
-idMap (TypedGraphMorphism _ cod1 _) (TypedGraphMorphism _ cod2 _) =
-  typedMorphism cod1 cod2 edgesUpdate
+idMap :: GraphMorphism a b -> GraphMorphism a b -> TypedGraphMorphism a b
+idMap gm1 gm2 =
+  typedMorphism gm1 gm2 edgesUpdate
     where
-      init = GM.empty (M.domain cod1) (M.domain cod2)
-      nodesUpdate = foldr (\n -> GM.updateNodes n n) init (G.nodes (M.domain cod1))
-      edgesUpdate = foldr (\e -> GM.updateEdges e e) nodesUpdate (G.edges (M.domain cod1))
+      init = GM.empty (M.domain gm1) (M.domain gm2)
+      nodesUpdate = foldr (\n -> GM.updateNodes n n) init (G.nodes (M.domain gm1))
+      edgesUpdate = foldr (\e -> GM.updateEdges e e) nodesUpdate (G.edges (M.domain gm2))
 
 instance Eq (TypedGraphMorphism a b) where
     (TypedGraphMorphism dom1 cod1 m1) == (TypedGraphMorphism dom2 cod2 m2) =
@@ -232,7 +232,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
         kr''      = foldr (\(a,_,_,b,sb,tb,tp) tgm -> updateEdgeRelationTGM a b (createEdgeCodTGM b sb tb tp tgm) )
                           kr'
                           edgeTable'
-    in (kr'', idMap k kr'')
+    in (kr'', idMap (codomain k) (codomain kr''))
 
   {-
      PO complement algorithm:
@@ -249,7 +249,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
         k        = foldr removeNodeCodTyped                                          -- delete all edges, then all nodes from ml
                        (foldr removeEdgeCodTyped ml delEdges)
                            delNodes
-    in (k, idMap k m)
+    in (k, idMap (codomain k) (codomain m))
 
   injectivePullback f g = (delNodesFromF', delNodesFromG')
     where

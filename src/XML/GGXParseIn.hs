@@ -23,7 +23,7 @@ parseGGName = atTag "GraphTransformationSystem" >>>
     returnA -< name
 
 -- | Parse all type graphs
-parseTypeGraph :: ArrowXml cat => cat (NTree XNode) TypeGraph
+parseTypeGraph :: ArrowXml cat => cat (NTree XNode) ParsedTypeGraph
 parseTypeGraph = atTag "Types" >>> atTag "Graph" >>>
   proc graph -> do
     nodes <- listA parseNode -< graph
@@ -86,17 +86,25 @@ parseNode :: ArrowXml cat => cat (NTree XNode) ParsedTypedNode
 parseNode = atTag "Node" >>>
   proc node -> do
     nodeId <- getAttrValue "ID" -< node
+    nodeName <- getAttrValue "name" -< node
+    let setNodeName = case nodeName of
+                       "" -> Nothing
+                       str -> Just str
     nodeType <- getAttrValue "type" -< node
-    returnA -< (clearId nodeId, clearId nodeType)
+    returnA -< (clearId nodeId, setNodeName, clearId nodeType)
 
 parseEdge :: ArrowXml cat => cat (NTree XNode) ParsedTypedEdge
 parseEdge = atTag "Edge" >>>
   proc node -> do
     edgeId <- getAttrValue "ID" -< node
+    edgeName <- getAttrValue "name" -< node
+    let setEdgeName = case edgeName of
+                        "" -> Nothing
+                        str -> Just str
     edgeType <- getAttrValue "type" -< node
     edgeSource <- getAttrValue "source" -< node
     edgeTarget <- getAttrValue "target" -< node
-    returnA -< (clearId edgeId, clearId edgeType, clearId edgeSource, clearId edgeTarget)
+    returnA -< (clearId edgeId, setEdgeName, clearId edgeType, clearId edgeSource, clearId edgeTarget)
 
 parseGraph :: ArrowXml cat => cat (NTree XNode) ParsedTypedGraph
 parseGraph = atTag "Graph" >>>
@@ -181,4 +189,4 @@ clearId :: String -> String
 clearId [] = error "Error reading id"
 clearId l = if isNum (last l) then (clearId (init l)) ++ [last l] else ""
   where
-   isNum x = x `elem` ['0','1','2','3','4','5','6','7','8','9']
+   isNum x = x `elem` "0123456789"

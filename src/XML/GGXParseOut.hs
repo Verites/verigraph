@@ -116,10 +116,12 @@ serializeGraph morphism = ("", nodes, edges)
 
 serializeNode :: GM.GraphMorphism a b -> G.NodeId -> ParsedTypedNode
 serializeNode graph n = ("N" ++ show n,
+                         Nothing, --name
                          "N" ++ show (fromJust $ GM.applyNode graph n))
 
 serializeEdge :: GM.GraphMorphism a b -> G.EdgeId -> ParsedTypedEdge
 serializeEdge graph e = ("E" ++ show e,
+                         Nothing, --name
                          "E" ++ show (fromJust $ GM.applyEdge graph e),
                          "N" ++ show (fromJust (G.sourceOf (M.domain graph) e)),
                          "N" ++ show (fromJust (G.targetOf (M.domain graph) e)))

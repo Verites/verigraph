@@ -160,8 +160,9 @@ writeTypes graph names = mkelem "Types" []
 writeTypeGraph :: ArrowXml a => G.Graph b c -> a XmlTree XmlTree
 writeTypeGraph graph = writeGraph "TypeGraph" "TG" "TypeGraph" nodeList edgeList
   where
-    nodeList = map (\n -> ("n" ++ show n, "N" ++ show n)) (G.nodes graph)
-    edgeList = map (\e -> ("e" ++ show e, "E" ++ show e, "n" ++ show (src graph e), "n" ++ show (tgt graph e))) (G.edges graph)
+    -- fix name
+    nodeList = map (\n -> ("n" ++ show n, Nothing, "N" ++ show n)) (G.nodes graph)
+    edgeList = map (\e -> ("e" ++ show e, Nothing, "E" ++ show e, "n" ++ show (src graph e), "n" ++ show (tgt graph e))) (G.edges graph)
 
 writeNodeTypes :: ArrowXml a => [(String,String)] -> [(String,String)] -> [a XmlTree XmlTree]
 writeNodeTypes names = map (writeNodeType names)
@@ -183,15 +184,15 @@ writeEdgeType names (edgeId,edgeType) =
   where
     name = fromMaybe edgeType (lookup ("I" ++ edgeType) names)
 
-writeGraph :: ArrowXml a => String -> String -> String -> [(String,String)]
-              -> [(String, String, String, String)] -> a XmlTree XmlTree
+writeGraph :: ArrowXml a => String -> String -> String
+              -> [ParsedTypedNode] -> [ParsedTypedEdge] -> a XmlTree XmlTree
 writeGraph graphId kind name nodes edges =
   mkelem "Graph"
     [ sattr "ID" graphId, sattr "kind" kind, sattr "name" name ]
     $ writeNodes graphId nodes ++ writeEdges graphId edges
 
-writeGraphOverlaping :: ArrowXml a => String -> String -> String -> String -> [(String,String)]
-              -> [(String, String, String, String)] -> a XmlTree XmlTree
+writeGraphOverlaping :: ArrowXml a => String -> String -> String -> String
+              -> [ParsedTypedNode] -> [ParsedTypedEdge] -> a XmlTree XmlTree
 writeGraphOverlaping graphId info kind name nodes edges =
   mkelem "Graph"
     (sattr "ID" graphId : attrInfo ++ [sattr "kind" kind, sattr "name" name])
@@ -270,28 +271,31 @@ writeDelDel nacNames (n1, n2, ((_, nodes, edges), map1, map2, nacName, _), idx) 
 writeHostGraph :: ArrowXml a => a XmlTree XmlTree
 writeHostGraph = writeGraph "Graph" "HOST" "Graph" [] []
 
-writeNodes :: ArrowXml a => String -> [(String,String)] -> [a XmlTree XmlTree]
+writeNodes :: ArrowXml a => String -> [ParsedTypedNode] -> [a XmlTree XmlTree]
 writeNodes graphId = map (writeNode graphId)
 
-writeNode :: ArrowXml a => String -> (String,String) -> a XmlTree XmlTree
-writeNode graphId (nodeId, nodeType) =
+-- fix write names of nodes
+writeNode :: ArrowXml a => String -> ParsedTypedNode -> a XmlTree XmlTree
+writeNode graphId (nodeId, _, nodeType) =
   mkelem "Node"
     [ sattr "ID" (graphId++"_"++nodeId), sattr "type" nodeType ]
     [ writeDefaultNodeLayout, writeAdditionalNodeLayout ]
 
-writeNodesConflict :: ArrowXml a => String -> [(String,String)] -> [a XmlTree XmlTree]
+writeNodesConflict :: ArrowXml a => String -> [ParsedTypedNode] -> [a XmlTree XmlTree]
 writeNodesConflict graphId = map (writeNodeConflict graphId)
 
-writeNodeConflict :: ArrowXml a => String -> (String,String) -> a XmlTree XmlTree
-writeNodeConflict graphId (nodeId, nodeType) =
+-- fix write names of nodes
+writeNodeConflict :: ArrowXml a => String -> ParsedTypedNode -> a XmlTree XmlTree
+writeNodeConflict graphId (nodeId, _, nodeType) =
   mkelem "Node"
     [sattr "ID" (graphId++"_"++nodeId), sattr "type" nodeType] []
 
-writeEdges :: ArrowXml a => String -> [(String,String,String,String)] -> [a XmlTree XmlTree]
+writeEdges :: ArrowXml a => String -> [ParsedTypedEdge] -> [a XmlTree XmlTree]
 writeEdges prefix = map (writeEdge prefix)
 
-writeEdge :: ArrowXml a => String -> (String,String,String,String) -> a XmlTree XmlTree
-writeEdge prefix (edgeId, edgeType, source, target) =
+-- fix write names of edges
+writeEdge :: ArrowXml a => String -> ParsedTypedEdge -> a XmlTree XmlTree
+writeEdge prefix (edgeId, _, edgeType, source, target) =
   mkelem "Edge"
     [ sattr "ID" (prefix++"_"++edgeId),
       sattr "source" (prefix++"_"++source),
@@ -299,11 +303,12 @@ writeEdge prefix (edgeId, edgeType, source, target) =
       sattr "type" edgeType]
     [ writeDefaultEdgeLayout, writeAdditionalEdgeLayout ]
 
-writeEdgesConflict :: ArrowXml a => String -> [(String,String,String,String)] -> [a XmlTree XmlTree]
+writeEdgesConflict :: ArrowXml a => String -> [ParsedTypedEdge] -> [a XmlTree XmlTree]
 writeEdgesConflict graphId = map (writeEdgeConflict graphId)
 
-writeEdgeConflict :: ArrowXml a => String -> (String,String,String,String) -> a XmlTree XmlTree
-writeEdgeConflict graphId (edgeId, edgeType, source, target) =
+-- fix write names of edges
+writeEdgeConflict :: ArrowXml a => String -> ParsedTypedEdge -> a XmlTree XmlTree
+writeEdgeConflict graphId (edgeId, _, edgeType, source, target) =
   mkelem "Edge"
     [ sattr "ID" (graphId++"_"++edgeId),
       sattr "source" (graphId++"_"++source),
