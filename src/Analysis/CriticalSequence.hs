@@ -25,13 +25,33 @@ import           Graph.FindMorphism        ()
 data CS = ProduceUse | DeliverDelete deriving(Eq,Show)
 
 -- | A Critical Sequence is defined as two matches (m1,m2) from the left side of their rules to a same graph.
+-- 
+-- This diagram shows graphs and morphisms names used in the algorithms below
+--
+-- l       = production (L1,K1,R1,[N1]) (N1 from L1)
+--
+-- invLeft = production (R1,K1,L1,[N1]) (N1 from R1)
+--
+-- r       = production (L2,K2,R2,[N2])
+--
 -- @
+--                    N1    N2
+--                    ^      ^
+--          l     r   │      │n
 --     L1◀─────K1────▶R1    L2◀────K2─────▶R2
---     │       │       \   /       │       │
---   m1│       │     m1'\ /m2'     │       │
+--     │       │       \\   /       │       │
+--   m1│      k│     m1'\\ /m2'     │       │
 --     ▼       ▼         ▼         ▼       ▼
 --     P1◀─────D1───────▶G◀───────D2──────▶P2
+--         r'       l' 
 -- @
+-- 
+-- m2  :: from L2 to P1
+--
+-- h21 :: from L2 to D1
+--
+-- q21 (nacMatch) :: from N2 to P1
+
 data CriticalSequence a b = CriticalSequence {
     match :: Maybe (TypedGraphMorphism a b, TypedGraphMorphism a b),
     comatch :: (TypedGraphMorphism a b, TypedGraphMorphism a b),
@@ -39,7 +59,7 @@ data CriticalSequence a b = CriticalSequence {
     cs  :: CS
     } deriving (Eq,Show)
 
--- | Returns the matches (m1, m2 (from L2 to P1))
+-- | Returns the matches (m1, m2)
 getMatch :: CriticalSequence a b -> Maybe (TypedGraphMorphism a b, TypedGraphMorphism a b)
 getMatch = match
 
@@ -82,7 +102,7 @@ allProduceUse nacInj i l r = map (\(m1,m2) -> CriticalSequence Nothing (m1,m2) N
   where
     invLeft = inverse i l
     pairs = createPairsCodomain i (left invLeft) (left r)
-    gluing = filter (\(m1,m2) -> satsGluingNacsBoth nacInj i  (invLeft,m1) (r,m2)) pairs
+    gluing = filter (\(m1',m2') -> satsGluingNacsBoth nacInj i  (invLeft,m1') (r,m2')) pairs
     prodUse = filter (produceUse invLeft r) gluing
 
 -- | Rule @l@ causes a produce-use dependency with @r@ if rule @l@ creates something that is used by @r@
@@ -90,11 +110,11 @@ allProduceUse nacInj i l r = map (\(m1,m2) -> CriticalSequence Nothing (m1,m2) N
 produceUse :: GraphRule a b -> GraphRule a b
            -> (TypedGraphMorphism a b,TypedGraphMorphism a b)
            -> Bool
-produceUse l _ (m1',m2) = Prelude.null filt
+produceUse l _ (m1',m2') = Prelude.null filt
     where
-        (_,e1) = RW.poc m1' (left l)
-        l2TOd1 = matches ALL (domain m2) (domain e1)
-        filt = filter (\h -> compose h e1 == m2) l2TOd1
+        (_,l') = RW.poc m1' (left l)
+        l2TOd1 = matches ALL (domain m2') (domain l')
+        filt = filter (\h -> compose h l' == m2') l2TOd1
 
 -- | All DeliverDelete caused by the derivation of @l@ before @r@
 -- rule @l@ causes a deliver-forbid conflict with @r@ if some NAC in @r@ turns satisfied after the aplication of @l@
@@ -120,22 +140,22 @@ deliverDelete nacInj inj l inverseLeft r (n,idx) = let
                                        ) pairs
 
         dpo = map (\(m1,q21) ->
-                    let (k,d1) = RW.poc m1 (left l)
-                        (m1',e1) = RW.po k (right l) in
-                      (m1,q21,k,d1,m1',e1))
+                    let (k,r') = RW.poc m1 (left l)
+                        (m1',l') = RW.po k (right l) in
+                      (m1,q21,k,r',m1',l'))
                   filtPairs
 
         filtM1 = filter (\(_,_,_,_,m1',_) -> satsNacs nacInj inj inverseLeft m1') dpo
 
-        h21 = concatMap (\(m1,q21,k,d1,m1',e1) ->
+        h21 = concatMap (\(m1,q21,k,r',m1',l') ->
                   let hs = matches ALL (domain n) (codomain k)
-                      list = map (\h -> compose h d1 == compose n q21) hs in
+                      list = map (\h -> compose h r' == compose n q21) hs in
                     case elemIndex True list of
-                           Just ind -> [(m1,q21,k,d1,m1',e1,hs!!ind)]
+                           Just ind -> [(m1,q21,k,r',m1',l',hs!!ind)]
                            Nothing  -> [])
                   filtM1
 
-        defineM2 = map (\(m1,q21,_,d1,m1',e1,l2d1) -> (q21, m1, compose l2d1 d1, m1', compose l2d1 e1)) h21
+        defineM2 = map (\(m1,q21,_,r',m1',l',l2d1) -> (q21, m1, compose l2d1 r', m1', compose l2d1 l')) h21
 
         filtM2 = filter (\(_,_,_,_,m2') -> {-(not inj || M.monomorphism m2) &&-}
                                       satsGluingAndNacs nacInj inj r m2') defineM2

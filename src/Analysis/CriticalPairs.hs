@@ -27,17 +27,35 @@ data CP = FOL | DeleteUse | ProduceForbid | ProduceEdgeDeleteNode deriving(Eq,Sh
 
 -- | A Critical Pair is defined as two matches (m1,m2) from the left side of their rules to a same graph.
 -- It assumes that the derivation of the rule with match @m1@ causes a conflict with the rule with match @m2@
+-- 
+-- This diagram shows graphs and morphisms names used in the algorithms below
+--
+-- l = production (L1,K1,R1,[N1])
+--
+-- r = production (L2,K2,R2,[N2])
+--
 -- @
+--                    N1    N2
+--                    ^      ^
+--          r     l   │      │n
 --     R1◀─────K1────▶L1    L2◀────K2─────▶R2
---     │       │       \   /       │       │
---  m1'│       │      m1\ /m2      │       │
+--     │       │       \\   /       │       │
+--  m1'│      k│      m1\\ /m2      │       │
 --     ▼       ▼         ▼         ▼       ▼
 --     P1◀─────D1───────▶G◀───────D2──────▶P2
--- @
+--         r'       l' 
+-- @ 
+-- 
+-- m2' :: from L2 to P1
+--
+-- h21 :: from L2 to D1
+--
+-- q21 (nacMatch) :: from N2 to P1
+
 data CriticalPair a b = CriticalPair {
     match  :: (TypedGraphMorphism a b, TypedGraphMorphism a b),
     comatch :: Maybe (TypedGraphMorphism a b, TypedGraphMorphism a b),
-    nac :: Maybe (TypedGraphMorphism a b, Int), --if is ProduceForbid, here is the index of the nac
+    nacMatch :: Maybe (TypedGraphMorphism a b, Int), --if is ProduceForbid, here is the index of the nac
     cp  :: CP
     } deriving (Eq,Show)
 
@@ -45,7 +63,7 @@ data CriticalPair a b = CriticalPair {
 getMatch :: CriticalPair a b -> (TypedGraphMorphism a b, TypedGraphMorphism a b)
 getMatch = match
 
--- | Returns the comatches (m1',m2' (from L2 to P1))
+-- | Returns the comatches (m1',m2')
 getComatch :: CriticalPair a b -> Maybe (TypedGraphMorphism a b, TypedGraphMorphism a b)
 getComatch = comatch
 
@@ -55,18 +73,15 @@ getCP = cp
 
 -- | Returns the nac match of a 'CriticalPair'
 getCPNac :: CriticalPair a b -> Maybe (TypedGraphMorphism a b)
-getCPNac cp = case nac cp of
+getCPNac cp = case nacMatch cp of
                 Just (nac,_) -> Just nac
                 Nothing -> Nothing
 
 -- | Returns the nac index of a 'CriticalPair'
 getCPNacIdx :: CriticalPair a b -> Maybe Int
-getCPNacIdx cp = case nac cp of
+getCPNacIdx cp = case nacMatch cp of
                    Just (_,idx) -> Just idx
                    Nothing -> Nothing
-
---instance Show (CriticalPair a b) where
---  show (CriticalPair m1 m2 cp) = "{"++(show $ TGM.mapping m1)++(show $ TGM.mapping m2)++(show cp)++"}"
 
 -- | Returns the Critical Pairs with rule names
 namedCriticalPairs :: Bool -> Bool -> [(String, GraphRule a b)] -> [(String,String,[CriticalPair a b])]
