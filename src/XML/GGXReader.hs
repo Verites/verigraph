@@ -1,4 +1,3 @@
-
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
 module XML.GGXReader
@@ -16,6 +15,7 @@ import           Abstract.Morphism
 import           Abstract.Valid
 import qualified Data.List                as L
 import           Data.Maybe               (fromMaybe, mapMaybe)
+import           Data.String.Utils        (startswith)
 import qualified Graph.Graph              as G
 import qualified Graph.GraphGrammar       as GG
 import           Graph.GraphMorphism      as GM
@@ -25,6 +25,7 @@ import           Text.Read                (readMaybe)
 import           Text.XML.HXT.Core
 import           XML.GGXParseIn
 import           XML.ParsedTypes
+import           XML.ParseSndOrderRule    (parseSndOrderRules)
 import           XML.XMLUtilities
 
 readGrammar :: String -> IO (GG.GraphGrammar a b)
@@ -36,10 +37,12 @@ readGrammar fileName = do
   _ <- parsedTypeGraph `seq` return ()
 
   parsedRules <- readRules fileName
-
-  let rulesNames = map (\((x,_,_,_),_) -> x) parsedRules
-      rules = map (instantiateRule parsedTypeGraph) parsedRules
-
+  
+  let (sndOrdRules, fstOrdRules) = L.partition (\((x,_,_,_),_) -> startswith "2rule_" x) parsedRules
+      rulesNames = map (\((x,_,_,_),_) -> x) fstOrdRules
+      rules = map (instantiateRule parsedTypeGraph) fstOrdRules
+      a = parseSndOrderRules sndOrdRules
+  
   _ <- (case L.elemIndices False (map valid rules) of
           []  -> []
           [a] -> error $ "Rule " ++ show a ++ " is not valid"
@@ -49,7 +52,7 @@ readGrammar fileName = do
   let typeGraph = codomain . domain . GR.left $ head rules
       initGraph = GM.empty typeGraph typeGraph
 
-  return $ GG.graphGrammar initGraph (zip rulesNames rules)
+  return $ if L.null a then GG.graphGrammar initGraph (zip rulesNames rules) else GG.graphGrammar initGraph (zip rulesNames rules)
 
 readGGName :: String -> IO String
 readGGName fileName = do

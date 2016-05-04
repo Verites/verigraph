@@ -11,7 +11,6 @@ module XML.GGXParseIn
  ) where
 
 import           Data.Tree.NTree.TypeDefs
-import           Data.String.Utils (startswith)
 import           Text.XML.HXT.Core
 import           XML.ParsedTypes
 import           XML.XMLUtilities
@@ -119,39 +118,20 @@ parseGraph = atTag "Graph" >>>
 parseRule :: ArrowXml cat => cat (NTree XNode) RuleWithNacs
 parseRule = atTag "Rule" >>>
   proc rule -> do
-    ruleName <- isA (\str -> not (startswith "2rule_" str)) <<< getAttrValue "name" -< rule
+    ruleName <- getAttrValue "name" -< rule
     _  <- isA (\str -> str == "" || str == "true") <<< getAttrValue "enabled" -< rule
-    lhs <- parseLHS -< rule
-    rhs <- parseRHS -< rule
+    lhs <- parseSideRule "LHS" -< rule
+    rhs <- parseSideRule "RHS" -< rule
     morphism <- parseMorphism -< rule
     nacs <- listA parseNac -< rule
     returnA -< ((ruleName, lhs, rhs, morphism), nacs)
 
--- | Parse all 2rules (left or right)
-parse2RuleSide :: ArrowXml cat => cat (NTree XNode) RuleWithNacs
-parse2RuleSide = atTag "Rule" >>>
-   proc rule -> do
-     ruleName <- isA (startswith "2rule_") <<< getAttrValue "name" -< rule
-     _  <- isA (\str -> str == "" || str == "true") <<< getAttrValue "enabled" -< rule
-     lhs <- parseLHS -< rule
-     rhs <- parseRHS -< rule
-     morphism <- parseMorphism -< rule
-     nacs <- listA parseNac -< rule
-     returnA -< ((ruleName, lhs, rhs, morphism), nacs)
-
-parseLHS :: ArrowXml cat => cat (NTree XNode) ParsedTypedGraph
-parseLHS = atTag "Graph" >>>
+parseSideRule :: ArrowXml cat => String -> cat (NTree XNode) ParsedTypedGraph
+parseSideRule str = atTag "Graph" >>>
   proc graph -> do
-    _ <- isA ("LHS" ==) <<< getAttrValue "kind"-< graph
+    _ <- isA (str ==) <<< getAttrValue "kind"-< graph
     lhs <- parseGraph -< graph
     returnA -< lhs
-
-parseRHS :: ArrowXml cat => cat (NTree XNode) ParsedTypedGraph
-parseRHS = atTag "Graph" >>>
-  proc graph -> do
-    _ <- isA ("RHS" ==) <<< getAttrValue "kind"-< graph
-    rhs <- parseGraph -< graph
-    returnA -< rhs
 
 parseMorphism :: ArrowXml cat => cat (NTree XNode) [Mapping]
 parseMorphism = getChildren >>> isElem >>> hasName "Morphism" >>>

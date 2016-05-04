@@ -1,7 +1,8 @@
 {-# LANGUAGE TypeFamilies #-}
 
 module Graph.RuleMorphism (
-    ruleMorphism
+    RuleMorphism
+  , ruleMorphism
   ) where
 
 import Abstract.AdhesiveHLR
@@ -75,11 +76,12 @@ instance Morphism (RuleMorphism a b) where
       (isomorphism (mappingInterface rm)) &&
       (isomorphism (mappingRight rm))
 
--- FIXME
 instance Valid (RuleMorphism a b) where
     valid (RuleMorphism dom cod mapL mapK mapR) =
         valid dom &&
         valid cod &&
         valid mapL &&
         valid mapK &&
-        valid mapR
+        valid mapR &&
+        (compose mapK (left cod)) == (compose mapK (right cod)) &&
+        (compose (left dom) mapL) == (compose (right dom) mapR)
