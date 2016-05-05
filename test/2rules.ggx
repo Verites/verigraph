@@ -111,5 +111,12 @@
             <TaggedValue Tag="layer" TagValue="0"/>
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
+        <Rule ID="I29" formula="true" name="regraBoba">
+            <Graph ID="I31" kind="LHS" name="Left"/>
+            <Graph ID="I32" kind="RHS" name="Right"/>
+            <Morphism name="regraBoba"/>
+            <TaggedValue Tag="layer" TagValue="0"/>
+            <TaggedValue Tag="priority" TagValue="0"/>
+        </Rule>
     </GraphTransformationSystem>
 </Document>

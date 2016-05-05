@@ -1,9 +1,9 @@
 {-# LANGUAGE TypeFamilies #-}
 
-module Graph.RuleMorphism (
+module Graph.RuleMorphism{- (
     RuleMorphism
   , ruleMorphism
-  ) where
+  ) -}where
 
 import Abstract.AdhesiveHLR
 import Abstract.Morphism as M
@@ -18,7 +18,7 @@ data RuleMorphism a b =
   , mappingLeft      :: TypedGraphMorphism a b
   , mappingInterface :: TypedGraphMorphism a b
   , mappingRight     :: TypedGraphMorphism a b
-  }
+  } deriving (Show)
 
 ruleMorphism :: GraphRule a b -> GraphRule a b
              -> TypedGraphMorphism a b

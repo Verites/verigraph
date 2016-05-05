@@ -100,6 +100,8 @@ execute globalOpts opts = do
                  (if calculateConflicts action then conflicts else [])
                  ++ (if calculateDependencies action then dependencies else [])
                  ++ ["Done!"]
+    
+    --print $ head (GG.sndOrderRules gg)
 
 defWriterFun :: Bool -> Bool -> AnalysisType
              ->(GG.GraphGrammar a b -> String

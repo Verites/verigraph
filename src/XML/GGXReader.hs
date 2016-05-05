@@ -20,12 +20,14 @@ import qualified Graph.Graph              as G
 import qualified Graph.GraphGrammar       as GG
 import           Graph.GraphMorphism      as GM
 import           Graph.GraphRule          as GR
+import           Graph.RuleMorphism
+import           Graph.SndOrderRule
 import           Graph.TypedGraphMorphism
 import           Text.Read                (readMaybe)
 import           Text.XML.HXT.Core
 import           XML.GGXParseIn
 import           XML.ParsedTypes
-import           XML.ParseSndOrderRule    (parseSndOrderRules)
+import qualified XML.ParseSndOrderRule    as SO
 import           XML.XMLUtilities
 
 readGrammar :: String -> IO (GG.GraphGrammar a b)
@@ -41,7 +43,6 @@ readGrammar fileName = do
   let (sndOrdRules, fstOrdRules) = L.partition (\((x,_,_,_),_) -> startswith "2rule_" x) parsedRules
       rulesNames = map (\((x,_,_,_),_) -> x) fstOrdRules
       rules = map (instantiateRule parsedTypeGraph) fstOrdRules
-      a = parseSndOrderRules sndOrdRules
   
   _ <- (case L.elemIndices False (map valid rules) of
           []  -> []
@@ -51,8 +52,11 @@ readGrammar fileName = do
 
   let typeGraph = codomain . domain . GR.left $ head rules
       initGraph = GM.empty typeGraph typeGraph
-
-  return $ if L.null a then GG.graphGrammar initGraph (zip rulesNames rules) else GG.graphGrammar initGraph (zip rulesNames rules)
+      a = SO.parseSndOrderRules sndOrdRules
+      c = map (instantiateSndOrderRule parsedTypeGraph) a
+      d = map (uncurry sndOrderRule) c
+  
+  return $ GG.graphGrammar initGraph (zip rulesNames rules) d
 
 readGGName :: String -> IO String
 readGGName fileName = do
@@ -189,6 +193,62 @@ instantiateTgm s t maps = typedMorphism s t gmMap
          then updateNodes (G.NodeId orig) (G.NodeId imag) gm
          else updateEdges (G.EdgeId orig) (G.EdgeId imag) gm)
       initGm listInt
+
+instantiateSndOrderRule :: ParsedTypeGraph -> (SO.SndOrderRuleSide,SO.SndOrderRuleSide) -> (RuleMorphism a b, RuleMorphism a b)
+instantiateSndOrderRule typegraph (l@(sideL,nameL,leftL),r@(sideR,nameR,rightR)) = instantiateRuleMorphisms (l,ruleLeft) (r,ruleRight)
+  where
+    ruleLeft = instantiateRule typegraph (leftL,[])
+    ruleRight = instantiateRule typegraph (rightR,[])
+    {-teste = ruleMorphism ruleLeft ruleRight
+      (idMap (codomain (GR.left ruleLeft)) (codomain (GR.left ruleRight)))
+      (idMap (domain (GR.left ruleLeft)) (domain (GR.left ruleRight)))
+      (idMap (codomain (GR.right ruleLeft)) (codomain (GR.right ruleRight)))-}
+
+instantiateRuleMorphisms :: (SO.SndOrderRuleSide, GraphRule a b)
+                         -> (SO.SndOrderRuleSide, GraphRule a b)
+                         -> (RuleMorphism a b , RuleMorphism a b)
+instantiateRuleMorphisms (parsedLeft, left) (parsedRight, right) =
+  (ruleMorphism ruleK left leftKtoLeftL interfaceKtoL rightKtoRightL,
+   ruleMorphism ruleK right leftKtoLeftR interfaceKtoR rightKtoRightR)
+    where
+      ruleK = graphRule leftK rightK []
+      leftK = mappingLeftK--typedMorphism graphKruleK graphLruleK mappingLeftK
+      rightK = mappingRightK--typedMorphism graphKruleK graphRruleK mappingRightK
+      
+      (graphLruleK, leftKtoLeftL, leftKtoLeftR) =
+        instantiateObjectName
+          (codomain (GR.left left))
+          (codomain (GR.left right))
+          (SO.getLeftObjNameMapping parsedLeft parsedRight)
+      (graphRruleK, rightKtoRightL, rightKtoRightR) = 
+        instantiateObjectName
+          (codomain (GR.right left))
+          (codomain (GR.right right))
+          (SO.getRightObjNameMapping parsedLeft parsedRight)
+      
+      (graphKruleK, mappingLeftK, mappingRightK, interfaceKtoL, interfaceKtoR) =
+        instantiateKSndOrder
+          (SO.getLeftObjNameMapping parsedLeft parsedRight)
+          (SO.getRuleMapping parsedLeft)
+          graphLruleK graphRruleK
+
+instantiateObjectName :: TypedGraph a b -> TypedGraph a b -> [Mapping]
+                      -> (TypedGraph a b, TypedGraphMorphism a b, TypedGraphMorphism a b)
+instantiateObjectName left right mapping = (interfaceL, leftLtoL, leftLtoR)
+  where
+    interfaceL = instantiateInterface mapping left
+    leftLtoL = instantiateLeft interfaceL left
+    leftLtoR = instantiateTgm interfaceL right mapping
+
+instantiateKSndOrder :: [Mapping] -> [Mapping] -> TypedGraph a b -> TypedGraph a b
+                     -> (TypedGraph a b, TypedGraphMorphism a b, TypedGraphMorphism a b, TypedGraphMorphism a b, TypedGraphMorphism a b)
+instantiateKSndOrder ruleMap mapping left right = (graphK, leftK, rightK, upK, downK)
+  where
+    graphK = instantiateInterface ruleMap left
+    leftK = instantiateLeft graphK left
+    rightK = instantiateTgm graphK right ruleMap
+    upK = instantiateLeft left graphK
+    downK = instantiateTgm graphK right mapping
 
 toN :: String -> Int
 toN x = case readMaybe x :: Maybe Int of
