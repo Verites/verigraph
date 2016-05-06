@@ -1,8 +1,12 @@
 module XML.ParseSndOrderRule where
 
+import Abstract.Morphism
 import Data.Char         (toLower)
 import Data.List         (groupBy,sortOn)
+import Data.Maybe        (fromMaybe)
 import Data.String.Utils (join,split)
+import Graph.Graph
+import Graph.TypedGraphMorphism
 import XML.ParsedTypes
 
 type Side = String
@@ -62,8 +66,21 @@ getSndOrderRuleSide (rule@(name,_,_,_),_) = (side, ruleName, rule)
 
 -- put together rules in pairs (left,right)
 groupRules :: [SndOrderRuleSide] -> [(SndOrderRuleSide,SndOrderRuleSide)]
-groupRules rules = map (\l -> if name (head l) == "left" then (head l, last l) else (last l, head l)) grouped
+groupRules rules = map (\l -> if name (head l) == "left" then (last l, head l) else (head l, last l)) grouped
   where
     name (_,x,_) = x
     sorted = sortOn name rules
     grouped = groupBy (\x y -> name x == name y) sorted
+
+-- left and right must have the same domain
+getObjetcNameMorphism :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [Mapping]
+getObjetcNameMorphism left right = nodesMap ++ edgesMap
+  where
+    nodesMap = map (\n -> (show (applyNodeTotalTGMMap right n), Nothing, show (applyNodeTotalTGMMap left n))) (nodes (domain (domain left)))
+    edgesMap = map (\e -> (show (applyEdgeTotalTGMMap right e), Nothing, show (applyEdgeTotalTGMMap left e))) (edges (domain (domain left)))
+
+applyNodeTotalTGMMap :: TypedGraphMorphism a b -> NodeId -> NodeId
+applyNodeTotalTGMMap m n = fromMaybe (error "Error, apply node in a non total morphism") $ applyNodeTGM m n
+
+applyEdgeTotalTGMMap :: TypedGraphMorphism a b -> EdgeId -> EdgeId
+applyEdgeTotalTGMMap m e = fromMaybe (error "Error, apply edge in a non total morphism") $ applyEdgeTGM m e

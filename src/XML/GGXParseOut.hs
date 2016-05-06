@@ -29,7 +29,7 @@ overlapsCP name2 cs = (graph, mapM1, mapM2 ++ mapM2WithNac, nacName cs, csType c
     (m1,m2) = case CP.getCP cs of
                 CP.ProduceForbid -> fromMaybe (error "Error when exporting ProduceForbid") (CP.getComatch cs)
                 _ -> CP.getMatch cs
-    graph = serializeGraph m1
+    graph = serializeGraph [] m1
     mapM1 = getTgmMappings Nothing m1
     mapM2 = getTgmMappings Nothing m2
     mapM2WithNac = case CP.getCP cs of
@@ -51,7 +51,7 @@ overlapsCS name2 cs = (graph, mapM1, mapM2 ++ mapM2WithNac, nacName cs, csType c
     (m1,m2) = case CS.getCS cs of
                 CS.DeliverDelete -> fromMaybe (error "Error when exporting DeliverDelete") (CS.getMatch cs)
                 _ -> CS.getComatch cs
-    graph = serializeGraph m1
+    graph = serializeGraph [] m1
     mapM1 = getTgmMappings Nothing m1
     mapM2 = getTgmMappings Nothing m2
     mapM2WithNac = case CS.getCS cs of
@@ -70,11 +70,11 @@ getTgmMappings prefix tgm = nodesMorph ++ edgesMorph
     nodesMorph = map (\n -> ("N" ++ show (nodeMap n), prefix, "N" ++ show n)) (nodesDomain tgm)
     edgesMorph = map (\e -> ("E" ++ show (edgeMap e), prefix, "E" ++ show e)) (edgesDomain tgm)
 
-getLHS :: GR.GraphRule a b -> ParsedTypedGraph
-getLHS rule = serializeGraph $ GR.left rule
+getLHS :: [Mapping] -> GR.GraphRule a b -> ParsedTypedGraph
+getLHS objName rule = serializeGraph objName $ GR.left rule
 
-getRHS :: GR.GraphRule a b -> ParsedTypedGraph
-getRHS rule = serializeGraph $ GR.right rule
+getRHS :: [Mapping] -> GR.GraphRule a b -> ParsedTypedGraph
+getRHS objName rule = serializeGraph objName $ GR.right rule
 
 getNacs :: String -> GR.GraphRule a b -> [(ParsedTypedGraph,[Mapping])]
 getNacs ruleName rule = map getNac nacsWithIds
@@ -85,7 +85,7 @@ getNacs ruleName rule = map getNac nacsWithIds
 getNac :: (String, TypedGraphMorphism a b) -> (ParsedTypedGraph, [Mapping])
 getNac (nacId,nac) = (graph, mappings)
   where
-    (_,n,e) = serializeGraph nac
+    (_,n,e) = serializeGraph [] nac
     graph = (nacId, n, e)
     mappings = getTgmMappings Nothing nac
 
@@ -107,21 +107,21 @@ parseNacName ruleName f x = case f x of
                    Just n  -> "NAC_" ++ ruleName ++ "_" ++ show n
                    Nothing -> ""
 
-serializeGraph :: TypedGraphMorphism a b -> ParsedTypedGraph
-serializeGraph morphism = ("", nodes, edges)
+serializeGraph :: [Mapping] -> TypedGraphMorphism a b -> ParsedTypedGraph
+serializeGraph objName morphism = ("", nodes, edges)
   where
     graph = M.codomain morphism
-    nodes = map (serializeNode graph) (G.nodes $ M.domain graph)
-    edges = map (serializeEdge graph) (G.edges $ M.domain graph)
+    nodes = map (serializeNode (map (\(x,_,y) -> (x,y)) objName) graph) (G.nodes $ M.domain graph)
+    edges = map (serializeEdge (map (\(x,_,y) -> (x,y)) objName) graph) (G.edges $ M.domain graph)
 
-serializeNode :: GM.GraphMorphism a b -> G.NodeId -> ParsedTypedNode
-serializeNode graph n = ("N" ++ show n,
-                         Nothing, --name
+serializeNode :: [(String,String)] -> GM.GraphMorphism a b -> G.NodeId -> ParsedTypedNode
+serializeNode objName graph n = ("N" ++ show n,
+                         (lookup (show n) objName),
                          "N" ++ show (applyNodeTotalMap graph n))
 
-serializeEdge :: GM.GraphMorphism a b -> G.EdgeId -> ParsedTypedEdge
-serializeEdge graph e = ("E" ++ show e,
-                         Nothing, --name
+serializeEdge :: [(String,String)] -> GM.GraphMorphism a b -> G.EdgeId -> ParsedTypedEdge
+serializeEdge objName graph e = ("E" ++ show e,
+                         (lookup (show e) objName),
                          "E" ++ show (applyEdgeTotalMap graph e),
                          "N" ++ show (getSrc (M.domain graph) e),
                          "N" ++ show (getTgt (M.domain graph) e))

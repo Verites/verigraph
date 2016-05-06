@@ -17,10 +17,10 @@ import           Graph.SndOrderRule  (SndOrderRule)
 data GraphGrammar a b = GraphGrammar {
                             initialGraph  :: GraphMorphism a b
                           , rules         :: [(String, GraphRule a b)]
-                          , sndOrderRules :: [SndOrderRule a b]
+                          , sndOrderRules :: [(String, SndOrderRule a b)]
                         } deriving (Show)--, Read)
 
-graphGrammar :: GraphMorphism a b -> [(String, GraphRule a b)] -> [SndOrderRule a b] -> GraphGrammar a b
+graphGrammar :: GraphMorphism a b -> [(String, GraphRule a b)] -> [(String, SndOrderRule a b)] -> GraphGrammar a b
 graphGrammar = GraphGrammar
 
 typeGraph :: GraphGrammar a b -> Graph a b

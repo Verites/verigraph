@@ -3,7 +3,6 @@ module Graph.SndOrderRule{- (
   sndOrderRule
   ) -}where
 
-import Abstract.Morphism
 import Abstract.Valid
 import Graph.RuleMorphism
 

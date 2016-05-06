@@ -54,9 +54,10 @@ readGrammar fileName = do
       initGraph = GM.empty typeGraph typeGraph
       a = SO.parseSndOrderRules sndOrdRules
       c = map (instantiateSndOrderRule parsedTypeGraph) a
-      d = map (uncurry sndOrderRule) c
+      d = map ((uncurry sndOrderRule) . snd) c
+      sndOrderNames = map fst c
   
-  return $ GG.graphGrammar initGraph (zip rulesNames rules) d
+  return $ GG.graphGrammar initGraph (zip rulesNames rules) (zip sndOrderNames d)
 
 readGGName :: String -> IO String
 readGGName fileName = do
@@ -194,8 +195,8 @@ instantiateTgm s t maps = typedMorphism s t gmMap
          else updateEdges (G.EdgeId orig) (G.EdgeId imag) gm)
       initGm listInt
 
-instantiateSndOrderRule :: ParsedTypeGraph -> (SO.SndOrderRuleSide,SO.SndOrderRuleSide) -> (RuleMorphism a b, RuleMorphism a b)
-instantiateSndOrderRule typegraph (l@(sideL,nameL,leftL),r@(sideR,nameR,rightR)) = instantiateRuleMorphisms (l,ruleLeft) (r,ruleRight)
+instantiateSndOrderRule :: ParsedTypeGraph -> (SO.SndOrderRuleSide,SO.SndOrderRuleSide) -> (String,(RuleMorphism a b, RuleMorphism a b))
+instantiateSndOrderRule typegraph (l@(_,nameL,leftL),r@(_,_,rightR)) = (nameL, instantiateRuleMorphisms (l,ruleLeft) (r,ruleRight))
   where
     ruleLeft = instantiateRule typegraph (leftL,[])
     ruleRight = instantiateRule typegraph (rightR,[])
@@ -222,7 +223,7 @@ instantiateRuleMorphisms (parsedLeft, left) (parsedRight, right) =
           (codomain (GR.right right))
           (SO.getRightObjNameMapping parsedLeft parsedRight)
       
-      (graphKruleK, mappingLeftK, mappingRightK, interfaceKtoL, interfaceKtoR) =
+      (_, mappingLeftK, mappingRightK, interfaceKtoL, interfaceKtoR) =
         instantiateKSndOrder
           (SO.getLeftObjNameMapping parsedLeft parsedRight)
           (SO.getRuleMapping parsedLeft)

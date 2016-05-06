@@ -6,7 +6,6 @@ module Graph.RuleMorphism{- (
   ) -}where
 
 import Abstract.AdhesiveHLR
-import Abstract.Morphism as M
 import Abstract.Valid
 import Graph.GraphRule
 import Graph.TypedGraphMorphism

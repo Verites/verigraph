@@ -5,6 +5,7 @@ module XML.GGXWriter
    writeGrammarFile
  ) where
 
+import           Abstract.Morphism         (codomain)
 import qualified Analysis.CriticalPairs    as CP
 import qualified Analysis.CriticalSequence as CS
 import           Data.List.Utils           (startswith)
@@ -12,9 +13,12 @@ import           Data.Maybe
 import qualified Graph.Graph               as G
 import           Graph.GraphGrammar
 import qualified Graph.GraphRule           as GR
+import qualified Graph.SndOrderRule        as SO
+import           Graph.RuleMorphism
 import           Text.XML.HXT.Core
 import           XML.GGXParseOut
 import           XML.ParsedTypes
+import           XML.ParseSndOrderRule
 
 -- | Writes grammar, conflicts and dependencies (.cpx)
 writeConfDepFile :: Bool -> Bool -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
@@ -145,7 +149,8 @@ writeGrammar :: ArrowXml a => GraphGrammar b c -> [(String,String)] -> [a XmlTre
 writeGrammar grammar names = writeAggProperties ++
                              [writeTypes (typeGraph grammar) names] ++
                              [writeHostGraph] ++
-                             writeRules grammar nacNames
+                             (writeRules grammar nacNames) ++
+                             (writeSndOrderRules grammar)
   where
     nacNames = filter (\(x,_) -> startswith "NAC" x) names
 
@@ -160,7 +165,6 @@ writeTypes graph names = mkelem "Types" []
 writeTypeGraph :: ArrowXml a => G.Graph b c -> a XmlTree XmlTree
 writeTypeGraph graph = writeGraph "TypeGraph" "TG" "TypeGraph" nodeList edgeList
   where
-    -- fix name
     nodeList = map (\n -> ("n" ++ show n, Nothing, "N" ++ show n)) (G.nodes graph)
     edgeList = map (\e -> ("e" ++ show e, Nothing, "E" ++ show e, "n" ++ show (src graph e), "n" ++ show (tgt graph e))) (G.edges graph)
 
@@ -323,19 +327,34 @@ writeEdgeConflict graphId (edgeId, objName, edgeType, source, target) =
       sattr "type" edgeType])
     []
 
-writeRules :: ArrowXml a => GraphGrammar b c -> [(String,String)] -> [a XmlTree XmlTree]
-writeRules grammar nacNames = map (writeRule nacNames) (rules grammar)
+writeSndOrderRules :: ArrowXml a => GraphGrammar b c -> [a XmlTree XmlTree]
+writeSndOrderRules grammar = concatMap writeSndOrderRule (sndOrderRules grammar)
 
-writeRule :: ArrowXml a => [(String,String)] -> (String, GR.GraphRule b c) -> a XmlTree XmlTree
-writeRule nacNames (ruleName, rule) =
+writeSndOrderRule :: ArrowXml a => (String, SO.SndOrderRule b c) -> [a XmlTree XmlTree]
+writeSndOrderRule (name, sndOrderRule) =
+  [writeSndOrderRuleSide ("2rule_left_" ++ name) (adjustObjName objNameMapLeft) (adjustObjName objNameMapRight) (SO.left sndOrderRule)] ++
+  [writeSndOrderRuleSide ("2rule_right_" ++ name) objNameMapLeft objNameMapRight (SO.right sndOrderRule)]
+    where
+      objNameMapLeft = getObjetcNameMorphism (mappingLeft (SO.left sndOrderRule)) (mappingLeft (SO.right sndOrderRule))
+      objNameMapRight = getObjetcNameMorphism (mappingRight (SO.left sndOrderRule)) (mappingRight (SO.right sndOrderRule))
+      adjustObjName = map (\(_,t,y) -> (y,t,y))
+
+writeSndOrderRuleSide :: ArrowXml a => String -> [Mapping] -> [Mapping] -> RuleMorphism b c -> a XmlTree XmlTree
+writeSndOrderRuleSide name objLeft objRight ruleMorphism = writeRule objLeft objRight [] (name, codomain ruleMorphism)
+
+writeRules :: ArrowXml a => GraphGrammar b c -> [(String,String)] -> [a XmlTree XmlTree]
+writeRules grammar nacNames = map (writeRule [] [] nacNames) (rules grammar)
+
+writeRule :: ArrowXml a => [Mapping] -> [Mapping] -> [(String,String)] -> (String, GR.GraphRule b c) -> a XmlTree XmlTree
+writeRule objNameLeft objNameRight nacNames (ruleName, rule) =
   mkelem "Rule"
     [sattr "ID" ruleName, sattr "formula" "true", sattr "name" ruleName]
     $ [writeLHS ruleName lhs, writeRHS ruleName rhs] ++
       [writeMorphism ("RightOf_"++ruleName, "LeftOf_"++ruleName) ruleName "" morphism] ++
       [writeConditions nacNames ruleName rule]
   where
-    lhs = getLHS rule
-    rhs = getRHS rule
+    lhs = getLHS objNameLeft rule
+    rhs = getRHS objNameRight rule
     morphism = getMappings rule
 
 writeLHS :: ArrowXml a => String -> ParsedTypedGraph -> a XmlTree XmlTree
