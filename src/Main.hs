@@ -30,7 +30,7 @@ import           Abstract.DPO              as RW
 import           Graph.TypedGraphMorphism
 import Data.Matrix
 import Data.Maybe
-import Data.List
+import qualified Data.List as L
 
 import qualified XML.GGXReader as XML
 
@@ -64,6 +64,193 @@ deleteUse l r (m1,m2) = Prelude.null matchD
         (_,d1) = RW.poc m1 (left l) --get only the morphism D2 to G
         l2TOd1 = matches ALL (domain m2) (domain d1)
         matchD = filter (\x -> m2 == compose x d1) l2TOd1
+
+
+-- TODO: following functions should be part of the Graph interface
+srcE, tgtE :: G.Graph a b -> EdgeId -> NodeId
+srcE gm e = fromJust $ G.sourceOf gm e
+tgtE gm e = fromJust $ G.targetOf gm e
+
+-- TODO: following function should be part of TypedGraph interface
+typeN :: GM.GraphMorphism a b -> NodeId -> NodeId
+typeN gm n = fromMaybe (error "NODE NOT TYPED") $ GM.applyNode gm n
+
+-- TODO: following function should be part of TypedGraph interface
+typeE :: GM.GraphMorphism a b -> EdgeId -> EdgeId
+typeE gm e = fromMaybe (error "EDGE NOT TYPED") $ GM.applyEdge gm e
+
+
+
+
+
+
+
+---------------------------------------------------------------------------------
+
+-- | Finds matches __/m/__
+--
+--   Injective, surjective, isomorphic or all possible matches
+matches' :: PROP -> GM.GraphMorphism a b-> GM.GraphMorphism a b
+        -> [TGM.TypedGraphMorphism a b]
+matches' prop graph1 graph2 =
+  buildMappings prop nodesSrc edgesSrc nodesTgt edgesTgt tgm
+  where
+    nodesSrc = nodes $ domain graph1
+    nodesTgt = nodes $ domain graph2
+    edgesSrc = edges $ domain graph1
+    edgesTgt = edges $ domain graph2
+
+    d   = graph1
+    c   = graph2
+    m   = GM.empty (domain graph1) (domain graph2)
+    tgm = TGM.typedMorphism d c m
+
+
+
+
+---------------------------------------------------------------------------------
+
+buildMappings :: PROP -> [G.NodeId] -> [G.EdgeId] -> [G.NodeId] -> [G.EdgeId]
+              -> TGM.TypedGraphMorphism a b -> [TGM.TypedGraphMorphism a b]
+{-
+--IF NO HAS FREE NODES OR FREE EDGES TO MAP, RETURN THE FOUND MORPHISMO
+buildMappings prop [] [] nodesT edgesT tgm =
+      case prop of
+        ALL  -> all
+        MONO -> all
+        EPI  -> epimorphism
+        ISO  -> isomorphism
+      where
+        all = return tgm
+
+        isomorphism | L.null nodesT && L.null edgesT = return tgm
+                    | otherwise = []
+
+        epimorphism | L.null (orphanNodesTyped tgm) &&
+                      L.null (orphanEdgesTyped tgm) = return tgm
+                    | otherwise = []
+-}
+---------------------------------------------------------------------------------
+{-
+--IF HAS FREE NODES, MAP ALL FREE NODES TO ALL DESTINATION NODES
+buildMappings prop (h:t) [] nodesT edgesT tgm
+  | L.null nodesT = []
+  | otherwise  = do
+      y <- nodesT
+
+      --MAP FREE NODES TO ALL TYPE COMPATIBLE DESTINATION NODES
+      let tgmN = if isNothing tgm1
+                 then Nothing
+                 else tgm1
+            where
+              tgm1 = updateNodesMapping h y tgm
+
+      case tgmN of
+        Just tgm' ->
+          --CHOSE BETWEEN INJECTIVE OR NOT
+          case prop of
+            ALL  -> all
+            MONO -> monomorphism
+            EPI  -> all
+            ISO  -> monomorphism
+          where
+            monomorphism = buildMappings prop t [] nodesT' edgesT tgm'
+            all          = buildMappings prop t [] nodesT  edgesT tgm'
+            --REMOVE THE TARGET NODES MAPPED (INJECTIVE MODULE)
+            nodesT'   = L.delete y nodesT
+        Nothing  -> []
+
+---------------------------------------------------------------------------------
+-}
+--IF HAS FREE NODES, AND FREE EDGES, VERIFY THE CURRENT STATUS
+buildMappings prop nodes (h:t) nodesT edgesT tgm
+  | L.null edgesT = []
+  | otherwise  =
+    do  --VERIFY THE POSSIBILITY OF A MAPPING BETWEEN h AND THE DESTINATION EDGES
+      y <- edgesT
+      --MAPPING SRC AND TGT NODES
+      let tgmN
+            | isNothing tgm1 = Nothing
+            | isNothing tgm2 = Nothing
+            | otherwise = tgm2
+            where tgm1 = updateNodesMapping (srcE d h) (srcE c y) tgm
+                  tgm2 = updateNodesMapping (tgtE d h) (tgtE c y) $ fromJust tgm1
+                  d = domain $ domain tgm
+                  c = domain $ codomain tgm
+
+          --MAPPING SRC EDGE AND TGT EDGE
+          tgmE
+            | isNothing tgmN = Nothing
+            | isNothing tgm3 = Nothing
+            | otherwise = tgm3
+            where tgm3 = updateEdgesMapping h y $fromJust tgmN
+
+      --FOR THE COMPATIBLES MAPPINGS, GO TO THE NEXT STEP
+      case tgmE of
+        Just tgm' -> do
+          let nodes'       = L.delete (srcE d h) $ L.delete (tgtE d h) nodes
+              d            = domain $ domain tgm
+              c            = domain $ codomain tgm
+              --REMOVE THE TARGET EDGES AND NODES MAPPED (INJECTIVE MODULE)
+              edgesT'      = L.delete y edgesT
+              nodesT'      = L.delete (srcE c y) $ L.delete (tgtE c y) nodesT
+              monomorphism = buildMappings prop nodes' t nodesT' edgesT' tgm'
+              all          = buildMappings prop nodes' t nodesT  edgesT  tgm'
+              --CHOSE BETWEEN INJECTIVE OR NOT
+          case prop of
+            ALL  -> all
+            MONO -> monomorphism
+            EPI  -> all
+            ISO  -> monomorphism
+        Nothing  -> []
+
+---------------------------------------------------------------------------------
+
+-- VALIDATION OF A NODE MAPPING
+-- VERIFY IF THE TYPES OF n1 AND n2 ARE COMPATIBLE AND UPDATE MAPPING
+updateNodesMapping :: G.NodeId -> G.NodeId -> TGM.TypedGraphMorphism a b
+                   -> Maybe (TGM.TypedGraphMorphism a b)
+updateNodesMapping n1 n2 tgm =
+  do
+    let d = domain tgm
+        c = codomain tgm
+        m = mapping tgm
+
+    if typeN d n1 == typeN c n2
+      then if isNothing $ applyNodeTGM tgm n1
+           then Just $ TGM.typedMorphism d c $ GM.updateNodes n1 n2 m
+           else if applyNodeTGM tgm n1 == Just n2
+                then Just $ TGM.typedMorphism d c $ GM.updateNodes n1 n2 m
+                else Nothing     
+      else Nothing
+    
+---------------------------------------------------------------------------------
+
+-- VALIDATION OF A EDGE MAPPING
+-- VERIFY IF THE TYPES OF e1 AND e2 ARE COMPATIBLE AND UPDATE MAPPING
+updateEdgesMapping :: G.EdgeId -> G.EdgeId -> TGM.TypedGraphMorphism a b
+                   -> Maybe (TGM.TypedGraphMorphism a b)
+updateEdgesMapping e1 e2 tgm =
+  do
+    let d = domain tgm
+        c = codomain tgm
+        m = mapping tgm
+
+    if typeE d e1 == typeE c e2
+      then if isNothing $ applyEdgeTGM tgm e1
+           then Just $ TGM.typedMorphism d c (GM.updateEdges e1 e2 m)
+           else if applyEdgeTGM tgm e1 == Just e2
+                then Just $ TGM.typedMorphism d c (GM.updateEdges e1 e2 m)
+                else Nothing 
+      else Nothing
+
+
+
+
+
+
+
+{-
 
 iN = insertNode
 iE = insertEdge
@@ -236,6 +423,9 @@ kr8_rr8 = GM.gmbuild kr8 rr8 [] []
 r8 = TGM.typedMorphism tkr8 trr8 kr8_rr8
 
 testeCreate = graphRule l8 r8 []
+
+-}
+
 
 {-Fim das Regras-}
 
