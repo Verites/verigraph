@@ -199,10 +199,6 @@ instantiateSndOrderRule typegraph (l@(sideL,nameL,leftL),r@(sideR,nameR,rightR))
   where
     ruleLeft = instantiateRule typegraph (leftL,[])
     ruleRight = instantiateRule typegraph (rightR,[])
-    {-teste = ruleMorphism ruleLeft ruleRight
-      (idMap (codomain (GR.left ruleLeft)) (codomain (GR.left ruleRight)))
-      (idMap (domain (GR.left ruleLeft)) (domain (GR.left ruleRight)))
-      (idMap (codomain (GR.right ruleLeft)) (codomain (GR.right ruleRight)))-}
 
 instantiateRuleMorphisms :: (SO.SndOrderRuleSide, GraphRule a b)
                          -> (SO.SndOrderRuleSide, GraphRule a b)

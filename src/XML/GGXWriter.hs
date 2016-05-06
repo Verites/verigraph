@@ -274,46 +274,54 @@ writeHostGraph = writeGraph "Graph" "HOST" "Graph" [] []
 writeNodes :: ArrowXml a => String -> [ParsedTypedNode] -> [a XmlTree XmlTree]
 writeNodes graphId = map (writeNode graphId)
 
--- fix write names of nodes
 writeNode :: ArrowXml a => String -> ParsedTypedNode -> a XmlTree XmlTree
-writeNode graphId (nodeId, _, nodeType) =
+writeNode graphId (nodeId, objName, nodeType) =
   mkelem "Node"
-    [ sattr "ID" (graphId++"_"++nodeId), sattr "type" nodeType ]
+   ([ sattr "ID" (graphId++"_"++nodeId) ] ++
+    (writeObjName objName) ++
+    [ sattr "type" nodeType ])
     [ writeDefaultNodeLayout, writeAdditionalNodeLayout ]
 
 writeNodesConflict :: ArrowXml a => String -> [ParsedTypedNode] -> [a XmlTree XmlTree]
 writeNodesConflict graphId = map (writeNodeConflict graphId)
 
--- fix write names of nodes
 writeNodeConflict :: ArrowXml a => String -> ParsedTypedNode -> a XmlTree XmlTree
-writeNodeConflict graphId (nodeId, _, nodeType) =
+writeNodeConflict graphId (nodeId, objName, nodeType) =
   mkelem "Node"
-    [sattr "ID" (graphId++"_"++nodeId), sattr "type" nodeType] []
+   ([sattr "ID" (graphId++"_"++nodeId) ] ++
+    (writeObjName objName) ++
+    [ sattr "type" nodeType ])
+   []
 
 writeEdges :: ArrowXml a => String -> [ParsedTypedEdge] -> [a XmlTree XmlTree]
 writeEdges prefix = map (writeEdge prefix)
 
--- fix write names of edges
 writeEdge :: ArrowXml a => String -> ParsedTypedEdge -> a XmlTree XmlTree
-writeEdge prefix (edgeId, _, edgeType, source, target) =
+writeEdge prefix (edgeId, objName, edgeType, source, target) =
   mkelem "Edge"
-    [ sattr "ID" (prefix++"_"++edgeId),
-      sattr "source" (prefix++"_"++source),
+   ([ sattr "ID" (prefix++"_"++edgeId) ] ++
+    (writeObjName objName) ++
+    [ sattr "source" (prefix++"_"++source),
       sattr "target" (prefix++"_"++target),
-      sattr "type" edgeType]
+      sattr "type" edgeType])
     [ writeDefaultEdgeLayout, writeAdditionalEdgeLayout ]
+
+writeObjName :: ArrowXml a => Maybe String -> [a XmlTree XmlTree]
+writeObjName (Just n) = [sattr "name" n]
+writeObjName _ = []
 
 writeEdgesConflict :: ArrowXml a => String -> [ParsedTypedEdge] -> [a XmlTree XmlTree]
 writeEdgesConflict graphId = map (writeEdgeConflict graphId)
 
--- fix write names of edges
 writeEdgeConflict :: ArrowXml a => String -> ParsedTypedEdge -> a XmlTree XmlTree
-writeEdgeConflict graphId (edgeId, _, edgeType, source, target) =
+writeEdgeConflict graphId (edgeId, objName, edgeType, source, target) =
   mkelem "Edge"
-    [ sattr "ID" (graphId++"_"++edgeId),
-      sattr "source" (graphId++"_"++source),
+   ([ sattr "ID" (graphId++"_"++edgeId) ] ++
+      (writeObjName objName) ++
+    [ sattr "source" (graphId++"_"++source),
       sattr "target" (graphId++"_"++target),
-      sattr "type" edgeType] []
+      sattr "type" edgeType])
+    []
 
 writeRules :: ArrowXml a => GraphGrammar b c -> [(String,String)] -> [a XmlTree XmlTree]
 writeRules grammar nacNames = map (writeRule nacNames) (rules grammar)
