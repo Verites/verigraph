@@ -450,6 +450,78 @@
             <TaggedValue Tag="layer" TagValue="0"/>
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
+        <Rule ID="I116" formula="true" name="2rule_left_a">
+            <Graph ID="I118" kind="LHS" name="Left">
+                <Node ID="I119" name="12" type="I4">
+                    <NodeLayout X="205" Y="46"/>
+                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                </Node>
+                <Node ID="I120" name="10" type="I3">
+                    <NodeLayout X="53" Y="120"/>
+                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                </Node>
+                <Edge ID="I121" name="11" source="I120" target="I119" type="I9">
+                    <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                    <additionalLayout aktlength="200" force="10" preflength="200"/>
+                </Edge>
+            </Graph>
+            <Graph ID="I122" kind="RHS" name="Right">
+                <Node ID="I123" name="21" type="I4">
+                    <NodeLayout X="194" Y="63"/>
+                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                </Node>
+                <Node ID="I124" name="20" type="I3">
+                    <NodeLayout X="95" Y="101"/>
+                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                </Node>
+            </Graph>
+            <Morphism name="2rule_left_a">
+                <Mapping image="I123" orig="I119"/>
+                <Mapping image="I124" orig="I120"/>
+            </Morphism>
+            <TaggedValue Tag="layer" TagValue="0"/>
+            <TaggedValue Tag="priority" TagValue="0"/>
+        </Rule>
+        <Rule ID="I125" formula="true" name="2rule_right_a">
+            <Graph ID="I127" kind="LHS" name="Left">
+                <Node ID="I128" name="10" type="I3">
+                    <NodeLayout X="76" Y="98"/>
+                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                </Node>
+                <Node ID="I129" name="12" type="I4">
+                    <NodeLayout X="178" Y="38"/>
+                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                </Node>
+                <Edge ID="I130" name="11" source="I128" target="I129" type="I9">
+                    <EdgeLayout bendX="110" bendY="69" textOffsetX="0" textOffsetY="-22"/>
+                    <additionalLayout aktlength="200" force="10" preflength="200"/>
+                </Edge>
+            </Graph>
+            <Graph ID="I131" kind="RHS" name="Right">
+                <Node ID="I132" name="20" type="I3">
+                    <NodeLayout X="49" Y="85"/>
+                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                </Node>
+                <Node ID="I133" name="21" type="I4">
+                    <NodeLayout X="148" Y="47"/>
+                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                </Node>
+                <Node ID="I134" type="I3">
+                    <NodeLayout X="225" Y="118"/>
+                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                </Node>
+                <Edge ID="I135" source="I134" target="I133" type="I9">
+                    <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                    <additionalLayout aktlength="200" force="10" preflength="200"/>
+                </Edge>
+            </Graph>
+            <Morphism name="2rule_right_a">
+                <Mapping image="I132" orig="I128"/>
+                <Mapping image="I133" orig="I129"/>
+            </Morphism>
+            <TaggedValue Tag="layer" TagValue="0"/>
+            <TaggedValue Tag="priority" TagValue="0"/>
+        </Rule>
         <RuleSequences>
             <Sequence name="RuleSequence">
                 <Graph id="I21"/>
