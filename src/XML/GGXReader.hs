@@ -195,14 +195,14 @@ instantiateTgm s t maps = typedMorphism s t gmMap
          else updateEdges (G.EdgeId orig) (G.EdgeId imag) gm)
       initGm listInt
 
-instantiateSndOrderRule :: ParsedTypeGraph -> (SO.SndOrderRuleSide,SO.SndOrderRuleSide) -> (String,(RuleMorphism a b, RuleMorphism a b))
+instantiateSndOrderRule :: ParsedTypeGraph -> (SndOrderRuleSide, SndOrderRuleSide) -> (String,(RuleMorphism a b, RuleMorphism a b))
 instantiateSndOrderRule typegraph (l@(_,nameL,leftL),r@(_,_,rightR)) = (nameL, instantiateRuleMorphisms (l,ruleLeft) (r,ruleRight))
   where
     ruleLeft = instantiateRule typegraph (leftL,[])
     ruleRight = instantiateRule typegraph (rightR,[])
 
-instantiateRuleMorphisms :: (SO.SndOrderRuleSide, GraphRule a b)
-                         -> (SO.SndOrderRuleSide, GraphRule a b)
+instantiateRuleMorphisms :: (SndOrderRuleSide, GraphRule a b)
+                         -> (SndOrderRuleSide, GraphRule a b)
                          -> (RuleMorphism a b , RuleMorphism a b)
 instantiateRuleMorphisms (parsedLeft, left) (parsedRight, right) =
   (ruleMorphism ruleK left leftKtoLeftL interfaceKtoL rightKtoRightL,

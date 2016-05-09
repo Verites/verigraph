@@ -17,6 +17,7 @@ sndOrderRule = SndOrderRule
 
 instance Valid (SndOrderRule a b) where
     valid (SndOrderRule l r) =
+      -- fix needs Eq GraphRule
       --domain l == domain r &&
       valid l &&
       valid r

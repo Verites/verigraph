@@ -63,17 +63,17 @@ instance Morphism (RuleMorphism a b) where
              (idMap (codomain (right t)) (codomain (right t)))
 
     monomorphism rm =
-      (monomorphism (mappingLeft rm)) &&
-      (monomorphism (mappingInterface rm)) &&
-      (monomorphism (mappingRight rm))
+      monomorphism (mappingLeft rm) &&
+      monomorphism (mappingInterface rm) &&
+      monomorphism (mappingRight rm)
     epimorphism rm =
-      (epimorphism (mappingLeft rm)) &&
-      (epimorphism (mappingInterface rm)) &&
-      (epimorphism (mappingRight rm))
+      epimorphism (mappingLeft rm) &&
+      epimorphism (mappingInterface rm) &&
+      epimorphism (mappingRight rm)
     isomorphism rm =
-      (isomorphism (mappingLeft rm)) &&
-      (isomorphism (mappingInterface rm)) &&
-      (isomorphism (mappingRight rm))
+      isomorphism (mappingLeft rm) &&
+      isomorphism (mappingInterface rm) &&
+      isomorphism (mappingRight rm)
 
 instance Valid (RuleMorphism a b) where
     valid (RuleMorphism dom cod mapL mapK mapR) =
@@ -82,5 +82,5 @@ instance Valid (RuleMorphism a b) where
         valid mapL &&
         valid mapK &&
         valid mapR &&
-        (compose mapK (left cod)) == (compose mapK (right cod)) &&
-        (compose (left dom) mapL) == (compose (right dom) mapR)
+        compose mapK (left cod) == compose mapK (right cod) &&
+        compose (left dom) mapL == compose (right dom) mapR

@@ -9,11 +9,6 @@ import Graph.Graph
 import Graph.TypedGraphMorphism
 import XML.ParsedTypes
 
-type Side = String
-type Name = String
-
-type SndOrderRuleSide = (Side, Name, Rule)
-
 getRuleMapping :: SndOrderRuleSide -> [Mapping]
 getRuleMapping (_,_,(_,_,_,x)) = x
 
