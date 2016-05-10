@@ -7,9 +7,10 @@ module CLI.ApplySndOrderRules
 import           CLI.GlobalOptions
 
 import           Abstract.AdhesiveHLR
-import           Abstract.Morphism
-import           Abstract.Valid
+--import           Abstract.Morphism
+--import           Abstract.Valid
 import qualified Graph.GraphGrammar        as GG
+import           Graph.GraphRule
 import qualified Graph.RuleMorphism        as SO
 import qualified Graph.SndOrderRule        as SO
 import           Options.Applicative
@@ -34,28 +35,37 @@ execute globalOpts opts = do
     ggName <- XML.readGGName (inputFile globalOpts)
     names <- XML.readNames (inputFile globalOpts)
 
-    putStrLn "Analyzing the graph grammar..."
+    putStrLn "Reading the second order graph grammar..."
     putStrLn ""
 
-    let nacInj = injectiveNacSatisfaction globalOpts
-        onlyInj = not $ injectiveMatchesOnly globalOpts
-        --adding a rule
-        gg2 = GG.graphGrammar (GG.initialGraph gg) ((GG.rules gg) ++ [("novaregra", codomain m')]) (GG.sndOrderRules gg)
-        rules = map snd (GG.rules gg)
-        
-    -- testing import 2rule
-        rule = snd (head (GG.sndOrderRules gg))
-        leftRule = SO.left rule
-        rightRule = SO.right rule
-        ruleK = domain leftRule
-        ruleL = codomain leftRule
-        ruleR = codomain rightRule
-        mat = head (SO.matchesSndOrder ruleL (rules!!1))
-        (k,l') = poc mat leftRule
-        (m',r') = po k rightRule
+    let --nacInj = injectiveNacSatisfaction globalOpts
+        --onlyInj = not $ injectiveMatchesOnly globalOpts
+        newRules = applySndOrderRules (GG.rules gg) (GG.sndOrderRules gg)
+        gg2 = GG.graphGrammar (GG.initialGraph gg) ((GG.rules gg) ++ newRules) (GG.sndOrderRules gg)
     
-    --let x = codomain m'
-    --print x
-    --print $ valid x
-    print "ASD"
     GW.writeGrammarFile gg2 ggName names (outputFile opts)
+    
+    putStrLn "Done!"
+    putStrLn ""
+
+applySndOrderRules :: [(String, GraphRule a b)] -> [(String, SO.SndOrderRule a b)] -> [(String, GraphRule a b)]
+applySndOrderRules _ [] = []
+applySndOrderRules fstRules (sndOrdRule:sndRules) = (applySndOrderRules fstRules sndRules) ++ (applySndOrderRuleListRules sndOrdRule fstRules)
+
+applySndOrderRuleListRules :: (String, SO.SndOrderRule a b) -> [(String, GraphRule a b)] -> [(String, GraphRule a b)]
+applySndOrderRuleListRules sndRule = concatMap (applySndOrderRule sndRule)
+
+applySndOrderRule :: (String, SO.SndOrderRule a b) -> (String, GraphRule a b) -> [(String, GraphRule a b)]
+applySndOrderRule (sndName,sndRule) (fstName,fstRule) = zip newNames newRules
+  where
+    newNames = map (\number -> fstName ++ "_" ++ "_" ++ sndName ++ "_" ++ show number) ([0..] :: [Int])
+    leftRule = SO.left sndRule
+    rightRule = SO.right sndRule
+    matches = SO.matchesSndOrder (codomain leftRule) fstRule
+    newRules = map
+                 (\match ->
+                   let (k,_)  = poc match leftRule
+                       (m',_) = po k rightRule in
+                       codomain m'
+                   ) matches
+
