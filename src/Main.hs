@@ -1,41 +1,43 @@
 --{-# LANGUAGE TypeFamilies #-}
 
-import Analysis.ConcurrentRules
+--import Analysis.ConcurrentRules
 import qualified XML.GGXReader as XML
-import           Abstract.Valid
-import qualified Analysis.CriticalSequence as CS
-import qualified Analysis.CriticalPairs as CP
-import qualified Graph.FindMorphism as MT
+--import           Abstract.Valid
+--import qualified Analysis.CriticalSequence as CS
+--import qualified Analysis.CriticalPairs as CP
+--import qualified Graph.FindMorphism as MT
 import           Graph.EpiPairs ()
-import           Partitions.GPToVeri
-import           Partitions.GraphPart
-import           Partitions.VeriToGP
+--import           Partitions.GPToVeri
+--import           Partitions.GraphPart
+--import           Partitions.VeriToGP
 import           Graph.Graph as G
-import qualified Graph.GraphRule as GR
+--import qualified Graph.GraphRule as GR
 import qualified Graph.GraphMorphism as GM
 import           Graph.TypedGraphMorphism as TGM
-import qualified Graph.GraphGrammar as GG
-import qualified XML.GGXWriter as GW
+--import qualified Graph.GraphGrammar as GG
+--import qualified XML.GGXWriter as GW
 import Graph.GraphRule
-import System.Process
-import System.Environment
-import System.Exit
+--import System.Process
+--import System.Environment
+--import System.Exit
 import           Abstract.Morphism
-import           Data.List                 (elemIndex)
-import           Data.Maybe                (mapMaybe)
-import           Graph.GraphRule
-import           Graph.EpiPairs            ()
+
+
+
+--import           Graph.EpiPairs
 import           Abstract.AdhesiveHLR      as RW
 import           Abstract.DPO              as RW
-import           Graph.TypedGraphMorphism
-import Data.Matrix
+import           Graph.TypedGraphMorphism()
+--import Data.Matrix
 import Data.Maybe
 import qualified Data.List as L
 
-import qualified XML.GGXReader as XML
+--import qualified XML.GGXReader as XML
 
+fn :: String
 fn = "test/elevator2.ggx"
 
+a :: String -> IO (GM.GraphMorphism a b, GM.GraphMorphism a b)
 a fn = do
       prls <- XML.readRules fn
       ptg <- XML.readTypeGraph fn
@@ -56,10 +58,11 @@ a fn = do
 -- | Rule @l@ causes a delete-use conflict with @r@ if rule @l@ deletes something that is used by @r@
 -- DeleteUse using a most aproximated algorithm of the categorial diagram
 -- Verify the non existence of h21: L2 -> D1 such that d1 . h21 = m2
+
 deleteUse :: GraphRule a b -> GraphRule a b
            -> (TGM.TypedGraphMorphism a b,TGM.TypedGraphMorphism a b)
            -> Bool
-deleteUse l r (m1,m2) = Prelude.null matchD
+deleteUse l _ (m1,m2) = Prelude.null matchD
     where
         (_,d1) = RW.poc m1 (left l) --get only the morphism D2 to G
         l2TOd1 = matches ALL (domain m2) (domain d1)
@@ -112,7 +115,7 @@ matches' prop graph1 graph2 =
 
 buildMappings :: PROP -> [G.NodeId] -> [G.EdgeId] -> [G.NodeId] -> [G.EdgeId]
               -> TGM.TypedGraphMorphism a b -> [TGM.TypedGraphMorphism a b]
-{-
+
 --IF NO HAS FREE NODES OR FREE EDGES TO MAP, RETURN THE FOUND MORPHISMO
 buildMappings prop [] [] nodesT edgesT tgm =
       case prop of
@@ -129,9 +132,9 @@ buildMappings prop [] [] nodesT edgesT tgm =
         epimorphism | L.null (orphanNodesTyped tgm) &&
                       L.null (orphanEdgesTyped tgm) = return tgm
                     | otherwise = []
--}
+
 ---------------------------------------------------------------------------------
-{-
+
 --IF HAS FREE NODES, MAP ALL FREE NODES TO ALL DESTINATION NODES
 buildMappings prop (h:t) [] nodesT edgesT tgm
   | L.null nodesT = []
@@ -161,7 +164,7 @@ buildMappings prop (h:t) [] nodesT edgesT tgm
         Nothing  -> []
 
 ---------------------------------------------------------------------------------
--}
+
 --IF HAS FREE NODES, AND FREE EDGES, VERIFY THE CURRENT STATUS
 buildMappings prop nodes (h:t) nodesT edgesT tgm
   | L.null edgesT = []
@@ -174,7 +177,9 @@ buildMappings prop nodes (h:t) nodesT edgesT tgm
             | isNothing tgm2 = Nothing
             | otherwise = tgm2
             where tgm1 = updateNodesMapping (srcE d h) (srcE c y) tgm
-                  tgm2 = updateNodesMapping (tgtE d h) (tgtE c y) $ fromJust tgm1
+                  tgm2 = if L.elem (tgtE c y) nodesT && (not $ isNothing tgm1)
+                         then updateNodesMapping (tgtE d h) (tgtE c y) $ fromJust tgm1
+                         else Nothing
                   d = domain $ domain tgm
                   c = domain $ codomain tgm
 
