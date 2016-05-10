@@ -6,7 +6,9 @@ module Graph.RuleMorphism{- (
   ) -}where
 
 import Abstract.AdhesiveHLR
+import Abstract.Morphism
 import Abstract.Valid
+import Graph.FindMorphism
 import Graph.GraphRule
 import Graph.TypedGraphMorphism
 
@@ -25,6 +27,15 @@ ruleMorphism :: GraphRule a b -> GraphRule a b
              -> TypedGraphMorphism a b
              -> RuleMorphism a b
 ruleMorphism = RuleMorphism
+
+matchesSndOrder :: GraphRule a b -> GraphRule a b -> [RuleMorphism a b]
+matchesSndOrder l g =
+  do
+    let f (a,b,c) = RuleMorphism l g a b c
+    matchesL <- matches MONO (codomain (left l)) (codomain (left g))
+    matchesK <- matches MONO (domain (left l)) (domain (left g))
+    matchesR <- matches MONO (codomain (right l)) (codomain (right g))
+    return (f (matchesL, matchesK, matchesR))
 
 instance AdhesiveHLR (RuleMorphism a b) where
   -- FIXME

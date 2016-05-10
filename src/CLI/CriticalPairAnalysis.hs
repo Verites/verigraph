@@ -6,13 +6,14 @@ module CLI.CriticalPairAnalysis
 
 import           CLI.GlobalOptions
 
---import           Abstract.Morphism
+import           Abstract.Morphism
+import qualified Graph.RuleMorphism        as SO
+import qualified Graph.SndOrderRule        as SO
+
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
 import           Data.Matrix               hiding ((<|>))
 import qualified Graph.GraphGrammar        as GG
---import qualified Graph.RuleMorphism        as SO
---import qualified Graph.SndOrderRule        as SO
 import           Options.Applicative
 import qualified XML.GGXReader             as XML
 import qualified XML.GGXWriter             as GW
@@ -105,7 +106,7 @@ execute globalOpts opts = do
                  ++ ["Done!"]
     
     -- testing import 2rule
-    {-print $ head (GG.sndOrderRules gg)
+    --print $ head (GG.sndOrderRules gg)
     let rule = snd (head (GG.sndOrderRules gg))
         leftRule = SO.left rule
         rightRule = SO.right rule
@@ -113,7 +114,7 @@ execute globalOpts opts = do
         ruleL = codomain leftRule
         ruleR = codomain rightRule
     
-    print rightRule-}
+    print (map (\r -> show (length (SO.matchesSndOrder ruleL r))) rules)
 
 defWriterFun :: Bool -> Bool -> AnalysisType
              ->(GG.GraphGrammar a b -> String
