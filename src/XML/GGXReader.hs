@@ -182,6 +182,19 @@ instantiateLeft k l = typedMorphism k l edges
     nodes = foldr (\n -> updateNodes n n) ini (G.nodes (domain k))
     edges = foldr (\e -> updateEdges e e) nodes (G.edges (domain k))
 
+instantiateDownK :: GraphMorphism a b -> GraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+instantiateDownK k r maps = typedMorphism k r edges
+  where
+    ini = empty (domain k) (domain r)
+    nodes = foldr (\n -> updateNodes n (applyNodeTotalTGMMap maps n)) ini (G.nodes (domain k))
+    edges = foldr (\e -> updateEdges e (applyEdgeTotalTGMMap maps e)) nodes (G.edges (domain k))
+
+applyNodeTotalTGMMap :: TypedGraphMorphism a b -> G.NodeId -> G.NodeId
+applyNodeTotalTGMMap m n = fromMaybe (error "Error, apply node in a non total morphism") $ applyNodeTGM m n
+
+applyEdgeTotalTGMMap :: TypedGraphMorphism a b -> G.EdgeId -> G.EdgeId
+applyEdgeTotalTGMMap m e = fromMaybe (error "Error, apply edge in a non total morphism") $ applyEdgeTGM m e
+
 instantiateTgm :: GraphMorphism a b -> GraphMorphism a b -> [Mapping] -> TypedGraphMorphism a b
 instantiateTgm s t maps = typedMorphism s t gmMap
   where
@@ -209,10 +222,11 @@ instantiateRuleMorphisms (parsedLeft, left) (parsedRight, right) =
    ruleMorphism ruleK right leftKtoLeftR interfaceKtoR rightKtoRightR)
     where
       ruleK = graphRule leftK rightK []
-      leftK = typedMorphism graphKruleK graphLruleK (mapping mappingLeftK)
-      rightK = typedMorphism graphKruleK graphRruleK (mapping mappingRightK)
+      leftK = typedMorphism graphKruleK graphLruleK (mapping interfaceKtoL)
+      rightK = typedMorphism graphKruleK graphRruleK (mapping interfaceKtoR)
       graphKruleL = domain (GR.left left)
       graphKruleR = domain (GR.left right)
+      interfaceKtoR = instantiateDownK graphKruleK (codomain (GR.right left)) (GR.right left)
       
       (graphLruleK, leftKtoLeftL, leftKtoLeftR) =
         instantiateObjectName
@@ -226,7 +240,7 @@ instantiateRuleMorphisms (parsedLeft, left) (parsedRight, right) =
           (codomain (GR.right right))
           (SO.getRightObjNameMapping parsedLeft parsedRight)
       
-      (graphKruleK, mappingLeftK, mappingRightK, interfaceKtoL, interfaceKtoR) =
+      (graphKruleK, {-mappingLeftK, mappingRightK-}_, _, interfaceKtoL) =
         instantiateKSndOrder
           (SO.getLeftObjNameMapping parsedLeft parsedRight)
           graphKruleL graphKruleR
@@ -240,14 +254,13 @@ instantiateObjectName left right mapping = (interfaceL, leftLtoL, leftLtoR)
     leftLtoR = instantiateTgm interfaceL right mapping
 
 instantiateKSndOrder :: [Mapping] -> TypedGraph a b -> TypedGraph a b
-                     -> (TypedGraph a b, TypedGraphMorphism a b, TypedGraphMorphism a b, TypedGraphMorphism a b, TypedGraphMorphism a b)
-instantiateKSndOrder ruleMap left right = (graphK, leftK, rightK, upK, downK)
+                     -> (TypedGraph a b, TypedGraphMorphism a b, TypedGraphMorphism a b, TypedGraphMorphism a b)
+instantiateKSndOrder ruleMap left right = (graphK, leftK, rightK, upK)
   where
     graphK = instantiateInterface ruleMap left
     leftK = instantiateLeft graphK left
     rightK = instantiateTgm graphK right ruleMap
     upK = instantiateLeft left graphK
-    downK = instantiateTgm graphK right ruleMap
 
 toN :: String -> Int
 toN x = case readMaybe x :: Maybe Int of

@@ -6,10 +6,6 @@ module CLI.CriticalPairAnalysis
 
 import           CLI.GlobalOptions
 
-import           Abstract.Morphism
-import qualified Graph.RuleMorphism        as SO
-import qualified Graph.SndOrderRule        as SO
-
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
 import           Data.Matrix               hiding ((<|>))
@@ -104,17 +100,6 @@ execute globalOpts opts = do
                  (if calculateConflicts action then conflicts else [])
                  ++ (if calculateDependencies action then dependencies else [])
                  ++ ["Done!"]
-    
-    -- testing import 2rule
-    --print $ head (GG.sndOrderRules gg)
-    let rule = snd (head (GG.sndOrderRules gg))
-        leftRule = SO.left rule
-        rightRule = SO.right rule
-        ruleK = domain leftRule
-        ruleL = codomain leftRule
-        ruleR = codomain rightRule
-    
-    print (map (\r -> show (length (SO.matchesSndOrder ruleL r))) rules)
 
 defWriterFun :: Bool -> Bool -> AnalysisType
              ->(GG.GraphGrammar a b -> String

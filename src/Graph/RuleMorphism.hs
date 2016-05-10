@@ -8,7 +8,7 @@ module Graph.RuleMorphism{- (
 import Abstract.AdhesiveHLR
 import Abstract.Morphism
 import Abstract.Valid
-import Graph.FindMorphism
+import Graph.GraphMorphism
 import Graph.GraphRule
 import Graph.TypedGraphMorphism
 
@@ -37,12 +37,37 @@ matchesSndOrder l g =
     matchesR <- matches MONO (codomain (right l)) (codomain (right g))
     return (f (matchesL, matchesK, matchesR))
 
+commutingMorphism :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+commutingMorphism a b = typedMorphism (codomain a) (codomain b) select
+  where
+    mats = matches ALL (codomain a) (codomain b)
+    filt = filter (\m -> compose a m == b) mats
+    select = if Prelude.null filt then empty (domain (codomain a)) (domain (codomain b)) else mapping (head filt)
+
 instance AdhesiveHLR (RuleMorphism a b) where
   -- FIXME
-  poc m l = (m,l)
+  poc (RuleMorphism _ cod1 l1 k1 r1) (RuleMorphism dom2 _ l2 k2 r2) = (k,l')
+     where
+       (kl,gl) = poc l1 l2
+       (kk,gk) = poc k1 k2
+       (kr,gr) = poc r1 r2
+       l = commutingMorphism kk (compose (left dom2) kl)
+       r = commutingMorphism kk (compose (right dom2) kr)
+       newRule = graphRule l r []
+       k = RuleMorphism dom2 newRule kl kk kr
+       l' = RuleMorphism newRule cod1 gl gk gr
   
   -- FIXME
-  po k r = (k,r)
+  po (RuleMorphism _ cod1 l1 k1 r1) (RuleMorphism _ cod2 l2 k2 r2) = (m',r')
+     where
+       (rl,kl) = po l1 l2
+       (rk,kk) = po k1 k2
+       (rr,kr) = po r1 r2
+       l = commutingMorphism kk (compose (left cod1) kl)
+       r = commutingMorphism kk (compose (right cod1) kr)
+       newRule = graphRule l r []
+       m' = RuleMorphism cod2 newRule rl rk rr
+       r' = RuleMorphism cod1 newRule kl kk kr
   
   -- FIXME
   injectivePullback f g = (f,g)
