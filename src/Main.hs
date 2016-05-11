@@ -27,7 +27,6 @@ import           Abstract.Morphism
 --import           Graph.EpiPairs
 import           Abstract.AdhesiveHLR      as RW
 import           Abstract.DPO              as RW
-import           Graph.TypedGraphMorphism()
 --import Data.Matrix
 import Data.Maybe
 import qualified Data.List as L
