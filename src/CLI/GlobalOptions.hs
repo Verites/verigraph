@@ -1,7 +1,7 @@
 module CLI.GlobalOptions
   ( GlobalOptions
   , globalOpts
-  , injectiveMatchesOnly
+  , arbitraryMatches
   , injectiveNacSatisfaction
   , verbose
   , inputFile
@@ -10,7 +10,7 @@ module CLI.GlobalOptions
 import           Options.Applicative
 
 data GlobalOptions = GOpts
-  { injectiveMatchesOnly     :: Bool
+  { arbitraryMatches         :: Bool
   , injectiveNacSatisfaction :: Bool
   , verbose                  :: Bool
   , inputFile                :: String
@@ -20,7 +20,7 @@ globalOpts :: Parser GlobalOptions
 globalOpts = GOpts
   <$> flag False True
     ( long "all-matches"
-    <> help "Set the analysis to arbitrary matches morphisms")
+    <> help "Set the matches for arbitrary morphisms")
   <*> flag False True
     ( long "inj-nac-satisfaction"
     <> help ("Restrict the analysis of NAC satisfaction to injective " ++

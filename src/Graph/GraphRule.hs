@@ -1,4 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE FlexibleInstances #-}
+
 module Graph.GraphRule (
     -- * Types
       GraphRule
@@ -26,6 +28,10 @@ import           Graph.TypedGraphMorphism as TGM
 import           Graph.FindMorphism       ()
 
 type GraphRule a b = Production (TypedGraphMorphism a b)
+
+-- TODO
+instance Eq (GraphRule a b) where
+    _ == _ = error "To do Eq GraphRule"
 
 -- | Create a rule based on both typed graph morphisms and a list of NAC's.
 graphRule :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b] -> GraphRule a b

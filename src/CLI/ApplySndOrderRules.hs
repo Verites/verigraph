@@ -7,8 +7,7 @@ module CLI.ApplySndOrderRules
 import           CLI.GlobalOptions
 
 import           Abstract.AdhesiveHLR
---import           Abstract.Morphism
---import           Abstract.Valid
+import           Abstract.Morphism
 import qualified Graph.GraphGrammar        as GG
 import           Graph.GraphRule
 import qualified Graph.RuleMorphism        as SO
@@ -39,8 +38,8 @@ execute globalOpts opts = do
     putStrLn ""
 
     let --nacInj = injectiveNacSatisfaction globalOpts
-        --onlyInj = not $ injectiveMatchesOnly globalOpts
-        newRules = applySndOrderRules (GG.rules gg) (GG.sndOrderRules gg)
+        onlyInj = if arbitraryMatches globalOpts then ALL else MONO
+        newRules = applySndOrderRules onlyInj (GG.rules gg) (GG.sndOrderRules gg)
         gg2 = GG.graphGrammar (GG.initialGraph gg) ((GG.rules gg) ++ newRules) (GG.sndOrderRules gg)
     
     GW.writeGrammarFile gg2 ggName names (outputFile opts)
@@ -48,19 +47,19 @@ execute globalOpts opts = do
     putStrLn "Done!"
     putStrLn ""
 
-applySndOrderRules :: [(String, GraphRule a b)] -> [(String, SO.SndOrderRule a b)] -> [(String, GraphRule a b)]
-applySndOrderRules fstRules = concatMap (\r -> applySndOrderRuleListRules r fstRules)
+applySndOrderRules :: PROP -> [(String, GraphRule a b)] -> [(String, SO.SndOrderRule a b)] -> [(String, GraphRule a b)]
+applySndOrderRules prop fstRules = concatMap (\r -> applySndOrderRuleListRules prop r fstRules)
 
-applySndOrderRuleListRules :: (String, SO.SndOrderRule a b) -> [(String, GraphRule a b)] -> [(String, GraphRule a b)]
-applySndOrderRuleListRules sndRule = concatMap (applySndOrderRule sndRule)
+applySndOrderRuleListRules :: PROP -> (String, SO.SndOrderRule a b) -> [(String, GraphRule a b)] -> [(String, GraphRule a b)]
+applySndOrderRuleListRules prop sndRule = concatMap (applySndOrderRule prop sndRule)
 
-applySndOrderRule :: (String, SO.SndOrderRule a b) -> (String, GraphRule a b) -> [(String, GraphRule a b)]
-applySndOrderRule (sndName,sndRule) (fstName,fstRule) = zip newNames newRules
+applySndOrderRule :: PROP -> (String, SO.SndOrderRule a b) -> (String, GraphRule a b) -> [(String, GraphRule a b)]
+applySndOrderRule prop (sndName,sndRule) (fstName,fstRule) = zip newNames newRules
   where
-    newNames = map (\number -> fstName ++ "_" ++ "_" ++ sndName ++ "_" ++ show number) ([0..] :: [Int])
+    newNames = map (\number -> fstName ++ "_" ++ sndName ++ "_" ++ show number) ([0..] :: [Int])
     leftRule = SO.left sndRule
     rightRule = SO.right sndRule
-    matches = SO.matchesSndOrder (codomain leftRule) fstRule
+    matches = SO.matchesSndOrder prop (codomain leftRule) fstRule
     newRules = map
                  (\match ->
                    let (k,_)  = poc match leftRule

@@ -1,5 +1,3 @@
-{-# LANGUAGE NoMonomorphismRestriction #-}
-
 module XML.GGXReader
  ( readGrammar,
    readGGName,
@@ -11,6 +9,7 @@ module XML.GGXReader
    instantiateRule
    ) where
 
+import           Abstract.DPO
 import           Abstract.Morphism
 import           Abstract.Valid
 import qualified Data.List                as L
@@ -21,7 +20,6 @@ import qualified Graph.GraphGrammar       as GG
 import           Graph.GraphMorphism      as GM
 import           Graph.GraphRule          as GR
 import           Graph.RuleMorphism
-import           Graph.SndOrderRule
 import           Graph.TypedGraphMorphism
 import           Text.Read                (readMaybe)
 import           Text.XML.HXT.Core
@@ -54,7 +52,7 @@ readGrammar fileName = do
       initGraph = GM.empty typeGraph typeGraph
       a = SO.parseSndOrderRules sndOrdRules
       c = map (instantiateSndOrderRule parsedTypeGraph) a
-      d = map (\(_,morphs) -> ((uncurry sndOrderRule) morphs) []) c
+      d = map (\(_,morphs) -> ((uncurry production) morphs) []) c
       sndOrderNames = map fst c
   
   return $ GG.graphGrammar initGraph (zip rulesNames rules) (zip sndOrderNames d)

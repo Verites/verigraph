@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE UndecidableInstances #-}
+
 -- | Provides definitions for the Double-Pushout approach to
 -- High-Level Rewriting Systems.
 module Abstract.DPO
@@ -123,9 +124,8 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
   -- | True if the given match satisfies the gluing condition for the given
   -- production.
   --
-  -- TODO: what does the following line mean?
-  --
-  -- @inj@ only indicates if the match is injective, this function does not checks it
+  -- Bool only indicates if the match is injective,
+  -- in the case of unknown use False
   satsGluing :: Bool -> m -> Production m -> Bool
 
   -- | Check if the second morphism is monomorphic outside the image of the

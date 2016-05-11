@@ -1,25 +1,47 @@
-module Graph.SndOrderRule{- (
-  SndOrderRule,
-  sndOrderRule
-  ) -}where
+module Graph.SndOrderRule (
+    SndOrderRule
+  , left
+  , right
+  , nacs
+  ) where
 
-import Abstract.Valid
+import Abstract.DPO
 import Graph.RuleMorphism
 
-data SndOrderRule a b =
-  SndOrderRule {
-    left  :: RuleMorphism a b
-  , right :: RuleMorphism a b
-  , nacs  :: [RuleMorphism a b]
-  } deriving (Eq, Show)
-
-sndOrderRule :: RuleMorphism a b -> RuleMorphism a b -> [RuleMorphism a b] -> SndOrderRule a b
-sndOrderRule = SndOrderRule
-
-instance Valid (SndOrderRule a b) where
-    valid (SndOrderRule l r nacs) =
-      -- fix needs Eq GraphRule
-      --domain l == domain r &&
-      valid l &&
-      valid r &&
-      all valid nacs
+-- | A second order rule:
+--
+-- @
+--         nl       nr
+--     NL◀─────\<NK\>─────▶NR
+--      ▲        ▲        ▲
+--   nacL\\    nacK\\    nacR\\ 
+--        \\        \\        \\
+--         \\   ll   \\   lr   \\
+--         LL◀─────\<LK\>─────▶LR
+--         ▲        ▲        ▲
+--    leftL│   leftK│   leftR│
+--         │        │        │
+--         │    kl  │    kr  │
+--         KL◀─────\<KK\>─────▶KR
+--         │        │        │
+--   rightL│  rightK│  rightR│
+--         │        │        │
+--         ▼    rl  ▼    rr  ▼
+--         RL◀─────\<RK\>─────▶RR
+-- @
+--
+-- domain rule = (ll,lr)
+--
+-- interface rule = (kl,kr)
+--
+-- codomain rule (rl,rr)
+--
+-- nac rule = (nl,nr)
+--
+-- nacs = set of: domain rule, nac rule, nacL, nacK, nacR
+--
+-- left = domain rule, interface rule, leftL, leftK, leftR
+--
+-- right = interface rule, codomain rule, rightL, rightK, rightR
+--
+type SndOrderRule a b = Production (RuleMorphism a b)
