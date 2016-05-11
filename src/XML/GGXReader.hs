@@ -50,12 +50,9 @@ readGrammar fileName = do
 
   let typeGraph = codomain . domain . GR.left $ head rules
       initGraph = GM.empty typeGraph typeGraph
-      a = SO.parseSndOrderRules sndOrdRules
-      c = map (instantiateSndOrderRule parsedTypeGraph) a
-      d = map (\(_,morphs) -> ((uncurry production) morphs) []) c
-      sndOrderNames = map fst c
+      sndOrderRules = instantiateSndOrderRules parsedTypeGraph sndOrdRules
   
-  return $ GG.graphGrammar initGraph (zip rulesNames rules) (zip sndOrderNames d)
+  return $ GG.graphGrammar initGraph (zip rulesNames rules) sndOrderRules
 
 readGGName :: String -> IO String
 readGGName fileName = do
@@ -206,11 +203,42 @@ instantiateTgm s t maps = typedMorphism s t gmMap
          else updateEdges (G.EdgeId orig) (G.EdgeId imag) gm)
       initGm listInt
 
-instantiateSndOrderRule :: ParsedTypeGraph -> (SndOrderRuleSide, SndOrderRuleSide) -> (String,(RuleMorphism a b, RuleMorphism a b))
-instantiateSndOrderRule typegraph (l@(_,nameL,leftL),r@(_,_,rightR)) = (nameL, instantiateRuleMorphisms (l,ruleLeft) (r,ruleRight))
+instantiateSndOrderRules :: ParsedTypeGraph -> [RuleWithNacs] -> [(String, Production (RuleMorphism a b))]
+instantiateSndOrderRules parsedTypeGraph sndOrdRules = zip sndOrderNames d
+  where
+    a = SO.parseSndOrderRules sndOrdRules
+    c = map (instantiateSndOrderRule parsedTypeGraph) a
+    d = map (\(_,(l,r),n) -> production l r n) c
+    sndOrderNames = map fstOfThree c
+
+instantiateSndOrderRule :: ParsedTypeGraph -> (SndOrderRuleSide, SndOrderRuleSide,[SndOrderRuleSide]) -> (String,(RuleMorphism a b, RuleMorphism a b),[RuleMorphism a b])
+instantiateSndOrderRule typegraph (l@(_,nameL,leftL),r@(_,_,rightR), n) = (nameL, instantiateMorphs, nacs)
   where
     ruleLeft = instantiateRule typegraph (leftL,[])
     ruleRight = instantiateRule typegraph (rightR,[])
+    instantiateMorphs = instantiateRuleMorphisms (l,ruleLeft) (r,ruleRight)
+    nacsRules = map (instantiateRule typegraph) (map (\(_,_,x) -> (x,[])) n)
+    nacs = map (instantiateSndOrderNac (l,ruleLeft)) (zip n nacsRules)
+
+instantiateSndOrderNac :: (SndOrderRuleSide, GraphRule a b) -> (SndOrderRuleSide, GraphRule a b) -> RuleMorphism a b
+instantiateSndOrderNac (parsedLeft, left) (n@(a,b,c),nacRule) = ruleMorphism left nacRule nacL nacK nacR
+  where
+    mapL = SO.getLeftObjNameMapping parsedLeft n
+    mapR = SO.getRightObjNameMapping parsedLeft n
+    nacL = instantiateNacMorphisms (codomain (GR.left left)) (codomain (GR.left nacRule)) mapL
+    nacK = instantiateNacMorphisms (domain (GR.left left)) (domain (GR.left nacRule)) mapL
+    nacR = instantiateNacMorphisms (codomain (GR.right left)) (codomain (GR.right nacRule)) mapR
+
+instantiateNacMorphisms :: TypedGraph a b -> TypedGraph a b
+                        -> [Mapping] -> TypedGraphMorphism a b
+instantiateNacMorphisms graphL graphN mapping = typedMorphism graphL graphN maps
+  where
+    mapElements = map (\(x,_,y) -> (read y :: Int, read x :: Int)) mapping
+    maps = gmbuild
+             (domain graphL)
+             (domain graphN)
+             mapElements
+             mapElements
 
 instantiateRuleMorphisms :: (SndOrderRuleSide, GraphRule a b)
                          -> (SndOrderRuleSide, GraphRule a b)

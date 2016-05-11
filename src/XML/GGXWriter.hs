@@ -332,9 +332,26 @@ writeSndOrderRules grammar = concatMap writeSndOrderRule (sndOrderRules grammar)
 
 writeSndOrderRule :: ArrowXml a => (String, SO.SndOrderRule b c) -> [a XmlTree XmlTree]
 writeSndOrderRule (name, sndOrderRule) =
-  [writeSndOrderRuleSide ("2rule_left_" ++ name) (adjustObjName objNameMapLeft) (adjustObjName objNameMapRight) (SO.left sndOrderRule)] ++
-  [writeSndOrderRuleSide ("2rule_right_" ++ name) objNameMapLeft objNameMapRight (SO.right sndOrderRule)]
+ ([writeSndOrderRuleSide
+    ("2rule_left_" ++ name)
+    (adjustObjName objNameMapLeft)
+    (adjustObjName objNameMapRight)
+    (SO.left sndOrderRule)] ++
+  [writeSndOrderRuleSide
+    ("2rule_right_" ++ name)
+    objNameMapLeft
+    objNameMapRight
+    (SO.right sndOrderRule)] ++
+  (map (\n ->
+          writeSndOrderRuleSide
+            ("2rule_nac_a")
+            (objNameMapNacLeft n)
+            (objNameMapNacRight n)
+            n)
+       (SO.nacs sndOrderRule)))
     where
+      objNameMapNacLeft n = getObjetcNameMorphism (mappingLeft (SO.left sndOrderRule)) (mappingLeft n)
+      objNameMapNacRight n = getObjetcNameMorphism (mappingRight (SO.left sndOrderRule)) (mappingRight n)
       objNameMapLeft = getObjetcNameMorphism (mappingLeft (SO.left sndOrderRule)) (mappingLeft (SO.right sndOrderRule))
       objNameMapRight = getObjetcNameMorphism (mappingRight (SO.left sndOrderRule)) (mappingRight (SO.right sndOrderRule))
       adjustObjName = map (\(_,t,y) -> (y,t,y))
