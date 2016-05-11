@@ -54,7 +54,7 @@ readGrammar fileName = do
       initGraph = GM.empty typeGraph typeGraph
       a = SO.parseSndOrderRules sndOrdRules
       c = map (instantiateSndOrderRule parsedTypeGraph) a
-      d = map ((uncurry sndOrderRule) . snd) c
+      d = map (\(_,morphs) -> ((uncurry sndOrderRule) morphs) []) c
       sndOrderNames = map fst c
   
   return $ GG.graphGrammar initGraph (zip rulesNames rules) (zip sndOrderNames d)

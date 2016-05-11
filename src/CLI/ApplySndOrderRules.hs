@@ -49,8 +49,7 @@ execute globalOpts opts = do
     putStrLn ""
 
 applySndOrderRules :: [(String, GraphRule a b)] -> [(String, SO.SndOrderRule a b)] -> [(String, GraphRule a b)]
-applySndOrderRules _ [] = []
-applySndOrderRules fstRules (sndOrdRule:sndRules) = (applySndOrderRules fstRules sndRules) ++ (applySndOrderRuleListRules sndOrdRule fstRules)
+applySndOrderRules fstRules = concatMap (\r -> applySndOrderRuleListRules r fstRules)
 
 applySndOrderRuleListRules :: (String, SO.SndOrderRule a b) -> [(String, GraphRule a b)] -> [(String, GraphRule a b)]
 applySndOrderRuleListRules sndRule = concatMap (applySndOrderRule sndRule)
