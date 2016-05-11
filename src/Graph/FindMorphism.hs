@@ -180,11 +180,7 @@ buildMappings prop (h:t) [] nodesT edgesT tgm
       y <- nodesT
 
       --MAP FREE NODES TO ALL TYPE COMPATIBLE DESTINATION NODES
-      let tgmN = if isNothing tgm1
-                 then Nothing
-                 else tgm1
-            where
-              tgm1 = updateNodesMapping h y tgm
+      let tgmN = updateNodesMapping h y nodesT tgm
 
       case tgmN of
         Just tgm' ->
@@ -212,19 +208,21 @@ buildMappings prop nodes (h:t) nodesT edgesT tgm
       --MAPPING SRC AND TGT NODES
       let tgmN
             | isNothing tgm1 = Nothing
-            | isNothing tgm2 = Nothing
             | otherwise = tgm2
-            where tgm1 = updateNodesMapping (srcE d h) (srcE c y) tgm
-                  tgm2 = updateNodesMapping (tgtE d h) (tgtE c y) $ fromJust tgm1
+            where tgm1 = updateNodesMapping (srcE d h) (srcE c y) nodesT tgm
+                  tgm2 = updateNodesMapping (tgtE d h) (tgtE c y) nodesT' $ fromJust tgm1
                   d = domain $ domain tgm
                   c = domain $ codomain tgm
+                  nodesT' = case prop of
+                    MONO -> L.delete (srcE c y) nodesT
+                    ISO  -> L.delete (srcE c y) nodesT
+                    EPI  -> nodesT
+                    ALL  -> nodesT
 
           --MAPPING SRC EDGE AND TGT EDGE
           tgmE
             | isNothing tgmN = Nothing
-            | isNothing tgm3 = Nothing
-            | otherwise = tgm3
-            where tgm3 = updateEdgesMapping h y $fromJust tgmN
+            | otherwise = updateEdgesMapping h y edgesT $ fromJust tgmN
 
       --FOR THE COMPATIBLES MAPPINGS, GO TO THE NEXT STEP
       case tgmE of
@@ -249,32 +247,34 @@ buildMappings prop nodes (h:t) nodesT edgesT tgm
 
 -- VALIDATION OF A NODE MAPPING
 -- VERIFY IF THE TYPES OF n1 AND n2 ARE COMPATIBLE AND UPDATE MAPPING
-updateNodesMapping :: G.NodeId -> G.NodeId -> TGM.TypedGraphMorphism a b
+updateNodesMapping :: G.NodeId -> G.NodeId -> [G.NodeId] -> TGM.TypedGraphMorphism a b
                    -> Maybe (TGM.TypedGraphMorphism a b)
-updateNodesMapping n1 n2 tgm =
+updateNodesMapping n1 n2 nodesT tgm =
   do
     let d = domain tgm
         c = codomain tgm
         m = mapping tgm
 
-    if (typeN d n1 == typeN c n2) &&
-       (isNothing (applyNodeTGM tgm n1) || (applyNodeTGM tgm n1 == Just n2))
-      then Just $ TGM.typedMorphism d c (GM.updateNodes n1 n2 m)
+    if typeN d n1 == typeN c n2 &&
+       (((isNothing $ applyNodeTGM tgm n1) && L.elem n2 nodesT) ||
+        applyNodeTGM tgm n1 == Just n2)
+      then Just $ TGM.typedMorphism d c $ GM.updateNodes n1 n2 m
       else Nothing
 
 ---------------------------------------------------------------------------------
 
 -- VALIDATION OF A EDGE MAPPING
 -- VERIFY IF THE TYPES OF e1 AND e2 ARE COMPATIBLE AND UPDATE MAPPING
-updateEdgesMapping :: G.EdgeId -> G.EdgeId -> TGM.TypedGraphMorphism a b
+updateEdgesMapping :: G.EdgeId -> G.EdgeId -> [G.EdgeId] -> TGM.TypedGraphMorphism a b
                    -> Maybe (TGM.TypedGraphMorphism a b)
-updateEdgesMapping e1 e2 tgm =
+updateEdgesMapping e1 e2 edgesT tgm =
   do
     let d = domain tgm
         c = codomain tgm
         m = mapping tgm
 
-    if (typeE d e1 == typeE c e2) &&
-       (isNothing (applyEdgeTGM tgm e1) || (applyEdgeTGM tgm e1 == Just e2))
+    if typeE d e1 == typeE c e2 &&
+       (((isNothing $ applyEdgeTGM tgm e1) && L.elem e2 edgesT ) ||
+        applyEdgeTGM tgm e1 == Just e2)
       then Just $ TGM.typedMorphism d c (GM.updateEdges e1 e2 m)
       else Nothing
