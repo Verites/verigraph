@@ -9,6 +9,7 @@ import           CLI.GlobalOptions
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Morphism
+import           Abstract.Valid
 import qualified Graph.GraphGrammar        as GG
 import           Graph.GraphRule
 import qualified Graph.RuleMorphism        as SO
@@ -42,8 +43,11 @@ execute globalOpts opts = do
         onlyInj = if arbitraryMatches globalOpts then ALL else MONO
         newRules = applySndOrderRules onlyInj (GG.rules gg) (GG.sndOrderRules gg)
         gg2 = GG.graphGrammar (GG.initialGraph gg) ((GG.rules gg) ++ newRules) (GG.sndOrderRules gg)
+        --rul = snd (head (GG.sndOrderRules gg))
     
     GW.writeGrammarFile gg2 ggName names (outputFile opts)
+    
+    --print (domain (SO.right rul))
     
     putStrLn "Done!"
     putStrLn ""
@@ -55,7 +59,7 @@ applySndOrderRuleListRules :: PROP -> (String, SO.SndOrderRule a b) -> [(String,
 applySndOrderRuleListRules prop sndRule = concatMap (applySndOrderRule prop sndRule)
 
 applySndOrderRule :: PROP -> (String, SO.SndOrderRule a b) -> (String, GraphRule a b) -> [(String, GraphRule a b)]
-applySndOrderRule prop (sndName,sndRule) (fstName,fstRule) = zip newNames newRules
+applySndOrderRule prop (sndName,sndRule) (fstName,fstRule) = {-error (show (map valid newRules))-} zip newNames newRules
   where
     newNames = map (\number -> fstName ++ "_" ++ sndName ++ "_" ++ show number) ([0..] :: [Int])
     leftRule = SO.left sndRule

@@ -165,13 +165,6 @@ instantiateLeft k l = typedMorphism k l edges
     nodes = foldr (\n -> updateNodes n n) ini (G.nodes (domain k))
     edges = foldr (\e -> updateEdges e e) nodes (G.edges (domain k))
 
-instantiateDownK :: GraphMorphism a b -> GraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
-instantiateDownK k r maps = typedMorphism k r edges
-  where
-    ini = empty (domain k) (domain r)
-    nodes = foldr (\n -> updateNodes n (applyNodeTGMUnsafe maps n)) ini (G.nodes (domain k))
-    edges = foldr (\e -> updateEdges e (applyEdgeTGMUnsafe maps e)) nodes (G.edges (domain k))
-
 instantiateTgm :: GraphMorphism a b -> GraphMorphism a b -> [Mapping] -> TypedGraphMorphism a b
 instantiateTgm s t maps = typedMorphism s t gmMap
   where
@@ -234,7 +227,7 @@ instantiateRuleMorphisms (parsedLeft, left) (parsedRight, right) =
       rightK = typedMorphism graphKruleK graphRruleK (mapping interfaceKtoR)
       graphKruleL = domain (GR.left left)
       graphKruleR = domain (GR.left right)
-      interfaceKtoR = instantiateDownK graphKruleK (codomain (GR.right left)) (GR.right left)
+      interfaceKtoR = instantiateDownK graphKruleK (domain (GR.right right)) leftKtoLeftR
       
       (graphLruleK, leftKtoLeftL, leftKtoLeftR) =
         instantiateObjectName
@@ -252,6 +245,13 @@ instantiateRuleMorphisms (parsedLeft, left) (parsedRight, right) =
         instantiateKSndOrder
           (SO.getLeftObjNameMapping parsedLeft parsedRight)
           graphKruleL graphKruleR
+
+instantiateDownK :: GraphMorphism a b -> GraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+instantiateDownK k r maps = typedMorphism k r edges
+  where
+    ini = empty (domain k) (domain r)
+    nodes = foldr (\n -> updateNodes n (applyNodeTGMUnsafe maps n)) ini (G.nodes (domain k))
+    edges = foldr (\e -> updateEdges e (applyEdgeTGMUnsafe maps e)) nodes (G.edges (domain k))
 
 instantiateObjectName :: TypedGraph a b -> TypedGraph a b -> [Mapping]
                       -> (TypedGraph a b, TypedGraphMorphism a b, TypedGraphMorphism a b)

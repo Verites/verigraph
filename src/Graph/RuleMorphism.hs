@@ -65,7 +65,7 @@ instance FindMorphism (RuleMorphism a b) where
 --
 -- (desconsidering the NACs)
 matchesSndOrder :: PROP -> GraphRule a b -> GraphRule a b -> [RuleMorphism a b]
-matchesSndOrder prop l g = filter valid (getAllMaps prop l g)
+matchesSndOrder prop l g = {-error (show ((getAllMaps prop l g)!!3))-} filter valid (getAllMaps prop l g)
 
 getAllMaps :: PROP -> GraphRule a b -> GraphRule a b -> [RuleMorphism a b]
 getAllMaps prop l g =
@@ -187,8 +187,5 @@ instance Valid (RuleMorphism a b) where
         valid mapL &&
         valid mapK &&
         valid mapR &&
-        monomorphism mapL &&
-        monomorphism mapK &&
-        monomorphism mapR &&
         compose mapK (left cod) == compose (left dom) mapL &&
         compose mapK (right cod) == compose (right dom) mapR
