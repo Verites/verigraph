@@ -24,7 +24,9 @@ module Graph.GraphMorphism (
     , createEdgeCod
     -- * Query
     , applyNode
+    , applyNodeUnsafe
     , applyEdge
+    , applyEdgeUnsafe
     , nodeRelation
     , edgeRelation
     , Graph.GraphMorphism.null
@@ -40,7 +42,7 @@ import           Abstract.Morphism
 import qualified Abstract.Relation as R
 import           Abstract.Valid
 import           Data.List
-import           Data.Maybe        (fromJust, isNothing, mapMaybe)
+import           Data.Maybe        (fromJust, fromMaybe, isNothing, mapMaybe)
 import           Graph.Graph       as G
 
 data GraphMorphism a b = GraphMorphism {
@@ -100,6 +102,14 @@ applyEdge m le =
     case R.apply (edgeRelation m) le of
         (x:_) -> Just x
         _ -> Nothing
+
+-- | Return the node to which @le@ gets mapped or error in the case of undefined
+applyNodeUnsafe :: GraphMorphism a b -> NodeId -> NodeId
+applyNodeUnsafe m n = fromMaybe (error "Error, apply node in a non total morphism") $ applyNode m n
+
+-- | Return the edge to which @le@ gets mapped or error in the case of undefined
+applyEdgeUnsafe :: GraphMorphism a b -> EdgeId -> EdgeId
+applyEdgeUnsafe m e = fromMaybe (error "Error, apply edge in a non total morphism") $ applyEdge m e
 
 -- | An empty morphism between two graphs.
 empty :: Graph a b -> Graph a b -> GraphMorphism a b

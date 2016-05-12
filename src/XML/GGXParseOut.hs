@@ -65,8 +65,8 @@ overlapsCS name2 cs = (graph, mapM1, mapM2 ++ mapM2WithNac, nacName cs, csType c
 getTgmMappings :: Maybe String -> TypedGraphMorphism a b -> [Mapping]
 getTgmMappings prefix tgm = nodesMorph ++ edgesMorph
   where
-    nodeMap = applyNodeTotalTGMMap tgm
-    edgeMap = applyEdgeTotalTGMMap tgm
+    nodeMap = applyNodeTGMUnsafe tgm
+    edgeMap = applyEdgeTGMUnsafe tgm
     nodesMorph = map (\n -> ("N" ++ show (nodeMap n), prefix, "N" ++ show n)) (nodesDomain tgm)
     edgesMorph = map (\e -> ("E" ++ show (edgeMap e), prefix, "E" ++ show e)) (edgesDomain tgm)
 
@@ -95,10 +95,10 @@ getMappings rule = nodesMorph ++ edgesMorph
     no = Nothing
     invL = invertTGM (GR.left rule)
     lr = M.compose invL (GR.right rule)
-    nodeMap = applyNodeTotalTGMMap lr
+    nodeMap = applyNodeTGMUnsafe lr
     nodes = filter (isJust . applyNodeTGM lr) (nodesDomain lr)
     nodesMorph = map (\n -> ("N" ++ show (nodeMap n), no, "N" ++ show n)) nodes
-    edgeMap = applyEdgeTotalTGMMap lr
+    edgeMap = applyEdgeTGMUnsafe lr
     edges = filter (isJust . applyEdgeTGM lr) (edgesDomain lr)
     edgesMorph = map (\e -> ("E" ++ show (edgeMap e), no, "E" ++ show e)) edges
 
@@ -117,29 +117,11 @@ serializeGraph objName morphism = ("", nodes, edges)
 serializeNode :: [(String,String)] -> GM.GraphMorphism a b -> G.NodeId -> ParsedTypedNode
 serializeNode objName graph n = ("N" ++ show n,
                          (lookup (show n) objName),
-                         "N" ++ show (applyNodeTotalMap graph n))
+                         "N" ++ show (GM.applyNodeUnsafe graph n))
 
 serializeEdge :: [(String,String)] -> GM.GraphMorphism a b -> G.EdgeId -> ParsedTypedEdge
 serializeEdge objName graph e = ("E" ++ show e,
                          (lookup (show e) objName),
-                         "E" ++ show (applyEdgeTotalMap graph e),
-                         "N" ++ show (getSrc (M.domain graph) e),
-                         "N" ++ show (getTgt (M.domain graph) e))
-
-getSrc :: G.Graph a b -> G.EdgeId -> G.NodeId
-getSrc g e = fromMaybe (error "Error, graph with source edges function non total") $ G.sourceOf g e
-
-getTgt :: G.Graph a b -> G.EdgeId -> G.NodeId
-getTgt g e = fromMaybe (error "Error, graph with target edges function non total") $ G.targetOf g e
-
-applyNodeTotalMap :: GM.GraphMorphism a b -> G.NodeId -> G.NodeId
-applyNodeTotalMap m n = fromMaybe (error "Error, apply node in a non total morphism") $ GM.applyNode m n
-
-applyEdgeTotalMap :: GM.GraphMorphism a b -> G.EdgeId -> G.EdgeId
-applyEdgeTotalMap m e = fromMaybe (error "Error, apply edge in a non total morphism") $ GM.applyEdge m e
-
-applyNodeTotalTGMMap :: TypedGraphMorphism a b -> G.NodeId -> G.NodeId
-applyNodeTotalTGMMap m n = fromMaybe (error "Error, apply node in a non total morphism") $ applyNodeTGM m n
-
-applyEdgeTotalTGMMap :: TypedGraphMorphism a b -> G.EdgeId -> G.EdgeId
-applyEdgeTotalTGMMap m e = fromMaybe (error "Error, apply edge in a non total morphism") $ applyEdgeTGM m e
+                         "E" ++ show (GM.applyEdgeUnsafe graph e),
+                         "N" ++ show (G.sourceOfUnsafe (M.domain graph) e),
+                         "N" ++ show (G.targetOfUnsafe (M.domain graph) e))

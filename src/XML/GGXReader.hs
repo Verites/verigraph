@@ -133,18 +133,6 @@ instantiateTypedGraph (_,b,c) tg = gmbuild g tg nodeTyping edgeTyping
     nodeTyping = map (\(x,_,y) -> (toN x, toN y)) b
     edgeTyping = map (\(x,_,y,_,_) -> (toN x, toN y)) c
 
-getSrc :: G.Graph a b -> G.EdgeId -> G.NodeId
-getSrc g e = fromMaybe (error "Error, graph with source edges function non total") $ G.sourceOf g e
-
-getTgt :: G.Graph a b -> G.EdgeId -> G.NodeId
-getTgt g e = fromMaybe (error "Error, graph with target edges function non total") $ G.targetOf g e
-
-applyNodeTotalMap :: GraphMorphism a b -> G.NodeId -> G.NodeId
-applyNodeTotalMap m n = fromMaybe (error "Error, apply node in a non total morphism") $ applyNode m n
-
-applyEdgeTotalMap :: GraphMorphism a b -> G.EdgeId -> G.EdgeId
-applyEdgeTotalMap m e = fromMaybe (error "Error, apply edge in a non total morphism") $ applyEdge m e
-
 fstOfThree :: (t1, t2, t3) -> t1
 fstOfThree (x,_,_) = x
 
@@ -158,15 +146,15 @@ instantiateInterface mapping l = gmbuild graphK (codomain l) nodeType edgeType
     nodesK = filter (\(G.NodeId x) -> x `elem` listMap) (G.nodes (domain l))
     nodesK2 = map (\(G.NodeId x) -> x) nodesK
     edgesK = filter (\(G.EdgeId x) -> x `elem` listMap) (G.edges (domain l))
-    src = getSrc (domain l)
+    src = G.sourceOfUnsafe (domain l)
     src2 (G.NodeId e) = e
-    tgt = getTgt (domain l)
+    tgt = G.targetOfUnsafe (domain l)
     tgt2 (G.NodeId e) = e
     edgesK2 = map (\edg@(G.EdgeId x) -> (x, src2 (src edg), tgt2 (tgt edg))) edgesK
 
     graphK = G.build nodesK2 edgesK2
-    nodeTyping = map (\n -> (n, applyNodeTotalMap l n)) nodesK
-    edgeTyping = map (\e -> (e, applyEdgeTotalMap l e)) edgesK
+    nodeTyping = map (\n -> (n, applyNodeUnsafe l n)) nodesK
+    edgeTyping = map (\e -> (e, applyEdgeUnsafe l e)) edgesK
     nodeType = map (\(G.NodeId x, G.NodeId y) -> (x,y)) nodeTyping
     edgeType = map (\(G.EdgeId x, G.EdgeId y) -> (x,y)) edgeTyping
 
@@ -181,14 +169,8 @@ instantiateDownK :: GraphMorphism a b -> GraphMorphism a b -> TypedGraphMorphism
 instantiateDownK k r maps = typedMorphism k r edges
   where
     ini = empty (domain k) (domain r)
-    nodes = foldr (\n -> updateNodes n (applyNodeTotalTGMMap maps n)) ini (G.nodes (domain k))
-    edges = foldr (\e -> updateEdges e (applyEdgeTotalTGMMap maps e)) nodes (G.edges (domain k))
-
-applyNodeTotalTGMMap :: TypedGraphMorphism a b -> G.NodeId -> G.NodeId
-applyNodeTotalTGMMap m n = fromMaybe (error "Error, apply node in a non total morphism") $ applyNodeTGM m n
-
-applyEdgeTotalTGMMap :: TypedGraphMorphism a b -> G.EdgeId -> G.EdgeId
-applyEdgeTotalTGMMap m e = fromMaybe (error "Error, apply edge in a non total morphism") $ applyEdgeTGM m e
+    nodes = foldr (\n -> updateNodes n (applyNodeTGMUnsafe maps n)) ini (G.nodes (domain k))
+    edges = foldr (\e -> updateEdges e (applyEdgeTGMUnsafe maps e)) nodes (G.edges (domain k))
 
 instantiateTgm :: GraphMorphism a b -> GraphMorphism a b -> [Mapping] -> TypedGraphMorphism a b
 instantiateTgm s t maps = typedMorphism s t gmMap
@@ -221,7 +203,7 @@ instantiateSndOrderRule typegraph (l@(_,nameL,leftL),r@(_,_,rightR), n) = (nameL
     nacs = map (instantiateSndOrderNac (l,ruleLeft)) (zip n nacsRules)
 
 instantiateSndOrderNac :: (SndOrderRuleSide, GraphRule a b) -> (SndOrderRuleSide, GraphRule a b) -> RuleMorphism a b
-instantiateSndOrderNac (parsedLeft, left) (n@(a,b,c),nacRule) = ruleMorphism left nacRule nacL nacK nacR
+instantiateSndOrderNac (parsedLeft, left) (n,nacRule) = ruleMorphism left nacRule nacL nacK nacR
   where
     mapL = SO.getLeftObjNameMapping parsedLeft n
     mapR = SO.getRightObjNameMapping parsedLeft n

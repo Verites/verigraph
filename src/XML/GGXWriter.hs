@@ -342,13 +342,13 @@ writeSndOrderRule (name, sndOrderRule) =
     objNameMapLeft
     objNameMapRight
     (SO.right sndOrderRule)] ++
-  (map (\n ->
+  (map (\(n,idx) ->
           writeSndOrderRuleSide
-            ("2rule_nac_a")
+            ("2rule_nac" ++ show idx ++ "_" ++ name)
             (objNameMapNacLeft n)
             (objNameMapNacRight n)
             n)
-       (SO.nacs sndOrderRule)))
+       (zip (SO.nacs sndOrderRule) ([0..] :: [Int]))))
     where
       objNameMapNacLeft n = getObjetcNameMorphism (mappingLeft (SO.left sndOrderRule)) (mappingLeft n)
       objNameMapNacRight n = getObjetcNameMorphism (mappingRight (SO.left sndOrderRule)) (mappingRight n)

@@ -36,8 +36,10 @@ getObjNameMapping (_,nodesL,edgesL) (_,nodesR,edgesR) = mapNodes ++ mapEdges
     mapEdges = map (\(id,n) -> (find2 n edgesRMap, Nothing, id)) edgesLMap
 
 find2 :: String -> [(String, String)] -> String
-find2 _ [] = error "2rule, wrong map of object names"
-find2 n ((a,b):xs) = if n == b then a else find2 n xs
+find2 n list =
+  fst (fromMaybe
+    (error "2rule, wrong map of object names")
+    (find (\(_,b) -> n == b) list))
 
 getLeftGraph :: SndOrderRuleSide -> ParsedTypedGraph
 getLeftGraph (_,_,(_,x,_,_)) = x
@@ -59,7 +61,7 @@ getSndOrderRuleSide (rule@(name,_,_,_),_) = (side, ruleName, rule)
     side = if (length splitted) /= 3 then error "Error parsing 2rule name" else map toLower $ splitted !! 1
     ruleName = join "_" (tail (tail splitted))
 
--- put together rules in pairs (left,right)
+-- put together rules in the form (left,right,[nacs])
 groupRules :: [SndOrderRuleSide] -> [(SndOrderRuleSide,SndOrderRuleSide,[SndOrderRuleSide])]
 groupRules rules = map
                      (\list ->
