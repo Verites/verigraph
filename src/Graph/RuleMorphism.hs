@@ -76,8 +76,22 @@ getAllMaps prop l g =
     matchesR <- matches prop (codomain (right l)) (codomain (right g))
     return $ f (matchesL, matchesK, matchesR)
 
+instance DPO (RuleMorphism a b) where
+  satsGluing inj m prod =
+    satsGluing inj (mappingLeft m)      leftProd      &&
+    satsGluing inj (mappingInterface m) interfaceProd &&
+    satsGluing inj (mappingRight m)     rightProd     &&
+    True -- dangling span to do
+      where
+        leftProd = production (mappingLeft (left prod)) (mappingLeft (right prod)) []
+        interfaceProd = production (mappingInterface (left prod)) (mappingInterface (right prod)) []
+        rightProd = production (mappingRight (left prod)) (mappingRight (right prod)) []
+
+  partiallyMonomorphic = error "partiallyMonomorphic not implemented for RuleMorphism"
+
 -- | Given the morphisms /a : X -> Y/ and /b : X -> Z/, respectively,
--- creates the morphism /x : Y -> Z/, where the following diagram commutes:
+-- creates the monomorphic morphism /x : Y -> Z/,
+-- where the following diagram commutes:
 --
 -- @
 --        a
@@ -94,21 +108,8 @@ commutingMorphismSameDomain a b = typedMorphism (codomain a) (codomain b) select
     mats = matches MONO (codomain a) (codomain b)
     filt = filter (\m -> compose a m == b) mats
     select = if Prelude.null filt
-               then error "Error when commuting morphisms, same domain"
+               then error "Error when commuting morphisms with same domain"
                else mapping (head filt)
-
-instance DPO (RuleMorphism a b) where
-  satsGluing inj m prod =
-    satsGluing inj (mappingLeft m)      leftProd      &&
-    satsGluing inj (mappingInterface m) interfaceProd &&
-    satsGluing inj (mappingRight m)     rightProd     &&
-    True -- dangling span to do
-      where
-        leftProd = production (mappingLeft (left prod)) (mappingLeft (right prod)) []
-        interfaceProd = production (mappingInterface (left prod)) (mappingInterface (right prod)) []
-        rightProd = production (mappingRight (left prod)) (mappingRight (right prod)) []
-
-  partiallyMonomorphic = error "partiallyMonomorphic not implemented for RuleMorphism"
 
 instance AdhesiveHLR (RuleMorphism a b) where
   -- poc m l
@@ -138,11 +139,10 @@ instance AdhesiveHLR (RuleMorphism a b) where
   -- TODO
   injectivePullback _ _ = error "injectivePullback not implemented in RuleMorphism"
 
--- FIXME
 instance Eq (RuleMorphism a b) where
-    (RuleMorphism _ _ mapL1 mapK1 mapR1) == (RuleMorphism _ _ mapL2 mapK2 mapR2) =
-        {-dom1 == dom2 &&
-        cod1 == cod2 &&-}
+    (RuleMorphism dom1 cod1 mapL1 mapK1 mapR1) == (RuleMorphism dom2 cod2 mapL2 mapK2 mapR2) =
+        dom1 == dom2 &&
+        cod1 == cod2 &&
         mapL1 == mapL2 &&
         mapK1 == mapK2 &&
         mapR1 == mapR2
@@ -152,6 +152,7 @@ instance Morphism (RuleMorphism a b) where
 
     domain = getDomain
     codomain = getCodomain
+    
     compose t1 t2 =
         RuleMorphism (domain t1)
                      (codomain t2)
@@ -168,12 +169,13 @@ instance Morphism (RuleMorphism a b) where
       monomorphism (mappingLeft rm) &&
       monomorphism (mappingInterface rm) &&
       monomorphism (mappingRight rm)
+    
     epimorphism rm =
       epimorphism (mappingLeft rm) &&
       epimorphism (mappingInterface rm) &&
       epimorphism (mappingRight rm)
-    -- check if needs to commute
-    isomorphism rm =
+    
+    isomorphism rm = -- check if needs to commute
       isomorphism (mappingLeft rm) &&
       isomorphism (mappingInterface rm) &&
       isomorphism (mappingRight rm)

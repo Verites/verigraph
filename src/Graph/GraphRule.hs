@@ -29,9 +29,13 @@ import           Graph.FindMorphism       ()
 
 type GraphRule a b = Production (TypedGraphMorphism a b)
 
--- TODO
+-- FIXME
+-- is correct?
+-- check nacs?
 instance Eq (GraphRule a b) where
-    _ == _ = error "To do Eq GraphRule"
+    x == y =
+      left x == left y &&
+      right x == right y
 
 -- | Create a rule based on both typed graph morphisms and a list of NAC's.
 graphRule :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b] -> GraphRule a b
