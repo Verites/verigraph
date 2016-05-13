@@ -58,10 +58,10 @@ createdEdges :: GraphRule a b -> [G.EdgeId]
 createdEdges r = TGM.orphanEdgesTyped (right r)
 
 instance DPO (TypedGraphMorphism a b) where
-  satsGluing inj m prod = (inj || identificationCondition) && danglingCondition
+  satsGluing inj m left = (inj || identificationCondition) && danglingCondition
     where
-        identificationCondition = satsDelItems (left prod) m
-        danglingCondition       = satsIncEdges (left prod) m
+        identificationCondition = satsDelItems left m
+        danglingCondition       = satsIncEdges left m
 
   partiallyMonomorphic = partialInjectiveTGM
 

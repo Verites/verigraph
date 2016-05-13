@@ -9,7 +9,7 @@ import           CLI.GlobalOptions
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Morphism
-import           Abstract.Valid
+--import           Abstract.Valid
 import qualified Graph.GraphGrammar        as GG
 import           Graph.GraphRule
 import qualified Graph.RuleMorphism        as SO
@@ -65,7 +65,7 @@ applySndOrderRule prop (sndName,sndRule) (fstName,fstRule) = {-error (show (map 
     leftRule = SO.left sndRule
     rightRule = SO.right sndRule
     matches = SO.matchesSndOrder prop (codomain leftRule) fstRule
-    gluing = filter (\m -> satsGluing False m sndRule) matches
+    gluing = filter (\m -> satsGluing False m leftRule) matches
     nacs = filter (satsNacs True False sndRule) gluing
     newRules = map
                  (\match ->

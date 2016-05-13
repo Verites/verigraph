@@ -58,7 +58,7 @@ pairs :: (EpiPairs m, DPO m) => Bool -> Production m -> Production m -> [(m, m)]
 pairs isInjective c n = validDpoPairs
   where
     allPairs  = createPairsCodomain isInjective (right c) (left n)
-    validDpoPairs = filter (\(lp, rp) -> satsGluing isInjective lp (inverseWithoutNacs c) && satsGluing isInjective rp n) allPairs
+    validDpoPairs = filter (\(lp, rp) -> satsGluing isInjective lp (right c) && satsGluing isInjective rp (left n)) allPairs
 
 --maxConcurrentRuleForLastPair :: (DPO m, EpiPairs m, Eq (Obj m)) => CRDependencies -> Bool -> Bool -> Production m -> Production m -> Production m
 maxConcurrentRuleForLastPair :: CRDependencies -> Bool -> Bool -> GraphRule a b -> GraphRule a b -> GraphRule a b

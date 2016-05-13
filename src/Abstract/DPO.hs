@@ -122,12 +122,12 @@ inverseWithoutNacs p = Production (right p) (left p) []
 -- | Class for morphisms whose category is Adhesive-HLR, and which can be
 -- used for double-pushout transformations.
 class (AdhesiveHLR m, FindMorphism m) => DPO m where
-  -- | True if the given match satisfies the gluing condition for the given
-  -- production.
+  -- | True if the given match satisfies the gluing condition for the given production.
+  -- This function does not need all production, just the left morphism.
   --
   -- Bool only indicates if the match is injective,
   -- in the case of unknown use False
-  satsGluing :: Bool -> m -> Production m -> Bool
+  satsGluing :: Bool -> m -> m -> Bool
 
   -- | Check if the second morphism is monomorphic outside the image of the
   -- first morphism.
@@ -161,7 +161,7 @@ satsGluingNacsBoth nacInj inj (l,m1) (r,m2) =
 satsGluingAndNacs :: DPO m => Bool -> Bool -> Production m -> m -> Bool
 satsGluingAndNacs nacInj inj rule m = gluingCond && nacsCondition
     where
-        gluingCond    = satsGluing inj m rule
+        gluingCond    = satsGluing inj m (left rule)
         nacsCondition = satsNacs nacInj inj rule m
 
 satsOneNacInj :: FindMorphism m => m -> m -> Bool
@@ -189,7 +189,7 @@ inverse inj r = Production (right r) (left r) (concatMap (shiftLeftNac inj r) (n
 --
 -- TODO: what's the first parameter?
 shiftLeftNac :: DPO m => Bool -> Production m -> m -> [m]
-shiftLeftNac inj rule n = [comatch n rule | satsGluing inj n rule]
+shiftLeftNac inj rule n = [comatch n rule | satsGluing inj n (left rule)]
 
 -- | Given a morphism /m : L -> L'/ and a NAC /n : L -> N/, obtains
 -- an equivalent set of NACs /n'i : L' -> N'i/ that is equivalent to the

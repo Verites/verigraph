@@ -77,15 +77,11 @@ getAllMaps prop l g =
     return $ f (matchesL, matchesK, matchesR)
 
 instance DPO (RuleMorphism a b) where
-  satsGluing inj m prod =
-    satsGluing inj (mappingLeft m)      leftProd      &&
-    satsGluing inj (mappingInterface m) interfaceProd &&
-    satsGluing inj (mappingRight m)     rightProd     &&
+  satsGluing inj m left =
+    satsGluing inj (mappingLeft m)      (mappingLeft left)      &&
+    satsGluing inj (mappingInterface m) (mappingInterface left) &&
+    satsGluing inj (mappingRight m)     (mappingRight left)     &&
     True -- dangling span to do
-      where
-        leftProd = production (mappingLeft (left prod)) (mappingLeft (right prod)) []
-        interfaceProd = production (mappingInterface (left prod)) (mappingInterface (right prod)) []
-        rightProd = production (mappingRight (left prod)) (mappingRight (right prod)) []
 
   partiallyMonomorphic = error "partiallyMonomorphic not implemented for RuleMorphism"
 
