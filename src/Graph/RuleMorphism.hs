@@ -104,7 +104,7 @@ commutingMorphismSameDomain a b = typedMorphism (codomain a) (codomain b) select
     mats = matches MONO (codomain a) (codomain b)
     filt = filter (\m -> compose a m == b) mats
     select = if Prelude.null filt
-               then error "Error when commuting morphisms with same domain"
+               then error ("Error when commuting monomorphic morphisms (must be generating an invalid rule)")
                else mapping (head filt)
 
 instance AdhesiveHLR (RuleMorphism a b) where
@@ -114,8 +114,8 @@ instance AdhesiveHLR (RuleMorphism a b) where
        (matchL', leftL') = poc matchL leftL
        (matchK', leftK') = poc matchK leftK
        (matchR', leftR') = poc matchR leftR
-       l = commutingMorphismSameDomain leftK' (compose (left ruleG) leftL')
-       r = commutingMorphismSameDomain leftK' (compose (right ruleG) leftR')
+       l = commutingMorphismSameDomain matchK' (compose (left ruleK) matchL')
+       r = commutingMorphismSameDomain matchK' (compose (right ruleK) matchR')
        newRule = graphRule l r []
        k = RuleMorphism ruleK newRule matchL' matchK' matchR'
        l' = RuleMorphism newRule ruleG leftL' leftK' leftR'
@@ -126,8 +126,8 @@ instance AdhesiveHLR (RuleMorphism a b) where
        (matchL', rightL') = po matchL rightL
        (matchK', rightK') = po matchK rightK
        (matchR', rightR') = po matchR rightR
-       l = commutingMorphismSameDomain rightK' (compose (left ruleD) rightL')
-       r = commutingMorphismSameDomain rightK' (compose (right ruleD) rightR')
+       l = commutingMorphismSameDomain matchK' (compose (left ruleR) matchL')
+       r = commutingMorphismSameDomain matchK' (compose (right ruleR) matchR')
        newRule = graphRule l r []
        m' = RuleMorphism ruleR newRule matchL' matchK' matchR'
        r' = RuleMorphism ruleD newRule rightL' rightK' rightR'

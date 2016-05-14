@@ -19,12 +19,11 @@ getRightObjNameMapping (_,_,(_,_,left,_)) (_,_,(_,_,right,_)) = getObjNameMappin
 getObjNameMapping :: ParsedTypedGraph -> ParsedTypedGraph -> [Mapping]
 getObjNameMapping (_,nodesL,edgesL) (_,nodesR,edgesR) = mapNodes ++ mapEdges
   where
-    fNodes = \(id,m,_) -> case m of
-                            Just n -> [(id,n)]
-                            Nothing -> []
-    fEdges = \(id,m,_,_,_) -> case m of
-                                Just n -> [(id,n)]
-                                Nothing -> []
+    f id m = case m of
+               Just n -> [(id,n)]
+               Nothing -> []
+    fNodes = \(id,m,_) -> f id m
+    fEdges = \(id,m,_,_,_) -> f id m
     nodesLMap = concatMap fNodes nodesL
     nodesRMap = concatMap fNodes nodesR
     edgesLMap = concatMap fEdges edgesL
@@ -57,7 +56,7 @@ getSndOrderRuleSide :: RuleWithNacs -> SndOrderRuleSide
 getSndOrderRuleSide (rule@(name,_,_,_),_) = (side, ruleName, rule)
   where
     splitted = split "_" name
-    side = if (length splitted) /= 3
+    side = if (length splitted) < 3
              then error "Error parsing 2rule name"
              else map toLower $ splitted !! 1
     ruleName = join "_" (tail (tail splitted))

@@ -9,7 +9,7 @@ import           CLI.GlobalOptions
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Morphism
---import           Abstract.Valid
+import           Abstract.Valid
 import qualified Graph.GraphGrammar        as GG
 import           Graph.GraphRule
 import qualified Graph.RuleMorphism        as SO
@@ -59,8 +59,15 @@ applySndOrderRuleListRules :: PROP -> (String, SO.SndOrderRule a b) -> [(String,
 applySndOrderRuleListRules prop sndRule = concatMap (applySndOrderRule prop sndRule)
 
 applySndOrderRule :: PROP -> (String, SO.SndOrderRule a b) -> (String, GraphRule a b) -> [(String, GraphRule a b)]
-applySndOrderRule prop (sndName,sndRule) (fstName,fstRule) = {-error (show (map valid newRules))-} zip newNames newRules
+applySndOrderRule prop (sndName,sndRule) (fstName,fstRule) = {-error (show h)-} zip newNames newRules
   where
+    a = matches!!0
+    b = SO.mappingLeft a
+    c = SO.mappingInterface a
+    d = SO.mappingRight a
+    e = SO.mappingLeft (SO.left sndRule)
+    (f,g) = poc a (SO.left sndRule)
+    (h,i) = po f (SO.right sndRule)
     newNames = map (\number -> fstName ++ "_" ++ sndName ++ "_" ++ show number) ([0..] :: [Int])
     leftRule = SO.left sndRule
     rightRule = SO.right sndRule
@@ -73,4 +80,3 @@ applySndOrderRule prop (sndName,sndRule) (fstName,fstRule) = {-error (show (map 
                        (m',_) = po k rightRule in
                        codomain m'
                    ) nacs
-
