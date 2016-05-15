@@ -81,7 +81,8 @@ instance DPO (RuleMorphism a b) where
     satsGluing inj (mappingLeft m)      (mappingLeft left)      &&
     satsGluing inj (mappingInterface m) (mappingInterface left) &&
     satsGluing inj (mappingRight m)     (mappingRight left)     &&
-    True -- dangling span to do
+    True && -- dangling span to do
+    True -- generates nacs
 
   partiallyMonomorphic = error "partiallyMonomorphic not implemented for RuleMorphism"
 
