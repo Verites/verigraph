@@ -23,6 +23,8 @@ module Graph.TypedGraphMorphism (
     , removeEdgeCodTyped
     , createEdgeDomTGM
     , createEdgeCodTGM
+    , createNodeDomTGM
+    , createNodeCodTGM
     , updateEdgeRelationTGM
     , updateNodeRelationTGM
     , orphanNodesTyped
@@ -116,6 +118,22 @@ createEdgeCodTGM :: G.EdgeId -> G.NodeId -> G.NodeId -> G.EdgeId -> TypedGraphMo
 createEdgeCodTGM e2 s2 t2 tp tgm =
   tgm { getCodomain = GM.createEdgeDom e2 s2 t2 tp (codomain tgm)
       , mapping = GM.createEdgeCod e2 s2 t2 (mapping tgm)
+      }
+
+-- | This function adds a node n1 (type tp) to the domain of the typed graph morphism, and associate it to n2
+--   It assumes n2 and tp already exist, and that n1 does not exist.
+createNodeDomTGM :: G.NodeId -> G.NodeId -> G.NodeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+createNodeDomTGM n1 tp n2 tgm =
+  tgm { getDomain = GM.createNodeDom n1 tp (M.domain tgm)
+      , mapping = GM.createNodeDom n1 n2 (mapping tgm)
+      }
+
+-- | This function adds a node n2 (type tp) to the codomain of the typed graph morphism
+--   It assumes tp already exist, and that n2 does not exist.
+createNodeCodTGM :: G.NodeId -> G.NodeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+createNodeCodTGM n2 tp tgm =
+  tgm { getCodomain = GM.createNodeDom n2 tp (codomain tgm)
+      , mapping = GM.createNodeCod n2 (mapping tgm)
       }
 
 -- | updates a typed graph morphism, mapping node n1 to node n2. It assumes both nodes already exist.

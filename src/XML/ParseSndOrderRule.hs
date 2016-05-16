@@ -1,9 +1,12 @@
 module XML.ParseSndOrderRule where
 
+import Abstract.Morphism
 import Data.Char         (toLower)
 import Data.List         ((\\),find,groupBy,sortOn)
-import Data.Maybe        (fromMaybe)
+import Data.Maybe        (mapMaybe,fromMaybe)
 import Data.String.Utils (join,split)
+import Graph.Graph
+import Graph.GraphMorphism
 import Graph.TypedGraphMorphism
 import XML.ParsedTypes
 
@@ -29,15 +32,16 @@ getObjNameMapping (_,nodesL,edgesL) (_,nodesR,edgesR) = mapNodes ++ mapEdges
     edgesLMap = concatMap fEdges edgesL
     edgesRMap = concatMap fEdges edgesR
     
-    getMap f = map (\(id,n) -> (find2 n f, Nothing, id))
+    getMap f = mapMaybe (\(id,n) -> case find2 n f of
+                                           Just x -> Just (x, Nothing, id)
+                                           Nothing -> Nothing)
     mapNodes = getMap nodesRMap nodesLMap
     mapEdges = getMap edgesRMap edgesLMap
 
-find2 :: String -> [(String, String)] -> String
-find2 n list = fst $
-  fromMaybe
-    (error "2rule, wrong map of object names")
-    (find (\(_,b) -> n == b) list)
+find2 :: String -> [(String, String)] -> Maybe String
+find2 n list = case find (\(_,b) -> n == b) list of
+                      Just (x,_) -> Just x
+                      Nothing -> Nothing
 
 getLeftGraph :: SndOrderRuleSide -> ParsedTypedGraph
 getLeftGraph (_,_,(_,x,_,_)) = x
@@ -77,6 +81,13 @@ groupRules rules = map
     getLeft list = fromMaybe (error ("Second order rule without left")) ((findSide "left") list)
     getRight list = fromMaybe (error "Second order rule without right") ((findSide "right") list)
     findSide str = find (\x -> side x == str)
+
+getObjetcNacNameMorphism :: GraphMorphism a b -> [Mapping]
+getObjetcNacNameMorphism m = nodesMap ++ edgesMap
+  where
+    nodesMap = getMap applyNodeUnsafe (nodes (domain m))
+    edgesMap = getMap applyEdgeUnsafe (edges (domain m))
+    getMap f = map (\e -> (show e, Nothing, show (f m e)))
 
 -- left and right must have the same domain
 getObjetcNameMorphism :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [Mapping]

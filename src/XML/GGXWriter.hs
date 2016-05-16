@@ -15,6 +15,7 @@ import           Graph.GraphGrammar
 import qualified Graph.GraphRule           as GR
 import qualified Graph.SndOrderRule        as SO
 import           Graph.RuleMorphism
+import           Graph.TypedGraphMorphism
 import           Text.XML.HXT.Core
 import           XML.GGXParseOut
 import           XML.ParsedTypes
@@ -176,7 +177,15 @@ writeNodeType names (nodeId,nodeType) =
   mkelem "NodeType"
     [sattr "ID" nodeId, sattr "abstract" "false", sattr "name" name] []
   where
-    name = fromMaybe nodeType (lookup ("I" ++ nodeType) names)
+    adjNames = map (\(x,y) -> (clearId x,y)) names
+    name = fromMaybe nodeType (lookup (clearId nodeType) adjNames)
+
+-- | Reads the id from the last to the head
+clearId :: String -> String
+clearId [] = ""
+clearId l = if isNum (last l) then (clearId (init l)) ++ [last l] else ""
+  where
+   isNum x = x `elem` "0123456789"
 
 writeEdgeTypes :: ArrowXml a => [(String,String)] -> [(String,String)] -> [a XmlTree XmlTree]
 writeEdgeTypes names = map (writeEdgeType names)
@@ -186,7 +195,8 @@ writeEdgeType names (edgeId,edgeType) =
   mkelem "EdgeType"
     [sattr "ID" edgeId, sattr "abstract" "false", sattr "name" name] []
   where
-    name = fromMaybe edgeType (lookup ("I" ++ edgeType) names)
+    adjNames = map (\(x,y) -> (clearId x,y)) names
+    name = fromMaybe edgeType (lookup (clearId edgeType) adjNames)
 
 writeGraph :: ArrowXml a => String -> String -> String
               -> [ParsedTypedNode] -> [ParsedTypedEdge] -> a XmlTree XmlTree
@@ -334,13 +344,13 @@ writeSndOrderRule :: ArrowXml a => (String, SO.SndOrderRule b c) -> [a XmlTree X
 writeSndOrderRule (name, sndOrderRule) =
  ([writeSndOrderRuleSide
     ("2rule_left_" ++ name)
-    (adjustObjName objNameMapLeft)
-    (adjustObjName objNameMapRight)
+    objNameMapLeftLeft
+    objNameMapLeftRight
     (SO.left sndOrderRule)] ++
   [writeSndOrderRuleSide
     ("2rule_right_" ++ name)
-    objNameMapLeft
-    objNameMapRight
+    objNameMapRightLeft
+    objNameMapRightRight
     (SO.right sndOrderRule)] ++
   (map (\(n,idx) ->
           writeSndOrderRuleSide
@@ -350,11 +360,15 @@ writeSndOrderRule (name, sndOrderRule) =
             n)
        (zip (SO.nacs sndOrderRule) ([0..] :: [Int]))))
     where
-      objNameMapNacLeft n = getObjetcNameMorphism (mappingLeft (SO.left sndOrderRule)) (mappingLeft n)
-      objNameMapNacRight n = getObjetcNameMorphism (mappingRight (SO.left sndOrderRule)) (mappingRight n)
-      objNameMapLeft = getObjetcNameMorphism (mappingLeft (SO.left sndOrderRule)) (mappingLeft (SO.right sndOrderRule))
-      objNameMapRight = getObjetcNameMorphism (mappingRight (SO.left sndOrderRule)) (mappingRight (SO.right sndOrderRule))
-      adjustObjName = map (\(_,t,y) -> (y,t,y))
+      objNameMapNacLeft n = getObjetcNacNameMorphism (mapping (mappingLeft n))
+      objNameMapNacRight n = getObjetcNacNameMorphism (mapping (mappingRight n))
+      objNameMapRightLeft = getObjetcNameMorphism (mappingLeft (SO.left sndOrderRule)) (mappingLeft (SO.right sndOrderRule))
+      objNameMapRightRight = getObjetcNameMorphism (mappingRight (SO.left sndOrderRule)) (mappingRight (SO.right sndOrderRule))
+      graphLRuleL = codomain (mappingLeft (SO.left sndOrderRule))
+      graphRRuleL = codomain (mappingRight (SO.left sndOrderRule))
+      twice f x = f x x
+      objNameMapLeftLeft = twice getObjetcNameMorphism (idMap graphLRuleL graphLRuleL)
+      objNameMapLeftRight = twice getObjetcNameMorphism (idMap graphRRuleL graphRRuleL)
 
 writeSndOrderRuleSide :: ArrowXml a => String -> [Mapping] -> [Mapping] -> RuleMorphism b c -> a XmlTree XmlTree
 writeSndOrderRuleSide name objLeft objRight ruleMorphism = writeRule objLeft objRight [] (name, codomain ruleMorphism)

@@ -22,6 +22,8 @@ module Graph.GraphMorphism (
     , removeNodeCod
     , createEdgeDom
     , createEdgeCod
+    , createNodeDom
+    , createNodeCod
     -- * Query
     , applyNode
     , applyNodeUnsafe
@@ -217,6 +219,22 @@ createEdgeCod :: G.EdgeId -> G.NodeId -> G.NodeId -> GraphMorphism a b -> GraphM
 createEdgeCod e2 s2 t2 gm =
   gm { getCodomain = G.insertEdge e2 s2 t2 (codomain gm)
      , edgeRelation = R.insertCod e2 (edgeRelation gm)
+     }
+
+-- | This function adds an edge e1 (with source s1 and target t1) to the domain of the morphism, and associate it to e2
+--   It assumes s1, t1, e2 already exist, and that e1 does not exist.
+createNodeDom :: G.NodeId -> G.NodeId -> GraphMorphism a b -> GraphMorphism a b
+createNodeDom n1 n2 gm =
+  gm { getDomain = G.insertNode n1 (domain gm)
+     , nodeRelation = R.update n1 n2 (nodeRelation gm)
+     }
+
+-- | This function adds an edge e2 (with source s2 and target t2) to the codomain of the morphism.
+--   It assumes that s2,t2 exist, and that e2 does not exist
+createNodeCod :: G.NodeId -> GraphMorphism a b -> GraphMorphism a b
+createNodeCod n2 gm =
+  gm { getCodomain = G.insertNode n2 (codomain gm)
+     , nodeRelation = R.insertCod n2 (nodeRelation gm)
      }
 
 -- | modifies a graph morphism, mapping edge e1 to edge e2. It assumes both edges already exist.
