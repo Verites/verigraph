@@ -6,10 +6,13 @@ module CLI.ApplySndOrderRules
 
 import           CLI.GlobalOptions
 
+--import           Abstract.Valid
+import           Graph.GraphMorphism
+import           Graph.TypedGraphMorphism
+
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Morphism
---import           Abstract.Valid
 import qualified Graph.GraphGrammar        as GG
 import           Graph.GraphRule
 import qualified Graph.RuleMorphism        as SO
@@ -47,10 +50,21 @@ execute globalOpts opts = do
     
     GW.writeGrammarFile gg2 ggName names (outputFile opts)
     
-    --print (domain (SO.right rul))
+    let sndRule = snd (head (GG.sndOrderRules gg))
+        ruleK = domain (SO.right sndRule)
+        fl = SO.mappingLeft (SO.left sndRule)
+        lb = left ruleK
+        gl = SO.mappingLeft (SO.right sndRule)
+        orphanlb = orphanNodesTyped lb
+    
+    print ruleK
     
     putStrLn "Done!"
     putStrLn ""
+    
+   -- probL = 1
+    
+    --nodesLb = nodesDomain graphLb
 
 applySndOrderRules :: PROP -> [(String, GraphRule a b)] -> [(String, SO.SndOrderRule a b)] -> [(String, GraphRule a b)]
 applySndOrderRules prop fstRules = concatMap (\r -> applySndOrderRuleListRules prop r fstRules)
@@ -61,14 +75,6 @@ applySndOrderRuleListRules prop sndRule = concatMap (applySndOrderRule prop sndR
 applySndOrderRule :: PROP -> (String, SO.SndOrderRule a b) -> (String, GraphRule a b) -> [(String, GraphRule a b)]
 applySndOrderRule prop (sndName,sndRule) (fstName,fstRule) = zip newNames newRules
   where
-    --a = matches!!0
-    --b = SO.mappingLeft a
-    --c = SO.mappingInterface a
-    --d = SO.mappingRight a
-    --e = SO.mappingLeft (SO.left sndRule)
-    --(f,g) = poc a (SO.left sndRule)
-    --(h,i) = po f (SO.right sndRule)
-    --n = head (SO.nacs sndRule)
     newNames = map (\number -> fstName ++ "_" ++ sndName ++ "_" ++ show number) ([0..] :: [Int])
     leftRule = SO.left sndRule
     rightRule = SO.right sndRule

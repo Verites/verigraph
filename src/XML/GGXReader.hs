@@ -238,10 +238,12 @@ instantiateRuleMorphisms (parsedLeft, left) (parsedRight, right) =
   (ruleMorphism ruleK left leftKtoLeftL interfaceKtoL rightKtoRightL,
    ruleMorphism ruleK right leftKtoLeftR interfaceKtoR rightKtoRightR)
     where
-      domLeft = domain (GR.left left)
-      domRight = domain (GR.left right)
-      codLeft = codomain (GR.left left)
-      codRight = codomain (GR.left right)
+      graphKRuleL = domain (GR.left left)
+      graphKRuleR = domain (GR.left right)
+      graphLRuleL = codomain (GR.left left)
+      graphLRuleR = codomain (GR.left right)
+      graphRRuleL = codomain (GR.right left)
+      graphRRuleR = codomain (GR.right right)
       
       mappingBetweenLeft = SO.getLeftObjNameMapping parsedLeft parsedRight
       mappingBetweenRight = SO.getRightObjNameMapping parsedLeft parsedRight
@@ -252,13 +254,13 @@ instantiateRuleMorphisms (parsedLeft, left) (parsedRight, right) =
       graphRRuleK = domain rightKtoRightL
       
       (leftKtoLeftL, leftKtoLeftR) =
-        instantiateSpan codLeft codRight mappingBetweenLeft
+        instantiateSpan graphLRuleL graphLRuleR mappingBetweenLeft
       
       (interfaceKtoL, interfaceKtoR) =
-        instantiateSpan domLeft domRight mappingBetweenLeft
+        instantiateSpan graphKRuleL graphKRuleR mappingBetweenLeft
       
       (rightKtoRightL, rightKtoRightR) =
-        instantiateSpan codLeft codRight mappingBetweenRight
+        instantiateSpan graphRRuleL graphRRuleR mappingBetweenRight
       
       maps (_,_,(_,_,_,x)) = x
       (leftK, rightK) = instantiateSpan graphLRuleK graphRRuleK (maps parsedLeft)
