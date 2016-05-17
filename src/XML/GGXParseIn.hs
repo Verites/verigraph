@@ -14,6 +14,10 @@ import           Data.Tree.NTree.TypeDefs
 import           Text.XML.HXT.Core
 import           XML.ParsedTypes
 import           XML.XMLUtilities
+import           XML.Utilities (clearIdUnsafe)
+
+clearId :: String -> String
+clearId = clearIdUnsafe
 
 -- | Parse the name of the Grammar
 parseGGName :: ArrowXml cat => cat (NTree XNode) String
@@ -176,10 +180,3 @@ parseSequenceItem = atTag "Item" >>>
     ruleName <- getAttrValue "rule" -< item
     let i = read iterations::Int
     returnA -< (i, ruleName)
-
--- | Reads the id from the last to the head, stops when do not found a number
-clearId :: String -> String
-clearId [] = error "Error reading id"
-clearId l = if isNum (last l) then (clearId (init l)) ++ [last l] else ""
-  where
-   isNum x = x `elem` "0123456789"

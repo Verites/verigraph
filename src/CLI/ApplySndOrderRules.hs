@@ -9,15 +9,15 @@ module CLI.ApplySndOrderRules
 import           CLI.GlobalOptions
 
 import           Abstract.Valid
-import           Data.Maybe
+--import           Data.Maybe
 import           Graph.Graph               as G
 import qualified Graph.GraphMorphism       as GM
+--import           Graph.EpiPairs
 import           Graph.TypedGraphMorphism
 
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Morphism
-import           Graph.EpiPairs
 import qualified Graph.GraphGrammar        as GG
 import           Graph.GraphRule
 import qualified Graph.RuleMorphism        as SO

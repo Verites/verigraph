@@ -20,6 +20,7 @@ import           Text.XML.HXT.Core
 import           XML.GGXParseOut
 import           XML.ParsedTypes
 import           XML.ParseSndOrderRule
+import           XML.Utilities
 
 -- | Writes grammar, conflicts and dependencies (.cpx)
 writeConfDepFile :: Bool -> Bool -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
@@ -166,6 +167,8 @@ writeTypes graph names = mkelem "Types" []
 writeTypeGraph :: ArrowXml a => G.Graph b c -> a XmlTree XmlTree
 writeTypeGraph graph = writeGraph "TypeGraph" "TG" "TypeGraph" nodeList edgeList
   where
+    src = G.sourceOfUnsafe
+    tgt = G.targetOfUnsafe
     nodeList = map (\n -> ("n" ++ show n, Nothing, "N" ++ show n)) (G.nodes graph)
     edgeList = map (\e -> ("e" ++ show e, Nothing, "E" ++ show e, "n" ++ show (src graph e), "n" ++ show (tgt graph e))) (G.edges graph)
 
@@ -179,13 +182,6 @@ writeNodeType names (nodeId,nodeType) =
   where
     adjNames = map (\(x,y) -> (clearId x,y)) names
     name = fromMaybe nodeType (lookup (clearId nodeType) adjNames)
-
--- | Reads the id from the last to the head
-clearId :: String -> String
-clearId [] = ""
-clearId l = if isNum (last l) then (clearId (init l)) ++ [last l] else ""
-  where
-   isNum x = x `elem` "0123456789"
 
 writeEdgeTypes :: ArrowXml a => [(String,String)] -> [(String,String)] -> [a XmlTree XmlTree]
 writeEdgeTypes names = map (writeEdgeType names)
@@ -423,12 +419,6 @@ writeNac ruleName ((nacGraph@(nacId,_,_), nacMorphism),nacName) = mkelem "NAC" [
   where
     writeNacGraph (nacId, nodes, edges) = writeGraph nacId "NAC" nacName nodes edges
     writeNacMorphism = writeMorphism (nacId, "LeftOf_"++ruleName) nacName ""
-
-src :: G.Graph a b -> G.EdgeId -> G.NodeId
-src g e = fromJust $ G.sourceOf g e
-
-tgt :: G.Graph a b -> G.EdgeId -> G.NodeId
-tgt g e = fromJust $ G.targetOf g e
 
 defaultGtsAttributes :: ArrowXml a => [a n XmlTree]
 defaultGtsAttributes = [ sattr "ID" "I1", sattr "directed" "true", sattr "parallel" "true" ]
