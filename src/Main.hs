@@ -1,54 +1,246 @@
 --{-# LANGUAGE TypeFamilies #-}
 
-{-import Analysis.ConcurrentRules
+--import Analysis.ConcurrentRules
 import qualified XML.GGXReader as XML
-import           Abstract.Valid
-import qualified Analysis.CriticalSequence as CS
-import qualified Analysis.CriticalPairs as CP
-import qualified Graph.FindMorphism as MT
+--import           Abstract.Valid
+--import qualified Analysis.CriticalSequence as CS
+--import qualified Analysis.CriticalPairs as CP
+--import qualified Graph.FindMorphism as MT
 import           Graph.EpiPairs ()
-import           Partitions.GPToVeri
-import           Partitions.GraphPart
-import           Partitions.VeriToGP
+--import           Partitions.GPToVeri
+--import           Partitions.GraphPart
+--import           Partitions.VeriToGP
 import           Graph.Graph as G
-import qualified Graph.GraphRule as GR
+--import qualified Graph.GraphRule as GR
 import qualified Graph.GraphMorphism as GM
 import           Graph.TypedGraphMorphism as TGM
-import qualified Graph.GraphGrammar as GG
-import qualified XML.GGXWriter as GW
+--import qualified Graph.GraphGrammar as GG
+--import qualified XML.GGXWriter as GW
 import Graph.GraphRule
-import System.Process
-import System.Environment
-import System.Exit
+--import System.Process
+--import System.Environment
+--import System.Exit
 import           Abstract.Morphism
-import           Data.List                 (elemIndex)
-import           Data.Maybe                (mapMaybe)
-import           Graph.GraphRule
-import           Graph.EpiPairs            ()
+
+
+
+--import           Graph.EpiPairs
 import           Abstract.AdhesiveHLR      as RW
 import           Abstract.DPO              as RW
-import           Graph.TypedGraphMorphism
-import Data.Matrix
+--import Data.Matrix
 import Data.Maybe
+import qualified Data.List as L
 
-import qualified XML.GGXReader as XML
+--import qualified XML.GGXReader as XML
 
-fn = "test/teseRodrigo.ggx"
+fn :: String
+fn = "test/elevator2.ggx"
 
+a :: String -> IO (GM.GraphMorphism a b, GM.GraphMorphism a b)
 a fn = do
       prls <- XML.readRules fn
       ptg <- XML.readTypeGraph fn
       let rs = map (XML.instantiateRule (head ptg)) prls
-          --r = rs!!7
-          --n = head (nacs r)
-          --inv = GR.inverseWithoutNacs r
-          --mix = mixGM (codomain (right r)) (codomain n)
-          --mix2 = mixNac (codomain (right r)) n
-          --m = mapM partitions (partBy checkNode (Partitions.GraphPart.nodes mix2))
-          --dgs = Partitions.GraphPart.edges mix2
           r1 = rs!!0
           r2 = rs!!1
+          pairs = createPairsCodomain True (left r1) (left r2)
+          --dgs = Partitions.GraphPart.edges mix2
+          inj = filter (\(m1,m2) -> monomorphism m1 && monomorphism m2) pairs
+          gluing = filter (\(m1,m2) -> satsGluing True m1 r1 && satsGluing True m2 r2) inj
+          delUse = filter (deleteUse r1 r2) gluing
       return (r1,r2)
+      --print (fst cp)
+      --print k
+      --print d1
+      return (codomain (head (nacs r1)), codomain (fst (delUse!!1)))
+  
+-- | Rule @l@ causes a delete-use conflict with @r@ if rule @l@ deletes something that is used by @r@
+-- DeleteUse using a most aproximated algorithm of the categorial diagram
+-- Verify the non existence of h21: L2 -> D1 such that d1 . h21 = m2
+
+deleteUse :: GraphRule a b -> GraphRule a b
+           -> (TGM.TypedGraphMorphism a b,TGM.TypedGraphMorphism a b)
+           -> Bool
+deleteUse l _ (m1,m2) = Prelude.null matchD
+    where
+        (_,d1) = RW.poc m1 (left l) --get only the morphism D2 to G
+        l2TOd1 = matches ALL (domain m2) (domain d1)
+        matchD = filter (\x -> m2 == compose x d1) l2TOd1
+
+
+-- TODO: following functions should be part of the Graph interface
+srcE, tgtE :: G.Graph a b -> EdgeId -> NodeId
+srcE gm e = fromJust $ G.sourceOf gm e
+tgtE gm e = fromJust $ G.targetOf gm e
+
+-- TODO: following function should be part of TypedGraph interface
+typeN :: GM.GraphMorphism a b -> NodeId -> NodeId
+typeN gm n = fromMaybe (error "NODE NOT TYPED") $ GM.applyNode gm n
+
+-- TODO: following function should be part of TypedGraph interface
+typeE :: GM.GraphMorphism a b -> EdgeId -> EdgeId
+typeE gm e = fromMaybe (error "EDGE NOT TYPED") $ GM.applyEdge gm e
+
+
+
+
+
+
+
+---------------------------------------------------------------------------------
+
+-- | Finds matches __/m/__
+--
+--   Injective, surjective, isomorphic or all possible matches
+matches' :: PROP -> GM.GraphMorphism a b-> GM.GraphMorphism a b
+        -> [TGM.TypedGraphMorphism a b]
+matches' prop graph1 graph2 =
+  buildMappings prop nodesSrc edgesSrc nodesTgt edgesTgt tgm
+  where
+    nodesSrc = nodes $ domain graph1
+    nodesTgt = nodes $ domain graph2
+    edgesSrc = edges $ domain graph1
+    edgesTgt = edges $ domain graph2
+
+    d   = graph1
+    c   = graph2
+    m   = GM.empty (domain graph1) (domain graph2)
+    tgm = TGM.typedMorphism d c m
+
+
+
+
+---------------------------------------------------------------------------------
+
+buildMappings :: PROP -> [G.NodeId] -> [G.EdgeId] -> [G.NodeId] -> [G.EdgeId]
+              -> TGM.TypedGraphMorphism a b -> [TGM.TypedGraphMorphism a b]
+
+--IF NO HAS FREE NODES OR FREE EDGES TO MAP, RETURN THE FOUND MORPHISMO
+buildMappings prop [] [] nodesT edgesT tgm =
+      case prop of
+        ALL  -> all
+        MONO -> all
+        EPI  -> epimorphism
+        ISO  -> isomorphism
+      where
+        all = return tgm
+
+        isomorphism | L.null nodesT && L.null edgesT = return tgm
+                    | otherwise = []
+
+        epimorphism | L.null (orphanNodesTyped tgm) &&
+                      L.null (orphanEdgesTyped tgm) = return tgm
+                    | otherwise = []
+
+---------------------------------------------------------------------------------
+
+--IF HAS FREE NODES, MAP ALL FREE NODES TO ALL DESTINATION NODES
+buildMappings prop (h:t) [] nodesT edgesT tgm
+  | L.null nodesT = []
+  | otherwise  = do
+      y <- nodesT
+
+      --MAP FREE NODES TO ALL TYPE COMPATIBLE DESTINATION NODES
+      let tgmN = updateNodesMapping h y nodesT tgm
+
+      case tgmN of
+        Just tgm' ->
+          --CHOSE BETWEEN INJECTIVE OR NOT
+          case prop of
+            ALL  -> all
+            MONO -> monomorphism
+            EPI  -> all
+            ISO  -> monomorphism
+          where
+            monomorphism = buildMappings prop t [] nodesT' edgesT tgm'
+            all          = buildMappings prop t [] nodesT  edgesT tgm'
+            --REMOVE THE TARGET NODES MAPPED (INJECTIVE MODULE)
+            nodesT'   = L.delete y nodesT
+        Nothing  -> []
+
+---------------------------------------------------------------------------------
+
+--IF HAS FREE NODES, AND FREE EDGES, VERIFY THE CURRENT STATUS
+buildMappings prop nodes (h:t) nodesT edgesT tgm
+  | L.null edgesT = []
+  | otherwise  =
+    do  --VERIFY THE POSSIBILITY OF A MAPPING BETWEEN h AND THE DESTINATION EDGES
+      y <- edgesT
+      --MAPPING SRC AND TGT NODES
+      let tgmN
+            | isNothing tgm1 = Nothing
+            | otherwise = tgm2
+            where tgm1 = updateNodesMapping (srcE d h) (srcE c y) nodesT tgm
+                  tgm2 = updateNodesMapping (tgtE d h) (tgtE c y) nodesT' $ fromJust tgm1
+                  d = domain $ domain tgm
+                  c = domain $ codomain tgm
+                  nodesT' = case prop of
+                    MONO -> L.delete (srcE c y) nodesT
+                    ISO  -> L.delete (srcE c y) nodesT
+                    EPI  -> nodesT
+                    ALL  -> nodesT
+
+          --MAPPING SRC EDGE AND TGT EDGE
+          tgmE
+            | isNothing tgmN = Nothing
+            | otherwise = updateEdgesMapping h y edgesT $ fromJust tgmN
+
+      --FOR THE COMPATIBLES MAPPINGS, GO TO THE NEXT STEP
+      case tgmE of
+        Just tgm' -> do
+          let nodes'       = L.delete (srcE d h) $ L.delete (tgtE d h) nodes
+              d            = domain $ domain tgm
+              c            = domain $ codomain tgm
+              --REMOVE THE TARGET EDGES AND NODES MAPPED (INJECTIVE MODULE)
+              edgesT'      = L.delete y edgesT
+              nodesT'      = L.delete (srcE c y) $ L.delete (tgtE c y) nodesT
+              monomorphism = buildMappings prop nodes' t nodesT' edgesT' tgm'
+              all          = buildMappings prop nodes' t nodesT  edgesT  tgm'
+              --CHOSE BETWEEN INJECTIVE OR NOT
+          case prop of
+            ALL  -> all
+            MONO -> monomorphism
+            EPI  -> all
+            ISO  -> monomorphism
+        Nothing  -> []
+
+---------------------------------------------------------------------------------
+
+-- VALIDATION OF A NODE MAPPING
+-- VERIFY IF THE TYPES OF n1 AND n2 ARE COMPATIBLE AND UPDATE MAPPING
+updateNodesMapping :: G.NodeId -> G.NodeId -> [G.NodeId] -> TGM.TypedGraphMorphism a b
+                   -> Maybe (TGM.TypedGraphMorphism a b)
+updateNodesMapping n1 n2 nodesT tgm =
+  do
+    let d = domain tgm
+        c = codomain tgm
+        m = mapping tgm
+
+    if typeN d n1 == typeN c n2 &&
+       (((isNothing $ applyNodeTGM tgm n1) && L.elem n2 nodesT) ||
+        applyNodeTGM tgm n1 == Just n2)
+      then Just $ TGM.typedMorphism d c $ GM.updateNodes n1 n2 m
+      else Nothing
+
+---------------------------------------------------------------------------------
+
+-- VALIDATION OF A EDGE MAPPING
+-- VERIFY IF THE TYPES OF e1 AND e2 ARE COMPATIBLE AND UPDATE MAPPING
+updateEdgesMapping :: G.EdgeId -> G.EdgeId -> [G.EdgeId] -> TGM.TypedGraphMorphism a b
+                   -> Maybe (TGM.TypedGraphMorphism a b)
+updateEdgesMapping e1 e2 edgesT tgm =
+  do
+    let d = domain tgm
+        c = codomain tgm
+        m = mapping tgm
+
+    if typeE d e1 == typeE c e2 &&
+       (((isNothing $ applyEdgeTGM tgm e1) && L.elem e2 edgesT ) ||
+        applyEdgeTGM tgm e1 == Just e2)
+      then Just $ TGM.typedMorphism d c (GM.updateEdges e1 e2 m)
+      else Nothing
+
+{-
 
 iN = insertNode
 iE = insertEdge
@@ -220,7 +412,10 @@ l8 = TGM.typedMorphism tkr8 tlr8 kr8_lr8
 kr8_rr8 = GM.gmbuild kr8 rr8 [] []
 r8 = TGM.typedMorphism tkr8 trr8 kr8_rr8
 
-testeCreate = graphRule l8 r8 []-}
+testeCreate = graphRule l8 r8 []
+
+-}
+
 
 {-Fim das Regras-}
 
