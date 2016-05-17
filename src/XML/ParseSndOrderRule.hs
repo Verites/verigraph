@@ -1,4 +1,57 @@
-module XML.ParseSndOrderRule where
+{-|
+Module      : ParseSndOrderRule
+Description : Imports 2-rules from .ggx to verigraph
+Stability   : experimental
+
+AGG implements first order rules in the SPO approach, to model 2-rules
+(second order rules in the DPO approach) a translation is needed.
+
+AGG model: a rule is two graphs and a partial mapping between them.
+
+@
+  N
+  ▲
+  │
+  L ───▶ R
+@
+
+Verigraph second order model:
+
+@
+        nl       fl       fr
+    Nl◀──────La◀─────\<Lb\>─────▶Lc
+    ▲        ▲        ▲        ▲
+ nal│      la│      lb│      lc│
+    │        │        │        │
+    ^   nk   ^   fk   ^   gk   ^
+    Nk◀──────Ka◀─────\<Kb\>─────▶Kc
+    v        v        v        v
+ nar│      ra│      rb│      rc│
+    │        │        │        │
+    v   nr   ▼   fr   ▼   gr   ▼
+    Nr◀──────Ra◀─────\<Rb\>─────▶Rc
+@
+
+The second order rules in AGG must be represented as two first order rules with some aditional maps.
+
+This maps bind two graph in different rules, to represent it we use the object names in AGG.
+
+The object names map must bind the graphs La to Ra and Lc to Rc,
+if there a NAC these maps will be needes: Nl to Nr, La to Nl and Ra to Nr.
+
+Besides that, rule names in agg must follow this form: 2rule_(left|right|nacid)_(ruleName)
+
+The translation from first order rules in the SPO to DPO is straightforward,
+and additionally with object name maps, all second order rule can be instantiated.
+-}
+
+module XML.ParseSndOrderRule (
+    parseSndOrderRules
+  , getLeftObjNameMapping
+  , getRightObjNameMapping
+  , getObjectNacNameMorphism
+  , getObjectNameMorphism
+  ) where
 
 import Abstract.Morphism
 import Data.Char         (toLower)
@@ -10,44 +63,46 @@ import Graph.GraphMorphism
 import Graph.TypedGraphMorphism
 import XML.ParsedTypes
 
-getRuleMapping :: SndOrderRuleSide -> [Mapping]
-getRuleMapping (_,_,(_,_,_,x)) = x
-
 getLeftObjNameMapping :: SndOrderRuleSide -> SndOrderRuleSide -> [Mapping]
 getLeftObjNameMapping (_,_,(_,left,_,_)) (_,_,(_,right,_,_)) = getObjNameMapping left right
 
 getRightObjNameMapping :: SndOrderRuleSide -> SndOrderRuleSide -> [Mapping]
 getRightObjNameMapping (_,_,(_,_,left,_)) (_,_,(_,_,right,_)) = getObjNameMapping left right
-    
+
 getObjNameMapping :: ParsedTypedGraph -> ParsedTypedGraph -> [Mapping]
 getObjNameMapping (_,nodesL,edgesL) (_,nodesR,edgesR) = mapNodes ++ mapEdges
   where
     f id m = case m of
-               Just n -> [(id,n)]
-               Nothing -> []
-    fNodes = \(id,m,_) -> f id m
-    fEdges = \(id,m,_,_,_) -> f id m
-    nodesLMap = concatMap fNodes nodesL
-    nodesRMap = concatMap fNodes nodesR
-    edgesLMap = concatMap fEdges edgesL
-    edgesRMap = concatMap fEdges edgesR
+               Just n -> Just (id,n)
+               Nothing -> Nothing
     
-    getMap f = mapMaybe (\(id,n) -> case find2 n f of
-                                           Just x -> Just (x, Nothing, id)
-                                           Nothing -> Nothing)
-    mapNodes = getMap nodesRMap nodesLMap
-    mapEdges = getMap edgesRMap edgesLMap
+    fNodes (id,m,_) = f id m
+    fEdges (id,m,_,_,_) = f id m
+    
+    nodesLMap = mapMaybe fNodes nodesL
+    nodesRMap = mapMaybe fNodes nodesR
+    edgesLMap = mapMaybe fEdges edgesL
+    edgesRMap = mapMaybe fEdges edgesR
+    
+    getMap f = mapMaybe
+                 (\(id,n) -> case find2 n f of
+                    Just x -> Just (x, Nothing, id)
+                    Nothing -> Nothing)
+    
+    mapNodes = getMap (adjMono nodesRMap) nodesLMap
+    mapEdges = getMap (adjMono edgesRMap) edgesLMap
 
 find2 :: String -> [(String, String)] -> Maybe String
 find2 n list = case find (\(_,b) -> n == b) list of
                       Just (x,_) -> Just x
                       Nothing -> Nothing
 
-getLeftGraph :: SndOrderRuleSide -> ParsedTypedGraph
-getLeftGraph (_,_,(_,x,_,_)) = x
-
-getRightGraph :: SndOrderRuleSide -> ParsedTypedGraph
-getRightGraph (_,_,(_,_,x,_)) = x
+adjMono :: [(String, String)] -> [(String, String)]
+adjMono [] = []
+adjMono ((id,objName):xs) = newObjNames ++ (adjMono xs)
+  where
+    splitted = split "|" objName
+    newObjNames = map (\name -> (id,name)) splitted
 
 parseSndOrderRules :: [RuleWithNacs] -> [(SndOrderRuleSide,SndOrderRuleSide,[SndOrderRuleSide])]
 parseSndOrderRules rules = groupedRules
@@ -82,16 +137,26 @@ groupRules rules = map
     getRight list = fromMaybe (error "Second order rule without right") ((findSide "right") list)
     findSide str = find (\x -> side x == str)
 
-getObjetcNacNameMorphism :: GraphMorphism a b -> [Mapping]
-getObjetcNacNameMorphism m = nodesMap ++ edgesMap
+getObjectNacNameMorphism :: GraphMorphism a b -> [Mapping]
+getObjectNacNameMorphism m = nodesMap ++ edgesMap
   where
-    nodesMap = getMap applyNodeUnsafe (nodes (domain m))
-    edgesMap = getMap applyEdgeUnsafe (edges (domain m))
-    getMap f = map (\e -> (show e, Nothing, show (f m e)))
+    nodesMap = parseNonMonoObjNames (group (getMap applyNodeUnsafe (nodes (domain m))))
+    edgesMap = parseNonMonoObjNames (group (getMap applyEdgeUnsafe (edges (domain m))))
+    
+    getMap f = map (\e -> (show (f m e), Nothing, show e))
+    group = groupBy (\(x,_,_) (y,_,_) -> x == y)
+
+parseNonMonoObjNames :: [[Mapping]] -> [Mapping]
+parseNonMonoObjNames [] = []
+parseNonMonoObjNames (x:xs) = (a,b,newObjName) : (parseNonMonoObjNames xs)
+  where
+    (a,b,_) = head x
+    allObjNames = map (\(_,_,y) -> y) x
+    newObjName = join "|" allObjNames
 
 -- left and right must have the same domain
-getObjetcNameMorphism :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [Mapping]
-getObjetcNameMorphism left right = nodesMap ++ edgesMap
+getObjectNameMorphism :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [Mapping]
+getObjectNameMorphism left right = nodesMap ++ edgesMap
   where
     nodesMap = getMap applyNodeTGMUnsafe (nodesDomain left)
     edgesMap = getMap applyEdgeTGMUnsafe (edgesDomain left)

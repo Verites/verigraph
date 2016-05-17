@@ -360,15 +360,15 @@ writeSndOrderRule (name, sndOrderRule) =
             n)
        (zip (SO.nacs sndOrderRule) ([0..] :: [Int]))))
     where
-      objNameMapNacLeft n = getObjetcNacNameMorphism (mapping (mappingLeft n))
-      objNameMapNacRight n = getObjetcNacNameMorphism (mapping (mappingRight n))
-      objNameMapRightLeft = getObjetcNameMorphism (mappingLeft (SO.left sndOrderRule)) (mappingLeft (SO.right sndOrderRule))
-      objNameMapRightRight = getObjetcNameMorphism (mappingRight (SO.left sndOrderRule)) (mappingRight (SO.right sndOrderRule))
+      objNameMapNacLeft n = getObjectNacNameMorphism (mapping (mappingLeft n))
+      objNameMapNacRight n = getObjectNacNameMorphism (mapping (mappingRight n))
+      objNameMapRightLeft = getObjectNameMorphism (mappingLeft (SO.left sndOrderRule)) (mappingLeft (SO.right sndOrderRule))
+      objNameMapRightRight = getObjectNameMorphism (mappingRight (SO.left sndOrderRule)) (mappingRight (SO.right sndOrderRule))
       graphLRuleL = codomain (mappingLeft (SO.left sndOrderRule))
       graphRRuleL = codomain (mappingRight (SO.left sndOrderRule))
       twice f x = f x x
-      objNameMapLeftLeft = twice getObjetcNameMorphism (idMap graphLRuleL graphLRuleL)
-      objNameMapLeftRight = twice getObjetcNameMorphism (idMap graphRRuleL graphRRuleL)
+      objNameMapLeftLeft = twice getObjectNameMorphism (idMap graphLRuleL graphLRuleL)
+      objNameMapLeftRight = twice getObjectNameMorphism (idMap graphRRuleL graphRRuleL)
 
 writeSndOrderRuleSide :: ArrowXml a => String -> [Mapping] -> [Mapping] -> RuleMorphism b c -> a XmlTree XmlTree
 writeSndOrderRuleSide name objLeft objRight ruleMorphism = writeRule objLeft objRight [] (name, codomain ruleMorphism)

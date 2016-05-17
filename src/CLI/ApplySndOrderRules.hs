@@ -51,16 +51,20 @@ execute globalOpts opts = do
         onlyInj = if arbitraryMatches globalOpts then ALL else MONO
         newRules = applySndOrderRules onlyInj (GG.rules gg) (GG.sndOrderRules gg)
         testSndOrder = map (\(n,r) -> (n,newNacs r)) (GG.sndOrderRules gg)
-        nac = snd (head (GG.sndOrderRules gg))
+        rule = snd (head (GG.sndOrderRules gg))
         gg2 = GG.graphGrammar (GG.initialGraph gg) ((GG.rules gg) ++ newRules) testSndOrder--(GG.sndOrderRules gg)
         --rul = snd (head (GG.sndOrderRules gg))
     
     GW.writeGrammarFile gg2 ggName names (outputFile opts)
     
+    print (GG.rules gg)
+    print (head (nacs rule))
+    print (newNacsPairL rule)
+    
     putStrLn "Done!"
     putStrLn ""
 
-
+-- | Generates the minimal safety NACs of a 2-rule
 newNacs :: SO.SndOrderRule a b -> SO.SndOrderRule a b
 newNacs sndRule =
   production
@@ -68,11 +72,11 @@ newNacs sndRule =
     (SO.right sndRule)
     ((nacs sndRule) ++
      (newNacsProbL sndRule) ++
-     (newNacsProbR sndRule) ++
-     (newNacsPairL sndRule))
+     (newNacsProbR sndRule){- ++
+     (newNacsPairL sndRule)-})
 
 newNacsProbL :: SO.SndOrderRule a b -> [SO.RuleMorphism a b]
-newNacsProbL sndRule = map newNacProbL probL
+newNacsProbL sndRule = map (\x -> createNacProbL ruleL x (tp x)) probL
   where
     apply = applyNodeTGMUnsafe
     
@@ -93,22 +97,23 @@ newNacsProbL sndRule = map newNacProbL probL
                , orphanNode lb n
                , not (orphanNode lc (apply gl n))]
     
-    newNacProbL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
-      where
-        tp = GM.applyNodeUnsafe (codomain la) x
-        x' = head (newNodes (domain (domain (left ruleL))))
-        x'' = head (newNodes (domain (codomain (right ruleL))))
-        a = createNodeDomTGM x' tp x (left ruleL)
-        b = updateNodeRelationTGM x' x tp a
-        c = createNodeCodTGM x'' tp (right ruleL)
-        d = updateNodeRelationTGM x' x'' tp c
-        nacRule = graphRule b d []
-        mapL = idMap (codomain (left ruleL)) (codomain b)
-        mapK = idMap (domain (left ruleL)) (domain b)
-        mapR = idMap (codomain (right ruleL)) (codomain d)
+    tp = GM.applyNodeUnsafe (codomain la)
+
+createNacProbL :: GraphRule a b -> NodeId -> NodeId -> SO.RuleMorphism a b
+createNacProbL ruleL x tp = SO.ruleMorphism ruleL nacRule mapL mapK mapR
+  where
+    x' = head (newNodes (domain (domain (left ruleL))))
+    x'' = head (newNodes (domain (codomain (right ruleL))))
+    updateLeft = createNodeDomTGM x' tp x (left ruleL)
+    updateRightCod = createNodeCodTGM x'' tp (right ruleL)
+    updateRightMap = updateNodeRelationTGM x' x'' tp updateRightCod
+    nacRule = production updateLeft updateRightMap []
+    mapL = idMap (codomain (left ruleL)) (codomain updateLeft)
+    mapK = idMap (domain (left ruleL)) (domain updateLeft)
+    mapR = idMap (codomain (right ruleL)) (codomain updateRightMap)
 
 newNacsProbR :: SO.SndOrderRule a b -> [SO.RuleMorphism a b]
-newNacsProbR sndRule = map newNacProbR probR
+newNacsProbR sndRule = map (\x -> createNacProbR ruleL x (tp x)) probR
   where
     apply = applyNodeTGMUnsafe
     
@@ -129,19 +134,20 @@ newNacsProbR sndRule = map newNacProbR probR
                , orphanNode rb n
                , not (orphanNode rc (apply gr n))]
     
-    newNacProbR x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
-      where
-        tp = GM.applyNodeUnsafe (codomain ra) x
-        x' = head (newNodes (domain (domain (left ruleL))))
-        x'' = head (newNodes (domain (codomain (left ruleL))))
-        a = createNodeDomTGM x' tp x (right ruleL)
-        b = updateNodeRelationTGM x' x tp a
-        c = createNodeCodTGM x'' tp (left ruleL)
-        d = updateNodeRelationTGM x' x'' tp c
-        nacRule = graphRule b d []
-        mapL = idMap (codomain (left ruleL)) (codomain b)
-        mapK = idMap (domain (left ruleL)) (domain b)
-        mapR = idMap (codomain (right ruleL)) (codomain d)
+    tp = GM.applyNodeUnsafe (codomain ra)
+
+createNacProbR :: GraphRule a b -> NodeId -> NodeId -> SO.RuleMorphism a b
+createNacProbR ruleL x tp = SO.ruleMorphism ruleL nacRule mapL mapK mapR
+  where
+    x' = head (newNodes (domain (domain (left ruleL))))
+    x'' = head (newNodes (domain (codomain (left ruleL))))
+    updateRight = createNodeDomTGM x' tp x (right ruleL)
+    updateLeftCod = createNodeCodTGM x'' tp (left ruleL)
+    updateLeftMap = updateNodeRelationTGM x' x'' tp updateLeftCod
+    nacRule = production updateLeftMap updateRight []
+    mapL = idMap (codomain (left ruleL)) (codomain updateLeftMap)
+    mapK = idMap (domain (left ruleL)) (domain updateLeftMap)
+    mapR = idMap (codomain (right ruleL)) (codomain updateRight)
 
 newNacsPairL :: SO.SndOrderRule a b -> [SO.RuleMorphism a b]
 newNacsPairL sndRule = ret
@@ -173,7 +179,7 @@ newNacsPairL sndRule = ret
     
     createNac e = SO.ruleMorphism ruleL ruleNac e mapK mapR
       where
-        ruleNac = graphRule (compose (left ruleL) e) (right ruleL) []
+        ruleNac = production (compose (left ruleL) e) (right ruleL) []
         mapK = idMap (domain (left ruleL)) (domain (left ruleL))
         mapR = idMap (codomain (right ruleL)) (codomain (right ruleL))
 
