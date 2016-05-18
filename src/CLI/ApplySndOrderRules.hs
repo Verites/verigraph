@@ -57,9 +57,9 @@ execute globalOpts opts = do
     
     GW.writeGrammarFile gg2 ggName names (outputFile opts)
     
-    print (GG.rules gg)
-    print (head (nacs rule))
-    print (newNacsPairL rule)
+    --print (GG.rules gg)
+    --print (head (nacs rule))
+    --print (newNacsPairL rule)
     
     putStrLn "Done!"
     putStrLn ""

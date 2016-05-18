@@ -65,7 +65,7 @@ instance FindMorphism (RuleMorphism a b) where
 --
 -- (desconsidering the NACs)
 matchesSndOrder :: PROP -> GraphRule a b -> GraphRule a b -> [RuleMorphism a b]
-matchesSndOrder prop l g = {-error (show ((getAllMaps prop l g)!!3))-} filter valid (getAllMaps prop l g)
+matchesSndOrder prop l g = filter valid (getAllMaps prop l g)
 
 getAllMaps :: PROP -> GraphRule a b -> GraphRule a b -> [RuleMorphism a b]
 getAllMaps prop l g =
@@ -76,13 +76,24 @@ getAllMaps prop l g =
     matchesR <- matches prop (codomain (right l)) (codomain (right g))
     return $ f (matchesL, matchesK, matchesR)
 
+danglingSpan :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
+danglingSpan matchRuleSide matchMorp matchK l k = deletedNodesInK && deletedEdgesInK
+  where
+    deletedNodes = filter (ruleDeletes l matchMorp applyNodeTGM nodesDomain) (nodesCodomain matchMorp)
+    nodesInK = [a | a <- nodesDomain matchRuleSide, (applyNodeTGMUnsafe matchRuleSide a) `elem` deletedNodes]
+    deletedNodesInK = all (ruleDeletes k matchK applyNodeTGM nodesDomain) nodesInK
+    
+    deletedEdges = filter (ruleDeletes l matchMorp applyEdgeTGM edgesDomain) (edgesCodomain matchMorp)
+    edgesInK = [a | a <- edgesDomain matchRuleSide, (applyEdgeTGMUnsafe matchRuleSide a) `elem` deletedEdges]
+    deletedEdgesInK = all (ruleDeletes k matchK applyEdgeTGM edgesDomain) edgesInK
+
 instance DPO (RuleMorphism a b) where
-  satsGluing inj m left =
-    satsGluing inj (mappingLeft m)      (mappingLeft left)      &&
-    satsGluing inj (mappingInterface m) (mappingInterface left) &&
-    satsGluing inj (mappingRight m)     (mappingRight left)     &&
-    True && -- dangling span to do
-    True -- generates nacs
+  satsGluing inj m l =
+    satsGluing inj (mappingLeft m)      (mappingLeft l)      &&
+    satsGluing inj (mappingInterface m) (mappingInterface l) &&
+    satsGluing inj (mappingRight m)     (mappingRight l)     &&
+    danglingSpan (left (codomain m)) (mappingLeft m) (mappingInterface m) (mappingLeft l) (mappingInterface l) &&
+    danglingSpan (right (codomain m)) (mappingRight m) (mappingInterface m) (mappingRight l) (mappingInterface l)
 
   partiallyMonomorphic = error "partiallyMonomorphic not implemented for RuleMorphism"
 

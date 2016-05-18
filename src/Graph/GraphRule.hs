@@ -14,6 +14,8 @@ module Graph.GraphRule (
     , deletedEdges
     , createdNodes
     , createdEdges
+    
+    , ruleDeletes
 
     -- * Gluing condition
     , satsDelItems
