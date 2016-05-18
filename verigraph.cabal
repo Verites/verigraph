@@ -18,7 +18,34 @@ cabal-version:       >=1.22
 executable verigraph
   main-is:             CLI/Cli.hs
   ghc-options:         -O2 -Wall -fno-warn-name-shadowing -fno-warn-unused-do-bind
-  -- other-modules:       
+  other-modules:       Abstract.AdhesiveHLR
+                       Abstract.DPO
+                       Abstract.Morphism
+                       Abstract.Relation
+                       Abstract.Valid
+                       Analysis.ConcurrentRules
+                       Analysis.CriticalPairs
+                       Analysis.CriticalSequence
+                       CLI.ConcurrentRules
+                       CLI.CriticalPairAnalysis
+                       CLI.GlobalOptions
+                       Graph.EpiPairs
+                       Graph.FindMorphism
+                       Graph.Graph
+                       Graph.GraphGrammar
+                       Graph.GraphMorphism
+                       Graph.GraphRule
+                       Graph.TypedGraphMorphism
+                       Partitions.GPToVeri
+                       Partitions.GraphPart
+                       Partitions.VeriToGP
+                       XML.GGXParseIn
+                       XML.GGXParseOut
+                       XML.GGXReader
+                       XML.GGXWriter
+                       XML.ParsedTypes
+                       XML.XMLUtilities
+                           
   other-extensions:    TypeFamilies, MultiParamTypeClasses, FlexibleContexts
   build-depends:       base >=4.8 && <4.9,
 --                       cairo >=0.12 && <0.14,
