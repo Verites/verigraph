@@ -111,33 +111,82 @@
             <TaggedValue Tag="layer" TagValue="0"/>
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
-        <Rule ID="I29" formula="true" name="regraBoba">
-            <Graph ID="I31" kind="LHS" name="LeftOf_regraBoba"/>
-            <Graph ID="I32" kind="RHS" name="RightOf_regraBoba"/>
-            <Morphism comment="Formula: true" name="regraBoba"/>
+        <Rule ID="I29" formula="true" name="comMatch">
+            <Graph ID="I31" kind="LHS" name="LeftOf_regraBoba">
+                <Node ID="I32" type="I2">
+                    <NodeLayout X="76" Y="94"/>
+                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                </Node>
+                <Node ID="I33" type="I2">
+                    <NodeLayout X="212" Y="146"/>
+                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                </Node>
+                <Edge ID="I34" source="I32" target="I33" type="I3">
+                    <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                    <additionalLayout aktlength="200" force="10" preflength="200"/>
+                </Edge>
+            </Graph>
+            <Graph ID="I35" kind="RHS" name="RightOf_regraBoba">
+                <Node ID="I36" type="I2">
+                    <NodeLayout X="105" Y="90"/>
+                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                </Node>
+                <Node ID="I37" type="I2">
+                    <NodeLayout X="197" Y="146"/>
+                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                </Node>
+            </Graph>
+            <Morphism comment="Formula: true" name="comMatch">
+                <Mapping image="I36" orig="I32"/>
+                <Mapping image="I37" orig="I33"/>
+            </Morphism>
             <TaggedValue Tag="layer" TagValue="0"/>
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
-        <Rule ID="I33" formula="true" name="2rule_nac0_teste">
-            <Graph ID="I35" kind="LHS" name="Left">
-                <Node ID="I36" name="10|11" type="I2">
+        <Rule ID="I38" enabled="false" formula="true" name="2rule_nac0_teste">
+            <Graph ID="I40" kind="LHS" name="LeftOf_2rule_nac0_teste">
+                <Node ID="I41" name="10|11" type="I2">
                     <NodeLayout X="108" Y="111"/>
-                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Edge ID="I37" name="31" source="I36" target="I36" type="I3">
+                <Edge ID="I42" name="31" source="I41" target="I41" type="I3">
                     <EdgeLayout bendX="34" bendY="86" loopH="20"
                         loopW="20" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
             </Graph>
-            <Graph ID="I38" kind="RHS" name="Right">
-                <Node ID="I39" name="20|21" type="I2">
+            <Graph ID="I43" kind="RHS" name="RightOf_2rule_nac0_teste">
+                <Node ID="I44" name="20|21" type="I2">
                     <NodeLayout X="130" Y="79"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+            </Graph>
+            <Morphism comment="Formula: true" name="2rule_nac0_teste">
+                <Mapping image="I44" orig="I41"/>
+            </Morphism>
+            <TaggedValue Tag="layer" TagValue="0"/>
+            <TaggedValue Tag="priority" TagValue="0"/>
+        </Rule>
+        <Rule ID="I45" formula="true" name="semMatch">
+            <Graph ID="I47" kind="LHS" name="Left">
+                <Node ID="I48" type="I2">
+                    <NodeLayout X="170" Y="178"/>
+                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                </Node>
+                <Edge ID="I49" source="I48" target="I48" type="I3">
+                    <EdgeLayout bendX="116" bendY="153" loopH="20"
+                        loopW="20" textOffsetX="0" textOffsetY="-22"/>
+                    <additionalLayout aktlength="200" force="10" preflength="200"/>
+                </Edge>
+            </Graph>
+            <Graph ID="I50" kind="RHS" name="Right">
+                <Node ID="I51" type="I2">
+                    <NodeLayout X="170" Y="178"/>
                     <additionalLayout age="0" force="10" frozen="false" zone="50"/>
                 </Node>
             </Graph>
-            <Morphism name="2rule_nac0_teste">
-                <Mapping image="I39" orig="I36"/>
+            <Morphism name="semMatch">
+                <Mapping image="I51" orig="I48"/>
             </Morphism>
             <TaggedValue Tag="layer" TagValue="0"/>
             <TaggedValue Tag="priority" TagValue="0"/>

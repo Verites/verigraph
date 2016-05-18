@@ -17,95 +17,104 @@
         <TaggedValue Tag="TypeGraphLevel" TagValue="ENABLED"/>
         <Types>
             <NodeType ID="I2" abstract="false" name="%:RECT:java.awt.Color[r=0,g=0,b=0]:[NODE]:"/>
-            <Graph ID="I3" kind="TG" name="TypeGraph">
-                <Node ID="I4" type="I2">
+            <EdgeType ID="I3" abstract="false" name="%:SOLID_LINE:java.awt.Color[r=0,g=0,b=0]:[EDGE]:"/>
+            <Graph ID="I4" kind="TG" name="TypeGraph">
+                <Node ID="I5" type="I2">
                     <NodeLayout X="239" Y="88"/>
-                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
+                <Edge ID="I6" source="I5" target="I5" type="I3">
+                    <EdgeLayout bendX="214" bendY="63" loopH="20"
+                        loopW="20" sourceMultiplicityOffsetX="5"
+                        sourceMultiplicityOffsetY="15"
+                        targetMultiplicityOffsetX="-6"
+                        targetMultiplicityOffsetY="7" textOffsetX="0" textOffsetY="-22"/>
+                    <additionalLayout aktlength="200" force="10" preflength="200"/>
+                </Edge>
             </Graph>
         </Types>
-        <Graph ID="I5" kind="HOST" name="Graph"/>
-        <Rule ID="I6" formula="true" name="2rule_left_r1">
-            <Graph ID="I8" kind="LHS" name="Left">
-                <Node ID="I9" name="10" type="I2">
+        <Graph ID="I7" kind="HOST" name="Graph"/>
+        <Rule ID="I8" formula="true" name="2rule_left_r1">
+            <Graph ID="I10" kind="LHS" name="LeftOf_2rule_left_r1">
+                <Node ID="I11" name="10" type="I2">
                     <NodeLayout X="87" Y="137"/>
-                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I10" name="12" type="I2">
+                <Node ID="I12" name="12" type="I2">
                     <NodeLayout X="140" Y="140"/>
-                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I11" name="13" type="I2">
+                <Node ID="I13" name="13" type="I2">
                     <NodeLayout X="95" Y="196"/>
-                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I12" name="14" type="I2">
+                <Node ID="I14" name="14" type="I2">
                     <NodeLayout X="170" Y="197"/>
-                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
             </Graph>
-            <Graph ID="I13" kind="RHS" name="Right">
-                <Node ID="I14" name="10" type="I2">
+            <Graph ID="I15" kind="RHS" name="RightOf_2rule_left_r1">
+                <Node ID="I16" name="10" type="I2">
                     <NodeLayout X="87" Y="137"/>
-                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I15" type="I2">
+                <Node ID="I17" type="I2">
                     <NodeLayout X="140" Y="140"/>
-                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
             </Graph>
-            <Morphism name="2rule_left_r1">
-                <Mapping image="I14" orig="I9"/>
-                <Mapping image="I15" orig="I10"/>
+            <Morphism comment="Formula: true" name="2rule_left_r1">
+                <Mapping image="I16" orig="I11"/>
+                <Mapping image="I17" orig="I12"/>
             </Morphism>
             <TaggedValue Tag="layer" TagValue="0"/>
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
-        <Rule ID="I16" formula="true" name="2rule_right_r1">
-            <Graph ID="I18" kind="LHS" name="Left">
-                <Node ID="I19" name="10" type="I2">
+        <Rule ID="I18" formula="true" name="2rule_right_r1">
+            <Graph ID="I20" kind="LHS" name="LeftOf_2rule_right_r1">
+                <Node ID="I21" name="10" type="I2">
                     <NodeLayout X="94" Y="70"/>
-                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I20" name="12" type="I2">
+                <Node ID="I22" name="12" type="I2">
                     <NodeLayout X="159" Y="70"/>
-                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I21" name="13" type="I2">
-                    <NodeLayout X="86" Y="101"/>
-                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                <Node ID="I23" name="13" type="I2">
+                    <NodeLayout X="93" Y="134"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I22" name="14" type="I2">
-                    <NodeLayout X="142" Y="107"/>
-                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
-                </Node>
-            </Graph>
-            <Graph ID="I23" kind="RHS" name="Right">
-                <Node ID="I24" name="10" type="I2">
-                    <NodeLayout X="94" Y="70"/>
-                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
-                </Node>
-                <Node ID="I25" type="I2">
-                    <NodeLayout X="86" Y="101"/>
-                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
-                </Node>
-                <Node ID="I26" type="I2">
-                    <NodeLayout X="142" Y="107"/>
-                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                <Node ID="I24" name="14" type="I2">
+                    <NodeLayout X="165" Y="139"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
             </Graph>
-            <Morphism name="2rule_right_r1">
-                <Mapping image="I24" orig="I19"/>
-                <Mapping image="I25" orig="I21"/>
-                <Mapping image="I26" orig="I22"/>
+            <Graph ID="I25" kind="RHS" name="RightOf_2rule_right_r1">
+                <Node ID="I26" name="10" type="I2">
+                    <NodeLayout X="82" Y="47"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+                <Node ID="I27" type="I2">
+                    <NodeLayout X="83" Y="116"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+                <Node ID="I28" type="I2">
+                    <NodeLayout X="152" Y="121"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+            </Graph>
+            <Morphism comment="Formula: true" name="2rule_right_r1">
+                <Mapping image="I26" orig="I21"/>
+                <Mapping image="I27" orig="I23"/>
+                <Mapping image="I28" orig="I24"/>
             </Morphism>
             <TaggedValue Tag="layer" TagValue="0"/>
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
-        <Rule ID="I27" formula="true" name="r2">
-            <Graph ID="I29" kind="LHS" name="Left"/>
-            <Graph ID="I30" kind="RHS" name="Right"/>
-            <Morphism name="r2"/>
+        <Rule ID="I29" formula="true" name="r2">
+            <Graph ID="I31" kind="LHS" name="LeftOf_r2"/>
+            <Graph ID="I32" kind="RHS" name="RightOf_r2"/>
+            <Morphism comment="Formula: true" name="r2"/>
             <TaggedValue Tag="layer" TagValue="0"/>
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
