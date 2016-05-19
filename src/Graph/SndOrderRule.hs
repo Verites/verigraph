@@ -1,4 +1,8 @@
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Graph.SndOrderRule (
     SndOrderRule
@@ -100,11 +104,11 @@ newNacsProb side sndRule = nacNodes ++ nacEdges
                , orphanEdge sb n
                , not (orphanEdge sc (applyEdge g n))]
     
-    nacNodes = map (\x -> createNacNodeProb side ruleL x) nodeProb
-    nacEdges = map (\x -> createNacEdgeProb side ruleL x) edgeProb
+    nacNodes = map (\x -> createNacProb side ruleL (Left x)) nodeProb
+    nacEdges = map (\x -> createNacProb side ruleL (Right x)) edgeProb
 
-createNacNodeProb :: Side -> GraphRule a b -> NodeId -> SO.RuleMorphism a b
-createNacNodeProb side ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
+createNacProb :: Side -> GraphRule a b -> Either NodeId EdgeId -> SO.RuleMorphism a b
+createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
   where    
     l = left ruleL
     r = right ruleL
@@ -113,85 +117,70 @@ createNacNodeProb side ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
     graphK = domain l
     graphR = codomain r
     
-    tp = GM.applyNodeUnsafe graphL x
+    src = G.sourceOfUnsafe (domain graphL)
+    tgt = G.targetOfUnsafe (domain graphL)
     
-    (graphSide, side1, side2) =
-      case side of
+    tpNode = GM.applyNodeUnsafe graphL
+    tpEdge = GM.applyEdgeUnsafe graphL
+    
+    (graphSide, side, otherSide) =
+      case sideChoose of
         LeftSide -> (graphR, l, r)
         RightSide -> (graphL, r, l)
     
-    x' = head (newNodes (domain graphK))
-    x'' = head (newNodes (domain graphSide))
+    typeSrc x = GM.applyNodeUnsafe graphL (src x)
+    typeTgt x = GM.applyNodeUnsafe graphL (tgt x)
     
-    updateSide1 = createNodeDomTGM x' tp x side1
-    updateSide2Cod = createNodeCodTGM x'' tp side2
-    updateSide2Map = updateNodeRelationTGM x' x'' tp updateSide2Cod
+    n' = head (newNodes (domain graphK))
+    n'' = head (newNodes (domain graphSide))
     
-    nacRule = production updateSide1 updateSide2Map []
-    mapL = idMap graphL (codomain updateSide1)
-    mapK = idMap graphK (domain updateSide1)
-    mapR = idMap graphR (codomain updateSide2Map)
-
-createNacEdgeProb :: Side -> GraphRule a b -> EdgeId -> SO.RuleMorphism a b
-createNacEdgeProb side ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
-  where
-    l = left ruleL
-    r = right ruleL
-    
-    graphL = codomain l
-    graphK = domain l
-    graphR = codomain r
-    
-    src = G.sourceOfUnsafe (domain graphL) x
-    tgt = G.targetOfUnsafe (domain graphL) x
-    
-    tp = GM.applyEdgeUnsafe graphL x
-    
-    (graphSide, side1, side2) =
-      case side of
-        LeftSide -> (graphR, l, r)
-        RightSide -> (graphL, r, l)
-    
-    typeSrc = GM.applyNodeUnsafe graphL src
-    typeTgt = GM.applyNodeUnsafe graphL tgt
-    
-    x' = head (newEdges (domain graphK))
-    x'' = head (newEdges (domain graphSide))
+    e' = head (newEdges (domain graphK))
+    e'' = head (newEdges (domain graphSide))
     
     newNodesK = newNodes (domain graphK)
     newNodesSide = newNodes (domain graphSide)
     
-    invertSide1 = invertTGM side1
+    invertSide = invertTGM side
     
-    srcInK = case applyNodeTGM invertSide1 src of
-                    Just x -> x
-                    Nothing -> newNodesK !! 0
-    tgtInK = case applyNodeTGM invertSide1 tgt of
-                    Just x -> x
-                    Nothing -> newNodesK !! 1
+    srcInK x = case applyNodeTGM invertSide (src x) of {Just y -> y; Nothing -> newNodesK !! 0}
+    tgtInK x = case applyNodeTGM invertSide (tgt x) of {Just y -> y; Nothing -> newNodesK !! 1}
+    srcInR x = case applyNodeTGM otherSide (srcInK x) of {Just y -> y; Nothing -> newNodesSide !! 0}
+    tgtInR x = case applyNodeTGM otherSide (tgtInK x) of {Just y -> y; Nothing -> newNodesSide !! 1}
     
-    srcInR = case applyNodeTGM side2 srcInK of
-                    Just x -> x
-                    Nothing -> newNodesSide !! 0
-    tgtInR = case applyNodeTGM side2 tgtInK of
-                    Just x -> x
-                    Nothing -> newNodesSide !! 1
+    (updateLeft, updateRight) =
+      (case x of 
+         (Left n) -> createNodes n n' n'' (tpNode n)
+         (Right e) -> createEdges e e' e'' (tpEdge e)
+                        (src e) (typeSrc e) (srcInK e) (srcInR e)
+                        (tgt e) (typeTgt e) (tgtInK e) (tgtInR e))
+        side otherSide
     
-    srcRight = createNodeCodTGM srcInR typeSrc side2
-    tgtRight = createNodeCodTGM tgtInR typeTgt srcRight
-    updateRight = createNodeDomTGM srcInK typeSrc srcInR tgtRight
-    updateRight2 = createNodeDomTGM tgtInK typeTgt tgtInR updateRight
-    updateRightCod = createEdgeCodTGM x'' srcInR tgtInR tp updateRight2
-    updateRightMap = createEdgeDomTGM x' srcInK tgtInK tp x'' updateRightCod
-    
-    updateLeft = createNodeDomTGM srcInK typeSrc src side1
-    updateLeft2 = createNodeDomTGM tgtInK typeTgt tgt updateLeft    
-    updateLeftEdge = createEdgeDomTGM x' srcInK tgtInK tp x updateLeft2
-    
-    nacRule = production updateLeftEdge updateRightMap []
+    nacRule = production updateLeft updateRight []
     mapL = idMap graphL (codomain updateLeft)
     mapK = idMap graphK (domain updateLeft)
-    mapR = idMap graphR (codomain updateRightMap)
+    mapR = idMap graphR (codomain updateRight)
+
+    createNodes x x' x'' tp side otherSide = (updateSide1, updateSide2Map)
+      where
+        updateSide1 = createNodeDomTGM x' tp x side
+        updateSide2Cod = createNodeCodTGM x'' tp otherSide
+        updateSide2Map = updateNodeRelationTGM x' x'' tp updateSide2Cod
+    
+    createEdges x x' x'' tp
+        src typeSrc srcInK srcInR
+        tgt typeTgt tgtInK tgtInR
+        side otherSide = (updateLeftEdge, updateRightMap)
+      where
+        srcRight = createNodeCodTGM srcInR typeSrc otherSide
+        tgtRight = createNodeCodTGM tgtInR typeTgt srcRight
+        updateRight = createNodeDomTGM srcInK typeSrc srcInR tgtRight
+        updateRight2 = createNodeDomTGM tgtInK typeTgt tgtInR updateRight
+        updateRightCod = createEdgeCodTGM x'' srcInR tgtInR tp updateRight2
+        updateRightMap = createEdgeDomTGM x' srcInK tgtInK tp x'' updateRightCod
+        
+        updateLeft = createNodeDomTGM srcInK typeSrc src side
+        updateLeft2 = createNodeDomTGM tgtInK typeTgt tgt updateLeft    
+        updateLeftEdge = createEdgeDomTGM x' srcInK tgtInK tp x updateLeft2
 
 {-newNacsPairL :: SndOrderRule a b -> [SO.RuleMorphism a b]
 newNacsPairL sndRule = map createNac ret
@@ -224,13 +213,13 @@ newNacsPairL sndRule = map createNac ret
       where
         ruleNac = production (compose (left ruleL) e) (right ruleL) []
         mapK = idMap (domain (left ruleL)) (domain (left ruleL))
-        mapR = idMap (codomain (right ruleL)) (codomain (right ruleL))
+        mapR = idMap (codomain (right ruleL)) (codomain (right ruleL))-}
 
 calculateAllPartitions :: GM.TypedGraph a b -> [TypedGraphMorphism a b]
 calculateAllPartitions graph = map fst (createPairs inj graph graphNull)
   where
     inj = False
-    graphNull = GM.empty G.empty G.empty-}
+    graphNull = GM.empty G.empty G.empty
 
 orphanNode :: TypedGraphMorphism a b -> NodeId -> Bool
 orphanNode m n = n `elem` (orphanNodesTyped m)
