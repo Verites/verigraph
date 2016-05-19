@@ -164,20 +164,18 @@ satsGluingAndNacs nacInj inj rule m = gluingCond && nacsCondition
         nacsCondition = satsNacs nacInj inj rule m
 
 satsOneNacInj :: FindMorphism m => m -> m -> Bool
-satsOneNacInj m nac = all (==False) check
+satsOneNacInj m nac = null checkCompose
    where
-      check = map monomorphism checkCompose --waiting for fix findMorphism
       checkCompose = filter (\x -> compose nac x == m) nacMatches
-      nacMatches = matches ALL typeNac typeG
+      nacMatches = matches MONO typeNac typeG
       typeNac = codomain nac
       typeG   = codomain m
 
 satsOneNacPartInj :: DPO m => m -> m -> Bool
-satsOneNacPartInj m nac = all (==False) check
+satsOneNacPartInj m nac = null checkCompose
    where
-      check = map (partiallyMonomorphic nac) checkCompose
       checkCompose = filter (\x -> compose nac x == m) matches
-      matches = partInjMatches nac m --generating some non partial injective matches
+      matches = partInjMatches nac m
 
 -- | Inverts a production, adjusting the NACs accordingly
 inverse :: DPO m => Bool -> Production m -> Production m
