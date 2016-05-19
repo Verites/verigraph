@@ -5,10 +5,6 @@ module Graph.GraphRule (
     -- * Types
       GraphRule
     -- * Basic Functions
-    , graphRule
-    , left
-    , right
-    , nacs
     , inverseWithoutNacs
     , deletedNodes
     , deletedEdges
@@ -38,10 +34,6 @@ instance Eq (GraphRule a b) where
     x == y =
       left x == left y &&
       right x == right y
-
--- | Create a rule based on both typed graph morphisms and a list of NAC's.
-graphRule :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b] -> GraphRule a b
-graphRule = production
 
 -- | Return the nodes deleted by a rule
 deletedNodes :: GraphRule a b -> [G.NodeId]

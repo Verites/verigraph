@@ -5,6 +5,7 @@ module XML.GGXWriter
    writeGrammarFile
  ) where
 
+import           Abstract.DPO
 import           Abstract.Morphism         (codomain)
 import qualified Analysis.CriticalPairs    as CP
 import qualified Analysis.CriticalSequence as CS
@@ -16,7 +17,7 @@ import qualified Graph.GraphRule           as GR
 import qualified Graph.SndOrderRule        as SO
 import           Graph.RuleMorphism
 import           Graph.TypedGraphMorphism
-import           Text.XML.HXT.Core
+import           Text.XML.HXT.Core         hiding (left,right)
 import           XML.GGXParseOut
 import           XML.ParsedTypes
 import           XML.ParseSndOrderRule
@@ -342,26 +343,26 @@ writeSndOrderRule (name, sndOrderRule) =
     ("2rule_left_" ++ name)
     objNameMapLeftLeft
     objNameMapLeftRight
-    (SO.left sndOrderRule)] ++
+    (left sndOrderRule)] ++
   [writeSndOrderRuleSide
     ("2rule_right_" ++ name)
     objNameMapRightLeft
     objNameMapRightRight
-    (SO.right sndOrderRule)] ++
+    (right sndOrderRule)] ++
   (map (\(n,idx) ->
           writeSndOrderRuleSide
             ("2rule_nac" ++ show idx ++ "_" ++ name)
             (objNameMapNacLeft n)
             (objNameMapNacRight n)
             n)
-       (zip (SO.nacs sndOrderRule) ([0..] :: [Int]))))
+       (zip (nacs sndOrderRule) ([0..] :: [Int]))))
     where
       objNameMapNacLeft n = getObjectNacNameMorphism (mapping (mappingLeft n))
       objNameMapNacRight n = getObjectNacNameMorphism (mapping (mappingRight n))
-      objNameMapRightLeft = getObjectNameMorphism (mappingLeft (SO.left sndOrderRule)) (mappingLeft (SO.right sndOrderRule))
-      objNameMapRightRight = getObjectNameMorphism (mappingRight (SO.left sndOrderRule)) (mappingRight (SO.right sndOrderRule))
-      graphLRuleL = codomain (mappingLeft (SO.left sndOrderRule))
-      graphRRuleL = codomain (mappingRight (SO.left sndOrderRule))
+      objNameMapRightLeft = getObjectNameMorphism (mappingLeft (left sndOrderRule)) (mappingLeft (right sndOrderRule))
+      objNameMapRightRight = getObjectNameMorphism (mappingRight (left sndOrderRule)) (mappingRight (right sndOrderRule))
+      graphLRuleL = codomain (mappingLeft (left sndOrderRule))
+      graphRRuleL = codomain (mappingRight (left sndOrderRule))
       twice f x = f x x
       objNameMapLeftLeft = twice getObjectNameMorphism (idMap graphLRuleL graphLRuleL)
       objNameMapLeftRight = twice getObjectNameMorphism (idMap graphRRuleL graphRRuleL)

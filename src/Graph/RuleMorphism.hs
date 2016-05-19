@@ -128,7 +128,7 @@ instance AdhesiveHLR (RuleMorphism a b) where
        (matchR', leftR') = poc matchR leftR
        l = commutingMorphismSameDomain matchK' (compose (left ruleK) matchL')
        r = commutingMorphismSameDomain matchK' (compose (right ruleK) matchR')
-       newRule = graphRule l r []
+       newRule = production l r []
        k = RuleMorphism ruleK newRule matchL' matchK' matchR'
        l' = RuleMorphism newRule ruleG leftL' leftK' leftR'
   
@@ -140,7 +140,7 @@ instance AdhesiveHLR (RuleMorphism a b) where
        (matchR', rightR') = po matchR rightR
        l = commutingMorphismSameDomain matchK' (compose (left ruleR) matchL')
        r = commutingMorphismSameDomain matchK' (compose (right ruleR) matchR')
-       newRule = graphRule l r []
+       newRule = production l r []
        m' = RuleMorphism ruleR newRule matchL' matchK' matchR'
        r' = RuleMorphism ruleD newRule rightL' rightK' rightR'
   

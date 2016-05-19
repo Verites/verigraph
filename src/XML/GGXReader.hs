@@ -10,6 +10,7 @@ module XML.GGXReader
    instantiateSpan
    ) where
 
+import           Abstract.DPO
 import           Abstract.Morphism
 import           Abstract.Valid
 import qualified Data.List                as L
@@ -20,7 +21,7 @@ import qualified Graph.GraphGrammar       as GG
 import           Graph.GraphMorphism      as GM
 import           Graph.GraphRule          as GR
 import           Graph.TypedGraphMorphism
-import           Text.XML.HXT.Core
+import           Text.XML.HXT.Core        hiding (left,right)
 import           XML.GGXParseIn
 import           XML.GGXSndOrderReader
 import           XML.ParsedTypes
@@ -49,7 +50,7 @@ readGrammar fileName = do
 
   let typeGraph = if L.null rules
                     then error "Not found first order rules, at least one is needed"
-                    else codomain . domain . GR.left $ head rules
+                    else codomain . domain . left $ head rules
       initGraph = GM.empty typeGraph typeGraph
       sndOrderRules = instantiateSndOrderRules parsedTypeGraph sndOrdRules
   
@@ -112,7 +113,7 @@ lookupNodes nodes n = fromMaybe
     changeToListOfPairs = map (\(x,_,y) -> (x,y)) nodes
 
 instantiateRule :: ParsedTypeGraph -> RuleWithNacs -> GraphRule a b
-instantiateRule typeGraph ((_, lhs, rhs, mappings), nacs) = graphRule lhsTgm rhsTgm nacsTgm
+instantiateRule typeGraph ((_, lhs, rhs, mappings), nacs) = production lhsTgm rhsTgm nacsTgm
   where
     tg = instantiateTypeGraph typeGraph
     lm = instantiateTypedGraph lhs tg

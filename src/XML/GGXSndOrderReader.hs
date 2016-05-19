@@ -29,13 +29,13 @@ instantiateSndOrderRule typegraph (l@(_,nameL,leftL),r@(_,_,rightR), n) = (nameL
     nacs = map (instantiateSndOrderNac (l,ruleLeft)) (zip n nacsRules)
 
 instantiateSndOrderNac :: (SndOrderRuleSide, GraphRule a b) -> (SndOrderRuleSide, GraphRule a b) -> RuleMorphism a b
-instantiateSndOrderNac (parsedLeft, left) (n, nacRule) = ruleMorphism left nacRule nacL nacK nacR
+instantiateSndOrderNac (parsedLeft, l) (n, nacRule) = ruleMorphism l nacRule nacL nacK nacR
   where
     mapL = SO.getLeftObjNameMapping parsedLeft n
     mapR = SO.getRightObjNameMapping parsedLeft n
-    nacL = instantiateNacMorphisms (codomain (GR.left left)) (codomain (GR.left nacRule)) mapL
-    nacK = instantiateNacMorphisms (domain (GR.left left)) (domain (GR.left nacRule)) mapL
-    nacR = instantiateNacMorphisms (codomain (GR.right left)) (codomain (GR.right nacRule)) mapR
+    nacL = instantiateNacMorphisms (codomain (left l)) (codomain (left nacRule)) mapL
+    nacK = instantiateNacMorphisms (domain (left l)) (domain (left nacRule)) mapL
+    nacR = instantiateNacMorphisms (codomain (right l)) (codomain (right nacRule)) mapR
 
 instantiateNacMorphisms :: TypedGraph a b -> TypedGraph a b
                         -> [Mapping] -> TypedGraphMorphism a b
@@ -51,21 +51,21 @@ instantiateNacMorphisms graphL graphN mapping = typedMorphism graphL graphN maps
 instantiateRuleMorphisms :: (SndOrderRuleSide, GraphRule a b)
                          -> (SndOrderRuleSide, GraphRule a b)
                          -> (RuleMorphism a b , RuleMorphism a b)
-instantiateRuleMorphisms (parsedLeft, left) (parsedRight, right) =
-  (ruleMorphism ruleK left leftKtoLeftL interfaceKtoL rightKtoRightL,
-   ruleMorphism ruleK right leftKtoLeftR interfaceKtoR rightKtoRightR)
+instantiateRuleMorphisms (parsedLeft, l) (parsedRight, r) =
+  (ruleMorphism ruleK l leftKtoLeftL interfaceKtoL rightKtoRightL,
+   ruleMorphism ruleK r leftKtoLeftR interfaceKtoR rightKtoRightR)
     where
-      graphKRuleL = domain (GR.left left)
-      graphKRuleR = domain (GR.left right)
-      graphLRuleL = codomain (GR.left left)
-      graphLRuleR = codomain (GR.left right)
-      graphRRuleL = codomain (GR.right left)
-      graphRRuleR = codomain (GR.right right)
+      graphKRuleL = domain (left l)
+      graphKRuleR = domain (left r)
+      graphLRuleL = codomain (left l)
+      graphLRuleR = codomain (left r)
+      graphRRuleL = codomain (right l)
+      graphRRuleR = codomain (right r)
       
       mappingBetweenLeft = SO.getLeftObjNameMapping parsedLeft parsedRight
       mappingBetweenRight = SO.getRightObjNameMapping parsedLeft parsedRight
       
-      ruleK = graphRule leftK rightK []
+      ruleK = production leftK rightK []
       
       graphLRuleK = domain leftKtoLeftL
       graphRRuleK = domain rightKtoRightL
