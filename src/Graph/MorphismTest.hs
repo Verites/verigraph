@@ -383,7 +383,7 @@ main = do
                                else error "Preliminary tests failed"
   if errors' == 0 && fails' == 0
     then print "All Tests Passed"
-    else error "Efective tests failed"
+    else error "Effective tests failed"
   
 
   return ()
