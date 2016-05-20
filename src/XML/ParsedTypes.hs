@@ -1,9 +1,9 @@
 module XML.ParsedTypes where
 
 type ParsedNode = String -- NodeId
-type ParsedTypedNode = (String, String) -- (NodeId, NodeType)
+type ParsedTypedNode = (String, Maybe String, String) -- (NodeId, name, NodeType)
 type ParsedEdge = (String, String, String)
-type ParsedTypedEdge = (String, String, String, String)
+type ParsedTypedEdge = (String, Maybe String, String, String, String) -- (id, name, type, src, tgt)
 type ParsedGraph = (String, [ParsedNode], [ParsedEdge])
 type ParsedTypedGraph = (String, [ParsedTypedNode], [ParsedTypedEdge])
 type ParsedRule = (String, String, ParsedTypedGraph,
@@ -11,10 +11,17 @@ type ParsedRule = (String, String, ParsedTypedGraph,
                    ([ParsedTypedNode], [ParsedTypedEdge]), [ParsedNAC])
 type ParsedNAC = ([ParsedTypedNode], [ParsedTypedEdge])
 
-type TypeGraph = ([ParsedTypedNode], [ParsedTypedEdge])
+type ParsedTypeGraph = ([ParsedTypedNode], [ParsedTypedEdge])
 type Rule = (String, ParsedTypedGraph, ParsedTypedGraph, [Mapping])
 type RuleWithNacs = (Rule,[Nac])
-type Mapping = (String, String) -- (image, orig)A
+
+-- (side, name, rule)
+type SndOrderRuleSide = (String, String, Rule)
+
+-- Maybe indicates different prefixes,
+-- if is Nothing uses default prefix,
+-- otherwise uses Just prefix
+type Mapping = (String, Maybe String, String) -- (image, orig prefix, orig)
 type Nac = (ParsedTypedGraph, [Mapping])
 
 type ConflictMorphism = (ParsedTypedGraph,[Mapping],[Mapping],String,String)

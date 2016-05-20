@@ -1,6 +1,3 @@
-
-{-# LANGUAGE NoMonomorphismRestriction #-}
-
 module XML.GGXReader
  ( readGrammar,
    readGGName,
@@ -9,23 +6,27 @@ module XML.GGXReader
    readTypeGraph,
    readRules,
    readSequences,
-   instantiateRule
+   instantiateRule,
+   instantiateSpan
    ) where
 
+import           Abstract.DPO
 import           Abstract.Morphism
 import           Abstract.Valid
 import qualified Data.List                as L
-import           Data.Maybe               (fromJust, mapMaybe)
+import           Data.Maybe               (fromMaybe, mapMaybe)
+import           Data.String.Utils        (startswith)
 import qualified Graph.Graph              as G
 import qualified Graph.GraphGrammar       as GG
 import           Graph.GraphMorphism      as GM
 import           Graph.GraphRule          as GR
 import           Graph.TypedGraphMorphism
-import           Text.Read                (readMaybe)
-import           Text.XML.HXT.Core
+import           Text.XML.HXT.Core        hiding (left,right)
 import           XML.GGXParseIn
+import           XML.GGXSndOrderReader
 import           XML.ParsedTypes
 import           XML.XMLUtilities
+import           XML.Utilities
 
 readGrammar :: String -> IO (GG.GraphGrammar a b)
 readGrammar fileName = do
@@ -36,20 +37,24 @@ readGrammar fileName = do
   _ <- parsedTypeGraph `seq` return ()
 
   parsedRules <- readRules fileName
-
-  let rulesNames = map (\((x,_,_,_),_) -> x) parsedRules
-      rules = map (instantiateRule parsedTypeGraph) parsedRules
-
+  
+  let (sndOrdRules, fstOrdRules) = L.partition (\((x,_,_,_),_) -> startswith "2rule_" x) parsedRules
+      rulesNames = map (\((x,_,_,_),_) -> x) fstOrdRules
+      rules = map (instantiateRule parsedTypeGraph) fstOrdRules
+  
   _ <- (case L.elemIndices False (map valid rules) of
           []  -> []
           [a] -> error $ "Rule " ++ show a ++ " is not valid"
           l   -> error $ "Rules " ++ show l ++ " are not valid"
           ) `seq` return ()
 
-  let typeGraph = codomain . domain . GR.left $ head rules
+  let typeGraph = if L.null rules
+                    then error "Not found first order rules, at least one is needed"
+                    else codomain . domain . left $ head rules
       initGraph = GM.empty typeGraph typeGraph
-
-  return $ GG.graphGrammar initGraph (zip rulesNames rules)
+      sndOrderRules = instantiateSndOrderRules parsedTypeGraph sndOrdRules
+  
+  return $ GG.graphGrammar initGraph (zip rulesNames rules) sndOrderRules
 
 readGGName :: String -> IO String
 readGGName fileName = do
@@ -66,7 +71,7 @@ readNames fileName = (++) <$> readTypeNames fileName <*> readNacNames fileName
 readName :: String -> IO [String]
 readName fileName = runX (parseXML fileName >>> parseGGName)
 
-readTypeGraph :: String -> IO[TypeGraph]
+readTypeGraph :: String -> IO[ParsedTypeGraph]
 readTypeGraph fileName = runX (parseXML fileName >>> parseTypeGraph)
 
 readNacNames :: String -> IO [(String,String)]
@@ -88,86 +93,99 @@ expandSequence grammar (name,s) = (name, mapMaybe lookupRule . concat $ map expa
     expandItens (i, r) = replicate i r
     lookupRule name = L.lookup name (GG.rules grammar)
 
-instantiateRule :: TypeGraph -> RuleWithNacs -> GraphRule a b
-instantiateRule typeGraph ((_, lhs, rhs, mappings), nacs) = graphRule lhsTgm rhsTgm nacsTgm
+instantiateTypeGraph :: ParsedTypeGraph -> G.Graph a b
+instantiateTypeGraph (nodes, edges) = graphWithEdges
+  where
+    getNodeType = G.NodeId . toN . (lookupNodes nodes)
+    trd (_,_,x) = x
+    
+    nodesId = map (G.NodeId . toN . trd) nodes
+    edgesId = map (\(_, _, typ, src, tgt) -> ((G.EdgeId . toN) typ, getNodeType src, getNodeType tgt)) edges
+    
+    graphWithNodes = foldr G.insertNode G.empty nodesId
+    graphWithEdges = foldr (\(ide,src,tgt) g -> G.insertEdge ide src tgt g) graphWithNodes edgesId
+
+lookupNodes :: [ParsedTypedNode] -> String -> String
+lookupNodes nodes n = fromMaybe
+                        (error ("Error getting node type of: " ++ show n))
+                        (lookup n changeToListOfPairs)
+  where
+    changeToListOfPairs = map (\(x,_,y) -> (x,y)) nodes
+
+instantiateRule :: ParsedTypeGraph -> RuleWithNacs -> GraphRule a b
+instantiateRule typeGraph ((_, lhs, rhs, mappings), nacs) = production lhsTgm rhsTgm nacsTgm
   where
     tg = instantiateTypeGraph typeGraph
     lm = instantiateTypedGraph lhs tg
     rm = instantiateTypedGraph rhs tg
-    km = instantiateInterface mappings lm
+    (lhsTgm, rhsTgm) = instantiateSpan lm rm mappings
     nacsTgm = map (instantiateNac lm tg) nacs
-    rhsTgm = instantiateTgm km rm mappings
-    lhsTgm = instantiateLeft km lm
 
-instantiateNac ::  GraphMorphism a b -> G.Graph a b -> Nac -> TypedGraphMorphism a b
-instantiateNac lhs graph (nacG, maps) = nacTgm
+instantiateNac :: TypedGraph a b -> G.Graph a b -> Nac -> TypedGraphMorphism a b
+instantiateNac lhs tg (nacGraph, maps) = nacTgm
   where
-    nacMorphism = instantiateTypedGraph nacG graph
-    nacTgm = instantiateTgm lhs nacMorphism maps
-
-instantiateTypeGraph :: TypeGraph -> G.Graph a b
-instantiateTypeGraph (nodes, edges) = graphWithEdges
-  where
-    getNodeId y = G.NodeId (read y :: Int)
-    getEdgeId y = G.EdgeId (read y :: Int)
-    lkup e l = fromJust $ lookup e l
-    getNodeType n = G.NodeId (read (lkup n nodes) :: Int)
-    nodesId = map (\(_,y) -> getNodeId y) nodes
-    graphWithNodes = foldr G.insertNode G.empty nodesId
-    edgesId = map (\(_, typ, src, tgt) -> (getEdgeId typ, getNodeType src, getNodeType tgt)) edges
-    graphWithEdges = foldr (\(ide,src,tgt) g -> G.insertEdge ide src tgt g) graphWithNodes edgesId
+    nacMorphism = instantiateTypedGraph nacGraph tg
+    (_,nacTgm) = instantiateSpan lhs nacMorphism maps
 
 instantiateTypedGraph :: ParsedTypedGraph -> G.Graph a b -> GraphMorphism a b
-instantiateTypedGraph (_,b,c) tg = gmbuild g tg nodeTyping edgeTyping
+instantiateTypedGraph (_, nodes, edges) tg = gmbuild g tg nodeTyping edgeTyping
   where
     g = G.build nodesG edgesG
-    nodesG = map (toN . fst) b
-    edgesG = map (\(x,_,y,z) -> (toN x, toN y, toN z)) c
-    nodeTyping = map (\(x,y) -> (toN x, toN y)) b
-    edgeTyping = map (\(x,y,_,_) -> (toN x, toN y)) c
+    
+    nodesG = map (toN . fstOfThree) nodes
+    edgesG = map (\(id,_,_,src,tgt) -> (toN id, toN src, toN tgt)) edges
+    
+    nodeTyping = map (\(id,_,typ) -> (toN id, toN typ)) nodes
+    edgeTyping = map (\(id,_,typ,_,_) -> (toN id, toN typ)) edges
 
-instantiateInterface :: [Mapping] -> GraphMorphism a b -> GraphMorphism a b
-instantiateInterface mapping l = gmbuild graphK (codomain l) nodeType edgeType
+instantiateSpan :: TypedGraph a b -> TypedGraph a b -> [Mapping] -> (TypedGraphMorphism a b, TypedGraphMorphism a b)
+instantiateSpan left right mapping = (leftM, rightM)
   where
-    listMap = map (toN . snd) mapping
-    nodesK = filter (\(G.NodeId x) -> x `elem` listMap) (G.nodes (domain l))
-    nodesK2 = map (\(G.NodeId x) -> x) nodesK
-    edgesK = filter (\(G.EdgeId x) -> x `elem` listMap) (G.edges (domain l))
-    src e = fromJust $ G.sourceOf (domain l) e
-    src2 (G.NodeId e) = e
-    tgt e = fromJust $ G.targetOf (domain l) e
-    tgt2 (G.NodeId e) = e
-    edgesK2 = map (\edg@(G.EdgeId x) -> (x, src2 (src edg), tgt2 (tgt edg))) edgesK
-
-    graphK = G.build nodesK2 edgesK2
-    applyN t n = fromJust $ applyNode t n
-    applyE t e = fromJust $ applyEdge t e
-    nodeTyping = map (\n -> (n, applyN l n)) nodesK
-    edgeTyping = map (\e -> (e, applyE l e)) edgesK
-    nodeType = map (\(G.NodeId x, G.NodeId y) -> (x,y)) nodeTyping
-    edgeType = map (\(G.EdgeId x, G.EdgeId y) -> (x,y)) edgeTyping
-
-instantiateLeft :: GraphMorphism a b -> GraphMorphism a b -> TypedGraphMorphism a b
-instantiateLeft k l = typedMorphism k l edges
-  where
-    ini = empty (domain k) (domain l)
-    nodes = foldr (\n -> updateNodes n n) ini (G.nodes (domain k))
-    edges = foldr (\e -> updateEdges e e) nodes (G.edges (domain k))
-
-instantiateTgm :: GraphMorphism a b -> GraphMorphism a b -> [Mapping] -> TypedGraphMorphism a b
-instantiateTgm s t maps = typedMorphism s t gmMap
-  where
-    graphS = domain s
-    initGm = empty graphS (domain t)
-    listNodes = map (\(G.NodeId x) -> x) (G.nodes graphS)
-    listInt = map (\(x,y) -> (toN x, toN y)) maps
-    gmMap = foldr (\(imag,orig) gm ->
-      if orig `elem` listNodes
-         then updateNodes (G.NodeId orig) (G.NodeId imag) gm
-         else updateEdges (G.EdgeId orig) (G.EdgeId imag) gm)
-      initGm listInt
-
-toN :: String -> Int
-toN x = case readMaybe x :: Maybe Int of
-          Just n -> n
-          Nothing -> error $ "Error converting id (" ++ x ++ ") to number"
+    parsedMap = map (\(t,_,s) -> (toN t, toN s)) mapping
+    
+    leftM = typedMorphism k left leftMap
+    rightM = typedMorphism k right rightMap
+    
+    nodesLeft = G.nodes (domain left)
+    nodesRight = G.nodes (domain right)
+    
+    edgesLeft = G.edges (domain left)
+    edgesRight = G.edges (domain right)
+    
+    typegraph = codomain left
+    initK = empty G.empty typegraph
+    initL = empty G.empty (domain left)
+    initR = empty G.empty (domain right)
+    
+    updateMorphisms (k,l,r) (tgt,src) =
+      if nodeSrc `elem` nodesLeft && nodeTgt `elem` nodesRight
+        then (newNodeK, updateNodesL, updateNodesR)
+        else
+          if edgeSrc `elem` edgesLeft && edgeTgt `elem` edgesRight
+            then (newEdgeK, updateEdgesL, updateEdgesR)
+            else (k, l, r)
+      where
+        nodeSrc = G.NodeId src
+        nodeTgt = G.NodeId tgt
+        edgeSrc = G.EdgeId src
+        edgeTgt = G.EdgeId tgt
+        
+        nodeDom = G.insertNode nodeSrc (domain k)
+        nodeType = applyNodeUnsafe left nodeSrc
+        newNodeK = updateNodes nodeSrc nodeType (updateDomain nodeDom k)
+        updateNodesL = updateNodes nodeSrc nodeSrc (updateDomain nodeDom l)
+        updateNodesR = updateNodes nodeSrc nodeTgt (updateDomain nodeDom r)
+        
+        src_ e = fromMaybe (error (show e)) (G.sourceOf (domain left) e)
+        tgt_ e = fromMaybe (error (show e)) (G.targetOf (domain left) e)
+        edgeDom = G.insertEdge edgeSrc (src_ edgeSrc) (tgt_ edgeSrc) (domain k)
+        edgeType = applyEdgeUnsafe left edgeSrc
+        newEdgeK = updateEdges edgeSrc edgeType (updateDomain edgeDom k)
+        updateEdgesL = updateEdges edgeSrc edgeSrc (updateDomain edgeDom l)
+        updateEdgesR = updateEdges edgeSrc edgeTgt (updateDomain edgeDom r)
+    
+    (k, leftMap, rightMap) =
+      foldl
+        updateMorphisms
+        (initK, initL, initR)
+        parsedMap

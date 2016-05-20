@@ -1,17 +1,17 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE FlexibleInstances #-}
+
 module Graph.GraphRule (
     -- * Types
       GraphRule
     -- * Basic Functions
-    , graphRule
-    , left
-    , right
-    , nacs
     , inverseWithoutNacs
     , deletedNodes
     , deletedEdges
     , createdNodes
     , createdEdges
+    
+    , ruleDeletes
 
     -- * Gluing condition
     , satsDelItems
@@ -27,9 +27,13 @@ import           Graph.FindMorphism       ()
 
 type GraphRule a b = Production (TypedGraphMorphism a b)
 
--- | Create a rule based on both typed graph morphisms and a list of NAC's.
-graphRule :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b] -> GraphRule a b
-graphRule = production
+-- FIXME
+-- is correct?
+-- check nacs?
+instance Eq (GraphRule a b) where
+    x == y =
+      left x == left y &&
+      right x == right y
 
 -- | Return the nodes deleted by a rule
 deletedNodes :: GraphRule a b -> [G.NodeId]
@@ -48,10 +52,10 @@ createdEdges :: GraphRule a b -> [G.EdgeId]
 createdEdges r = TGM.orphanEdgesTyped (right r)
 
 instance DPO (TypedGraphMorphism a b) where
-  satsGluing inj m prod = (inj || identificationCondition) && danglingCondition
+  satsGluing inj m left = (inj || identificationCondition) && danglingCondition
     where
-        identificationCondition = satsDelItems (left prod) m
-        danglingCondition       = satsIncEdges (left prod) m
+        identificationCondition = satsDelItems left m
+        danglingCondition       = satsIncEdges left m
 
   partiallyMonomorphic = partialInjectiveTGM
 

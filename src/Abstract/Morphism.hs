@@ -22,6 +22,7 @@ data PROP
   | MONO  -- ^ Finds only monomorphic matches
   | EPI   -- ^ Finds only epimorphic matches
   | ISO   -- ^ Finds only isomorphic matches
+  deriving (Show)
 
 class Morphism m => FindMorphism m where
   -- | Finds matches __/m/__

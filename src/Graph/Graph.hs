@@ -41,7 +41,9 @@ module Graph.Graph (
     , nodePayload
     , edgePayload
     , sourceOf
+    , sourceOfUnsafe
     , targetOf
+    , targetOfUnsafe
     -- ** Predicates
     , isEdgeOf
     , isNodeOf
@@ -56,6 +58,7 @@ module Graph.Graph (
 import           Abstract.Valid
 import           Data.List
 import           Data.List.Utils
+import           Data.Maybe (fromMaybe)
 
 data Node a = Node { getNodePayload :: Maybe a
               } deriving (Show, Read)
@@ -288,6 +291,14 @@ targetOf (Graph _ es) e =
         _ -> Nothing
   where
     res = lookup e es
+
+-- | Return @e@'s source or error in the case of undefined
+sourceOfUnsafe :: Graph a b -> EdgeId -> NodeId
+sourceOfUnsafe g e = fromMaybe (error "Error, graph with source edges function non total") $ sourceOf g e
+
+-- | Return @e@'s target or error in the case of undefined
+targetOfUnsafe :: Graph a b -> EdgeId -> NodeId
+targetOfUnsafe g e = fromMaybe (error "Error, graph with target edges function non total") $ targetOf g e
 
 -- | Test whether a graph is empty.
 null :: Graph a b -> Bool

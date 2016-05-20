@@ -1,5 +1,7 @@
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE UndecidableInstances #-}
+
 -- | Provides definitions for the Double-Pushout approach to
 -- High-Level Rewriting Systems.
 module Abstract.DPO
@@ -64,6 +66,7 @@ production = Production
 
 instance (Morphism m, Valid m, Eq (Obj m)) => Valid (Production m) where
   valid (Production l r nacs) =
+    monomorphism l && monomorphism r && --check if is needed
     valid l && valid r && all valid nacs &&
     domain l == domain r && all (==codomain l) (map domain nacs)
 
@@ -120,18 +123,17 @@ inverseWithoutNacs p = Production (right p) (left p) []
 -- | Class for morphisms whose category is Adhesive-HLR, and which can be
 -- used for double-pushout transformations.
 class (AdhesiveHLR m, FindMorphism m) => DPO m where
-  -- | True if the given match satisfies the gluing condition for the given
-  -- production.
+  -- | True if the given match satisfies the gluing condition for the given production.
+  -- This function does not need all production, just the left morphism.
   --
-  -- TODO: what does the following line mean?
-  --
-  -- @inj@ only indicates if the match is injective, this function does not checks it
-  satsGluing :: Bool -> m -> Production m -> Bool
+  -- Bool only indicates if the match is injective,
+  -- in the case of unknown use False
+  satsGluing :: Bool -> m -> m -> Bool
 
   -- | Check if the second morphism is monomorphic outside the image of the
   -- first morphism.
   partiallyMonomorphic :: m -> m -> Bool
-{-# WARNING partiallyMonomorphic "Only necessary until 'partInjMatches' is corrected" #-}
+--{-# WARNING partiallyMonomorphic "Only necessary until 'partInjMatches' is corrected" #-}
 
 -- | True if the given match satisfies all NACs of the given production.
 --
@@ -160,7 +162,7 @@ satsGluingNacsBoth nacInj inj (l,m1) (r,m2) =
 satsGluingAndNacs :: DPO m => Bool -> Bool -> Production m -> m -> Bool
 satsGluingAndNacs nacInj inj rule m = gluingCond && nacsCondition
     where
-        gluingCond    = satsGluing inj m rule
+        gluingCond    = satsGluing inj m (left rule)
         nacsCondition = satsNacs nacInj inj rule m
 
 satsOneNacInj :: FindMorphism m => m -> m -> Bool
@@ -188,7 +190,7 @@ inverse inj r = Production (right r) (left r) (concatMap (shiftLeftNac inj r) (n
 --
 -- TODO: what's the first parameter?
 shiftLeftNac :: DPO m => Bool -> Production m -> m -> [m]
-shiftLeftNac inj rule n = [comatch n rule | satsGluing inj n rule]
+shiftLeftNac inj rule n = [comatch n rule | satsGluing inj n (left rule)]
 
 -- | Given a morphism /m : L -> L'/ and a NAC /n : L -> N/, obtains
 -- an equivalent set of NACs /n'i : L' -> N'i/ that is equivalent to the

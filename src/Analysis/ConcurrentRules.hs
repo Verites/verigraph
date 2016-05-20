@@ -8,7 +8,7 @@ module Analysis.ConcurrentRules
 import           Abstract.Morphism
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
-import           Analysis.CriticalSequence (criticalSequences,getM1,getM2)
+import           Analysis.CriticalSequence (criticalSequences,getComatch)
 import           Graph.GraphRule           (GraphRule)
 import           Graph.TypedGraphMorphism  (TypedGraphMorphism)
 
@@ -52,13 +52,13 @@ concurrentRules dep nacInj isInjective c n = map (concurrentRuleForPair isInject
 
 --depPairs :: (EpiPairs m, DPO m) => Bool -> Bool -> Production m -> Production m -> [(m, m)]
 depPairs :: Bool -> Bool -> GraphRule a b -> GraphRule a b -> [(TypedGraphMorphism a b, TypedGraphMorphism a b)]
-depPairs nacInj isInjective c n = map (\cs -> (getM1 cs, getM2 cs)) $ criticalSequences nacInj isInjective c n
+depPairs nacInj isInjective c n = map getComatch $ criticalSequences nacInj isInjective c n
 
 pairs :: (EpiPairs m, DPO m) => Bool -> Production m -> Production m -> [(m, m)]
 pairs isInjective c n = validDpoPairs
   where
     allPairs  = createPairsCodomain isInjective (right c) (left n)
-    validDpoPairs = filter (\(lp, rp) -> satsGluing isInjective lp (inverseWithoutNacs c) && satsGluing isInjective rp n) allPairs
+    validDpoPairs = filter (\(lp, rp) -> satsGluing isInjective lp (right c) && satsGluing isInjective rp (left n)) allPairs
 
 --maxConcurrentRuleForLastPair :: (DPO m, EpiPairs m, Eq (Obj m)) => CRDependencies -> Bool -> Bool -> Production m -> Production m -> Production m
 maxConcurrentRuleForLastPair :: CRDependencies -> Bool -> Bool -> GraphRule a b -> GraphRule a b -> GraphRule a b

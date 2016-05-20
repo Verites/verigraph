@@ -4,6 +4,7 @@ module Partitions.VeriToGP (
    mixNac
    ) where
 
+import           Abstract.DPO
 import qualified Abstract.Morphism        as M
 import           Data.List.Utils          (countElem)
 import           Graph.Graph              as G

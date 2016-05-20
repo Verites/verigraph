@@ -14,6 +14,10 @@ import           Data.Tree.NTree.TypeDefs
 import           Text.XML.HXT.Core
 import           XML.ParsedTypes
 import           XML.XMLUtilities
+import           XML.Utilities (clearIdUnsafe)
+
+clearId :: String -> String
+clearId = clearIdUnsafe
 
 -- | Parse the name of the Grammar
 parseGGName :: ArrowXml cat => cat (NTree XNode) String
@@ -23,7 +27,7 @@ parseGGName = atTag "GraphTransformationSystem" >>>
     returnA -< name
 
 -- | Parse all type graphs
-parseTypeGraph :: ArrowXml cat => cat (NTree XNode) TypeGraph
+parseTypeGraph :: ArrowXml cat => cat (NTree XNode) ParsedTypeGraph
 parseTypeGraph = atTag "Types" >>> atTag "Graph" >>>
   proc graph -> do
     nodes <- listA parseNode -< graph
@@ -86,17 +90,25 @@ parseNode :: ArrowXml cat => cat (NTree XNode) ParsedTypedNode
 parseNode = atTag "Node" >>>
   proc node -> do
     nodeId <- getAttrValue "ID" -< node
+    nodeName <- getAttrValue "name" -< node
+    let setNodeName = case nodeName of
+                       "" -> Nothing
+                       str -> Just str
     nodeType <- getAttrValue "type" -< node
-    returnA -< (clearId nodeId, clearId nodeType)
+    returnA -< (clearId nodeId, setNodeName, clearId nodeType)
 
 parseEdge :: ArrowXml cat => cat (NTree XNode) ParsedTypedEdge
 parseEdge = atTag "Edge" >>>
   proc node -> do
     edgeId <- getAttrValue "ID" -< node
+    edgeName <- getAttrValue "name" -< node
+    let setEdgeName = case edgeName of
+                        "" -> Nothing
+                        str -> Just str
     edgeType <- getAttrValue "type" -< node
     edgeSource <- getAttrValue "source" -< node
     edgeTarget <- getAttrValue "target" -< node
-    returnA -< (clearId edgeId, clearId edgeType, clearId edgeSource, clearId edgeTarget)
+    returnA -< (clearId edgeId, setEdgeName, clearId edgeType, clearId edgeSource, clearId edgeTarget)
 
 parseGraph :: ArrowXml cat => cat (NTree XNode) ParsedTypedGraph
 parseGraph = atTag "Graph" >>>
@@ -106,31 +118,24 @@ parseGraph = atTag "Graph" >>>
     edges <- listA parseEdge -< graph
     returnA -< (clearId graphId, nodes, edges)
 
--- | Parse all enabled rules
+-- | Parse all enabled rules of first order
 parseRule :: ArrowXml cat => cat (NTree XNode) RuleWithNacs
 parseRule = atTag "Rule" >>>
   proc rule -> do
     ruleName <- getAttrValue "name" -< rule
     _  <- isA (\str -> str == "" || str == "true") <<< getAttrValue "enabled" -< rule
-    lhs <- parseLHS -< rule
-    rhs <- parseRHS -< rule
+    lhs <- parseSideRule "LHS" -< rule
+    rhs <- parseSideRule "RHS" -< rule
     morphism <- parseMorphism -< rule
     nacs <- listA parseNac -< rule
     returnA -< ((ruleName, lhs, rhs, morphism), nacs)
 
-parseLHS :: ArrowXml cat => cat (NTree XNode) ParsedTypedGraph
-parseLHS = atTag "Graph" >>>
+parseSideRule :: ArrowXml cat => String -> cat (NTree XNode) ParsedTypedGraph
+parseSideRule str = atTag "Graph" >>>
   proc graph -> do
-    _ <- isA ("LHS" ==) <<< getAttrValue "kind"-< graph
+    _ <- isA (str ==) <<< getAttrValue "kind"-< graph
     lhs <- parseGraph -< graph
     returnA -< lhs
-
-parseRHS :: ArrowXml cat => cat (NTree XNode) ParsedTypedGraph
-parseRHS = atTag "Graph" >>>
-  proc graph -> do
-    _ <- isA ("RHS" ==) <<< getAttrValue "kind"-< graph
-    rhs <- parseGraph -< graph
-    returnA -< rhs
 
 parseMorphism :: ArrowXml cat => cat (NTree XNode) [Mapping]
 parseMorphism = getChildren >>> isElem >>> hasName "Morphism" >>>
@@ -143,7 +148,7 @@ parseMappings = atTag "Mapping" >>>
   proc mapping -> do
     image <- getAttrValue "image" -< mapping
     orig <- getAttrValue "orig" -< mapping
-    returnA -< (clearId image, clearId orig)
+    returnA -< (clearId image, Nothing, clearId orig)
 
 parseNac :: ArrowXml cat => cat (NTree XNode) (ParsedTypedGraph,[Mapping])
 parseNac = atTag "NAC" >>>
@@ -175,10 +180,3 @@ parseSequenceItem = atTag "Item" >>>
     ruleName <- getAttrValue "rule" -< item
     let i = read iterations::Int
     returnA -< (i, ruleName)
-
--- | Reads the id from the last to the head, stops when do not found a number
-clearId :: String -> String
-clearId [] = error "Error reading id"
-clearId l = if isNum (last l) then (clearId (init l)) ++ [last l] else ""
-  where
-   isNum x = x `elem` ['0','1','2','3','4','5','6','7','8','9']

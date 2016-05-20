@@ -59,10 +59,10 @@ execute globalOpts opts = do
                                 MaxConcurrentRule -> makeMaxConcurrentRule
                                 AllConcurrentRules -> makeAllConcurrentRules
         dependencies = concRulesbyDep opts
-        injectiveOnly = injectiveMatchesOnly globalOpts
+        injectiveOnly = not $ arbitraryMatches globalOpts
         nacInj = injectiveNacSatisfaction globalOpts
         newRules = concatMap (makeConcurrentRules dependencies nacInj injectiveOnly) sequences
-        gg' = GG.graphGrammar (GG.initialGraph gg) (GG.rules gg ++ newRules)
+        gg' = GG.graphGrammar (GG.initialGraph gg) (GG.rules gg ++ newRules) []
     GW.writeGrammarFile gg' ggName names (outputFile opts)
 
 makeAllConcurrentRules :: CRDependencies -> Bool -> Bool -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
