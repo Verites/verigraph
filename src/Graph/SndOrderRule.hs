@@ -213,13 +213,13 @@ newNacsPairL sndRule = map createNac ret
       where
         ruleNac = production (compose (left ruleL) e) (right ruleL) []
         mapK = idMap (domain (left ruleL)) (domain (left ruleL))
-        mapR = idMap (codomain (right ruleL)) (codomain (right ruleL))-}
+        mapR = idMap (codomain (right ruleL)) (codomain (right ruleL))
 
 calculateAllPartitions :: GM.TypedGraph a b -> [TypedGraphMorphism a b]
 calculateAllPartitions graph = map fst (createPairs inj graph graphNull)
   where
     inj = False
-    graphNull = GM.empty G.empty G.empty
+    graphNull = GM.empty G.empty G.empty-}
 
 orphanNode :: TypedGraphMorphism a b -> NodeId -> Bool
 orphanNode m n = n `elem` (orphanNodesTyped m)

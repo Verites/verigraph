@@ -1,5 +1,4 @@
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
 
 module CLI.ApplySndOrderRules
   ( Options
@@ -12,10 +11,13 @@ import           CLI.GlobalOptions
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Morphism
+import           Graph.EpiPairs            ()
 import qualified Graph.GraphGrammar        as GG
+import           Graph.GraphMorphism
 import           Graph.GraphRule
 import qualified Graph.RuleMorphism        as SO
 import qualified Graph.SndOrderRule        as SO
+import           Graph.TypedGraphMorphism
 import           Options.Applicative
 import qualified XML.GGXReader             as XML
 import qualified XML.GGXWriter             as GW
@@ -45,9 +47,11 @@ execute globalOpts opts = do
         onlyInj = if arbitraryMatches globalOpts then ALL else MONO
         newRules = applySndOrderRules onlyInj (GG.rules gg) (GG.sndOrderRules gg)
         testSndOrder = map (\(n,r) -> (n,SO.minimalSafetyNacs r)) (GG.sndOrderRules gg)
-        --rule = snd (head (GG.sndOrderRules gg))
+        rule = snd (head (GG.sndOrderRules gg))
         gg2 = GG.graphGrammar (GG.initialGraph gg) ((GG.rules gg) ++ newRules) testSndOrder--(GG.sndOrderRules gg)
+        --gg3 = GG.graphGrammar (GG.initialGraph gg) rulePairs []--(GG.sndOrderRules gg)
         --rul = snd (head (GG.sndOrderRules gg))
+        --rulePairs = map (\(idx,(a,_)) -> (show idx, codomain a)) (zip [0..] (createPairs True ruleL ruleR))
     
     GW.writeGrammarFile gg2 ggName names (outputFile opts)
     
@@ -55,6 +59,9 @@ execute globalOpts opts = do
     --print (head (nacs rule))
     --print (map (\x -> codomain (left (codomain x))) (newNacsPairL rule))
     --print (length (newNacsPairL rule))
+    --print (createPairs True (codomain (left rule)) (codomain (left rule)))
+    --print (length (createPairs' True ruleL ruleL))
+    --GW.writeGrammarFile gg3 ggName names "t.ggx"
     
     putStrLn "Done!"
     putStrLn ""
@@ -71,8 +78,8 @@ applySndOrderRule prop (sndName,sndRule) (fstName,fstRule) = zip newNames newRul
     newNames = map (\number -> fstName ++ "_" ++ sndName ++ "_" ++ show number) ([0..] :: [Int])
     leftRule = left sndRule
     rightRule = right sndRule
-    matches = SO.matchesSndOrder prop (codomain leftRule) fstRule
-    gluing = filter (\m -> satsGluing False m leftRule) matches
+    mats = matches prop (codomain leftRule) fstRule
+    gluing = filter (\m -> satsGluing False m leftRule) mats
     nacs = filter (satsNacs True False sndRule) gluing
     newRules = map
                  (\match ->

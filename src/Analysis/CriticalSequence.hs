@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances #-}
+
 module Analysis.CriticalSequence
  ( CS (..),
    CriticalSequence,
@@ -21,8 +23,11 @@ import           Abstract.DPO              as RW hiding (comatch)
 import           Graph.TypedGraphMorphism
 import           Graph.FindMorphism        ()
 
+class CriticalSequences m where
+  css :: Production m -> Production m -> [(m,m)]
+
 -- | Data representing the type of a 'CriticalPair'
-data CS = ProduceUse | DeliverDelete deriving(Eq,Show)
+data CS = ProduceUse | DeliverDelete deriving (Eq,Show)
 
 -- | A Critical Sequence is defined as two matches (m1,m2) from the left side of their rules to a same graph.
 -- 
@@ -52,52 +57,52 @@ data CS = ProduceUse | DeliverDelete deriving(Eq,Show)
 --
 -- q21 (nacMatch) :: from N2 to P1
 
-data CriticalSequence a b = CriticalSequence {
-    match :: Maybe (TypedGraphMorphism a b, TypedGraphMorphism a b),
-    comatch :: (TypedGraphMorphism a b, TypedGraphMorphism a b),
-    nac :: Maybe (TypedGraphMorphism a b, Int), --if is DeliverDelete, here is the index of the nac
+data CriticalSequence m = CriticalSequence {
+    match :: Maybe (m, m),
+    comatch :: (m, m),
+    nac :: Maybe (m, Int), --if is DeliverDelete, here is the index of the nac
     cs  :: CS
     } deriving (Eq,Show)
 
 -- | Returns the matches (m1, m2)
-getMatch :: CriticalSequence a b -> Maybe (TypedGraphMorphism a b, TypedGraphMorphism a b)
+getMatch :: CriticalSequence m -> Maybe (m, m)
 getMatch = match
 
 -- | Returns the comatches (m1', m2')
-getComatch :: CriticalSequence a b -> (TypedGraphMorphism a b, TypedGraphMorphism a b)
+getComatch :: CriticalSequence m -> (m, m)
 getComatch = comatch
 
 -- | Returns the type of a 'CriticalSequence'
-getCS :: CriticalSequence a b -> CS
+getCS :: CriticalSequence m -> CS
 getCS = cs
 
 -- | Returns the nac match of a 'CriticalSequence'
-getCSNac :: CriticalSequence a b -> Maybe (TypedGraphMorphism a b)
+getCSNac :: CriticalSequence m -> Maybe m
 getCSNac cs = case nac cs of
                 Just (nac,_) -> Just nac
                 Nothing -> Nothing
 
 -- | Returns the nac index of a 'CriticalSequence'
-getCSNacIdx :: CriticalSequence a b -> Maybe Int
+getCSNacIdx :: CriticalSequence m -> Maybe Int
 getCSNacIdx cs = case nac cs of
                    Just (_,idx) -> Just idx
                    Nothing -> Nothing
 
 -- | Returns the Critical Sequences with rule names
-namedCriticalSequence :: Bool -> Bool -> [(String, GraphRule a b)] -> [(String,String,[CriticalSequence a b])]
+namedCriticalSequence :: (EpiPairs m, DPO m) => Bool -> Bool -> [(String, Production m)] -> [(String,String,[CriticalSequence m])]
 namedCriticalSequence nacInj inj r = map (uncurry getCPs) [(a,b) | a <- r, b <- r]
   where
     getCPs (n1,r1) (n2,r2) = (n1, n2, criticalSequences nacInj inj r1 r2)
 
 -- | All Critical Sequences
-criticalSequences :: Bool -> Bool
-                  -> GraphRule a b
-                  -> GraphRule a b
-                  -> [CriticalSequence a b]
+criticalSequences :: (EpiPairs m, DPO m) => Bool -> Bool
+                  -> Production m
+                  -> Production m
+                  -> [CriticalSequence m]
 criticalSequences nacInj inj l r = allProduceUse nacInj inj l r ++ allDeliverDelete nacInj inj l r
 
 -- | All ProduceUse caused by the derivation of @l@ before @r@
-allProduceUse :: Bool -> Bool -> GraphRule a b -> GraphRule a b -> [CriticalSequence a b]
+allProduceUse :: (DPO m, EpiPairs m) => Bool -> Bool -> Production m -> Production m -> [CriticalSequence m]
 allProduceUse nacInj i l r = map (\(m1,m2) -> CriticalSequence Nothing (m1,m2) Nothing ProduceUse) prodUse
   where
     invLeft = inverse i l
@@ -107,8 +112,8 @@ allProduceUse nacInj i l r = map (\(m1,m2) -> CriticalSequence Nothing (m1,m2) N
 
 -- | Rule @l@ causes a produce-use dependency with @r@ if rule @l@ creates something that is used by @r@
 -- Verify the non existence of h21: L2 -> D1 such that d1 . h21 = m2
-produceUse :: GraphRule a b -> GraphRule a b
-           -> (TypedGraphMorphism a b,TypedGraphMorphism a b)
+produceUse :: (AdhesiveHLR m, FindMorphism m, Morphism m, Eq m) => Production m -> Production m
+           -> (m, m)
            -> Bool
 produceUse l _ (m1',m2') = Prelude.null filt
     where
@@ -118,19 +123,19 @@ produceUse l _ (m1',m2') = Prelude.null filt
 
 -- | All DeliverDelete caused by the derivation of @l@ before @r@
 -- rule @l@ causes a deliver-forbid conflict with @r@ if some NAC in @r@ turns satisfied after the aplication of @l@
-allDeliverDelete :: Bool -> Bool
-                 -> GraphRule a b
-                 -> GraphRule a b
-                 -> [CriticalSequence a b]
+allDeliverDelete :: (DPO m, EpiPairs m) => Bool -> Bool
+                 -> Production m
+                 -> Production m
+                 -> [CriticalSequence m]
 allDeliverDelete nacInj inj l r = concatMap (deliverDelete nacInj inj l inverseLeft r) (zip (nacs r) [0..])
   where
     inverseLeft = inverse inj l
 
 -- | Check DeliverDelete for a NAC @n@ in @r@
-deliverDelete :: Bool -> Bool
-                      -> GraphRule a b -> GraphRule a b -> GraphRule a b
-                      -> (TypedGraphMorphism a b, Int)
-                      -> [CriticalSequence a b]
+deliverDelete :: (EpiPairs m, Morphism m, DPO m) => Bool -> Bool
+                      -> Production m -> Production m -> Production m
+                      -> (m, Int)
+                      -> [CriticalSequence m]
 deliverDelete nacInj inj l inverseLeft r (n,idx) = let
         pairs = createPairsNac nacInj inj (codomain (left l)) n
         

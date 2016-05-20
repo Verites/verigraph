@@ -71,7 +71,10 @@ writeDep nacInj inj gg name names fileName = root [] [writeCpx gg [] cps name na
 writeRoot :: ArrowXml a => GraphGrammar b c -> String -> [(String,String)] -> a XmlTree XmlTree
 writeRoot gg name names = mkelem "Document" [sattr "version" "1.0"] [writeGts gg name names]
 
-writeCpx :: ArrowXml a => GraphGrammar b c -> [(String,String,[CP.CriticalPair b c])] -> [(String,String,[CS.CriticalSequence b c])] -> String -> [(String,String)] -> a XmlTree XmlTree
+writeCpx :: ArrowXml a => GraphGrammar b c
+         -> [(String,String,[CP.CriticalPair (TypedGraphMorphism b c)])]
+         -> [(String,String,[CS.CriticalSequence (TypedGraphMorphism b c)])] -> String
+         -> [(String,String)] -> a XmlTree XmlTree
 writeCpx gg cp cs name names = mkelem "Document"
                         [sattr "version" "1.0"]
                         [mkelem "CriticalPairs"

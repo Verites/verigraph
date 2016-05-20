@@ -19,12 +19,12 @@ import qualified Graph.GraphRule           as GR
 import           Graph.TypedGraphMorphism
 import           XML.ParsedTypes
 
-parseCPGraph :: (String,String,[CP.CriticalPair a b]) -> Overlappings
+parseCPGraph :: (String,String,[CP.CriticalPair (TypedGraphMorphism a b)]) -> Overlappings
 parseCPGraph (name1,name2,cps) = (name1,name2,overlaps)
   where
     overlaps = map (overlapsCP name2) cps
 
-overlapsCP :: String -> CP.CriticalPair a b -> (ParsedTypedGraph, [Mapping], [Mapping], String, String)
+overlapsCP :: String -> CP.CriticalPair (TypedGraphMorphism a b) -> (ParsedTypedGraph, [Mapping], [Mapping], String, String)
 overlapsCP name2 cs = (graph, mapM1, mapM2 ++ mapM2WithNac, nacName cs, csType cs)
   where
     (m1,m2) = case CP.getCP cs of
@@ -41,12 +41,13 @@ overlapsCP name2 cs = (graph, mapM1, mapM2 ++ mapM2WithNac, nacName cs, csType c
     nacName = parseNacName name2 CP.getCPNacIdx
     csType = show . CP.getCP
 
-parseCSGraph :: (String,String,[CS.CriticalSequence a b]) -> Overlappings
+parseCSGraph :: (String,String,[CS.CriticalSequence (TypedGraphMorphism a b)]) -> Overlappings
 parseCSGraph (name1,name2,cps) = (name1,name2,overlaps)
   where
     overlaps = map (overlapsCS name2) cps
 
-overlapsCS :: String -> CS.CriticalSequence a b -> (ParsedTypedGraph, [Mapping], [Mapping], String, String)
+overlapsCS :: String -> CS.CriticalSequence (TypedGraphMorphism a b)
+          -> (ParsedTypedGraph, [Mapping], [Mapping], String, String)
 overlapsCS name2 cs = (graph, mapM1, mapM2 ++ mapM2WithNac, nacName cs, csType cs)
   where
     (m1,m2) = case CS.getCS cs of

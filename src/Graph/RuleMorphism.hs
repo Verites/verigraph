@@ -6,7 +6,6 @@ module Graph.RuleMorphism (
   , mappingLeft
   , mappingInterface
   , mappingRight
-  , matchesSndOrder
   , commutingMorphismSameDomain
   ) where
 
@@ -14,7 +13,7 @@ import Abstract.AdhesiveHLR
 import Abstract.DPO
 import Abstract.Morphism
 import Abstract.Valid
-import Graph.GraphRule
+import Graph.GraphRule (ruleDeletes)
 import Graph.TypedGraphMorphism
 
 -- | A morphism between two rules:
@@ -42,15 +41,15 @@ import Graph.TypedGraphMorphism
 --
 data RuleMorphism a b =
   RuleMorphism {
-    getDomain        :: GraphRule a b
-  , getCodomain      :: GraphRule a b
+    getDomain        :: Production (TypedGraphMorphism a b)
+  , getCodomain      :: Production (TypedGraphMorphism a b)
   , mappingLeft      :: TypedGraphMorphism a b
   , mappingInterface :: TypedGraphMorphism a b
   , mappingRight     :: TypedGraphMorphism a b
   } deriving (Show)
 
-
-ruleMorphism :: GraphRule a b -> GraphRule a b
+ruleMorphism :: Production (TypedGraphMorphism a b)
+             -> Production (TypedGraphMorphism a b)
              -> TypedGraphMorphism a b
              -> TypedGraphMorphism a b
              -> TypedGraphMorphism a b
@@ -58,16 +57,20 @@ ruleMorphism :: GraphRule a b -> GraphRule a b
 ruleMorphism = RuleMorphism
 
 instance FindMorphism (RuleMorphism a b) where
-  matches = matchesSndOrder
-  partInjMatches = error "Partial Injective Matches for RuleMorphism not implemented"
+  -- | A match between two rules, only considers monomorphic matches morphisms:
+  -- (desconsidering the NACs)
+  matches prop l g = filter valid (getAllMaps prop l g)
+  
+  partInjMatches n m =
+    filter
+      (\q ->
+        (partiallyMonomorphic (mappingLeft n) (mappingLeft q)) &&
+        (partiallyMonomorphic (mappingInterface n) (mappingInterface q)) &&
+        (partiallyMonomorphic (mappingRight n) (mappingRight q)))
+      (matches ALL (codomain n) (codomain m))
 
--- | A match between two rules, only considers monomorphic matches morphisms:
---
--- (desconsidering the NACs)
-matchesSndOrder :: PROP -> GraphRule a b -> GraphRule a b -> [RuleMorphism a b]
-matchesSndOrder prop l g = filter valid (getAllMaps prop l g)
-
-getAllMaps :: PROP -> GraphRule a b -> GraphRule a b -> [RuleMorphism a b]
+getAllMaps :: PROP -> Production (TypedGraphMorphism a b)
+           -> Production (TypedGraphMorphism a b) -> [RuleMorphism a b]
 getAllMaps prop l g =
   do
     let f (mapL,mapk,mapR) = RuleMorphism l g mapL mapk mapR
@@ -156,7 +159,7 @@ instance Eq (RuleMorphism a b) where
         mapR1 == mapR2
 
 instance Morphism (RuleMorphism a b) where
-    type Obj (RuleMorphism a b) = GraphRule a b
+    type Obj (RuleMorphism a b) = Production (TypedGraphMorphism a b)
 
     domain = getDomain
     codomain = getCodomain

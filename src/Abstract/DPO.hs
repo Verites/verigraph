@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE UndecidableInstances #-}
 
@@ -132,7 +133,7 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
   -- | Check if the second morphism is monomorphic outside the image of the
   -- first morphism.
   partiallyMonomorphic :: m -> m -> Bool
-{-# WARNING partiallyMonomorphic "Only necessary until 'partInjMatches' is corrected" #-}
+--{-# WARNING partiallyMonomorphic "Only necessary until 'partInjMatches' is corrected" #-}
 
 -- | True if the given match satisfies all NACs of the given production.
 --

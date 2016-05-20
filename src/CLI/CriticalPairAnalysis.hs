@@ -16,6 +16,7 @@ import qualified XML.GGXWriter             as GW
 
 data Options = Options
   { outputFile   :: Maybe String
+  , sndOrder     :: Bool
   , analysisType :: AnalysisType
   }
 
@@ -30,7 +31,13 @@ options = Options
     <> action "file"
     <> help ("CPX file that will be written, receiving the critical pairs " ++
              "for the grammar (if absent, a summary will be printed to stdout)")))
+  <*> cpOrder
   <*> cpAnalysisType
+
+cpOrder :: Parser Bool
+cpOrder = flag False True
+    ( long "snd-order"
+    <> help "Set the analysis to the second order rules")
 
 cpAnalysisType :: Parser AnalysisType
 cpAnalysisType =
@@ -41,7 +48,6 @@ cpAnalysisType =
         ( long "dependencies-only"
           <> help "Restrict to Critical Sequence analysis")
   <|> pure Both
-
 
 calculateConflicts :: AnalysisType -> Bool
 calculateConflicts flag = flag `elem` [Both,Conflicts]
@@ -54,14 +60,16 @@ execute globalOpts opts = do
     gg <- XML.readGrammar (inputFile globalOpts)
     ggName <- XML.readGGName (inputFile globalOpts)
     names <- XML.readNames (inputFile globalOpts)
-
+    
     putStrLn "Analyzing the graph grammar..."
     putStrLn ""
 
     let nacInj = injectiveNacSatisfaction globalOpts
         onlyInj = not $ arbitraryMatches globalOpts
         action = analysisType opts
-        writer = defWriterFun nacInj onlyInj action
+        secondOrder = sndOrder opts
+        writer = defWriterFun secondOrder nacInj onlyInj action
+        -- First order conflicts/dependencies
         rules = map snd (GG.rules gg)
         puMatrix = pairwiseCompare (allProduceUse nacInj onlyInj) rules
         ddMatrix = pairwiseCompare (allDeliverDelete nacInj onlyInj) rules
@@ -70,6 +78,15 @@ execute globalOpts opts = do
         peMatrix = pairwiseCompare (allProdEdgeDelNode nacInj onlyInj) rules
         conflictsMatrix = liftMatrix3 (\x y z -> x ++ y ++ z) udMatrix pfMatrix peMatrix
         dependenciesMatrix = liftMatrix2 (++) puMatrix ddMatrix
+        
+        -- Second order conflicts/dependencies
+        rules2 = map snd (GG.sndOrderRules gg)
+        ud2Matrix = pairwiseCompare (allDeleteUse nacInj onlyInj) rules2
+        pf2Matrix = pairwiseCompare (allProduceForbid nacInj onlyInj) rules2
+        pu2Matrix = pairwiseCompare (allProduceUse nacInj onlyInj) rules2
+        dd2Matrix = pairwiseCompare (allDeliverDelete nacInj onlyInj) rules2
+        conflicts2Matrix = liftMatrix2 (++) ud2Matrix pf2Matrix
+        dependencies2Matrix = liftMatrix2 (++) pu2Matrix dd2Matrix
 
         conflicts = [ "Delete-Use:"
                 , show (length <$> udMatrix)
@@ -93,22 +110,49 @@ execute globalOpts opts = do
                    , show (length <$> dependenciesMatrix)
                    , ""]
 
+        conflicts2 = [ "Second Order Delete-Use:"
+                , show (length <$> ud2Matrix)
+                , ""
+                , "Second Order Produce-Forbid:"
+                , show (length <$> pf2Matrix)
+                , ""
+                , "All Second Order Conflicts:"
+                , show (length <$> conflicts2Matrix)
+                , ""]
+        
+        dependencies2 = [ "Second Order Produce Use Dependency:"
+                   , show (length <$> pu2Matrix)
+                   , ""
+                   , "Second Order Deliver Delete Dependency:"
+                   , show (length <$> dd2Matrix)
+                   , ""
+                   , "All Second Order Dependencies:"
+                   , show (length <$> dependencies2Matrix)
+                   , ""]
+
     case outputFile opts of
       Just file -> writer gg ggName names file
-      Nothing -> mapM_
-                 putStrLn $
-                 (if calculateConflicts action then conflicts else [])
-                 ++ (if calculateDependencies action then dependencies else [])
-                 ++ ["Done!"]
+      Nothing -> let (confMatrix, depMatrix) =
+                       if secondOrder
+                         then (conflicts2, dependencies2)
+                         else (conflicts, dependencies)
+                 in
+                   mapM_
+                   putStrLn $
+                   (if calculateConflicts action then confMatrix else [])
+                   ++ (if calculateDependencies action then depMatrix else [])
+                   ++ ["Done!"]
 
-defWriterFun :: Bool -> Bool -> AnalysisType
+defWriterFun :: Bool -> Bool -> Bool -> AnalysisType
              ->(GG.GraphGrammar a b -> String
              -> [(String,String)] -> String -> IO ())
-defWriterFun nacInj inj t = case t of
-                   Conflicts    -> GW.writeConflictsFile nacInj inj
-                   Dependencies -> GW.writeDependenciesFile nacInj inj
-                   Both         -> GW.writeConfDepFile nacInj inj
-                   None         -> GW.writeGrammarFile
+defWriterFun secondOrder nacInj inj t =
+  case (secondOrder,t) of
+    (False, Conflicts)    -> GW.writeConflictsFile nacInj inj
+    (False, Dependencies) -> GW.writeDependenciesFile nacInj inj
+    (False, Both)         -> GW.writeConfDepFile nacInj inj
+    (False, None)         -> GW.writeGrammarFile
+    (True, _)             -> error "Not possible to write second order conflicts to file"
 
 -- | Combine three matrices with the given function. All matrices _must_ have
 -- the same dimensions.
