@@ -6,11 +6,13 @@
 
 module Graph.SndOrderRule (
     SndOrderRule
+  , applySndOrderRules
   , minimalSafetyNacs
   ) where
 
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
+import           Abstract.Morphism
 import           Graph.EpiPairs ()
 import           Graph.Graph as G
 import           Graph.GraphRule
@@ -57,6 +59,28 @@ import           Graph.TypedGraphMorphism
 type SndOrderRule a b = Production (RuleMorphism a b)
 
 data Side = LeftSide | RightSide
+
+applySndOrderRules :: [(String, GraphRule a b)] -> [(String, SndOrderRule a b)] -> [(String, GraphRule a b)]
+applySndOrderRules fstRules = concatMap (\r -> applySndOrderRuleListRules r fstRules)
+
+applySndOrderRuleListRules :: (String, SndOrderRule a b) -> [(String, GraphRule a b)] -> [(String, GraphRule a b)]
+applySndOrderRuleListRules sndRule = concatMap (applySndOrderRule sndRule)
+
+applySndOrderRule :: (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String, GraphRule a b)]
+applySndOrderRule (sndName,sndRule) (fstName,fstRule) = zip newNames newRules
+  where
+    newNames = map (\number -> fstName ++ "_" ++ sndName ++ "_" ++ show number) ([0..] :: [Int])
+    leftRule = left sndRule
+    rightRule = right sndRule
+    mats = matches MONO (codomain leftRule) fstRule
+    gluing = filter (\m -> satsGluing False m leftRule) mats
+    nacs = filter (satsNacs True False sndRule) gluing
+    newRules = map
+                 (\match ->
+                   let (k,_)  = poc match leftRule
+                       (m',_) = po k rightRule in
+                       codomain m'
+                   ) nacs
 
 -- | Generates the minimal safety NACs of a 2-rule
 -- probL and probR done, pairL and pairR to do.

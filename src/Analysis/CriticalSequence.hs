@@ -4,7 +4,7 @@ module Analysis.CriticalSequence
  ( CS (..),
    CriticalSequence,
    criticalSequences,
-   namedCriticalSequence,
+   namedCriticalSequences,
    allProduceUse,
    allDeliverDelete,
    getMatch,
@@ -84,8 +84,8 @@ getCSNacIdx cs = case nac cs of
                    Nothing -> Nothing
 
 -- | Returns the Critical Sequences with rule names
-namedCriticalSequence :: (EpiPairs m, DPO m) => Bool -> Bool -> [(String, Production m)] -> [(String,String,[CriticalSequence m])]
-namedCriticalSequence nacInj inj r = map (uncurry getCPs) [(a,b) | a <- r, b <- r]
+namedCriticalSequences :: (EpiPairs m, DPO m) => Bool -> Bool -> [(String, Production m)] -> [(String,String,[CriticalSequence m])]
+namedCriticalSequences nacInj inj r = map (uncurry getCPs) [(a,b) | a <- r, b <- r]
   where
     getCPs (n1,r1) (n2,r2) = (n1, n2, criticalSequences nacInj inj r1 r2)
 

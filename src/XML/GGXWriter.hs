@@ -2,6 +2,9 @@ module XML.GGXWriter
  ( writeConfDepFile,
    writeConflictsFile,
    writeDependenciesFile,
+   writeSndOderConfDepFile,
+   writeSndOderConflictsFile,
+   writeSndOderDependenciesFile,
    writeGrammarFile
  ) where
 
@@ -22,6 +25,49 @@ import           XML.GGXParseOut
 import           XML.ParsedTypes
 import           XML.ParseSndOrderRule
 import           XML.Utilities
+
+appendSndOrderConflicts :: GraphGrammar a b -> GraphGrammar a b
+appendSndOrderConflicts gg = newGG
+  where
+    conflicts = CP.namedCriticalPairs True False (sndOrderRules gg)
+    matches = concatMap (\(n1,n2,c) -> map (\ol -> (n1, n2, CP.getCP ol, codomain (fst (CP.getMatch ol)))) c) conflicts
+    conflictRules = map (\(idx,(n1,n2,tp,rule)) -> ("conflict_"++(show tp)++"_"++n1++"_"++n2++"_"++(show idx), rule)) (zip ([0..]::[Int]) matches)
+    newGG = graphGrammar (initialGraph gg) ((rules gg) ++ conflictRules) (sndOrderRules gg)
+
+appendSndOrderDependencies :: GraphGrammar a b -> GraphGrammar a b
+appendSndOrderDependencies gg = newGG
+  where
+    conflicts = CS.namedCriticalSequences True False (sndOrderRules gg)
+    matches = concatMap (\(n1,n2,c) -> map (\ol -> (n1, n2, CS.getCS ol, codomain (fst (CS.getComatch ol)))) c) conflicts
+    conflictRules = map (\(idx,(n1,n2,tp,rule)) -> ("dependency_"++(show tp)++"_"++n1++"_"++n2++"_"++(show idx), rule)) (zip ([0..]::[Int]) matches)
+    newGG = graphGrammar (initialGraph gg) ((rules gg) ++ conflictRules) (sndOrderRules gg)
+
+-- | Writes grammar, second order conflicts and dependencies (.ggx)
+writeSndOderConfDepFile :: Bool -> Bool -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
+writeSndOderConfDepFile nacInj inj gg name names fileName =
+  do
+    let newGG = (appendSndOrderDependencies . appendSndOrderConflicts) gg
+    runX $ writeConfDep nacInj inj newGG name names fileName
+    putStrLn $ "Saved in " ++ fileName
+    return ()
+
+-- | Writes the grammar and the second order conflicts (.ggx)
+writeSndOderConflictsFile :: Bool -> Bool -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
+writeSndOderConflictsFile nacInj inj gg name names fileName =
+  do
+    let newGG = appendSndOrderConflicts gg
+    runX $ writeConf nacInj inj newGG name names fileName
+    putStrLn $ "Saved in " ++ fileName
+    return ()
+
+-- | Writes the grammar and the second order dependencies (.ggx)
+writeSndOderDependenciesFile :: Bool -> Bool -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
+writeSndOderDependenciesFile nacInj inj gg name names fileName =
+  do
+    let newGG = appendSndOrderDependencies gg
+    runX $ writeDep nacInj inj newGG name names fileName
+    putStrLn $ "Saved in " ++ fileName
+    return ()
 
 -- | Writes grammar, conflicts and dependencies (.cpx)
 writeConfDepFile :: Bool -> Bool -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
@@ -55,7 +101,7 @@ writeConfDep :: Bool -> Bool -> GraphGrammar a b -> String -> [(String,String)] 
 writeConfDep nacInj inj gg name names fileName = root [] [writeCpx gg cps css name names] >>> writeDocument [withIndent yes] fileName
   where
     cps = CP.namedCriticalPairs nacInj inj (rules gg)
-    css = CS.namedCriticalSequence nacInj inj (rules gg)
+    css = CS.namedCriticalSequences nacInj inj (rules gg)
 
 writeConf :: Bool -> Bool -> GraphGrammar a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
 writeConf nacInj inj gg name names fileName = root [] [writeCpx gg cps [] name names] >>> writeDocument [withIndent yes] fileName
@@ -65,7 +111,7 @@ writeConf nacInj inj gg name names fileName = root [] [writeCpx gg cps [] name n
 writeDep :: Bool -> Bool -> GraphGrammar a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
 writeDep nacInj inj gg name names fileName = root [] [writeCpx gg [] cps name names] >>> writeDocument [withIndent yes] fileName
   where
-    cps = CS.namedCriticalSequence nacInj inj (rules gg)
+    cps = CS.namedCriticalSequences nacInj inj (rules gg)
 
 --Functions to deal with ggx format specificities
 writeRoot :: ArrowXml a => GraphGrammar b c -> String -> [(String,String)] -> a XmlTree XmlTree
