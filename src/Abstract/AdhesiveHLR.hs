@@ -100,6 +100,10 @@ class Morphism m => EpiPairs m where
   --
   -- Bool indicates injective
   commutingPairs :: Bool -> m -> m -> [(m, m)]
+  commutingPairs inj m1 m2 = filt
+    where
+      allPairs = createPairs inj (codomain m1) (codomain m2)
+      filt = filter (\(x,y) -> compose m1 x == compose m2 y) allPairs
   
   -- Similar to commutingPairs but indicating which morphism is injective
   commutingPairsAlt :: (m,Bool) -> (m,Bool) -> [(m, m)]
