@@ -56,7 +56,9 @@ instance DPO (TypedGraphMorphism a b) where
     where
         identificationCondition = satsDelItems left m
         danglingCondition       = satsIncEdges left m
-
+  
+  freeDanglingEdges = satsIncEdges
+  
   partiallyMonomorphic = partialInjectiveTGM
 
 ---- Gluing Conditions

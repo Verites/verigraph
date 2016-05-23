@@ -210,7 +210,6 @@ instance Morphism (TypedGraphMorphism a b) where
     epimorphism = epimorphism . mapping
     isomorphism = isomorphism . mapping
 
-
 instance Valid (TypedGraphMorphism a b) where
     valid (TypedGraphMorphism dom cod m) =
         valid dom &&

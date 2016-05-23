@@ -151,8 +151,10 @@ defWriterFun secondOrder nacInj inj t =
     (False, Conflicts)    -> GW.writeConflictsFile nacInj inj
     (False, Dependencies) -> GW.writeDependenciesFile nacInj inj
     (False, Both)         -> GW.writeConfDepFile nacInj inj
-    (False, None)         -> GW.writeGrammarFile
-    (True, _)             -> error "Not possible to write second order conflicts to file"
+    (True, Conflicts)     -> GW.writeSndOderConflictsFile nacInj inj
+    (True, Dependencies)  -> GW.writeSndOderDependenciesFile nacInj inj
+    (True, Both)          -> GW.writeSndOderConfDepFile nacInj inj
+    (_, None)             -> GW.writeGrammarFile
 
 -- | Combine three matrices with the given function. All matrices _must_ have
 -- the same dimensions.

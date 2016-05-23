@@ -56,6 +56,34 @@ ruleMorphism :: Production (TypedGraphMorphism a b)
              -> RuleMorphism a b
 ruleMorphism = RuleMorphism
 
+instance DPO (RuleMorphism a b) where
+  satsGluing inj m l =
+    satsGluing inj (mappingLeft m)      (mappingLeft l)      &&
+    satsGluing inj (mappingInterface m) (mappingInterface l) &&
+    satsGluing inj (mappingRight m)     (mappingRight l)     &&
+    danglingSpan (left (codomain m)) (mappingLeft m) (mappingInterface m) (mappingLeft l) (mappingInterface l) &&
+    danglingSpan (right (codomain m)) (mappingRight m) (mappingInterface m) (mappingRight l) (mappingInterface l)
+  
+  -- CHECK
+  freeDanglingEdges _ _ = True
+  
+  partiallyMonomorphic m l =
+    partiallyMonomorphic (mappingLeft m)      (mappingLeft l)      &&
+    partiallyMonomorphic (mappingInterface m) (mappingInterface l) &&
+    partiallyMonomorphic (mappingRight m)     (mappingRight l)
+
+-- | A gluing condition for second order rules application 
+danglingSpan :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
+danglingSpan matchRuleSide matchMorp matchK l k = deletedNodesInK && deletedEdgesInK
+  where
+    deletedNodes = filter (ruleDeletes l matchMorp applyNodeTGM nodesDomain) (nodesCodomain matchMorp)
+    nodesInK = [a | a <- nodesDomain matchRuleSide, (applyNodeTGMUnsafe matchRuleSide a) `elem` deletedNodes]
+    deletedNodesInK = all (ruleDeletes k matchK applyNodeTGM nodesDomain) nodesInK
+    
+    deletedEdges = filter (ruleDeletes l matchMorp applyEdgeTGM edgesDomain) (edgesCodomain matchMorp)
+    edgesInK = [a | a <- edgesDomain matchRuleSide, (applyEdgeTGMUnsafe matchRuleSide a) `elem` deletedEdges]
+    deletedEdgesInK = all (ruleDeletes k matchK applyEdgeTGM edgesDomain) edgesInK
+
 instance FindMorphism (RuleMorphism a b) where
   -- | A match between two rules, only considers monomorphic matches morphisms:
   -- (desconsidering the NACs)
@@ -78,27 +106,6 @@ getAllMaps prop l g =
     matchesK <- matches prop (domain (left l)) (domain (left g))
     matchesR <- matches prop (codomain (right l)) (codomain (right g))
     return $ f (matchesL, matchesK, matchesR)
-
-danglingSpan :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
-danglingSpan matchRuleSide matchMorp matchK l k = deletedNodesInK && deletedEdgesInK
-  where
-    deletedNodes = filter (ruleDeletes l matchMorp applyNodeTGM nodesDomain) (nodesCodomain matchMorp)
-    nodesInK = [a | a <- nodesDomain matchRuleSide, (applyNodeTGMUnsafe matchRuleSide a) `elem` deletedNodes]
-    deletedNodesInK = all (ruleDeletes k matchK applyNodeTGM nodesDomain) nodesInK
-    
-    deletedEdges = filter (ruleDeletes l matchMorp applyEdgeTGM edgesDomain) (edgesCodomain matchMorp)
-    edgesInK = [a | a <- edgesDomain matchRuleSide, (applyEdgeTGMUnsafe matchRuleSide a) `elem` deletedEdges]
-    deletedEdgesInK = all (ruleDeletes k matchK applyEdgeTGM edgesDomain) edgesInK
-
-instance DPO (RuleMorphism a b) where
-  satsGluing inj m l =
-    satsGluing inj (mappingLeft m)      (mappingLeft l)      &&
-    satsGluing inj (mappingInterface m) (mappingInterface l) &&
-    satsGluing inj (mappingRight m)     (mappingRight l)     &&
-    danglingSpan (left (codomain m)) (mappingLeft m) (mappingInterface m) (mappingLeft l) (mappingInterface l) &&
-    danglingSpan (right (codomain m)) (mappingRight m) (mappingInterface m) (mappingRight l) (mappingInterface l)
-
-  partiallyMonomorphic = error "partiallyMonomorphic not implemented for RuleMorphism"
 
 -- | Given the morphisms /a : X -> Y/ and /b : X -> Z/, respectively,
 -- creates the monomorphic morphism /x : Y -> Z/,

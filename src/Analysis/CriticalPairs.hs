@@ -21,10 +21,6 @@ import           Data.Maybe                (mapMaybe)
 import           Graph.EpiPairs            ()
 import           Abstract.AdhesiveHLR      as RW
 import           Abstract.DPO              as RW hiding (comatch)
-import           Graph.TypedGraphMorphism
-
-class CriticalPairs m where
-  cps :: Production m -> Production m -> [(m,m)]
 
 -- | Data representing the type of a 'CriticalPair'
 data CP = FOL | DeleteUse | ProduceForbid | ProduceEdgeDeleteNode deriving(Eq,Show)
@@ -100,8 +96,7 @@ criticalPairs :: (EpiPairs m, DPO m) =>
               -> Production m
               -> [CriticalPair m]
 --criticalPairs nacInj inj l r = (allDeleteUse nacInj inj l r) ++ (allProduceForbid nacInj inj l r) ++ (allProdEdgeDelNode nacInj inj l r)
---criticalPairs nacInj inj l r = allDeleteUseAndDangling nacInj inj l r ++ allProduceForbid nacInj inj l r
-criticalPairs nacInj inj l r = allDeleteUse nacInj inj l r ++ allProduceForbid nacInj inj l r
+criticalPairs nacInj inj l r = allDeleteUseAndDangling nacInj inj l r ++ allProduceForbid nacInj inj l r
 
 ---- Delete-Use
 
@@ -128,8 +123,7 @@ deleteUseDangling nacInj inj l r (m1,m2) = cp
     matchD = filter (\x -> m2 == compose x l') lTOd
     (_,r') = RW.po k (right l)
     m2' = compose (head matchD) r'
-    --dang = not (satsIncEdges (left r) m2') && (satsNacs nacInj inj r m2')
-    dang = not (satsGluing inj (left r) m2') && (satsNacs nacInj inj r m2')
+    dang = not (freeDanglingEdges (left r) m2') && (satsNacs nacInj inj r m2')
     cp = case (null matchD, dang) of
            (True,_)     -> Just (CriticalPair (m1,m2) Nothing Nothing DeleteUse)
            (False,True) -> Just (CriticalPair (m1,m2) Nothing Nothing ProduceEdgeDeleteNode)
@@ -192,8 +186,7 @@ allProdEdgeDelNode nacInj i l r = map (\(m1,m2) -> CriticalPair (m1,m2) Nothing 
         conflictPairs = filter (prodEdgeDelNode nacInj i l r) gluing
 
 prodEdgeDelNode :: (AdhesiveHLR m, FindMorphism m, Morphism m, Eq m, DPO m) => Bool -> Bool -> Production m -> Production m -> (m, m) -> Bool
---prodEdgeDelNode nacInj inj l r (m1,m2) = not (null matchD) && not (satsIncEdges (left r) m2') && (satsNacs nacInj inj r m2')
-prodEdgeDelNode nacInj inj l r (m1,m2) = not (null matchD) && not (satsGluing inj (left r) m2') && (satsNacs nacInj inj r m2')
+prodEdgeDelNode nacInj inj l r (m1,m2) = not (null matchD) && not (freeDanglingEdges (left r) m2') && (satsNacs nacInj inj r m2')
     where
         (k,d1) = RW.poc m1 (left l)
         l2TOd1 = matches ALL (domain m2) (domain d1)
