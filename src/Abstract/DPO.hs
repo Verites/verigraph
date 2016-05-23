@@ -129,6 +129,9 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
   -- Bool only indicates if the match is injective,
   -- in the case of unknown use False
   satsGluing :: Bool -> m -> m -> Bool
+  
+  -- | Checks if the match if free oh have a dangling edge that unable the production
+  freeDanglingEdges :: m -> m -> Bool
 
   -- | Check if the second morphism is monomorphic outside the image of the
   -- first morphism.

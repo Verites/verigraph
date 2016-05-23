@@ -31,7 +31,9 @@ instance EpiPairs (TypedGraphMorphism a b) where
       allPairs = map (mountTGMBoth cod1 cod2) (genGraphEqClass (mixGM (cod1,inj1) (cod2,inj2)))
       filt = filter (\(x,y) -> compose m1 x == compose m2 y) allPairs
 
--- | Generates all (ss1,ss2,m) morphisms that commute with all EpiPairs of S1 and S2 
+-- | Generates all (ss1,ss2,m) morphisms that commute with all EpiPairs of S1 and S2.
+-- The Bool flag indicates monomorphics ss1 and ss2.
+-- The morphism m is always monomorphic.
 --
 -- @
 --        sideM1   

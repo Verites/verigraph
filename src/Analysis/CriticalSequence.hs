@@ -16,15 +16,10 @@ module Analysis.CriticalSequence
 
 import           Abstract.Morphism
 import           Data.List                 (elemIndex)
-import           Graph.GraphRule
 import           Graph.EpiPairs            ()
 import           Abstract.AdhesiveHLR      as RW
 import           Abstract.DPO              as RW hiding (comatch)
-import           Graph.TypedGraphMorphism
 import           Graph.FindMorphism        ()
-
-class CriticalSequences m where
-  css :: Production m -> Production m -> [(m,m)]
 
 -- | Data representing the type of a 'CriticalPair'
 data CS = ProduceUse | DeliverDelete deriving (Eq,Show)
