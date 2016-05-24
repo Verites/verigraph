@@ -112,28 +112,28 @@
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
         <Rule ID="I29" formula="true" name="comMatch">
-            <Graph ID="I31" kind="LHS" name="LeftOf_regraBoba">
+            <Graph ID="I31" kind="LHS" name="LeftOf_comMatch">
                 <Node ID="I32" type="I2">
                     <NodeLayout X="76" Y="94"/>
-                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Node ID="I33" type="I2">
                     <NodeLayout X="212" Y="146"/>
-                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Edge ID="I34" source="I32" target="I33" type="I3">
                     <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
             </Graph>
-            <Graph ID="I35" kind="RHS" name="RightOf_regraBoba">
+            <Graph ID="I35" kind="RHS" name="RightOf_comMatch">
                 <Node ID="I36" type="I2">
                     <NodeLayout X="105" Y="90"/>
-                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Node ID="I37" type="I2">
                     <NodeLayout X="197" Y="146"/>
-                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
             </Graph>
             <Morphism comment="Formula: true" name="comMatch">
@@ -143,7 +143,7 @@
             <TaggedValue Tag="layer" TagValue="0"/>
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
-        <Rule ID="I38" enabled="false" formula="true" name="2rule_nac0_teste">
+        <Rule ID="I38" formula="true" name="2rule_nac0_teste">
             <Graph ID="I40" kind="LHS" name="LeftOf_2rule_nac0_teste">
                 <Node ID="I41" name="10|11" type="I2">
                     <NodeLayout X="108" Y="111"/>
@@ -168,10 +168,10 @@
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
         <Rule ID="I45" formula="true" name="semMatch">
-            <Graph ID="I47" kind="LHS" name="Left">
+            <Graph ID="I47" kind="LHS" name="LeftOf_semMatch">
                 <Node ID="I48" type="I2">
                     <NodeLayout X="170" Y="178"/>
-                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Edge ID="I49" source="I48" target="I48" type="I3">
                     <EdgeLayout bendX="116" bendY="153" loopH="20"
@@ -179,13 +179,13 @@
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
             </Graph>
-            <Graph ID="I50" kind="RHS" name="Right">
+            <Graph ID="I50" kind="RHS" name="RightOf_semMatch">
                 <Node ID="I51" type="I2">
                     <NodeLayout X="170" Y="178"/>
-                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
             </Graph>
-            <Morphism name="semMatch">
+            <Morphism comment="Formula: true" name="semMatch">
                 <Mapping image="I51" orig="I48"/>
             </Morphism>
             <TaggedValue Tag="layer" TagValue="0"/>

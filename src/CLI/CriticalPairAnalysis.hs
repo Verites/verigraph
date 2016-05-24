@@ -82,12 +82,15 @@ execute globalOpts opts = do
         
         -- Second order conflicts/dependencies
         newNacs =
-          map (\(n,r) -> let newRule = addMinimalSafetyNacs r
-                             tamNewNacs = length (nacs newRule)
-                             tamNacs = length (nacs r) in
-           ((n, newRule), (n, tamNewNacs - tamNacs)))
-           (GG.sndOrderRules gg)
+          map (\(n,r) ->
+            let newRule = addMinimalSafetyNacs r
+                tamNewNacs = length (nacs newRule)
+                tamNacs = length (nacs r)
+             in ((n, newRule), (n, tamNewNacs - tamNacs))
+             ) (GG.sndOrderRules gg)
         rules2 = map (snd . fst) newNacs
+        newGG = gg {GG.sndOrderRules = (map fst newNacs)}
+        
         printNewNacs = map snd newNacs
         
         ud2Matrix = pairwiseCompare (allDeleteUse nacInj onlyInj) rules2
@@ -139,19 +142,21 @@ execute globalOpts opts = do
                    , show (length <$> dependencies2Matrix)
                    , ""]
     
-    print (map (inverse False) rules2)
+    putStrLn $ "injective satisfability of nacs: " ++ show nacInj
+    putStrLn $ "only injective matches morphisms: " ++ show onlyInj
+    putStrLn ""
     
     if secondOrder
       then mapM_
         putStrLn $
-        ["Adding minimal safety nacs to second order rules"]
+        ["Adding minimal safety nacs to second order rules:"]
         ++ (map (\(r,n) -> "Rule "++r++", added "++ show n ++ " nacs") printNewNacs)
-        ++ ["All nacs added!",""]
+        ++ ["All minimal safety nacs added!",""]
       else
         putStrLn ""
     
     case outputFile opts of
-      Just file -> writer gg ggName names file
+      Just file -> writer newGG ggName names file
       Nothing -> let (confMatrix, depMatrix) =
                        if secondOrder
                          then (conflicts2, dependencies2)
