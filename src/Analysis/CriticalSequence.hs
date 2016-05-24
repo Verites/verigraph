@@ -134,7 +134,7 @@ deliverDelete :: (EpiPairs m, Morphism m, DPO m) => Bool -> Bool
 deliverDelete nacInj inj l inverseLeft r (n,idx) = let
         pairs = createPairsNac nacInj inj (codomain (left l)) n
         
-        filtPairs = {-error (show (length pairs))-}filter (\(m1,_) -> satsGluingAndNacs nacInj inj l m1) pairs
+        filtPairs = filter (\(m1,_) -> satsGluingAndNacs nacInj inj l m1) pairs
 
         dpo = map (\(m1,q21) ->
                     let (k,r') = RW.poc m1 (left l)

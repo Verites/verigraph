@@ -85,14 +85,14 @@ getCPNacIdx cp = case nacMatch cp of
                    Nothing -> Nothing
 
 -- | Returns the Critical Pairs with rule names
-namedCriticalPairs :: (Show m, EpiPairs m, DPO m) =>
+namedCriticalPairs :: (EpiPairs m, DPO m) =>
                       Bool -> Bool -> [(String, Production m)] -> [(String,String,[CriticalPair m])]
 namedCriticalPairs nacInj inj r = map (uncurry getCPs) [(a,b) | a <- r, b <- r]
   where
     getCPs (n1,r1) (n2,r2) = (n1, n2, criticalPairs nacInj inj r1 r2)
 
 -- | All Critical Pairs
-criticalPairs :: (Show m, EpiPairs m, DPO m) =>
+criticalPairs :: (EpiPairs m, DPO m) =>
                  Bool -> Bool
               -> Production m
               -> Production m
@@ -178,7 +178,7 @@ prodEdgeDelNode nacInj inj l r (m1,m2) = not (null matchD) && not (freeDanglingE
 
 -- | All ProduceForbid caused by the derivation of @l@ before @r@
 -- rule @l@ causes a produce-forbid conflict with @r@ if some NAC in @r@ fails to be satisfied after the aplication of @l@
-allProduceForbid :: (Show m, EpiPairs m, DPO m) =>
+allProduceForbid :: (EpiPairs m, DPO m) =>
                     Bool -> Bool
                  -> Production m
                  -> Production m
@@ -188,7 +188,7 @@ allProduceForbid nacInj inj l r = concatMap (produceForbidOneNac nacInj inj l in
     inverseLeft = inverse inj l
 
 -- | Check ProduceForbid for a NAC @n@ in @r@
-produceForbidOneNac :: (Show m, AdhesiveHLR m, EpiPairs m, FindMorphism m, Morphism m, DPO m) => Bool -> Bool
+produceForbidOneNac :: (AdhesiveHLR m, EpiPairs m, FindMorphism m, Morphism m, DPO m) => Bool -> Bool
                     -> Production m -> Production m -> Production m -> (m, Int)
                     -> [CriticalPair m]
 produceForbidOneNac nacInj inj l inverseLeft r (n,idx) = let
