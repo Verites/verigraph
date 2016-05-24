@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -7,6 +8,7 @@
 module Graph.SndOrderRule (
     SndOrderRule
   , applySndOrderRules
+  , addMinimalSafetyNacs
   , minimalSafetyNacs
   ) where
 
@@ -60,6 +62,45 @@ type SndOrderRule a b = Production (RuleMorphism a b)
 
 data Side = LeftSide | RightSide
 
+instance DPO (RuleMorphism a b) where
+  satsGluing inj m l =
+    satsGluing inj (mappingLeft m)      (mappingLeft l)      &&
+    satsGluing inj (mappingInterface m) (mappingInterface l) &&
+    satsGluing inj (mappingRight m)     (mappingRight l)     &&
+    danglingSpan (left (codomain m)) (mappingLeft m) (mappingInterface m) (mappingLeft l) (mappingInterface l) &&
+    danglingSpan (right (codomain m)) (mappingRight m) (mappingInterface m) (mappingRight l) (mappingInterface l)
+  
+  -- CHECK
+  freeDanglingEdges _ _ = True
+  
+  inverse inj r = addMinimalSafetyNacs newRule
+    where
+      newRule = production (right r) (left r) (concatMap (shiftLeftNac inj r) (nacs r))
+  
+  -- | Needs the satsNacs extra verification because not every satsGluing nac can be shifted
+  shiftLeftNac inj rule n = [comatch n rule |
+                               satsGluing inj n (left rule) &&
+                               satsNacs True inj ruleWithOnlyMinimalSafetyNacs n]
+    where
+      ruleWithOnlyMinimalSafetyNacs = production (left rule) (right rule) (minimalSafetyNacs rule)
+  
+  partiallyMonomorphic m l =
+    partiallyMonomorphic (mappingLeft m)      (mappingLeft l)      &&
+    partiallyMonomorphic (mappingInterface m) (mappingInterface l) &&
+    partiallyMonomorphic (mappingRight m)     (mappingRight l)
+
+-- | A gluing condition for second order rules application 
+danglingSpan :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
+danglingSpan matchRuleSide matchMorp matchK l k = deletedNodesInK && deletedEdgesInK
+  where
+    deletedNodes = filter (ruleDeletes l matchMorp applyNodeTGM nodesDomain) (nodesCodomain matchMorp)
+    nodesInK = [a | a <- nodesDomain matchRuleSide, (applyNodeTGMUnsafe matchRuleSide a) `elem` deletedNodes]
+    deletedNodesInK = all (ruleDeletes k matchK applyNodeTGM nodesDomain) nodesInK
+    
+    deletedEdges = filter (ruleDeletes l matchMorp applyEdgeTGM edgesDomain) (edgesCodomain matchMorp)
+    edgesInK = [a | a <- edgesDomain matchRuleSide, (applyEdgeTGMUnsafe matchRuleSide a) `elem` deletedEdges]
+    deletedEdgesInK = all (ruleDeletes k matchK applyEdgeTGM edgesDomain) edgesInK
+
 applySndOrderRules :: [(String, GraphRule a b)] -> [(String, SndOrderRule a b)] -> [(String, GraphRule a b)]
 applySndOrderRules fstRules = concatMap (\r -> applySndOrderRuleListRules r fstRules)
 
@@ -82,17 +123,20 @@ applySndOrderRule (sndName,sndRule) (fstName,fstRule) = zip newNames newRules
                        codomain m'
                    ) nacs
 
--- | Generates the minimal safety NACs of a 2-rule
--- probL and probR done, pairL and pairR to do.
-minimalSafetyNacs :: SndOrderRule a b -> SndOrderRule a b
-minimalSafetyNacs sndRule =
+-- | Adds the minimal safety nacs needed to this production always produce a second order rule.
+-- If the nacs to be added not satisfies the others nacs, then it do not need to be added.
+addMinimalSafetyNacs :: SndOrderRule a b -> SndOrderRule a b
+addMinimalSafetyNacs sndRule =
   production
     (left sndRule)
     (right sndRule)
     ((nacs sndRule) ++
-     (newNacsProb LeftSide sndRule) ++
-     (newNacsProb RightSide sndRule){- ++
-     (newNacsPairL sndRule)-})
+     (filter (satsNacs True True sndRule) (minimalSafetyNacs sndRule)))
+
+-- | Generates the minimal safety NACs of a 2-rule
+-- probL and probR done, pairL and pairR to do.
+minimalSafetyNacs :: SndOrderRule a b -> [RuleMorphism a b]
+minimalSafetyNacs sndRule = (newNacsProb LeftSide sndRule) ++ (newNacsProb RightSide sndRule)
 
 newNacsProb :: Side -> SndOrderRule a b -> [SO.RuleMorphism a b]
 newNacsProb side sndRule = nacNodes ++ nacEdges

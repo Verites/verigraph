@@ -59,6 +59,10 @@ instance DPO (TypedGraphMorphism a b) where
   
   freeDanglingEdges = satsIncEdges
   
+  inverse inj r = production (right r) (left r) (concatMap (shiftLeftNac inj r) (nacs r))
+  
+  shiftLeftNac inj rule n = [comatch n rule | satsGluing inj n (left rule)]
+  
   partiallyMonomorphic = partialInjectiveTGM
 
 ---- Gluing Conditions

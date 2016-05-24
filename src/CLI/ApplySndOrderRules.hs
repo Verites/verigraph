@@ -6,8 +6,8 @@ module CLI.ApplySndOrderRules
   , execute
   ) where
 
+import           Abstract.DPO
 import           CLI.GlobalOptions
-
 import           Graph.EpiPairs            ()
 import qualified Graph.GraphGrammar        as GG
 import qualified Graph.SndOrderRule        as SO
@@ -38,23 +38,28 @@ execute globalOpts opts = do
 
     let --nacInj = injectiveNacSatisfaction globalOpts
         --onlyInj = if arbitraryMatches globalOpts then ALL else MONO
-        newRules = SO.applySndOrderRules (GG.rules gg) (GG.sndOrderRules gg)
-        testSndOrder = map (\(n,r) -> (n,SO.minimalSafetyNacs r)) (GG.sndOrderRules gg)
+        newNacs =
+          map (\(n,r) -> let newRule = SO.addMinimalSafetyNacs r
+                             tamNewNacs = length (nacs newRule)
+                             tamNacs = length (nacs r) in
+           ((n, newRule), (n, tamNewNacs - tamNacs)))
+           (GG.sndOrderRules gg)
+        addNacs = map fst newNacs
+        printNewNacs = map snd newNacs
         --rule = snd (head (GG.sndOrderRules gg))
-        gg2 = GG.graphGrammar (GG.initialGraph gg) ((GG.rules gg) ++ newRules) testSndOrder--(GG.sndOrderRules gg)
+        newRules = SO.applySndOrderRules (GG.rules gg) (GG.sndOrderRules gg)
+        gg2 = GG.graphGrammar (GG.initialGraph gg) ((GG.rules gg) ++ newRules) addNacs--(GG.sndOrderRules gg)
         --gg3 = GG.graphGrammar (GG.initialGraph gg) rulePairs []--(GG.sndOrderRules gg)
         --rul = snd (head (GG.sndOrderRules gg))
         --rulePairs = map (\(idx,(a,_)) -> (show idx, codomain a)) (zip [0..] (createPairs True ruleL ruleR))
     
-    GW.writeGrammarFile gg2 ggName names (outputFile opts)
+    mapM_
+      putStrLn $
+      ["Adding minimal safety nacs to second order rules"]
+      ++ (map (\(r,n) -> "Rule "++r++", added "++ show n ++ " nacs") printNewNacs)
+      ++ ["All nacs added!",""]
     
-    --print (GG.rules gg)
-    --print (head (nacs rule))
-    --print (map (\x -> codomain (left (codomain x))) (newNacsPairL rule))
-    --print (length (newNacsPairL rule))
-    --print (createPairs True (codomain (left rule)) (codomain (left rule)))
-    --print (length (createPairs' True ruleL ruleL))
-    --GW.writeGrammarFile gg3 ggName names "t.ggx"
+    GW.writeGrammarFile gg2 ggName names (outputFile opts)
     
     putStrLn "Done!"
     putStrLn ""

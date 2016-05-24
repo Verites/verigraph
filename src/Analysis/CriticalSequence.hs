@@ -134,10 +134,7 @@ deliverDelete :: (EpiPairs m, Morphism m, DPO m) => Bool -> Bool
 deliverDelete nacInj inj l inverseLeft r (n,idx) = let
         pairs = createPairsNac nacInj inj (codomain (left l)) n
         
-        --filtFun = if nacInj then M.monomorphism else partialInjectiveTGM n
-        filtPairs = filter (\(m1,_) -> {-(not inj || M.monomorphism m1) && filtFun q &&-}
-                                       satsGluingAndNacs nacInj inj l m1
-                                       ) pairs
+        filtPairs = {-error (show (length pairs))-}filter (\(m1,_) -> satsGluingAndNacs nacInj inj l m1) pairs
 
         dpo = map (\(m1,q21) ->
                     let (k,r') = RW.poc m1 (left l)
@@ -157,7 +154,6 @@ deliverDelete nacInj inj l inverseLeft r (n,idx) = let
 
         defineM2 = map (\(m1,q21,_,r',m1',l',l2d1) -> (q21, m1, compose l2d1 r', m1', compose l2d1 l')) h21
 
-        filtM2 = filter (\(_,_,_,_,m2') -> {-(not inj || M.monomorphism m2) &&-}
-                                      satsGluingAndNacs nacInj inj r m2') defineM2
+        filtM2 = filter (\(_,_,_,_,m2') -> satsGluingAndNacs nacInj inj r m2') defineM2
 
         in map (\(q21,m1,m2,m1',m2') -> CriticalSequence (Just (m1,m2)) (m1',m2') (Just (q21,idx)) DeliverDelete) filtM2

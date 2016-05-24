@@ -4,12 +4,13 @@ module CLI.CriticalPairAnalysis
   , execute
   ) where
 
-import           CLI.GlobalOptions
-
+import           Abstract.DPO
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
+import           CLI.GlobalOptions
 import           Data.Matrix               hiding ((<|>))
 import qualified Graph.GraphGrammar        as GG
+import           Graph.SndOrderRule
 import           Options.Applicative
 import qualified XML.GGXReader             as XML
 import qualified XML.GGXWriter             as GW
@@ -80,7 +81,18 @@ execute globalOpts opts = do
         dependenciesMatrix = liftMatrix2 (++) puMatrix ddMatrix
         
         -- Second order conflicts/dependencies
-        rules2 = map snd (GG.sndOrderRules gg)
+        newNacs =
+          map (\(n,r) ->
+            let newRule = addMinimalSafetyNacs r
+                tamNewNacs = length (nacs newRule)
+                tamNacs = length (nacs r)
+             in ((n, newRule), (n, tamNewNacs - tamNacs))
+             ) (GG.sndOrderRules gg)
+        rules2 = map (snd . fst) newNacs
+        newGG = gg {GG.sndOrderRules = (map fst newNacs)}
+        
+        printNewNacs = map snd newNacs
+        
         ud2Matrix = pairwiseCompare (allDeleteUse nacInj onlyInj) rules2
         pf2Matrix = pairwiseCompare (allProduceForbid nacInj onlyInj) rules2
         pu2Matrix = pairwiseCompare (allProduceUse nacInj onlyInj) rules2
@@ -129,9 +141,22 @@ execute globalOpts opts = do
                    , "All Second Order Dependencies:"
                    , show (length <$> dependencies2Matrix)
                    , ""]
-
+    
+    putStrLn $ "injective satisfability of nacs: " ++ show nacInj
+    putStrLn $ "only injective matches morphisms: " ++ show onlyInj
+    putStrLn ""
+    
+    if secondOrder
+      then mapM_
+        putStrLn $
+        ["Adding minimal safety nacs to second order rules:"]
+        ++ (map (\(r,n) -> "Rule "++r++", added "++ show n ++ " nacs") printNewNacs)
+        ++ ["All minimal safety nacs added!",""]
+      else
+        putStrLn ""
+    
     case outputFile opts of
-      Just file -> writer gg ggName names file
+      Just file -> writer newGG ggName names file
       Nothing -> let (confMatrix, depMatrix) =
                        if secondOrder
                          then (conflicts2, dependencies2)

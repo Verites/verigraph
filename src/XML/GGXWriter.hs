@@ -26,18 +26,18 @@ import           XML.ParsedTypes
 import           XML.ParseSndOrderRule
 import           XML.Utilities
 
-appendSndOrderConflicts :: GraphGrammar a b -> GraphGrammar a b
-appendSndOrderConflicts gg = newGG
+appendSndOrderConflicts :: Bool -> Bool -> GraphGrammar a b -> GraphGrammar a b
+appendSndOrderConflicts nacInj inj gg = newGG
   where
-    conflicts = CP.namedCriticalPairs True False (sndOrderRules gg)
+    conflicts = CP.namedCriticalPairs nacInj inj (sndOrderRules gg)
     matches = concatMap (\(n1,n2,c) -> map (\ol -> (n1, n2, CP.getCP ol, codomain (fst (CP.getMatch ol)))) c) conflicts
     conflictRules = map (\(idx,(n1,n2,tp,rule)) -> ("conflict_"++(show tp)++"_"++n1++"_"++n2++"_"++(show idx), rule)) (zip ([0..]::[Int]) matches)
     newGG = graphGrammar (initialGraph gg) ((rules gg) ++ conflictRules) (sndOrderRules gg)
 
-appendSndOrderDependencies :: GraphGrammar a b -> GraphGrammar a b
-appendSndOrderDependencies gg = newGG
+appendSndOrderDependencies :: Bool -> Bool -> GraphGrammar a b -> GraphGrammar a b
+appendSndOrderDependencies nacInj inj gg = newGG
   where
-    conflicts = CS.namedCriticalSequences True False (sndOrderRules gg)
+    conflicts = CS.namedCriticalSequences nacInj inj (sndOrderRules gg)
     matches = concatMap (\(n1,n2,c) -> map (\ol -> (n1, n2, CS.getCS ol, codomain (fst (CS.getComatch ol)))) c) conflicts
     conflictRules = map (\(idx,(n1,n2,tp,rule)) -> ("dependency_"++(show tp)++"_"++n1++"_"++n2++"_"++(show idx), rule)) (zip ([0..]::[Int]) matches)
     newGG = graphGrammar (initialGraph gg) ((rules gg) ++ conflictRules) (sndOrderRules gg)
@@ -46,7 +46,7 @@ appendSndOrderDependencies gg = newGG
 writeSndOderConfDepFile :: Bool -> Bool -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
 writeSndOderConfDepFile nacInj inj gg name names fileName =
   do
-    let newGG = (appendSndOrderDependencies . appendSndOrderConflicts) gg
+    let newGG = ((appendSndOrderDependencies nacInj inj) . (appendSndOrderConflicts nacInj inj)) gg
     runX $ writeConfDep nacInj inj newGG name names fileName
     putStrLn $ "Saved in " ++ fileName
     return ()
@@ -55,7 +55,7 @@ writeSndOderConfDepFile nacInj inj gg name names fileName =
 writeSndOderConflictsFile :: Bool -> Bool -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
 writeSndOderConflictsFile nacInj inj gg name names fileName =
   do
-    let newGG = appendSndOrderConflicts gg
+    let newGG = appendSndOrderConflicts nacInj inj gg
     runX $ writeConf nacInj inj newGG name names fileName
     putStrLn $ "Saved in " ++ fileName
     return ()
@@ -64,7 +64,7 @@ writeSndOderConflictsFile nacInj inj gg name names fileName =
 writeSndOderDependenciesFile :: Bool -> Bool -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
 writeSndOderDependenciesFile nacInj inj gg name names fileName =
   do
-    let newGG = appendSndOrderDependencies gg
+    let newGG = appendSndOrderDependencies nacInj inj gg
     runX $ writeDep nacInj inj newGG name names fileName
     putStrLn $ "Saved in " ++ fileName
     return ()

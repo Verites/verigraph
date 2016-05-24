@@ -37,8 +37,6 @@ module Abstract.DPO
 
   -- ** Manipulating
   , inverseWithoutNacs
-  , inverse
-  , shiftLeftNac
   , downwardShift
   ) where
 
@@ -132,7 +130,18 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
   
   -- | Checks if the match if free oh have a dangling edge that unable the production
   freeDanglingEdges :: m -> m -> Bool
-
+  
+  -- | Inverts a production, adjusting the NACs accordingly
+  inverse :: DPO m => Bool -> Production m -> Production m
+  
+  -- | Given a production /L ←l- K -r→ R/ and a NAC morphism /n : L -> N/, obtain
+  -- a set of NACs /n'i : R -> N'i/ that is equivalent to the original NAC.
+  --
+  -- TODO: review name
+  --
+  -- TODO: what's the first parameter?
+  shiftLeftNac :: DPO m => Bool -> Production m -> m -> [m]
+  
   -- | Check if the second morphism is monomorphic outside the image of the
   -- first morphism.
   partiallyMonomorphic :: m -> m -> Bool
@@ -181,19 +190,6 @@ satsOneNacPartInj m nac = null checkCompose
    where
       checkCompose = filter (\x -> compose nac x == m) matches
       matches = partInjMatches nac m
-
--- | Inverts a production, adjusting the NACs accordingly
-inverse :: DPO m => Bool -> Production m -> Production m
-inverse inj r = Production (right r) (left r) (concatMap (shiftLeftNac inj r) (nacs r))
-
--- | Given a production /L ←l- K -r→ R/ and a NAC morphism /n : L -> N/, obtain
--- a set of NACs /n'i : R -> N'i/ that is equivalent to the original NAC.
---
--- TODO: review name
---
--- TODO: what's the first parameter?
-shiftLeftNac :: DPO m => Bool -> Production m -> m -> [m]
-shiftLeftNac inj rule n = [comatch n rule | satsGluing inj n (left rule)]
 
 -- | Given a morphism /m : L -> L'/ and a NAC /n : L -> N/, obtains
 -- an equivalent set of NACs /n'i : L' -> N'i/ that is equivalent to the

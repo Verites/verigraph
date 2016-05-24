@@ -5,6 +5,7 @@ import           Abstract.Morphism
 import           Graph.GraphMorphism      as GM
 import           Graph.GraphRule          as GR
 import           Graph.RuleMorphism
+import           Graph.SndOrderRule       ()
 import           Graph.TypedGraphMorphism
 import {-# SOURCE #-} XML.GGXReader
 import           XML.ParsedTypes
