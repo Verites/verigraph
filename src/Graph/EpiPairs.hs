@@ -83,12 +83,16 @@ instance EpiPairs (RuleMorphism a b) where
                    in (ruleMorphism m1 rule l1 k1 r1,
                        ruleMorphism m2 rule l2 k2 r2)) rights
   
-  createPairsNac nacInj inj r nac = satsMorphisms
+  --FIXME
+  createPairsNac _ _ r nac = allPairs
+    where
+      allPairs = createPairs True r (codomain nac)
+  {-createPairsNac nacInj inj r nac = satsMorphisms
     where
       allPairs = createPairs False r (codomain nac)
       satsR = if inj then monomorphism else (\_ -> True)
       satsNac = if nacInj then monomorphism else partiallyMonomorphic nac
-      satsMorphisms = filter (\(h,q) -> satsR h && satsNac q) allPairs
+      satsMorphisms = filter (\(h,q) -> satsR h && satsNac q) allPairs-}
   
   commutingPairsAlt (m1,inj1) (m2,inj2) = filt
     where

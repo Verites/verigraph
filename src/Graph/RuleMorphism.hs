@@ -7,13 +7,14 @@ module Graph.RuleMorphism (
   , mappingInterface
   , mappingRight
   , commutingMorphismSameDomain
+  , commutingMorphismSameCodomain
   ) where
 
 import Abstract.AdhesiveHLR
 import Abstract.DPO
 import Abstract.Morphism
 import Abstract.Valid
-import Graph.GraphRule (ruleDeletes)
+import Graph.GraphRule ()
 import Graph.TypedGraphMorphism
 
 -- | A morphism between two rules:
@@ -56,34 +57,6 @@ ruleMorphism :: Production (TypedGraphMorphism a b)
              -> RuleMorphism a b
 ruleMorphism = RuleMorphism
 
-instance DPO (RuleMorphism a b) where
-  satsGluing inj m l =
-    satsGluing inj (mappingLeft m)      (mappingLeft l)      &&
-    satsGluing inj (mappingInterface m) (mappingInterface l) &&
-    satsGluing inj (mappingRight m)     (mappingRight l)     &&
-    danglingSpan (left (codomain m)) (mappingLeft m) (mappingInterface m) (mappingLeft l) (mappingInterface l) &&
-    danglingSpan (right (codomain m)) (mappingRight m) (mappingInterface m) (mappingRight l) (mappingInterface l)
-  
-  -- CHECK
-  freeDanglingEdges _ _ = True
-  
-  partiallyMonomorphic m l =
-    partiallyMonomorphic (mappingLeft m)      (mappingLeft l)      &&
-    partiallyMonomorphic (mappingInterface m) (mappingInterface l) &&
-    partiallyMonomorphic (mappingRight m)     (mappingRight l)
-
--- | A gluing condition for second order rules application 
-danglingSpan :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
-danglingSpan matchRuleSide matchMorp matchK l k = deletedNodesInK && deletedEdgesInK
-  where
-    deletedNodes = filter (ruleDeletes l matchMorp applyNodeTGM nodesDomain) (nodesCodomain matchMorp)
-    nodesInK = [a | a <- nodesDomain matchRuleSide, (applyNodeTGMUnsafe matchRuleSide a) `elem` deletedNodes]
-    deletedNodesInK = all (ruleDeletes k matchK applyNodeTGM nodesDomain) nodesInK
-    
-    deletedEdges = filter (ruleDeletes l matchMorp applyEdgeTGM edgesDomain) (edgesCodomain matchMorp)
-    edgesInK = [a | a <- edgesDomain matchRuleSide, (applyEdgeTGMUnsafe matchRuleSide a) `elem` deletedEdges]
-    deletedEdgesInK = all (ruleDeletes k matchK applyEdgeTGM edgesDomain) edgesInK
-
 instance FindMorphism (RuleMorphism a b) where
   -- | A match between two rules, only considers monomorphic matches morphisms:
   -- (desconsidering the NACs)
@@ -107,27 +80,59 @@ getAllMaps prop l g =
     matchesR <- matches prop (codomain (right l)) (codomain (right g))
     return $ f (matchesL, matchesK, matchesR)
 
--- | Given the morphisms /a : X -> Y/ and /b : X -> Z/, respectively,
+-- | Given the morphisms /k1 : X -> Y/, /s1 : X -> Z/,
+-- /k2 : W -> Y/ and /s2 : W -> Z/, respectively,
 -- creates the monomorphic morphism /x : Y -> Z/,
 -- where the following diagram commutes:
 --
 -- @
---        a
+--        k1
 --     X ───▶Y
---      \\   /
---      b\\ /x
---        ▼ 
---        Z
+--      \\   / ▲
+--     s1\\ /x  \\k2
+--        ▼     \\
+--        Z◀──── W
+--           s2
 -- @
 -- 
-commutingMorphismSameDomain :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
-commutingMorphismSameDomain a b = typedMorphism (codomain a) (codomain b) select
+commutingMorphismSameDomain :: TypedGraphMorphism a b -> TypedGraphMorphism a b
+                            -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+commutingMorphismSameDomain k1 s1 k2 s2 = typedMorphism (codomain k1) (codomain s1) select
   where
-    mats = matches MONO (codomain a) (codomain b)
-    filt = filter (\m -> compose a m == b) mats
+    mats = matches MONO (codomain k1) (codomain s1)
+    filt = filter (\m -> compose k1 m == s1 && compose k2 m == s2) mats
     select = if Prelude.null filt
-               then error ("Error when commuting monomorphic morphisms (must be generating an invalid rule)")
-               else mapping (head filt)
+               then error "(domain) Error when commuting monomorphic morphisms (must be generating an invalid rule)"
+               else if length filt > 1
+                   then error "(domain) Error when commuting monomorphic morphisms (non unique commuting morphism)"
+                   else mapping (head filt)
+
+-- | Given the morphisms /k1 : Y -> X/, /s1 : Z -> X/,
+-- /k2 : W -> Y/ and /s2 : W -> Z/, respectively,
+-- creates the monomorphic morphism /a : X -> Y/,
+-- where the following diagram commutes:
+--
+-- @
+--        k1
+--     X ◀─── Y
+--     ▲     / ▲
+--    s1\\   /x  \\k2
+--       \\ ▼     \\
+--        Z◀──── W
+--           s2
+-- @
+-- 
+commutingMorphismSameCodomain :: TypedGraphMorphism a b -> TypedGraphMorphism a b
+                              -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+commutingMorphismSameCodomain k1 s1 k2 s2 = typedMorphism (domain k1) (domain s1) select
+  where
+    mats = matches MONO (domain k1) (domain s1)
+    filt = filter (\m -> compose m s1 == k1 && compose k2 m == s2) mats
+    select = if Prelude.null filt
+               then error "(codomain) Error when commuting monomorphic morphisms (must be generating an invalid rule)"
+               else if length filt > 1
+                   then error "(codomain) Error when commuting monomorphic morphisms (non unique commuting morphism)"
+                   else mapping (head filt)
 
 instance AdhesiveHLR (RuleMorphism a b) where
   -- poc m l
@@ -136,8 +141,12 @@ instance AdhesiveHLR (RuleMorphism a b) where
        (matchL', leftL') = poc matchL leftL
        (matchK', leftK') = poc matchK leftK
        (matchR', leftR') = poc matchR leftR
-       l = commutingMorphismSameDomain matchK' (compose (left ruleK) matchL')
-       r = commutingMorphismSameDomain matchK' (compose (right ruleK) matchR')
+       l = commutingMorphismSameCodomain
+             (compose leftK' (left ruleG)) leftL'
+             matchK' (compose (left ruleK) matchL')
+       r = commutingMorphismSameCodomain
+             (compose leftK' (right ruleG)) leftR'
+             matchK' (compose (right ruleK) matchR')
        newRule = production l r []
        k = RuleMorphism ruleK newRule matchL' matchK' matchR'
        l' = RuleMorphism newRule ruleG leftL' leftK' leftR'
@@ -148,8 +157,12 @@ instance AdhesiveHLR (RuleMorphism a b) where
        (matchL', rightL') = po matchL rightL
        (matchK', rightK') = po matchK rightK
        (matchR', rightR') = po matchR rightR
-       l = commutingMorphismSameDomain matchK' (compose (left ruleR) matchL')
-       r = commutingMorphismSameDomain matchK' (compose (right ruleR) matchR')
+       l = commutingMorphismSameDomain
+             rightK' (compose (left ruleD) rightL')
+             matchK' (compose (left ruleR) matchL')
+       r = commutingMorphismSameDomain
+             rightK' (compose (right ruleD) rightR')
+             matchK' (compose (right ruleR) matchR')
        newRule = production l r []
        m' = RuleMorphism ruleR newRule matchL' matchK' matchR'
        r' = RuleMorphism ruleD newRule rightL' rightK' rightR'
