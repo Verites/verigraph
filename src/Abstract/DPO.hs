@@ -131,8 +131,10 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
   -- | Checks if the match if free oh have a dangling edge that unable the production
   freeDanglingEdges :: m -> m -> Bool
   
-  -- | Inverts a production, adjusting the NACs accordingly
-  inverse :: DPO m => Bool -> Production m -> Production m
+  -- | Inverts a production, adjusting the NACs accordingly.
+  -- Needs information of nac injective satisfaction (in second order)
+  -- and matches injective.
+  inverse :: DPO m => Bool -> Bool -> Production m -> Production m
   
   -- | Given a production /L ←l- K -r→ R/ and a NAC morphism /n : L -> N/, obtain
   -- a set of NACs /n'i : R -> N'i/ that is equivalent to the original NAC.
@@ -140,7 +142,7 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
   -- TODO: review name
   --
   -- TODO: what's the first parameter?
-  shiftLeftNac :: DPO m => Bool -> Production m -> m -> [m]
+  shiftLeftNac :: DPO m => Bool -> Bool -> Production m -> m -> [m]
   
   -- | Check if the second morphism is monomorphic outside the image of the
   -- first morphism.

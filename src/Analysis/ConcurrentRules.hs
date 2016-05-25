@@ -42,7 +42,7 @@ maxConcurrentRules dep nacInj injectiveOnly (x:xs) = map (singleCR x) (maxCRs xs
 
 --concurrentRules :: (DPO m, EpiPairs m, Eq (Obj m)) => Bool -> Bool -> Production m -> Production m -> [Production m]
 concurrentRules :: CRDependencies -> Bool -> Bool -> GraphRule a b -> GraphRule a b -> [GraphRule a b]
-concurrentRules dep nacInj isInjective c n = map (concurrentRuleForPair isInjective c n) selectedPairs
+concurrentRules dep nacInj isInjective c n = map (concurrentRuleForPair nacInj isInjective c n) selectedPairs
   where
     selectedPairs = case dep of
                       OnlyDependency -> dependencies
@@ -62,7 +62,7 @@ pairs isInjective c n = validDpoPairs
 
 --maxConcurrentRuleForLastPair :: (DPO m, EpiPairs m, Eq (Obj m)) => CRDependencies -> Bool -> Bool -> Production m -> Production m -> Production m
 maxConcurrentRuleForLastPair :: CRDependencies -> Bool -> Bool -> GraphRule a b -> GraphRule a b -> GraphRule a b
-maxConcurrentRuleForLastPair dep nacInj isInjective c n = concurrentRuleForPair isInjective c n (last selectedPairs)
+maxConcurrentRuleForLastPair dep nacInj isInjective c n = concurrentRuleForPair nacInj isInjective c n (last selectedPairs)
   where
     selectedPairs = case dep of
                       OnlyDependency -> dependencies
@@ -71,8 +71,8 @@ maxConcurrentRuleForLastPair dep nacInj isInjective c n = concurrentRuleForPair 
     dependencies = depPairs nacInj isInjective c n
 
 --concurrentRuleForPair :: (DPO m, EpiPairs m, Eq (Obj m)) => Bool -> Production m -> Production m -> (m, m) -> Production m
-concurrentRuleForPair :: Bool -> GraphRule a b -> GraphRule a b -> (TypedGraphMorphism a b, TypedGraphMorphism a b) -> GraphRule a b
-concurrentRuleForPair inj c n pair = production l r (dmc ++ lp)
+concurrentRuleForPair :: Bool -> Bool -> GraphRule a b -> GraphRule a b -> (TypedGraphMorphism a b, TypedGraphMorphism a b) -> GraphRule a b
+concurrentRuleForPair nacInj inj c n pair = production l r (dmc ++ lp)
   where
     pocC = poc (fst pair) (right c)
     pocN = poc (snd pair) (left n)
@@ -84,4 +84,4 @@ concurrentRuleForPair inj c n pair = production l r (dmc ++ lp)
     dmc = concatMap (downwardShift inj (fst poC)) (nacs c)
     inverseP = production (snd pocC) (snd poC) []
     den = concatMap (downwardShift inj (snd pair)) (nacs n)
-    lp = concatMap (shiftLeftNac inj inverseP) den
+    lp = concatMap (shiftLeftNac nacInj inj inverseP) den

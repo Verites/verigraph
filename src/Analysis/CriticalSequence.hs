@@ -100,7 +100,7 @@ criticalSequences nacInj inj l r = allProduceUse nacInj inj l r ++ allDeliverDel
 allProduceUse :: (DPO m, EpiPairs m) => Bool -> Bool -> Production m -> Production m -> [CriticalSequence m]
 allProduceUse nacInj i l r = map (\(m1,m2) -> CriticalSequence Nothing (m1,m2) Nothing ProduceUse) prodUse
   where
-    invLeft = inverse i l
+    invLeft = inverse nacInj i l
     pairs = createPairsCodomain i (left invLeft) (left r)
     gluing = filter (\(m1',m2') -> satsGluingNacsBoth nacInj i  (invLeft,m1') (r,m2')) pairs
     prodUse = filter (produceUse invLeft r) gluing
@@ -124,7 +124,7 @@ allDeliverDelete :: (DPO m, EpiPairs m) => Bool -> Bool
                  -> [CriticalSequence m]
 allDeliverDelete nacInj inj l r = concatMap (deliverDelete nacInj inj l inverseLeft r) (zip (nacs r) [0..])
   where
-    inverseLeft = inverse inj l
+    inverseLeft = inverse nacInj inj l
 
 -- | Check DeliverDelete for a NAC @n@ in @r@
 deliverDelete :: (EpiPairs m, Morphism m, DPO m) => Bool -> Bool

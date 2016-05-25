@@ -185,7 +185,7 @@ allProduceForbid :: (EpiPairs m, DPO m) =>
                  -> [CriticalPair m]
 allProduceForbid nacInj inj l r = concatMap (produceForbidOneNac nacInj inj l inverseLeft r) (zip (nacs r) [0..])
   where
-    inverseLeft = inverse inj l
+    inverseLeft = inverse nacInj inj l
 
 -- | Check ProduceForbid for a NAC @n@ in @r@
 produceForbidOneNac :: (AdhesiveHLR m, EpiPairs m, FindMorphism m, Morphism m, DPO m) => Bool -> Bool

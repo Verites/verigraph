@@ -73,14 +73,14 @@ instance DPO (RuleMorphism a b) where
   -- CHECK
   freeDanglingEdges _ _ = True
   
-  inverse inj r = addMinimalSafetyNacs newRule
+  inverse nacInj inj r = addMinimalSafetyNacs newRule
     where
-      newRule = production (right r) (left r) (concatMap (shiftLeftNac inj r) (nacs r))
+      newRule = production (right r) (left r) (concatMap (shiftLeftNac nacInj inj r) (nacs r))
   
   -- | Needs the satsNacs extra verification because not every satsGluing nac can be shifted
-  shiftLeftNac inj rule n = [comatch n rule |
+  shiftLeftNac nacInj inj rule n = [comatch n rule |
                                satsGluing inj n (left rule) &&
-                               satsNacs True inj ruleWithOnlyMinimalSafetyNacs n]
+                               satsNacs nacInj inj ruleWithOnlyMinimalSafetyNacs n]
     where
       ruleWithOnlyMinimalSafetyNacs = production (left rule) (right rule) (minimalSafetyNacs rule)
   
