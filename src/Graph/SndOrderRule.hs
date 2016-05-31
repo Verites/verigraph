@@ -7,14 +7,17 @@
 
 module Graph.SndOrderRule (
     SndOrderRule
-  , applySndOrderRules
   , addMinimalSafetyNacs
   , minimalSafetyNacs
+  , applySndOrderRule
+  , interLevelConflict
+  , applySecondOrder
   ) where
 
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Morphism
+import           Data.Maybe (mapMaybe)
 import           Graph.EpiPairs ()
 import           Graph.Graph as G
 import           Graph.GraphRule
@@ -62,6 +65,138 @@ type SndOrderRule a b = Production (RuleMorphism a b)
 
 data Side = LeftSide | RightSide
 
+danglingExtension :: TypedGraphMorphism a b -> TypedGraphMorphism a b
+danglingExtension l = error (show x)
+  where
+    ld = orphanNodesTyped l
+    tl = codomain l
+    t = codomain tl
+    tlx n' = any (\n -> GM.applyNodeUnsafe tl n == n') ld
+    dangT = filter (\e -> tlx (G.sourceOfUnsafe t e) || tlx (G.targetOfUnsafe t e)) (G.edges t)
+    
+    init = idTGM (codomain l)
+    
+    x = map (\n -> map (\e -> (n,e)) dangT) ld
+
+idTGM :: GM.GraphMorphism a b -> TypedGraphMorphism a b
+idTGM = Abstract.Morphism.id
+
+-- | Considering /m : X -> Y/,
+-- generates all subgraphs of /Y/ containing the graph /X/ via m.
+induzedSubgraphs :: TypedGraphMorphism a b -> [TypedGraphMorphism a b]
+induzedSubgraphs m = map (idMap (domain m)) subEdges
+  where
+    g = codomain m
+    graph = domain g
+    
+    listNodesToAdd =
+      map
+        (\n -> (n, GM.applyNodeUnsafe g n))
+        (orphanNodesTyped m)
+    
+    subNodes = addNodesSubgraphs (domain m) listNodesToAdd
+    
+    listEdgesToAdd =
+      map
+        (\e -> (e,
+                sourceOfUnsafe graph e,
+                targetOfUnsafe graph e,
+                GM.applyEdgeUnsafe g e))
+        (orphanEdgesTyped m)
+    
+    subEdges =
+      concatMap
+        (\g -> addEdgesSubgraphs g listEdgesToAdd)
+        subNodes
+
+addNodesSubgraphs :: GM.TypedGraph a b -> [(NodeId,NodeId)] -> [GM.TypedGraph a b]
+addNodesSubgraphs g [] = [g]
+addNodesSubgraphs g ((n,tp):ns) = (addNodesSubgraphs g ns) ++ (addNodesSubgraphs added ns)
+  where
+    added = GM.createNodeDom n tp g
+
+addEdgesSubgraphs :: GM.TypedGraph a b -> [(EdgeId,NodeId,NodeId,EdgeId)] -> [GM.TypedGraph a b]
+addEdgesSubgraphs g [] = [g]
+addEdgesSubgraphs g ((e,s,t,tp):es) = (addEdgesSubgraphs g es) ++
+  if isNodeOf graph s && isNodeOf graph t
+    then (addEdgesSubgraphs added es) else []
+  where
+    graph = domain g
+    added = GM.createEdgeDom e s t tp g
+
+-- | Receives a function that works with a second order and a first order rule.
+-- Apply this function on all possible combinations of rules. 
+applySecondOrder ::
+     ((String, SndOrderRule a b) -> (String, GraphRule a b) -> [t])
+  -> [(String, GraphRule a b)] -> [(String, SndOrderRule a b)] -> [t]
+applySecondOrder f fstRules = concatMap (\r -> applySecondOrderListRules f r fstRules)
+
+applySecondOrderListRules ::
+    ((String, SndOrderRule a b) -> (String, GraphRule a b) -> [t])
+ -> (String, SndOrderRule a b) -> [(String, GraphRule a b)] -> [t]
+applySecondOrderListRules f sndRule = concatMap (f sndRule)
+
+interLevelConflict :: (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String,(RuleMorphism a b, TypedGraphMorphism a b))]
+interLevelConflict (sndName,sndRule) (fstName,fstRule) = zip newNames (concatMap conflicts nacs)
+  where
+    newNames = map (\number -> fstName ++ "_" ++ sndName ++ "_" ++ show number) ([0..] :: [Int])
+    nacInj = False
+    inj = False
+    sndOrderL = left sndRule
+    leftRule = codomain sndOrderL
+    mats = matches MONO leftRule fstRule
+    gluing = filter (\m -> satsGluing inj m sndOrderL) mats
+    nacs = filter (satsNacs nacInj inj sndRule) gluing
+    conflicts m = 
+      do
+        a <- interLevelConflictOneMatch sndRule m
+        return (m,a)
+
+interLevelConflictOneMatch :: SndOrderRule a b -> RuleMorphism a b -> [TypedGraphMorphism a b]
+interLevelConflictOneMatch sndRule match = m0s
+  where
+    --nacInj = False
+    inj = False
+    sndOrderL = left sndRule
+    sndOrderR = right sndRule
+    
+    -- step 2a
+    (k,l') = poc match sndOrderL
+    (m',r') = po k sndOrderR
+    p = codomain match
+    p'' = codomain m'
+    
+    bigL = left p
+    bigL'' = left p''
+    
+    fl = mappingLeft l'
+    gl = mappingLeft r'
+    
+    -- step 2b
+    (_,al) = po fl (compose gl (danglingExtension bigL''))
+    
+    -- step 2c
+    axs = induzedSubgraphs al
+    
+    m0s = concatMap calc axs
+    
+    calc ax = mapMaybe
+                (\(m0,fact) -> if test fact then Just m0 else Nothing)
+                (zip mm facts)
+      where
+        -- step 2d
+        part = partitions False (codomain ax)
+        
+        -- step 2e
+        axeps = map (\ep -> compose ax ep) part
+        mm = filter (\axep -> satsGluing inj axep bigL) axeps
+        
+        -- step3
+        facts = map (\m0 -> let mts = matches MONO (codomain bigL'') (codomain m0)
+                             in filter (\m'' -> compose fl m0 == compose gl m'') mts) mm
+        
+        test x = Prelude.null x || all (==False) (map (\m'' -> satsGluing inj m'' bigL'') x)
+
 instance DPO (RuleMorphism a b) where
   satsGluing inj m l =
     satsGluing inj (mappingLeft m)      (mappingLeft l)      &&
@@ -100,12 +235,6 @@ danglingSpan matchRuleSide matchMorp matchK l k = deletedNodesInK && deletedEdge
     deletedEdges = filter (ruleDeletes l matchMorp applyEdgeTGM edgesDomain) (edgesCodomain matchMorp)
     edgesInK = [a | a <- edgesDomain matchRuleSide, (applyEdgeTGMUnsafe matchRuleSide a) `elem` deletedEdges]
     deletedEdgesInK = all (ruleDeletes k matchK applyEdgeTGM edgesDomain) edgesInK
-
-applySndOrderRules :: [(String, GraphRule a b)] -> [(String, SndOrderRule a b)] -> [(String, GraphRule a b)]
-applySndOrderRules fstRules = concatMap (\r -> applySndOrderRuleListRules r fstRules)
-
-applySndOrderRuleListRules :: (String, SndOrderRule a b) -> [(String, GraphRule a b)] -> [(String, GraphRule a b)]
-applySndOrderRuleListRules sndRule = concatMap (applySndOrderRule sndRule)
 
 applySndOrderRule :: (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String, GraphRule a b)]
 applySndOrderRule (sndName,sndRule) (fstName,fstRule) = zip newNames newRules

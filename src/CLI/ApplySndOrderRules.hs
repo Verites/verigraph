@@ -47,8 +47,10 @@ execute globalOpts opts = do
         addNacs = map fst newNacs
         printNewNacs = map snd newNacs
         --rule = snd (head (GG.sndOrderRules gg))
-        newRules = SO.applySndOrderRules (GG.rules gg) (GG.sndOrderRules gg)
+        newRules = SO.applySecondOrder SO.applySndOrderRule (GG.rules gg) (GG.sndOrderRules gg)
+        conf = SO.applySecondOrder SO.interLevelConflict (GG.rules gg) (GG.sndOrderRules gg)
         gg2 = GG.graphGrammar (GG.initialGraph gg) ((GG.rules gg) ++ newRules) addNacs--(GG.sndOrderRules gg)
+        --gg2 = GG.graphGrammar (GG.initialGraph gg) (GG.rules gg) addNacs--(GG.sndOrderRules gg)
         --gg3 = GG.graphGrammar (GG.initialGraph gg) rulePairs []--(GG.sndOrderRules gg)
         --rul = snd (head (GG.sndOrderRules gg))
         --rulePairs = map (\(idx,(a,_)) -> (show idx, codomain a)) (zip [0..] (createPairs True ruleL ruleR))
@@ -63,3 +65,5 @@ execute globalOpts opts = do
     
     putStrLn "Done!"
     putStrLn ""
+    
+    print conf--(map fst conf)
