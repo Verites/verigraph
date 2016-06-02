@@ -67,4 +67,4 @@ execute globalOpts opts = do
     putStrLn "Done!"
     putStrLn ""
     
-    print conf--(map fst conf)
+    print (map fst conf)

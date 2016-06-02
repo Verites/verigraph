@@ -140,7 +140,7 @@ addMinimalSafetyNacs sndRule =
     ((nacs sndRule) ++
      (filter (satsNacs True True sndRule) (minimalSafetyNacs sndRule)))
 
--- | Generates the minimal safety NACs of a 2-rule
+-- | Generates the minimal safety NACs of a 2-rule.
 -- probL and probR done, pairL and pairR to do.
 minimalSafetyNacs :: SndOrderRule a b -> [RuleMorphism a b]
 minimalSafetyNacs sndRule = (newNacsProb LeftSide sndRule) ++ (newNacsProb RightSide sndRule)

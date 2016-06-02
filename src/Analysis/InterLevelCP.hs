@@ -12,8 +12,8 @@ import           Graph.TypedGraphMorphism
 import           Graph.RuleMorphism
 import           Graph.SndOrderRule
 
-danglingExtension :: TypedGraphMorphism a b -> TypedGraphMorphism a b
-danglingExtension l = error (show x)
+danglingExtension :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+danglingExtension gl l = tlUpdated
   where
     ld = orphanNodesTyped l
     tl = codomain l
@@ -23,7 +23,36 @@ danglingExtension l = error (show x)
     
     --init = idTGM (codomain l)
     
-    x = map (\n -> map (\e -> (n,e)) dangT) ld
+    edgesToAdd = concatMap (\n -> map (\e -> (n,e)) dangT) ld
+    
+    tlUpdated = foldl addEdge gl edgesToAdd
+    
+    addEdge tgm (n,e) =
+      case (isSrc,isTgt) of
+        (True,True) -> createEdge tgm e n n
+        (True,False) -> createSrc tgm e n
+        (False,True) -> createTgt tgm e n
+        (False,False) -> error "danglingExtension: it's not supposed to be here"
+      where
+        typeNode = applyNodeUnsafe (codomain tgm) n
+        isSrc = typeNode == sourceOfUnsafe t e
+        isTgt = typeNode == targetOfUnsafe t e
+        
+        createEdge tgm e s t = createEdgeCodTGM edgeId s t e tgm
+          where
+            edgeId = head (newEdgesTyped (codomain tgm))
+        
+        createSrc tgm e n = createEdge newGraph e n nodeId
+          where
+            nodeId = head (newNodesTyped (codomain tgm))
+            typeNewNode = targetOfUnsafe (codomain (codomain tgm)) e
+            newGraph = createNodeCodTGM nodeId typeNewNode tgm
+        
+        createTgt tgm e n = createEdge newGraph e nodeId n
+          where
+            nodeId = head (newNodesTyped (codomain tgm))
+            typeNewNode = sourceOfUnsafe (codomain (codomain tgm)) e
+            newGraph = createNodeCodTGM nodeId typeNewNode tgm
 
 --idTGM :: GM.GraphMorphism a b -> TypedGraphMorphism a b
 --idTGM = Abstract.Morphism.id
@@ -65,7 +94,7 @@ interLevelConflictOneMatch sndRule match = m0s
     gl = mappingLeft r'
     
     -- step 2b
-    (_,al) = po fl (compose gl (danglingExtension bigL''))
+    (_,al) = po fl (compose gl (danglingExtension gl bigL''))
     
     -- step 2c
     axs = induzedSubgraphs al
