@@ -2,6 +2,7 @@
 
 module Graph.TypedGraphMorphism (
       TypedGraphMorphism
+    , induzedSubgraphs
     , idMap
     , partialInjectiveTGM
     , invertTGM
@@ -188,6 +189,49 @@ idMap gm1 gm2 =
       init = GM.empty (M.domain gm1) (M.domain gm2)
       nodesUpdate = foldr (\n -> GM.updateNodes n n) init (G.nodes (M.domain gm1))
       edgesUpdate = foldr (\e -> GM.updateEdges e e) nodesUpdate (G.edges (M.domain gm2))
+
+-- | Considering /m : X -> Y/,
+-- generates all subgraphs of /Y/ containing the graph /X/ via m.
+induzedSubgraphs :: TypedGraphMorphism a b -> [TypedGraphMorphism a b]
+induzedSubgraphs m = map (idMap (domain m)) subEdges
+  where
+    g = codomain m
+    graph = domain g
+    
+    listNodesToAdd =
+      map
+        (\n -> (n, GM.applyNodeUnsafe g n))
+        (orphanNodesTyped m)
+    
+    subNodes = addNodesSubgraphs (domain m) listNodesToAdd
+    
+    listEdgesToAdd =
+      map
+        (\e -> (e,
+                sourceOfUnsafe graph e,
+                targetOfUnsafe graph e,
+                GM.applyEdgeUnsafe g e))
+        (orphanEdgesTyped m)
+    
+    subEdges =
+      concatMap
+        (\g -> addEdgesSubgraphs g listEdgesToAdd)
+        subNodes
+
+addNodesSubgraphs :: GM.TypedGraph a b -> [(NodeId,NodeId)] -> [GM.TypedGraph a b]
+addNodesSubgraphs g [] = [g]
+addNodesSubgraphs g ((n,tp):ns) = (addNodesSubgraphs g ns) ++ (addNodesSubgraphs added ns)
+  where
+    added = GM.createNodeDom n tp g
+
+addEdgesSubgraphs :: GM.TypedGraph a b -> [(EdgeId,NodeId,NodeId,EdgeId)] -> [GM.TypedGraph a b]
+addEdgesSubgraphs g [] = [g]
+addEdgesSubgraphs g ((e,s,t,tp):es) = (addEdgesSubgraphs g es) ++
+  if isNodeOf graph s && isNodeOf graph t
+    then (addEdgesSubgraphs added es) else []
+  where
+    graph = domain g
+    added = GM.createEdgeDom e s t tp g
 
 instance Eq (TypedGraphMorphism a b) where
     (TypedGraphMorphism dom1 cod1 m1) == (TypedGraphMorphism dom2 cod2 m2) =
