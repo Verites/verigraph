@@ -86,7 +86,7 @@ instance DPO (RuleMorphism a b) where
   -- CHECK
   freeDanglingEdges _ _ = True
   
-  inverse nacInj inj r = addMinimalSafetyNacs newRule
+  inverse nacInj inj r = addMinimalSafetyNacs nacInj inj newRule
     where
       newRule = production (right r) (left r) (concatMap (shiftLeftNac nacInj inj r) (nacs r))
   
@@ -114,15 +114,15 @@ danglingSpan matchRuleSide matchMorp matchK l k = deletedNodesInK && deletedEdge
     edgesInK = [a | a <- edgesDomain matchRuleSide, (applyEdgeTGMUnsafe matchRuleSide a) `elem` deletedEdges]
     deletedEdgesInK = all (ruleDeletes k matchK applyEdgeTGM edgesDomain) edgesInK
 
-applySndOrderRule :: (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String, GraphRule a b)]
-applySndOrderRule (sndName,sndRule) (fstName,fstRule) = zip newNames newRules
+applySndOrderRule :: Bool -> Bool -> (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String, GraphRule a b)]
+applySndOrderRule nacInj inj (sndName,sndRule) (fstName,fstRule) = zip newNames newRules
   where
     newNames = map (\number -> fstName ++ "_" ++ sndName ++ "_" ++ show number) ([0..] :: [Int])
     leftRule = left sndRule
     rightRule = right sndRule
-    mats = matches MONO (codomain leftRule) fstRule
-    gluing = filter (\m -> satsGluing False m leftRule) mats
-    nacs = filter (satsNacs True False sndRule) gluing
+    mats = matches (injectiveBoolToProp inj) (codomain leftRule) fstRule
+    gluing = filter (\m -> satsGluing inj m leftRule) mats
+    nacs = filter (satsNacs nacInj inj sndRule) gluing
     newRules = map
                  (\match ->
                    let (k,_)  = poc match leftRule
@@ -132,13 +132,13 @@ applySndOrderRule (sndName,sndRule) (fstName,fstRule) = zip newNames newRules
 
 -- | Adds the minimal safety nacs needed to this production always produce a second order rule.
 -- If the nacs to be added not satisfies the others nacs, then it do not need to be added.
-addMinimalSafetyNacs :: SndOrderRule a b -> SndOrderRule a b
-addMinimalSafetyNacs sndRule =
+addMinimalSafetyNacs :: Bool -> Bool -> SndOrderRule a b -> SndOrderRule a b
+addMinimalSafetyNacs nacInj inj sndRule =
   production
     (left sndRule)
     (right sndRule)
     ((nacs sndRule) ++
-     (filter (satsNacs True True sndRule) (minimalSafetyNacs sndRule)))
+     (filter (satsNacs nacInj inj sndRule) (minimalSafetyNacs sndRule)))
 
 -- | Generates the minimal safety NACs of a 2-rule.
 -- probL and probR done, pairL and pairR to do.

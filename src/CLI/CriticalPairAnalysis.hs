@@ -7,7 +7,11 @@ module CLI.CriticalPairAnalysis
 import           Abstract.DPO
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
+import           Analysis.InterLevelCP
 import           CLI.GlobalOptions
+import           Data.List
+import           Data.List.Split
+import           Data.List.Utils
 import           Data.Matrix               hiding ((<|>))
 import qualified Graph.GraphGrammar        as GG
 import           Graph.SndOrderRule
@@ -80,10 +84,13 @@ execute globalOpts opts = do
         conflictsMatrix = liftMatrix3 (\x y z -> x ++ y ++ z) udMatrix pfMatrix peMatrix
         dependenciesMatrix = liftMatrix2 (++) puMatrix ddMatrix
         
+        -- Inter Level conflicts
+        conf = applySecondOrder (interLevelConflict nacInj onlyInj) (GG.rules gg) (GG.sndOrderRules gg)
+        
         -- Second order conflicts/dependencies
         newNacs =
           map (\(n,r) ->
-            let newRule = addMinimalSafetyNacs r
+            let newRule = addMinimalSafetyNacs nacInj onlyInj r
                 tamNewNacs = length (nacs newRule)
                 tamNacs = length (nacs r)
              in ((n, newRule), (n, tamNewNacs - tamNacs))
@@ -150,6 +157,7 @@ execute globalOpts opts = do
       then mapM_
         putStrLn $
         ["Adding minimal safety nacs to second order rules:"]
+        ++ (if onlyInj then [] else ["Warning, some nacs for non injective matches are not implemented"])
         ++ (map (\(r,n) -> "Rule "++r++", added "++ show n ++ " nacs") printNewNacs)
         ++ ["All minimal safety nacs added!",""]
       else
@@ -167,6 +175,10 @@ execute globalOpts opts = do
                    (if calculateConflicts action then confMatrix else [])
                    ++ (if calculateDependencies action then depMatrix else [])
                    ++ ["Done!"]
+    
+    let f str = join "_" (take 2 (splitOn "_" str))
+    putStrLn "2rule_rule (number of conflicts)"
+    mapM_ putStrLn $ (map (\x -> f (head x) ++ " " ++ show (length x)) (groupBy (\x y -> f x == f y) (map fst conf)))++[""]
 
 defWriterFun :: Bool -> Bool -> Bool -> AnalysisType
              ->(GG.GraphGrammar a b -> String

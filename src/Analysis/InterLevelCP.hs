@@ -21,12 +21,12 @@ danglingExtension gl l = tlUpdated
     tlx n' = any (\n -> applyNodeUnsafe tl n == n') ld
     dangT = filter (\e -> tlx (sourceOfUnsafe t e) || tlx (targetOfUnsafe t e)) (edges t)
     
-    --init = idTGM (codomain l)
-    
     edgesToAdd = concatMap (\n -> map (\e -> (n,e)) dangT) ld
     
     tlUpdated = foldl addEdge gl edgesToAdd
     
+    -- when two edges from the same source (or domain) in the typegraph 
+    -- are created, it creates two differents nodes. verify this
     addEdge tgm (n,e) =
       case (isSrc,isTgt) of
         (True,True) -> createEdge tgm e n n
@@ -54,30 +54,23 @@ danglingExtension gl l = tlUpdated
             typeNewNode = sourceOfUnsafe (codomain (codomain tgm)) e
             newGraph = createNodeCodTGM nodeId typeNewNode tgm
 
---idTGM :: GM.GraphMorphism a b -> TypedGraphMorphism a b
---idTGM = Abstract.Morphism.id
-
-interLevelConflict :: (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String,(RuleMorphism a b, TypedGraphMorphism a b))]
-interLevelConflict (sndName,sndRule) (fstName,fstRule) = zip newNames (concatMap conflicts nacs)
+interLevelConflict :: Bool -> Bool -> (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String,(RuleMorphism a b, TypedGraphMorphism a b))]
+interLevelConflict nacInj inj (sndName,sndRule) (fstName,fstRule) = zip newNames (concatMap conflicts nacs)
   where
     newNames = map (\number -> fstName ++ "_" ++ sndName ++ "_" ++ show number) ([0..] :: [Int])
-    nacInj = False
-    inj = False
     sndOrderL = left sndRule
     leftRule = codomain sndOrderL
-    mats = matches MONO leftRule fstRule
+    mats = matches (injectiveBoolToProp inj) leftRule fstRule
     gluing = filter (\m -> satsGluing inj m sndOrderL) mats
     nacs = filter (satsNacs nacInj inj sndRule) gluing
     conflicts m = 
       do
-        a <- interLevelConflictOneMatch sndRule m
+        a <- interLevelConflictOneMatch inj sndRule m
         return (m,a)
 
-interLevelConflictOneMatch :: SndOrderRule a b -> RuleMorphism a b -> [TypedGraphMorphism a b]
-interLevelConflictOneMatch sndRule match = m0s
+interLevelConflictOneMatch :: Bool -> SndOrderRule a b -> RuleMorphism a b -> [TypedGraphMorphism a b]
+interLevelConflictOneMatch inj sndRule match = m0s
   where
-    --nacInj = False
-    inj = False
     sndOrderL = left sndRule
     sndOrderR = right sndRule
     
@@ -106,14 +99,14 @@ interLevelConflictOneMatch sndRule match = m0s
                 (zip mm facts)
       where
         -- step 2d
-        part = partitions False (codomain ax)
+        part = partitions inj (codomain ax)
         
         -- step 2e
         axeps = map (\ep -> compose ax ep) part
         mm = filter (\axep -> satsGluing inj axep bigL) axeps
         
         -- step3
-        facts = map (\m0 -> let mts = matches MONO (codomain bigL'') (codomain m0)
+        facts = map (\m0 -> let mts = matches (injectiveBoolToProp inj) (codomain bigL'') (codomain m0)
                              in filter (\m'' -> compose fl m0 == compose gl m'') mts) mm
         
         test x = Prelude.null x || all (==False) (map (\m'' -> satsGluing inj m'' bigL'') x)
