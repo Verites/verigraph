@@ -206,10 +206,12 @@ instance Morphism (RuleMorphism a b) where
       epimorphism (mappingInterface rm) &&
       epimorphism (mappingRight rm)
     
-    isomorphism rm = -- check if needs to commute
-      isomorphism (mappingLeft rm) &&
-      isomorphism (mappingInterface rm) &&
-      isomorphism (mappingRight rm)
+    isomorphism (RuleMorphism dom cod mapL mapK mapR) =
+      isomorphism mapL &&
+      isomorphism mapK &&
+      isomorphism mapR &&
+      compose (left dom) mapL == compose mapK (left cod) &&
+      compose (right dom) mapR == compose mapK (right cod)
 
 instance Valid (RuleMorphism a b) where
     valid (RuleMorphism dom cod mapL mapK mapR) =

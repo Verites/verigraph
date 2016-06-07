@@ -64,7 +64,7 @@ production = Production
 
 instance (Morphism m, Valid m, Eq (Obj m)) => Valid (Production m) where
   valid (Production l r nacs) =
-    monomorphism l && monomorphism r && --check if is needed
+    monomorphism l && monomorphism r &&
     valid l && valid r && all valid nacs &&
     domain l == domain r && all (==codomain l) (map domain nacs)
 

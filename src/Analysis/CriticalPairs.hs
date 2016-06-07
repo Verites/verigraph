@@ -24,7 +24,7 @@ import           Abstract.AdhesiveHLR      as RW
 import           Abstract.DPO              as RW hiding (comatch)
 
 -- | Data representing the type of a 'CriticalPair'
-data CP = FOL | DeleteUse | ProduceForbid | ProduceEdgeDeleteNode deriving(Eq,Show)
+data CP = FOL | DeleteUse | ProduceForbid | ProduceDangling deriving(Eq,Show)
 
 -- | A Critical Pair is defined as two matches (m1,m2) from the left side of their rules to a same graph.
 -- It assumes that the derivation of the rule with match @m1@ causes a conflict with the rule with match @m2@
@@ -127,7 +127,7 @@ deleteUseDangling nacInj inj l r (m1,m2) = cp
     dang = not (freeDanglingEdges (left r) m2') && (satsNacs nacInj inj r m2')
     cp = case (null matchD, dang) of
            (True,_)     -> Just (CriticalPair (m1,m2) Nothing Nothing DeleteUse)
-           (False,True) -> Just (CriticalPair (m1,m2) Nothing Nothing ProduceEdgeDeleteNode)
+           (False,True) -> Just (CriticalPair (m1,m2) Nothing Nothing ProduceDangling)
            _            -> Nothing
 
 -- | All DeleteUse caused by the derivation of @l@ before @r@
@@ -158,7 +158,7 @@ allProdEdgeDelNode :: (EpiPairs m, DPO m) =>
                    -> Production m
                    -> Production m
                    -> [CriticalPair m]
-allProdEdgeDelNode nacInj i l r = map (\(m1,m2) -> CriticalPair (m1,m2) Nothing Nothing ProduceEdgeDeleteNode) conflictPairs
+allProdEdgeDelNode nacInj i l r = map (\(m1,m2) -> CriticalPair (m1,m2) Nothing Nothing ProduceDangling) conflictPairs
     where
         pairs = createPairsCodomain i (left l) (left r)
         gluing = filter (\(m1,m2) -> satsGluingNacsBoth nacInj i (l,m1) (r,m2)) pairs
