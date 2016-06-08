@@ -86,8 +86,7 @@ interLevelConflictOneMatch nacInj inj sndRule match = m0s
     fl = mappingLeft l'
     gl = mappingLeft r'
     
-    -- is not clear which G graphs this step will generate
-    danglingExtFl = fl--compose fl (danglingExtension fl bigL)
+    danglingExtFl = compose fl (danglingExtension fl bigL)
     danglingExtGl = compose gl (danglingExtension gl bigL'')
     
     axs = relevantGraphs inj danglingExtFl danglingExtGl
@@ -104,7 +103,6 @@ interLevelConflictOneMatch nacInj inj sndRule match = m0s
             matchesM0'' = matches (injectiveBoolToProp inj) (codomain bigL'') (codomain m0)
             validMatch = satsGluingAndNacs nacInj inj p''
             
-            --commutes m0'' = (compose danglingExtFl m0) == (compose danglingExtGl m0'')--check
             commutes m0'' = (compose fl m0) == (compose gl m0'')
             
             --paper definition

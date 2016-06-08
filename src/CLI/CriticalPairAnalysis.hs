@@ -181,11 +181,18 @@ execute globalOpts opts = do
                    ++ ["Done!"]-}
     
     let f str = join "_" (take 2 (splitOn "_" str))
+    putStrLn "Interlevel Critical Pairs"
     putStrLn "2rule_rule (number of conflicts)"
-    mapM_ putStrLn $ (map (\x -> f (head x) ++ " " ++ show (length x)) (groupBy (\x y -> f x == f y) (map fst conf)))++[""]
+    let printILCP = mapM_ putStrLn $ (map (\x -> f (head x) ++ " " ++ show (length x)) (groupBy (\x y -> f x == f y) (map fst conf)))++[""]
+      
+      --mapM_ putStrLn $ (map (\(x,(_,y)) -> f x ++ " " ++ show y)
+      --                   (filter (\(x,(_,y)) -> True{-(testN y) == 3 && (testE y) == 2-}) conf))++[""]
     
-    --mapM_ putStrLn $ (map (\(x,(_,y)) -> f x ++ " " ++ show y)
-    --                   (filter (\(x,(_,y)) -> True{-(testN y) == 3 && (testE y) == 2-}) conf))++[""]
+    case (secondOrder, onlyInj) of
+      (True,False) -> printILCP
+      (True,True) -> putStrLn "Interlevel CP not defined for only injective matches"
+      _ -> putStrLn ""
+    
 
 testN :: TypedGraphMorphism a b -> Int
 testN t = length (nodesCodomain t)
