@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeFamilies #-}
 module Graph.Graph (
     -- * Types
       Edge

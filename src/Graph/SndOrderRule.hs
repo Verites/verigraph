@@ -1,9 +1,4 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 
 module Graph.SndOrderRule (
     SndOrderRule
@@ -17,6 +12,7 @@ import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Morphism
 import           Graph.EpiPairs ()
+import           Graph.FindMorphismSndOrder ()
 import           Graph.Graph as G
 import           Graph.GraphRule
 import qualified Graph.GraphMorphism as GM

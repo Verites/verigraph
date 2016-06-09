@@ -10,6 +10,7 @@ import           Graph.GraphRule
 import           Graph.TypedGraphMorphism
 import           Graph.RuleMorphism
 import           Graph.SndOrderRule
+import           Graph.Subgraph      (induzedSubgraphs)
 
 danglingExtension :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 danglingExtension gl l = tlUpdated
