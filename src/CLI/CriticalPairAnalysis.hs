@@ -19,9 +19,9 @@ import           Options.Applicative
 import qualified XML.GGXReader             as XML
 import qualified XML.GGXWriter             as GW
 
-import           Abstract.Morphism
-import           Graph.Graph
-import           Graph.TypedGraphMorphism
+--import           Abstract.Morphism
+--import           Graph.Graph
+--import           Graph.TypedGraphMorphism
 
 data Options = Options
   { outputFile   :: Maybe String
@@ -167,7 +167,7 @@ execute globalOpts opts = do
       else
         putStrLn ""
     
-    {-case outputFile opts of
+    case outputFile opts of
       Just file -> writer newGG ggName names file
       Nothing -> let (confMatrix, depMatrix) =
                        if secondOrder
@@ -178,27 +178,23 @@ execute globalOpts opts = do
                    putStrLn $
                    (if calculateConflicts action then confMatrix else [])
                    ++ (if calculateDependencies action then depMatrix else [])
-                   ++ ["Done!"]-}
+                   ++ ["Done!"]
     
     let f str = join "_" (take 2 (splitOn "_" str))
-    putStrLn "Interlevel Critical Pairs"
-    putStrLn "2rule_rule (number of conflicts)"
-    let printILCP = mapM_ putStrLn $ (map (\x -> f (head x) ++ " " ++ show (length x)) (groupBy (\x y -> f x == f y) (map fst conf)))++[""]
+    let printILCP = ("Interlevel Critical Pairs") :
+                    ("2rule_rule (number of conflicts)") :
+                    (map (\x -> f (head x) ++ " " ++ show (length x)) (groupBy (\x y -> f x == f y) (map fst conf)))
       
       --mapM_ putStrLn $ (map (\(x,(_,y)) -> f x ++ " " ++ show y)
       --                   (filter (\(x,(_,y)) -> True{-(testN y) == 3 && (testE y) == 2-}) conf))++[""]
+      
+    --testN t = length (nodesCodomain t)
+    --testE t = length (edgesCodomain t)
     
     case (secondOrder, onlyInj) of
-      (True,False) -> printILCP
+      (True,False) -> mapM_ putStrLn printILCP
       (True,True) -> putStrLn "Interlevel CP not defined for only injective matches"
-      _ -> putStrLn ""
-    
-
-testN :: TypedGraphMorphism a b -> Int
-testN t = length (nodesCodomain t)
-
-testE :: TypedGraphMorphism a b -> Int
-testE t = length (edgesCodomain t)
+      _ -> mapM_ putStrLn []
 
 defWriterFun :: Bool -> Bool -> Bool -> AnalysisType
              ->(GG.GraphGrammar a b -> String

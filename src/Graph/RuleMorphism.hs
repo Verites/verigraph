@@ -57,10 +57,35 @@ ruleMorphism :: Production (TypedGraphMorphism a b)
              -> RuleMorphism a b
 ruleMorphism = RuleMorphism
 
+-- aux functions of matches
+leftM :: FindMorphism t => PROP -> Production t -> Production t -> t -> [(t, t)]
+leftM prop l g mapK = map (\m -> (m, mapK)) commuting
+  where
+    matchesL = matches prop (codomain (left l)) (codomain (left g))
+    commuting = filter (\m -> compose (left l) m == compose mapK (left g)) matchesL
+
+rightM :: FindMorphism t =>  PROP -> Production t -> Production t -> (t, t) -> [(t, t, t)]
+rightM prop l g (mapL,mapK) = map (\m -> (mapL, mapK, m)) commuting
+  where
+    matchesR = matches prop (codomain (right l)) (codomain (right g))
+    commuting = filter (\m -> compose (right l) m == compose mapK (right g)) matchesR
+
+buildPair :: Production (TypedGraphMorphism a b)
+        -> Production (TypedGraphMorphism a b)
+        -> (TypedGraphMorphism a b,
+            TypedGraphMorphism a b,
+            TypedGraphMorphism a b)
+        -> RuleMorphism a b
+buildPair l g (m1,m2,m3) = ruleMorphism l g m1 m2 m3
+
 instance FindMorphism (RuleMorphism a b) where
   -- | A match between two rules, only considers monomorphic matches morphisms:
   -- (desconsidering the NACs)
-  matches prop l g = filter valid (getAllMaps prop l g)
+  matches prop l g = map (buildPair l g) rightMatch
+    where
+      matchesK = matches prop (domain (left l)) (domain (left g))
+      leftMatch = concatMap (leftM prop l g) matchesK
+      rightMatch = concatMap (rightM prop l g) leftMatch
   
   partInjMatches n m =
     filter
@@ -70,6 +95,7 @@ instance FindMorphism (RuleMorphism a b) where
         (partiallyMonomorphic (mappingRight n) (mappingRight q)))
       (matches ALL (codomain n) (codomain m))
 
+{- brute-force
 getAllMaps :: PROP -> Production (TypedGraphMorphism a b)
            -> Production (TypedGraphMorphism a b) -> [RuleMorphism a b]
 getAllMaps prop l g =
@@ -78,7 +104,7 @@ getAllMaps prop l g =
     matchesL <- matches prop (codomain (left l)) (codomain (left g))
     matchesK <- matches prop (domain (left l)) (domain (left g))
     matchesR <- matches prop (codomain (right l)) (codomain (right g))
-    return $ f (matchesL, matchesK, matchesR)
+    return $ f (matchesL, matchesK, matchesR)-}
 
 -- | Given the morphisms /k1 : X -> Y/, /s1 : X -> Z/,
 -- /k2 : W -> Y/ and /s2 : W -> Z/, respectively,

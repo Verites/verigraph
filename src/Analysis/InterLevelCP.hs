@@ -103,7 +103,7 @@ interLevelConflictOneMatch nacInj inj sndRule match = m0s
             matchesM0'' = matches (injectiveBoolToProp inj) (codomain bigL'') (codomain m0)
             validMatch = satsGluingAndNacs nacInj inj p''
             
-            commutes m0'' = (compose fl m0) == (compose gl m0'')
+            commutes m0'' = compose fl m0 == compose gl m0''
             
             --paper definition
             --validM0'' = filter (\m0'' -> not ((validMatch m0'') && (commutes m0''))) matchesM0''
