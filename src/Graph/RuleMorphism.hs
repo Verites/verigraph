@@ -57,17 +57,6 @@ ruleMorphism :: Production (TypedGraphMorphism a b)
              -> RuleMorphism a b
 ruleMorphism = RuleMorphism
 
-{- brute-force
-getAllMaps :: PROP -> Production (TypedGraphMorphism a b)
-           -> Production (TypedGraphMorphism a b) -> [RuleMorphism a b]
-getAllMaps prop l g =
-  do
-    let f (mapL,mapk,mapR) = RuleMorphism l g mapL mapk mapR
-    matchesL <- matches prop (codomain (left l)) (codomain (left g))
-    matchesK <- matches prop (domain (left l)) (domain (left g))
-    matchesR <- matches prop (codomain (right l)) (codomain (right g))
-    return $ f (matchesL, matchesK, matchesR)-}
-
 -- | Given the morphisms /k1 : X -> Y/, /s1 : X -> Z/,
 -- /k2 : W -> Y/ and /s2 : W -> Z/, respectively,
 -- creates the monomorphic morphism /x : Y -> Z/,

@@ -13,7 +13,8 @@ module Analysis.CriticalPairs
    getComatch,
    getCPNacIdx,
    getCPNac,
-   getCP
+   getCP,
+   deleteUse
    ) where
 
 import           Abstract.Morphism
@@ -100,6 +101,10 @@ criticalPairs :: (EpiPairs m, DPO m) =>
 --criticalPairs nacInj inj l r = (allDeleteUse nacInj inj l r) ++ (allProduceForbid nacInj inj l r) ++ (allProdEdgeDelNode nacInj inj l r)
 criticalPairs nacInj inj l r = allDeleteUseAndDangling nacInj inj l r ++ allProduceForbid nacInj inj l r
 
+-- abreviation with a better name for this context
+flagInj :: Bool -> PROP
+flagInj = injectiveBoolToProp
+
 ---- Delete-Use
 
 -- | Tests DeleteUse and ProdEdgeDelNode for the same pairs
@@ -114,42 +119,40 @@ allDeleteUseAndDangling nacInj i l r = mapMaybe (deleteUseDangling nacInj i l r)
     pairs = createPairsCodomain i (left l) (left r)
     gluing = filter (\(m1,m2) -> satsGluingNacsBoth nacInj i (l,m1) (r,m2)) pairs
 
-deleteUseDangling :: (AdhesiveHLR m, FindMorphism m, Morphism m, Eq m, DPO m) =>
-                     Bool -> Bool -> Production m -> Production m -> (m, m)
-                  -> Maybe (CriticalPair m)
-deleteUseDangling nacInj inj l r (m1,m2) = cp
+deleteUseDangling :: DPO m => Bool -> Bool -> Production m
+                  -> Production m -> (m, m) -> Maybe (CriticalPair m)
+deleteUseDangling nacInj inj l r (m1,m2) =
+  case (null matchD, dang) of
+    (True,_)     -> Just (CriticalPair (m1,m2) Nothing Nothing DeleteUse)
+    (False,True) -> Just (CriticalPair (m1,m2) Nothing Nothing ProduceDangling)
+    _            -> Nothing
   where
     (k,l') = RW.poc m1 (left l)
-    lTOd = matches ALL (domain m2) (domain l')
+    lTOd = matches (flagInj inj) (domain m2) (domain l')
     matchD = filter (\x -> m2 == compose x l') lTOd
     (_,r') = RW.po k (right l)
     m2' = compose (head matchD) r'
     dang = not (freeDanglingEdges (left r) m2') && (satsNacs nacInj inj r m2')
-    cp = case (null matchD, dang) of
-           (True,_)     -> Just (CriticalPair (m1,m2) Nothing Nothing DeleteUse)
-           (False,True) -> Just (CriticalPair (m1,m2) Nothing Nothing ProduceDangling)
-           _            -> Nothing
 
 -- | All DeleteUse caused by the derivation of @l@ before @r@
 allDeleteUse :: (EpiPairs m, DPO m) => Bool -> Bool
              -> Production m
              -> Production m
              -> [CriticalPair m]
-allDeleteUse nacInj i l r = map (\match -> CriticalPair match Nothing Nothing DeleteUse) delUse
+allDeleteUse nacInj inj l r = map (\match -> CriticalPair match Nothing Nothing DeleteUse) delUse
     where
-        pairs = createPairsCodomain i (left l) (left r)
-        gluing = filter (\(m1,m2) -> satsGluingNacsBoth nacInj i (l,m1) (r,m2)) pairs--(if i then inj else pairs) --filter the pairs that not satisfie gluing conditions of L and R
-        delUse = filter (deleteUse l r) gluing                               --select just the pairs that are in DeleteUse conflict
+        pairs = createPairsCodomain inj (left l) (left r)
+        gluing = filter (\(m1,m2) -> satsGluingNacsBoth nacInj inj (l,m1) (r,m2)) pairs--(if i then inj else pairs) --filter the pairs that not satisfie gluing conditions of L and R
+        delUse = filter (deleteUse inj l) gluing                               --select just the pairs that are in DeleteUse conflict
 
 -- | Rule @l@ causes a delete-use conflict with @r@ if rule @l@ deletes something that is used by @r@
 -- DeleteUse using a most aproximated algorithm of the categorial diagram
 -- Verify the non existence of h21: L2 -> D1 such that d1 . h21 = m2
-deleteUse :: (AdhesiveHLR m, FindMorphism m, Morphism m, Eq m) =>
-              Production m -> Production m -> (m, m) -> Bool
-deleteUse l _ (m1,m2) = null matchD
+deleteUse :: DPO m => Bool -> Production m -> (m, m) -> Bool
+deleteUse inj l (m1,m2) = null matchD
     where
         (_,d1) = RW.poc m1 (left l) --get only the morphism D2 to G
-        l2TOd1 = matches ALL (domain m2) (domain d1)
+        l2TOd1 = matches (flagInj inj) (domain m2) (domain d1)
         matchD = filter (\x -> m2 == compose x d1) l2TOd1
 
 ---- Produce Edge Delete Node
@@ -164,15 +167,14 @@ allProdEdgeDelNode nacInj i l r = map (\(m1,m2) -> CriticalPair (m1,m2) Nothing 
         gluing = filter (\(m1,m2) -> satsGluingNacsBoth nacInj i (l,m1) (r,m2)) pairs
         conflictPairs = filter (prodEdgeDelNode nacInj i l r) gluing
 
-prodEdgeDelNode :: (AdhesiveHLR m, FindMorphism m, Morphism m, Eq m, DPO m) =>
-                   Bool -> Bool -> Production m -> Production m -> (m, m) -> Bool
+prodEdgeDelNode :: DPO m => Bool -> Bool -> Production m -> Production m -> (m, m) -> Bool
 prodEdgeDelNode nacInj inj l r (m1,m2) = not (null matchD) && not (freeDanglingEdges (left r) m2') && (satsNacs nacInj inj r m2')
     where
-        (k,d1) = RW.poc m1 (left l)
-        l2TOd1 = matches ALL (domain m2) (domain d1)
-        matchD = filter (\x -> m2 == compose x d1) l2TOd1
-        (_,r') = RW.po k (right l)
-        m2' = compose (head matchD) r' --matchD is unique if exists
+      (k,d1) = RW.poc m1 (left l)
+      l2TOd1 = matches (flagInj inj) (domain m2) (domain d1)
+      matchD = filter (\x -> m2 == compose x d1) l2TOd1
+      (_,r') = RW.po k (right l)
+      m2' = compose (head matchD) r' --matchD is unique if exists
 
 ---- Produce-Forbid
 
@@ -188,9 +190,9 @@ allProduceForbid nacInj inj l r = concatMap (produceForbidOneNac nacInj inj l in
     inverseLeft = inverse nacInj inj l
 
 -- | Check ProduceForbid for a NAC @n@ in @r@
-produceForbidOneNac :: (AdhesiveHLR m, EpiPairs m, FindMorphism m, Morphism m, DPO m) => Bool -> Bool
-                    -> Production m -> Production m -> Production m -> (m, Int)
-                    -> [CriticalPair m]
+produceForbidOneNac :: (EpiPairs m, DPO m) => Bool -> Bool
+                    -> Production m -> Production m -> Production m
+                    -> (m, Int) -> [CriticalPair m]
 produceForbidOneNac nacInj inj l inverseLeft r (n,idx) = let
         -- Consider for a NAC n (L2 -> N2) of r any jointly surjective
         -- pair of morphisms (h1: R1 -> P1, q21: N2 -> P1) with q21 (part)inj
@@ -201,7 +203,7 @@ produceForbidOneNac nacInj inj l inverseLeft r (n,idx) = let
 
         -- Check gluing cond for (h1,r1). Construct PO complement D1.
         -- Construct PO K and abort if m1 not sats NACs l
-        filtPairs = filter (\(h1,_) -> satsGluingAndNacs nacInj False inverseLeft h1) pairs
+        filtPairs = filter (\(h1,_) -> satsGluingAndNacs nacInj inj inverseLeft h1) pairs
 
         dpo = map (\(h1,q21) ->
                     let (k,r') = RW.poc h1 (right l)
@@ -213,7 +215,7 @@ produceForbidOneNac nacInj inj l inverseLeft r (n,idx) = let
 
         --  Check existence of h21: L2 -> D1 st. e1 . h21 = q21 . n2
         h21 = concatMap (\(h1,q21,k,r',m1,l') ->
-                  let hs = matches ALL (domain n) (codomain k)
+                  let hs = matches (flagInj inj) (domain n) (codomain k)
                       list = map (\h -> compose h r' == compose n q21) hs in
                        case elemIndex True list of
                            Just ind -> [(h1,q21,k,r',m1,l',hs!!ind)]

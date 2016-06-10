@@ -15,6 +15,7 @@ module Analysis.CriticalSequence
    ) where
 
 import           Abstract.Morphism
+import qualified Analysis.CriticalPairs    as CP
 import           Data.List                 (elemIndex)
 import           Graph.EpiPairs            ()
 import           Abstract.AdhesiveHLR      as RW
@@ -22,7 +23,7 @@ import           Abstract.DPO              as RW hiding (comatch)
 import           Graph.FindMorphism        ()
 
 -- | Data representing the type of a 'CriticalPair'
-data CS = ProduceUse | DeliverDelete deriving (Eq,Show)
+data CS = ProduceUse | DeliverDelete | RemoveDangling deriving (Eq,Show)
 
 -- | A Critical Sequence is defined as two matches (m1,m2) from the left side of their rules to a same graph.
 -- 
@@ -83,17 +84,20 @@ getCSNacIdx cs = case nac cs of
                    Just (_,idx) -> Just idx
                    Nothing -> Nothing
 
+-- abreviation with a better name for this context
+flagInj :: Bool -> PROP
+flagInj = injectiveBoolToProp
+
 -- | Returns the Critical Sequences with rule names
-namedCriticalSequences :: (EpiPairs m, DPO m) => Bool -> Bool -> [(String, Production m)] -> [(String,String,[CriticalSequence m])]
+namedCriticalSequences :: (EpiPairs m, DPO m) => Bool -> Bool
+                       -> [(String, Production m)] -> [(String,String,[CriticalSequence m])]
 namedCriticalSequences nacInj inj r = map (uncurry getCPs) [(a,b) | a <- r, b <- r]
   where
     getCPs (n1,r1) (n2,r2) = (n1, n2, criticalSequences nacInj inj r1 r2)
 
 -- | All Critical Sequences
-criticalSequences :: (EpiPairs m, DPO m) => Bool -> Bool
-                  -> Production m
-                  -> Production m
-                  -> [CriticalSequence m]
+criticalSequences :: (EpiPairs m, DPO m) => Bool -> Bool -> Production m
+                  -> Production m -> [CriticalSequence m]
 criticalSequences nacInj inj l r = allProduceUse nacInj inj l r ++ allDeliverDelete nacInj inj l r
 
 -- | All ProduceUse caused by the derivation of @l@ before @r@
@@ -103,34 +107,24 @@ allProduceUse nacInj i l r = map (\(m1,m2) -> CriticalSequence Nothing (m1,m2) N
     invLeft = inverse nacInj i l
     pairs = createPairsCodomain i (left invLeft) (left r)
     gluing = filter (\(m1',m2') -> satsGluingNacsBoth nacInj i  (invLeft,m1') (r,m2')) pairs
-    prodUse = filter (produceUse invLeft r) gluing
+    prodUse = filter (produceUse i invLeft) gluing
 
 -- | Rule @l@ causes a produce-use dependency with @r@ if rule @l@ creates something that is used by @r@
 -- Verify the non existence of h21: L2 -> D1 such that d1 . h21 = m2
-produceUse :: (AdhesiveHLR m, FindMorphism m, Morphism m, Eq m) => Production m -> Production m
-           -> (m, m)
-           -> Bool
-produceUse l _ (m1',m2') = Prelude.null filt
-    where
-        (_,l') = RW.poc m1' (left l)
-        l2TOd1 = matches ALL (domain m2') (domain l')
-        filt = filter (\h -> compose h l' == m2') l2TOd1
+produceUse :: DPO m => Bool -> Production m -> (m, m) -> Bool
+produceUse = CP.deleteUse
 
 -- | All DeliverDelete caused by the derivation of @l@ before @r@
 -- rule @l@ causes a deliver-forbid conflict with @r@ if some NAC in @r@ turns satisfied after the aplication of @l@
 allDeliverDelete :: (DPO m, EpiPairs m) => Bool -> Bool
-                 -> Production m
-                 -> Production m
-                 -> [CriticalSequence m]
+                 -> Production m -> Production m -> [CriticalSequence m]
 allDeliverDelete nacInj inj l r = concatMap (deliverDelete nacInj inj l inverseLeft r) (zip (nacs r) [0..])
   where
     inverseLeft = inverse nacInj inj l
 
 -- | Check DeliverDelete for a NAC @n@ in @r@
-deliverDelete :: (EpiPairs m, Morphism m, DPO m) => Bool -> Bool
-                      -> Production m -> Production m -> Production m
-                      -> (m, Int)
-                      -> [CriticalSequence m]
+deliverDelete :: (EpiPairs m, DPO m) => Bool -> Bool -> Production m
+              -> Production m -> Production m -> (m, Int) -> [CriticalSequence m]
 deliverDelete nacInj inj l inverseLeft r (n,idx) = let
         pairs = createPairsNac nacInj inj (codomain (left l)) n
         
@@ -145,7 +139,7 @@ deliverDelete nacInj inj l inverseLeft r (n,idx) = let
         filtM1 = filter (\(_,_,_,_,m1',_) -> satsNacs nacInj inj inverseLeft m1') dpo
 
         h21 = concatMap (\(m1,q21,k,r',m1',l') ->
-                  let hs = matches ALL (domain n) (codomain k)
+                  let hs = matches (flagInj inj) (domain n) (codomain k)
                       list = map (\h -> compose h r' == compose n q21) hs in
                     case elemIndex True list of
                            Just ind -> [(m1,q21,k,r',m1',l',hs!!ind)]
