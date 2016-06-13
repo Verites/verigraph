@@ -72,15 +72,12 @@ applySecondOrderListRules ::
 applySecondOrderListRules f sndRule = concatMap (f sndRule)
 
 instance DPO (RuleMorphism a b) where
-  satsGluing inj m l =
-    satsGluing inj (mappingLeft m)      (mappingLeft l)      &&
-    satsGluing inj (mappingInterface m) (mappingInterface l) &&
-    satsGluing inj (mappingRight m)     (mappingRight l)     &&
+  satsGluing inj l m =
+    satsGluing inj (mappingLeft l)      (mappingLeft m)      &&
+    satsGluing inj (mappingInterface l) (mappingInterface m) &&
+    satsGluing inj (mappingRight l)     (mappingRight m)     &&
     danglingSpan (left (codomain m)) (mappingLeft m) (mappingInterface m) (mappingLeft l) (mappingInterface l) &&
     danglingSpan (right (codomain m)) (mappingRight m) (mappingInterface m) (mappingRight l) (mappingInterface l)
-  
-  -- CHECK
-  freeDanglingEdges _ _ = True
   
   inverse nacInj inj r = addMinimalSafetyNacs nacInj inj newRule
     where
@@ -88,7 +85,7 @@ instance DPO (RuleMorphism a b) where
   
   -- | Needs the satsNacs extra verification because not every satsGluing nac can be shifted
   shiftLeftNac nacInj inj rule n = [comatch n rule |
-                               satsGluing inj n (left rule) &&
+                               satsGluing inj (left rule) n &&
                                satsNacs nacInj inj ruleWithOnlyMinimalSafetyNacs n]
     where
       ruleWithOnlyMinimalSafetyNacs = production (left rule) (right rule) (minimalSafetyNacs rule)
@@ -117,7 +114,7 @@ applySndOrderRule nacInj inj (sndName,sndRule) (fstName,fstRule) = zip newNames 
     leftRule = left sndRule
     rightRule = right sndRule
     mats = matches (injectiveBoolToProp inj) (codomain leftRule) fstRule
-    gluing = filter (\m -> satsGluing inj m leftRule) mats
+    gluing = filter (satsGluing inj leftRule) mats
     nacs = filter (satsNacs nacInj inj sndRule) gluing
     newRules = map
                  (\match ->

@@ -126,10 +126,9 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
   --
   -- Bool only indicates if the match is injective,
   -- in the case of unknown use False
+  --
+  -- satsGluing injFlag (left of a production) match
   satsGluing :: Bool -> m -> m -> Bool
-  
-  -- | Checks if the match if free oh have a dangling edge that unable the production
-  freeDanglingEdges :: m -> m -> Bool
   
   -- | Inverts a production, adjusting the NACs accordingly.
   -- Needs information of nac injective satisfaction (in second order)
@@ -176,7 +175,7 @@ satsGluingNacsBoth nacInj inj (l,m1) (r,m2) =
 satsGluingAndNacs :: DPO m => Bool -> Bool -> Production m -> m -> Bool
 satsGluingAndNacs nacInj inj rule m = gluingCond && nacsCondition
     where
-        gluingCond    = satsGluing inj m (left rule)
+        gluingCond    = satsGluing inj (left rule) m
         nacsCondition = satsNacs nacInj inj rule m
 
 satsOneNacInj :: FindMorphism m => m -> m -> Bool

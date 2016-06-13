@@ -1,3 +1,9 @@
+{-|
+Module      : InterLevelCP
+Description : Implements the inter-level conflict
+Stability   : development
+-}
+
 module Analysis.InterLevelCP (interLevelConflict) where
 
 import           Abstract.AdhesiveHLR
@@ -99,7 +105,7 @@ interLevelConflictOneMatch nacInj inj sndRule match = m0s
         mats = matches (injectiveBoolToProp inj) (codomain bigL) (codomain ax)
         validMatches = filter (satsGluingAndNacs nacInj inj p) mats
         
-        conflicts m0 = Prelude.null validM0''-- || all (==False) (map (\m'' -> satsGluing inj m'' bigL'') validM0'') --thesis def
+        conflicts m0 = Prelude.null validM0''-- or all (==False) (map (\m'' -> satsGluing inj bigL'' m'') validM0'') --thesis def
           where
             matchesM0'' = matches (injectiveBoolToProp inj) (codomain bigL'') (codomain m0)
             validMatch = satsGluingAndNacs nacInj inj p''

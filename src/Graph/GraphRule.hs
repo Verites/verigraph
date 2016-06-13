@@ -52,16 +52,14 @@ createdEdges :: GraphRule a b -> [G.EdgeId]
 createdEdges r = TGM.orphanEdgesTyped (right r)
 
 instance DPO (TypedGraphMorphism a b) where
-  satsGluing inj m left = (inj || identificationCondition) && danglingCondition
+  satsGluing inj left m = (inj || identificationCondition) && danglingCondition
     where
         identificationCondition = satsDelItems left m
         danglingCondition       = satsIncEdges left m
   
-  freeDanglingEdges = satsIncEdges
-  
   inverse nacInj inj r = production (right r) (left r) (concatMap (shiftLeftNac nacInj inj r) (nacs r))
   
-  shiftLeftNac _ inj rule n = [comatch n rule | satsGluing inj n (left rule)]
+  shiftLeftNac _ inj rule n = [comatch n rule | satsGluing inj (left rule) n]
   
   partiallyMonomorphic = partialInjectiveTGM
 

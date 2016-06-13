@@ -81,12 +81,13 @@ execute globalOpts opts = do
         -- First order conflicts/dependencies
         rules = map snd (GG.rules gg)
         puMatrix = pairwiseCompare (allProduceUse nacInj onlyInj) rules
+        rdMatrix = pairwiseCompare (allRemoveDangling nacInj onlyInj) rules
         ddMatrix = pairwiseCompare (allDeliverDelete nacInj onlyInj) rules
         udMatrix = pairwiseCompare (allDeleteUse nacInj onlyInj) rules
+        peMatrix = pairwiseCompare (allProduceDangling nacInj onlyInj) rules
         pfMatrix = pairwiseCompare (allProduceForbid nacInj onlyInj) rules
-        peMatrix = pairwiseCompare (allProdEdgeDelNode nacInj onlyInj) rules
         conflictsMatrix = liftMatrix3 (\x y z -> x ++ y ++ z) udMatrix pfMatrix peMatrix
-        dependenciesMatrix = liftMatrix2 (++) puMatrix ddMatrix
+        dependenciesMatrix = liftMatrix3 (\x y z -> x ++ y ++ z) puMatrix rdMatrix ddMatrix
         
         -- Inter Level conflicts
         conf = applySecondOrder (interLevelConflict nacInj onlyInj) (GG.rules gg) (GG.sndOrderRules gg)
@@ -114,19 +115,23 @@ execute globalOpts opts = do
         conflicts = [ "Delete-Use:"
                 , show (length <$> udMatrix)
                 , ""
+                , "Produce-Dangling:"
+                , show (length <$> peMatrix)
+                , ""
                 , "Produce-Forbid:"
                 , show (length <$> pfMatrix)
                 , ""
-                , "Produce Edge Delete Node:"
-                , show (length <$> peMatrix)
                 , "All Conflicts:"
                 , show (length <$> conflictsMatrix)
                 , ""]
 
-        dependencies = [ "Produce Use Dependency:"
+        dependencies = [ "Produce-Use Dependency:"
                    , show (length <$> puMatrix)
                    , ""
-                   , "Deliver Delete Dependency:"
+                   , "Remove-Dangling:"
+                   , show (length <$> rdMatrix)
+                   , ""
+                   , "Deliver-Delete Dependency:"
                    , show (length <$> ddMatrix)
                    , ""
                    , "All Dependencies:"
@@ -156,7 +161,7 @@ execute globalOpts opts = do
     putStrLn $ "injective satisfability of nacs: " ++ show nacInj
     putStrLn $ "only injective matches morphisms: " ++ show onlyInj
     putStrLn ""
-    
+        
     if secondOrder
       then mapM_
         putStrLn $
@@ -190,7 +195,7 @@ execute globalOpts opts = do
       
     --testN t = length (nodesCodomain t)
     --testE t = length (edgesCodomain t)
-    
+        
     case (secondOrder, onlyInj) of
       (True,False) -> mapM_ putStrLn printILCP
       (True,True) -> putStrLn "Interlevel CP not defined for only injective matches"
