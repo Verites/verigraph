@@ -1,9 +1,31 @@
-module Graph.Subgraph (induzedSubgraphs) where
+module Graph.Subgraph (subgraphs, induzedSubgraphs) where
 
 import           Abstract.Morphism
 import           Graph.Graph
 import           Graph.GraphMorphism
 import           Graph.TypedGraphMorphism
+
+-- | Generates all subgraphs of a graph.
+subgraphs :: TypedGraph a b -> [TypedGraph a b]
+subgraphs g = subEdges
+  where
+    graph = domain g
+    emptyGraph = Graph.GraphMorphism.empty Graph.Graph.empty (codomain g)
+    
+    listNodesToAdd = [(n, applyNodeUnsafe g n) | n <- nodes graph]
+    
+    subNodes = decisionTreeNodes emptyGraph listNodesToAdd
+    
+    listEdgesToAdd = [(e,
+                       sourceOfUnsafe graph e,
+                       targetOfUnsafe graph e,
+                       applyEdgeUnsafe g e)
+                       | e <- edges graph]
+    
+    subEdges =
+      concatMap
+        (\g -> decisionTreeEdges g listEdgesToAdd)
+        subNodes
 
 -- | Considering /m : X -> Y/,
 -- generates all subgraphs of /Y/ containing the graph /X/ via m.

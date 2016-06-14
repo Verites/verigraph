@@ -16,7 +16,7 @@ import           Graph.GraphRule
 import           Graph.TypedGraphMorphism
 import           Graph.RuleMorphism
 import           Graph.SndOrderRule
-import           Graph.Subgraph      (induzedSubgraphs)
+import           Graph.Subgraph
 
 danglingExtension :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 danglingExtension gl l = tlUpdated
@@ -118,7 +118,9 @@ interLevelConflictOneMatch nacInj inj sndRule match = m0s
 
 relevantGraphs :: Bool -> TypedGraphMorphism a b -> TypedGraphMorphism a b
                -> [TypedGraphMorphism a b]
-relevantGraphs inj dangFl dangGl = concatMap (\ax -> partitions inj (codomain ax)) axs
+--relevantGraphs inj dangFl dangGl = concatMap (\ax -> partitions inj (codomain ax)) axs
+relevantGraphs inj dangFl dangGl = concatMap (\ax -> partitions inj ax) axs
   where
     (_,al) = po dangFl dangGl
-    axs = induzedSubgraphs al
+    --axs = induzedSubgraphs al
+    axs = subgraphs (codomain al)
