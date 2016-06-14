@@ -19,10 +19,6 @@ import           Options.Applicative
 import qualified XML.GGXReader             as XML
 import qualified XML.GGXWriter             as GW
 
---import           Abstract.Morphism
---import           Graph.Graph
---import           Graph.TypedGraphMorphism
-
 data Options = Options
   { outputFile   :: Maybe String
   , sndOrder     :: Bool
@@ -91,11 +87,15 @@ execute globalOpts opts = do
         
         -- Inter Level conflicts
         conf = applySecondOrder (interLevelConflict nacInj onlyInj) (GG.rules gg) (GG.sndOrderRules gg)
-        
+        f str = join "_" (take 2 (splitOn "_" str))
+        printILCP = ("Interlevel Critical Pairs") :
+                    ("2rule_rule (number of conflicts)") :
+                    (map (\x -> f (head x) ++ " " ++ show (length x)) (groupBy (\x y -> f x == f y) (map fst conf)))
+
         -- Second order conflicts/dependencies
         newNacs =
           map (\(n,r) ->
-            let newRule = addMinimalSafetyNacs nacInj onlyInj r
+            let newRule = addMinimalSafetyNacs nacInj r
                 tamNewNacs = length (nacs newRule)
                 tamNacs = length (nacs r)
              in ((n, newRule), (n, tamNewNacs - tamNacs))
@@ -106,11 +106,13 @@ execute globalOpts opts = do
         printNewNacs = map snd newNacs
         
         ud2Matrix = pairwiseCompare (allDeleteUse nacInj onlyInj) rules2
+        pd2Matrix = pairwiseCompare (allProduceDangling nacInj onlyInj) rules2
         pf2Matrix = pairwiseCompare (allProduceForbid nacInj onlyInj) rules2
         pu2Matrix = pairwiseCompare (allProduceUse nacInj onlyInj) rules2
+        rd2Matrix = pairwiseCompare (allRemoveDangling nacInj onlyInj) rules2
         dd2Matrix = pairwiseCompare (allDeliverDelete nacInj onlyInj) rules2
-        conflicts2Matrix = liftMatrix2 (++) ud2Matrix pf2Matrix
-        dependencies2Matrix = liftMatrix2 (++) pu2Matrix dd2Matrix
+        conflicts2Matrix = liftMatrix3 (\x y z -> x ++ y ++ z) ud2Matrix pd2Matrix pf2Matrix
+        dependencies2Matrix = liftMatrix3 (\x y z -> x ++ y ++ z) pu2Matrix rd2Matrix dd2Matrix
 
         conflicts = [ "Delete-Use:"
                 , show (length <$> udMatrix)
@@ -128,7 +130,7 @@ execute globalOpts opts = do
         dependencies = [ "Produce-Use Dependency:"
                    , show (length <$> puMatrix)
                    , ""
-                   , "Remove-Dangling:"
+                   , "Remove-Dangling Dependency:"
                    , show (length <$> rdMatrix)
                    , ""
                    , "Deliver-Delete Dependency:"
@@ -141,6 +143,9 @@ execute globalOpts opts = do
         conflicts2 = [ "Second Order Delete-Use:"
                 , show (length <$> ud2Matrix)
                 , ""
+                , "Second Order Produce-Dangling:"
+                , show (length <$> pd2Matrix)
+                , ""
                 , "Second Order Produce-Forbid:"
                 , show (length <$> pf2Matrix)
                 , ""
@@ -150,6 +155,9 @@ execute globalOpts opts = do
         
         dependencies2 = [ "Second Order Produce Use Dependency:"
                    , show (length <$> pu2Matrix)
+                   , ""
+                   , "Second Order Remove-Dangling Dependency:"
+                   , show (length <$> rd2Matrix)
                    , ""
                    , "Second Order Deliver Delete Dependency:"
                    , show (length <$> dd2Matrix)
@@ -185,17 +193,6 @@ execute globalOpts opts = do
                    ++ (if calculateDependencies action then depMatrix else [])
                    ++ ["Done!"]
     
-    let f str = join "_" (take 2 (splitOn "_" str))
-    let printILCP = ("Interlevel Critical Pairs") :
-                    ("2rule_rule (number of conflicts)") :
-                    (map (\x -> f (head x) ++ " " ++ show (length x)) (groupBy (\x y -> f x == f y) (map fst conf)))
-      
-      --mapM_ putStrLn $ (map (\(x,(_,y)) -> f x ++ " " ++ show y)
-      --                   (filter (\(x,(_,y)) -> True{-(testN y) == 3 && (testE y) == 2-}) conf))++[""]
-      
-    --testN t = length (nodesCodomain t)
-    --testE t = length (edgesCodomain t)
-        
     case (secondOrder, onlyInj) of
       (True,False) -> mapM_ putStrLn printILCP
       (True,True) -> putStrLn "Interlevel CP not defined for only injective matches"
@@ -219,12 +216,6 @@ defWriterFun secondOrder nacInj inj t =
 liftMatrix3 :: (a -> b -> c -> d) -> Matrix a -> Matrix b -> Matrix c -> Matrix d
 liftMatrix3 f ma mb mc = matrix (nrows ma) (ncols ma) $ \pos ->
   f (ma!pos) (mb!pos) (mc!pos)
-
--- | Combine two matrices with the given function. All matrices _must_ have
--- the same dimensions.
-liftMatrix2 :: (a -> b -> c) -> Matrix a -> Matrix b -> Matrix c
-liftMatrix2 f ma mb = matrix (nrows ma) (ncols ma) $ \pos ->
-  f (ma!pos) (mb!pos)
 
 pairwiseCompare :: (a -> a -> b) -> [a] -> Matrix b
 pairwiseCompare compare items =

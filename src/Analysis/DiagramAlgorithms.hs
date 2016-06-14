@@ -70,7 +70,7 @@ deleteUse inj l (m1,m2) = null matchD
 -- 
 -- Gets the match of @p1@ from L2 to P1, checks if satsNacs and not satsGluing
 produceDangling :: DPO m => Bool -> Bool -> Production m -> Production m -> (m, m) -> Bool
-produceDangling nacInj inj l r (m1,m2) = not (null matchD) && not (satsGluing inj (left r) m2') && (satsNacs nacInj inj r m2')
+produceDangling nacInj inj l r (m1,m2) = not (null matchD) && not (satsGluing inj (left r) m2') && (satsNacs nacInj r m2')
     where
       (k,l') = RW.poc m1 (left l)
       l2TOd1 = matches (flagInj inj) (domain m2) (domain l')
@@ -95,7 +95,7 @@ deleteUseDangling nacInj inj l r (m1,m2) =
     matchD = filter (\x -> m2 == compose x l') lTOd
     (_,r') = RW.po k (right l)
     m2' = compose (head matchD) r'
-    dang = (not (satsGluing inj (left r) m2')) && (satsNacs nacInj inj r m2')
+    dang = (not (satsGluing inj (left r) m2')) && (satsNacs nacInj r m2')
 
 -- | Rule @p1@ is in a produce-forbid conflict with @p2@ if @p1@
 -- produces something that able some nac of @p2@.
@@ -119,7 +119,7 @@ produceForbidOneNac nacInj inj l inverseLeft r (n,idx) = let
                     in  (h1,q21,k,r',m1,l'))
                   filtPairs --(h1,q21,k,r',m1,l')
 
-        filtM1 = filter (\(_,_,_,_,m1,_) -> satsNacs nacInj inj l m1) dpo
+        filtM1 = filter (\(_,_,_,_,m1,_) -> satsNacs nacInj l m1) dpo
 
         --  Check existence of h21: L2 -> D1 st. e1 . h21 = q21 . n2
         h21 = concatMap (\(h1,q21,k,r',m1,l') ->

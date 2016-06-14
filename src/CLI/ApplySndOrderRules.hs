@@ -39,7 +39,7 @@ execute globalOpts opts = do
     let nacInj = injectiveNacSatisfaction globalOpts
         onlyInj = not $ arbitraryMatches globalOpts
         newNacs =
-          map (\(n,r) -> let newRule = SO.addMinimalSafetyNacs nacInj onlyInj r
+          map (\(n,r) -> let newRule = SO.addMinimalSafetyNacs nacInj r
                              tamNewNacs = length (nacs newRule)
                              tamNacs = length (nacs r) in
            ((n, newRule), (n, tamNewNacs - tamNacs)))

@@ -150,12 +150,13 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
 
 -- | True if the given match satisfies all NACs of the given production.
 --
--- If the first and second arguments are false, only considers partially injective morphisms.
+-- If the first argument is false, only considers partially injective morphisms.
 -- Otherwise, considers injective morphisms /Ni -> G/.
-satsNacs :: DPO m => Bool -> Bool -> Production m -> m -> Bool
-satsNacs nacInj inj rule m = all (==True) (map (satsFun m) (nacs rule))
+satsNacs :: DPO m => Bool -> Production m -> m -> Bool
+satsNacs nacInj rule m = all (==True) (map (satsFun m) (nacs rule))
   where
-    satsFun = if not nacInj && not inj then satsOneNacPartInj else satsOneNacInj
+    --satsFun = if not nacInj && not inj then satsOneNacPartInj else satsOneNacInj
+    satsFun = if nacInj then satsOneNacInj else satsOneNacPartInj
 
 -- | Check gluing conditions and the NACs satisfaction for a pair of matches
 -- @inj@ only indicates if the match is injective, this function does not checks it
@@ -176,7 +177,7 @@ satsGluingAndNacs :: DPO m => Bool -> Bool -> Production m -> m -> Bool
 satsGluingAndNacs nacInj inj rule m = gluingCond && nacsCondition
     where
         gluingCond    = satsGluing inj (left rule) m
-        nacsCondition = satsNacs nacInj inj rule m
+        nacsCondition = satsNacs nacInj rule m
 
 satsOneNacInj :: FindMorphism m => m -> m -> Bool
 satsOneNacInj m nac = null checkCompose
