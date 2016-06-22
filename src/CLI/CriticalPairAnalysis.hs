@@ -92,6 +92,8 @@ execute globalOpts opts = do
                     ("2rule_rule (number of conflicts)") :
                     (map (\x -> f (head x) ++ " " ++ show (length x)) (groupBy (\x y -> f x == f y) (map fst conf)))
 
+        evoConflicts = map (\r1 -> map (\r2 -> evo nacInj onlyInj r1 r2) (GG.sndOrderRules gg)) (GG.sndOrderRules gg)
+
         -- Second order conflicts/dependencies
         newNacs =
           map (\(n,r) ->
@@ -197,6 +199,9 @@ execute globalOpts opts = do
       (True,False) -> mapM_ putStrLn printILCP
       (True,True) -> putStrLn "Interlevel CP not defined for only injective matches"
       _ -> mapM_ putStrLn []
+    
+    putStrLn "Evolution Interlevel CP"
+    print evoConflicts
 
 defWriterFun :: Bool -> Bool -> Bool -> AnalysisType
              ->(GG.GraphGrammar a b -> String

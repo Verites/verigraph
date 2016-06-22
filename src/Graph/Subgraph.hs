@@ -5,7 +5,7 @@ import           Graph.Graph
 import           Graph.GraphMorphism
 import           Graph.TypedGraphMorphism
 
--- | Generates all subgraphs of a graph.
+-- | Generates all subgraphs of a typed graph.
 subgraphs :: TypedGraph a b -> [TypedGraph a b]
 subgraphs g = subEdges
   where
