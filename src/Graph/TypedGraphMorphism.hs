@@ -40,8 +40,8 @@ import           Graph.Graph         as G
 import           Graph.GraphMorphism as GM
 
 data TypedGraphMorphism a b = TypedGraphMorphism {
-                              getDomain   :: GM.GraphMorphism a b
-                            , getCodomain :: GM.GraphMorphism a b
+                              getDomain   :: GM.TypedGraph a b
+                            , getCodomain :: GM.TypedGraph a b
                             , mapping  :: GM.GraphMorphism a b
                          } deriving (Show, Read)
 
