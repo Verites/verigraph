@@ -1,4 +1,4 @@
-module Partitions.VeriToGP (
+module TypedGraph.Partitions.VeriToGP (
    --  mixLeftRule,
    mixGM,
    mixNac
@@ -9,7 +9,7 @@ import           Graph.Graph              as G
 import           Graph.GraphMorphism
 import           TypedGraph.Graph
 import           TypedGraph.MorphismCore
-import qualified Partitions.GraphPart     as GP
+import qualified TypedGraph.Partitions.GraphPart     as GP
 
 --from verigraph to GraphPart
 

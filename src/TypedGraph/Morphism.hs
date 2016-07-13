@@ -38,9 +38,9 @@ import           Graph.Graph         as G
 import           Graph.GraphMorphism as GM
 import           TypedGraph.Graph
 import           TypedGraph.MorphismCore
-import           Partitions.GPToVeri      (mountTGMBoth)
-import           Partitions.GraphPart     (genGraphEqClass)
-import           Partitions.VeriToGP      (mixGM,mixNac)
+import           TypedGraph.Partitions.GPToVeri      (mountTGMBoth)
+import           TypedGraph.Partitions.GraphPart     (genGraphEqClass)
+import           TypedGraph.Partitions.VeriToGP      (mixGM,mixNac)
 
 
 -- | Return the graph domain

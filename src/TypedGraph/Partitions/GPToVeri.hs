@@ -1,4 +1,4 @@
-module Partitions.GPToVeri (
+module TypedGraph.Partitions.GPToVeri (
    mountTGMBoth
    ) where
 
@@ -9,7 +9,7 @@ import qualified Graph.Graph              as G
 import qualified Graph.GraphMorphism      as GM
 import           TypedGraph.Graph
 import qualified TypedGraph.MorphismCore as TGM
-import           Partitions.GraphPart     as GP
+import           TypedGraph.Partitions.GraphPart     as GP
 
 -- | For two typed graphs and a EpiPair (in GraphPart format) return two TypedGraphMorphism for the graph in verigraph format
 mountTGMBoth :: GM.GraphMorphism a b -> GM.GraphMorphism a b

@@ -34,9 +34,6 @@ executable verigraph
                        CLI.GlobalOptions
                        Graph.Graph
                        Graph.GraphMorphism
-                       Partitions.GPToVeri
-                       Partitions.GraphPart
-                       Partitions.VeriToGP
                        SndOrder.Morphism
                        SndOrder.Rule
                        TypedGraph.GraphGrammar
@@ -44,6 +41,9 @@ executable verigraph
                        TypedGraph.Graph
                        TypedGraph.Morphism
                        TypedGraph.MorphismCore
+                       TypedGraph.Partitions.GPToVeri
+                       TypedGraph.Partitions.GraphPart
+                       TypedGraph.Partitions.VeriToGP
                        TypedGraph.Subgraph
                        XML.GGXParseIn
                        XML.GGXParseOut
