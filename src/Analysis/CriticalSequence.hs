@@ -25,7 +25,7 @@ import           Graph.FindMorphism        ()
 data CS = ProduceUse | DeliverDelete | RemoveDangling deriving (Eq,Show)
 
 -- | A Critical Sequence is defined as two matches (m1,m2) from the left side of their rules to a same graph.
--- 
+--
 -- This diagram shows graphs and morphisms names used in the algorithms below
 --
 -- l       = production (L1,K1,R1,[N1]) (N1 from L1)
@@ -43,9 +43,9 @@ data CS = ProduceUse | DeliverDelete | RemoveDangling deriving (Eq,Show)
 --   m1│      k│     m1'\\ /m2'     │       │
 --     ▼       ▼         ▼         ▼       ▼
 --     P1◀─────D1───────▶G◀───────D2──────▶P2
---         r'       l' 
+--         r'       l'
 -- @
--- 
+--
 -- m2  :: from L2 to P1
 --
 -- h21 :: from L2 to D1

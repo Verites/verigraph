@@ -25,7 +25,7 @@ data CP = FOL | DeleteUse | ProduceForbid | ProduceDangling deriving(Eq,Show)
 
 -- | A Critical Pair is defined as two matches (m1,m2) from the left side of their rules to a same graph.
 -- It assumes that the derivation of the rule with match @m1@ causes a conflict with the rule with match @m2@
--- 
+--
 -- This diagram shows graphs and morphisms names used in the algorithms below
 --
 -- l = production (L1,K1,R1,[N1])
@@ -41,9 +41,9 @@ data CP = FOL | DeleteUse | ProduceForbid | ProduceDangling deriving(Eq,Show)
 --  m1'│      k│      m1\\ /m2      │       │
 --     ▼       ▼         ▼         ▼       ▼
 --     P1◀─────D1───────▶G◀───────D2──────▶P2
---         r'       l' 
--- @ 
--- 
+--         r'       l'
+-- @
+--
 -- m2' :: from L2 to P1
 --
 -- h21 :: from L2 to D1
@@ -70,7 +70,7 @@ getCP :: CriticalPair m -> CP
 getCP = cp
 
 -- | Returns the nac match of a 'CriticalPair'
-getCPNac :: CriticalPair m -> Maybe (m)
+getCPNac :: CriticalPair m -> Maybe m
 getCPNac cp = case nacMatch cp of
                 Just (nac,_) -> Just nac
                 Nothing -> Nothing

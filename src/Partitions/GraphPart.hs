@@ -60,7 +60,7 @@ type EqClassGraph = ([[Node]],[[Edge]])
 -- | Checks if two nodes are in the same equivalence class
 checkNode :: Node -> [Node] -> Bool
 checkNode _ [] = error "error checkNode in GraphPart"
-checkNode (Node type1 _ _ inj side) l@((Node type2 _ _ _ _):_) =
+checkNode (Node type1 _ _ inj side) l@(Node type2 _ _ _ _ : _) =
   type1 == type2 && (not inj || not checkInj)
   where --checks if another inj node is in this list
     checkInj = any (\(Node _ _ _ inj side2) -> inj && side == side2) l
@@ -69,7 +69,7 @@ checkNode (Node type1 _ _ inj side) l@((Node type2 _ _ _ _):_) =
 -- Needs @nodes@ to know if a source or target was collapsed
 checkEdge :: [[Node]] -> Edge -> [Edge] -> Bool
 checkEdge _ _ [] = error "error checkEdge in GraphPart"
-checkEdge nodes (Edge type1 _ _ s1 t1 inj side) l@((Edge type2 _ _ s2 t2 _ _):_) = exp1 && exp2 && exp3
+checkEdge nodes (Edge type1 _ _ s1 t1 inj side) l@(Edge type2 _ _ s2 t2 _ _ : _) = exp1 && exp2 && exp3
   where
     exp1 = type1 == type2 && (not inj || not checkInj)
     --checks if another inj edge is in this list
@@ -103,7 +103,7 @@ bt :: (a -> [a] -> Bool) -> [a] -> [[a]] -> [[[a]]]
 bt f toAdd [] = bt f (init toAdd) [[last toAdd]]
 bt _ [] actual = [actual]
 bt f toAdd actual =
-  (bt f initAdd ([ad]:actual)) ++ 
+  bt f initAdd ([ad]:actual) ++
     concat
       (mapMaybe
         (\(n,id) -> if f ad n
@@ -116,9 +116,9 @@ bt f toAdd actual =
     initAdd = init toAdd
     ad = last toAdd
 
--- | Replaces the @idx@-th element by @new@ in the list @l@ 
+-- | Replaces the @idx@-th element by @new@ in the list @l@
 replace :: Int -> a -> [a] -> [a]
-replace idx new l = (take idx l) ++ [new] ++ (drop (idx+1) l)
+replace idx new l = take idx l ++ [new] ++ drop (idx+1) l
 
 -- | Returns the node that this @p@ was collapsed in partitions
 -- Used to compare if an edge can be mixed with another

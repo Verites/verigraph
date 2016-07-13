@@ -14,8 +14,8 @@ This diagram shows objects and morphisms names used in the algorithms below:
   m1'│      k│      m1\\ /m2      │       │
      ▼       ▼         ▼         ▼       ▼
      P1◀─────D1───────▶G◀───────D2──────▶P2
-         r'       l' 
- @ 
+         r'       l'
+ @
 
 p1 = l1 r1 {n1}
 
@@ -46,9 +46,9 @@ import           Abstract.DPO              as RW hiding (comatch)
 --  m1'│      k│      m1\\ /m2      │       │
 --     ▼       ▼         ▼         ▼       ▼
 --     P1◀─────D1───────▶G◀───────D2──────▶P2
---         r'       l' 
--- @ 
--- 
+--         r'       l'
+-- @
+--
 
 -- abreviation with a better name for this context
 flagInj :: Bool -> PROP
@@ -56,7 +56,7 @@ flagInj = injectiveBoolToProp
 
 -- | Rule @p1@ is in a delete-use conflict with @p2@ if @p1@ deletes
 -- something that is used by @p2@.
--- 
+--
 -- Verifies the non existence of h21: L2 -> D1 such that l' . h21 = m2
 deleteUse :: DPO m => Bool -> Production m -> (m, m) -> Bool
 deleteUse inj l (m1,m2) = null matchD
@@ -67,16 +67,16 @@ deleteUse inj l (m1,m2) = null matchD
 
 -- | Rule @p1@ is in a produce-dangling conflict with @p2@ if @p1@
 -- produces something that unable @p2@.
--- 
+--
 -- Gets the match of @p1@ from L2 to P1, checks if satsNacs and not satsGluing
 produceDangling :: DPO m => Bool -> Bool -> Production m -> Production m -> (m, m) -> Bool
-produceDangling nacInj inj l r (m1,m2) = not (null matchD) && not (satsGluing inj (left r) m2') && (satsNacs nacInj r m2')
+produceDangling nacInj inj l r (m1,m2) = not (null matchD) && not (satsGluing inj (left r) m2') && satsNacs nacInj r m2'
     where
       (k,l') = RW.pushoutComplement m1 (left l)
       l2TOd1 = matches (flagInj inj) (domain m2) (domain l')
       matchD = filter (\x -> m2 == compose x l') l2TOd1
       (_,r') = RW.pushout k (right l)
-      m2' = if (length matchD) > 1
+      m2' = if length matchD > 1
               then error "produceDangling: non unique h21 morphism"
               else compose (head matchD) r' --matchD is unique if exists
 
@@ -95,11 +95,11 @@ deleteUseDangling nacInj inj l r (m1,m2) =
     matchD = filter (\x -> m2 == compose x l') lTOd
     (_,r') = RW.pushout k (right l)
     m2' = compose (head matchD) r'
-    dang = (not (satsGluing inj (left r) m2')) && (satsNacs nacInj r m2')
+    dang = not (satsGluing inj (left r) m2') && satsNacs nacInj r m2'
 
 -- | Rule @p1@ is in a produce-forbid conflict with @p2@ if @p1@
 -- produces something that able some nac of @p2@.
--- 
+--
 -- Checks produce-forbid for a NAC @n@ in @p2@
 produceForbidOneNac :: (EpiPairs m, DPO m) => Bool -> Bool
                     -> Production m -> Production m -> Production m

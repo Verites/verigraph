@@ -24,9 +24,8 @@ import           SndOrder.Morphism
 import           SndOrder.Rule
 import           Graph.Subgraph
 
-cp :: Bool -> GraphRule a b -> GraphRule a b -> [(RuleMorphism a b, RuleMorphism a b)]
-cp inj r1 r2 = createPairs inj r1 r2
-
+-- TODO: Decent names, please
+-- TODO: Follow naming convention for haskell: CamelCase
 data CPE = FOL_FOL | DUSE_DUSE | FOL_DUSE | DUSE_FOL deriving(Show)
 
 classify :: Bool -> SndOrderRule a b -> SndOrderRule a b -> (RuleMorphism a b, RuleMorphism a b) -> CPE
@@ -49,6 +48,8 @@ classify inj r1 r2 (m1,m2) =
       deleteUse inj r1Right (mappingRight m1, mappingRight m2) ||
       deleteUse inj r2Right (mappingRight m2, mappingRight m1)
 
+-- TODO: Decent names, please
+-- TODO: Remove duplication (as per hlint)
 evo :: Bool -> Bool -> (String, SndOrderRule a b) -> (String, SndOrderRule a b) -> (String, [CPE])
 evo nacInj inj (n1,r1) (n2,r2) = (n1 ++ "_" ++ n2, map (classify inj r1 r2) xs'')
   where
@@ -60,7 +61,7 @@ evo nacInj inj (n1,r1) (n2,r2) = (n1 ++ "_" ++ n2, map (classify inj r1 r2) xs''
     leftR1 = production (mappingLeft (left r1)) (mappingLeft (right r1)) []
     leftR2 = production (mappingLeft (left r2)) (mappingLeft (right r2)) []
 
-    pairs = cp inj leftR1 leftR2
+    pairs = createPairs inj leftR1 leftR2
 
     xs = filter (\(m1,_) -> valid (codomain m1)) pairs
     xs' = filter (\(m1,m2) -> satsGluingNacsBoth nacInj inj (r1Left, mappingLeft m1) (r2Left, mappingLeft m2)) xs
@@ -167,7 +168,7 @@ interLevelConflictOneMatch nacInj inj sndRule match = m0s
 relevantGraphs :: Bool -> TypedGraphMorphism a b -> TypedGraphMorphism a b
                -> [TypedGraphMorphism a b]
 --relevantGraphs inj dangFl dangGl = concatMap (\ax -> partitions inj (codomain ax)) axs
-relevantGraphs inj dangFl dangGl = concatMap (\ax -> partitions inj ax) axs
+relevantGraphs inj dangFl dangGl = concatMap (partitions inj) axs
   where
     (_,al) = pushout dangFl dangGl
     --axs = induzedSubgraphs al

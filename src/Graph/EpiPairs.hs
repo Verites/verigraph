@@ -3,10 +3,8 @@
 module Graph.EpiPairs where
 
 import           Abstract.AdhesiveHLR
-import           Abstract.DPO
-import           Abstract.Morphism
 import           Graph.Graph              (empty)
-import           Graph.GraphMorphism      (GraphMorphism, gmbuild)
+import           Graph.GraphMorphism      (gmbuild)
 import           Graph.TypedGraphMorphism (TypedGraphMorphism)
 import           Partitions.GPToVeri      (mountTGMBoth)
 import           Partitions.GraphPart     (genGraphEqClass)

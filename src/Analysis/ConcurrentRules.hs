@@ -34,31 +34,25 @@ maxConcurrentRules dep nacInj injectiveOnly (x:xs) = map (singleCR x) (maxCRs xs
     maxCRs = maxConcurrentRules dep nacInj injectiveOnly
 
 concurrentRules :: (DPO m, EpiPairs m, Eq (Obj m)) => CRDependencies -> Bool -> Bool -> Production m -> Production m -> [Production m]
-concurrentRules dep nacInj isInjective c n = map (concurrentRuleForPair nacInj isInjective c n) selectedPairs
-  where
-    selectedPairs = case dep of
-                      OnlyDependency -> dependencies
-                      _ -> allPairs
-    allPairs = pairs isInjective c n
-    dependencies = depPairs nacInj isInjective c n
-
-depPairs :: (EpiPairs m, DPO m) => Bool -> Bool -> Production m -> Production m -> [(m, m)]
-depPairs nacInj isInjective c n = map getComatch $ criticalSequences nacInj isInjective c n
-
-pairs :: (EpiPairs m, DPO m) => Bool -> Production m -> Production m -> [(m, m)]
-pairs isInjective c n = validDpoPairs
-  where
-    allPairs  = createPairsCodomain isInjective (right c) (left n)
-    validDpoPairs = filter (\(lp, rp) -> satsGluing isInjective (right c) lp && satsGluing isInjective (left n) rp) allPairs
+concurrentRules dep nacInj isInjective c n =
+  let epiPairs = epiPairsForConcurrentRule dep nacInj isInjective c n
+  in map (concurrentRuleForPair nacInj isInjective c n) epiPairs
 
 maxConcurrentRuleForLastPair :: (DPO m, EpiPairs m, Eq (Obj m)) => CRDependencies -> Bool -> Bool -> Production m -> Production m -> Production m
-maxConcurrentRuleForLastPair dep nacInj isInjective c n = concurrentRuleForPair nacInj isInjective c n (last selectedPairs)
-  where
-    selectedPairs = case dep of
-                      OnlyDependency -> dependencies
-                      _ -> allPairs
-    allPairs = pairs isInjective c n
-    dependencies = depPairs nacInj isInjective c n
+maxConcurrentRuleForLastPair dep nacInj isInjective c n =
+  let epiPair = last (epiPairsForConcurrentRule dep nacInj isInjective c n)
+  in concurrentRuleForPair nacInj isInjective c n epiPair
+
+epiPairsForConcurrentRule :: (DPO m, EpiPairs m)
+                             => CRDependencies -> Bool -> Bool
+                             -> Production m -> Production m -> [(m, m)]
+epiPairsForConcurrentRule OnlyDependency nacInj matchInj c n =
+  let dependencies = criticalSequences nacInj matchInj c n
+  in map getComatch dependencies
+epiPairsForConcurrentRule _ _ matchInj c n =
+  let allPairs = createPairsCodomain matchInj (right c) (left n)
+      isValidPair (lp, rp) = satsGluing matchInj (right c) lp && satsGluing matchInj (left n) rp
+  in filter isValidPair allPairs
 
 concurrentRuleForPair :: (DPO m, EpiPairs m, Eq (Obj m)) => Bool -> Bool -> Production m -> Production m -> (m, m) -> Production m
 concurrentRuleForPair nacInj inj c n pair = production l r (dmc ++ lp)
