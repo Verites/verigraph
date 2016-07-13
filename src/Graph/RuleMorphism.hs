@@ -47,7 +47,7 @@ data RuleMorphism a b =
   , mappingLeft      :: TypedGraphMorphism a b
   , mappingInterface :: TypedGraphMorphism a b
   , mappingRight     :: TypedGraphMorphism a b
-  } deriving (Show)
+  } deriving (Show, Read)
 
 ruleMorphism :: Production (TypedGraphMorphism a b)
              -> Production (TypedGraphMorphism a b)
@@ -56,29 +56,6 @@ ruleMorphism :: Production (TypedGraphMorphism a b)
              -> TypedGraphMorphism a b
              -> RuleMorphism a b
 ruleMorphism = RuleMorphism
-
-instance FindMorphism (RuleMorphism a b) where
-  -- | A match between two rules, only considers monomorphic matches morphisms:
-  -- (desconsidering the NACs)
-  matches prop l g = filter valid (getAllMaps prop l g)
-  
-  partInjMatches n m =
-    filter
-      (\q ->
-        (partiallyMonomorphic (mappingLeft n) (mappingLeft q)) &&
-        (partiallyMonomorphic (mappingInterface n) (mappingInterface q)) &&
-        (partiallyMonomorphic (mappingRight n) (mappingRight q)))
-      (matches ALL (codomain n) (codomain m))
-
-getAllMaps :: PROP -> Production (TypedGraphMorphism a b)
-           -> Production (TypedGraphMorphism a b) -> [RuleMorphism a b]
-getAllMaps prop l g =
-  do
-    let f (mapL,mapk,mapR) = RuleMorphism l g mapL mapk mapR
-    matchesL <- matches prop (codomain (left l)) (codomain (left g))
-    matchesK <- matches prop (domain (left l)) (domain (left g))
-    matchesR <- matches prop (codomain (right l)) (codomain (right g))
-    return $ f (matchesL, matchesK, matchesR)
 
 -- | Given the morphisms /k1 : X -> Y/, /s1 : X -> Z/,
 -- /k2 : W -> Y/ and /s2 : W -> Z/, respectively,
@@ -206,10 +183,12 @@ instance Morphism (RuleMorphism a b) where
       epimorphism (mappingInterface rm) &&
       epimorphism (mappingRight rm)
     
-    isomorphism rm = -- check if needs to commute
-      isomorphism (mappingLeft rm) &&
-      isomorphism (mappingInterface rm) &&
-      isomorphism (mappingRight rm)
+    isomorphism (RuleMorphism dom cod mapL mapK mapR) =
+      isomorphism mapL &&
+      isomorphism mapK &&
+      isomorphism mapR &&
+      compose (left dom) mapL == compose mapK (left cod) &&
+      compose (right dom) mapR == compose mapK (right cod)
 
 instance Valid (RuleMorphism a b) where
     valid (RuleMorphism dom cod mapL mapK mapR) =

@@ -24,6 +24,12 @@ data PROP
   | ISO   -- ^ Finds only isomorphic matches
   deriving (Show)
 
+-- | Receives a bool indicating injective or arbitrary match,
+-- converts it to data PROP
+injectiveBoolToProp :: Bool -> PROP
+injectiveBoolToProp True = MONO
+injectiveBoolToProp False = ALL
+
 class Morphism m => FindMorphism m where
   -- | Finds matches __/m/__
   --

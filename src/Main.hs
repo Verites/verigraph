@@ -46,7 +46,7 @@ a fn = do
           pairs = createPairsCodomain True (left r1) (left r2)
           --dgs = Partitions.GraphPart.edges mix2
           inj = filter (\(m1,m2) -> monomorphism m1 && monomorphism m2) pairs
-          gluing = filter (\(m1,m2) -> satsGluing True m1 r1 && satsGluing True m2 r2) inj
+          gluing = filter (\(m1,m2) -> satsGluing True r1 m1 && satsGluing True r2 m2) inj
           delUse = filter (deleteUse r1 r2) gluing
       return (r1,r2)
       --print (fst cp)

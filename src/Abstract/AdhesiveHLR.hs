@@ -70,6 +70,8 @@ class Morphism m => EpiPairs m where
   -- The flag indicates only monomorphic morphisms.
   createPairs :: Bool -> Obj m -> Obj m -> [(m, m)]
   
+  partitions :: Bool -> Obj m -> [m]
+  
   -- | Create a special case of jointly epimorphic pairs, where the second morphism is a Nac
   -- The first flag indicates Nac satisfability with a monomorphic morphism
   -- The second flag indicates that the other morphism is monomorphic

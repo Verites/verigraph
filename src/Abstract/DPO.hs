@@ -64,7 +64,7 @@ production = Production
 
 instance (Morphism m, Valid m, Eq (Obj m)) => Valid (Production m) where
   valid (Production l r nacs) =
-    monomorphism l && monomorphism r && --check if is needed
+    monomorphism l && monomorphism r &&
     valid l && valid r && all valid nacs &&
     domain l == domain r && all (==codomain l) (map domain nacs)
 
@@ -126,13 +126,14 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
   --
   -- Bool only indicates if the match is injective,
   -- in the case of unknown use False
+  --
+  -- satsGluing injFlag (left of a production) match
   satsGluing :: Bool -> m -> m -> Bool
   
-  -- | Checks if the match if free oh have a dangling edge that unable the production
-  freeDanglingEdges :: m -> m -> Bool
-  
-  -- | Inverts a production, adjusting the NACs accordingly
-  inverse :: DPO m => Bool -> Production m -> Production m
+  -- | Inverts a production, adjusting the NACs accordingly.
+  -- Needs information of nac injective satisfaction (in second order)
+  -- and matches injective.
+  inverse :: DPO m => Bool -> Bool -> Production m -> Production m
   
   -- | Given a production /L ←l- K -r→ R/ and a NAC morphism /n : L -> N/, obtain
   -- a set of NACs /n'i : R -> N'i/ that is equivalent to the original NAC.
@@ -140,7 +141,7 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
   -- TODO: review name
   --
   -- TODO: what's the first parameter?
-  shiftLeftNac :: DPO m => Bool -> Production m -> m -> [m]
+  shiftLeftNac :: DPO m => Bool -> Bool -> Production m -> m -> [m]
   
   -- | Check if the second morphism is monomorphic outside the image of the
   -- first morphism.
@@ -149,12 +150,13 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
 
 -- | True if the given match satisfies all NACs of the given production.
 --
--- If the first and second arguments are false, only considers partially injective morphisms.
+-- If the first argument is false, only considers partially injective morphisms.
 -- Otherwise, considers injective morphisms /Ni -> G/.
-satsNacs :: DPO m => Bool -> Bool -> Production m -> m -> Bool
-satsNacs nacInj inj rule m = all (==True) (map (satsFun m) (nacs rule))
+satsNacs :: DPO m => Bool -> Production m -> m -> Bool
+satsNacs nacInj rule m = all (==True) (map (satsFun m) (nacs rule))
   where
-    satsFun = if not nacInj && not inj then satsOneNacPartInj else satsOneNacInj
+    --satsFun = if not nacInj && not inj then satsOneNacPartInj else satsOneNacInj
+    satsFun = if nacInj then satsOneNacInj else satsOneNacPartInj
 
 -- | Check gluing conditions and the NACs satisfaction for a pair of matches
 -- @inj@ only indicates if the match is injective, this function does not checks it
@@ -174,8 +176,8 @@ satsGluingNacsBoth nacInj inj (l,m1) (r,m2) =
 satsGluingAndNacs :: DPO m => Bool -> Bool -> Production m -> m -> Bool
 satsGluingAndNacs nacInj inj rule m = gluingCond && nacsCondition
     where
-        gluingCond    = satsGluing inj m (left rule)
-        nacsCondition = satsNacs nacInj inj rule m
+        gluingCond    = satsGluing inj (left rule) m
+        nacsCondition = satsNacs nacInj rule m
 
 satsOneNacInj :: FindMorphism m => m -> m -> Bool
 satsOneNacInj m nac = null checkCompose

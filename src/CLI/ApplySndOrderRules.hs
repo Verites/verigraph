@@ -36,10 +36,10 @@ execute globalOpts opts = do
     putStrLn "Reading the second order graph grammar..."
     putStrLn ""
 
-    let --nacInj = injectiveNacSatisfaction globalOpts
-        --onlyInj = if arbitraryMatches globalOpts then ALL else MONO
+    let nacInj = injectiveNacSatisfaction globalOpts
+        onlyInj = not $ arbitraryMatches globalOpts
         newNacs =
-          map (\(n,r) -> let newRule = SO.addMinimalSafetyNacs r
+          map (\(n,r) -> let newRule = SO.addMinimalSafetyNacs nacInj r
                              tamNewNacs = length (nacs newRule)
                              tamNacs = length (nacs r) in
            ((n, newRule), (n, tamNewNacs - tamNacs)))
@@ -47,15 +47,21 @@ execute globalOpts opts = do
         addNacs = map fst newNacs
         printNewNacs = map snd newNacs
         --rule = snd (head (GG.sndOrderRules gg))
-        newRules = SO.applySndOrderRules (GG.rules gg) (GG.sndOrderRules gg)
+        newRules = SO.applySecondOrder (SO.applySndOrderRule nacInj onlyInj) (GG.rules gg) (GG.sndOrderRules gg)
         gg2 = GG.graphGrammar (GG.initialGraph gg) ((GG.rules gg) ++ newRules) addNacs--(GG.sndOrderRules gg)
+        --gg2 = GG.graphGrammar (GG.initialGraph gg) (GG.rules gg) addNacs--(GG.sndOrderRules gg)
         --gg3 = GG.graphGrammar (GG.initialGraph gg) rulePairs []--(GG.sndOrderRules gg)
         --rul = snd (head (GG.sndOrderRules gg))
         --rulePairs = map (\(idx,(a,_)) -> (show idx, codomain a)) (zip [0..] (createPairs True ruleL ruleR))
     
+    putStrLn $ "injective satisfability of nacs: " ++ show nacInj
+    putStrLn $ "only injective matches morphisms: " ++ show onlyInj
+    putStrLn ""
+    
     mapM_
       putStrLn $
       ["Adding minimal safety nacs to second order rules"]
+      ++ (if onlyInj then [] else ["Warning, some nacs for non injective matches are not implemented"])
       ++ (map (\(r,n) -> "Rule "++r++", added "++ show n ++ " nacs") printNewNacs)
       ++ ["All nacs added!",""]
     

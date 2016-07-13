@@ -1,21 +1,18 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 
 module Graph.SndOrderRule (
     SndOrderRule
-  , applySndOrderRules
   , addMinimalSafetyNacs
   , minimalSafetyNacs
+  , applySndOrderRule
+  , applySecondOrder
   ) where
 
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Morphism
 import           Graph.EpiPairs ()
+import           Graph.FindMorphismSndOrder ()
 import           Graph.Graph as G
 import           Graph.GraphRule
 import qualified Graph.GraphMorphism as GM
@@ -62,25 +59,34 @@ type SndOrderRule a b = Production (RuleMorphism a b)
 
 data Side = LeftSide | RightSide
 
+-- | Receives a function that works with a second order and a first order rule.
+-- Apply this function on all possible combinations of rules. 
+applySecondOrder ::
+     ((String, SndOrderRule a b) -> (String, GraphRule a b) -> [t])
+  -> [(String, GraphRule a b)] -> [(String, SndOrderRule a b)] -> [t]
+applySecondOrder f fstRules = concatMap (\r -> applySecondOrderListRules f r fstRules)
+
+applySecondOrderListRules ::
+    ((String, SndOrderRule a b) -> (String, GraphRule a b) -> [t])
+ -> (String, SndOrderRule a b) -> [(String, GraphRule a b)] -> [t]
+applySecondOrderListRules f sndRule = concatMap (f sndRule)
+
 instance DPO (RuleMorphism a b) where
-  satsGluing inj m l =
-    satsGluing inj (mappingLeft m)      (mappingLeft l)      &&
-    satsGluing inj (mappingInterface m) (mappingInterface l) &&
-    satsGluing inj (mappingRight m)     (mappingRight l)     &&
+  satsGluing inj l m =
+    satsGluing inj (mappingLeft l)      (mappingLeft m)      &&
+    satsGluing inj (mappingInterface l) (mappingInterface m) &&
+    satsGluing inj (mappingRight l)     (mappingRight m)     &&
     danglingSpan (left (codomain m)) (mappingLeft m) (mappingInterface m) (mappingLeft l) (mappingInterface l) &&
     danglingSpan (right (codomain m)) (mappingRight m) (mappingInterface m) (mappingRight l) (mappingInterface l)
   
-  -- CHECK
-  freeDanglingEdges _ _ = True
-  
-  inverse inj r = addMinimalSafetyNacs newRule
+  inverse nacInj inj r = addMinimalSafetyNacs nacInj newRule
     where
-      newRule = production (right r) (left r) (concatMap (shiftLeftNac inj r) (nacs r))
+      newRule = production (right r) (left r) (concatMap (shiftLeftNac nacInj inj r) (nacs r))
   
   -- | Needs the satsNacs extra verification because not every satsGluing nac can be shifted
-  shiftLeftNac inj rule n = [comatch n rule |
-                               satsGluing inj n (left rule) &&
-                               satsNacs True inj ruleWithOnlyMinimalSafetyNacs n]
+  shiftLeftNac nacInj inj rule n = [comatch n rule |
+                               satsGluing inj (left rule) n &&
+                               satsNacs nacInj ruleWithOnlyMinimalSafetyNacs n]
     where
       ruleWithOnlyMinimalSafetyNacs = production (left rule) (right rule) (minimalSafetyNacs rule)
   
@@ -101,21 +107,15 @@ danglingSpan matchRuleSide matchMorp matchK l k = deletedNodesInK && deletedEdge
     edgesInK = [a | a <- edgesDomain matchRuleSide, (applyEdgeTGMUnsafe matchRuleSide a) `elem` deletedEdges]
     deletedEdgesInK = all (ruleDeletes k matchK applyEdgeTGM edgesDomain) edgesInK
 
-applySndOrderRules :: [(String, GraphRule a b)] -> [(String, SndOrderRule a b)] -> [(String, GraphRule a b)]
-applySndOrderRules fstRules = concatMap (\r -> applySndOrderRuleListRules r fstRules)
-
-applySndOrderRuleListRules :: (String, SndOrderRule a b) -> [(String, GraphRule a b)] -> [(String, GraphRule a b)]
-applySndOrderRuleListRules sndRule = concatMap (applySndOrderRule sndRule)
-
-applySndOrderRule :: (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String, GraphRule a b)]
-applySndOrderRule (sndName,sndRule) (fstName,fstRule) = zip newNames newRules
+applySndOrderRule :: Bool -> Bool -> (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String, GraphRule a b)]
+applySndOrderRule nacInj inj (sndName,sndRule) (fstName,fstRule) = zip newNames newRules
   where
     newNames = map (\number -> fstName ++ "_" ++ sndName ++ "_" ++ show number) ([0..] :: [Int])
     leftRule = left sndRule
     rightRule = right sndRule
-    mats = matches MONO (codomain leftRule) fstRule
-    gluing = filter (\m -> satsGluing False m leftRule) mats
-    nacs = filter (satsNacs True False sndRule) gluing
+    mats = matches (injectiveBoolToProp inj) (codomain leftRule) fstRule
+    gluing = filter (satsGluing inj leftRule) mats
+    nacs = filter (satsNacs nacInj sndRule) gluing
     newRules = map
                  (\match ->
                    let (k,_)  = poc match leftRule
@@ -125,15 +125,15 @@ applySndOrderRule (sndName,sndRule) (fstName,fstRule) = zip newNames newRules
 
 -- | Adds the minimal safety nacs needed to this production always produce a second order rule.
 -- If the nacs to be added not satisfies the others nacs, then it do not need to be added.
-addMinimalSafetyNacs :: SndOrderRule a b -> SndOrderRule a b
-addMinimalSafetyNacs sndRule =
+addMinimalSafetyNacs :: Bool -> SndOrderRule a b -> SndOrderRule a b
+addMinimalSafetyNacs nacInj sndRule =
   production
     (left sndRule)
     (right sndRule)
     ((nacs sndRule) ++
-     (filter (satsNacs True True sndRule) (minimalSafetyNacs sndRule)))
+     (filter (satsNacs nacInj sndRule) (minimalSafetyNacs sndRule)))
 
--- | Generates the minimal safety NACs of a 2-rule
+-- | Generates the minimal safety NACs of a 2-rule.
 -- probL and probR done, pairL and pairR to do.
 minimalSafetyNacs :: SndOrderRule a b -> [RuleMorphism a b]
 minimalSafetyNacs sndRule = (newNacsProb LeftSide sndRule) ++ (newNacsProb RightSide sndRule)

@@ -18,7 +18,7 @@ data GraphGrammar a b = GraphGrammar {
                             initialGraph  :: GraphMorphism a b
                           , rules         :: [(String, GraphRule a b)]
                           , sndOrderRules :: [(String, SndOrderRule a b)]
-                        } deriving (Show)--, Read)
+                        } deriving (Show, Read)
 
 graphGrammar :: GraphMorphism a b -> [(String, GraphRule a b)] -> [(String, SndOrderRule a b)] -> GraphGrammar a b
 graphGrammar = GraphGrammar

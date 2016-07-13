@@ -5,7 +5,8 @@ module Graph.EpiPairs where
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Morphism
-import           Graph.GraphMorphism      (GraphMorphism)
+import           Graph.Graph              (empty)
+import           Graph.GraphMorphism      (GraphMorphism, gmbuild)
 import           Graph.TypedGraphMorphism (TypedGraphMorphism)
 import           Graph.RuleMorphism       (RuleMorphism, ruleMorphism)
 import           Partitions.GPToVeri      (mountTGMBoth)
@@ -15,6 +16,11 @@ import           Partitions.VeriToGP      (mixGM,mixNac)
 instance EpiPairs (TypedGraphMorphism a b) where
   -- | Create all jointly surjective pairs of @m1@ and @m2@
   createPairs inj m1 m2 = map (mountTGMBoth m1 m2) (genGraphEqClass (mixGM (m1,inj) (m2,inj)))
+  
+  partitions inj m1 = map fst part
+    where
+      m2 = gmbuild empty empty [] []
+      part = map (mountTGMBoth m1 m2) (genGraphEqClass (mixGM (m1,inj) (m2,inj)))
 
   -- | Create all jointly surjective pairs of @m1@ and @m2@ with some of both injective
   --createPairsAlt (m1,inj1) (m2,inj2) = map (mountTGMBoth m1 m2) (genGraphEqClass (mixGM (m1,inj1) (m2,inj2)))
@@ -82,6 +88,8 @@ instance EpiPairs (RuleMorphism a b) where
                    let rule = production l r []
                    in (ruleMorphism m1 rule l1 k1 r1,
                        ruleMorphism m2 rule l2 k2 r2)) rights
+  
+  partitions _ _ = error "Not implemented"
   
   --FIXME
   createPairsNac _ _ r nac = allPairs
