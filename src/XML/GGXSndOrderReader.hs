@@ -4,8 +4,8 @@ import           Abstract.DPO
 import           Abstract.Morphism
 import           Graph.GraphMorphism      as GM
 import           Graph.GraphRule          as GR
-import           Graph.RuleMorphism
-import           Graph.SndOrderRule       ()
+import           SndOrder.Rule            ()
+import           SndOrder.Morphism
 import           Graph.TypedGraphMorphism
 import {-# SOURCE #-} XML.GGXReader
 import           XML.ParsedTypes
@@ -62,23 +62,23 @@ instantiateRuleMorphisms (parsedLeft, l) (parsedRight, r) =
       graphLRuleR = codomain (left r)
       graphRRuleL = codomain (right l)
       graphRRuleR = codomain (right r)
-      
+
       mappingBetweenLeft = SO.getLeftObjNameMapping parsedLeft parsedRight
       mappingBetweenRight = SO.getRightObjNameMapping parsedLeft parsedRight
-      
+
       ruleK = production leftK rightK []
-      
+
       graphLRuleK = domain leftKtoLeftL
       graphRRuleK = domain rightKtoRightL
-      
+
       (leftKtoLeftL, leftKtoLeftR) =
         instantiateSpan graphLRuleL graphLRuleR mappingBetweenLeft
-      
+
       (interfaceKtoL, interfaceKtoR) =
         instantiateSpan graphKRuleL graphKRuleR mappingBetweenLeft
-      
+
       (rightKtoRightL, rightKtoRightR) =
         instantiateSpan graphRRuleL graphRRuleR mappingBetweenRight
-      
+
       maps (_,_,(_,_,_,x)) = x
       (leftK, rightK) = instantiateSpan graphLRuleK graphRRuleK (maps parsedLeft)

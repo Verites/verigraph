@@ -17,9 +17,9 @@ import           Data.Maybe
 import qualified Graph.Graph               as G
 import           Graph.GraphGrammar
 import qualified Graph.GraphRule           as GR
-import qualified Graph.SndOrderRule        as SO
-import           Graph.RuleMorphism
 import           Graph.TypedGraphMorphism
+import qualified SndOrder.Rule             as SO
+import           SndOrder.Morphism
 import           Text.XML.HXT.Core         hiding (left,right)
 import           XML.GGXParseOut
 import           XML.ParsedTypes

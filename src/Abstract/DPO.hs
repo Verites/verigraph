@@ -53,7 +53,7 @@ data Production m = Production
   , right :: m  -- ^ The morphism /K -> R/ of a production
   , nacs :: [m] -- ^ The set of nacs /L -> Ni/ of a production
   }
-  deriving (Show, Read)
+  deriving (Eq, Show, Read)
 
 -- | Construct a production from the morphism /l : K -> L/,
 -- the morphism /r : K -> R/, and the nacs /L -> Ni/, respectively.

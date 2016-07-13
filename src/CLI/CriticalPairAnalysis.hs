@@ -14,7 +14,7 @@ import           Data.List.Split
 import           Data.List.Utils
 import           Data.Matrix               hiding ((<|>))
 import qualified Graph.GraphGrammar        as GG
-import           Graph.SndOrderRule
+import           SndOrder.Rule
 import           Options.Applicative
 import qualified XML.GGXReader             as XML
 import qualified XML.GGXWriter             as GW

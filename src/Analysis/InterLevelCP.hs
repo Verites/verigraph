@@ -20,8 +20,8 @@ import           Graph.Graph
 import           Graph.GraphMorphism
 import           Graph.GraphRule
 import           Graph.TypedGraphMorphism
-import           Graph.RuleMorphism
-import           Graph.SndOrderRule
+import           SndOrder.Morphism
+import           SndOrder.Rule
 import           Graph.Subgraph
 
 cp :: Bool -> GraphRule a b -> GraphRule a b -> [(RuleMorphism a b, RuleMorphism a b)]
@@ -30,7 +30,7 @@ cp inj r1 r2 = createPairs inj r1 r2
 data CPE = FOL_FOL | DUSE_DUSE | FOL_DUSE | DUSE_FOL deriving(Show)
 
 classify :: Bool -> SndOrderRule a b -> SndOrderRule a b -> (RuleMorphism a b, RuleMorphism a b) -> CPE
-classify inj r1 r2 (m1,m2) = 
+classify inj r1 r2 (m1,m2) =
   case (deleteUseFlGl, deleteUseFlGl'') of
     (True,True) -> DUSE_DUSE
     (True,False) -> DUSE_FOL
@@ -41,7 +41,7 @@ classify inj r1 r2 (m1,m2) =
     r2Left = codomain (left r2)
     r1Right = codomain (right r1)
     r2Right = codomain (right r2)
-    
+
     deleteUseFlGl =
       deleteUse inj r1Left (mappingLeft m1, mappingLeft m2) ||
       deleteUse inj r2Left (mappingLeft m2, mappingLeft m1)
@@ -56,12 +56,12 @@ evo nacInj inj (n1,r1) (n2,r2) = (n1 ++ "_" ++ n2, map (classify inj r1 r2) xs''
     r2Left = codomain (left r2)
     r1Right = codomain (right r1)
     r2Right = codomain (right r2)
-    
+
     leftR1 = production (mappingLeft (left r1)) (mappingLeft (right r1)) []
     leftR2 = production (mappingLeft (left r2)) (mappingLeft (right r2)) []
-    
+
     pairs = cp inj leftR1 leftR2
-    
+
     xs = filter (\(m1,_) -> valid (codomain m1)) pairs
     xs' = filter (\(m1,m2) -> satsGluingNacsBoth nacInj inj (r1Left, mappingLeft m1) (r2Left, mappingLeft m2)) xs
     xs'' = filter (\(m1,m2) -> satsGluingNacsBoth nacInj inj (r1Right, mappingLeft m1) (r2Right, mappingLeft m2)) xs'
@@ -74,11 +74,11 @@ danglingExtension gl l = tlUpdated
     t = codomain tl
     tlx n' = any (\n -> applyNodeUnsafe tl n == n') ld
     dangT = filter (\e -> tlx (sourceOfUnsafe t e) || tlx (targetOfUnsafe t e)) (edges t)
-    
+
     edgesToAdd = concatMap (\n -> map (\e -> (n,e)) dangT) ld
-    
+
     tlUpdated = foldl addEdge gl edgesToAdd
-    
+
     addEdge tgm (n,e) =
       case (isSrc,isTgt) of
         (True,True) -> createSrcTgt tgm e n
@@ -89,19 +89,19 @@ danglingExtension gl l = tlUpdated
         typeNode = applyNodeUnsafe (codomain tgm) n
         isSrc = typeNode == sourceOfUnsafe t e
         isTgt = typeNode == targetOfUnsafe t e
-        
+
         createEdge tgm e s t = createEdgeCodTGM edgeId s t e tgm
           where
             edgeId = head (newEdgesTyped (codomain tgm))
-        
+
         createSrcTgt tgm e n = createTgt (createSrc tgm e n) e n
-        
+
         createSrc tgm e n = createEdge newGraph e n nodeId
           where
             nodeId = head (newNodesTyped (codomain tgm))
             typeNewNode = targetOfUnsafe (codomain (codomain tgm)) e
             newGraph = createNodeCodTGM nodeId typeNewNode tgm
-        
+
         createTgt tgm e n = createEdge newGraph e nodeId n
           where
             nodeId = head (newNodesTyped (codomain tgm))
@@ -114,11 +114,11 @@ interLevelConflict nacInj inj (sndName,sndRule) (fstName,fstRule) = zip newNames
     newNames = map (\number -> fstName ++ "_" ++ sndName ++ "_" ++ show number) ([0..] :: [Int])
     sndOrderL = left sndRule
     leftRule = codomain sndOrderL
-    
+
     mats = matches (injectiveBoolToProp inj) leftRule fstRule
     validMatches = filter (satsGluingAndNacs nacInj inj sndRule) mats
-    
-    conflicts m = 
+
+    conflicts m =
       do
         a <- interLevelConflictOneMatch nacInj inj sndRule m
         return (m,a)
@@ -128,38 +128,38 @@ interLevelConflictOneMatch nacInj inj sndRule match = m0s
   where
     sndOrderL = left sndRule
     sndOrderR = right sndRule
-    
+
     (k,l') = pushoutComplement match sndOrderL
     (m',r') = pushout k sndOrderR
-    
+
     p = codomain match
     p'' = codomain m'
-    
+
     bigL = left p
     bigL'' = left p''
-    
+
     fl = mappingLeft l'
     gl = mappingLeft r'
-    
+
     danglingExtFl = compose fl (danglingExtension fl bigL)
     danglingExtGl = compose gl (danglingExtension gl bigL'')
-    
+
     axs = relevantGraphs inj danglingExtFl danglingExtGl
-    
+
     m0s = concatMap defineMatches axs
-    
+
     defineMatches ax = filter conflicts validMatches
       where
         mats = matches (injectiveBoolToProp inj) (codomain bigL) (codomain ax)
         validMatches = filter (satsGluingAndNacs nacInj inj p) mats
-        
+
         conflicts m0 = Prelude.null validM0''-- or all (==False) (map (\m'' -> satsGluing inj bigL'' m'') validM0'') --thesis def
           where
             matchesM0'' = matches (injectiveBoolToProp inj) (codomain bigL'') (codomain m0)
             validMatch = satsGluingAndNacs nacInj inj p''
-            
+
             commutes m0'' = compose fl m0 == compose gl m0''
-            
+
             --paper definition
             --validM0'' = filter (\m0'' -> not ((validMatch m0'') && (commutes m0''))) matchesM0''
             validM0'' = filter (\m0'' -> commutes m0'' && validMatch m0'') matchesM0''
@@ -172,4 +172,3 @@ relevantGraphs inj dangFl dangGl = concatMap (\ax -> partitions inj ax) axs
     (_,al) = pushout dangFl dangGl
     --axs = induzedSubgraphs al
     axs = subgraphs (codomain al)
-

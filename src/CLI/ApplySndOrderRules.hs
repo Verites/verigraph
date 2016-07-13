@@ -10,7 +10,7 @@ import           Abstract.DPO
 import           CLI.GlobalOptions
 import           Graph.EpiPairs            ()
 import qualified Graph.GraphGrammar        as GG
-import qualified Graph.SndOrderRule        as SO
+import qualified SndOrder.Rule        as SO
 import           Options.Applicative
 import qualified XML.GGXReader             as XML
 import qualified XML.GGXWriter             as GW

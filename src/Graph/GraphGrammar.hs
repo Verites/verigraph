@@ -11,7 +11,7 @@ import qualified Abstract.Morphism   as M
 import           Graph.Graph         (Graph)
 import           Graph.GraphMorphism
 import           Graph.GraphRule     (GraphRule)
-import           Graph.SndOrderRule  (SndOrderRule)
+import           SndOrder.Rule  (SndOrderRule)
 
 -- TODO: extract as DPO grammar?
 data GraphGrammar a b = GraphGrammar {

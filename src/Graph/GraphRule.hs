@@ -10,7 +10,7 @@ module Graph.GraphRule (
     , deletedEdges
     , createdNodes
     , createdEdges
-    
+
     , ruleDeletes
 
     -- * Gluing condition
@@ -26,14 +26,6 @@ import           Graph.TypedGraphMorphism as TGM
 import           Graph.FindMorphism       ()
 
 type GraphRule a b = Production (TypedGraphMorphism a b)
-
--- FIXME
--- is correct?
--- check nacs?
-instance Eq (GraphRule a b) where
-    x == y =
-      left x == left y &&
-      right x == right y
 
 -- | Return the nodes deleted by a rule
 deletedNodes :: GraphRule a b -> [G.NodeId]
@@ -56,11 +48,11 @@ instance DPO (TypedGraphMorphism a b) where
     where
         identificationCondition = satsDelItems left m
         danglingCondition       = satsIncEdges left m
-  
+
   inverse nacInj inj r = production (right r) (left r) (concatMap (shiftLeftNac nacInj inj r) (nacs r))
-  
+
   shiftLeftNac _ inj rule n = [comatch n rule | satsGluing inj (left rule) n]
-  
+
   partiallyMonomorphic = partialInjectiveTGM
 
 ---- Gluing Conditions

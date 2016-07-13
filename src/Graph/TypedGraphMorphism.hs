@@ -43,7 +43,7 @@ data TypedGraphMorphism a b = TypedGraphMorphism {
                               getDomain   :: GM.TypedGraph a b
                             , getCodomain :: GM.TypedGraph a b
                             , mapping  :: GM.GraphMorphism a b
-                         } deriving (Show, Read)
+                         } deriving (Eq, Show, Read)
 
 typedMorphism :: GraphMorphism a b -> GraphMorphism a b -> GraphMorphism a b -> TypedGraphMorphism a b
 typedMorphism = TypedGraphMorphism
@@ -188,12 +188,6 @@ idMap gm1 gm2 =
       init = GM.empty (M.domain gm1) (M.domain gm2)
       nodesUpdate = foldr (\n -> GM.updateNodes n n) init (G.nodes (M.domain gm1))
       edgesUpdate = foldr (\e -> GM.updateEdges e e) nodesUpdate (G.edges (M.domain gm2))
-
-instance Eq (TypedGraphMorphism a b) where
-    (TypedGraphMorphism dom1 cod1 m1) == (TypedGraphMorphism dom2 cod2 m2) =
-        dom1 == dom2 &&
-        cod1 == cod2 &&
-        m1 == m2
 
 instance Morphism (TypedGraphMorphism a b) where
     type Obj (TypedGraphMorphism a b) = GraphMorphism a b
