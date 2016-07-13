@@ -82,14 +82,14 @@ getCPNacIdx cp = case nacMatch cp of
                    Nothing -> Nothing
 
 -- | Returns the Critical Pairs with rule names
-namedCriticalPairs :: (EpiPairs m, DPO m) => Bool -> Bool
+namedCriticalPairs :: (EpiPairs m, DPO m) => NacSatisfaction -> MatchRestriction
   -> [(String, Production m)] -> [(String,String,[CriticalPair m])]
 namedCriticalPairs nacInj inj r = map (uncurry getCPs) [(a,b) | a <- r, b <- r]
   where
     getCPs (n1,r1) (n2,r2) = (n1, n2, criticalPairs nacInj inj r1 r2)
 
 -- | All Critical Pairs
-criticalPairs :: (EpiPairs m, DPO m) => Bool -> Bool
+criticalPairs :: (EpiPairs m, DPO m) => NacSatisfaction -> MatchRestriction
               -> Production m -> Production m -> [CriticalPair m]
 --criticalPairs nacInj inj l r = (allDeleteUse nacInj inj l r) ++ (allProduceDangling nacInj inj l r) ++ (allProduceForbid nacInj inj l r)
 criticalPairs nacInj inj l r =
@@ -99,7 +99,7 @@ criticalPairs nacInj inj l r =
 ---- Delete-Use
 
 -- | All DeleteUse caused by the derivation of @l@ before @r@
-allDeleteUse :: (EpiPairs m, DPO m) => Bool -> Bool
+allDeleteUse :: (EpiPairs m, DPO m) => NacSatisfaction -> MatchRestriction
              -> Production m -> Production m -> [CriticalPair m]
 allDeleteUse nacInj inj l r =
   map
@@ -112,7 +112,7 @@ allDeleteUse nacInj inj l r =
 
 ---- Produce-Dangling
 
-allProduceDangling :: (EpiPairs m, DPO m) => Bool -> Bool
+allProduceDangling :: (EpiPairs m, DPO m) => NacSatisfaction -> MatchRestriction
                    -> Production m -> Production m -> [CriticalPair m]
 allProduceDangling nacInj i l r =
   map
@@ -127,7 +127,7 @@ allProduceDangling nacInj i l r =
 
 -- | Tests DeleteUse and ProduceDangling for the same pairs,
 -- more efficient than deal separately.
-allDeleteUseAndDang :: (EpiPairs m, DPO m) => Bool -> Bool
+allDeleteUseAndDang :: (EpiPairs m, DPO m) => NacSatisfaction -> MatchRestriction
                     -> Production m -> Production m -> [CriticalPair m]
 allDeleteUseAndDang nacInj i l r =
   let conflicts = mapMaybe (deleteUseDangling nacInj i l r) gluing
@@ -145,7 +145,7 @@ allDeleteUseAndDang nacInj i l r =
 -- | All ProduceForbid caused by the derivation of @l@ before @r@.
 -- Rule @l@ causes a produce-forbid conflict with @r@ if some NAC in @r@
 -- fails to be satisfied after the aplication of @l@.
-allProduceForbid :: (EpiPairs m, DPO m) => Bool -> Bool
+allProduceForbid :: (EpiPairs m, DPO m) => NacSatisfaction -> MatchRestriction
                  -> Production m -> Production m -> [CriticalPair m]
 allProduceForbid nacInj inj l r =
   concatMap
@@ -155,9 +155,16 @@ allProduceForbid nacInj inj l r =
     inverseLeft = inverse nacInj inj l
 
 -- | Check ProduceForbid for a NAC @n@ in @r@.
-produceForbid :: (EpiPairs m, DPO m) => Bool -> Bool -> Production m
+produceForbid :: (EpiPairs m, DPO m) => NacSatisfaction -> MatchRestriction -> Production m
               -> Production m -> Production m -> (m, Int) -> [CriticalPair m]
 produceForbid nacInj inj l inverseLeft r nac =
   map
     (\(m,m',nac) -> CriticalPair m (Just m') (Just nac) ProduceForbid)
     (produceForbidOneNac nacInj inj l inverseLeft r nac)
+
+
+-- | Create all jointly epimorphic pairs of morphisms from the codomains of
+-- the given morphisms.
+-- The flag indicates only monomorphic morphisms.
+createPairsCodomain :: (EpiPairs m) => MatchRestriction -> m -> m -> [(m, m)]
+createPairsCodomain inj m1 m2 = createPairs (inj == MonoMatches) (codomain m1) (codomain m2)

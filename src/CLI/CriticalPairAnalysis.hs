@@ -70,7 +70,7 @@ execute globalOpts opts = do
     putStrLn ""
 
     let nacInj = injectiveNacSatisfaction globalOpts
-        onlyInj = not $ arbitraryMatches globalOpts
+        onlyInj = arbitraryMatches globalOpts
         action = analysisType opts
         secondOrder = sndOrder opts
         writer = defWriterFun secondOrder nacInj onlyInj action
@@ -177,7 +177,7 @@ execute globalOpts opts = do
       then mapM_
         putStrLn $
         ["Adding minimal safety nacs to second order rules:"]
-        ++ (if onlyInj then [] else ["Warning, some nacs for non injective matches are not implemented"])
+        ++ (if onlyInj == MonoMatches then [] else ["Warning, some nacs for non injective matches are not implemented"])
         ++ map (\(r,n) -> "Rule " ++ r ++ ", added " ++ show n ++ " nacs") printNewNacs
         ++ ["All minimal safety nacs added!", ""]
       else
@@ -197,14 +197,14 @@ execute globalOpts opts = do
                    ++ ["Done!"]
 
     case (secondOrder, onlyInj) of
-      (True,False) -> mapM_ putStrLn printILCP
-      (True,True) -> putStrLn "Interlevel CP not defined for only injective matches"
+      (True, AnyMatches) -> mapM_ putStrLn printILCP
+      (True, MonoMatches) -> putStrLn "Interlevel CP not defined for only injective matches"
       _ -> mapM_ putStrLn []
 
     putStrLn "Evolution Interlevel CP"
     print evoConflicts
 
-defWriterFun :: Bool -> Bool -> Bool -> AnalysisType
+defWriterFun :: Bool -> NacSatisfaction -> MatchRestriction -> AnalysisType
              ->(GG.GraphGrammar a b -> String
              -> [(String,String)] -> String -> IO ())
 defWriterFun secondOrder nacInj inj t =

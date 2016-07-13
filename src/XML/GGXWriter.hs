@@ -26,7 +26,7 @@ import           XML.ParsedTypes
 import           XML.ParseSndOrderRule
 import           XML.Utilities
 
-appendSndOrderConflicts :: Bool -> Bool -> GraphGrammar a b -> GraphGrammar a b
+appendSndOrderConflicts :: NacSatisfaction -> MatchRestriction -> GraphGrammar a b -> GraphGrammar a b
 appendSndOrderConflicts nacInj inj gg = newGG
   where
     conflicts = CP.namedCriticalPairs nacInj inj (sndOrderRules gg)
@@ -34,7 +34,7 @@ appendSndOrderConflicts nacInj inj gg = newGG
     conflictRules = map (\(idx,(n1,n2,tp,rule)) -> ("conflict_"++(show tp)++"_"++n1++"_"++n2++"_"++(show idx), rule)) (zip ([0..]::[Int]) matches)
     newGG = graphGrammar (initialGraph gg) ((rules gg) ++ conflictRules) (sndOrderRules gg)
 
-appendSndOrderDependencies :: Bool -> Bool -> GraphGrammar a b -> GraphGrammar a b
+appendSndOrderDependencies :: NacSatisfaction -> MatchRestriction -> GraphGrammar a b -> GraphGrammar a b
 appendSndOrderDependencies nacInj inj gg = newGG
   where
     conflicts = CS.namedCriticalSequences nacInj inj (sndOrderRules gg)
@@ -43,7 +43,7 @@ appendSndOrderDependencies nacInj inj gg = newGG
     newGG = graphGrammar (initialGraph gg) ((rules gg) ++ conflictRules) (sndOrderRules gg)
 
 -- | Writes grammar, second order conflicts and dependencies (.ggx)
-writeSndOderConfDepFile :: Bool -> Bool -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
+writeSndOderConfDepFile :: NacSatisfaction -> MatchRestriction -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
 writeSndOderConfDepFile nacInj inj gg name names fileName =
   do
     let newGG = ((appendSndOrderDependencies nacInj inj) . (appendSndOrderConflicts nacInj inj)) gg
@@ -52,7 +52,7 @@ writeSndOderConfDepFile nacInj inj gg name names fileName =
     return ()
 
 -- | Writes the grammar and the second order conflicts (.ggx)
-writeSndOderConflictsFile :: Bool -> Bool -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
+writeSndOderConflictsFile :: NacSatisfaction -> MatchRestriction -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
 writeSndOderConflictsFile nacInj inj gg name names fileName =
   do
     let newGG = appendSndOrderConflicts nacInj inj gg
@@ -61,7 +61,7 @@ writeSndOderConflictsFile nacInj inj gg name names fileName =
     return ()
 
 -- | Writes the grammar and the second order dependencies (.ggx)
-writeSndOderDependenciesFile :: Bool -> Bool -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
+writeSndOderDependenciesFile :: NacSatisfaction -> MatchRestriction -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
 writeSndOderDependenciesFile nacInj inj gg name names fileName =
   do
     let newGG = appendSndOrderDependencies nacInj inj gg
@@ -70,21 +70,21 @@ writeSndOderDependenciesFile nacInj inj gg name names fileName =
     return ()
 
 -- | Writes grammar, conflicts and dependencies (.cpx)
-writeConfDepFile :: Bool -> Bool -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
+writeConfDepFile :: NacSatisfaction -> MatchRestriction -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
 writeConfDepFile nacInj inj gg name names fileName = do
   runX $ writeConfDep nacInj inj gg name names fileName
   putStrLn $ "Saved in " ++ fileName
   return ()
 
 -- | Writes the grammar and the conflicts (.cpx)
-writeConflictsFile :: Bool -> Bool -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
+writeConflictsFile :: NacSatisfaction -> MatchRestriction -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
 writeConflictsFile nacInj inj gg name names fileName = do
   runX $ writeConf nacInj inj gg name names fileName
   putStrLn $ "Saved in " ++ fileName
   return ()
 
 -- | Writes the grammar and the dependencies (.cpx)
-writeDependenciesFile :: Bool -> Bool -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
+writeDependenciesFile :: NacSatisfaction -> MatchRestriction -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
 writeDependenciesFile nacInj inj gg name names fileName = do
   runX $ writeDep nacInj inj gg name names fileName
   putStrLn $ "Saved in " ++ fileName
@@ -97,18 +97,18 @@ writeGrammarFile gg name names fileName = do
   putStrLn $ "Saved in " ++ fileName
   return ()
 
-writeConfDep :: Bool -> Bool -> GraphGrammar a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
+writeConfDep :: NacSatisfaction -> MatchRestriction -> GraphGrammar a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
 writeConfDep nacInj inj gg name names fileName = root [] [writeCpx gg cps css name names] >>> writeDocument [withIndent yes] fileName
   where
     cps = CP.namedCriticalPairs nacInj inj (rules gg)
     css = CS.namedCriticalSequences nacInj inj (rules gg)
 
-writeConf :: Bool -> Bool -> GraphGrammar a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
+writeConf :: NacSatisfaction -> MatchRestriction -> GraphGrammar a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
 writeConf nacInj inj gg name names fileName = root [] [writeCpx gg cps [] name names] >>> writeDocument [withIndent yes] fileName
   where
     cps = CP.namedCriticalPairs nacInj inj (rules gg)
 
-writeDep :: Bool -> Bool -> GraphGrammar a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
+writeDep :: NacSatisfaction -> MatchRestriction -> GraphGrammar a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
 writeDep nacInj inj gg name names fileName = root [] [writeCpx gg [] cps name names] >>> writeDocument [withIndent yes] fileName
   where
     cps = CS.namedCriticalSequences nacInj inj (rules gg)

@@ -2,6 +2,10 @@ module Abstract.AdhesiveHLR
   ( Morphism(..)
   , EpiPairs(..)
   , AdhesiveHLR(..)
+
+  , MatchRestriction(..)
+  , matchRestrictionToProp
+  , NacSatisfaction(..)
   ) where
 
 import Abstract.Morphism
@@ -69,21 +73,18 @@ class (Morphism m) => AdhesiveHLR m where
 
 class Morphism m => EpiPairs m where
   -- | Create all jointly epimorphic pairs of morphisms from the given objects.
-  -- The flag indicates only monomorphic morphisms.
+  --
+  -- If the first argument is true, only pairs of monomorphisms are created. Otherwise,
+  -- pairs of arbitrary morphisms are created.
   createPairs :: Bool -> Obj m -> Obj m -> [(m, m)]
 
+  -- TODO: document
   partitions :: Bool -> Obj m -> [m]
 
   -- | Create a special case of jointly epimorphic pairs, where the second morphism is a Nac
   -- The first flag indicates Nac satisfability with a monomorphic morphism
   -- The second flag indicates that the other morphism is monomorphic
-  createPairsNac :: Bool -> Bool -> Obj m -> m -> [(m, m)]
-
-  -- | Create all jointly epimorphic pairs of morphisms from the codomains of
-  -- the given morphisms.
-  -- The flag indicates only monomorphic morphisms.
-  createPairsCodomain :: Bool -> m -> m -> [(m, m)]
-  createPairsCodomain inj m1 m2 = createPairs inj (codomain m1) (codomain m2)
+  createPairsNac :: NacSatisfaction -> MatchRestriction -> Obj m -> m -> [(m, m)]
 
   -- | Given two morphisms from the same domain, create all jointly epimorphic
   -- pairs of morphisms from their codomains, such that the square formed by
@@ -111,3 +112,15 @@ class Morphism m => EpiPairs m where
 
   -- Similar to commutingPairs but indicating which morphism is injective
   commutingPairsAlt :: (m,Bool) -> (m,Bool) -> [(m, m)]
+
+
+-- | Flag indicating what restrictions are required or assumed of matches.
+data MatchRestriction = MonoMatches | AnyMatches deriving (Eq, Show)
+
+-- | Converts a match restriction to the corresponding restriction for morphism search
+matchRestrictionToProp :: MatchRestriction -> PROP
+matchRestrictionToProp MonoMatches = MONO
+matchRestrictionToProp AnyMatches = ALL
+
+-- | Flag indicating the semantics of NAC satisfaction.
+data NacSatisfaction = MonoNacSatisfaction | PartMonoNacSatisfaction deriving (Eq, Show)

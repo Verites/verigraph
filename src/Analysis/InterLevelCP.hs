@@ -28,7 +28,7 @@ import           Graph.Subgraph
 -- TODO: Follow naming convention for haskell: CamelCase
 data CPE = FOL_FOL | DUSE_DUSE | FOL_DUSE | DUSE_FOL deriving(Show)
 
-classify :: Bool -> SndOrderRule a b -> SndOrderRule a b -> (RuleMorphism a b, RuleMorphism a b) -> CPE
+classify :: MatchRestriction -> SndOrderRule a b -> SndOrderRule a b -> (RuleMorphism a b, RuleMorphism a b) -> CPE
 classify inj r1 r2 (m1,m2) =
   case (deleteUseFlGl, deleteUseFlGl'') of
     (True,True) -> DUSE_DUSE
@@ -50,7 +50,7 @@ classify inj r1 r2 (m1,m2) =
 
 -- TODO: Decent names, please
 -- TODO: Remove duplication (as per hlint)
-evo :: Bool -> Bool -> (String, SndOrderRule a b) -> (String, SndOrderRule a b) -> (String, [CPE])
+evo :: NacSatisfaction -> MatchRestriction -> (String, SndOrderRule a b) -> (String, SndOrderRule a b) -> (String, [CPE])
 evo nacInj inj (n1,r1) (n2,r2) = (n1 ++ "_" ++ n2, map (classify inj r1 r2) xs'')
   where
     r1Left = codomain (left r1)
@@ -61,7 +61,7 @@ evo nacInj inj (n1,r1) (n2,r2) = (n1 ++ "_" ++ n2, map (classify inj r1 r2) xs''
     leftR1 = production (mappingLeft (left r1)) (mappingLeft (right r1)) []
     leftR2 = production (mappingLeft (left r2)) (mappingLeft (right r2)) []
 
-    pairs = createPairs inj leftR1 leftR2
+    pairs = createPairs (inj == MonoMatches) leftR1 leftR2
 
     xs = filter (\(m1,_) -> valid (codomain m1)) pairs
     xs' = filter (\(m1,m2) -> satsGluingNacsBoth nacInj inj (r1Left, mappingLeft m1) (r2Left, mappingLeft m2)) xs
@@ -109,14 +109,14 @@ danglingExtension gl l = tlUpdated
             typeNewNode = sourceOfUnsafe (codomain (codomain tgm)) e
             newGraph = createNodeCodTGM nodeId typeNewNode tgm
 
-interLevelConflict :: Bool -> Bool -> (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String,(RuleMorphism a b, TypedGraphMorphism a b))]
+interLevelConflict :: NacSatisfaction -> MatchRestriction -> (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String,(RuleMorphism a b, TypedGraphMorphism a b))]
 interLevelConflict nacInj inj (sndName,sndRule) (fstName,fstRule) = zip newNames (concatMap conflicts validMatches)
   where
     newNames = map (\number -> fstName ++ "_" ++ sndName ++ "_" ++ show number) ([0..] :: [Int])
     sndOrderL = left sndRule
     leftRule = codomain sndOrderL
 
-    mats = matches (injectiveBoolToProp inj) leftRule fstRule
+    mats = matches (matchRestrictionToProp inj) leftRule fstRule
     validMatches = filter (satsGluingAndNacs nacInj inj sndRule) mats
 
     conflicts m =
@@ -124,7 +124,7 @@ interLevelConflict nacInj inj (sndName,sndRule) (fstName,fstRule) = zip newNames
         a <- interLevelConflictOneMatch nacInj inj sndRule m
         return (m,a)
 
-interLevelConflictOneMatch :: Bool -> Bool -> SndOrderRule a b -> RuleMorphism a b -> [TypedGraphMorphism a b]
+interLevelConflictOneMatch :: NacSatisfaction -> MatchRestriction -> SndOrderRule a b -> RuleMorphism a b -> [TypedGraphMorphism a b]
 interLevelConflictOneMatch nacInj inj sndRule match = m0s
   where
     sndOrderL = left sndRule
@@ -151,12 +151,12 @@ interLevelConflictOneMatch nacInj inj sndRule match = m0s
 
     defineMatches ax = filter conflicts validMatches
       where
-        mats = matches (injectiveBoolToProp inj) (codomain bigL) (codomain ax)
+        mats = matches (matchRestrictionToProp inj) (codomain bigL) (codomain ax)
         validMatches = filter (satsGluingAndNacs nacInj inj p) mats
 
         conflicts m0 = Prelude.null validM0''-- or all (==False) (map (\m'' -> satsGluing inj bigL'' m'') validM0'') --thesis def
           where
-            matchesM0'' = matches (injectiveBoolToProp inj) (codomain bigL'') (codomain m0)
+            matchesM0'' = matches (matchRestrictionToProp inj) (codomain bigL'') (codomain m0)
             validMatch = satsGluingAndNacs nacInj inj p''
 
             commutes m0'' = compose fl m0 == compose gl m0''
@@ -165,10 +165,10 @@ interLevelConflictOneMatch nacInj inj sndRule match = m0s
             --validM0'' = filter (\m0'' -> not ((validMatch m0'') && (commutes m0''))) matchesM0''
             validM0'' = filter (\m0'' -> commutes m0'' && validMatch m0'') matchesM0''
 
-relevantGraphs :: Bool -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+relevantGraphs :: MatchRestriction -> TypedGraphMorphism a b -> TypedGraphMorphism a b
                -> [TypedGraphMorphism a b]
 --relevantGraphs inj dangFl dangGl = concatMap (\ax -> partitions inj (codomain ax)) axs
-relevantGraphs inj dangFl dangGl = concatMap (partitions inj) axs
+relevantGraphs inj dangFl dangGl = concatMap (partitions (inj == MonoMatches)) axs
   where
     (_,al) = pushout dangFl dangGl
     --axs = induzedSubgraphs al

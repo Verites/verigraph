@@ -106,13 +106,14 @@ danglingSpan matchRuleSide matchMorp matchK l k = deletedNodesInK && deletedEdge
     edgesInK = [a | a <- edgesDomain matchRuleSide, applyEdgeTGMUnsafe matchRuleSide a `elem` deletedEdges]
     deletedEdgesInK = all (ruleDeletes k matchK applyEdgeTGM edgesDomain) edgesInK
 
-applySndOrderRule :: Bool -> Bool -> (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String, GraphRule a b)]
+applySndOrderRule :: NacSatisfaction -> MatchRestriction
+                  -> (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String, GraphRule a b)]
 applySndOrderRule nacInj inj (sndName,sndRule) (fstName,fstRule) = zip newNames newRules
   where
     newNames = map (\number -> fstName ++ "_" ++ sndName ++ "_" ++ show number) ([0..] :: [Int])
     leftRule = left sndRule
     rightRule = right sndRule
-    mats = matches (injectiveBoolToProp inj) (codomain leftRule) fstRule
+    mats = matches (matchRestrictionToProp inj) (codomain leftRule) fstRule
     gluing = filter (satsGluing inj leftRule) mats
     nacs = filter (satsNacs nacInj sndRule) gluing
     newRules = map
@@ -124,7 +125,7 @@ applySndOrderRule nacInj inj (sndName,sndRule) (fstName,fstRule) = zip newNames 
 
 -- | Adds the minimal safety nacs needed to this production always produce a second order rule.
 -- If the nacs to be added not satisfies the others nacs, then it do not need to be added.
-addMinimalSafetyNacs :: Bool -> SndOrderRule a b -> SndOrderRule a b
+addMinimalSafetyNacs :: NacSatisfaction -> SndOrderRule a b -> SndOrderRule a b
 addMinimalSafetyNacs nacInj sndRule =
   production
     (left sndRule)

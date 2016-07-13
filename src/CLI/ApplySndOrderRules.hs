@@ -37,7 +37,7 @@ execute globalOpts opts = do
     putStrLn ""
 
     let nacInj = injectiveNacSatisfaction globalOpts
-        onlyInj = not $ arbitraryMatches globalOpts
+        onlyInj = arbitraryMatches globalOpts
         newNacs =
           map (\(n,r) -> let newRule = SO.addMinimalSafetyNacs nacInj r
                              tamNewNacs = length (nacs newRule)
@@ -61,7 +61,7 @@ execute globalOpts opts = do
     mapM_
       putStrLn $
       ["Adding minimal safety nacs to second order rules"]
-      ++ (if onlyInj then [] else ["Warning, some nacs for non injective matches are not implemented"])
+      ++ (if onlyInj == MonoMatches then [] else ["Warning, some nacs for non injective matches are not implemented"])
       ++ map (\(r,n) -> "Rule "++ r ++", added " ++ show n ++ " nacs") printNewNacs
       ++ ["All nacs added!",""]
 

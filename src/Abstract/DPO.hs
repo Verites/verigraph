@@ -13,6 +13,10 @@ module Abstract.DPO
   , right
   , nacs
 
+  , MatchRestriction(..)
+  , matchRestrictionToProp
+  , NacSatisfaction(..)
+
   -- ** Application
 
   -- *** Conditions
@@ -128,20 +132,18 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
   -- in the case of unknown use False
   --
   -- satsGluing injFlag (left of a production) match
-  satsGluing :: Bool -> m -> m -> Bool
+  satsGluing :: MatchRestriction -> m -> m -> Bool
 
   -- | Inverts a production, adjusting the NACs accordingly.
   -- Needs information of nac injective satisfaction (in second order)
   -- and matches injective.
-  inverse :: DPO m => Bool -> Bool -> Production m -> Production m
+  inverse :: DPO m => NacSatisfaction -> MatchRestriction -> Production m -> Production m
 
   -- | Given a production /L ←l- K -r→ R/ and a NAC morphism /n : L -> N/, obtain
   -- a set of NACs /n'i : R -> N'i/ that is equivalent to the original NAC.
   --
   -- TODO: review name
-  --
-  -- TODO: what's the first parameter?
-  shiftLeftNac :: DPO m => Bool -> Bool -> Production m -> m -> [m]
+  shiftLeftNac :: DPO m => NacSatisfaction -> MatchRestriction -> Production m -> m -> [m]
 
   -- | Check if the second morphism is monomorphic outside the image of the
   -- first morphism.
@@ -149,55 +151,44 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
 --{-# WARNING partiallyMonomorphic "Only necessary until 'partInjMatches' is corrected" #-}
 
 -- | True if the given match satisfies all NACs of the given production.
---
--- If the first argument is false, only considers partially injective morphisms.
--- Otherwise, considers injective morphisms /Ni -> G/.
-satsNacs :: DPO m => Bool -> Production m -> m -> Bool
-satsNacs nacInj rule m = all (==True) (map (satsFun m) (nacs rule))
-  where
-    --satsFun = if not nacInj && not inj then satsOneNacPartInj else satsOneNacInj
-    satsFun = if nacInj then satsOneNacInj else satsOneNacPartInj
+satsNacs :: DPO m => NacSatisfaction -> Production m -> m -> Bool
+satsNacs nacInj rule m = all (satisfiesSingleNac nacInj m) (nacs rule)
 
 -- | Check gluing conditions and the NACs satisfaction for a pair of matches
 -- @inj@ only indicates if the match is injective, this function does not checks it
 --
 -- TODO: deprecate? why do we need this __here__?
-satsGluingNacsBoth :: DPO m => Bool -> Bool -> (Production m, m) -> (Production m, m) -> Bool
+satsGluingNacsBoth :: DPO m => NacSatisfaction -> MatchRestriction
+                            -> (Production m, m) -> (Production m, m) -> Bool
 satsGluingNacsBoth nacInj inj (l,m1) (r,m2) =
   satsGluingAndNacs nacInj inj l m1 && satsGluingAndNacs nacInj inj r m2
 
 -- | True if the given match satisfies the gluing condition and NACs of the
 -- given production.
---
--- If the first argument is true, only considers injective morphisms /Ni -> G/.
--- Otherwise, considers partially injective morphisms.
---
--- TODO: what is the second argument?
-satsGluingAndNacs :: DPO m => Bool -> Bool -> Production m -> m -> Bool
+satsGluingAndNacs :: DPO m => NacSatisfaction -> MatchRestriction
+                           -> Production m -> m -> Bool
 satsGluingAndNacs nacInj inj rule m = gluingCond && nacsCondition
     where
         gluingCond    = satsGluing inj (left rule) m
         nacsCondition = satsNacs nacInj rule m
 
-satsOneNacInj :: FindMorphism m => m -> m -> Bool
-satsOneNacInj m nac = null checkCompose
-   where
-      checkCompose = filter (\x -> compose nac x == m) nacMatches
-      nacMatches = matches MONO typeNac typeG
-      typeNac = codomain nac
-      typeG   = codomain m
-
-satsOneNacPartInj :: DPO m => m -> m -> Bool
-satsOneNacPartInj m nac = null checkCompose
-   where
-      checkCompose = filter (\x -> compose nac x == m) matches
-      matches = partInjMatches nac m
+satisfiesSingleNac :: DPO m => NacSatisfaction -> m -> m -> Bool
+satisfiesSingleNac nacSats m nac = not $ any (\nacMatch -> compose nac nacMatch == m) nacMatches
+  where
+    nacMatches = case nacSats of
+                  MonoNacSatisfaction ->
+                      let typeG   = codomain m
+                          typeNac = codomain nac
+                          -- TODO: are we finding morphisms between the type graphs?!?
+                      in matches MONO typeNac typeG
+                  PartMonoNacSatisfaction ->
+                      partInjMatches nac m
 
 -- | Given a morphism /m : L -> L'/ and a NAC /n : L -> N/, obtains
 -- an equivalent set of NACs /n'i : L' -> N'i/ that is equivalent to the
 -- original NAC.
-downwardShift :: EpiPairs m => Bool -> m -> m -> [m]
+downwardShift :: EpiPairs m => MatchRestriction -> m -> m -> [m]
 downwardShift inj m n = newNacs
   where
-    pairs = commutingPairsAlt (n,True) (m,inj) --Bool indicates injective
+    pairs = commutingPairsAlt (n,True) (m, inj == MonoMatches) --Bool indicates injective
     newNacs = map snd pairs
