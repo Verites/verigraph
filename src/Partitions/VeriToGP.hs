@@ -1,23 +1,23 @@
 module Partitions.VeriToGP (
-   mixLeftRule,
+   --  mixLeftRule,
    mixGM,
    mixNac
    ) where
 
-import           Abstract.DPO
 import qualified Abstract.Morphism        as M
 import           Graph.Graph              as G
-import           TypedGraph.GraphRule
 import           Graph.GraphMorphism
 import           TypedGraph.Graph
-import           TypedGraph.Morphism as TGM
+import           TypedGraph.MorphismCore
 import qualified Partitions.GraphPart     as GP
 
 --from verigraph to GraphPart
 
+{- TODO: this function seems to be unnecessary, and causes a cyclic dependency between modules
 -- | Creates the disjoint union of left sides of two rules in 'GraphPart' format
 mixLeftRule :: Bool -> GraphRule a b -> GraphRule a b -> GP.Graph
 mixLeftRule inj l r = mixGM (M.codomain (left l), inj) (M.codomain (left r), inj)
+-}
 
 -- | Creates the disjoint union of two verigraph graphs in 'GraphPart' format
 mixGM :: (GraphMorphism a b,Bool) -> (GraphMorphism a b,Bool) -> GP.Graph
@@ -32,15 +32,15 @@ mixGM (l,injL) (r,injR) = disjUnionGraphs left right
      disjUnionGraphs a b = (nodes a ++ nodes b, edges a ++ edges b)
 
 -- | Creates the disjoint union of two verigraph graphs in 'GraphPart' format, with restriction to @nac@
-mixNac :: (GraphMorphism a b,Bool) -> (TGM.TypedGraphMorphism a b,Bool) -> GP.Graph
+mixNac :: (GraphMorphism a b,Bool) -> (TypedGraphMorphism a b,Bool) -> GP.Graph
 mixNac (r,injR) (nac,injN) = disjUnionGraphs left right
    where
      (left,id) = tgmToGP injectiveR r True 0
      (right,_) = tgmToGP injectiveN (M.codomain nac) False id
      injectiveR = if injR then (G.nodes (M.domain r), G.edges (M.domain r)) else ([],[])
-     injectiveN = if injN then (TGM.nodesCodomain nac, TGM.edgesCodomain nac) else (injNodes, injEdges)
-     injNodes = filter (\n -> countIncidentMap (TGM.applyNodeTGM nac) (TGM.nodesDomain nac) n < 2) (TGM.nodesCodomain nac)
-     injEdges = filter (\n -> countIncidentMap (TGM.applyEdgeTGM nac) (TGM.edgesCodomain nac) n < 2) (TGM.edgesCodomain nac)
+     injectiveN = if injN then (nodesCodomain nac, edgesCodomain nac) else (injNodes, injEdges)
+     injNodes = filter (\n -> countIncidentMap (applyNodeTGM nac) (nodesDomain nac) n < 2) (nodesCodomain nac)
+     injEdges = filter (\n -> countIncidentMap (applyEdgeTGM nac) (edgesCodomain nac) n < 2) (edgesCodomain nac)
      nodes = fst
      edges = snd
      disjUnionGraphs a b = (nodes a ++ nodes b, edges a ++ edges b)

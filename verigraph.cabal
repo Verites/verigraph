@@ -39,12 +39,11 @@ executable verigraph
                        Partitions.VeriToGP
                        SndOrder.Morphism
                        SndOrder.Rule
-                       TypedGraph.EpiPairs
-                       TypedGraph.FindMorphism
                        TypedGraph.GraphGrammar
                        TypedGraph.GraphRule
                        TypedGraph.Graph
                        TypedGraph.Morphism
+                       TypedGraph.MorphismCore
                        TypedGraph.Subgraph
                        XML.GGXParseIn
                        XML.GGXParseOut

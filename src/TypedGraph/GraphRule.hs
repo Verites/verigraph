@@ -23,8 +23,6 @@ import           Abstract.Morphism
 import           Abstract.DPO
 import           Graph.Graph              as G
 import           TypedGraph.Morphism as TGM
-import           TypedGraph.FindMorphism       ()
---import           TypedGraph.EpiPairs           ()
 -- TODO: resolve cyclic dependency
 
 type GraphRule a b = Production (TypedGraphMorphism a b)

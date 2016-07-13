@@ -15,7 +15,6 @@ import           Abstract.DPO
 import           Abstract.Morphism
 import           Abstract.Valid
 import           Analysis.DiagramAlgorithms
-import           TypedGraph.EpiPairs ()
 import           Graph.Graph
 import           Graph.GraphMorphism
 import           TypedGraph.GraphRule

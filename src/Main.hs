@@ -5,8 +5,6 @@ import qualified XML.GGXReader as XML
 --import           Abstract.Valid
 --import qualified Analysis.CriticalSequence as CS
 --import qualified Analysis.CriticalPairs as CP
---import qualified TypedGraph.FindMorphism as MT
-import           TypedGraph.EpiPairs ()
 --import           Partitions.GPToVeri
 --import           Partitions.GraphPart
 --import           Partitions.VeriToGP
@@ -24,7 +22,6 @@ import           Abstract.Morphism
 
 
 
---import           TypedGraph.EpiPairs
 import           Abstract.AdhesiveHLR      as RW
 import           Abstract.DPO              as RW
 --import Data.Matrix
@@ -53,7 +50,7 @@ a fn = do
       --print k
       --print d1
       return (codomain (head (nacs r1)), codomain (fst (delUse!!1)))
-  
+
 -- | Rule @l@ causes a delete-use conflict with @r@ if rule @l@ deletes something that is used by @r@
 -- DeleteUse using a most aproximated algorithm of the categorial diagram
 -- Verify the non existence of h21: L2 -> D1 such that d1 . h21 = m2

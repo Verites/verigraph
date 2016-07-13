@@ -17,7 +17,6 @@ import Abstract.Valid
 import Graph.GraphMorphism
 import TypedGraph.Morphism
 import TypedGraph.GraphRule ()
-import TypedGraph.EpiPairs ()
 
 -- | A morphism between two rules.
 --

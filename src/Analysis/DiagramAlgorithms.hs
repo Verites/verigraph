@@ -31,7 +31,6 @@ module Analysis.DiagramAlgorithms (
 
 import           Abstract.Morphism
 import           Data.List                 (elemIndex)
-import           TypedGraph.EpiPairs            ()
 import           Abstract.AdhesiveHLR      as RW
 import           Abstract.DPO              as RW hiding (comatch)
 

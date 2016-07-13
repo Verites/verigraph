@@ -8,7 +8,6 @@ module CLI.ApplySndOrderRules
 
 import           Abstract.DPO
 import           CLI.GlobalOptions
-import           TypedGraph.EpiPairs            ()
 import qualified TypedGraph.GraphGrammar        as GG
 import qualified SndOrder.Rule        as SO
 import           Options.Applicative
