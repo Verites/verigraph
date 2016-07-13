@@ -129,8 +129,8 @@ interLevelConflictOneMatch nacInj inj sndRule match = m0s
     sndOrderL = left sndRule
     sndOrderR = right sndRule
     
-    (k,l') = poc match sndOrderL
-    (m',r') = po k sndOrderR
+    (k,l') = pushoutComplement match sndOrderL
+    (m',r') = pushout k sndOrderR
     
     p = codomain match
     p'' = codomain m'
@@ -169,7 +169,7 @@ relevantGraphs :: Bool -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 --relevantGraphs inj dangFl dangGl = concatMap (\ax -> partitions inj (codomain ax)) axs
 relevantGraphs inj dangFl dangGl = concatMap (\ax -> partitions inj ax) axs
   where
-    (_,al) = po dangFl dangGl
+    (_,al) = pushout dangFl dangGl
     --axs = induzedSubgraphs al
     axs = subgraphs (codomain al)
 

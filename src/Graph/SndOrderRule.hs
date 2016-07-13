@@ -118,8 +118,8 @@ applySndOrderRule nacInj inj (sndName,sndRule) (fstName,fstRule) = zip newNames 
     nacs = filter (satsNacs nacInj sndRule) gluing
     newRules = map
                  (\match ->
-                   let (k,_)  = poc match leftRule
-                       (m',_) = po k rightRule in
+                   let (k,_)  = pushoutComplement match leftRule
+                       (m',_) = pushout k rightRule in
                        codomain m'
                    ) nacs
 

@@ -228,7 +228,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
      6. associate edges
   -}
 
-  po k r =
+  pushout k r =
     let
         kr = M.compose (invertTGM r) k                                 -- invert r and compose with k, obtain kr : R -> D
         createdNodes = orphanNodesTyped r                                -- nodes in R to be created
@@ -269,7 +269,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
      3. delete all edges
      4. delete all nodes
   -}
-  poc m l =
+  pushoutComplement m l =
     let ml       = M.compose l m                                                         -- compose l and m obtaining ml
         delEdges = mapMaybe (GM.applyEdge $ mapping m) (orphanEdgesTyped l) -- obtain list of edges to be deleted in G
         delNodes = mapMaybe (GM.applyNode $ mapping m) (orphanNodesTyped l) -- obtain list of nodes to be deleted in G

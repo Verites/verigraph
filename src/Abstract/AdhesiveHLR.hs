@@ -27,7 +27,7 @@ class (Morphism m) => AdhesiveHLR m where
   --    B──────▶X
   --       f'
   -- @
-  po :: m -> m -> (m, m)
+  pushout :: m -> m -> (m, m)
 
   -- | Calculate the pushout complement for two sequential morphisms.
   --
@@ -46,7 +46,7 @@ class (Morphism m) => AdhesiveHLR m where
   -- @
   --
   -- TODO: what if it doesn't exist??
-  poc :: m -> m -> (m, m)
+  pushoutComplement :: m -> m -> (m, m)
 
   -- | Calculate the pullback between the two given morphisms
   --
@@ -62,6 +62,8 @@ class (Morphism m) => AdhesiveHLR m where
   --     ▼       ▼
   --     B──────▶C
   --        g
+  --
+  -- TODO: rename to /monoPullback/ to use category-theoretical names?
   -- @
   injectivePullback :: m -> m -> (m, m)
 
@@ -69,9 +71,9 @@ class Morphism m => EpiPairs m where
   -- | Create all jointly epimorphic pairs of morphisms from the given objects.
   -- The flag indicates only monomorphic morphisms.
   createPairs :: Bool -> Obj m -> Obj m -> [(m, m)]
-  
+
   partitions :: Bool -> Obj m -> [m]
-  
+
   -- | Create a special case of jointly epimorphic pairs, where the second morphism is a Nac
   -- The first flag indicates Nac satisfability with a monomorphic morphism
   -- The second flag indicates that the other morphism is monomorphic
@@ -106,6 +108,6 @@ class Morphism m => EpiPairs m where
     where
       allPairs = createPairs inj (codomain m1) (codomain m2)
       filt = filter (\(x,y) -> compose m1 x == compose m2 y) allPairs
-  
+
   -- Similar to commutingPairs but indicating which morphism is injective
   commutingPairsAlt :: (m,Bool) -> (m,Bool) -> [(m, m)]

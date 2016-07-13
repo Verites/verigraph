@@ -112,12 +112,12 @@ commutingMorphismSameCodomain k1 s1 k2 s2 = typedMorphism (domain k1) (domain s1
                    else mapping (head filt)
 
 instance AdhesiveHLR (RuleMorphism a b) where
-  -- poc m l
-  poc (RuleMorphism _ ruleG matchL matchK matchR) (RuleMorphism ruleK _ leftL leftK leftR) = (k,l')
+  -- pushoutComplement m l
+  pushoutComplement (RuleMorphism _ ruleG matchL matchK matchR) (RuleMorphism ruleK _ leftL leftK leftR) = (k,l')
      where
-       (matchL', leftL') = poc matchL leftL
-       (matchK', leftK') = poc matchK leftK
-       (matchR', leftR') = poc matchR leftR
+       (matchL', leftL') = pushoutComplement matchL leftL
+       (matchK', leftK') = pushoutComplement matchK leftK
+       (matchR', leftR') = pushoutComplement matchR leftR
        l = commutingMorphismSameCodomain
              (compose leftK' (left ruleG)) leftL'
              matchK' (compose (left ruleK) matchL')
@@ -128,12 +128,12 @@ instance AdhesiveHLR (RuleMorphism a b) where
        k = RuleMorphism ruleK newRule matchL' matchK' matchR'
        l' = RuleMorphism newRule ruleG leftL' leftK' leftR'
   
-  -- po k r
-  po (RuleMorphism _ ruleD matchL matchK matchR) (RuleMorphism _ ruleR rightL rightK rightR) =  (m',r')
+  -- pushout k r
+  pushout (RuleMorphism _ ruleD matchL matchK matchR) (RuleMorphism _ ruleR rightL rightK rightR) =  (m',r')
      where
-       (matchL', rightL') = po matchL rightL
-       (matchK', rightK') = po matchK rightK
-       (matchR', rightR') = po matchR rightR
+       (matchL', rightL') = pushout matchL rightL
+       (matchK', rightK') = pushout matchK rightK
+       (matchR', rightR') = pushout matchR rightR
        l = commutingMorphismSameDomain
              rightK' (compose (left ruleD) rightL')
              matchK' (compose (left ruleR) matchL')

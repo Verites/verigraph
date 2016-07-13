@@ -61,7 +61,7 @@ flagInj = injectiveBoolToProp
 deleteUse :: DPO m => Bool -> Production m -> (m, m) -> Bool
 deleteUse inj l (m1,m2) = null matchD
     where
-        (_,l') = RW.poc m1 (left l) --get only the morphism D2 to G
+        (_,l') = RW.pushoutComplement m1 (left l) --get only the morphism D2 to G
         l2TOd1 = matches (flagInj inj) (domain m2) (domain l')
         matchD = filter (\x -> m2 == compose x l') l2TOd1
 
@@ -72,10 +72,10 @@ deleteUse inj l (m1,m2) = null matchD
 produceDangling :: DPO m => Bool -> Bool -> Production m -> Production m -> (m, m) -> Bool
 produceDangling nacInj inj l r (m1,m2) = not (null matchD) && not (satsGluing inj (left r) m2') && (satsNacs nacInj r m2')
     where
-      (k,l') = RW.poc m1 (left l)
+      (k,l') = RW.pushoutComplement m1 (left l)
       l2TOd1 = matches (flagInj inj) (domain m2) (domain l')
       matchD = filter (\x -> m2 == compose x l') l2TOd1
-      (_,r') = RW.po k (right l)
+      (_,r') = RW.pushout k (right l)
       m2' = if (length matchD) > 1
               then error "produceDangling: non unique h21 morphism"
               else compose (head matchD) r' --matchD is unique if exists
@@ -90,10 +90,10 @@ deleteUseDangling nacInj inj l r (m1,m2) =
     (False,True) -> Just (Right (m1,m2))
     _            -> Nothing
   where
-    (k,l') = RW.poc m1 (left l)
+    (k,l') = RW.pushoutComplement m1 (left l)
     lTOd = matches (flagInj inj) (domain m2) (domain l')
     matchD = filter (\x -> m2 == compose x l') lTOd
-    (_,r') = RW.po k (right l)
+    (_,r') = RW.pushout k (right l)
     m2' = compose (head matchD) r'
     dang = (not (satsGluing inj (left r) m2')) && (satsNacs nacInj r m2')
 
@@ -114,8 +114,8 @@ produceForbidOneNac nacInj inj l inverseLeft r (n,idx) = let
         filtPairs = filter (\(h1,_) -> satsGluingAndNacs nacInj inj inverseLeft h1) pairs
 
         dpo = map (\(h1,q21) ->
-                    let (k,r') = RW.poc h1 (right l)
-                        (m1,l') = RW.po k (left l)
+                    let (k,r') = RW.pushoutComplement h1 (right l)
+                        (m1,l') = RW.pushout k (left l)
                     in  (h1,q21,k,r',m1,l'))
                   filtPairs --(h1,q21,k,r',m1,l')
 

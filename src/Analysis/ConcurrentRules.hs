@@ -63,10 +63,10 @@ maxConcurrentRuleForLastPair dep nacInj isInjective c n = concurrentRuleForPair 
 concurrentRuleForPair :: (DPO m, EpiPairs m, Eq (Obj m)) => Bool -> Bool -> Production m -> Production m -> (m, m) -> Production m
 concurrentRuleForPair nacInj inj c n pair = production l r (dmc ++ lp)
   where
-    pocC = poc (fst pair) (right c)
-    pocN = poc (snd pair) (left n)
-    poC = po (fst pocC) (left c)
-    poN = po (fst pocN) (right n)
+    pocC = pushoutComplement (fst pair) (right c)
+    pocN = pushoutComplement (snd pair) (left n)
+    poC = pushout (fst pocC) (left c)
+    poN = pushout (fst pocN) (right n)
     pb = injectivePullback (snd pocC) (snd pocN)
     l = compose (fst pb) (snd poC)
     r = compose (snd pb) (snd poN)

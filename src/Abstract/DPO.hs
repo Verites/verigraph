@@ -89,8 +89,8 @@ instance (Morphism m, Valid m, Eq (Obj m)) => Valid (Production m) where
 -- nor if the match satisfies all application conditions.
 dpo :: AdhesiveHLR m => m -> Production m -> (m, m, m, m)
 dpo m (Production l r _) =
-  let (k, f) = poc m l
-      (n, g) = po k r
+  let (k, f) = pushoutComplement m l
+      (n, g) = pushout k r
   in (k, n, f, g)
 
 -- | Given a match and a production, calculate the comatch for the
@@ -129,12 +129,12 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
   --
   -- satsGluing injFlag (left of a production) match
   satsGluing :: Bool -> m -> m -> Bool
-  
+
   -- | Inverts a production, adjusting the NACs accordingly.
   -- Needs information of nac injective satisfaction (in second order)
   -- and matches injective.
   inverse :: DPO m => Bool -> Bool -> Production m -> Production m
-  
+
   -- | Given a production /L ←l- K -r→ R/ and a NAC morphism /n : L -> N/, obtain
   -- a set of NACs /n'i : R -> N'i/ that is equivalent to the original NAC.
   --
@@ -142,7 +142,7 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
   --
   -- TODO: what's the first parameter?
   shiftLeftNac :: DPO m => Bool -> Bool -> Production m -> m -> [m]
-  
+
   -- | Check if the second morphism is monomorphic outside the image of the
   -- first morphism.
   partiallyMonomorphic :: m -> m -> Bool

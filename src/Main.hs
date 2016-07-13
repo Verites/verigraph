@@ -63,7 +63,7 @@ deleteUse :: GraphRule a b -> GraphRule a b
            -> Bool
 deleteUse l _ (m1,m2) = Prelude.null matchD
     where
-        (_,d1) = RW.poc m1 (left l) --get only the morphism D2 to G
+        (_,d1) = RW.pushoutComplement m1 (left l) --get only the morphism D2 to G
         l2TOd1 = matches ALL (domain m2) (domain d1)
         matchD = filter (\x -> m2 == compose x d1) l2TOd1
 
@@ -481,11 +481,11 @@ filtMono x = filter (\(_,q) -> M.monomorphism q) x
 
 filtPairs inverseLeft x = filter (\(h1,_) -> satsGluingCond inverseLeft h1) x
 
-poc inverseLeft x = map (\(h1,q21) -> let (k,r') = RW.poc h1 (left inverseLeft) in
+pushoutComplement inverseLeft x = map (\(h1,q21) -> let (k,r') = RW.pushoutComplement h1 (left inverseLeft) in
  (h1,q21,k,r')) x
 
-po inverseLeft x = map (\(h1,q21,k,r') ->
- let (m1,l') = RW.po k (right inverseLeft) in
+pushout inverseLeft x = map (\(h1,q21,k,r') ->
+ let (m1,l') = RW.pushout k (right inverseLeft) in
  (h1,q21,k,r',m1,l')) x
 
 filtM1 l x = filter (\(_,_,_,_,m1,_) -> satsNacs l m1) x
@@ -534,11 +534,11 @@ filtPairs = filter (\(m'1,_) -> satsGluingCond inverseRule m'1) pairs
 m' = map fst filtPairs
 q = map snd filtPairs
 
-kr' = map (\m'1 -> RW.poc m'1 (left inverseRule)) m'
+kr' = map (\m'1 -> RW.pushoutComplement m'1 (left inverseRule)) m'
 k = map fst kr'
 r' = map snd kr'
 
-ml' = map (\x -> RW.po x (right inverseRule)) k
+ml' = map (\x -> RW.pushout x (right inverseRule)) k
 mm1 = map fst ml'
 l' = map snd ml'
 
@@ -562,7 +562,7 @@ ajeita (h:hs) (m1:m1s) (l:ls) = (if Prelude.null h then [] else [(head h,m1,l)])
 ---
 
 {-g = fst (head filtPairs)
-k = fst (RW.poc g (left inverseRule))
+k = fst (RW.pushoutComplement g (left inverseRule))
 r = right inverseRule
 
 kr = M.compose (TGM.invertTGM r) k                                 -- invert r and compose with k, obtain kr : R -> D
