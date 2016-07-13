@@ -3,7 +3,6 @@
 module Graph.GraphMorphism (
     -- * Types
       GraphMorphism
-    , TypedGraph
     -- * Construction
     , Graph.GraphMorphism.empty
     , graphMorphism
@@ -31,13 +30,10 @@ module Graph.GraphMorphism (
     , applyEdgeUnsafe
     , nodeRelation
     , edgeRelation
-    , Graph.GraphMorphism.null
     , orphanNodes
     , orphanEdges
 
     , partialInjectiveGM
-    , newNodesTyped
-    , newEdgesTyped
     ) where
 
 import           Abstract.Morphism
@@ -60,8 +56,6 @@ instance Eq (GraphMorphism a b) where
                nodeRelation m1 == nodeRelation m2 &&
                edgeRelation m1 == edgeRelation m2
 
-type TypedGraph a b = GraphMorphism a b
-
 instance Show (GraphMorphism a b) where
     show m =
 --        "Domain: " ++ (show $ getDomain m) ++
@@ -74,14 +68,6 @@ instance Show (GraphMorphism a b) where
           show (fromJust (G.sourceOf (domain m) e)) ++ " -> " ++
           show (fromJust (G.targetOf (domain m) e)) ++ ")\n")
                   (G.edges $ getDomain m)
-
--- | Infinite list of new node instances of a typed graph
-newNodesTyped :: TypedGraph a b -> [G.NodeId]
-newNodesTyped tg = G.newNodes $ domain tg
-
--- | Infinite list of new edge instances of a typed graph
-newEdgesTyped :: TypedGraph a b -> [G.EdgeId]
-newEdgesTyped tg = G.newEdges $ domain tg
 
 -- | Return the orphan nodes in a graph morphism
 orphanNodes :: GraphMorphism a b -> [G.NodeId]
@@ -132,10 +118,6 @@ graphMorphism = GraphMorphism
 inverse :: GraphMorphism a b -> GraphMorphism a b
 inverse (GraphMorphism dom cod nm em) =
     GraphMorphism cod dom (R.inverse nm) (R.inverse em)
-
--- | Test if the morphism is null.
-null :: TypedGraph a b -> Bool
-null = G.null . getDomain
 
 -- | Set a new codomain.
 updateCodomain :: Graph a b -> GraphMorphism a b -> GraphMorphism a b

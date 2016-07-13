@@ -15,9 +15,9 @@ import Abstract.DPO
 import Abstract.Morphism
 import Abstract.Valid
 import Graph.GraphMorphism
-import Graph.TypedGraphMorphism
-import Graph.GraphRule ()
-import Graph.EpiPairs ()
+import TypedGraph.Morphism
+import TypedGraph.GraphRule ()
+import TypedGraph.EpiPairs ()
 
 -- | A morphism between two rules.
 --

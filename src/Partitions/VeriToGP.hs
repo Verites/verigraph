@@ -7,9 +7,10 @@ module Partitions.VeriToGP (
 import           Abstract.DPO
 import qualified Abstract.Morphism        as M
 import           Graph.Graph              as G
-import           Graph.GraphRule
+import           TypedGraph.GraphRule
 import           Graph.GraphMorphism
-import           Graph.TypedGraphMorphism as TGM
+import           TypedGraph.Graph
+import           TypedGraph.Morphism as TGM
 import qualified Partitions.GraphPart     as GP
 
 --from verigraph to GraphPart

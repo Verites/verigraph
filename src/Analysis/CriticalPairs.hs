@@ -18,7 +18,7 @@ import           Abstract.AdhesiveHLR      as RW
 import           Abstract.DPO              as RW hiding (comatch)
 import           Analysis.DiagramAlgorithms
 import           Data.Maybe                (mapMaybe)
-import           Graph.EpiPairs            ()
+import           TypedGraph.EpiPairs            ()
 
 -- | Data representing the type of a 'CriticalPair'
 data CP = FOL | DeleteUse | ProduceForbid | ProduceDangling deriving(Eq,Show)

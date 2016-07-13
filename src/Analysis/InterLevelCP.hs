@@ -15,14 +15,15 @@ import           Abstract.DPO
 import           Abstract.Morphism
 import           Abstract.Valid
 import           Analysis.DiagramAlgorithms
-import           Graph.EpiPairs ()
+import           TypedGraph.EpiPairs ()
 import           Graph.Graph
 import           Graph.GraphMorphism
-import           Graph.GraphRule
-import           Graph.TypedGraphMorphism
+import           TypedGraph.GraphRule
+import           TypedGraph.Graph
+import           TypedGraph.Morphism
+import           TypedGraph.Subgraph
 import           SndOrder.Morphism
 import           SndOrder.Rule
-import           Graph.Subgraph
 
 -- TODO: Decent names, please
 -- TODO: Follow naming convention for haskell: CamelCase

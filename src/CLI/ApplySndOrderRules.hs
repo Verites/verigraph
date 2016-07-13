@@ -8,8 +8,8 @@ module CLI.ApplySndOrderRules
 
 import           Abstract.DPO
 import           CLI.GlobalOptions
-import           Graph.EpiPairs            ()
-import qualified Graph.GraphGrammar        as GG
+import           TypedGraph.EpiPairs            ()
+import qualified TypedGraph.GraphGrammar        as GG
 import qualified SndOrder.Rule        as SO
 import           Options.Applicative
 import qualified XML.GGXReader             as XML

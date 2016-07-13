@@ -32,19 +32,20 @@ executable verigraph
                        CLI.ConcurrentRules
                        CLI.CriticalPairAnalysis
                        CLI.GlobalOptions
-                       Graph.EpiPairs
-                       Graph.FindMorphism
                        Graph.Graph
-                       Graph.GraphGrammar
                        Graph.GraphMorphism
-                       Graph.GraphRule
-                       Graph.Subgraph
-                       Graph.TypedGraphMorphism
                        Partitions.GPToVeri
                        Partitions.GraphPart
                        Partitions.VeriToGP
                        SndOrder.Morphism
                        SndOrder.Rule
+                       TypedGraph.EpiPairs
+                       TypedGraph.FindMorphism
+                       TypedGraph.GraphGrammar
+                       TypedGraph.GraphRule
+                       TypedGraph.Graph
+                       TypedGraph.Morphism
+                       TypedGraph.Subgraph
                        XML.GGXParseIn
                        XML.GGXParseOut
                        XML.GGXReader

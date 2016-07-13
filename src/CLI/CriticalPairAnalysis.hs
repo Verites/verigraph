@@ -13,7 +13,7 @@ import           Data.List
 import           Data.List.Split
 import           Data.List.Utils
 import           Data.Matrix               hiding ((<|>))
-import qualified Graph.GraphGrammar        as GG
+import qualified TypedGraph.GraphGrammar        as GG
 import           SndOrder.Rule
 import           Options.Applicative
 import qualified XML.GGXReader             as XML

@@ -8,8 +8,8 @@ import           CLI.GlobalOptions
 
 import           Analysis.ConcurrentRules
 import           Abstract.AdhesiveHLR
-import qualified Graph.GraphGrammar        as GG
-import           Graph.GraphRule
+import qualified TypedGraph.GraphGrammar        as GG
+import           TypedGraph.GraphRule
 import           Options.Applicative
 import qualified XML.GGXReader             as XML
 import qualified XML.GGXWriter             as GW

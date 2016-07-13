@@ -1,4 +1,4 @@
-module Graph.GraphGrammar (
+module TypedGraph.GraphGrammar (
       graphGrammar
     , GraphGrammar
     , initialGraph
@@ -10,7 +10,7 @@ module Graph.GraphGrammar (
 import qualified Abstract.Morphism   as M
 import           Graph.Graph         (Graph)
 import           Graph.GraphMorphism
-import           Graph.GraphRule     (GraphRule)
+import           TypedGraph.GraphRule     (GraphRule)
 import           SndOrder.Rule  (SndOrderRule)
 
 -- TODO: extract as DPO grammar?

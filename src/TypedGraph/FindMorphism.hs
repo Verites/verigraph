@@ -1,12 +1,12 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module Graph.FindMorphism () where
+module TypedGraph.FindMorphism () where
 
 import           Abstract.Morphism
 import           Data.List                as L
 import           Data.Maybe
 import           Graph.Graph              as G
 import qualified Graph.GraphMorphism      as GM
-import           Graph.TypedGraphMorphism as TGM
+import           TypedGraph.Morphism as TGM
 
 instance FindMorphism (TGM.TypedGraphMorphism a b) where
   matches = matches'

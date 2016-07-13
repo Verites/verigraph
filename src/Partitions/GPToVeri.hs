@@ -7,7 +7,8 @@ module Partitions.GPToVeri (
 import qualified Abstract.Morphism        as M
 import qualified Graph.Graph              as G
 import qualified Graph.GraphMorphism      as GM
-import qualified Graph.TypedGraphMorphism as TGM
+import           TypedGraph.Graph
+import qualified TypedGraph.Morphism as TGM
 import           Partitions.GraphPart     as GP
 
 -- | For two typed graphs and a EpiPair (in GraphPart format) return two TypedGraphMorphism for the graph in verigraph format
@@ -29,7 +30,7 @@ mountG (nodes,edges) = G.build nods edgs
     nodeTgt e = GP.nid $ GP.getNode (nameAndSrc (GP.target e)) nodes
     nameAndSrc node = (nname node, inLeftn node)
 
-mountTypeGraph :: GP.EqClassGraph -> G.Graph a b -> G.Graph a b -> GM.TypedGraph a b
+mountTypeGraph :: GP.EqClassGraph -> G.Graph a b -> G.Graph a b -> TypedGraph a b
 mountTypeGraph gp g typeG = GM.gmbuild g typeG nodes edges
   where
     nodes = map (\(n:_) -> (GP.nid n, GP.ntype n)) (fst gp)

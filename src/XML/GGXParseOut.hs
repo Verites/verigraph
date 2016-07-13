@@ -15,8 +15,8 @@ import qualified Analysis.CriticalSequence as CS
 import           Data.Maybe                (fromMaybe, isJust)
 import qualified Graph.Graph               as G
 import qualified Graph.GraphMorphism       as GM
-import qualified Graph.GraphRule           as GR
-import           Graph.TypedGraphMorphism
+import qualified TypedGraph.GraphRule           as GR
+import           TypedGraph.Morphism
 import           XML.ParsedTypes
 
 parseCPGraph :: (String,String,[CP.CriticalPair (TypedGraphMorphism a b)]) -> Overlappings

@@ -18,8 +18,8 @@ import           Abstract.AdhesiveHLR      as RW
 import           Abstract.DPO              as RW hiding (comatch)
 import           Analysis.DiagramAlgorithms
 import           Data.Maybe                (mapMaybe)
-import           Graph.EpiPairs            ()
-import           Graph.FindMorphism        ()
+import           TypedGraph.EpiPairs            ()
+import           TypedGraph.FindMorphism        ()
 
 -- | Data representing the type of a 'CriticalPair'
 data CS = ProduceUse | DeliverDelete | RemoveDangling deriving (Eq,Show)

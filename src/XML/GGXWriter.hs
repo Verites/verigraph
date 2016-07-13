@@ -15,9 +15,9 @@ import qualified Analysis.CriticalSequence as CS
 import           Data.List.Utils           (startswith)
 import           Data.Maybe
 import qualified Graph.Graph               as G
-import           Graph.GraphGrammar
-import qualified Graph.GraphRule           as GR
-import           Graph.TypedGraphMorphism
+import           TypedGraph.GraphGrammar
+import qualified TypedGraph.GraphRule           as GR
+import           TypedGraph.Morphism
 import qualified SndOrder.Rule             as SO
 import           SndOrder.Morphism
 import           Text.XML.HXT.Core         hiding (left,right)

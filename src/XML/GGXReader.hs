@@ -17,10 +17,11 @@ import qualified Data.List                as L
 import           Data.Maybe               (fromMaybe, mapMaybe)
 import           Data.String.Utils        (startswith)
 import qualified Graph.Graph              as G
-import qualified Graph.GraphGrammar       as GG
+import qualified TypedGraph.GraphGrammar       as GG
 import           Graph.GraphMorphism      as GM
-import           Graph.GraphRule          as GR
-import           Graph.TypedGraphMorphism
+import           TypedGraph.GraphRule          as GR
+import           TypedGraph.Graph
+import           TypedGraph.Morphism
 import           Text.XML.HXT.Core        hiding (left,right)
 import           XML.GGXParseIn
 import           XML.GGXSndOrderReader
@@ -37,11 +38,11 @@ readGrammar fileName = do
   _ <- parsedTypeGraph `seq` return ()
 
   parsedRules <- readRules fileName
-  
+
   let (sndOrdRules, fstOrdRules) = L.partition (\((x,_,_,_),_) -> startswith "2rule_" x) parsedRules
       rulesNames = map (\((x,_,_,_),_) -> x) fstOrdRules
       rules = map (instantiateRule parsedTypeGraph) fstOrdRules
-  
+
   _ <- (case L.elemIndices False (map valid rules) of
           []  -> []
           [a] -> error $ "Rule " ++ show a ++ " is not valid"
@@ -53,7 +54,7 @@ readGrammar fileName = do
                     else codomain . domain . left $ head rules
       initGraph = GM.empty typeGraph typeGraph
       sndOrderRules = instantiateSndOrderRules parsedTypeGraph sndOrdRules
-  
+
   return $ GG.graphGrammar initGraph (zip rulesNames rules) sndOrderRules
 
 readGGName :: String -> IO String
@@ -98,10 +99,10 @@ instantiateTypeGraph (nodes, edges) = graphWithEdges
   where
     getNodeType = G.NodeId . toN . (lookupNodes nodes)
     trd (_,_,x) = x
-    
+
     nodesId = map (G.NodeId . toN . trd) nodes
     edgesId = map (\(_, _, typ, src, tgt) -> ((G.EdgeId . toN) typ, getNodeType src, getNodeType tgt)) edges
-    
+
     graphWithNodes = foldr G.insertNode G.empty nodesId
     graphWithEdges = foldr (\(ide,src,tgt) g -> G.insertEdge ide src tgt g) graphWithNodes edgesId
 
@@ -131,10 +132,10 @@ instantiateTypedGraph :: ParsedTypedGraph -> G.Graph a b -> GraphMorphism a b
 instantiateTypedGraph (_, nodes, edges) tg = gmbuild g tg nodeTyping edgeTyping
   where
     g = G.build nodesG edgesG
-    
+
     nodesG = map (toN . fstOfThree) nodes
     edgesG = map (\(id,_,_,src,tgt) -> (toN id, toN src, toN tgt)) edges
-    
+
     nodeTyping = map (\(id,_,typ) -> (toN id, toN typ)) nodes
     edgeTyping = map (\(id,_,typ,_,_) -> (toN id, toN typ)) edges
 
@@ -142,21 +143,21 @@ instantiateSpan :: TypedGraph a b -> TypedGraph a b -> [Mapping] -> (TypedGraphM
 instantiateSpan left right mapping = (leftM, rightM)
   where
     parsedMap = map (\(t,_,s) -> (toN t, toN s)) mapping
-    
+
     leftM = typedMorphism k left leftMap
     rightM = typedMorphism k right rightMap
-    
+
     nodesLeft = G.nodes (domain left)
     nodesRight = G.nodes (domain right)
-    
+
     edgesLeft = G.edges (domain left)
     edgesRight = G.edges (domain right)
-    
+
     typegraph = codomain left
     initK = empty G.empty typegraph
     initL = empty G.empty (domain left)
     initR = empty G.empty (domain right)
-    
+
     updateMorphisms (k,l,r) (tgt,src) =
       if nodeSrc `elem` nodesLeft && nodeTgt `elem` nodesRight
         then (newNodeK, updateNodesL, updateNodesR)
@@ -169,13 +170,13 @@ instantiateSpan left right mapping = (leftM, rightM)
         nodeTgt = G.NodeId tgt
         edgeSrc = G.EdgeId src
         edgeTgt = G.EdgeId tgt
-        
+
         nodeDom = G.insertNode nodeSrc (domain k)
         nodeType = applyNodeUnsafe left nodeSrc
         newNodeK = updateNodes nodeSrc nodeType (updateDomain nodeDom k)
         updateNodesL = updateNodes nodeSrc nodeSrc (updateDomain nodeDom l)
         updateNodesR = updateNodes nodeSrc nodeTgt (updateDomain nodeDom r)
-        
+
         src_ e = fromMaybe (error (show e)) (G.sourceOf (domain left) e)
         tgt_ e = fromMaybe (error (show e)) (G.targetOf (domain left) e)
         edgeDom = G.insertEdge edgeSrc (src_ edgeSrc) (tgt_ edgeSrc) (domain k)
@@ -183,7 +184,7 @@ instantiateSpan left right mapping = (leftM, rightM)
         newEdgeK = updateEdges edgeSrc edgeType (updateDomain edgeDom k)
         updateEdgesL = updateEdges edgeSrc edgeSrc (updateDomain edgeDom l)
         updateEdgesR = updateEdges edgeSrc edgeTgt (updateDomain edgeDom r)
-    
+
     (k, leftMap, rightMap) =
       foldl
         updateMorphisms

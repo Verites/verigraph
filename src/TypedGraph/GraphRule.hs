@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module Graph.GraphRule (
+module TypedGraph.GraphRule (
     -- * Types
       GraphRule
     -- * Basic Functions
@@ -22,8 +22,10 @@ import           Data.Maybe               (mapMaybe)
 import           Abstract.Morphism
 import           Abstract.DPO
 import           Graph.Graph              as G
-import           Graph.TypedGraphMorphism as TGM
-import           Graph.FindMorphism       ()
+import           TypedGraph.Morphism as TGM
+import           TypedGraph.FindMorphism       ()
+--import           TypedGraph.EpiPairs           ()
+-- TODO: resolve cyclic dependency
 
 type GraphRule a b = Production (TypedGraphMorphism a b)
 

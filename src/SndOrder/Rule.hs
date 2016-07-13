@@ -14,10 +14,10 @@ import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Morphism
 import           Graph.Graph as G
-import           Graph.GraphRule
+import           TypedGraph.GraphRule
 import qualified Graph.GraphMorphism as GM
 import           SndOrder.Morphism as SO
-import           Graph.TypedGraphMorphism
+import           TypedGraph.Morphism
 
 -- | A second order rule:
 --

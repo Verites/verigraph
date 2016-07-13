@@ -1,11 +1,11 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Graph.EpiPairs where
+module TypedGraph.EpiPairs where
 
 import           Abstract.AdhesiveHLR
 import           Graph.Graph              (empty)
 import           Graph.GraphMorphism      (gmbuild)
-import           Graph.TypedGraphMorphism (TypedGraphMorphism)
+import           TypedGraph.Morphism (TypedGraphMorphism)
 import           Partitions.GPToVeri      (mountTGMBoth)
 import           Partitions.GraphPart     (genGraphEqClass)
 import           Partitions.VeriToGP      (mixGM,mixNac)

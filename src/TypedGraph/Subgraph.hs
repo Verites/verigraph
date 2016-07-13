@@ -1,9 +1,10 @@
-module Graph.Subgraph (subgraphs, inducedSubgraphs) where
+module TypedGraph.Subgraph (subgraphs, inducedSubgraphs) where
 
-import           Abstract.Morphism
+import           Abstract.Morphism   as M
 import           Graph.Graph
 import           Graph.GraphMorphism
-import           Graph.TypedGraphMorphism
+import           TypedGraph.Graph
+import           TypedGraph.Morphism
 
 -- | Generates all subgraphs of a typed graph.
 subgraphs :: TypedGraph a b -> [TypedGraph a b]

@@ -60,7 +60,7 @@ import Data.Maybe        (mapMaybe,fromMaybe)
 import Data.String.Utils (join,split)
 import Graph.Graph
 import Graph.GraphMorphism
-import Graph.TypedGraphMorphism
+import TypedGraph.Morphism
 import XML.ParsedTypes
 
 -- | Gets the object name map between the left of two rules
@@ -77,28 +77,28 @@ getObjNameMapping (_,nodesL,edgesL) (_,nodesR,edgesR) = mapNodes ++ mapEdges
   where
     f id (Just n) = Just (id,n)
     f _ _ = Nothing
-    
+
     fNodes (id,m,_) = f id m
     fEdges (id,m,_,_,_) = f id m
-    
+
     nodesLMap = mapMaybe fNodes nodesL
     nodesRMap = mapMaybe fNodes nodesR
     edgesLMap = mapMaybe fEdges edgesL
     edgesRMap = mapMaybe fEdges edgesR
-    
+
     getMap f = mapMaybe
                  (\(id,n) ->
                    case find (\(_,b) -> n == b) f of
                      Just (x,_) -> Just (x, Nothing, id)
                      _ -> Nothing)
-    
+
     nonMono = concatMap
                 (\(id,objName) ->
                   map
                     (\name -> (id,name))
                     (split "|" objName)
                 )
-    
+
     mapNodes = getMap (nonMono nodesRMap) nodesLMap
     mapEdges = getMap (nonMono edgesRMap) edgesLMap
 
@@ -136,14 +136,14 @@ groupRules rules =
     getRight list = fromMaybe (error "Second order rule without right") ((findSide "right") list)
     findSide str = find (\x -> side x == str)
 
--- | Given a morphism from some graph in the rule left to nac extracts the mapping 
+-- | Given a morphism from some graph in the rule left to nac extracts the mapping
 getObjectNacNameMorphism :: GraphMorphism a b -> [Mapping]
 getObjectNacNameMorphism m = (nodesMap m) ++ (edgesMap m)
   where
     adjustNonMono = parseNonMonoObjNames . group
     nodesMap = adjustNonMono . (getMap applyNodeUnsafe) . nodes . domain
     edgesMap = adjustNonMono . (getMap applyEdgeUnsafe) . edges . domain
-    
+
     getMap f = map (\e -> (show (f m e), Nothing, show e))
     group = groupBy (\(x,_,_) (y,_,_) -> x == y)
 

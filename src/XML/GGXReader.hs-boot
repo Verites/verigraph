@@ -1,8 +1,8 @@
 module XML.GGXReader where
 
-import           Graph.GraphMorphism
-import           Graph.GraphRule
-import           Graph.TypedGraphMorphism
+import           TypedGraph.GraphRule
+import           TypedGraph.Morphism
+import           TypedGraph.Graph
 import           XML.ParsedTypes
 
 instantiateRule :: ParsedTypeGraph -> RuleWithNacs -> GraphRule a b

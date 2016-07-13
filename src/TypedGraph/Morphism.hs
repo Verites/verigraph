@@ -1,6 +1,6 @@
 {-# LANGUAGE TypeFamilies #-}
 
-module Graph.TypedGraphMorphism (
+module TypedGraph.Morphism (
       TypedGraphMorphism
     , idMap
     , partialInjectiveTGM
@@ -38,10 +38,11 @@ import           Data.Maybe
 import           Data.List           ((\\))
 import           Graph.Graph         as G
 import           Graph.GraphMorphism as GM
+import           TypedGraph.Graph
 
 data TypedGraphMorphism a b = TypedGraphMorphism {
-                              getDomain   :: GM.TypedGraph a b
-                            , getCodomain :: GM.TypedGraph a b
+                              getDomain   :: TypedGraph a b
+                            , getCodomain :: TypedGraph a b
                             , mapping  :: GM.GraphMorphism a b
                          } deriving (Eq, Show, Read)
 
@@ -50,11 +51,11 @@ typedMorphism = TypedGraphMorphism
 
 -- | Return the graph domain
 graphDomain :: TypedGraphMorphism a b -> Graph a b
-graphDomain = M.domain . M.domain
+graphDomain = untypedGraph . domain
 
 -- | Return the graph codomain
 graphCodomain :: TypedGraphMorphism a b -> Graph a b
-graphCodomain = M.domain . M.codomain
+graphCodomain = untypedGraph . codomain
 
 -- | Return the node to which @ln@ gets mapped
 applyNodeTGM :: TypedGraphMorphism a b -> G.NodeId -> Maybe G.NodeId
@@ -90,25 +91,25 @@ invertTGM tgm =
 
 -- | Return the nodes in the domain of this TGM
 nodesDomain :: TypedGraphMorphism a b -> [NodeId]
-nodesDomain = nodes . M.domain . getDomain
+nodesDomain = nodes . domain . getDomain
 
 -- | Return the edges in the domain of this TGM
 edgesDomain :: TypedGraphMorphism a b -> [EdgeId]
-edgesDomain = edges . M.domain . getDomain
+edgesDomain = edges . domain . getDomain
 
 -- | Return the nodes in the codomain of this TGM
 nodesCodomain :: TypedGraphMorphism a b -> [NodeId]
-nodesCodomain = nodes . M.domain . getCodomain
+nodesCodomain = nodes . domain . getCodomain
 
 -- | Return the edges in the codomain of this TGM
 edgesCodomain :: TypedGraphMorphism a b -> [EdgeId]
-edgesCodomain = edges . M.domain . getCodomain
+edgesCodomain = edges . domain . getCodomain
 
 -- | This function adds an edge e1 (with source s1, target t1 and type tp) to the domain of the typed graph morphism, and associate it to e2
 --   It assumes s1, t1, e2, tp already exist, and that e1 does not exist.
 createEdgeDomTGM :: G.EdgeId -> G.NodeId -> G.NodeId -> G.EdgeId -> G.EdgeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 createEdgeDomTGM e1 s1 t1 tp e2 tgm =
-  tgm { getDomain = GM.createEdgeDom e1 s1 t1 tp (M.domain tgm)
+  tgm { getDomain = GM.createEdgeDom e1 s1 t1 tp (domain tgm)
       , mapping = GM.createEdgeDom e1 s1 t1 e2 (mapping tgm)
       }
 
@@ -124,7 +125,7 @@ createEdgeCodTGM e2 s2 t2 tp tgm =
 --   It assumes n2 and tp already exist, and that n1 does not exist.
 createNodeDomTGM :: G.NodeId -> G.NodeId -> G.NodeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 createNodeDomTGM n1 tp n2 tgm =
-  tgm { getDomain = GM.createNodeDom n1 tp (M.domain tgm)
+  tgm { getDomain = GM.createNodeDom n1 tp (domain tgm)
       , mapping = GM.createNodeDom n1 n2 (mapping tgm)
       }
 
@@ -185,15 +186,15 @@ idMap :: GraphMorphism a b -> GraphMorphism a b -> TypedGraphMorphism a b
 idMap gm1 gm2 =
   typedMorphism gm1 gm2 edgesUpdate
     where
-      init = GM.empty (M.domain gm1) (M.domain gm2)
-      nodesUpdate = foldr (\n -> GM.updateNodes n n) init (G.nodes (M.domain gm1))
-      edgesUpdate = foldr (\e -> GM.updateEdges e e) nodesUpdate (G.edges (M.domain gm2))
+      init = GM.empty (domain gm1) (domain gm2)
+      nodesUpdate = foldr (\n -> GM.updateNodes n n) init (G.nodes (domain gm1))
+      edgesUpdate = foldr (\e -> GM.updateEdges e e) nodesUpdate (G.edges (domain gm2))
 
 instance Morphism (TypedGraphMorphism a b) where
     type Obj (TypedGraphMorphism a b) = GraphMorphism a b
 
-    domain = Graph.TypedGraphMorphism.getDomain
-    codomain = Graph.TypedGraphMorphism.getCodomain
+    domain = TypedGraph.Morphism.getDomain
+    codomain = TypedGraph.Morphism.getCodomain
     compose t1 t2 =
         TypedGraphMorphism (domain t1)
                       (codomain t2)
@@ -224,21 +225,21 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
 
   pushout k r =
     let
-        kr = M.compose (invertTGM r) k                                 -- invert r and compose with k, obtain kr : R -> D
+        kr = compose (invertTGM r) k                                 -- invert r and compose with k, obtain kr : R -> D
         createdNodes = orphanNodesTyped r                                -- nodes in R to be created
         createdEdges = orphanEdgesTyped r                                -- edges in R to be created
-        nodeTable    = zip createdNodes (GM.newNodesTyped $ M.codomain kr) -- table mapping NodeIds in R to NodeIds in G'
-        edgeTable    = zip createdEdges (GM.newEdgesTyped $ M.codomain kr) -- table mapping EdgeIds in R to EdgeIds in G'
+        nodeTable    = zip createdNodes (newNodesTyped $ codomain kr) -- table mapping NodeIds in R to NodeIds in G'
+        edgeTable    = zip createdEdges (newEdgesTyped $ codomain kr) -- table mapping EdgeIds in R to EdgeIds in G'
 
         -- generate new node instances in G', associating them to the "created" nodes in R
-        kr'          = foldr (\(a,b) tgm -> let tp = fromJust $ GM.applyNode (M.domain kr) a
+        kr'          = foldr (\(a,b) tgm -> let tp = fromJust $ GM.applyNode (domain kr) a
                                             in updateNodeRelationTGM a b tp tgm)
                              kr
                              nodeTable
 
         -- query the instance graphs R
-        typemor = M.domain         kr'                     -- typemor is the typed graph (R -> T)
-        g       = M.domain         typemor                 -- g  is the instance graph R
+        typemor = domain         kr'                     -- typemor is the typed graph (R -> T)
+        g       = domain         typemor                 -- g  is the instance graph R
         mp      = mapping        kr'                     -- mp is the mapping of kr'  : (R -> D'), where D' = D + new nodes
         s1 e = fromJust $ G.sourceOf g e                     -- obtain source of e in R
         t1 e = fromJust $ G.targetOf g e                     -- obtain target of e in R
@@ -264,7 +265,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
      4. delete all nodes
   -}
   pushoutComplement m l =
-    let ml       = M.compose l m                                                         -- compose l and m obtaining ml
+    let ml       = compose l m                                                         -- compose l and m obtaining ml
         delEdges = mapMaybe (GM.applyEdge $ mapping m) (orphanEdgesTyped l) -- obtain list of edges to be deleted in G
         delNodes = mapMaybe (GM.applyNode $ mapping m) (orphanNodesTyped l) -- obtain list of nodes to be deleted in G
         k        = foldr removeNodeCodTyped                                          -- delete all edges, then all nodes from ml
