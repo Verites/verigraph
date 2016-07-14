@@ -177,10 +177,9 @@ satisfiesSingleNac nacSats m nac = not $ any (\nacMatch -> compose nac nacMatch 
   where
     nacMatches = case nacSats of
                   MonoNacSatisfaction ->
-                      let typeG   = codomain m
-                          typeNac = codomain nac
-                          -- TODO: are we finding morphisms between the type graphs?!?
-                      in matches MONO typeNac typeG
+                      let objG   = codomain m
+                          objNac = codomain nac
+                      in matches MONO objNac objG
                   PartMonoNacSatisfaction ->
                       partInjMatches nac m
 
