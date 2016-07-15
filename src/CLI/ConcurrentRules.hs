@@ -1,10 +1,10 @@
-module CLI.ConcurrentRules
+module ConcurrentRules
   ( Options
   , options
   , execute
   ) where
 
-import           CLI.GlobalOptions
+import           GlobalOptions
 
 import           Analysis.ConcurrentRules
 import           Abstract.AdhesiveHLR

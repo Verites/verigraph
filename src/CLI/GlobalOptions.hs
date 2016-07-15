@@ -1,4 +1,4 @@
-module CLI.GlobalOptions
+module GlobalOptions
   ( GlobalOptions
   , globalOpts
   , arbitraryMatches

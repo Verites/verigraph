@@ -1,4 +1,4 @@
-module CLI.CriticalPairAnalysis
+module CriticalPairAnalysis
   ( Options
   , options
   , execute
@@ -8,7 +8,7 @@ import           Abstract.DPO
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
 import           Analysis.InterLevelCP
-import           CLI.GlobalOptions
+import           GlobalOptions
 import           Data.List
 import           Data.List.Split
 import           Data.List.Utils

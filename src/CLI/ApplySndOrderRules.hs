@@ -1,13 +1,13 @@
 {-# LANGUAGE TypeFamilies #-}
 
-module CLI.ApplySndOrderRules
+module ApplySndOrderRules
   ( Options
   , options
   , execute
   ) where
 
 import           Abstract.DPO
-import           CLI.GlobalOptions
+import           GlobalOptions
 import qualified TypedGraph.GraphGrammar        as GG
 import qualified SndOrder.Rule        as SO
 import           Options.Applicative
