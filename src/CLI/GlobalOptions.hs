@@ -19,7 +19,7 @@ data GlobalOptions = GOpts
 
 globalOpts :: Parser GlobalOptions
 globalOpts = GOpts
-  <$> flag AnyMatches MonoMatches
+  <$> flag MonoMatches AnyMatches
     ( long "all-matches"
     <> help "Set the matches for arbitrary morphisms")
   <*> flag MonoNacSatisfaction PartMonoNacSatisfaction
