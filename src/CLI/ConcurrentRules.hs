@@ -1,14 +1,15 @@
-module CLI.ConcurrentRules
+module ConcurrentRules
   ( Options
   , options
   , execute
   ) where
 
-import           CLI.GlobalOptions
+import           GlobalOptions
 
 import           Analysis.ConcurrentRules
-import qualified Graph.GraphGrammar        as GG
-import           Graph.GraphRule
+import           Abstract.AdhesiveHLR
+import qualified TypedGraph.GraphGrammar        as GG
+import           TypedGraph.GraphRule
 import           Options.Applicative
 import qualified XML.GGXReader             as XML
 import qualified XML.GGXWriter             as GW
@@ -59,15 +60,15 @@ execute globalOpts opts = do
                                 MaxConcurrentRule -> makeMaxConcurrentRule
                                 AllConcurrentRules -> makeAllConcurrentRules
         dependencies = concRulesbyDep opts
-        injectiveOnly = not $ arbitraryMatches globalOpts
+        injectiveOnly = arbitraryMatches globalOpts
         nacInj = injectiveNacSatisfaction globalOpts
         newRules = concatMap (makeConcurrentRules dependencies nacInj injectiveOnly) sequences
         gg' = GG.graphGrammar (GG.initialGraph gg) (GG.rules gg ++ newRules) []
     GW.writeGrammarFile gg' ggName names (outputFile opts)
 
-makeAllConcurrentRules :: CRDependencies -> Bool -> Bool -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
+makeAllConcurrentRules :: CRDependencies -> NacSatisfaction -> MatchRestriction -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
 makeAllConcurrentRules dep nacInj injectiveOnly (baseName, sequence) = zipWith makeName (allConcurrentRules dep nacInj injectiveOnly sequence) [0::Int ..]
   where makeName rule idx = (baseName++"_"++show idx, rule)
 
-makeMaxConcurrentRule :: CRDependencies -> Bool -> Bool -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
+makeMaxConcurrentRule :: CRDependencies -> NacSatisfaction -> MatchRestriction -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
 makeMaxConcurrentRule dep nacInj injectiveOnly (baseName, sequence) = [(baseName, maxConcurrentRule dep nacInj injectiveOnly sequence)]

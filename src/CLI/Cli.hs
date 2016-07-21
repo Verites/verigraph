@@ -1,11 +1,11 @@
 module Main (main) where
 
 import           Options.Applicative
-import           CLI.GlobalOptions
+import           GlobalOptions
 
-import qualified CLI.ConcurrentRules       as CR
-import qualified CLI.CriticalPairAnalysis  as CPA
-import qualified CLI.ApplySndOrderRules    as ASO
+import qualified ConcurrentRules       as CR
+import qualified CriticalPairAnalysis  as CPA
+import qualified ApplySndOrderRules    as ASO
 
 main :: IO ()
 main = execParser opts >>= execute
@@ -32,7 +32,7 @@ commands = subparser (cpAnalysis <> secondOrder <> concurrentRule)
   where
     cpAnalysis = command "analysis" . fmap CPAnalysis $ info (helper <*> CPA.options)
       ( fullDesc <> progDesc "Run critical pair analysis on the input grammar")
-    
+
     secondOrder = command "snd-order" . fmap ApplySndOrderRules $ info (helper <*> ASO.options)
       ( fullDesc <> progDesc "Apply all second order rules in all possible matches with the first order rules")
 

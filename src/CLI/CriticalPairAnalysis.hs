@@ -1,4 +1,4 @@
-module CLI.CriticalPairAnalysis
+module CriticalPairAnalysis
   ( Options
   , options
   , execute
@@ -8,13 +8,13 @@ import           Abstract.DPO
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
 import           Analysis.InterLevelCP
-import           CLI.GlobalOptions
+import           GlobalOptions
 import           Data.List
 import           Data.List.Split
 import           Data.List.Utils
 import           Data.Matrix               hiding ((<|>))
-import qualified Graph.GraphGrammar        as GG
-import           Graph.SndOrderRule
+import qualified TypedGraph.GraphGrammar        as GG
+import           SndOrder.Rule
 import           Options.Applicative
 import qualified XML.GGXReader             as XML
 import qualified XML.GGXWriter             as GW
@@ -65,12 +65,12 @@ execute globalOpts opts = do
     gg <- XML.readGrammar (inputFile globalOpts)
     ggName <- XML.readGGName (inputFile globalOpts)
     names <- XML.readNames (inputFile globalOpts)
-    
+
     putStrLn "Analyzing the graph grammar..."
     putStrLn ""
 
     let nacInj = injectiveNacSatisfaction globalOpts
-        onlyInj = not $ arbitraryMatches globalOpts
+        onlyInj = arbitraryMatches globalOpts
         action = analysisType opts
         secondOrder = sndOrder opts
         writer = defWriterFun secondOrder nacInj onlyInj action
@@ -84,15 +84,16 @@ execute globalOpts opts = do
         pfMatrix = pairwiseCompare (allProduceForbid nacInj onlyInj) rules
         conflictsMatrix = liftMatrix3 (\x y z -> x ++ y ++ z) udMatrix pfMatrix peMatrix
         dependenciesMatrix = liftMatrix3 (\x y z -> x ++ y ++ z) puMatrix rdMatrix ddMatrix
-        
+
         -- Inter Level conflicts
         conf = applySecondOrder (interLevelConflict nacInj onlyInj) (GG.rules gg) (GG.sndOrderRules gg)
         f str = join "_" (take 2 (splitOn "_" str))
-        printILCP = ("Interlevel Critical Pairs") :
-                    ("2rule_rule (number of conflicts)") :
-                    (map (\x -> f (head x) ++ " " ++ show (length x)) (groupBy (\x y -> f x == f y) (map fst conf)))
+        printILCP = "Interlevel Critical Pairs" :
+                    "2rule_rule (number of conflicts)" :
+                    map (\x -> f (head x) ++ " " ++ show (length x))
+                        (groupBy (\x y -> f x == f y) (map fst conf))
 
-        evoConflicts = map (\r1 -> map (\r2 -> evo nacInj onlyInj r1 r2) (GG.sndOrderRules gg)) (GG.sndOrderRules gg)
+        evoConflicts = map (\r1 -> map (evo nacInj onlyInj r1) (GG.sndOrderRules gg)) (GG.sndOrderRules gg)
 
         -- Second order conflicts/dependencies
         newNacs =
@@ -103,10 +104,10 @@ execute globalOpts opts = do
              in ((n, newRule), (n, tamNewNacs - tamNacs))
              ) (GG.sndOrderRules gg)
         rules2 = map (snd . fst) newNacs
-        newGG = gg {GG.sndOrderRules = (map fst newNacs)}
-        
+        newGG = gg {GG.sndOrderRules = map fst newNacs}
+
         printNewNacs = map snd newNacs
-        
+
         ud2Matrix = pairwiseCompare (allDeleteUse nacInj onlyInj) rules2
         pd2Matrix = pairwiseCompare (allProduceDangling nacInj onlyInj) rules2
         pf2Matrix = pairwiseCompare (allProduceForbid nacInj onlyInj) rules2
@@ -154,7 +155,7 @@ execute globalOpts opts = do
                 , "All Second Order Conflicts:"
                 , show (length <$> conflicts2Matrix)
                 , ""]
-        
+
         dependencies2 = [ "Second Order Produce Use Dependency:"
                    , show (length <$> pu2Matrix)
                    , ""
@@ -167,21 +168,21 @@ execute globalOpts opts = do
                    , "All Second Order Dependencies:"
                    , show (length <$> dependencies2Matrix)
                    , ""]
-    
+
     putStrLn $ "injective satisfability of nacs: " ++ show nacInj
     putStrLn $ "only injective matches morphisms: " ++ show onlyInj
     putStrLn ""
-        
+
     if secondOrder
       then mapM_
         putStrLn $
         ["Adding minimal safety nacs to second order rules:"]
-        ++ (if onlyInj then [] else ["Warning, some nacs for non injective matches are not implemented"])
-        ++ (map (\(r,n) -> "Rule "++r++", added "++ show n ++ " nacs") printNewNacs)
-        ++ ["All minimal safety nacs added!",""]
+        ++ (if onlyInj == MonoMatches then [] else ["Warning, some nacs for non injective matches are not implemented"])
+        ++ map (\(r,n) -> "Rule " ++ r ++ ", added " ++ show n ++ " nacs") printNewNacs
+        ++ ["All minimal safety nacs added!", ""]
       else
         putStrLn ""
-    
+
     case outputFile opts of
       Just file -> writer newGG ggName names file
       Nothing -> let (confMatrix, depMatrix) =
@@ -194,16 +195,16 @@ execute globalOpts opts = do
                    (if calculateConflicts action then confMatrix else [])
                    ++ (if calculateDependencies action then depMatrix else [])
                    ++ ["Done!"]
-    
+
     case (secondOrder, onlyInj) of
-      (True,False) -> mapM_ putStrLn printILCP
-      (True,True) -> putStrLn "Interlevel CP not defined for only injective matches"
+      (True, AnyMatches) -> mapM_ putStrLn printILCP
+      (True, MonoMatches) -> putStrLn "Interlevel CP not defined for only injective matches"
       _ -> mapM_ putStrLn []
-    
+
     putStrLn "Evolution Interlevel CP"
     print evoConflicts
 
-defWriterFun :: Bool -> Bool -> Bool -> AnalysisType
+defWriterFun :: Bool -> NacSatisfaction -> MatchRestriction -> AnalysisType
              ->(GG.GraphGrammar a b -> String
              -> [(String,String)] -> String -> IO ())
 defWriterFun secondOrder nacInj inj t =

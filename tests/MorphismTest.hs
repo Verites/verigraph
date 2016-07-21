@@ -1,9 +1,8 @@
 import           Abstract.Morphism
 import qualified Abstract.Relation as R
-import           Graph.FindMorphism()
 import           Graph.Graph
 import qualified Graph.GraphMorphism as GM
-import qualified Graph.TypedGraphMorphism as TGM
+import qualified TypedGraph.Morphism as TGM
 import           Data.List
 import qualified Data.Map as M
 import           Test.HUnit
@@ -26,10 +25,10 @@ genericLenTest src tgt = (length $ mono src tgt,
 
     surj :: GM a b -> GM a b -> [TGM a b ]
     surj src tgt = matches EPI src tgt
-    
+
     isom :: GM a b -> GM a b -> [TGM a b ]
     isom src tgt = matches ISO src tgt
-    
+
     allm :: GM a b -> GM a b -> [TGM a b ]
     allm src tgt = matches ALL src tgt
 
@@ -46,10 +45,10 @@ genericTest src tgt = (sort . map toCanonical $ mono src tgt,
 
     surj :: GM a b -> GM a b -> [TGM a b]
     surj src tgt = matches EPI src tgt
-    
+
     isom :: GM a b -> GM a b -> [TGM a b]
     isom src tgt = matches ISO src tgt
-    
+
     allm :: GM a b -> GM a b -> [TGM a b]
     allm src tgt = matches ALL src tgt
 
@@ -262,7 +261,7 @@ tests = test [ "Test 1 "  ~: test1  ~=? ( []
                                         , []
                                         , [([(1,1),(2,2)],[(3,3)])
                                           ,([(1,1),(2,2)],[(3,4)])] )
-               
+
              , "Test 2 "  ~: test2  ~=? ( []
                                         , [ ([(1,1),(2,3),(3,2),(4,3)],[(5,4),(6,5)])
                                           , ([(1,2),(2,3),(3,1),(4,3)],[(5,5),(6,4)])]
@@ -271,19 +270,19 @@ tests = test [ "Test 1 "  ~: test1  ~=? ( []
                                           , ([(1,1),(2,3),(3,2),(4,3)],[(5,4),(6,5)])
                                           , ([(1,2),(2,3),(3,1),(4,3)],[(5,5),(6,4)])
                                           , ([(1,2),(2,3),(3,2),(4,3)],[(5,5),(6,5)])] )
-               
+
              , "Test 2' " ~: test2'  ~=? ( []
                                          , []
                                          , []
                                          , [ ([(1,1),(2,1),(3,2)],[(4,5),(5,5)])
                                            , ([(1,3),(2,3),(3,4)],[(4,6),(5,6)])] )
-               
+
              , "Test 3 "  ~: test3  ~=? ( []
                                         , []
                                         , []
                                         , [ ([(1,1),(2,2),(3,2)],[(4,5),(5,5)])
                                           , ([(1,3),(2,4),(3,4)],[(4,6),(5,6)])] )
-               
+
              , "Test 3' " ~: test3' ~=? ( []
                                         , [ ([(1,1),(2,2),(3,1),(4,3)],[(5,4),(6,5)])
                                           , ([(1,1),(2,3),(3,1),(4,2)],[(5,5),(6,4)])]
@@ -312,7 +311,7 @@ tests = test [ "Test 1 "  ~: test1  ~=? ( []
                                           , ([(1,1),(2,3),(3,2),(4,3)],[(5,4),(6,5),(7,5),(8,4)])
                                           , ([(1,2),(2,3),(3,1),(4,3)],[(5,5),(6,4),(7,4),(8,5)])
                                           , ([(1,2),(2,3),(3,2),(4,3)],[(5,5),(6,5),(7,5),(8,5)])] )
-               
+
              , "Test 5' " ~: test5' ~=? ( [ ([(1,1),(2,3),(3,2)],[(4,5),(5,7)])
                                           , ([(1,1),(2,3),(3,4)],[(4,8),(5,6)])
                                           , ([(1,3),(2,1),(3,2)],[(4,7),(5,5)])
@@ -327,7 +326,7 @@ tests = test [ "Test 1 "  ~: test1  ~=? ( []
                                           , ([(1,3),(2,1),(3,4)],[(4,6),(5,8)])
                                           , ([(1,3),(2,3),(3,2)],[(4,7),(5,7)])
                                           , ([(1,3),(2,3),(3,4)],[(4,6),(5,6)])] )
-               
+
              , "Test 6 "  ~: test6  ~=? ( []
                                         , [ ([(1,1),(2,1)],[(3,2)])]
                                         , []
@@ -337,7 +336,7 @@ tests = test [ "Test 1 "  ~: test1  ~=? ( []
                                         , []
                                         , []
                                         , [] )
-               
+
              , "Test 7 "  ~: test7  ~=? ( [ ([(1,1),(2,3)],[(3,4)]),([(1,2),(2,3)],[(3,5)])]
                                         , []
                                         , []
@@ -354,21 +353,21 @@ tests = test [ "Test 1 "  ~: test1  ~=? ( []
 testsLen :: Test
 testsLen = test [ "TestLen 1 "  ~: testLen1  ~=? (0,1,0,1)
                 , "TestLen 1' " ~: testLen1' ~=? (2,0,0,2)
-                  
+
                 , "TestLen 2 "  ~: testLen2  ~=? (0,2,0,4)
-                , "TestLen 2' " ~: testLen2' ~=? (0,0,0,2) 
-                  
+                , "TestLen 2' " ~: testLen2' ~=? (0,0,0,2)
+
                 , "TestLen 3 "  ~: testLen3  ~=? (0,0,0,2)
                 , "TestLen 3' " ~: testLen3' ~=? (0,2,0,4)
-                                
+
                 , "TestLen 4 "  ~: testLen4  ~=? (2,2,2,4)
-                  
+
                 , "TestLen 5 "  ~: testLen5  ~=? (0,2,0,4)
                 , "TestLen 5' " ~: testLen5' ~=? (4,0,0,8)
-                  
+
                 , "TestLen 6 "  ~: testLen6  ~=? (0,1,0,1)
                 , "TestLen 6' " ~: testLen6' ~=? (0,0,0,0)
-                  
+
                 , "TestLen 7 "  ~: testLen7  ~=? (2,0,0,2)
                 , "TestLen 7' " ~: testLen7' ~=? (0,1,0,1) ]
 
@@ -376,7 +375,7 @@ main :: IO()
 main = do
   print "Preliminar tests with number of morphisms"
   Counts _ _ errors fails   <- runTestTT testsLen
-    
+
   print "Efective tests with results of morphisms"
   Counts _ _ errors' fails' <- if errors == 0 && fails == 0
                                then runTestTT tests
@@ -384,7 +383,6 @@ main = do
   if errors' == 0 && fails' == 0
     then print "All Tests Passed"
     else error "Effective tests failed"
-  
+
 
   return ()
-                                           
