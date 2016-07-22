@@ -109,3 +109,4 @@ test-suite CtlTest
                        wl-pprint
   other-modules:       CtlTest.Utils
                        CtlTest.TestParser
+                       CtlTest.TestSemantics

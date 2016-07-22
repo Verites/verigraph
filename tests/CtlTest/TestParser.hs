@@ -1,5 +1,5 @@
 module CtlTest.TestParser
-  ( parserTests
+  ( tests
   ) where
 
 
@@ -13,8 +13,8 @@ import Logic.Ctl
 import CtlTest.Utils ()
 
 
-parserTests :: [Test]
-parserTests =
+tests :: [Test]
+tests =
   [ testGroup "atomic expressions" $ parseTest
       [ ("true", Literal True)
       , ("false", Literal False)
