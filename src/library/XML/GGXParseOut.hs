@@ -51,15 +51,15 @@ overlapsCS :: String -> CS.CriticalSequence (TypedGraphMorphism a b)
 overlapsCS name2 cs = (graph, mapM1, mapM2 ++ mapM2WithNac, nacName cs, csType cs)
   where
     (m1,m2) = case CS.getCS cs of
-                CS.DeliverDelete -> fromMaybe (error "Error when exporting DeliverDelete") (CS.getMatch cs)
+                CS.DeleteForbid -> fromMaybe (error "Error when exporting DeleteForbid") (CS.getMatch cs)
                 _ -> CS.getComatch cs
     graph = serializeGraph [] m1
     mapM1 = getTgmMappings Nothing m1
     mapM2 = getTgmMappings Nothing m2
     mapM2WithNac = case CS.getCS cs of
-                     CS.DeliverDelete -> addNacMap
+                     CS.DeleteForbid -> addNacMap
                      _ -> []
-    nacMatch = fromMaybe (error "Error when exporting DeliverDelete") (CS.getCSNac cs)
+    nacMatch = fromMaybe (error "Error when exporting DeleteForbid") (CS.getCSNac cs)
     addNacMap = getTgmMappings (Just (nacName cs)) nacMatch
     nacName = parseNacName name2 CS.getCSNacIdx
     csType = show . CS.getCS

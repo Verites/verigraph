@@ -7,11 +7,11 @@ module CriticalPairAnalysis
 import           Abstract.DPO
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
-import           Analysis.InterLevelCP
+--import           Analysis.InterLevelCP
 import           GlobalOptions
-import           Data.List
-import           Data.List.Split
-import           Data.List.Utils
+--import           Data.List
+--import           Data.List.Split
+--import           Data.List.Utils
 import           Data.Matrix               hiding ((<|>))
 import qualified TypedGraph.GraphGrammar        as GG
 import           SndOrder.Rule
@@ -75,14 +75,14 @@ execute globalOpts opts = do
         writer = defWriterFun secondOrder dpoConf action
         -- First order conflicts/dependencies
         rules = map snd (GG.rules gg)
-        puMatrix = pairwiseCompare (allProduceUse dpoConf) rules
-        rdMatrix = pairwiseCompare (allRemoveDangling dpoConf) rules
-        ddMatrix = pairwiseCompare (allDeliverDelete dpoConf) rules
-        udMatrix = pairwiseCompare (allDeleteUse dpoConf) rules
-        peMatrix = pairwiseCompare (allProduceDangling dpoConf) rules
-        pfMatrix = pairwiseCompare (allProduceForbid dpoConf) rules
+        puMatrix = pairwiseCompare (allProduceUse nacInj onlyInj) rules
+        rdMatrix = pairwiseCompare (allRemoveDangling nacInj onlyInj) rules
+        dfMatrix = pairwiseCompare (allDeleteForbid nacInj onlyInj) rules
+        udMatrix = pairwiseCompare (allDeleteUse nacInj onlyInj) rules
+        peMatrix = pairwiseCompare (allProduceDangling nacInj onlyInj) rules
+        pfMatrix = pairwiseCompare (allProduceForbid nacInj onlyInj) rules
         conflictsMatrix = liftMatrix3 (\x y z -> x ++ y ++ z) udMatrix pfMatrix peMatrix
-        dependenciesMatrix = liftMatrix3 (\x y z -> x ++ y ++ z) puMatrix rdMatrix ddMatrix
+        dependenciesMatrix = liftMatrix3 (\x y z -> x ++ y ++ z) puMatrix rdMatrix dfMatrix
 
         -- Inter Level conflicts
         conf = applySecondOrder (interLevelConflict dpoConf) (GG.rules gg) (GG.sndOrderRules gg)
@@ -92,7 +92,7 @@ execute globalOpts opts = do
                     map (\x -> f (head x) ++ " " ++ show (length x))
                         (groupBy (\x y -> f x == f y) (map fst conf))
 
-        evoConflicts = map (\r1 -> map (evo dpoConf r1) (GG.sndOrderRules gg)) (GG.sndOrderRules gg)
+        --evoConflicts = map (\r1 -> map (evo nacInj onlyInj r1) (GG.sndOrderRules gg)) (GG.sndOrderRules gg)
 
         -- Second order conflicts/dependencies
         newNacs =
@@ -107,14 +107,14 @@ execute globalOpts opts = do
 
         printNewNacs = map snd newNacs
 
-        ud2Matrix = pairwiseCompare (allDeleteUse dpoConf) rules2
-        pd2Matrix = pairwiseCompare (allProduceDangling dpoConf) rules2
-        pf2Matrix = pairwiseCompare (allProduceForbid dpoConf) rules2
-        pu2Matrix = pairwiseCompare (allProduceUse dpoConf) rules2
-        rd2Matrix = pairwiseCompare (allRemoveDangling dpoConf) rules2
-        dd2Matrix = pairwiseCompare (allDeliverDelete dpoConf) rules2
+        ud2Matrix = pairwiseCompare (allDeleteUse nacInj onlyInj) rules2
+        pd2Matrix = pairwiseCompare (allProduceDangling nacInj onlyInj) rules2
+        pf2Matrix = pairwiseCompare (allProduceForbid nacInj onlyInj) rules2
+        pu2Matrix = pairwiseCompare (allProduceUse nacInj onlyInj) rules2
+        rd2Matrix = pairwiseCompare (allRemoveDangling nacInj onlyInj) rules2
+        df2Matrix = pairwiseCompare (allDeleteForbid nacInj onlyInj) rules2
         conflicts2Matrix = liftMatrix3 (\x y z -> x ++ y ++ z) ud2Matrix pd2Matrix pf2Matrix
-        dependencies2Matrix = liftMatrix3 (\x y z -> x ++ y ++ z) pu2Matrix rd2Matrix dd2Matrix
+        dependencies2Matrix = liftMatrix3 (\x y z -> x ++ y ++ z) pu2Matrix rd2Matrix df2Matrix
 
         conflicts = [ "Delete-Use:"
                 , show (length <$> udMatrix)
@@ -135,8 +135,8 @@ execute globalOpts opts = do
                    , "Remove-Dangling Dependency:"
                    , show (length <$> rdMatrix)
                    , ""
-                   , "Deliver-Delete Dependency:"
-                   , show (length <$> ddMatrix)
+                   , "Delete-Forbid Dependency:"
+                   , show (length <$> dfMatrix)
                    , ""
                    , "All Dependencies:"
                    , show (length <$> dependenciesMatrix)
@@ -155,14 +155,14 @@ execute globalOpts opts = do
                 , show (length <$> conflicts2Matrix)
                 , ""]
 
-        dependencies2 = [ "Second Order Produce Use Dependency:"
+        dependencies2 = [ "Second Order Produce-Use Dependency:"
                    , show (length <$> pu2Matrix)
                    , ""
                    , "Second Order Remove-Dangling Dependency:"
                    , show (length <$> rd2Matrix)
                    , ""
-                   , "Second Order Deliver Delete Dependency:"
-                   , show (length <$> dd2Matrix)
+                   , "Second Order Delete-Forbid Dependency:"
+                   , show (length <$> df2Matrix)
                    , ""
                    , "All Second Order Dependencies:"
                    , show (length <$> dependencies2Matrix)
@@ -200,8 +200,8 @@ execute globalOpts opts = do
       (True, MonoMatches) -> putStrLn "Interlevel CP not defined for only injective matches"
       _ -> mapM_ putStrLn []
 
-    putStrLn "Evolution Interlevel CP"
-    print evoConflicts
+    --putStrLn "Evolution Interlevel CP"
+    --print evoConflicts
 
 defWriterFun :: Bool -> DPOConfig -> AnalysisType
              ->(GG.GraphGrammar a b -> String

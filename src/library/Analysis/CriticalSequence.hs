@@ -6,7 +6,7 @@ module Analysis.CriticalSequence
    allProduceUse,
    allRemoveDangling,
    allProdUseAndDang,
-   allDeliverDelete,
+   allDeleteForbid,
    getMatch,
    getComatch,
    getCSNac,
@@ -20,7 +20,7 @@ import           Analysis.DiagramAlgorithms
 import           Data.Maybe                (mapMaybe)
 
 -- | Data representing the type of a 'CriticalPair'
-data CS = ProduceUse | DeliverDelete | RemoveDangling deriving (Eq,Show)
+data CS = ProduceUse | DeleteForbid | RemoveDangling deriving (Eq,Show)
 
 -- | A Critical Sequence is defined as two matches (m1,m2) from the left side of their rules to a same graph.
 --
@@ -53,7 +53,7 @@ data CS = ProduceUse | DeliverDelete | RemoveDangling deriving (Eq,Show)
 data CriticalSequence m = CriticalSequence {
     match :: Maybe (m, m),
     comatch :: (m, m),
-    nac :: Maybe (m, Int), --if is DeliverDelete, here is the index of the nac
+    nac :: Maybe (m, Int), --if is DeleteForbid, here is the index of the nac
     cs  :: CS
     } deriving (Eq,Show)
 
@@ -91,9 +91,9 @@ namedCriticalSequences config r = map (uncurry getCPs) [(a,b) | a <- r, b <- r]
 -- | All Critical Sequences
 criticalSequences :: (EpiPairs m, DPO m) => DPOConfig
                   -> Production m -> Production m -> [CriticalSequence m]
-criticalSequences config l r =
-  allProdUseAndDang config l r ++
-  allDeliverDelete config l r
+criticalSequences nacInj inj l r =
+  allProdUseAndDang nacInj inj l r ++
+  allDeleteForbid nacInj inj l r
 
 ---- ProduceUse
 
@@ -146,22 +146,22 @@ allProdUseAndDang config l r =
     pairs = createPairsCodomain config (left invLeft) (left r)
     gluing = filter (\(m1,m2) -> satsGluingNacsBoth config (invLeft,m1) (r,m2)) pairs
 
----- DeliverDelete
+---- DeleteForbid
 
--- | All DeliverDelete caused by the derivation of @l@ before @r@
--- rule @l@ causes a deliver-forbid conflict with @r@ if some NAC in @r@ turns satisfied after the aplication of @l@
-allDeliverDelete :: (DPO m, EpiPairs m) => DPOConfig
+-- | All DeleteForbid caused by the derivation of @l@ before @r@
+-- rule @l@ causes a delete-forbid conflict with @r@ if some NAC in @r@ turns satisfied after the aplication of @l@
+allDeleteForbid :: (DPO m, EpiPairs m) => DPOConfig
                  -> Production m -> Production m -> [CriticalSequence m]
-allDeliverDelete config l r = concatMap (deliverDelete config l inverseLeft r) (zip (nacs r) [0..])
+allDeliverDelete config l r = concatMap (deleteForbid config l inverseLeft r) (zip (nacs r) [0..])
   where
     inverseLeft = inverse config l
 
--- | Check DeliverDelete for a NAC @n@ in @r@
-deliverDelete :: (EpiPairs m, DPO m) => DPOConfig -> Production m
+-- | Check DeleteForbid for a NAC @n@ in @r@
+deleteForbid :: (EpiPairs m, DPO m) => DPOConfig -> Production m
               -> Production m -> Production m -> (m, Int) -> [CriticalSequence m]
-deliverDelete config l inverseLeft r nac =
+deleteForbid config l inverseLeft r nac =
   map
-    (\(m,m',nac) -> CriticalSequence (Just m) m' (Just nac) DeliverDelete)
+    (\(m,m',nac) -> CriticalSequence (Just m) m' (Just nac) DeleteForbid)
     (produceForbidOneNac config inverseLeft l r nac)
 
 
