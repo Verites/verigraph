@@ -274,6 +274,9 @@ writeOverlapping nacNames overlap@(_,_,(_,_,_,_,t),_) =
     "ProduceUse"      -> writeProdUse
     "RemoveDangling"  -> writeRemDangling
     "DeleteForbid"    -> writeDelFor nacNames
+    "DeliverDelete"   -> writeDelDel
+    "DeliverDangling" -> writeDelDangling
+    "ForbidProduce"   -> writeForbProd nacNames
     _ -> error $ "Unexpected type of overlapping: " ++ t)
   overlap
 
@@ -318,6 +321,16 @@ writeProdUse (n1, n2, ((_, nodes, edges), map1, map2, _, _), idx) =
     msg = "( "++show idx++ " ) " ++ "produce-use-dependency"
     graphId idx = n1 ++ n2 ++ show idx ++ "_prousedep"
 
+writeDelDel :: ArrowXml a => Overlapping -> a XmlTree XmlTree
+writeDelDel (n1, n2, ((_, nodes, edges), map1, map2, _, _), idx) =
+  mkelem "Overlapping_Pair" []
+    [writeGraphOverlaping (graphId idx) "" "GRAPH" msg nodes edges,
+     writeMorphism (graphId idx, "RightOf_"++n1) ("MorphOf_" ++ n1) "RHS" map1,
+     writeMorphism (graphId idx, "LeftOf_"++n2) ("MorphOf_" ++ n2) "LHS" map2]
+  where
+    msg = "( "++show idx++ " ) " ++ "deliver-delete-dependency"
+    graphId idx = n1 ++ n2 ++ show idx ++ "_deldeldep"
+
 writeRemDangling :: ArrowXml a => Overlapping -> a XmlTree XmlTree
 writeRemDangling (n1, n2, ((_, nodes, edges), map1, map2, _, _), idx) =
   mkelem "Overlapping_Pair" []
@@ -328,6 +341,16 @@ writeRemDangling (n1, n2, ((_, nodes, edges), map1, map2, _, _), idx) =
     msg = "( "++show idx++ " ) " ++ "remove-dangling-dependency"
     graphId idx = n1 ++ n2 ++ show idx ++ "_remdandep"
 
+writeDelDangling :: ArrowXml a => Overlapping -> a XmlTree XmlTree
+writeDelDangling (n1, n2, ((_, nodes, edges), map1, map2, _, _), idx) =
+  mkelem "Overlapping_Pair" []
+    [writeGraphOverlaping (graphId idx) "" "GRAPH" msg nodes edges,
+     writeMorphism (graphId idx, "RightOf_"++n1) ("MorphOf_" ++ n1) "RHS" map1,
+     writeMorphism (graphId idx, "LeftOf_"++n2) ("MorphOf_" ++ n2) "LHS" map2]
+  where
+    msg = "( "++show idx++ " ) " ++ "delete-dangling-dependency"
+    graphId idx = n1 ++ n2 ++ show idx ++ "_deldandep"
+
 writeDelFor :: ArrowXml a => [(String,String)] -> Overlapping -> a XmlTree XmlTree
 writeDelFor nacNames (n1, n2, ((_, nodes, edges), map1, map2, nacName, _), idx) =
   mkelem "Overlapping_Pair" []
@@ -337,6 +360,17 @@ writeDelFor nacNames (n1, n2, ((_, nodes, edges), map1, map2, nacName, _), idx) 
   where
     msg = "( "++show idx++ " ) " ++ "delete-forbid-dependency (NAC: "++nacCorrectName++")"
     graphId idx = n1 ++ n2 ++ show idx ++ "_delfordep"
+    nacCorrectName = fromMaybe nacName (lookup nacName nacNames)
+
+writeForbProd :: ArrowXml a => [(String,String)] -> Overlapping -> a XmlTree XmlTree
+writeForbProd nacNames (n1, n2, ((_, nodes, edges), map1, map2, nacName, _), idx) =
+  mkelem "Overlapping_Pair" []
+    [writeGraphOverlaping (graphId idx) nacCorrectName "GRAPH" msg nodes edges,
+     writeMorphism (graphId idx, "LeftOf_"++n1) ("MorphOf_" ++ n1) "LHS" map1,
+     writeMorphism (graphId idx, "LeftOf_"++n2) ("MorphOf_" ++ n2) "NAC+LHS" map2]
+  where
+    msg = "( "++show idx++ " ) " ++ "forbid-produce-dependency (NAC: "++nacCorrectName++")"
+    graphId idx = n1 ++ n2 ++ show idx ++ "_forprodep"
     nacCorrectName = fromMaybe nacName (lookup nacName nacNames)
 
 writeHostGraph :: ArrowXml a => a XmlTree XmlTree

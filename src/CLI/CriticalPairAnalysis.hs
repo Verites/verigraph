@@ -78,19 +78,23 @@ execute globalOpts opts = do
         puMatrix = pairwiseCompare (allProduceUse nacInj onlyInj) rules
         rdMatrix = pairwiseCompare (allRemoveDangling nacInj onlyInj) rules
         dfMatrix = pairwiseCompare (allDeleteForbid nacInj onlyInj) rules
+        ddMatrix = pairwiseCompare (allDeliverDelete nacInj onlyInj) rules
+        dgMatrix = pairwiseCompare (allDeliverDangling nacInj onlyInj) rules
+        fpMatrix = pairwiseCompare (allForbidProduce nacInj onlyInj) rules
         udMatrix = pairwiseCompare (allDeleteUse nacInj onlyInj) rules
         peMatrix = pairwiseCompare (allProduceDangling nacInj onlyInj) rules
         pfMatrix = pairwiseCompare (allProduceForbid nacInj onlyInj) rules
         conflictsMatrix = liftMatrix3 (\x y z -> x ++ y ++ z) udMatrix pfMatrix peMatrix
-        dependenciesMatrix = liftMatrix3 (\x y z -> x ++ y ++ z) puMatrix rdMatrix dfMatrix
+        triDependenciesMatrix = liftMatrix3 (\x y z -> x ++ y ++ z) puMatrix rdMatrix dfMatrix
+        irrDependenciesMatrix = liftMatrix3 (\x y z -> x ++ y ++ z) ddMatrix fpMatrix dgMatrix
 
         -- Inter Level conflicts
-        conf = applySecondOrder (interLevelConflict dpoConf) (GG.rules gg) (GG.sndOrderRules gg)
-        f str = join "_" (take 2 (splitOn "_" str))
-        printILCP = "Interlevel Critical Pairs" :
-                    "2rule_rule (number of conflicts)" :
-                    map (\x -> f (head x) ++ " " ++ show (length x))
-                        (groupBy (\x y -> f x == f y) (map fst conf))
+        --conf = applySecondOrder (interLevelConflict nacInj onlyInj) (GG.rules gg) (GG.sndOrderRules gg)
+        --f str = join "_" (take 2 (splitOn "_" str))
+        --printILCP = "Interlevel Critical Pairs" :
+        --            "2rule_rule (number of conflicts)" :
+        --            map (\x -> f (head x) ++ " " ++ show (length x))
+        --                (groupBy (\x y -> f x == f y) (map fst conf))
 
         --evoConflicts = map (\r1 -> map (evo nacInj onlyInj r1) (GG.sndOrderRules gg)) (GG.sndOrderRules gg)
 
@@ -138,9 +142,20 @@ execute globalOpts opts = do
                    , "Delete-Forbid Dependency:"
                    , show (length <$> dfMatrix)
                    , ""
-                   , "All Dependencies:"
-                   , show (length <$> dependenciesMatrix)
-                   , ""]
+                   , "All Triggereds Dependencies:"
+                   , show (length <$> triDependenciesMatrix)
+                   , ""
+                   , "Deliver-Delete Dependency:"
+                   , show (length <$> ddMatrix)
+                   , ""
+                   , "Forbid-Produce Dependency:"
+                   , show (length <$> fpMatrix)
+                   , ""
+                   , "Deliver-Dangling Dependency:"
+                   , show (length <$> dgMatrix)
+                   , ""
+                   , "All Irreversibles Dependencies:"
+                   , show (length <$> irrDependenciesMatrix)]
 
         conflicts2 = [ "Second Order Delete-Use:"
                 , show (length <$> ud2Matrix)
@@ -195,10 +210,10 @@ execute globalOpts opts = do
                    ++ (if calculateDependencies action then depMatrix else [])
                    ++ ["Done!"]
 
-    case (secondOrder, matchRestriction dpoConf) of
-      (True, AnyMatches) -> mapM_ putStrLn printILCP
-      (True, MonoMatches) -> putStrLn "Interlevel CP not defined for only injective matches"
-      _ -> mapM_ putStrLn []
+    --case (secondOrder, matchRestriction dpoConf) of
+    --  (True, AnyMatches) -> mapM_ putStrLn printILCP
+    --  (True, MonoMatches) -> putStrLn "Interlevel CP not defined for only injective matches"
+    --  _ -> mapM_ putStrLn []
 
     --putStrLn "Evolution Interlevel CP"
     --print evoConflicts
