@@ -32,15 +32,16 @@ data CS =
   | RemoveDangling
   deriving (Eq,Show)
 
--- | A Critical Sequence is defined as two matches (m1,m2) from the left side of their rules to a same graph.
+-- | A Critical Sequence is defined as two matches (m1,m2) from the
+-- left side of their rules to a same graph.
 --
 -- This diagram shows graphs and morphisms names used in the algorithms below
 --
--- l       = production (L1,K1,R1,[N1]) (N1 from L1)
+-- pLeft   = production (L1,K1,R1,[N1]) (N1 from L1)
 --
 -- invLeft = production (R1,K1,L1,[N1]) (N1 from R1)
 --
--- r       = production (L2,K2,R2,[N2])
+-- pRight  = production (L2,K2,R2,[N2])
 --
 -- @
 --                    N1    N2
@@ -92,158 +93,207 @@ getCSNacIdx cs = case nac cs of
                    Nothing -> Nothing
 
 -- | Returns the Critical Sequences with rule names
-namedCriticalSequences :: (EpiPairs m, DPO m) => DPOConfig
-  -> [(String, Production m)] -> [(String, String, [CriticalSequence m])]
-namedCriticalSequences config r = map (uncurry getCPs) [(a,b) | a <- r, b <- r]
+namedCriticalSequences :: (EpiPairs m, DPO m)
+  => DPOConfig -> [(String, Production m)]
+  -> [(String, String, [CriticalSequence m])]
+namedCriticalSequences config rules =
+  map
+    (uncurry getCPs)
+    [(a,b) | a <- rules, b <- rules]
   where
-    getCPs (n1,r1) (n2,r2) = (n1, n2, criticalSequences nacInj inj r1 r2)
+    getCPs (n1,r1) (n2,r2) =
+      (n1, n2, criticalSequences nacInj inj r1 r2)
 
 -- | Create all jointly epimorphic pairs of morphisms from the codomains of
 -- the given morphisms.
 -- The flag indicates only monomorphic morphisms.
 createPairsCodomain :: (EpiPairs m) => MatchRestriction -> m -> m -> [(m, m)]
-createPairsCodomain inj m1 m2 = createPairs (inj == MonoMatches) (codomain m1) (codomain m2)
+createPairsCodomain inj m1 m2 =
+  createPairs (inj == MonoMatches) (codomain m1) (codomain m2)
 
 -- | All Critical Sequences
-criticalSequences :: (EpiPairs m, DPO m) => DPOConfig
-                  -> Production m -> Production m -> [CriticalSequence m]
-criticalSequences nacInj inj l r =
-  allProdUseAndDang nacInj inj l r ++
-  allDeliverDangling nacInj inj l r ++
-  allDeleteForbid nacInj inj l r ++
-  allDeliverDelete nacInj inj l r ++
-  allForbidProduce nacInj inj l r
+criticalSequences :: (EpiPairs m, DPO m)
+  => DPOConfig
+  -> Production m -> Production m -> [CriticalSequence m]
+criticalSequences nacInj inj pLeft pRight =
+  allProdUseAndDang nacInj inj pLeft pRight ++
+  allDeleteForbid nacInj inj pLeft pRight ++
+  allDeliverDelete nacInj inj pLeft pRight ++
+  allDeliverDangling nacInj inj pLeft pRight ++
+  allForbidProduce nacInj inj pLeft pRight
 
--- Triggered Dependencies (ProduceUse, DeleteForbid, RemoveDangling)
+-- ** Triggered Dependencies
 
----- ProduceUse
+-- It occurs when pLeft enables pRight.
+-- (ProduceUse, DeleteForbid, RemoveDangling)
+
+-- *** ProduceUse
 
 -- | All ProduceUse caused by the derivation of @l@ before @r@.
 --
--- Rule @l@ causes a produce-use dependency with @r@ if rule @l@ creates
--- something that is used by @r@.
+-- Rule @pLeft@ causes a produce-use dependency with @pRight@
+-- if rule @pLeft@ creates something that is used by @pRight@.
 -- Verify the non existence of h21: L2 -> D1 such that d1 . h21 = m2'.
-allProduceUse :: (DPO m, EpiPairs m) => DPOConfig
-              -> Production m -> Production m -> [CriticalSequence m]
-allProduceUse config l r =
+allProduceUse :: (DPO m, EpiPairs m)
+  => DPOConfig
+  -> Production m -> Production m -> [CriticalSequence m]
+allProduceUse config pLeft pRight =
   map
     (\m -> CriticalSequence Nothing m Nothing ProduceUse)
     prodUse
   where
-    invLeft = inverse config l
-    pairs = createPairsCodomain config (left invLeft) (left r)
-    gluing = filter (\(m1',m2') -> satsGluingNacsBoth config (invLeft,m1') (r,m2')) pairs
+    invLeft = inverse config pLeft
+    pairs = createPairsCodomain config (left invLeft) (left pRight)
+    gluing =
+      filter
+        (\(m1',m2') -> satsGluingNacsBoth config (invLeft,m1') (pRight,m2'))
+        pairs
     prodUse = filter (deleteUse config invLeft) gluing
 
----- RemoveDangling
+-- *** RemoveDangling
 
+-- | All RemoveDangling caused by the derivation of @pLeft@ before @pRight@.
+--
+-- Rule @pLeft@ causes a remove-dangling dependency with @pRight@
+-- if rule @pLeft@ deletes something that enables @pRight@.
 allRemoveDangling :: (EpiPairs m, DPO m) => DPOConfig
                   -> Production m -> Production m -> [CriticalSequence m]
-allRemoveDangling config l r =
+allRemoveDangling config pLeft pRight =
   map
     (\m -> CriticalSequence Nothing m Nothing RemoveDangling)
     remDang
   where
-    invLeft = inverse config l
-    pairs = createPairsCodomain config (left invLeft) (left r)
-    gluing = filter (\(m1,m2) -> satsGluingNacsBoth config (invLeft,m1) (r,m2)) pairs
-    remDang = filter (produceDangling config invLeft r) gluing
+    invLeft = inverse nacInj i pLeft
+    pairs = createPairsCodomain i (left invLeft) (left pRight)
+    gluing =
+      filter
+        (\(m1,m2) -> satsGluingNacsBoth nacInj i (invLeft,m1) (pRight,m2))
+        pairs
+    remDang = filter (produceDangling nacInj i invLeft pRight) gluing
 
----- ProduceUse and RemoveDangling
+-- ProduceUse and RemoveDangling
 
 -- | Tests ProduceUse and RemoveDangling for the same pairs,
 -- more efficient than deal separately.
-allProdUseAndDang :: (EpiPairs m, DPO m) => DPOConfig
-                  -> Production m -> Production m -> [CriticalSequence m]
-allProdUseAndDang config l r =
-  let dependencies = mapMaybe (deleteUseDangling config invLeft r) gluing
-  in map
-      (\x -> case x of
-        (Left m) -> CriticalSequence Nothing m Nothing ProduceUse
-        (Right m) -> CriticalSequence Nothing m Nothing RemoveDangling)
-      dependencies
+allProdUseAndDang :: (EpiPairs m, DPO m) =>
+  DPOConfig -> Production m -> Production m -> [CriticalSequence m]
+allProdUseAndDang config pLeft pRight =
+  map
+    (\x -> case x of
+      (Left m) -> CriticalSequence Nothing m Nothing ProduceUse
+      (Right m) -> CriticalSequence Nothing m Nothing RemoveDangling)
+    dependencies
   where
-    invLeft = inverse config l
-    pairs = createPairsCodomain config (left invLeft) (left r)
-    gluing = filter (\(m1,m2) -> satsGluingNacsBoth config (invLeft,m1) (r,m2)) pairs
+    invLeft = inverse config pLeft
+    pairs = createPairsCodomain config (left invLeft) (left pRight)
+    gluing =
+      filter
+        (\(m1,m2) -> satsGluingNacsBoth config (invLeft,m1) (pRight,m2))
+        pairs
+    dependencies = mapMaybe (deleteUseDangling config invLeft pRight) gluing
 
----- DeleteForbid
+-- *** DeleteForbid
 
--- | All DeleteForbid caused by the derivation of @l@ before @r@
--- rule @l@ causes a delete-forbid dependency with @r@ if some NAC in @r@ turns satisfied after the aplication of @l@
-allDeleteForbid :: (DPO m, EpiPairs m) => DPOConfig
-                 -> Production m -> Production m -> [CriticalSequence m]
-allDeleteForbid config l r = concatMap (deleteForbid nacInj inj l inverseLeft r) (zip (nacs r) [0..])
+-- | All DeleteForbid caused by the derivation of @pLeft@ before @r@.
+-- Rule @pLeft@ causes a delete-forbid dependency with @pRight@ if
+-- some NAC in @pRight@ turns satisfied after the aplication of @pLeft@
+allDeleteForbid :: (DPO m, EpiPairs m)
+  => DPOConfig
+  -> Production m -> Production m -> [CriticalSequence m]
+allDeleteForbid config pLeft pRight =
+  concatMap
+    (deleteForbid nacInj inj pLeft inverseLeft pRight)
+    (zip (nacs pRight) [0..])
   where
-    inverseLeft = inverse config l
+    inverseLeft = inverse config pLeft
 
--- | Check DeleteForbid for a NAC @n@ in @r@
-deleteForbid :: (EpiPairs m, DPO m) => DPOConfig -> Production m
-              -> Production m -> Production m -> (m, Int) -> [CriticalSequence m]
-deleteForbid config l inverseLeft r nac =
+-- | Check DeleteForbid for a NAC @n@ in @pRight@
+deleteForbid :: (EpiPairs m, DPO m)
+  => DPOConfig -> Production m
+  -> Production m -> Production m -> (m, Int) -> [CriticalSequence m]
+deleteForbid config pLeft inverseLeft pRight nac =
   map
     (\(m,m',nac) -> CriticalSequence (Just m) m' (Just nac) DeleteForbid)
-    (produceForbidOneNac config inverseLeft l r nac)
+    (produceForbidOneNac config inverseLeft pLeft pRight nac)
 
--- Irreversible Dependencies (DeliverDelete, ForbidProduce)
+-- ** Irreversible Dependencies
 
----- DeliverDelete
+-- It occurs when applying pLeft and pRight, pLeft inverse cannot be applied.
+-- Capture cases of two rules only can be applied in a prefixed order.
+-- (DeliverDelete, DeliverDangling, ForbidProduce)
 
--- | All DeliverDelete caused by the derivation of @l@ before @r@.
+-- *** DeliverDelete
+
+-- | All DeliverDelete caused by the derivation of @pLeft@ before @r@.
 --
--- Rule @l@ causes a deliver-delete dependency with @r@ if rule @l@ deletes
--- something that is used by @r@, disabling the reverse of the @l@ to be applicated.
+-- Rule @pLeft@ causes a deliver-delete dependency with @pRight@ if
+-- rule @pRight@ deletes something that is used by @pRight@,
 -- Verify the non existence of h12: L1 -> D2 such that d2 . h12 = m1'.
-allDeliverDelete :: (DPO m, EpiPairs m) => NacSatisfaction -> MatchRestriction
-                 -> Production m -> Production m -> [CriticalSequence m]
-allDeliverDelete nacInj i l r = 
+allDeliverDelete :: (DPO m, EpiPairs m)
+  => NacSatisfaction -> MatchRestriction
+  -> Production m -> Production m -> [CriticalSequence m]
+allDeliverDelete nacInj i pLeft pRight = 
   map
     (\m -> CriticalSequence Nothing m Nothing DeliverDelete)
     delDel
   where
-    invLeft = inverse nacInj i l
-    pairs = createPairsCodomain i (right l) (left r)
-    gluing = filter (\(m1',m2') -> satsGluingNacsBoth nacInj i (invLeft,m1') (r,m2')) pairs
-    delDel = filter (\(m1,m2) -> deleteUse i r (m2,m1)) gluing
+    invLeft = inverse nacInj i pLeft
+    pairs = createPairsCodomain i (right pLeft) (left pRight)
+    gluing =
+      filter
+        (\(m1',m2') -> satsGluingNacsBoth nacInj i (invLeft,m1') (pRight,m2'))
+        pairs
+    delDel = filter (\(m1,m2) -> deleteUse i pRight (m2,m1)) gluing
 
----- DeliverDangling
+-- *** DeliverDangling
 
--- | All DeliverDangling caused by the derivation of @l@ before @r@.
+-- | All DeliverDangling caused by the derivation of @pLeft@ before @pRight@.
 --
--- Rule @l@ causes a deliver-delete dependency with @r@ if rule @l@ deletes
--- something that is used by @r@, disabling the reverse of the @l@ to be applicated.
--- Verify the non existence of h12: L1 -> D2 such that d2 . h12 = m1'.
-allDeliverDangling :: (DPO m, EpiPairs m) => NacSatisfaction -> MatchRestriction
-                   -> Production m -> Production m -> [CriticalSequence m]
-allDeliverDangling nacInj i l r = 
+-- Rule @pLeft@ causes a deliver-delete dependency with @pRight@ if
+-- rule @pRight@ creates something that unable inverse of @pLeft@.
+allDeliverDangling :: (DPO m, EpiPairs m)
+  => NacSatisfaction -> MatchRestriction
+  -> Production m -> Production m -> [CriticalSequence m]
+allDeliverDangling nacInj i pLeft pRight = 
   map
     (\m -> CriticalSequence Nothing m Nothing DeliverDangling)
     delDang
   where
-    invLeft = inverse nacInj i l
-    pairs = createPairsCodomain i (right l) (left r)
-    gluing = filter (\(m1',m2') -> satsGluingNacsBoth nacInj i (invLeft,m1') (r,m2')) pairs
-    delDang = filter (\(m1,m2) -> produceDangling nacInj i r invLeft (m2,m1)) gluing
+    invLeft = inverse nacInj i pLeft
+    pairs = createPairsCodomain i (right pLeft) (left pRight)
+    gluing =
+      filter
+        (\(m1',m2') -> satsGluingNacsBoth nacInj i (invLeft,m1') (pRight,m2'))
+        pairs
+    delDang =
+      filter
+        (\(m1,m2) -> produceDangling nacInj i pRight invLeft (m2,m1))
+        gluing
 
----- ForbidProduce
+-- TODO: DeliverDelete and DeliverDangling together
 
--- | All ForbidProduce caused by the derivation of @l@ before @r@
--- rule @l@ causes a forbid-produce dependency with @r@ if
--- some NAC in right of @l@ turns satisfied after the aplication of @r@
-allForbidProduce :: (DPO m, EpiPairs m) => NacSatisfaction -> MatchRestriction
-                 -> Production m -> Production m -> [CriticalSequence m]
-allForbidProduce nacInj inj l r =
+-- *** ForbidProduce
+
+-- | All ForbidProduce caused by the derivation of @pLeft@ before @pRight@.
+--
+-- Rule @pLeft@ causes a forbid-produce dependency with @pRight@ if some
+-- NAC in right of @pLeft@ turns satisfied after the aplication of @pRight@.
+allForbidProduce :: (DPO m, EpiPairs m)
+  => NacSatisfaction -> MatchRestriction
+  -> Production m -> Production m -> [CriticalSequence m]
+allForbidProduce nacInj inj pLeft pRight =
   concatMap
-    (forbidProduce nacInj inj inverseLeft inverseRight r)
+    (forbidProduce nacInj inj inverseLeft inverseRight pRight)
     (zip (nacs inverseLeft) [0..])
     where
-      inverseLeft = inverse nacInj inj l
-      inverseRight = inverse nacInj inj r
+      inverseLeft = inverse nacInj inj pLeft
+      inverseRight = inverse nacInj inj pRight
 
--- | Check ForbidProduce for a NAC @n@ in @l@
-forbidProduce :: (EpiPairs m, DPO m) => NacSatisfaction -> MatchRestriction -> Production m
-              -> Production m -> Production m -> (m, Int) -> [CriticalSequence m]
-forbidProduce nacInj inj inverseLeft inverseRight r nac =
+-- | Check ForbidProduce for a NAC @n@ in right of @pLeft@
+forbidProduce :: (EpiPairs m, DPO m)
+  => NacSatisfaction -> MatchRestriction -> Production m
+  -> Production m -> Production m -> (m, Int) -> [CriticalSequence m]
+forbidProduce nacInj inj inverseLeft inverseRight pRight nac =
   map
     (\(m,m',nac) -> CriticalSequence (Just m) m' (Just nac) ForbidProduce)
-    (produceForbidOneNac nacInj inj r inverseRight inverseLeft nac)
+    (produceForbidOneNac nacInj inj pRight inverseRight inverseLeft nac)
