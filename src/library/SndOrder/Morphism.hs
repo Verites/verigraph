@@ -174,7 +174,7 @@ instance EpiPairs (RuleMorphism a b) where
   partitions _ _ = error "Not implemented"
 
   --FIXME
-  createPairsNac _ _ r nac = allPairs
+  createPairsNac _ r nac = allPairs
     where
       allPairs = createPairs True r (codomain nac)
   {-createPairsNac nacInj inj r nac = satsMorphisms

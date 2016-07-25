@@ -44,14 +44,17 @@ createdEdges :: GraphRule a b -> [G.EdgeId]
 createdEdges r = TGM.orphanEdgesTyped (right r)
 
 instance DPO (TypedGraphMorphism a b) where
-  satsGluing inj left m = (inj == MonoMatches || identificationCondition) && danglingCondition
+  satsGluing config left m =
+    (matchInjective || satisfiesIdentificationCondition) && satisfiesDanglingCondition
+
     where
-        identificationCondition = satsDelItems left m
-        danglingCondition       = satsIncEdges left m
+        matchInjective = matchRestriction config == MonoMatches
+        satisfiesIdentificationCondition = satsDelItems left m
+        satisfiesDanglingCondition = satsIncEdges left m
 
-  inverse nacInj inj r = production (right r) (left r) (concatMap (shiftLeftNac nacInj inj r) (nacs r))
+  inverse config r = production (right r) (left r) (concatMap (shiftLeftNac config r) (nacs r))
 
-  shiftLeftNac _ inj rule n = [comatch n rule | satsGluing inj (left rule) n]
+  shiftLeftNac config rule n = [comatch n rule | satsGluing config (left rule) n]
 
   partiallyMonomorphic = partialInjectiveTGM
 

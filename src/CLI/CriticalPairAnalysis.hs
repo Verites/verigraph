@@ -69,36 +69,35 @@ execute globalOpts opts = do
     putStrLn "Analyzing the graph grammar..."
     putStrLn ""
 
-    let nacInj = injectiveNacSatisfaction globalOpts
-        onlyInj = arbitraryMatches globalOpts
+    let dpoConf = dpoConfig globalOpts
         action = analysisType opts
         secondOrder = sndOrder opts
-        writer = defWriterFun secondOrder nacInj onlyInj action
+        writer = defWriterFun secondOrder dpoConf action
         -- First order conflicts/dependencies
         rules = map snd (GG.rules gg)
-        puMatrix = pairwiseCompare (allProduceUse nacInj onlyInj) rules
-        rdMatrix = pairwiseCompare (allRemoveDangling nacInj onlyInj) rules
-        ddMatrix = pairwiseCompare (allDeliverDelete nacInj onlyInj) rules
-        udMatrix = pairwiseCompare (allDeleteUse nacInj onlyInj) rules
-        peMatrix = pairwiseCompare (allProduceDangling nacInj onlyInj) rules
-        pfMatrix = pairwiseCompare (allProduceForbid nacInj onlyInj) rules
+        puMatrix = pairwiseCompare (allProduceUse dpoConf) rules
+        rdMatrix = pairwiseCompare (allRemoveDangling dpoConf) rules
+        ddMatrix = pairwiseCompare (allDeliverDelete dpoConf) rules
+        udMatrix = pairwiseCompare (allDeleteUse dpoConf) rules
+        peMatrix = pairwiseCompare (allProduceDangling dpoConf) rules
+        pfMatrix = pairwiseCompare (allProduceForbid dpoConf) rules
         conflictsMatrix = liftMatrix3 (\x y z -> x ++ y ++ z) udMatrix pfMatrix peMatrix
         dependenciesMatrix = liftMatrix3 (\x y z -> x ++ y ++ z) puMatrix rdMatrix ddMatrix
 
         -- Inter Level conflicts
-        conf = applySecondOrder (interLevelConflict nacInj onlyInj) (GG.rules gg) (GG.sndOrderRules gg)
+        conf = applySecondOrder (interLevelConflict dpoConf) (GG.rules gg) (GG.sndOrderRules gg)
         f str = join "_" (take 2 (splitOn "_" str))
         printILCP = "Interlevel Critical Pairs" :
                     "2rule_rule (number of conflicts)" :
                     map (\x -> f (head x) ++ " " ++ show (length x))
                         (groupBy (\x y -> f x == f y) (map fst conf))
 
-        evoConflicts = map (\r1 -> map (evo nacInj onlyInj r1) (GG.sndOrderRules gg)) (GG.sndOrderRules gg)
+        evoConflicts = map (\r1 -> map (evo dpoConf r1) (GG.sndOrderRules gg)) (GG.sndOrderRules gg)
 
         -- Second order conflicts/dependencies
         newNacs =
           map (\(n,r) ->
-            let newRule = addMinimalSafetyNacs nacInj r
+            let newRule = addMinimalSafetyNacs dpoConf r
                 tamNewNacs = length (nacs newRule)
                 tamNacs = length (nacs r)
              in ((n, newRule), (n, tamNewNacs - tamNacs))
@@ -108,12 +107,12 @@ execute globalOpts opts = do
 
         printNewNacs = map snd newNacs
 
-        ud2Matrix = pairwiseCompare (allDeleteUse nacInj onlyInj) rules2
-        pd2Matrix = pairwiseCompare (allProduceDangling nacInj onlyInj) rules2
-        pf2Matrix = pairwiseCompare (allProduceForbid nacInj onlyInj) rules2
-        pu2Matrix = pairwiseCompare (allProduceUse nacInj onlyInj) rules2
-        rd2Matrix = pairwiseCompare (allRemoveDangling nacInj onlyInj) rules2
-        dd2Matrix = pairwiseCompare (allDeliverDelete nacInj onlyInj) rules2
+        ud2Matrix = pairwiseCompare (allDeleteUse dpoConf) rules2
+        pd2Matrix = pairwiseCompare (allProduceDangling dpoConf) rules2
+        pf2Matrix = pairwiseCompare (allProduceForbid dpoConf) rules2
+        pu2Matrix = pairwiseCompare (allProduceUse dpoConf) rules2
+        rd2Matrix = pairwiseCompare (allRemoveDangling dpoConf) rules2
+        dd2Matrix = pairwiseCompare (allDeliverDelete dpoConf) rules2
         conflicts2Matrix = liftMatrix3 (\x y z -> x ++ y ++ z) ud2Matrix pd2Matrix pf2Matrix
         dependencies2Matrix = liftMatrix3 (\x y z -> x ++ y ++ z) pu2Matrix rd2Matrix dd2Matrix
 
@@ -169,15 +168,15 @@ execute globalOpts opts = do
                    , show (length <$> dependencies2Matrix)
                    , ""]
 
-    putStrLn $ "injective satisfability of nacs: " ++ show nacInj
-    putStrLn $ "only injective matches morphisms: " ++ show onlyInj
+    putStrLn $ "injective satisfability of nacs: " ++ show (nacSatisfaction dpoConf)
+    putStrLn $ "only injective matches morphisms: " ++ show (matchRestriction dpoConf)
     putStrLn ""
 
     if secondOrder
       then mapM_
         putStrLn $
         ["Adding minimal safety nacs to second order rules:"]
-        ++ (if onlyInj == MonoMatches then [] else ["Warning, some nacs for non injective matches are not implemented"])
+        ++ (if matchRestriction dpoConf == MonoMatches then [] else ["Warning, some nacs for non injective matches are not implemented"])
         ++ map (\(r,n) -> "Rule " ++ r ++ ", added " ++ show n ++ " nacs") printNewNacs
         ++ ["All minimal safety nacs added!", ""]
       else
@@ -196,7 +195,7 @@ execute globalOpts opts = do
                    ++ (if calculateDependencies action then depMatrix else [])
                    ++ ["Done!"]
 
-    case (secondOrder, onlyInj) of
+    case (secondOrder, matchRestriction dpoConf) of
       (True, AnyMatches) -> mapM_ putStrLn printILCP
       (True, MonoMatches) -> putStrLn "Interlevel CP not defined for only injective matches"
       _ -> mapM_ putStrLn []
@@ -204,17 +203,17 @@ execute globalOpts opts = do
     putStrLn "Evolution Interlevel CP"
     print evoConflicts
 
-defWriterFun :: Bool -> NacSatisfaction -> MatchRestriction -> AnalysisType
+defWriterFun :: Bool -> DPOConfig -> AnalysisType
              ->(GG.GraphGrammar a b -> String
              -> [(String,String)] -> String -> IO ())
-defWriterFun secondOrder nacInj inj t =
+defWriterFun secondOrder config t =
   case (secondOrder,t) of
-    (False, Conflicts)    -> GW.writeConflictsFile nacInj inj
-    (False, Dependencies) -> GW.writeDependenciesFile nacInj inj
-    (False, Both)         -> GW.writeConfDepFile nacInj inj
-    (True, Conflicts)     -> GW.writeSndOderConflictsFile nacInj inj
-    (True, Dependencies)  -> GW.writeSndOderDependenciesFile nacInj inj
-    (True, Both)          -> GW.writeSndOderConfDepFile nacInj inj
+    (False, Conflicts)    -> GW.writeConflictsFile config
+    (False, Dependencies) -> GW.writeDependenciesFile config
+    (False, Both)         -> GW.writeConfDepFile config
+    (True, Conflicts)     -> GW.writeSndOderConflictsFile config
+    (True, Dependencies)  -> GW.writeSndOderDependenciesFile config
+    (True, Both)          -> GW.writeSndOderConfDepFile config
     (_, None)             -> GW.writeGrammarFile
 
 -- | Combine three matrices with the given function. All matrices _must_ have

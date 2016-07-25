@@ -6,6 +6,7 @@ module Abstract.AdhesiveHLR
   , MatchRestriction(..)
   , matchRestrictionToProp
   , NacSatisfaction(..)
+  , DPOConfig(..)
   ) where
 
 import Abstract.Morphism
@@ -84,7 +85,7 @@ class Morphism m => EpiPairs m where
   -- | Create a special case of jointly epimorphic pairs, where the second morphism is a Nac
   -- The first flag indicates Nac satisfability with a monomorphic morphism
   -- The second flag indicates that the other morphism is monomorphic
-  createPairsNac :: NacSatisfaction -> MatchRestriction -> Obj m -> m -> [(m, m)]
+  createPairsNac :: DPOConfig -> Obj m -> m -> [(m, m)]
 
   -- | Given two morphisms from the same domain, create all jointly epimorphic
   -- pairs of morphisms from their codomains, such that the square formed by
@@ -124,3 +125,9 @@ matchRestrictionToProp AnyMatches = ALL
 
 -- | Flag indicating the semantics of NAC satisfaction.
 data NacSatisfaction = MonoNacSatisfaction | PartMonoNacSatisfaction deriving (Eq, Show)
+
+
+data DPOConfig = DPOConfig
+  { matchRestriction :: MatchRestriction
+  , nacSatisfaction :: NacSatisfaction
+  }

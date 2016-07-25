@@ -13,6 +13,7 @@ module Abstract.DPO
   , right
   , nacs
 
+  , DPOConfig(..)
   , MatchRestriction(..)
   , matchRestrictionToProp
   , NacSatisfaction(..)
@@ -69,23 +70,22 @@ data Production m = Production
 production :: (DPO m, Eq (Obj m)) => m -> m -> [m] -> Production m
 production = Production
 
-
 -- | Obtain all matches from the production into the given object, even if they
 -- aren't applicable.
 --
 -- When given `MonoMatches`, only obtains monomorphic matches.
-allMatches :: (DPO m) => MatchRestriction -> Production m -> Obj m -> [m]
-allMatches matchInj production obj =
-  findMorphisms (matchRestrictionToProp matchInj) (codomain $ left production) obj
+allMatches :: (DPO m) => DPOConfig -> Production m -> Obj m -> [m]
+allMatches config production obj =
+  findMorphisms (matchRestrictionToProp $ matchRestriction config) (codomain $ left production) obj
 
 
 -- | Obtain the matches from the production into the given object that satisfiy the NACs
 -- and gluing conditions.
 --
 -- When given `MonoMatches`, only obtains monomorphic matches.
-applicableMatches :: (DPO m) => NacSatisfaction -> MatchRestriction -> Production m -> Obj m -> [m]
-applicableMatches nacInj matchInj production obj =
-  filter (satsGluingAndNacs nacInj matchInj production) (allMatches matchInj production obj)
+applicableMatches :: (DPO m) => DPOConfig -> Production m -> Obj m -> [m]
+applicableMatches config production obj =
+  filter (satsGluingAndNacs config production) (allMatches config production obj)
 
 
 instance (Morphism m, Valid m, Eq (Obj m)) => Valid (Production m) where
@@ -161,52 +161,52 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
   -- in the case of unknown use False
   --
   -- satsGluing injFlag (left of a production) match
-  satsGluing :: MatchRestriction -> m -> m -> Bool
+  satsGluing :: DPOConfig -> m -> m -> Bool
 
   -- | Inverts a production, adjusting the NACs accordingly.
   -- Needs information of nac injective satisfaction (in second order)
   -- and matches injective.
-  inverse :: DPO m => NacSatisfaction -> MatchRestriction -> Production m -> Production m
+  inverse :: DPO m => DPOConfig -> Production m -> Production m
 
   -- | Given a production /L ←l- K -r→ R/ and a NAC morphism /n : L -> N/, obtain
   -- a set of NACs /n'i : R -> N'i/ that is equivalent to the original NAC.
   --
   -- TODO: review name
-  shiftLeftNac :: DPO m => NacSatisfaction -> MatchRestriction -> Production m -> m -> [m]
+  shiftLeftNac :: DPO m => DPOConfig -> Production m -> m -> [m]
 
   -- | Check if the second morphism is monomorphic outside the image of the
   -- first morphism.
   partiallyMonomorphic :: m -> m -> Bool
 --{-# WARNING partiallyMonomorphic "Only necessary until 'partInjMatches' is corrected" #-}
 
+
 -- | True if the given match satisfies all NACs of the given production.
-satsNacs :: DPO m => NacSatisfaction -> Production m -> m -> Bool
-satsNacs nacInj rule m = all (satisfiesSingleNac nacInj m) (nacs rule)
+satsNacs :: DPO m => DPOConfig -> Production m -> m -> Bool
+satsNacs config production match =
+  all (satisfiesSingleNac config match) (nacs production)
+
 
 -- | Check gluing conditions and the NACs satisfaction for a pair of matches
 -- @inj@ only indicates if the match is injective, this function does not checks it
 --
 -- TODO: deprecate? why do we need this __here__?
-satsGluingNacsBoth :: DPO m => NacSatisfaction -> MatchRestriction
-                            -> (Production m, m) -> (Production m, m) -> Bool
-satsGluingNacsBoth nacInj inj (l,m1) (r,m2) =
-  satsGluingAndNacs nacInj inj l m1 && satsGluingAndNacs nacInj inj r m2
+satsGluingNacsBoth :: DPO m => DPOConfig -> (Production m, m) -> (Production m, m) -> Bool
+satsGluingNacsBoth config (l,m1) (r,m2) =
+  satsGluingAndNacs config l m1 && satsGluingAndNacs config r m2
+
 
 -- | True if the given match satisfies the gluing condition and NACs of the
 -- given production.
-satsGluingAndNacs :: DPO m => NacSatisfaction -> MatchRestriction
-                           -> Production m -> m -> Bool
-satsGluingAndNacs nacInj inj rule m = gluingCond && nacsCondition
-    where
-        gluingCond    = satsGluing inj (left rule) m
-        nacsCondition = satsNacs nacInj rule m
+satsGluingAndNacs :: DPO m => DPOConfig -> Production m -> m -> Bool
+satsGluingAndNacs config production match =
+  satsGluing config (left production) match && satsNacs config production match
 
 
-satisfiesSingleNac :: DPO m => NacSatisfaction -> m -> m -> Bool
-satisfiesSingleNac nacSats match nac =
+satisfiesSingleNac :: DPO m => DPOConfig -> m -> m -> Bool
+satisfiesSingleNac config match nac =
   let
     nacMatches =
-      case nacSats of
+      case nacSatisfaction config of
         MonoNacSatisfaction ->
           findMorphisms MONO (codomain nac) (codomain match)
 
@@ -222,8 +222,8 @@ satisfiesSingleNac nacSats match nac =
 -- | Given a morphism /m : L -> L'/ and a NAC /n : L -> N/, obtains
 -- an equivalent set of NACs /n'i : L' -> N'i/ that is equivalent to the
 -- original NAC.
-downwardShift :: EpiPairs m => MatchRestriction -> m -> m -> [m]
-downwardShift inj m n = newNacs
+downwardShift :: EpiPairs m => DPOConfig -> m -> m -> [m]
+downwardShift config m n = newNacs
   where
-    pairs = commutingPairsAlt (n,True) (m, inj == MonoMatches) --Bool indicates injective
+    pairs = commutingPairsAlt (n,True) (m, matchRestriction config == MonoMatches)
     newNacs = map snd pairs

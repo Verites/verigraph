@@ -249,7 +249,15 @@ instance EpiPairs (TypedGraphMorphism a b) where
   -- | Create all jointly surjective pairs of @m1@ and @m2@ with some of both injective
   --createPairsAlt (m1,inj1) (m2,inj2) = map (mountTGMBoth m1 m2) (genGraphEqClass (mixGM (m1,inj1) (m2,inj2)))
 
-  createPairsNac nacInj inj r nac = map (mountTGMBoth r (codomain nac)) (genGraphEqClass (mixNac (r, inj == MonoMatches) (nac, nacInj == MonoNacSatisfaction)))
+  createPairsNac config r nac =
+    map (mountTGMBoth r (codomain nac)) (genGraphEqClass (mixNac (r, matchInj) (nac, nacInj)))
+
+    where
+      matchInj =
+        matchRestriction config == MonoMatches
+
+      nacInj =
+        nacSatisfaction config == MonoNacSatisfaction
 
   -- | Create all jointly surjective pairs of @m1@ and @m2@ that commutes,
   -- considering they have same domain

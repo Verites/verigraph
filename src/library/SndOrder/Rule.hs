@@ -77,14 +77,16 @@ instance DPO (RuleMorphism a b) where
     danglingSpan (left (codomain m)) (mappingLeft m) (mappingInterface m) (mappingLeft l) (mappingInterface l) &&
     danglingSpan (right (codomain m)) (mappingRight m) (mappingInterface m) (mappingRight l) (mappingInterface l)
 
-  inverse nacInj inj r = addMinimalSafetyNacs nacInj newRule
+  inverse config r = addMinimalSafetyNacs config newRule
     where
-      newRule = production (right r) (left r) (concatMap (shiftLeftNac nacInj inj r) (nacs r))
+      newRule = production (right r) (left r) (concatMap (shiftLeftNac config r) (nacs r))
 
   -- | Needs the satsNacs extra verification because not every satsGluing nac can be shifted
-  shiftLeftNac nacInj inj rule n = [comatch n rule |
-                               satsGluing inj (left rule) n &&
-                               satsNacs nacInj ruleWithOnlyMinimalSafetyNacs n]
+  shiftLeftNac config rule n =
+    [comatch n rule |
+      satsGluing config (left rule) n &&
+      satsNacs config ruleWithOnlyMinimalSafetyNacs n]
+
     where
       ruleWithOnlyMinimalSafetyNacs = production (left rule) (right rule) (minimalSafetyNacs rule)
 
@@ -105,12 +107,11 @@ danglingSpan matchRuleSide matchMorp matchK l k = deletedNodesInK && deletedEdge
     edgesInK = [a | a <- edgesDomain matchRuleSide, applyEdgeTGMUnsafe matchRuleSide a `elem` deletedEdges]
     deletedEdgesInK = all (ruleDeletes k matchK applyEdgeTGM edgesDomain) edgesInK
 
-applySndOrderRule :: NacSatisfaction -> MatchRestriction
-                  -> (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String, GraphRule a b)]
-applySndOrderRule nacInj inj (sndName,sndRule) (fstName,fstRule) =
+applySndOrderRule :: DPOConfig -> (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String, GraphRule a b)]
+applySndOrderRule config (sndName,sndRule) (fstName,fstRule) =
   let
     matches =
-      applicableMatches nacInj inj sndRule fstRule
+      applicableMatches config sndRule fstRule
 
     newRules =
       map (`rewrite` sndRule) matches
@@ -122,7 +123,7 @@ applySndOrderRule nacInj inj (sndName,sndRule) (fstName,fstRule) =
 
 -- | Adds the minimal safety nacs needed to this production always produce a second order rule.
 -- If the nacs to be added not satisfies the others nacs, then it do not need to be added.
-addMinimalSafetyNacs :: NacSatisfaction -> SndOrderRule a b -> SndOrderRule a b
+addMinimalSafetyNacs :: DPOConfig -> SndOrderRule a b -> SndOrderRule a b
 addMinimalSafetyNacs nacInj sndRule =
   production
     (left sndRule)
