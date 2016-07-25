@@ -85,6 +85,8 @@ class Morphism m => EpiPairs m where
   -- | Create a special case of jointly epimorphic pairs, where the second morphism is a Nac
   -- The first flag indicates Nac satisfability with a monomorphic morphism
   -- The second flag indicates that the other morphism is monomorphic
+  --
+  -- FIXME: nacs don't belong in this module
   createPairsNac :: DPOConfig -> Obj m -> m -> [(m, m)]
 
   -- | Given two morphisms from the same domain, create all jointly epimorphic
@@ -119,9 +121,9 @@ class Morphism m => EpiPairs m where
 data MatchRestriction = MonoMatches | AnyMatches deriving (Eq, Show)
 
 -- | Converts a match restriction to the corresponding restriction for morphism search
-matchRestrictionToProp :: MatchRestriction -> PROP
-matchRestrictionToProp MonoMatches = MONO
-matchRestrictionToProp AnyMatches = ALL
+matchRestrictionToProp :: MatchRestriction -> MorphismRestriction
+matchRestrictionToProp MonoMatches = MonoMorphisms
+matchRestrictionToProp AnyMatches = AnyMorphisms
 
 -- | Flag indicating the semantics of NAC satisfaction.
 data NacSatisfaction = MonoNacSatisfaction | PartMonoNacSatisfaction deriving (Eq, Show)

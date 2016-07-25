@@ -61,7 +61,7 @@ deleteUse :: GraphRule a b -> GraphRule a b
 deleteUse l _ (m1,m2) = Prelude.null matchD
     where
         (_,d1) = RW.pushoutComplement m1 (left l) --get only the morphism D2 to G
-        l2TOd1 = matches ALL (domain m2) (domain d1)
+        l2TOd1 = matches AnyMorphisms (domain m2) (domain d1)
         matchD = filter (\x -> m2 == compose x d1) l2TOd1
 
 
@@ -89,7 +89,7 @@ typeE gm e = fromMaybe (error "EDGE NOT TYPED") $ GM.applyEdge gm e
 -- | Finds matches __/m/__
 --
 --   Injective, surjective, isomorphic or all possible matches
-matches' :: PROP -> GM.GraphMorphism a b-> GM.GraphMorphism a b
+matches' :: MorphismRestriction -> GM.GraphMorphism a b-> GM.GraphMorphism a b
         -> [TGM.TypedGraphMorphism a b]
 matches' prop graph1 graph2 =
   buildMappings prop nodesSrc edgesSrc nodesTgt edgesTgt tgm
@@ -109,16 +109,16 @@ matches' prop graph1 graph2 =
 
 ---------------------------------------------------------------------------------
 
-buildMappings :: PROP -> [G.NodeId] -> [G.EdgeId] -> [G.NodeId] -> [G.EdgeId]
+buildMappings :: MorphismRestriction -> [G.NodeId] -> [G.EdgeId] -> [G.NodeId] -> [G.EdgeId]
               -> TGM.TypedGraphMorphism a b -> [TGM.TypedGraphMorphism a b]
 
 --IF NO HAS FREE NODES OR FREE EDGES TO MAP, RETURN THE FOUND MORPHISMO
 buildMappings prop [] [] nodesT edgesT tgm =
       case prop of
-        ALL  -> all
-        MONO -> all
-        EPI  -> epimorphism
-        ISO  -> isomorphism
+        AnyMorphisms  -> all
+        MonoMorphisms -> all
+        EpiMorphisms  -> epimorphism
+        IsoMorphisms  -> isomorphism
       where
         all = return tgm
 
@@ -131,23 +131,23 @@ buildMappings prop [] [] nodesT edgesT tgm =
 
 ---------------------------------------------------------------------------------
 
---IF HAS FREE NODES, MAP ALL FREE NODES TO ALL DESTINATION NODES
+--IF HAS FREE NODES, MAP AnyMorphisms FREE NODES TO AnyMorphisms DESTINATION NODES
 buildMappings prop (h:t) [] nodesT edgesT tgm
   | L.null nodesT = []
   | otherwise  = do
       y <- nodesT
 
-      --MAP FREE NODES TO ALL TYPE COMPATIBLE DESTINATION NODES
+      --MAP FREE NODES TO AnyMorphisms TYPE COMPATIBLE DESTINATION NODES
       let tgmN = updateNodesMapping h y nodesT tgm
 
       case tgmN of
         Just tgm' ->
           --CHOSE BETWEEN INJECTIVE OR NOT
           case prop of
-            ALL  -> all
-            MONO -> monomorphism
-            EPI  -> all
-            ISO  -> monomorphism
+            AnyMorphisms  -> all
+            MonoMorphisms -> monomorphism
+            EpiMorphisms  -> all
+            IsoMorphisms  -> monomorphism
           where
             monomorphism = buildMappings prop t [] nodesT' edgesT tgm'
             all          = buildMappings prop t [] nodesT  edgesT tgm'
@@ -172,10 +172,10 @@ buildMappings prop nodes (h:t) nodesT edgesT tgm
                   d = domain $ domain tgm
                   c = domain $ codomain tgm
                   nodesT' = case prop of
-                    MONO -> L.delete (srcE c y) nodesT
-                    ISO  -> L.delete (srcE c y) nodesT
-                    EPI  -> nodesT
-                    ALL  -> nodesT
+                    MonoMorphisms -> L.delete (srcE c y) nodesT
+                    IsoMorphisms  -> L.delete (srcE c y) nodesT
+                    EpiMorphisms  -> nodesT
+                    AnyMorphisms  -> nodesT
 
           --MAPPING SRC EDGE AND TGT EDGE
           tgmE
@@ -195,10 +195,10 @@ buildMappings prop nodes (h:t) nodesT edgesT tgm
               all          = buildMappings prop nodes' t nodesT  edgesT  tgm'
               --CHOSE BETWEEN INJECTIVE OR NOT
           case prop of
-            ALL  -> all
-            MONO -> monomorphism
-            EPI  -> all
-            ISO  -> monomorphism
+            AnyMorphisms  -> all
+            MonoMorphisms -> monomorphism
+            EpiMorphisms  -> all
+            IsoMorphisms  -> monomorphism
         Nothing  -> []
 
 ---------------------------------------------------------------------------------

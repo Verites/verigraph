@@ -208,7 +208,7 @@ satisfiesSingleNac config match nac =
     nacMatches =
       case nacSatisfaction config of
         MonoNacSatisfaction ->
-          findMorphisms MONO (codomain nac) (codomain match)
+          findMorphisms MonoMorphisms (codomain nac) (codomain match)
 
         PartMonoNacSatisfaction ->
           partInjMatches nac match

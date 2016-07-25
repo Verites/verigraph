@@ -15,34 +15,30 @@ class (Eq m) => Morphism m where
     isomorphism :: m -> Bool
 
 -- | Restriction to morphisms that may be considered when searching for them.
---
--- TODO: rename following Haskell naming conventions (not all caps)
-data PROP
-  = ALL   -- ^ Finds all possible matches
-  | MONO  -- ^ Finds only monomorphic matches
-  | EPI   -- ^ Finds only epimorphic matches
-  | ISO   -- ^ Finds only isomorphic matches
+data MorphismRestriction
+  = AnyMorphisms -- ^ Allows all morphisms
+  | MonoMorphisms -- ^ Allows only monomorphisms
+  | EpiMorphisms -- ^ Allows only epimorphisms
+  | IsoMorphisms -- ^ Allows only isomorphisms
   deriving (Show)
 
 -- | Receives a bool indicating injective or arbitrary match,
--- converts it to data PROP
-injectiveBoolToProp :: Bool -> PROP
-injectiveBoolToProp True = MONO
-injectiveBoolToProp False = ALL
+-- converts it to data MorphismRestriction
+injectiveBoolToProp :: Bool -> MorphismRestriction
+injectiveBoolToProp True = MonoMorphisms
+injectiveBoolToProp False = AnyMorphisms
 
 class Morphism m => FindMorphism m where
   -- | Finds matches __/m/__
   --
   --   Injective, surjective, isomorphic or all possible matches
-  --
-  -- TODO: rename to allMorphismsBetween?
-  findMorphisms :: PROP -> Obj m -> Obj m -> [m]
+  findMorphisms :: MorphismRestriction -> Obj m -> Obj m -> [m]
 
   -- | Finds matches __/q/__ .
   --
   --   Partially injective. (Injective out of __/m/__)
   --
-  -- TODO: replace by data constructor @PartMono :: m -> PROP@?
+  -- TODO: replace by data constructor @PartMono :: m -> MorphismRestriction@?
   --
   -- TODO: what is the second argument??
   --
