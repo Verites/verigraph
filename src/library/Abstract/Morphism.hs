@@ -22,11 +22,6 @@ data MorphismRestriction
   | IsoMorphisms -- ^ Allows only isomorphisms
   deriving (Show)
 
--- | Receives a bool indicating injective or arbitrary match,
--- converts it to data MorphismRestriction
-injectiveBoolToProp :: Bool -> MorphismRestriction
-injectiveBoolToProp True = MonoMorphisms
-injectiveBoolToProp False = AnyMorphisms
 
 class Morphism m => FindMorphism m where
   -- | Finds matches __/m/__
