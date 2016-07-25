@@ -109,9 +109,9 @@ instance Morphism (RuleMorphism a b) where
 instance FindMorphism (RuleMorphism a b) where
   -- | A match between two rules, only considers monomorphic matches morphisms:
   -- (desconsidering the NACs)
-  matches prop l g = map (buildPair l g) rightMatch
+  findMorphisms prop l g = map (buildPair l g) rightMatch
     where
-      matchesK = matches prop (domain (left l)) (domain (left g))
+      matchesK = findMorphisms prop (domain (left l)) (domain (left g))
       leftMatch = concatMap (leftM prop l g) matchesK
       rightMatch = concatMap (rightM prop l g) leftMatch
 
@@ -121,20 +121,20 @@ instance FindMorphism (RuleMorphism a b) where
         partiallyMonomorphic (mappingLeft n) (mappingLeft q) &&
         partiallyMonomorphic (mappingInterface n) (mappingInterface q) &&
         partiallyMonomorphic (mappingRight n) (mappingRight q))
-      (matches ALL (codomain n) (codomain m))
+      (findMorphisms ALL (codomain n) (codomain m))
 
 -- commutes left side
 leftM :: FindMorphism t => PROP -> Production t -> Production t -> t -> [(t, t)]
 leftM prop l g mapK = map (\m -> (m, mapK)) commuting
   where
-    matchesL = matches prop (codomain (left l)) (codomain (left g))
+    matchesL = findMorphisms prop (codomain (left l)) (codomain (left g))
     commuting = filter (\m -> compose (left l) m == compose mapK (left g)) matchesL
 
 -- commutes right side
 rightM :: FindMorphism t =>  PROP -> Production t -> Production t -> (t, t) -> [(t, t, t)]
 rightM prop l g (mapL,mapK) = map (\m -> (mapL, mapK, m)) commuting
   where
-    matchesR = matches prop (codomain (right l)) (codomain (right g))
+    matchesR = findMorphisms prop (codomain (right l)) (codomain (right g))
     commuting = filter (\m -> compose (right l) m == compose mapK (right g)) matchesR
 
 -- kind of curry for three arguments
@@ -214,7 +214,7 @@ createSideRule :: Bool -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> Gr
 createSideRule inj k1 sideM1 s1 k2 sideM2 s2 = d
   where
     a = createPairs inj s1 s2
-    b = concatMap (\(s1,s2) -> sequence [[s1],[s2], matches MONO (codomain k1) (codomain s1)]) a
+    b = concatMap (\(s1,s2) -> sequence [[s1],[s2], findMorphisms MONO (codomain k1) (codomain s1)]) a
     c = map (\(x:y:z:_) -> (x,y,z)) b
     d = filter (\(ss1,ss2,m) -> compose sideM1 ss1 == compose k1 m &&
                                 compose sideM2 ss2 == compose k2 m) c
@@ -275,7 +275,7 @@ commutingMorphismSameDomain :: TypedGraphMorphism a b -> TypedGraphMorphism a b
                             -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 commutingMorphismSameDomain k1 s1 k2 s2 = typedMorphism (codomain k1) (codomain s1) select
   where
-    mats = matches MONO (codomain k1) (codomain s1)
+    mats = findMorphisms MONO (codomain k1) (codomain s1)
     filt = filter (\m -> compose k1 m == s1 && compose k2 m == s2) mats
     select = case filt of
                 [] -> error "(domain) Error when commuting monomorphic morphisms (must be generating an invalid rule)"
@@ -302,7 +302,7 @@ commutingMorphismSameCodomain :: TypedGraphMorphism a b -> TypedGraphMorphism a 
                               -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 commutingMorphismSameCodomain k1 s1 k2 s2 = typedMorphism (domain k1) (domain s1) select
   where
-    mats = matches MONO (domain k1) (domain s1)
+    mats = findMorphisms MONO (domain k1) (domain s1)
     filt = filter (\m -> compose m s1 == k1 && compose k2 m == s2) mats
     select = case filt of
                 [] -> error "(domain) Error when commuting monomorphic morphisms (must be generating an invalid rule)"

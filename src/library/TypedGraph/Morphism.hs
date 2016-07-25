@@ -263,7 +263,7 @@ instance EpiPairs (TypedGraphMorphism a b) where
 
 
 instance FindMorphism (TypedGraphMorphism a b) where
-  matches = matches'
+  findMorphisms = matches'
   partInjMatches = partInjMatches'
 
 --ALIAS OF MOST USED FUNCTIONS --

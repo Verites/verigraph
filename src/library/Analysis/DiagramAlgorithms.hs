@@ -57,7 +57,7 @@ deleteUse :: DPO m => MatchRestriction -> Production m -> (m, m) -> Bool
 deleteUse inj l (m1,m2) = null matchD
     where
         (_,l') = RW.pushoutComplement m1 (left l) --get only the morphism D2 to G
-        l2TOd1 = matches (matchRestrictionToProp inj) (domain m2) (domain l')
+        l2TOd1 = findMorphisms (matchRestrictionToProp inj) (domain m2) (domain l')
         matchD = filter (\x -> m2 == compose x l') l2TOd1
 
 -- | Rule @p1@ is in a produce-dangling conflict with @p2@ if @p1@
@@ -68,7 +68,7 @@ produceDangling :: DPO m => NacSatisfaction -> MatchRestriction -> Production m 
 produceDangling nacInj inj l r (m1,m2) = not (null matchD) && not (satsGluing inj (left r) m2') && satsNacs nacInj r m2'
     where
       (k,l') = RW.pushoutComplement m1 (left l)
-      l2TOd1 = matches (matchRestrictionToProp inj) (domain m2) (domain l')
+      l2TOd1 = findMorphisms (matchRestrictionToProp inj) (domain m2) (domain l')
       matchD = filter (\x -> m2 == compose x l') l2TOd1
       (_,r') = RW.pushout k (right l)
       m2' = if length matchD > 1
@@ -86,7 +86,7 @@ deleteUseDangling nacInj inj l r (m1,m2) =
     _            -> Nothing
   where
     (k,l') = RW.pushoutComplement m1 (left l)
-    lTOd = matches (matchRestrictionToProp inj) (domain m2) (domain l')
+    lTOd = findMorphisms (matchRestrictionToProp inj) (domain m2) (domain l')
     matchD = filter (\x -> m2 == compose x l') lTOd
     (_,r') = RW.pushout k (right l)
     m2' = compose (head matchD) r'
@@ -118,7 +118,7 @@ produceForbidOneNac nacInj inj l inverseLeft r (n,idx) = let
 
         --  Check existence of h21: L2 -> D1 st. e1 . h21 = q21 . n2
         h21 = concatMap (\(h1,q21,k,r',m1,l') ->
-                  let hs = matches (matchRestrictionToProp inj) (domain n) (codomain k)
+                  let hs = findMorphisms (matchRestrictionToProp inj) (domain n) (codomain k)
                       list = map (\h -> compose h r' == compose n q21) hs in
                        case elemIndex True list of
                            Just ind -> [(h1,q21,k,r',m1,l',hs!!ind)]

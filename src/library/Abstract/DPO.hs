@@ -35,8 +35,11 @@ module Abstract.DPO
   -- | Given a production and a match for its left side, it may be possible
   -- to apply the production and obtain a transformation of the matched graph.
   -- This section provides functions that calculate such transformations.
+  , allMatches
+  , applicableMatches
   , dpo
   , comatch
+  , rewrite
 
 
   -- ** Manipulating
@@ -65,6 +68,25 @@ data Production m = Production
 -- Note: this doesn't check that the production is valid.
 production :: (DPO m, Eq (Obj m)) => m -> m -> [m] -> Production m
 production = Production
+
+
+-- | Obtain all matches from the production into the given object, even if they
+-- aren't applicable.
+--
+-- When given `MonoMatches`, only obtains monomorphic matches.
+allMatches :: (DPO m) => MatchRestriction -> Production m -> Obj m -> [m]
+allMatches matchInj production obj =
+  findMorphisms (matchRestrictionToProp matchInj) (codomain $ left production) obj
+
+
+-- | Obtain the matches from the production into the given object that satisfiy the NACs
+-- and gluing conditions.
+--
+-- When given `MonoMatches`, only obtains monomorphic matches.
+applicableMatches :: (DPO m) => NacSatisfaction -> MatchRestriction -> Production m -> Obj m -> [m]
+applicableMatches nacInj matchInj production obj =
+  filter (satsGluingAndNacs nacInj matchInj production) (allMatches matchInj production obj)
+
 
 instance (Morphism m, Valid m, Eq (Obj m)) => Valid (Production m) where
   valid (Production l r nacs) =
@@ -117,6 +139,13 @@ dpo m (Production l r _) =
 -- nor if the match satisfies all application conditions.
 comatch :: AdhesiveHLR m => m -> Production m -> m
 comatch m prod = let (_,m',_,_) = dpo m prod in m'
+
+-- | Given a match and a production, obtain the rewritten object.
+--
+-- @rewrite match production@ is equivalent to @'codomain' ('comatch' match production)@
+rewrite :: AdhesiveHLR m => m -> Production m -> Obj m
+rewrite m prod =
+  codomain (comatch m prod)
 
 -- | Discards the NACs of a production and inverts it.
 inverseWithoutNacs :: Production m -> Production m
@@ -172,16 +201,23 @@ satsGluingAndNacs nacInj inj rule m = gluingCond && nacsCondition
         gluingCond    = satsGluing inj (left rule) m
         nacsCondition = satsNacs nacInj rule m
 
+
 satisfiesSingleNac :: DPO m => NacSatisfaction -> m -> m -> Bool
-satisfiesSingleNac nacSats m nac = not $ any (\nacMatch -> compose nac nacMatch == m) nacMatches
-  where
-    nacMatches = case nacSats of
-                  MonoNacSatisfaction ->
-                      let objG   = codomain m
-                          objNac = codomain nac
-                      in matches MONO objNac objG
-                  PartMonoNacSatisfaction ->
-                      partInjMatches nac m
+satisfiesSingleNac nacSats match nac =
+  let
+    nacMatches =
+      case nacSats of
+        MonoNacSatisfaction ->
+          findMorphisms MONO (codomain nac) (codomain match)
+
+        PartMonoNacSatisfaction ->
+          partInjMatches nac match
+
+    commutes nacMatch =
+      compose nac nacMatch == match
+  in
+    not $ any commutes nacMatches
+
 
 -- | Given a morphism /m : L -> L'/ and a NAC /n : L -> N/, obtains
 -- an equivalent set of NACs /n'i : L' -> N'i/ that is equivalent to the

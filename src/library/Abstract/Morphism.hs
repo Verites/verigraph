@@ -36,7 +36,7 @@ class Morphism m => FindMorphism m where
   --   Injective, surjective, isomorphic or all possible matches
   --
   -- TODO: rename to allMorphismsBetween?
-  matches :: PROP -> Obj m -> Obj m -> [m]
+  findMorphisms :: PROP -> Obj m -> Obj m -> [m]
 
   -- | Finds matches __/q/__ .
   --

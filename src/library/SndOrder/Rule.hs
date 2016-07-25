@@ -12,7 +12,6 @@ import Data.Maybe (fromMaybe)
 
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
-import           Abstract.Morphism
 import           Graph.Graph as G
 import           TypedGraph.GraphRule
 import qualified Graph.GraphMorphism as GM
@@ -108,20 +107,18 @@ danglingSpan matchRuleSide matchMorp matchK l k = deletedNodesInK && deletedEdge
 
 applySndOrderRule :: NacSatisfaction -> MatchRestriction
                   -> (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String, GraphRule a b)]
-applySndOrderRule nacInj inj (sndName,sndRule) (fstName,fstRule) = zip newNames newRules
-  where
-    newNames = map (\number -> fstName ++ "_" ++ sndName ++ "_" ++ show number) ([0..] :: [Int])
-    leftRule = left sndRule
-    rightRule = right sndRule
-    mats = matches (matchRestrictionToProp inj) (codomain leftRule) fstRule
-    gluing = filter (satsGluing inj leftRule) mats
-    nacs = filter (satsNacs nacInj sndRule) gluing
-    newRules = map
-                 (\match ->
-                   let (k,_)  = pushoutComplement match leftRule
-                       (m',_) = pushout k rightRule in
-                       codomain m'
-                   ) nacs
+applySndOrderRule nacInj inj (sndName,sndRule) (fstName,fstRule) =
+  let
+    matches =
+      applicableMatches nacInj inj sndRule fstRule
+
+    newRules =
+      map (`rewrite` sndRule) matches
+
+    newNames =
+      map (\number -> fstName ++ "_" ++ sndName ++ "_" ++ show number) ([0..] :: [Int])
+  in
+    zip newNames newRules
 
 -- | Adds the minimal safety nacs needed to this production always produce a second order rule.
 -- If the nacs to be added not satisfies the others nacs, then it do not need to be added.

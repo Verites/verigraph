@@ -12,7 +12,6 @@ module Analysis.InterLevelCP (interLevelConflict, evo) where
 
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
-import           Abstract.Morphism
 import           Abstract.Valid
 import           Analysis.DiagramAlgorithms
 import           Graph.Graph
@@ -110,19 +109,21 @@ danglingExtension gl l = tlUpdated
             newGraph = createNodeCodTGM nodeId typeNewNode tgm
 
 interLevelConflict :: NacSatisfaction -> MatchRestriction -> (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String,(RuleMorphism a b, TypedGraphMorphism a b))]
-interLevelConflict nacInj inj (sndName,sndRule) (fstName,fstRule) = zip newNames (concatMap conflicts validMatches)
+interLevelConflict nacInj inj (sndName, sndRule) (fstName, fstRule) =
+  zip newNames (concatMap conflictsForMatch validMatches)
+
   where
-    newNames = map (\number -> fstName ++ "_" ++ sndName ++ "_" ++ show number) ([0..] :: [Int])
-    sndOrderL = left sndRule
-    leftRule = codomain sndOrderL
+    validMatches =
+      applicableMatches nacInj inj sndRule fstRule
 
-    mats = matches (matchRestrictionToProp inj) leftRule fstRule
-    validMatches = filter (satsGluingAndNacs nacInj inj sndRule) mats
-
-    conflicts m =
+    conflictsForMatch match =
       do
-        a <- interLevelConflictOneMatch nacInj inj sndRule m
-        return (m,a)
+        conflicts <- interLevelConflictOneMatch nacInj inj sndRule match
+        return (match, conflicts)
+
+    newNames =
+      map (\number -> fstName ++ "_" ++ sndName ++ "_" ++ show number) ([0..] :: [Int])
+
 
 interLevelConflictOneMatch :: NacSatisfaction -> MatchRestriction -> SndOrderRule a b -> RuleMorphism a b -> [TypedGraphMorphism a b]
 interLevelConflictOneMatch nacInj inj sndRule match = m0s
@@ -151,12 +152,11 @@ interLevelConflictOneMatch nacInj inj sndRule match = m0s
 
     defineMatches ax = filter conflicts validMatches
       where
-        mats = matches (matchRestrictionToProp inj) (codomain bigL) (codomain ax)
-        validMatches = filter (satsGluingAndNacs nacInj inj p) mats
+        validMatches = applicableMatches nacInj inj p (codomain ax)
 
         conflicts m0 = Prelude.null validM0''-- or all (==False) (map (\m'' -> satsGluing inj bigL'' m'') validM0'') --thesis def
           where
-            matchesM0'' = matches (matchRestrictionToProp inj) (codomain bigL'') (codomain m0)
+            matchesM0'' = allMatches inj p'' (codomain m0)
             validMatch = satsGluingAndNacs nacInj inj p''
 
             commutes m0'' = compose fl m0 == compose gl m0''
