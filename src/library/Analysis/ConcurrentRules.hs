@@ -52,7 +52,7 @@ epiPairsForConcurrentRule OnlyDependency config c n =
 epiPairsForConcurrentRule _ config c n =
   let matchInj = matchRestriction config == MonoMatches
       allPairs = createPairs matchInj (codomain (right c)) (codomain (left n))
-      isValidPair (lp, rp) = satsGluing config (right c) lp && satsGluing config (left n) rp
+      isValidPair (lp, rp) = satsGluing config (inverseWithoutNacs c) lp && satsGluing config n rp
   in filter isValidPair allPairs
 
 concurrentRuleForPair :: (DPO m, EpiPairs m, Eq (Obj m)) => DPOConfig -> Production m -> Production m -> (m, m) -> Production m

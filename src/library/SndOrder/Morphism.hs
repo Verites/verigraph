@@ -16,7 +16,7 @@ import Abstract.Morphism
 import Abstract.Valid
 import Graph.GraphMorphism
 import TypedGraph.Morphism
-import TypedGraph.GraphRule ()
+import TypedGraph.GraphRule
 
 -- | A morphism between two rules.
 --
@@ -253,6 +253,25 @@ instance AdhesiveHLR (RuleMorphism a b) where
 
   -- TODO
   injectivePullback _ _ = error "injectivePullback not implemented in RuleMorphism"
+
+  hasPushoutComplement (restrictionG, g) (restrictionF, f) =
+    hasPushoutComplement (restrictionG, mappingLeft g) (restrictionF, mappingLeft f)
+    && hasPushoutComplement (restrictionG, mappingRight g) (restrictionF, mappingRight f)
+    && hasPushoutComplement (restrictionG, mappingInterface g) (restrictionF, mappingInterface f)
+    && danglingSpan (left $ codomain g) (mappingLeft g) (mappingInterface g) (mappingLeft f) (mappingInterface f)
+    && danglingSpan (right $ codomain g) (mappingRight g) (mappingInterface g) (mappingRight f) (mappingInterface f)
+
+-- | A gluing condition for pushout complements of rule morphisms
+danglingSpan :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
+danglingSpan matchRuleSide matchMorp matchK l k = deletedNodesInK && deletedEdgesInK
+  where
+    deletedNodes = filter (ruleDeletes l matchMorp applyNodeTGM nodesDomain) (nodesCodomain matchMorp)
+    nodesInK = [a | a <- nodesDomain matchRuleSide, applyNodeTGMUnsafe matchRuleSide a `elem` deletedNodes]
+    deletedNodesInK = all (ruleDeletes k matchK applyNodeTGM nodesDomain) nodesInK
+
+    deletedEdges = filter (ruleDeletes l matchMorp applyEdgeTGM edgesDomain) (edgesCodomain matchMorp)
+    edgesInK = [a | a <- edgesDomain matchRuleSide, applyEdgeTGMUnsafe matchRuleSide a `elem` deletedEdges]
+    deletedEdgesInK = all (ruleDeletes k matchK applyEdgeTGM edgesDomain) edgesInK
 
 
 -- | Given the morphisms /k1 : X -> Y/, /s1 : X -> Z/,

@@ -70,13 +70,6 @@ applySecondOrderListRules ::
 applySecondOrderListRules f sndRule = concatMap (f sndRule)
 
 instance DPO (RuleMorphism a b) where
-  satsGluing inj l m =
-    satsGluing inj (mappingLeft l)      (mappingLeft m)      &&
-    satsGluing inj (mappingInterface l) (mappingInterface m) &&
-    satsGluing inj (mappingRight l)     (mappingRight m)     &&
-    danglingSpan (left (codomain m)) (mappingLeft m) (mappingInterface m) (mappingLeft l) (mappingInterface l) &&
-    danglingSpan (right (codomain m)) (mappingRight m) (mappingInterface m) (mappingRight l) (mappingInterface l)
-
   inverse config r = addMinimalSafetyNacs config newRule
     where
       newRule = production (right r) (left r) (concatMap (shiftLeftNac config r) (nacs r))
@@ -84,7 +77,7 @@ instance DPO (RuleMorphism a b) where
   -- | Needs the satsNacs extra verification because not every satsGluing nac can be shifted
   shiftLeftNac config rule n =
     [comatch n rule |
-      satsGluing config (left rule) n &&
+      satsGluing config rule n &&
       satsNacs config ruleWithOnlyMinimalSafetyNacs n]
 
     where
@@ -94,18 +87,6 @@ instance DPO (RuleMorphism a b) where
     partiallyMonomorphic (mappingLeft m)      (mappingLeft l)      &&
     partiallyMonomorphic (mappingInterface m) (mappingInterface l) &&
     partiallyMonomorphic (mappingRight m)     (mappingRight l)
-
--- | A gluing condition for second order rules application
-danglingSpan :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
-danglingSpan matchRuleSide matchMorp matchK l k = deletedNodesInK && deletedEdgesInK
-  where
-    deletedNodes = filter (ruleDeletes l matchMorp applyNodeTGM nodesDomain) (nodesCodomain matchMorp)
-    nodesInK = [a | a <- nodesDomain matchRuleSide, applyNodeTGMUnsafe matchRuleSide a `elem` deletedNodes]
-    deletedNodesInK = all (ruleDeletes k matchK applyNodeTGM nodesDomain) nodesInK
-
-    deletedEdges = filter (ruleDeletes l matchMorp applyEdgeTGM edgesDomain) (edgesCodomain matchMorp)
-    edgesInK = [a | a <- edgesDomain matchRuleSide, applyEdgeTGMUnsafe matchRuleSide a `elem` deletedEdges]
-    deletedEdgesInK = all (ruleDeletes k matchK applyEdgeTGM edgesDomain) edgesInK
 
 applySndOrderRule :: DPOConfig -> (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String, GraphRule a b)]
 applySndOrderRule config (sndName,sndRule) (fstName,fstRule) =

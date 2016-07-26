@@ -66,16 +66,17 @@ deleteUse config l (m1,m2) = null matchD
 --
 -- Gets the match of @p1@ from L2 to P1, checks if satsNacs and not satsGluing
 produceDangling :: DPO m => DPOConfig -> Production m -> Production m -> (m, m) -> Bool
-produceDangling config l r (m1,m2) = not (null matchD) && not (satsGluing config (left r) m2') && satsNacs config r m2'
-    where
-      (k,l') = RW.pushoutComplement m1 (left l)
-      morphismRestriction = matchRestrictionToProp (matchRestriction config)
-      l2TOd1 = findMorphisms morphismRestriction (domain m2) (domain l')
-      matchD = filter (\x -> m2 == compose x l') l2TOd1
-      (_,r') = RW.pushout k (right l)
-      m2' = if length matchD > 1
-              then error "produceDangling: non unique h21 morphism"
-              else compose (head matchD) r' --matchD is unique if exists
+produceDangling config l r (m1,m2) =
+  not (null matchD) && not (satsGluing config r m2') && satsNacs config r m2'
+  where
+    (k,l') = RW.pushoutComplement m1 (left l)
+    morphismRestriction = matchRestrictionToProp (matchRestriction config)
+    l2TOd1 = findMorphisms morphismRestriction (domain m2) (domain l')
+    matchD = filter (\x -> m2 == compose x l') l2TOd1
+    (_,r') = RW.pushout k (right l)
+    m2' = if length matchD > 1
+            then error "produceDangling: non unique h21 morphism"
+            else compose (head matchD) r' --matchD is unique if exists
 
 -- | Verifies delete-use, if false verifies produce-dangling.
 -- Returns Left in the case o delete-use and Right for produce-dangling.
@@ -93,7 +94,7 @@ deleteUseDangling config l r (m1,m2) =
     matchD = filter (\x -> m2 == compose x l') lTOd
     (_,r') = RW.pushout k (right l)
     m2' = compose (head matchD) r'
-    dang = not (satsGluing config (left r) m2') && satsNacs config r m2'
+    dang = not (satsGluing config r m2') && satsNacs config r m2'
 
 -- | Rule @p1@ is in a produce-forbid conflict with @p2@ if @p1@
 -- produces something that able some nac of @p2@.

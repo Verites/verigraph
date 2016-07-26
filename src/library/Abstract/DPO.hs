@@ -27,6 +27,7 @@ module Abstract.DPO
   -- if such conditions are met.
 
   , DPO(..)
+  , satsGluing
   , satsNacs
   , satsGluingAndNacs
   , satsGluingNacsBoth
@@ -154,15 +155,6 @@ inverseWithoutNacs p = Production (right p) (left p) []
 -- | Class for morphisms whose category is Adhesive-HLR, and which can be
 -- used for double-pushout transformations.
 class (AdhesiveHLR m, FindMorphism m) => DPO m where
-  -- | True if the given match satisfies the gluing condition for the given production.
-  -- This function does not need all production, just the left morphism.
-  --
-  -- Bool only indicates if the match is injective,
-  -- in the case of unknown use False
-  --
-  -- satsGluing injFlag (left of a production) match
-  satsGluing :: DPOConfig -> m -> m -> Bool
-
   -- | Inverts a production, adjusting the NACs accordingly.
   -- Needs information of nac injective satisfaction (in second order)
   -- and matches injective.
@@ -179,6 +171,13 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
   partiallyMonomorphic :: m -> m -> Bool
 --{-# WARNING partiallyMonomorphic "Only necessary until 'partInjMatches' is corrected" #-}
 
+satsGluing :: DPO m => DPOConfig -> Production m -> m -> Bool
+satsGluing config production match =
+  hasPushoutComplement (matchIsMono, match) (AnyMorphisms, left production)
+
+  where
+    matchIsMono =
+      matchRestrictionToProp (matchRestriction config)
 
 -- | True if the given match satisfies all NACs of the given production.
 satsNacs :: DPO m => DPOConfig -> Production m -> m -> Bool
@@ -199,7 +198,7 @@ satsGluingNacsBoth config (l,m1) (r,m2) =
 -- given production.
 satsGluingAndNacs :: DPO m => DPOConfig -> Production m -> m -> Bool
 satsGluingAndNacs config production match =
-  satsGluing config (left production) match && satsNacs config production match
+  satsGluing config production match && satsNacs config production match
 
 
 satisfiesSingleNac :: DPO m => DPOConfig -> m -> m -> Bool

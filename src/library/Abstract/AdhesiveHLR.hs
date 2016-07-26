@@ -34,11 +34,13 @@ class (Morphism m) => AdhesiveHLR m where
   -- @
   pushout :: m -> m -> (m, m)
 
-  -- | Calculate the pushout complement for two sequential morphisms.
+
+  -- | Checks if the given sequential morphisms have a pushout complement, assuming they satsify
+  -- the given restriction.
   --
-  -- Given the morphisms /g : B -> C/ and /f : A -> B/, respectively, returns
-  -- the pair of morphisms /f' : A -> X/ and /g' : X -> B/ such that the
-  -- following square is a pushout.
+  -- Given the morphisms /g : B -> C/ and /f : A -> B/, respectively, tests if
+  -- there exists a pair of morphisms /f' : A -> X/ and /g' : X -> B/ such that the
+  -- following square is a pushout. Since the category is Adhesive, such a pair is unique.
   --
   -- @
   --        f
@@ -50,7 +52,28 @@ class (Morphism m) => AdhesiveHLR m where
   --        f'
   -- @
   --
-  -- TODO: what if it doesn't exist??
+  -- If restrictions are known of one of the morphisms, they should be given. The implementation
+  -- of this operation may then assume such restrictions for more efficient calculation.
+  hasPushoutComplement :: (MorphismRestriction, m) -> (MorphismRestriction, m) -> Bool
+
+
+  -- | Calculate the pushout complement for two sequential morphisms, __assumes it exists__.
+  --
+  -- In order to test if the pushout complement exists, use 'hasPushoutComplement'.
+  --
+  -- Given the morphisms /g : B -> C/ and /f : A -> B/, respectively, returns
+  -- the pair of morphisms /f' : A -> X/ and /g' : X -> B/ such that the
+  -- following square is a pushout. Since the category is Adhesive, such a pair is unique.
+  --
+  -- @
+  --        f
+  --     A──────▶B
+  --     │       │
+  --  g' │       │ g
+  --     ▼       ▼
+  --     X──────▶C
+  --        f'
+  -- @
   pushoutComplement :: m -> m -> (m, m)
 
   -- | Calculate the pullback between the two given morphisms
