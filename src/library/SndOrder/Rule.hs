@@ -12,7 +12,6 @@ import Data.Maybe (fromMaybe)
 
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
-import           Abstract.Morphism
 import           Graph.Graph as G
 import           TypedGraph.GraphRule
 import qualified Graph.GraphMorphism as GM
@@ -71,21 +70,16 @@ applySecondOrderListRules ::
 applySecondOrderListRules f sndRule = concatMap (f sndRule)
 
 instance DPO (RuleMorphism a b) where
-  satsGluing inj l m =
-    satsGluing inj (mappingLeft l)      (mappingLeft m)      &&
-    satsGluing inj (mappingInterface l) (mappingInterface m) &&
-    satsGluing inj (mappingRight l)     (mappingRight m)     &&
-    danglingSpan (left (codomain m)) (mappingLeft m) (mappingInterface m) (mappingLeft l) (mappingInterface l) &&
-    danglingSpan (right (codomain m)) (mappingRight m) (mappingInterface m) (mappingRight l) (mappingInterface l)
-
-  inverse nacInj inj r = addMinimalSafetyNacs nacInj newRule
+  inverse config r = addMinimalSafetyNacs config newRule
     where
-      newRule = production (right r) (left r) (concatMap (shiftLeftNac nacInj inj r) (nacs r))
+      newRule = production (right r) (left r) (concatMap (shiftLeftNac config r) (nacs r))
 
   -- | Needs the satsNacs extra verification because not every satsGluing nac can be shifted
-  shiftLeftNac nacInj inj rule n = [comatch n rule |
-                               satsGluing inj (left rule) n &&
-                               satsNacs nacInj ruleWithOnlyMinimalSafetyNacs n]
+  shiftLeftNac config rule n =
+    [comatch n rule |
+      satsGluing config rule n &&
+      satsNacs config ruleWithOnlyMinimalSafetyNacs n]
+
     where
       ruleWithOnlyMinimalSafetyNacs = production (left rule) (right rule) (minimalSafetyNacs rule)
 
@@ -94,38 +88,23 @@ instance DPO (RuleMorphism a b) where
     partiallyMonomorphic (mappingInterface m) (mappingInterface l) &&
     partiallyMonomorphic (mappingRight m)     (mappingRight l)
 
--- | A gluing condition for second order rules application
-danglingSpan :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
-danglingSpan matchRuleSide matchMorp matchK l k = deletedNodesInK && deletedEdgesInK
-  where
-    deletedNodes = filter (ruleDeletes l matchMorp applyNodeTGM nodesDomain) (nodesCodomain matchMorp)
-    nodesInK = [a | a <- nodesDomain matchRuleSide, applyNodeTGMUnsafe matchRuleSide a `elem` deletedNodes]
-    deletedNodesInK = all (ruleDeletes k matchK applyNodeTGM nodesDomain) nodesInK
+applySndOrderRule :: DPOConfig -> (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String, GraphRule a b)]
+applySndOrderRule config (sndName,sndRule) (fstName,fstRule) =
+  let
+    matches =
+      applicableMatches config sndRule fstRule
 
-    deletedEdges = filter (ruleDeletes l matchMorp applyEdgeTGM edgesDomain) (edgesCodomain matchMorp)
-    edgesInK = [a | a <- edgesDomain matchRuleSide, applyEdgeTGMUnsafe matchRuleSide a `elem` deletedEdges]
-    deletedEdgesInK = all (ruleDeletes k matchK applyEdgeTGM edgesDomain) edgesInK
+    newRules =
+      map (`rewrite` sndRule) matches
 
-applySndOrderRule :: NacSatisfaction -> MatchRestriction
-                  -> (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String, GraphRule a b)]
-applySndOrderRule nacInj inj (sndName,sndRule) (fstName,fstRule) = zip newNames newRules
-  where
-    newNames = map (\number -> fstName ++ "_" ++ sndName ++ "_" ++ show number) ([0..] :: [Int])
-    leftRule = left sndRule
-    rightRule = right sndRule
-    mats = matches (matchRestrictionToProp inj) (codomain leftRule) fstRule
-    gluing = filter (satsGluing inj leftRule) mats
-    nacs = filter (satsNacs nacInj sndRule) gluing
-    newRules = map
-                 (\match ->
-                   let (k,_)  = pushoutComplement match leftRule
-                       (m',_) = pushout k rightRule in
-                       codomain m'
-                   ) nacs
+    newNames =
+      map (\number -> fstName ++ "_" ++ sndName ++ "_" ++ show number) ([0..] :: [Int])
+  in
+    zip newNames newRules
 
 -- | Adds the minimal safety nacs needed to this production always produce a second order rule.
 -- If the nacs to be added not satisfies the others nacs, then it do not need to be added.
-addMinimalSafetyNacs :: NacSatisfaction -> SndOrderRule a b -> SndOrderRule a b
+addMinimalSafetyNacs :: DPOConfig -> SndOrderRule a b -> SndOrderRule a b
 addMinimalSafetyNacs nacInj sndRule =
   production
     (left sndRule)

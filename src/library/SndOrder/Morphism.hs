@@ -16,7 +16,7 @@ import Abstract.Morphism
 import Abstract.Valid
 import Graph.GraphMorphism
 import TypedGraph.Morphism
-import TypedGraph.GraphRule ()
+import TypedGraph.GraphRule
 
 -- | A morphism between two rules.
 --
@@ -109,9 +109,9 @@ instance Morphism (RuleMorphism a b) where
 instance FindMorphism (RuleMorphism a b) where
   -- | A match between two rules, only considers monomorphic matches morphisms:
   -- (desconsidering the NACs)
-  matches prop l g = map (buildPair l g) rightMatch
+  findMorphisms prop l g = map (buildPair l g) rightMatch
     where
-      matchesK = matches prop (domain (left l)) (domain (left g))
+      matchesK = findMorphisms prop (domain (left l)) (domain (left g))
       leftMatch = concatMap (leftM prop l g) matchesK
       rightMatch = concatMap (rightM prop l g) leftMatch
 
@@ -121,20 +121,20 @@ instance FindMorphism (RuleMorphism a b) where
         partiallyMonomorphic (mappingLeft n) (mappingLeft q) &&
         partiallyMonomorphic (mappingInterface n) (mappingInterface q) &&
         partiallyMonomorphic (mappingRight n) (mappingRight q))
-      (matches ALL (codomain n) (codomain m))
+      (findMorphisms AnyMorphisms (codomain n) (codomain m))
 
 -- commutes left side
-leftM :: FindMorphism t => PROP -> Production t -> Production t -> t -> [(t, t)]
+leftM :: FindMorphism t => MorphismRestriction -> Production t -> Production t -> t -> [(t, t)]
 leftM prop l g mapK = map (\m -> (m, mapK)) commuting
   where
-    matchesL = matches prop (codomain (left l)) (codomain (left g))
+    matchesL = findMorphisms prop (codomain (left l)) (codomain (left g))
     commuting = filter (\m -> compose (left l) m == compose mapK (left g)) matchesL
 
 -- commutes right side
-rightM :: FindMorphism t =>  PROP -> Production t -> Production t -> (t, t) -> [(t, t, t)]
+rightM :: FindMorphism t =>  MorphismRestriction -> Production t -> Production t -> (t, t) -> [(t, t, t)]
 rightM prop l g (mapL,mapK) = map (\m -> (mapL, mapK, m)) commuting
   where
-    matchesR = matches prop (codomain (right l)) (codomain (right g))
+    matchesR = findMorphisms prop (codomain (right l)) (codomain (right g))
     commuting = filter (\m -> compose (right l) m == compose mapK (right g)) matchesR
 
 -- kind of curry for three arguments
@@ -174,7 +174,7 @@ instance EpiPairs (RuleMorphism a b) where
   partitions _ _ = error "Not implemented"
 
   --FIXME
-  createPairsNac _ _ r nac = allPairs
+  createPairsNac _ r nac = allPairs
     where
       allPairs = createPairs True r (codomain nac)
   {-createPairsNac nacInj inj r nac = satsMorphisms
@@ -214,7 +214,7 @@ createSideRule :: Bool -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> Gr
 createSideRule inj k1 sideM1 s1 k2 sideM2 s2 = d
   where
     a = createPairs inj s1 s2
-    b = concatMap (\(s1,s2) -> sequence [[s1],[s2], matches MONO (codomain k1) (codomain s1)]) a
+    b = concatMap (\(s1,s2) -> sequence [[s1],[s2], findMorphisms MonoMorphisms (codomain k1) (codomain s1)]) a
     c = map (\(x:y:z:_) -> (x,y,z)) b
     d = filter (\(ss1,ss2,m) -> compose sideM1 ss1 == compose k1 m &&
                                 compose sideM2 ss2 == compose k2 m) c
@@ -254,6 +254,25 @@ instance AdhesiveHLR (RuleMorphism a b) where
   -- TODO
   injectivePullback _ _ = error "injectivePullback not implemented in RuleMorphism"
 
+  hasPushoutComplement (restrictionG, g) (restrictionF, f) =
+    hasPushoutComplement (restrictionG, mappingLeft g) (restrictionF, mappingLeft f)
+    && hasPushoutComplement (restrictionG, mappingRight g) (restrictionF, mappingRight f)
+    && hasPushoutComplement (restrictionG, mappingInterface g) (restrictionF, mappingInterface f)
+    && danglingSpan (left $ codomain g) (mappingLeft g) (mappingInterface g) (mappingLeft f) (mappingInterface f)
+    && danglingSpan (right $ codomain g) (mappingRight g) (mappingInterface g) (mappingRight f) (mappingInterface f)
+
+-- | A gluing condition for pushout complements of rule morphisms
+danglingSpan :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
+danglingSpan matchRuleSide matchMorp matchK l k = deletedNodesInK && deletedEdgesInK
+  where
+    deletedNodes = filter (ruleDeletes l matchMorp applyNodeTGM nodesDomain) (nodesCodomain matchMorp)
+    nodesInK = [a | a <- nodesDomain matchRuleSide, applyNodeTGMUnsafe matchRuleSide a `elem` deletedNodes]
+    deletedNodesInK = all (ruleDeletes k matchK applyNodeTGM nodesDomain) nodesInK
+
+    deletedEdges = filter (ruleDeletes l matchMorp applyEdgeTGM edgesDomain) (edgesCodomain matchMorp)
+    edgesInK = [a | a <- edgesDomain matchRuleSide, applyEdgeTGMUnsafe matchRuleSide a `elem` deletedEdges]
+    deletedEdgesInK = all (ruleDeletes k matchK applyEdgeTGM edgesDomain) edgesInK
+
 
 -- | Given the morphisms /k1 : X -> Y/, /s1 : X -> Z/,
 -- /k2 : W -> Y/ and /s2 : W -> Z/, respectively,
@@ -275,7 +294,7 @@ commutingMorphismSameDomain :: TypedGraphMorphism a b -> TypedGraphMorphism a b
                             -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 commutingMorphismSameDomain k1 s1 k2 s2 = typedMorphism (codomain k1) (codomain s1) select
   where
-    mats = matches MONO (codomain k1) (codomain s1)
+    mats = findMorphisms MonoMorphisms (codomain k1) (codomain s1)
     filt = filter (\m -> compose k1 m == s1 && compose k2 m == s2) mats
     select = case filt of
                 [] -> error "(domain) Error when commuting monomorphic morphisms (must be generating an invalid rule)"
@@ -302,7 +321,7 @@ commutingMorphismSameCodomain :: TypedGraphMorphism a b -> TypedGraphMorphism a 
                               -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 commutingMorphismSameCodomain k1 s1 k2 s2 = typedMorphism (domain k1) (domain s1) select
   where
-    mats = matches MONO (domain k1) (domain s1)
+    mats = findMorphisms MonoMorphisms (domain k1) (domain s1)
     filt = filter (\m -> compose m s1 == k1 && compose k2 m == s2) mats
     select = case filt of
                 [] -> error "(domain) Error when commuting monomorphic morphisms (must be generating an invalid rule)"

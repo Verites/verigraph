@@ -6,6 +6,7 @@ module Abstract.AdhesiveHLR
   , MatchRestriction(..)
   , matchRestrictionToProp
   , NacSatisfaction(..)
+  , DPOConfig(..)
   ) where
 
 import Abstract.Morphism
@@ -33,11 +34,13 @@ class (Morphism m) => AdhesiveHLR m where
   -- @
   pushout :: m -> m -> (m, m)
 
-  -- | Calculate the pushout complement for two sequential morphisms.
+
+  -- | Checks if the given sequential morphisms have a pushout complement, assuming they satsify
+  -- the given restriction.
   --
-  -- Given the morphisms /g : B -> C/ and /f : A -> B/, respectively, returns
-  -- the pair of morphisms /f' : A -> X/ and /g' : X -> B/ such that the
-  -- following square is a pushout.
+  -- Given the morphisms /g : B -> C/ and /f : A -> B/, respectively, tests if
+  -- there exists a pair of morphisms /f' : A -> X/ and /g' : X -> B/ such that the
+  -- following square is a pushout. Since the category is Adhesive, such a pair is unique.
   --
   -- @
   --        f
@@ -49,7 +52,28 @@ class (Morphism m) => AdhesiveHLR m where
   --        f'
   -- @
   --
-  -- TODO: what if it doesn't exist??
+  -- If restrictions are known of one of the morphisms, they should be given. The implementation
+  -- of this operation may then assume such restrictions for more efficient calculation.
+  hasPushoutComplement :: (MorphismRestriction, m) -> (MorphismRestriction, m) -> Bool
+
+
+  -- | Calculate the pushout complement for two sequential morphisms, __assumes it exists__.
+  --
+  -- In order to test if the pushout complement exists, use 'hasPushoutComplement'.
+  --
+  -- Given the morphisms /g : B -> C/ and /f : A -> B/, respectively, returns
+  -- the pair of morphisms /f' : A -> X/ and /g' : X -> B/ such that the
+  -- following square is a pushout. Since the category is Adhesive, such a pair is unique.
+  --
+  -- @
+  --        f
+  --     A──────▶B
+  --     │       │
+  --  g' │       │ g
+  --     ▼       ▼
+  --     X──────▶C
+  --        f'
+  -- @
   pushoutComplement :: m -> m -> (m, m)
 
   -- | Calculate the pullback between the two given morphisms
@@ -84,7 +108,9 @@ class Morphism m => EpiPairs m where
   -- | Create a special case of jointly epimorphic pairs, where the second morphism is a Nac
   -- The first flag indicates Nac satisfability with a monomorphic morphism
   -- The second flag indicates that the other morphism is monomorphic
-  createPairsNac :: NacSatisfaction -> MatchRestriction -> Obj m -> m -> [(m, m)]
+  --
+  -- FIXME: nacs don't belong in this module
+  createPairsNac :: DPOConfig -> Obj m -> m -> [(m, m)]
 
   -- | Given two morphisms from the same domain, create all jointly epimorphic
   -- pairs of morphisms from their codomains, such that the square formed by
@@ -118,9 +144,15 @@ class Morphism m => EpiPairs m where
 data MatchRestriction = MonoMatches | AnyMatches deriving (Eq, Show)
 
 -- | Converts a match restriction to the corresponding restriction for morphism search
-matchRestrictionToProp :: MatchRestriction -> PROP
-matchRestrictionToProp MonoMatches = MONO
-matchRestrictionToProp AnyMatches = ALL
+matchRestrictionToProp :: MatchRestriction -> MorphismRestriction
+matchRestrictionToProp MonoMatches = MonoMorphisms
+matchRestrictionToProp AnyMatches = AnyMorphisms
 
 -- | Flag indicating the semantics of NAC satisfaction.
 data NacSatisfaction = MonoNacSatisfaction | PartMonoNacSatisfaction deriving (Eq, Show)
+
+
+data DPOConfig = DPOConfig
+  { matchRestriction :: MatchRestriction
+  , nacSatisfaction :: NacSatisfaction
+  }

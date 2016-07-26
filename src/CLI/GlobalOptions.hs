@@ -1,14 +1,13 @@
 module GlobalOptions
   ( GlobalOptions
   , globalOpts
-  , arbitraryMatches
-  , injectiveNacSatisfaction
+  , dpoConfig
   , verbose
   , inputFile
   ) where
 
 import           Options.Applicative
-import           Abstract.AdhesiveHLR (NacSatisfaction(..), MatchRestriction(..))
+import           Abstract.AdhesiveHLR (NacSatisfaction(..), MatchRestriction(..), DPOConfig(..))
 
 data GlobalOptions = GOpts
   { arbitraryMatches         :: MatchRestriction
@@ -16,6 +15,11 @@ data GlobalOptions = GOpts
   , verbose                  :: Bool
   , inputFile                :: String
   }
+
+
+dpoConfig :: GlobalOptions -> DPOConfig
+dpoConfig opts = DPOConfig (arbitraryMatches opts) (injectiveNacSatisfaction opts)
+
 
 globalOpts :: Parser GlobalOptions
 globalOpts = GOpts

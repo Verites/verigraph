@@ -237,6 +237,70 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
       delEdgesFromG' = foldr removeEdgeDomTyped g' delEdges
       delNodesFromG' = foldr removeNodeDomTyped delEdgesFromG' delNodes
 
+  hasPushoutComplement (MonoMorphisms, g) (_, f) =
+    satisfiesDanglingCondition f g
+
+  hasPushoutComplement (_, g) (_, f) =
+    satisfiesDanglingCondition f g && satisfiesIdentificationCondition f g
+
+
+---- Gluing Conditions
+
+-- | Return True if the match @m@ satifies the identification condition for existence of
+-- a pushout complement
+satisfiesIdentificationCondition :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
+satisfiesIdentificationCondition l m =
+  all (==True) (nodesDelPres ++ edgesDelPres)
+
+  where
+    nodesDelPres =
+      map (satsDelItemsAux l m nodesDomain applyNodeTGM) (nodesCodomain m)
+
+    edgesDelPres =
+      map (satsDelItemsAux l m edgesDomain applyEdgeTGM) (edgesCodomain m)
+
+    -- | Check if in the match @m@, a element @n@ is deleted and at same time have another incident element on himself
+    satsDelItemsAux :: Eq t => TypedGraphMorphism a b -> TypedGraphMorphism a b
+                             -> (TypedGraphMorphism a b -> [t])
+                             -> (TypedGraphMorphism a b -> t -> Maybe t)
+                             -> t -> Bool
+    -- if just one element is incident in @n@, so it is not deleted and preserved at same match
+    -- otherwise, is needed to verify if in the list of incident elements, if some is deleting @n@
+    -- if two or more incident elements delete the element @n@ return False
+    satsDelItemsAux l m dom apply n =
+      (length incident <= 1) || not someIsDel
+
+      where
+        incident = [a | a <- dom m, apply m a == Just n]
+        ruleDel = apply (invertTGM l)
+        someIsDel = any (==Nothing) (map ruleDel incident)
+
+-- | Return True if do not exist dangling edges by the derivation of @r@ with match @m@
+satisfiesDanglingCondition :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
+satisfiesDanglingCondition leftR m = all (==True) (concat incidentEdgesDel)
+    where
+        l = graphDomain m
+        g = graphCodomain m
+        matchedLInG = mapMaybe (applyNodeTGM m) (nodes l)
+        delNodes = filter (ruleDeletes leftR m applyNodeTGM nodesDomain) matchedLInG
+        hasIncEdges = map (incidentEdges g) delNodes
+        verEdgeDel = map (ruleDeletes leftR m applyEdgeTGM edgesDomain)
+        incidentEdgesDel = map verEdgeDel hasIncEdges
+
+-- | Return True if the element @n@ is deleted by the rule @rule@ with match @m@
+-- assumes that @n@ has type NodeId or EdgeId
+-- @n@ not is necessarily element of G (the graph matched by @m@), in this case return False
+-- @list@ must get all element in the domain of @m@
+ruleDeletes :: Eq t => TypedGraphMorphism a b -> TypedGraphMorphism a b
+                  -> (TypedGraphMorphism a b -> t -> Maybe t)
+                  -> (TypedGraphMorphism a b -> [t])
+                  -> t -> Bool
+ruleDeletes l m apply list n = inL && not isPreserv
+    where
+        inL = any (\x -> apply m x == Just n) (list m)
+        kToG = compose l m
+        isPreserv = any (\x -> apply kToG x == Just n) (list kToG)
+
 instance EpiPairs (TypedGraphMorphism a b) where
   -- | Create all jointly surjective pairs of @m1@ and @m2@
   createPairs inj m1 m2 = map (mountTGMBoth m1 m2) (genGraphEqClass (mixGM (m1,inj) (m2,inj)))
@@ -249,7 +313,15 @@ instance EpiPairs (TypedGraphMorphism a b) where
   -- | Create all jointly surjective pairs of @m1@ and @m2@ with some of both injective
   --createPairsAlt (m1,inj1) (m2,inj2) = map (mountTGMBoth m1 m2) (genGraphEqClass (mixGM (m1,inj1) (m2,inj2)))
 
-  createPairsNac nacInj inj r nac = map (mountTGMBoth r (codomain nac)) (genGraphEqClass (mixNac (r, inj == MonoMatches) (nac, nacInj == MonoNacSatisfaction)))
+  createPairsNac config r nac =
+    map (mountTGMBoth r (codomain nac)) (genGraphEqClass (mixNac (r, matchInj) (nac, nacInj)))
+
+    where
+      matchInj =
+        matchRestriction config == MonoMatches
+
+      nacInj =
+        nacSatisfaction config == MonoNacSatisfaction
 
   -- | Create all jointly surjective pairs of @m1@ and @m2@ that commutes,
   -- considering they have same domain
@@ -263,7 +335,7 @@ instance EpiPairs (TypedGraphMorphism a b) where
 
 
 instance FindMorphism (TypedGraphMorphism a b) where
-  matches = matches'
+  findMorphisms = matches'
   partInjMatches = partInjMatches'
 
 --ALIAS OF MOST USED FUNCTIONS --
@@ -363,7 +435,7 @@ partInjMatches' nac match =
 
     case q'' of
       Nothing -> []
-      Just q2 -> buildMappings MONO nodesSrc edgesSrc nodesTgt edgesTgt q2
+      Just q2 -> buildMappings MonoMorphisms nodesSrc edgesSrc nodesTgt edgesTgt q2
         where
           --DELETE FROM QUEUE ALREADY MAPPED SOURCE NODES (NODES FROM NAC)
           nodesSrc = filter (notMappedNodes q2) (nodes $ domain domQ)
@@ -385,7 +457,7 @@ partInjMatches' nac match =
 -- | Finds matches __/m/__
 --
 --   Injective, surjective, isomorphic or all possible matches
-matches' :: PROP -> GM.GraphMorphism a b-> GM.GraphMorphism a b
+matches' :: MorphismRestriction -> GM.GraphMorphism a b-> GM.GraphMorphism a b
         -> [TypedGraphMorphism a b]
 matches' prop graph1 graph2 =
   buildMappings prop nodesSrc edgesSrc nodesTgt edgesTgt tgm
@@ -405,16 +477,16 @@ matches' prop graph1 graph2 =
 
 ---------------------------------------------------------------------------------
 
-buildMappings :: PROP -> [G.NodeId] -> [G.EdgeId] -> [G.NodeId] -> [G.EdgeId]
+buildMappings :: MorphismRestriction -> [G.NodeId] -> [G.EdgeId] -> [G.NodeId] -> [G.EdgeId]
               -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
 
 --IF NO HAS FREE NODES OR FREE EDGES TO MAP, RETURN THE FOUND MORPHISMO
 buildMappings prop [] [] nodesT edgesT tgm =
       case prop of
-        ALL  -> all
-        MONO -> all
-        EPI  -> epimorphism
-        ISO  -> isomorphism
+        AnyMorphisms  -> all
+        MonoMorphisms -> all
+        EpiMorphisms  -> epimorphism
+        IsoMorphisms  -> isomorphism
       where
         all = return tgm
 
@@ -427,23 +499,23 @@ buildMappings prop [] [] nodesT edgesT tgm =
 
 ---------------------------------------------------------------------------------
 
---IF HAS FREE NODES, MAP ALL FREE NODES TO ALL DESTINATION NODES
+--IF HAS FREE NODES, MAP AnyMorphisms FREE NODES TO AnyMorphisms DESTINATION NODES
 buildMappings prop (h:t) [] nodesT edgesT tgm
   | L.null nodesT = []
   | otherwise  = do
       y <- nodesT
 
-      --MAP FREE NODES TO ALL TYPE COMPATIBLE DESTINATION NODES
+      --MAP FREE NODES TO AnyMorphisms TYPE COMPATIBLE DESTINATION NODES
       let tgmN = updateNodesMapping h y nodesT tgm
 
       case tgmN of
         Just tgm' ->
           --CHOSE BETWEEN INJECTIVE OR NOT
           case prop of
-            ALL  -> all
-            MONO -> monomorphism
-            EPI  -> all
-            ISO  -> monomorphism
+            AnyMorphisms  -> all
+            MonoMorphisms -> monomorphism
+            EpiMorphisms  -> all
+            IsoMorphisms  -> monomorphism
           where
             monomorphism = buildMappings prop t [] nodesT' edgesT tgm'
             all          = buildMappings prop t [] nodesT  edgesT tgm'
@@ -468,10 +540,10 @@ buildMappings prop nodes (h:t) nodesT edgesT tgm
                   d = domain $ domain tgm
                   c = domain $ codomain tgm
                   nodesT' = case prop of
-                    MONO -> L.delete (srcE c y) nodesT
-                    ISO  -> L.delete (srcE c y) nodesT
-                    EPI  -> nodesT
-                    ALL  -> nodesT
+                    MonoMorphisms -> L.delete (srcE c y) nodesT
+                    IsoMorphisms  -> L.delete (srcE c y) nodesT
+                    EpiMorphisms  -> nodesT
+                    AnyMorphisms  -> nodesT
 
           --MAPPING SRC EDGE AND TGT EDGE
           tgmE
@@ -491,10 +563,10 @@ buildMappings prop nodes (h:t) nodesT edgesT tgm
               all          = buildMappings prop nodes' t nodesT  edgesT  tgm'
               --CHOSE BETWEEN INJECTIVE OR NOT
           case prop of
-            ALL  -> all
-            MONO -> monomorphism
-            EPI  -> all
-            ISO  -> monomorphism
+            AnyMorphisms  -> all
+            MonoMorphisms -> monomorphism
+            EpiMorphisms  -> all
+            IsoMorphisms  -> monomorphism
         Nothing  -> []
 
 ---------------------------------------------------------------------------------
