@@ -1,0 +1,212 @@
+{-|
+Description : Utilities for exploring the state space of DPO-based High-Level Replacement Systems.
+
+Maintainer  : Guilherme G. Azzi <ggazzi@inf.ufrgs.br>
+Stability   : experimental
+
+A High-Level Replacement (HLR) system, along with a starting state, induces a state space that
+may be seen as a transition system or Kripke structure. This module provides a data structure
+for representing the explored portion of such a state space, as well as a monad for doing said
+exploration.
+-}
+
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+module Abstract.DPO.StateSpace
+  (
+  -- * State spaces
+    StateSpace
+  , empty
+  , states
+  , transitions
+  , searchForState
+
+  -- * State space builder
+  , StateSpaceBuilder
+  , runStateSpaceBuilder
+  , evalStateSpaceBuilder
+  , execStateSpaceBuilder
+
+  -- ** Getting the configuration
+  , getDpoConfig
+  , getProductions
+
+  -- ** Accessing the state space
+  , putState
+  , putTransition
+  , findIsomorphicState
+
+  -- ** Exploring the state space
+  , expandSuccessors
+  , depthSearch
+  ) where
+
+import Control.Monad.State as Monad
+import Data.IntMap (IntMap)
+import qualified Data.IntMap as IntMap
+import Data.Set (Set)
+import qualified Data.Set as Set
+
+import Abstract.Morphism
+import Abstract.DPO
+
+
+
+-- | A data structure storing the explored portion of the state space induced by a
+-- High-Level Replacement (HLR) system.
+--
+-- The states are objects in the category, up to isomorphism. Such states are
+-- identified by numeric indices. The transitions are specified as pairs of
+-- indices, so multiple transitions  between the same two states are seen as
+-- a single one.
+data StateSpace m = SS
+  { states :: IntMap (Obj m) -- ^ Obtain the set of (explored) indexed states in a state space.
+  , transitions :: Set (Int, Int) -- ^ Obtain the set of (explored) transitions in a state space.
+  , uid :: Int -- ^ Provides an unused state index.
+  , dpoConfig :: DPOConfig -- ^ Obtain the configuration of DPO semantics for the state space.
+  , productions :: [Production m] -- ^ Obtain the productions of the HLR system of the state space.
+  }
+
+
+-- | An empty state space for the HLR system defined by the given productions, with the given
+-- configuration of the DPO semantics.
+empty :: DPOConfig -> [Production m] -> StateSpace m
+empty = SS IntMap.empty Set.empty 0
+
+
+-- | Tries to find an isomorphic object in the state space, returning its index.
+searchForState :: forall m. (DPO m) => Obj m -> StateSpace m -> Maybe Int
+searchForState obj space =
+  let
+    isIso (_, obj') =
+      let
+        isomorphisms = findMorphisms IsoMorphisms obj obj' :: [m]
+      in
+        not (null isomorphisms)
+  in
+    case filter isIso (IntMap.toList $ states space) of
+      [] ->
+        Nothing
+
+      ((idx, _) : _) ->
+        Just idx
+
+
+
+-- | A monad for exploring the state space of a High-Level Replacement System.
+--
+-- Provides a static configuration of the DPO semantics and a static set of
+newtype StateSpaceBuilder m a = SSB
+  { unSSB :: Monad.State (StateSpace m) a }
+  deriving ( Functor, Applicative, Monad
+           , (MonadState (StateSpace m))
+           )
+
+
+-- | Runs the builder with the given configuration and initial state space.
+runStateSpaceBuilder :: StateSpaceBuilder m a -> StateSpace m -> (a, StateSpace m)
+runStateSpaceBuilder =
+  Monad.runState . unSSB
+
+
+-- | Runs the builder with the given configuration and state space, providing only
+-- the computed value and ignoring the resulting state space.
+evalStateSpaceBuilder :: StateSpaceBuilder m a -> StateSpace m -> a
+evalStateSpaceBuilder  =
+  Monad.evalState . unSSB
+
+
+-- | Runs the builder with the given configuration and state space, ignoring
+-- the computed value and providing only the resulting state space.
+execStateSpaceBuilder :: StateSpaceBuilder m a -> StateSpace m -> StateSpace m
+execStateSpaceBuilder =
+  Monad.execState . unSSB
+
+
+-- | Gets the configuration of DPO semantics for this builder.
+getDpoConfig :: StateSpaceBuilder m DPOConfig
+getDpoConfig =
+  gets dpoConfig
+
+
+-- | Gets the productions of the HLR system being explored in this builder.
+getProductions :: StateSpaceBuilder m [Production m]
+getProductions =
+  gets productions
+
+
+-- | Adds the given state if an isomorphic one doesn't exist. Returns a tuple @(index, isNew)@,
+-- where @index@ is the index of the state and @isNew@ is true if no isomorphic state existed.
+putState :: (DPO m) => Obj m -> StateSpaceBuilder m (Int, Bool)
+putState object =
+  do
+    maybeIndex <- findIsomorphicState object
+
+    case maybeIndex of
+      Just index -> do
+        return (index, False)
+
+      Nothing -> do
+        index <- gets uid
+        modify $ \space ->
+          space
+          { states = IntMap.insert index object (states space)
+          , uid = uid space + 1
+          }
+        return (index, True)
+
+
+-- | Adds a transition between the states with the given indices. Does __not__ check if
+-- such states exist.
+putTransition :: (Int, Int) -> StateSpaceBuilder m ()
+putTransition transition =
+  modify $ \space ->
+    space
+    { transitions = Set.insert transition (transitions space) }
+
+
+-- | Tries to find an isomorphic object in the current state space, returning its index.
+findIsomorphicState :: (DPO m) => Obj m -> StateSpaceBuilder m (Maybe Int)
+findIsomorphicState obj =
+  gets (searchForState obj)
+
+
+
+-- | Finds all transformations of the given state with the productions of the HLR system being explored, adding them to the state space. Returns a list of the successor states as @(index, object, isNew)@, where @isNew@ indicates that the state was not present in the state space before.
+expandSuccessors :: forall m. DPO m => (Int, Obj m) -> StateSpaceBuilder m [(Int, Obj m, Bool)]
+expandSuccessors (index, object) =
+  do
+    prods <- getProductions
+    successorLists <- mapM applyProduction prods
+    return (concat successorLists)
+  where
+    applyProduction prod =
+      do
+        config <- getDpoConfig
+        forM (applicableMatches config prod object) $ \match -> do
+          let object' = rewrite match prod
+
+          (index', isNew) <- putState object'
+          putTransition (index, index')
+          return (index', object', isNew)
+
+
+-- | Runs a depth-first search on the state space, starting on the given object and limiting
+-- the depth to the given number.
+depthSearch :: forall m. DPO m => Int -> Obj m -> StateSpaceBuilder m ()
+depthSearch maxDepth startObject =
+  do
+    (startIndex, _) <- putState startObject
+    go maxDepth (startIndex, startObject)
+
+  where
+    go :: Int -> (Int, Obj m) -> StateSpaceBuilder m ()
+    go 0 _ =
+      return ()
+
+    go depthLeft (index, object) =
+      do
+        sucessors <- expandSuccessors (index, object)
+        forM_ sucessors $ \(index', object', isNew) ->
+          when isNew $
+            go (depthLeft - 1) (index', object')
