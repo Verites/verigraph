@@ -91,17 +91,17 @@ deleteUseDangling config l r (m1,m2) =
 produceForbidOneNac :: (EpiPairs m, DPO m) => DPOConfig
                     -> Production m -> Production m -> Production m
                     -> (m, Int) -> [((m,m), (m,m), (m,Int))]
-produceForbidOneNac nacInj inj l inverseLeft r (n,idx) =
+produceForbidOneNac config l inverseLeft r (n,idx) =
   map (\(q21,h1,m2',m1,m2) -> ((m1,m2), (h1,m2'), (q21,idx))) prodForbids
     where
       -- common names
       r1 = right l
-      restriction = matchRestrictionToProp inj
-      satsGluingNacs = satsGluingAndNacs nacInj inj
+      restriction = matchRestrictionToProp (matchRestriction config)
+      satsGluingNacs = satsGluingAndNacs config
 
       -- Consider for a NAC n (L2 -> N2) of r any jointly surjective
       -- pair of morphisms (m1',q21) with q21 (part)inj
-      allP1 = createPairsNac nacInj inj (codomain r1) n
+      allP1 = createPairsNac config (codomain r1) n
 
       -- Check gluing cond for (m1',r1)
       validP1 = filter (\(m1', _) -> satsGluingNacs inverseLeft m1') allP1
@@ -113,7 +113,7 @@ produceForbidOneNac nacInj inj l inverseLeft r (n,idx) =
           (\(m1', q21) ->
             let (k, m1, r', l') = RW.dpo m1' inverseLeft --allG
             in
-              case satsNacs nacInj l m1 of
+              case satsNacs config l m1 of
                 False -> Nothing
                 True -> Just (m1', q21, k, r', m1, l'))
         validP1
@@ -122,7 +122,7 @@ produceForbidOneNac nacInj inj l inverseLeft r (n,idx) =
       checkH21 =
         mapMaybe
           (\(m1', q21, k, r', m1, l') ->
-            let h21Candidates = matches restriction (domain n) (codomain k)
+            let h21Candidates = findMorphisms restriction (domain n) (codomain k)
                 composeNQ21 = compose n q21
                 validH21 = filter (\h21Cand -> compose h21Cand r' == composeNQ21) h21Candidates
              in

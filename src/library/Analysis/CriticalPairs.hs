@@ -119,15 +119,14 @@ criticalPairs config pLeft pRight =
 
 -- | All DeleteUse caused by the derivation of @pLeft@ before @pRight@.
 -- It occurs when @pLeft@ deletes something used by @pRight@.
-allDeleteUse :: (EpiPairs m, DPO m)
-  => DPOConfig
+allDeleteUse :: (EpiPairs m, DPO m) => DPOConfig
   -> Production m -> Production m -> [CriticalPair m]
 allDeleteUse config pLeft pRight =
   map
     (\m -> CriticalPair m Nothing Nothing DeleteUse)
     delUse
   where
-    pairs = createPairsCodomain config (left pLeft) (left pRight)
+    pairs = createPairsCodomain (matchRestriction config) (left pLeft) (left pRight)
     gluing =
       filter
         (\(m1,m2) -> satsGluingNacsBoth config (pLeft,m1) (pRight,m2))
@@ -138,15 +137,14 @@ allDeleteUse config pLeft pRight =
 
 -- | All ProduceDangling caused by the derivation of @pLeft@ before @pRight@.
 -- It occurs when @pLeft@ creates something that unable @pRight@.
-allProduceDangling :: (EpiPairs m, DPO m)
-  => DPOConfig
+allProduceDangling :: (EpiPairs m, DPO m) => DPOConfig
   -> Production m -> Production m -> [CriticalPair m]
 allProduceDangling config pLeft pRight =
   map
     (\m -> CriticalPair m Nothing Nothing ProduceDangling)
     prodDang
   where
-    pairs = createPairsCodomain config (left pLeft) (left pRight)
+    pairs = createPairsCodomain (matchRestriction config) (left pLeft) (left pRight)
     gluing =
       filter
         (\(m1,m2) -> satsGluingNacsBoth config (pLeft,m1) (pRight,m2))
@@ -157,8 +155,7 @@ allProduceDangling config pLeft pRight =
 
 -- | Tests DeleteUse and ProduceDangling for the same pairs,
 -- more efficient than deal separately.
-allDeleteUseAndDang :: (EpiPairs m, DPO m)
-  => DPOConfig
+allDeleteUseAndDang :: (EpiPairs m, DPO m) => DPOConfig
   -> Production m -> Production m -> [CriticalPair m]
 allDeleteUseAndDang config pLeft pRight =
   map
@@ -167,7 +164,7 @@ allDeleteUseAndDang config pLeft pRight =
       (Right m) -> CriticalPair m Nothing Nothing ProduceDangling)
     conflicts
   where
-    pairs = createPairsCodomain config (left pLeft) (left pRight)
+    pairs = createPairsCodomain (matchRestriction config) (left pLeft) (left pRight)
     gluing =
       filter
         (\(m1,m2) -> satsGluingNacsBoth config (pLeft,m1) (pRight,m2))

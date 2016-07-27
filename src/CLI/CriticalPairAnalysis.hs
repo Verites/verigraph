@@ -75,15 +75,15 @@ execute globalOpts opts = do
         writer = defWriterFun secondOrder dpoConf action
         -- First order conflicts/dependencies
         rules = map snd (GG.rules gg)
-        puMatrix = pairwiseCompare (allProduceUse nacInj onlyInj) rules
-        rdMatrix = pairwiseCompare (allRemoveDangling nacInj onlyInj) rules
-        dfMatrix = pairwiseCompare (allDeleteForbid nacInj onlyInj) rules
-        ddMatrix = pairwiseCompare (allDeliverDelete nacInj onlyInj) rules
-        dgMatrix = pairwiseCompare (allDeliverDangling nacInj onlyInj) rules
-        fpMatrix = pairwiseCompare (allForbidProduce nacInj onlyInj) rules
-        udMatrix = pairwiseCompare (allDeleteUse nacInj onlyInj) rules
-        peMatrix = pairwiseCompare (allProduceDangling nacInj onlyInj) rules
-        pfMatrix = pairwiseCompare (allProduceForbid nacInj onlyInj) rules
+        puMatrix = pairwiseCompare (allProduceUse dpoConf) rules
+        rdMatrix = pairwiseCompare (allRemoveDangling dpoConf) rules
+        dfMatrix = pairwiseCompare (allDeleteForbid dpoConf) rules
+        ddMatrix = pairwiseCompare (allDeliverDelete dpoConf) rules
+        dgMatrix = pairwiseCompare (allDeliverDangling dpoConf) rules
+        fpMatrix = pairwiseCompare (allForbidProduce dpoConf) rules
+        udMatrix = pairwiseCompare (allDeleteUse dpoConf) rules
+        peMatrix = pairwiseCompare (allProduceDangling dpoConf) rules
+        pfMatrix = pairwiseCompare (allProduceForbid dpoConf) rules
         conflictsMatrix = liftMatrix3 (\x y z -> x ++ y ++ z) udMatrix pfMatrix peMatrix
         triDependenciesMatrix = liftMatrix3 (\x y z -> x ++ y ++ z) puMatrix rdMatrix dfMatrix
         irrDependenciesMatrix = liftMatrix3 (\x y z -> x ++ y ++ z) ddMatrix fpMatrix dgMatrix
@@ -111,12 +111,12 @@ execute globalOpts opts = do
 
         printNewNacs = map snd newNacs
 
-        ud2Matrix = pairwiseCompare (allDeleteUse nacInj onlyInj) rules2
-        pd2Matrix = pairwiseCompare (allProduceDangling nacInj onlyInj) rules2
-        pf2Matrix = pairwiseCompare (allProduceForbid nacInj onlyInj) rules2
-        pu2Matrix = pairwiseCompare (allProduceUse nacInj onlyInj) rules2
-        rd2Matrix = pairwiseCompare (allRemoveDangling nacInj onlyInj) rules2
-        df2Matrix = pairwiseCompare (allDeleteForbid nacInj onlyInj) rules2
+        ud2Matrix = pairwiseCompare (allDeleteUse dpoConf) rules2
+        pd2Matrix = pairwiseCompare (allProduceDangling dpoConf) rules2
+        pf2Matrix = pairwiseCompare (allProduceForbid dpoConf) rules2
+        pu2Matrix = pairwiseCompare (allProduceUse dpoConf) rules2
+        rd2Matrix = pairwiseCompare (allRemoveDangling dpoConf) rules2
+        df2Matrix = pairwiseCompare (allDeleteForbid dpoConf) rules2
         conflicts2Matrix = liftMatrix3 (\x y z -> x ++ y ++ z) ud2Matrix pd2Matrix pf2Matrix
         dependencies2Matrix = liftMatrix3 (\x y z -> x ++ y ++ z) pu2Matrix rd2Matrix df2Matrix
 
