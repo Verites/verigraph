@@ -151,12 +151,13 @@ printAnalysis action dpoConf rules =
 
 -- Receives functions that theirs names,
 -- and returns they applicated to the rules
-analysisMatrix :: t -> [a]
-                        -> (t -> a -> a -> [a1])
-                        -> (t -> a -> a -> [a1])
-                        -> (t -> a -> a -> [a1])
-                        -> String -> String -> String -> String
-                        -> [String]
+analysisMatrix :: (EpiPairs m, DPO m)
+  => DPOConfig -> [Production m]
+  -> (DPOConfig -> Production m -> Production m -> [cps])
+  -> (DPOConfig -> Production m -> Production m -> [cps])
+  -> (DPOConfig -> Production m -> Production m -> [cps])
+  -> String -> String -> String -> String
+  -> [String]
 analysisMatrix dpoConf rules f1 f2 f3 n1 n2 n3 n4 =
   let f1Matrix = pairwiseCompare (f1 dpoConf) rules
       f2Matrix = pairwiseCompare (f2 dpoConf) rules
@@ -180,8 +181,8 @@ analysisMatrix dpoConf rules f1 f2 f3 n1 n2 n3 n4 =
       , ""]
 
 defWriterFun :: Bool -> DPOConfig -> AnalysisType
-             ->(GG.GraphGrammar a b -> String
-             -> [(String,String)] -> String -> IO ())
+             -> GG.GraphGrammar a b -> String
+             -> [(String,String)] -> String -> IO ()
 defWriterFun secondOrder config t =
   case (secondOrder,t) of
     (False, Conflicts)    -> GW.writeConflictsFile config

@@ -113,9 +113,9 @@ produceForbidOneNac config l inverseLeft r (n,idx) =
           (\(m1', q21) ->
             let (k, m1, r', l') = RW.dpo m1' inverseLeft --allG
             in
-              case satsNacs config l m1 of
-                False -> Nothing
-                True -> Just (m1', q21, k, r', m1, l'))
+              if satsNacs config l m1
+                then Just (m1', q21, k, r', m1, l')
+                else Nothing)
         validP1
 
       -- Check existence of h21: L2 -> D1, st: e1 . h21 = q21 . n2
@@ -139,7 +139,7 @@ produceForbidOneNac config l inverseLeft r (n,idx) =
             let m2  = compose h21 l'
                 m2' = compose h21 r'
             in
-              case satsGluingNacs r m2 of
-                False -> Nothing
-                True -> Just (q21, m1', m2', m1, m2))
+              if satsGluingNacs r m2
+                then Just (q21, m1', m2', m1, m2)
+                else Nothing)
           checkH21

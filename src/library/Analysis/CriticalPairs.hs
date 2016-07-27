@@ -106,8 +106,7 @@ namedCriticalPairs config rules =
         (n1, n2, criticalPairs config r1 r2)
 
 -- | All Critical Pairs
-criticalPairs :: (EpiPairs m, DPO m)
-  => DPOConfig
+criticalPairs :: (EpiPairs m, DPO m) => DPOConfig
   -> Production m -> Production m -> [CriticalPair m]
 criticalPairs config pLeft pRight =
   allDeleteUseAndDang config pLeft pRight ++
@@ -177,8 +176,7 @@ allDeleteUseAndDang config pLeft pRight =
 --
 -- Rule @pLeft@ causes a produce-forbid conflict with @pRight@ if some
 -- NAC in @pRight@ fails to be satisfied after the aplication of @pLeft@.
-allProduceForbid :: (EpiPairs m, DPO m)
-  => DPOConfig
+allProduceForbid :: (EpiPairs m, DPO m) => DPOConfig
   -> Production m -> Production m -> [CriticalPair m]
 allProduceForbid config pLeft pRight =
   concatMap
@@ -188,8 +186,7 @@ allProduceForbid config pLeft pRight =
     inverseLeft = inverse config pLeft
 
 -- | Check ProduceForbid for a NAC @n@ in @pRight@.
-produceForbid :: (EpiPairs m, DPO m)
-  => DPOConfig -> Production m
+produceForbid :: (EpiPairs m, DPO m) => DPOConfig -> Production m
   -> Production m -> Production m -> (m, Int) -> [CriticalPair m]
 produceForbid config pLeft inverseLeft pRight nac =
   map

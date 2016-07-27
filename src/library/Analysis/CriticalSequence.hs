@@ -112,8 +112,7 @@ createPairsCodomain inj m1 m2 =
   createPairs (inj == MonoMatches) (codomain m1) (codomain m2)
 
 -- | All Critical Sequences
-criticalSequences :: (EpiPairs m, DPO m)
-  => DPOConfig
+criticalSequences :: (EpiPairs m, DPO m) => DPOConfig
   -> Production m -> Production m -> [CriticalSequence m]
 criticalSequences config pLeft pRight =
   allProdUseAndDang config pLeft pRight ++
@@ -134,8 +133,7 @@ criticalSequences config pLeft pRight =
 -- Rule @pLeft@ causes a produce-use dependency with @pRight@
 -- if rule @pLeft@ creates something that is used by @pRight@.
 -- Verify the non existence of h21: L2 -> D1 such that d1 . h21 = m2'.
-allProduceUse :: (DPO m, EpiPairs m)
-  => DPOConfig
+allProduceUse :: (DPO m, EpiPairs m) => DPOConfig
   -> Production m -> Production m -> [CriticalSequence m]
 allProduceUse config pLeft pRight =
   map
@@ -157,7 +155,7 @@ allProduceUse config pLeft pRight =
 -- Rule @pLeft@ causes a remove-dangling dependency with @pRight@
 -- if rule @pLeft@ deletes something that enables @pRight@.
 allRemoveDangling :: (EpiPairs m, DPO m) => DPOConfig
-                  -> Production m -> Production m -> [CriticalSequence m]
+  -> Production m -> Production m -> [CriticalSequence m]
 allRemoveDangling config pLeft pRight =
   map
     (\m -> CriticalSequence Nothing m Nothing RemoveDangling)
@@ -175,8 +173,8 @@ allRemoveDangling config pLeft pRight =
 
 -- | Tests ProduceUse and RemoveDangling for the same pairs,
 -- more efficient than deal separately.
-allProdUseAndDang :: (EpiPairs m, DPO m) =>
-  DPOConfig -> Production m -> Production m -> [CriticalSequence m]
+allProdUseAndDang :: (EpiPairs m, DPO m) => DPOConfig
+  -> Production m -> Production m -> [CriticalSequence m]
 allProdUseAndDang config pLeft pRight =
   map
     (\x -> case x of
@@ -207,8 +205,7 @@ allDeleteForbid config pLeft pRight =
     inverseLeft = inverse config pLeft
 
 -- | Check DeleteForbid for a NAC @n@ in @pRight@
-deleteForbid :: (EpiPairs m, DPO m)
-  => DPOConfig -> Production m
+deleteForbid :: (EpiPairs m, DPO m) => DPOConfig -> Production m
   -> Production m -> Production m -> (m, Int) -> [CriticalSequence m]
 deleteForbid config pLeft inverseLeft pRight nac =
   map
@@ -286,8 +283,7 @@ allForbidProduce config pLeft pRight =
       inverseRight = inverse config pRight
 
 -- | Check ForbidProduce for a NAC @n@ in right of @pLeft@
-forbidProduce :: (EpiPairs m, DPO m)
-  => DPOConfig -> Production m
+forbidProduce :: (EpiPairs m, DPO m) => DPOConfig -> Production m
   -> Production m -> Production m -> (m, Int) -> [CriticalSequence m]
 forbidProduce config inverseLeft inverseRight pRight nac =
   map
