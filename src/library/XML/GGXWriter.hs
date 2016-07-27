@@ -143,7 +143,7 @@ writeCriticalPairAnalysis names rules cpOL csOL = writeCpaOptions : conflictCont
                           [writeConflictContainer "exclude" nacNames rules cpOL,
                            writeConflictFreeContainer rules cpOL]
     dependenceContainer = if null csOL then [] else
-                           [writeConflictContainer "trigger_dependency" nacNames rules csOL,
+                           [writeConflictContainer "trigger_switch_dependency" nacNames rules csOL,
                             writeConflictFreeContainer rules csOL]
     nacNames = filter (\(x,_) -> startswith "NAC" x) names
 
@@ -153,7 +153,7 @@ writeConflictContainer kind nacNames rules overlappings =
     where
       elem = case kind of
                "exclude"            -> "conflictContainer"
-               "trigger_dependency" -> "dependencyContainer"
+               "trigger_switch_dependency" -> "dependencyContainer"
                _ -> error $ "Unexpected kind of conflict/dependency: " ++ kind
 
 writeConflictMatrix :: ArrowXml a => [(String,String)] -> [(String,GR.GraphRule b c)] -> [Overlappings] -> [a XmlTree XmlTree]
