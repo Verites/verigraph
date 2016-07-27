@@ -5,6 +5,7 @@ module XML.GGXReader
    readNames,
    readTypeGraph,
    readRules,
+   readGraphs,
    readSequences,
    instantiateRule,
    instantiateSpan
@@ -66,6 +67,9 @@ readGGName fileName = do
   return ret
 
 -- | Reads the names of node/edge types and NACs, which are necessary when reexporting this grammar.
+--
+-- To lookup the name of a node type, use @"I" ++ show nodeId@ as key, where @nodeId@ is the ID of
+-- the node in the type graph. Lookup of edge types is analogous.
 readNames :: String -> IO [(String,String)]
 readNames fileName = (++) <$> readTypeNames fileName <*> readNacNames fileName
 
@@ -80,6 +84,17 @@ readNacNames fileName = concat <$> runX (parseXML fileName >>> parseNacNames)
 
 readTypeNames :: String -> IO [(String,String)]
 readTypeNames fileName = concat <$> runX (parseXML fileName >>> parseNames)
+
+readGraphs :: String -> IO [(String, TypedGraph a b)]
+readGraphs fileName =
+  do
+    [parsedTypeGraph] <- readTypeGraph fileName
+    let typeGraph = instantiateTypeGraph parsedTypeGraph
+
+    [parsedGraphs] <- runX (parseXML fileName >>> parseGraphs)
+    let instantiate graph@(name, _, _) = (name, instantiateTypedGraph graph typeGraph)
+
+    return $ map instantiate parsedGraphs
 
 readRules :: String -> IO[RuleWithNacs]
 readRules fileName = runX (parseXML fileName >>> parseRule)

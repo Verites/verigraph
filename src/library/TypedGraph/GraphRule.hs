@@ -4,6 +4,10 @@
 module TypedGraph.GraphRule (
     -- * Types
       GraphRule
+    , left
+    , right
+    , nacs
+
     -- * Basic Functions
     , inverseWithoutNacs
     , deletedNodes
@@ -15,7 +19,7 @@ module TypedGraph.GraphRule (
 ) where
 
 
-import           Abstract.DPO
+import           Abstract.DPO             as DPO
 import           Abstract.Morphism
 import           Graph.Graph              as G
 import           TypedGraph.Morphism      as TGM
