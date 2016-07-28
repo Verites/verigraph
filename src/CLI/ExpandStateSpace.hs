@@ -16,6 +16,7 @@ import qualified XML.GGXReader             as XML
 
 import           Control.Monad
 import qualified Data.IntMap as IntMap
+import qualified Data.List as List
 import           System.IO
 import           System.Exit
 import           Text.PrettyPrint.Leijen (hPutDoc)
@@ -34,7 +35,7 @@ main =
 
 data Options = Options
   { maxDepth :: Int
-  , outDir :: Maybe FilePath
+  , drawTo :: Maybe FilePath
   }
 
 
@@ -44,8 +45,8 @@ options = Options
     ( long "max-depth" <> short 'd'
     <> help "Distance from the start graph after which the search stops.")
   <*> optional (strOption $
-        long "output-dir" <> short 'o'
-        <> help "Directory where the output files should be written")
+        long "draw-output-dir" <> short 'o'
+        <> help "Create .dot files for the state space in the given directory.")
 
 
 allOptions :: Parser (GlobalOptions, Options)
@@ -59,38 +60,53 @@ execute :: (GlobalOptions, Options) -> IO ()
 execute (globalOpts, options) =
   do
     grammar <- XML.readGrammar (inputFile globalOpts)
+    ensureAllValid (rules grammar) $ \name -> "Invalid rule '" ++ name ++ "'"
+
     graphs <- XML.readGraphs (inputFile globalOpts)
-    names <- XML.readNames (inputFile globalOpts)
-
-    forM_ graphs $ \(name, graph) ->
-      unless (valid graph) $ do
-        putStrLn ("Invalid graph '" ++ name ++ "'")
-        exitFailure
-
-    forM_ (rules grammar) $ \(name, rule) ->
-      unless (valid rule) $ do
-        putStrLn ("Invalid rule '" ++ name ++ "'")
-        exitFailure
-
+    ensureAllValid graphs $ \name -> "Invalid graph '" ++ name ++ "'"
 
     let stateSpace = exploreStateSpace (dpoConfig globalOpts) (maxDepth options) grammar graphs
-    let exploredStates = IntMap.toList (states stateSpace)
 
+    names <- XML.readNames (inputFile globalOpts)
     let namingContext = makeNamingContext names
-    let fileFor graphName =
-          case outDir options of
-            Nothing -> graphName ++ ".dot"
-            Just dir -> dir ++ "/" ++ graphName ++ ".dot"
 
+    case drawTo options of
+      Nothing ->
+        return ()
+
+      Just dir ->
+        drawStateSpace dir namingContext stateSpace
+
+    return ()
+
+
+-- | Tests if all given graphs are valid. If one isn't, print a message and exit.
+ensureAllValid :: Valid a => [(String, a)] -> (String -> String) -> IO ()
+ensureAllValid items errorMessage =
+  let
+    invalid =
+      filter (not . valid . snd) items
+  in
+    unless (List.null invalid) $ do
+      mapM_ (putStrLn . errorMessage . fst) invalid
+      exitFailure
+
+
+-- | Creates .dot files for the given state space in the given directory.
+--
+-- Uses the naming context for labeling nodes and edges of instance graphs with their types.
+drawStateSpace :: FilePath -> Dot.NamingContext -> StateSpace (TypedGraphMorphism a b) -> IO ()
+drawStateSpace dir namingContext stateSpace =
+  do
     withFile (fileFor "stateSpace") WriteMode $ \file ->
       hPutDoc file (Dot.printStateSpace stateSpace)
 
-    forM_ exploredStates $ \(id, (graph, _)) -> do
-      let name = show id
+    forM_ (IntMap.toList $ states stateSpace) $ \(idx, (graph, _)) -> do
+      let name = show idx
       withFile (fileFor name) WriteMode $ \file ->
         hPutDoc file (Dot.printTypedGraph namingContext name graph)
-
-    return ()
+  where
+    fileFor name = dir ++ "/" ++ name ++ ".dot"
 
 
 makeNamingContext :: [(String, String)] -> Dot.NamingContext
@@ -108,6 +124,7 @@ makeNamingContext assocList =
           takeWhile (/= '%') name
   in
     Dot.Ctx (nameForId . normalizeId) (nameForId . normalizeId)
+
 
 
 type NamedProduction = (String, GraphRule () ())
