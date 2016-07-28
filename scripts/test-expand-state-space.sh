@@ -22,7 +22,7 @@ example=$1
 stack install
 mkdir -p test-output/
 rm -f test-output/*
-verigraph-expand -d$depth -otest-output "$example"
+verigraph-mcheck -d$depth -otest-output "$example"
 
 [ "$?" = 0 ] || exit 1
 

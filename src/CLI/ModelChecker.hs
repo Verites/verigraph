@@ -7,6 +7,8 @@ import           Abstract.Valid
 import           Abstract.Morphism
 import           Abstract.DPO
 import           Abstract.DPO.StateSpace as StateSpace
+import qualified Logic.Model as Logic
+import qualified Logic.Ctl as Logic
 import           TypedGraph.Graph
 import           TypedGraph.Morphism
 import           TypedGraph.GraphRule
@@ -36,6 +38,7 @@ main =
 data Options = Options
   { maxDepth :: Int
   , drawTo :: Maybe FilePath
+  , formula :: Maybe String
   }
 
 
@@ -47,7 +50,9 @@ options = Options
   <*> optional (strOption $
         long "draw-output-dir" <> short 'o'
         <> help "Create .dot files for the state space in the given directory.")
-
+  <*> optional (strArgument $
+        metavar "CTL_FORMULA"
+        <> help "CTL formula to be checked")
 
 allOptions :: Parser (GlobalOptions, Options)
 allOptions =
@@ -65,7 +70,17 @@ execute (globalOpts, options) =
     graphs <- XML.readGraphs (inputFile globalOpts)
     ensureAllValid graphs $ \name -> "Invalid graph '" ++ name ++ "'"
 
-    let stateSpace = exploreStateSpace (dpoConfig globalOpts) (maxDepth options) grammar graphs
+    let
+      (initialStates, stateSpace) =
+        exploreStateSpace (dpoConfig globalOpts) (maxDepth options) grammar graphs
+
+    case formula options of
+      Nothing ->
+        return ()
+
+      Just exprText -> do
+        expr <- parseExpressionOrExit exprText
+        modelCheck (StateSpace.toTransitionSystem stateSpace) expr initialStates
 
     names <- XML.readNames (inputFile globalOpts)
     let namingContext = makeNamingContext names
@@ -78,6 +93,49 @@ execute (globalOpts, options) =
         drawStateSpace dir namingContext stateSpace
 
     return ()
+
+
+parseExpressionOrExit :: String -> IO Logic.Expr
+parseExpressionOrExit text =
+  case Logic.parseExpr "" text of
+    Left err -> do
+      putStrLn "Invalid CTL formula:"
+      print err
+      exitFailure
+
+    Right expr -> do
+      return expr
+
+
+modelCheck :: Logic.TransitionSystem String -> Logic.Expr -> [Int] -> IO ()
+modelCheck model expr initialStates =
+  let
+    allGoodStates =
+      Logic.satisfyExpr' model expr
+
+    (goodStates, badStates) =
+      List.partition (`List.elem` allGoodStates) initialStates
+
+    explainStates states msgIfEmpty msgIfNonEmpty =
+      if List.null states then
+        putStrLn msgIfEmpty
+      else
+        putStrLn msgIfNonEmpty >> mapM_ showState states
+
+    showState index =
+      putStrLn $ "\t" ++ show index
+  in do
+    explainStates
+      goodStates
+      "No initial states satisfy the formula!"
+      "The following initial states satisfy the formula:"
+
+    putStrLn ""
+
+    explainStates
+      badStates
+      "All initial states satisfy the formula!"
+      "The following initial states do NOT satisfy the formula:"
 
 
 -- | Tests if all given graphs are valid. If one isn't, print a message and exit.
@@ -131,20 +189,28 @@ type NamedProduction = (String, GraphRule () ())
 
 type NamedPredicate = (String, GraphRule () ())
 
+type Space = StateSpace (TypedGraphMorphism () ())
 
-exploreStateSpace :: DPOConfig -> Int -> GraphGrammar () () -> [(String, TypedGraph () ())] -> StateSpace (TypedGraphMorphism () ())
+
+exploreStateSpace :: DPOConfig -> Int -> GraphGrammar () () -> [(String, TypedGraph () ())] -> ([Int], Space)
 exploreStateSpace config maxDepth grammar graphs =
   let
     (productions, predicates) =
       splitPredicates (rules grammar)
 
+    searchFrom (_, graph) =
+      do
+        (idx, _) <- putState graph
+        depthSearch maxDepth graph
+        return idx
+
     search =
-      mapM_ (depthSearch maxDepth . snd) graphs
+      mapM searchFrom graphs
 
     initialSpace =
       StateSpace.empty config (map snd productions) predicates
   in
-    execStateSpaceBuilder search initialSpace
+    runStateSpaceBuilder search initialSpace
 
 
 -- | Separates the rules that change nothing (which are considered predicates)

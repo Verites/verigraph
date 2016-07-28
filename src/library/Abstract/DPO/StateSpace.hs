@@ -20,6 +20,7 @@ module Abstract.DPO.StateSpace
   , states
   , transitions
   , searchForState
+  , toTransitionSystem
 
   -- * State space builder
   , StateSpaceBuilder
@@ -49,8 +50,9 @@ import qualified Data.IntMap as IntMap
 import           Data.Set (Set)
 import qualified Data.Set as Set
 
-import Abstract.Morphism
-import Abstract.DPO
+import           Abstract.Morphism
+import           Abstract.DPO
+import qualified Logic.Model as Logic
 
 
 
@@ -100,6 +102,25 @@ searchForState obj space =
 
       (state : _) ->
         Just state
+
+
+-- | Converts the state space to a transition system that may be used for model checking
+toTransitionSystem :: StateSpace m -> Logic.TransitionSystem String
+toTransitionSystem space =
+  let
+    convertedStates =
+      map convertState $ IntMap.toList (states space)
+
+    convertState (index, (_, props)) =
+      Logic.State index props
+
+    convertedTransitions =
+      zipWith convertTransition [0..] $ Set.toList (transitions space)
+
+    convertTransition index (from, to) =
+      Logic.Transition index from to []
+  in
+    Logic.TransitionSystem convertedStates convertedTransitions
 
 
 
