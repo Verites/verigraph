@@ -5,6 +5,7 @@ module XML.GGXParseIn
  ( parseGGName
  , parseNames
  , parseTypeGraph
+ , parseGraphs
  , parseNacNames
  , parseRule
  , parseRuleSequence
@@ -109,6 +110,11 @@ parseEdge = atTag "Edge" >>>
     edgeSource <- getAttrValue "source" -< node
     edgeTarget <- getAttrValue "target" -< node
     returnA -< (clearId edgeId, setEdgeName, clearId edgeType, clearId edgeSource, clearId edgeTarget)
+
+-- | Given a GTS tag, parses all instance graphs
+parseGraphs :: ArrowXml cat => cat (NTree XNode) [ParsedTypedGraph]
+parseGraphs =
+  atTag "GraphTransformationSystem" >>> listA (getChildren >>> isElem >>> hasName "Graph" >>> parseGraph)
 
 parseGraph :: ArrowXml cat => cat (NTree XNode) ParsedTypedGraph
 parseGraph = atTag "Graph" >>>
