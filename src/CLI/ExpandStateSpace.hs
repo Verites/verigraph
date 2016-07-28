@@ -85,7 +85,7 @@ execute (globalOpts, options) =
     withFile (fileFor "stateSpace") WriteMode $ \file ->
       hPutDoc file (Dot.printStateSpace stateSpace)
 
-    forM_ exploredStates $ \(id, graph) -> do
+    forM_ exploredStates $ \(id, (graph, _)) -> do
       let name = show id
       withFile (fileFor name) WriteMode $ \file ->
         hPutDoc file (Dot.printTypedGraph namingContext name graph)
@@ -114,6 +114,7 @@ type NamedProduction = (String, GraphRule () ())
 
 type NamedPredicate = (String, GraphRule () ())
 
+
 exploreStateSpace :: DPOConfig -> Int -> GraphGrammar () () -> [(String, TypedGraph () ())] -> StateSpace (TypedGraphMorphism () ())
 exploreStateSpace config maxDepth grammar graphs =
   let
@@ -124,9 +125,10 @@ exploreStateSpace config maxDepth grammar graphs =
       mapM_ (depthSearch maxDepth . snd) graphs
 
     initialSpace =
-      StateSpace.empty config (map snd productions)
+      StateSpace.empty config (map snd productions) predicates
   in
     execStateSpaceBuilder search initialSpace
+
 
 -- | Separates the rules that change nothing (which are considered predicates)
 -- from those that have some effect (which are considered productions).

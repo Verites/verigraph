@@ -40,8 +40,14 @@ printStateSpace stateSpace =
     (map prettyTransition . Set.toList $ transitions stateSpace)
 
   where
-    prettyState (key, _) =
-      int key
+    prettyState (key, (_, predicates)) =
+      let
+        label =
+          int key <> newline <> cat (punctuate newline . map text $ predicates)
+        newline =
+          text "\\n"
+      in
+        int key <+> brackets (text "label=" <> dquotes label)
 
     prettyTransition (from, to) =
       int from <+> text "->" <+> int to

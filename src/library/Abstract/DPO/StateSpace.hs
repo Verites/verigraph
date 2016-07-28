@@ -41,10 +41,12 @@ module Abstract.DPO.StateSpace
   , depthSearch
   ) where
 
-import Control.Monad.State as Monad
-import Data.IntMap (IntMap)
+
+import           Control.Monad
+import qualified Control.Monad.State as Monad
+import           Data.IntMap (IntMap)
 import qualified Data.IntMap as IntMap
-import Data.Set (Set)
+import           Data.Set (Set)
 import qualified Data.Set as Set
 
 import Abstract.Morphism
@@ -59,26 +61,34 @@ import Abstract.DPO
 -- identified by numeric indices. The transitions are specified as pairs of
 -- indices, so multiple transitions  between the same two states are seen as
 -- a single one.
+--
+-- The states are annotated with the set of predicates that hold in them. Predicates
+-- are expressed as rules, and a predicate holds in a state if the rule is applicable.
 data StateSpace m = SS
-  { states :: IntMap (Obj m) -- ^ Obtain the set of (explored) indexed states in a state space.
+  { states :: IntMap (State m) -- ^ Obtain the set of (explored) indexed states in a state space.
   , transitions :: Set (Int, Int) -- ^ Obtain the set of (explored) transitions in a state space.
   , uid :: Int -- ^ Provides an unused state index.
   , dpoConfig :: DPOConfig -- ^ Obtain the configuration of DPO semantics for the state space.
   , productions :: [Production m] -- ^ Obtain the productions of the HLR system of the state space.
+  , predicates :: [(String, Production m)] -- ^ Obtain the predicates of the state space.
   }
+
+
+-- | A state contains the object of the category and the list of predicates that hold in it.
+type State m = (Obj m, [String])
 
 
 -- | An empty state space for the HLR system defined by the given productions, with the given
 -- configuration of the DPO semantics.
-empty :: DPOConfig -> [Production m] -> StateSpace m
+empty :: DPOConfig -> [Production m] -> [(String, Production m)] -> StateSpace m
 empty = SS IntMap.empty Set.empty 0
 
 
--- | Tries to find an isomorphic object in the state space, returning its index.
-searchForState :: forall m. (DPO m) => Obj m -> StateSpace m -> Maybe Int
+-- | Tries to find an isomorphic object in the state space, returning it along with its index.
+searchForState :: forall m. (DPO m) => Obj m -> StateSpace m -> Maybe (Int, State m)
 searchForState obj space =
   let
-    isIso (_, obj') =
+    isIso (_, (obj', _)) =
       let
         isomorphisms = findMorphisms IsoMorphisms obj obj' :: [m]
       in
@@ -88,8 +98,8 @@ searchForState obj space =
       [] ->
         Nothing
 
-      ((idx, _) : _) ->
-        Just idx
+      (state : _) ->
+        Just state
 
 
 
@@ -99,7 +109,7 @@ searchForState obj space =
 newtype StateSpaceBuilder m a = SSB
   { unSSB :: Monad.State (StateSpace m) a }
   deriving ( Functor, Applicative, Monad
-           , (MonadState (StateSpace m))
+           , (Monad.MonadState (StateSpace m))
            )
 
 
@@ -126,13 +136,19 @@ execStateSpaceBuilder =
 -- | Gets the configuration of DPO semantics for this builder.
 getDpoConfig :: StateSpaceBuilder m DPOConfig
 getDpoConfig =
-  gets dpoConfig
+  Monad.gets dpoConfig
 
 
 -- | Gets the productions of the HLR system being explored in this builder.
 getProductions :: StateSpaceBuilder m [Production m]
 getProductions =
-  gets productions
+  Monad.gets productions
+
+
+-- | Gets the productions of the HLR system being explored in this builder.
+getPredicates :: StateSpaceBuilder m [(String, Production m)]
+getPredicates =
+  Monad.gets predicates
 
 
 -- | Adds the given state if an isomorphic one doesn't exist. Returns a tuple @(index, isNew)@,
@@ -143,32 +159,41 @@ putState object =
     maybeIndex <- findIsomorphicState object
 
     case maybeIndex of
-      Just index -> do
+      Just (index, _) -> do
         return (index, False)
 
       Nothing -> do
-        index <- gets uid
-        modify $ \space ->
+        index <- Monad.gets uid
+        config <- getDpoConfig
+        allPredicates <- getPredicates
+
+        let truePredicates = map fst . filter (isTrueAt config object) $ allPredicates
+        let state = (object, truePredicates)
+
+        Monad.modify $ \space ->
           space
-          { states = IntMap.insert index object (states space)
+          { states = IntMap.insert index state (states space)
           , uid = uid space + 1
           }
         return (index, True)
+  where
+    isTrueAt config object (_, production) =
+      not . null $ applicableMatches config production object
 
 
 -- | Adds a transition between the states with the given indices. Does __not__ check if
 -- such states exist.
 putTransition :: (Int, Int) -> StateSpaceBuilder m ()
 putTransition transition =
-  modify $ \space ->
+  Monad.modify $ \space ->
     space
     { transitions = Set.insert transition (transitions space) }
 
 
 -- | Tries to find an isomorphic object in the current state space, returning its index.
-findIsomorphicState :: (DPO m) => Obj m -> StateSpaceBuilder m (Maybe Int)
+findIsomorphicState :: (DPO m) => Obj m -> StateSpaceBuilder m (Maybe (Int, State m))
 findIsomorphicState obj =
-  gets (searchForState obj)
+  Monad.gets (searchForState obj)
 
 
 
