@@ -20,7 +20,7 @@ module Abstract.DPO.StateSpace
   , states
   , transitions
   , searchForState
-  , toTransitionSystem
+  , toKripkeStructure
 
   -- * State space builder
   , StateSpaceBuilder
@@ -105,8 +105,8 @@ searchForState obj space =
 
 
 -- | Converts the state space to a transition system that may be used for model checking
-toTransitionSystem :: StateSpace m -> Logic.TransitionSystem String
-toTransitionSystem space =
+toKripkeStructure :: StateSpace m -> Logic.KripkeStructure String
+toKripkeStructure space =
   let
     convertedStates =
       map convertState $ IntMap.toList (states space)
@@ -120,7 +120,7 @@ toTransitionSystem space =
     convertTransition index (from, to) =
       Logic.Transition index from to []
   in
-    Logic.TransitionSystem convertedStates convertedTransitions
+    Logic.KripkeStructure convertedStates convertedTransitions
 
 
 

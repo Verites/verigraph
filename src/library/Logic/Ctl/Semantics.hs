@@ -9,13 +9,14 @@ import Logic.Ctl.Base
 import Logic.Model
 
 
--- | Obtain all states of the transition system that satisfy the given CTL expression.
-satisfyExpr :: TransitionSystem String -> Expr -> [State String]
+-- | Obtain all states that satisfy the given CTL expression.
+satisfyExpr :: KripkeStructure String -> Expr -> [State String]
 satisfyExpr model expr =
   statesByIds model (satisfyExpr' model expr)
 
 
-satisfyExpr' :: TransitionSystem String -> Expr -> [Int]
+-- | Obtain the identifiers of all states that satisfy the given CTL expression.
+satisfyExpr' :: KripkeStructure String -> Expr -> [Int]
 satisfyExpr' _ (Literal False) =
   []
 
@@ -55,7 +56,7 @@ stateSatisfies p st =
   p `elem` values st
 
 
-satisfyTemporal :: TransitionSystem String -> PathQuantified Expr -> [Int]
+satisfyTemporal :: KripkeStructure String -> PathQuantified Expr -> [Int]
 satisfyTemporal model (A (X p)) =
   satisfyExpr' model (Not$ Temporal$E$X$ Not p)
 
@@ -82,7 +83,7 @@ satisfyTemporal model (E (U p q)) =
   satisfySomeUntil model p q
 
 
-satisfyAllFuture :: TransitionSystem String -> Expr -> [Int]
+satisfyAllFuture :: KripkeStructure String -> Expr -> [Int]
 satisfyAllFuture model p =
   recursivelyAddPredecessors statesWherePHolds
 
@@ -101,7 +102,7 @@ satisfyAllFuture model p =
           recursivelyAddPredecessors reachable'
 
 
-satisfySomeNext :: TransitionSystem String -> Expr -> [Int]
+satisfySomeNext :: KripkeStructure String -> Expr -> [Int]
 satisfySomeNext model p =
   let
     statesWherePHolds =
@@ -112,7 +113,7 @@ satisfySomeNext model p =
     foldl' union [] predecessorSets
 
 
-satisfySomeUntil :: TransitionSystem String -> Expr -> Expr -> [Int]
+satisfySomeUntil :: KripkeStructure String -> Expr -> Expr -> [Int]
 satisfySomeUntil model p q =
   recursivelyAddPredecessors statesWhereQHolds
 
@@ -139,7 +140,7 @@ satisfySomeUntil model p q =
 
 
 -- | Obtain the states that are predecessors _only_ to states in the given set.
-predecessorsA :: TransitionSystem a -> [Int] -> [Int]
+predecessorsA :: KripkeStructure a -> [Int] -> [Int]
 predecessorsA model states =
   let
     allPredecessors =
@@ -152,7 +153,7 @@ predecessorsA model states =
 
 
 -- | Obtain the states that are predecessors to _some_ state in the given set.
-predecessorsE :: TransitionSystem a -> [Int] -> [Int]
+predecessorsE :: KripkeStructure a -> [Int] -> [Int]
 predecessorsE model ids =
   let
     predecessorSets =
@@ -166,6 +167,6 @@ subsetOf as bs =
   all (`elem` bs) as
 
 
-statesByIds :: TransitionSystem a -> [Int] -> [State a]
+statesByIds :: KripkeStructure a -> [Int] -> [State a]
 statesByIds model =
   map (`getState` model)

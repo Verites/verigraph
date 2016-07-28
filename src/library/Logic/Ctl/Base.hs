@@ -7,6 +7,7 @@ module Logic.Ctl.Base
 import Text.PrettyPrint.Leijen as PP
 
 
+-- | CTL expressions
 data Expr
   = Literal Bool
   | Atom String
@@ -19,12 +20,14 @@ data Expr
   deriving (Eq, Show, Read)
 
 
+-- | Path-quantified CTL expressions
 data PathQuantified e
   = A (StateQuantified e)
   | E (StateQuantified e)
   deriving (Eq, Show, Read)
 
 
+-- | State-quantified CTL expressions
 data StateQuantified e
   = X e
   | G e

@@ -11,6 +11,14 @@ import Logic.Ctl.Base
 type Parser a = Parsec String () a
 
 
+-- | Parse a CTL expressions from the given string.
+--
+-- The first parameter will be used to identify the source of the
+-- text in error messages.
+--
+-- This parser is compatible with the pretty printer of expressions,
+-- that is, pretty printed expressions will be parseable by this
+-- (unless they contain illegal identifiers for atomic propositions).
 parseExpr :: SourceName -> String -> Either ParseError Expr
 parseExpr =
   parse (whiteSpace *> expr <* eof)

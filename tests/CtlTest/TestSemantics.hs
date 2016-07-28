@@ -113,12 +113,12 @@ testTemporalUntil =
     ]
 
 
-testModelChecker :: String -> TransitionSystem String -> [Int] -> Test
+testModelChecker :: String -> KripkeStructure String -> [Int] -> Test
 testModelChecker expr model expected =
   testCase expr $ statesThatSatisfy expr model @?= List.sort expected
 
 
-statesThatSatisfy :: String -> TransitionSystem String -> [Int]
+statesThatSatisfy :: String -> KripkeStructure String -> [Int]
 statesThatSatisfy exprText model =
   case parseExpr "" exprText of
     Left err ->
@@ -128,7 +128,7 @@ statesThatSatisfy exprText model =
       List.sort (satisfyExpr' model expr)
 
 
-assembleModel :: [[String]] -> TransitionSystem String
+assembleModel :: [[String]] -> KripkeStructure String
 assembleModel description =
   let
     (states, transitions') =
@@ -140,7 +140,7 @@ assembleModel description =
     addTransition (src, tgt) (ts, uid) =
       (Transition uid src tgt [] : ts, uid + 1)
   in
-    TransitionSystem (IntMap.elems states) transitions
+    KripkeStructure (IntMap.elems states) transitions
 
 
 type PartialModel =

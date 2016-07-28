@@ -80,7 +80,7 @@ execute (globalOpts, options) =
 
       Just exprText -> do
         expr <- parseExpressionOrExit exprText
-        modelCheck (StateSpace.toTransitionSystem stateSpace) expr initialStates
+        modelCheck (StateSpace.toKripkeStructure stateSpace) expr initialStates
 
     names <- XML.readNames (inputFile globalOpts)
     let namingContext = makeNamingContext names
@@ -107,7 +107,7 @@ parseExpressionOrExit text =
       return expr
 
 
-modelCheck :: Logic.TransitionSystem String -> Logic.Expr -> [Int] -> IO ()
+modelCheck :: Logic.KripkeStructure String -> Logic.Expr -> [Int] -> IO ()
 modelCheck model expr initialStates =
   let
     allGoodStates =
