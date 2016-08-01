@@ -2,6 +2,7 @@ module Analysis.CriticalSequence
  ( CS (..),
    CriticalSequence,
    criticalSequences,
+   triggeredCriticalSequences,
    namedCriticalSequences,
    allProduceUse,
    allRemoveDangling,
@@ -110,6 +111,13 @@ namedCriticalSequences config rules =
 createPairsCodomain :: (EpiPairs m) => MatchRestriction -> m -> m -> [(m, m)]
 createPairsCodomain inj m1 m2 =
   createPairs (inj == MonoMatches) (codomain m1) (codomain m2)
+
+-- | All Triggered Critical Sequences
+triggeredCriticalSequences :: (EpiPairs m, DPO m) => DPOConfig
+  -> Production m -> Production m -> [CriticalSequence m]
+triggeredCriticalSequences config pLeft pRight =
+  allProdUseAndDang config pLeft pRight ++
+  allDeleteForbid config pLeft pRight
 
 -- | All Critical Sequences
 criticalSequences :: (EpiPairs m, DPO m) => DPOConfig

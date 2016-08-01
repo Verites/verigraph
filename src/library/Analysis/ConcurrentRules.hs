@@ -8,7 +8,7 @@ module Analysis.ConcurrentRules
 import           Abstract.Morphism
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
-import           Analysis.CriticalSequence (criticalSequences,getComatch)
+import           Analysis.CriticalSequence (triggeredCriticalSequences,getComatch)
 
 data CRDependencies = AllOverlapings | OnlyDependency
 
@@ -44,12 +44,13 @@ maxConcurrentRuleForLastPair dep config c n =
   in concurrentRuleForPair config c n epiPair
 
 epiPairsForConcurrentRule :: (DPO m, EpiPairs m)
-                             => CRDependencies -> DPOConfig
-                             -> Production m -> Production m -> [(m, m)]
+  => CRDependencies -> DPOConfig -> Production m -> Production m -> [(m, m)]
+-- it only considers triggered dependencies because is the most intuitive and natural behaviour expected until now.
 epiPairsForConcurrentRule OnlyDependency config c n =
-  let dependencies = criticalSequences config c n
+  let dependencies = triggeredCriticalSequences config c n
   in map getComatch dependencies
-epiPairsForConcurrentRule _ config c n =
+
+epiPairsForConcurrentRule AllOverlapings config c n =
   let matchInj = matchRestriction config == MonoMatches
       allPairs = createPairs matchInj (codomain (right c)) (codomain (left n))
       isValidPair (lp, rp) = satsGluing config (inverseWithoutNacs c) lp && satsGluing config n rp
