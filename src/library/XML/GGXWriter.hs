@@ -143,7 +143,7 @@ writeCriticalPairAnalysis names rules cpOL csOL = writeCpaOptions : conflictCont
                           [writeConflictContainer "exclude" nacNames rules cpOL,
                            writeConflictFreeContainer rules cpOL]
     dependenceContainer = if null csOL then [] else
-                           [writeConflictContainer "trigger_dependency" nacNames rules csOL,
+                           [writeConflictContainer "trigger_switch_dependency" nacNames rules csOL,
                             writeConflictFreeContainer rules csOL]
     nacNames = filter (\(x,_) -> startswith "NAC" x) names
 
@@ -153,7 +153,7 @@ writeConflictContainer kind nacNames rules overlappings =
     where
       elem = case kind of
                "exclude"            -> "conflictContainer"
-               "trigger_dependency" -> "dependencyContainer"
+               "trigger_switch_dependency" -> "dependencyContainer"
                _ -> error $ "Unexpected kind of conflict/dependency: " ++ kind
 
 writeConflictMatrix :: ArrowXml a => [(String,String)] -> [(String,GR.GraphRule b c)] -> [Overlappings] -> [a XmlTree XmlTree]
@@ -273,7 +273,10 @@ writeOverlapping nacNames overlap@(_,_,(_,_,_,_,t),_) =
     "ProduceForbid"   -> writeProdForbid nacNames
     "ProduceUse"      -> writeProdUse
     "RemoveDangling"  -> writeRemDangling
-    "DeliverDelete"   -> writeDelDel nacNames
+    "DeleteForbid"    -> writeDelFor nacNames
+    "DeliverDelete"   -> writeDelDel
+    "DeliverDangling" -> writeDelDangling
+    "ForbidProduce"   -> writeForbProd nacNames
     _ -> error $ "Unexpected type of overlapping: " ++ t)
   overlap
 
@@ -284,7 +287,7 @@ writeProdForbid nacNames (n1, n2, ((_, nodes, edges), map1, map2, nacName, _), i
      writeMorphism (graphId idx, "RightOf_"++n1) ("MorphOf_" ++ n1) "RHS" map1,
      writeMorphism (graphId idx, "LeftOf_"++n2) ("MorphOf_" ++ n2) "NAC+LHS" map2]
   where
-    msg = "( "++show idx++ " ) " ++ "produce-forbid-conflict (NAC: "++nacCorrectName++")"
+    msg = "( "++show idx++ " ) " ++ "produce-forbid-verigraph-conflict (NAC: "++nacCorrectName++")"
     graphId idx = n1 ++ n2 ++ show idx ++ "_proforcon"
     nacCorrectName = fromMaybe nacName (lookup nacName nacNames)
 
@@ -295,7 +298,7 @@ writeProdDangling (n1, n2, ((_, nodes, edges), map1, map2, _, _), idx) =
      writeMorphism (graphId idx, "LeftOf_"++n1) ("MorphOf_" ++ n1) "LHS" map1,
      writeMorphism (graphId idx, "LeftOf_"++n2) ("MorphOf_" ++ n2) "LHS" map2]
   where
-    msg = "( "++show idx++ " ) " ++ "produceEdge-deleteNode-conflict"
+    msg = "( "++show idx++ " ) " ++ "produceDangling-verigraph-conflict"
     graphId idx = n1 ++ n2 ++ show idx ++ "_prodelcon"
 
 writeDeleteUse :: ArrowXml a => Overlapping -> a XmlTree XmlTree
@@ -305,7 +308,7 @@ writeDeleteUse (n1, n2, ((_, nodes, edges), map1, map2, _, _), idx) =
      writeMorphism (graphId idx, "LeftOf_"++n1) ("MorphOf_" ++ n1) "LHS" map1,
      writeMorphism (graphId idx, "LeftOf_"++n2) ("MorphOf_" ++ n2) "LHS" map2]
   where
-    msg = "( "++show idx++ " ) " ++ "delete-use-conflict"
+    msg = "( "++show idx++ " ) " ++ "delete-use-verigraph-conflict"
     graphId idx = n1 ++ n2 ++ show idx ++ "_delusecon"
 
 writeProdUse :: ArrowXml a => Overlapping -> a XmlTree XmlTree
@@ -315,8 +318,18 @@ writeProdUse (n1, n2, ((_, nodes, edges), map1, map2, _, _), idx) =
      writeMorphism (graphId idx, "RightOf_"++n1) ("MorphOf_" ++ n1) "RHS" map1,
      writeMorphism (graphId idx, "LeftOf_"++n2) ("MorphOf_" ++ n2) "LHS" map2]
   where
-    msg = "( "++show idx++ " ) " ++ "produce-use-dependency"
+    msg = "( "++show idx++ " ) " ++ "produce-use-verigraph-dependency"
     graphId idx = n1 ++ n2 ++ show idx ++ "_prousedep"
+
+writeDelDel :: ArrowXml a => Overlapping -> a XmlTree XmlTree
+writeDelDel (n1, n2, ((_, nodes, edges), map1, map2, _, _), idx) =
+  mkelem "Overlapping_Pair" []
+    [writeGraphOverlaping (graphId idx) "" "GRAPH" msg nodes edges,
+     writeMorphism (graphId idx, "RightOf_"++n1) ("MorphOf_" ++ n1) "RHS" map1,
+     writeMorphism (graphId idx, "LeftOf_"++n2) ("MorphOf_" ++ n2) "LHS" map2]
+  where
+    msg = "( "++show idx++ " ) " ++ "deliver-delete-verigraph-dependency"
+    graphId idx = n1 ++ n2 ++ show idx ++ "_deldeldep"
 
 writeRemDangling :: ArrowXml a => Overlapping -> a XmlTree XmlTree
 writeRemDangling (n1, n2, ((_, nodes, edges), map1, map2, _, _), idx) =
@@ -325,18 +338,39 @@ writeRemDangling (n1, n2, ((_, nodes, edges), map1, map2, _, _), idx) =
      writeMorphism (graphId idx, "RightOf_"++n1) ("MorphOf_" ++ n1) "RHS" map1,
      writeMorphism (graphId idx, "LeftOf_"++n2) ("MorphOf_" ++ n2) "LHS" map2]
   where
-    msg = "( "++show idx++ " ) " ++ "remove-dangling-dependency"
+    msg = "( "++show idx++ " ) " ++ "remove-dangling-verigraph-dependency"
     graphId idx = n1 ++ n2 ++ show idx ++ "_remdandep"
 
-writeDelDel :: ArrowXml a => [(String,String)] -> Overlapping -> a XmlTree XmlTree
-writeDelDel nacNames (n1, n2, ((_, nodes, edges), map1, map2, nacName, _), idx) =
+writeDelDangling :: ArrowXml a => Overlapping -> a XmlTree XmlTree
+writeDelDangling (n1, n2, ((_, nodes, edges), map1, map2, _, _), idx) =
+  mkelem "Overlapping_Pair" []
+    [writeGraphOverlaping (graphId idx) "" "GRAPH" msg nodes edges,
+     writeMorphism (graphId idx, "RightOf_"++n1) ("MorphOf_" ++ n1) "RHS" map1,
+     writeMorphism (graphId idx, "LeftOf_"++n2) ("MorphOf_" ++ n2) "LHS" map2]
+  where
+    msg = "( "++show idx++ " ) " ++ "delete-dangling-verigraph-dependency"
+    graphId idx = n1 ++ n2 ++ show idx ++ "_deldandep"
+
+writeDelFor :: ArrowXml a => [(String,String)] -> Overlapping -> a XmlTree XmlTree
+writeDelFor nacNames (n1, n2, ((_, nodes, edges), map1, map2, nacName, _), idx) =
   mkelem "Overlapping_Pair" []
     [writeGraphOverlaping (graphId idx) nacCorrectName "GRAPH" msg nodes edges,
      writeMorphism (graphId idx, "LeftOf_"++n1) ("MorphOf_" ++ n1) "LHS" map1,
      writeMorphism (graphId idx, "LeftOf_"++n2) ("MorphOf_" ++ n2) "NAC+LHS" map2]
   where
-    msg = "( "++show idx++ " ) " ++ "delete-forbid-dependency (NAC: "++nacCorrectName++")"
+    msg = "( "++show idx++ " ) " ++ "delete-forbid-verigraph-dependency (NAC: "++nacCorrectName++")"
     graphId idx = n1 ++ n2 ++ show idx ++ "_delfordep"
+    nacCorrectName = fromMaybe nacName (lookup nacName nacNames)
+
+writeForbProd :: ArrowXml a => [(String,String)] -> Overlapping -> a XmlTree XmlTree
+writeForbProd nacNames (n1, n2, ((_, nodes, edges), map1, map2, nacName, _), idx) =
+  mkelem "Overlapping_Pair" []
+    [writeGraphOverlaping (graphId idx) nacCorrectName "GRAPH" msg nodes edges,
+     writeMorphism (graphId idx, "LeftOf_"++n1) ("MorphOf_" ++ n1) "LHS" map1,
+     writeMorphism (graphId idx, "LeftOf_"++n2) ("MorphOf_" ++ n2) "NAC+LHS" map2]
+  where
+    msg = "( "++show idx++ " ) " ++ "forbid-produce-verigraph-dependency (NAC: "++nacCorrectName++")"
+    graphId idx = n1 ++ n2 ++ show idx ++ "_forprodep"
     nacCorrectName = fromMaybe nacName (lookup nacName nacNames)
 
 writeHostGraph :: ArrowXml a => a XmlTree XmlTree

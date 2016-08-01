@@ -4,10 +4,6 @@ Description : Implements the inter-level conflict
 Stability   : development
 -}
 
---{-# LANGUAGE TypeFamilies #-}
---{-# LANGUAGE ScopedTypeVariables #-}
---{-# LANGUAGE MultiParamTypeClasses #-}
-
 module Analysis.InterLevelCP (interLevelConflict, evo) where
 
 import           Abstract.AdhesiveHLR

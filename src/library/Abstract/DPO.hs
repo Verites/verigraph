@@ -76,8 +76,10 @@ production = Production
 --
 -- When given `MonoMatches`, only obtains monomorphic matches.
 allMatches :: (DPO m) => DPOConfig -> Production m -> Obj m -> [m]
-allMatches config production obj =
-  findMorphisms (matchRestrictionToProp $ matchRestriction config) (codomain $ left production) obj
+allMatches config production =
+  findMorphisms
+    (matchRestrictionToProp $ matchRestriction config)
+    (codomain $ left production)
 
 
 -- | Obtain the matches from the production into the given object that satisfiy the NACs
@@ -174,7 +176,6 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
 satsGluing :: DPO m => DPOConfig -> Production m -> m -> Bool
 satsGluing config production match =
   hasPushoutComplement (matchIsMono, match) (AnyMorphisms, left production)
-
   where
     matchIsMono =
       matchRestrictionToProp (matchRestriction config)

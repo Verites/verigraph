@@ -1,53 +1,53 @@
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 
-import           Partitions.GraphPart
+import           Abstract.AdhesiveHLR
+import           Graph.Graph
+import           Graph.GraphMorphism
+import           TypedGraph.Morphism
 import           Math.Combinat.Numbers (bellNumber)
 import           Test.HUnit
 
-{-data Node = Node {
-    ntype    :: Int,
-    nname    :: Int,
-    nid      :: Int,
-    injn     :: Bool,
-    inLeftn   :: Bool
-    }-}
+tests =
+  test (
+      -- Tests if a graph with the same repeated node n times has partitions length equals to the n-th bell number
+        [(map
+          (\n ->
+            ("BellNumber " ++ show n ++ " nodes") ~:
+            fromInteger (bellNumber n) ~=?
+            length (getPart (graph1 [1..n])))
+          ids)
+        ]
+      ++
+      -- Tests if a graph with the same repeated edge n times has partitions length equals to the n-th bell number
+        [(map
+          (\e ->
+            ("BellNumber " ++ show e ++ " edges") ~:
+            fromInteger (bellNumber e) ~=?
+            length (getPart (graph2 [1..e])))
+          ids)
+        ]
+        )
 
-n1 = Node 1 1 1 True False
-n2 = Node 1 2 2 True False
-n3 = Node 1 3 3 False True
-n4 = Node 1 4 4 False True
-l = [n1,n2]
-
-{-data Edge = Edge {
-    etype    :: Int,
-    label    :: Int,
-    eid      :: Int,
-    source   :: Node,
-    target   :: Node,
-    inje     :: Bool,
-    inLefte  :: Bool
-    } deriving (Eq)-}
-
-e1 = Edge 1 1 1 n1 n2 False False
-e2 = Edge 1 1 1 n3 n4 False True
-e3 = Edge 1 1 1 n3 n3 False True
-e = [e1,e1]
+getPart :: GraphMorphism a b -> [TypedGraphMorphism a b]
+getPart = partitions False
 
 limitBellNumber = 8
+ids = [1..limitBellNumber]
 
-tests =
-  test ([ "Basic test show" ~: show (genGraphEqClass (l,e)) ~=? "[([[1:1:Right (id:1) {True}],[2:1:Right (id:2) {True}]],[[1:1(1->2)Right (id:1) {False}],[1:1(1->2)Right (id:1) {False}]]),([[1:1:Right (id:1) {True}],[2:1:Right (id:2) {True}]],[[1:1(1->2)Right (id:1) {False},1:1(1->2)Right (id:1) {False}]])]"]
-        ++
-        -- Tests if a graph with the same repeated node n times has partitions length equals to the n-th bell number
-        (map (\n -> ("BellNumber " ++ show n) ~: (length (genGraphEqClass (replicate n n3,[]))) ~=? fromInteger (bellNumber n)) ([0..limitBellNumber] :: [Int]))
-        ++
-        -- Tests if a graph with the same repeated edge n times has partitions length equals to the n-th bell number
-        (map (\n -> ("BellNumber " ++ show n) ~: (length (genGraphEqClass ([n3], replicate n e3))) ~=? fromInteger (bellNumber n)) ([0..limitBellNumber] :: [Int])))
-        
+--typegraph: graph with one node and one edge on itself
+typegraph = insertEdge (EdgeId 0) (NodeId 0) (NodeId 0) (insertNode (NodeId 0) Graph.Graph.empty)
+
+--graph1: typed graph with 'limitBellNumber' nodes of same type
+initGraph1 = Graph.GraphMorphism.empty Graph.Graph.empty typegraph
+graph1 = foldr (\n -> createNodeDom (NodeId n) (NodeId 0)) initGraph1
+
+--graph2: typed graph with 'limitBellNumber' edges of same type with the same source and target
+initGraph2 = Graph.GraphMorphism.empty (insertNode (NodeId 0) Graph.Graph.empty) typegraph
+graph2 = foldr
+           (\e -> createEdgeDom (EdgeId e) (NodeId 0) (NodeId 0) (EdgeId 0))
+           (updateNodes (NodeId 0) (NodeId 0) initGraph2)
 
 main :: IO()
 main = do
-  
   runTestTT tests  
-  
   return ()
