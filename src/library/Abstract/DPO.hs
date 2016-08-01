@@ -176,7 +176,6 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
 satsGluing :: DPO m => DPOConfig -> Production m -> m -> Bool
 satsGluing config production match =
   hasPushoutComplement (matchIsMono, match) (AnyMorphisms, left production)
-
   where
     matchIsMono =
       matchRestrictionToProp (matchRestriction config)

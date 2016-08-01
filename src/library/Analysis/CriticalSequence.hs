@@ -24,12 +24,12 @@ import           Data.Maybe                (mapMaybe)
 
 -- | Data representing the type of a 'CriticalPair'
 data CS =
-    DeliverDelete
-  | ForbidProduce
-  | DeliverDangling
-  | ProduceUse
-  | DeleteForbid
-  | RemoveDangling
+    ProduceUse      -- ^ resp. delete-use
+  | RemoveDangling  -- ^ resp. produce-dangling
+  | DeleteForbid    -- ^ resp. produce-forbid
+  | DeliverDelete   -- ^ resp. inverted delete-use
+  | DeliverDangling -- ^ resp. inverted produce-dangling
+  | ForbidProduce   -- ^ resp. inverted produce-forbid
   deriving (Eq,Show)
 
 -- | A Critical Sequence is defined as two matches (m1,m2) from the
@@ -64,7 +64,7 @@ data CS =
 data CriticalSequence m = CriticalSequence {
     match :: Maybe (m, m),
     comatch :: (m, m),
-    nac :: Maybe (m, Int), --if is DeleteForbid, here is the index of the nac
+    nac :: Maybe (m, Int), --if is DeleteForbid or ForbidProduce, here is the index of the nac
     cs  :: CS
     } deriving (Eq,Show)
 
@@ -124,7 +124,7 @@ criticalSequences config pLeft pRight =
 -- ** Triggered Dependencies
 
 -- It occurs when pLeft enables pRight.
--- (ProduceUse, DeleteForbid, RemoveDangling)
+-- (ProduceUse, RemoveDangling, DeleteForbid)
 
 -- *** ProduceUse
 
