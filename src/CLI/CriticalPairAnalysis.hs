@@ -141,8 +141,8 @@ printAnalysis action dpoConf rules =
         allProduceUse allRemoveDangling allDeleteForbid
         "Produce-Use" "Remove-Dangling" "Deliver-Forbid" "Triggereds Dependencies"
       irrDepMatrix = analysisMatrix dpoConf rules
-        allProduceUse allDeliverDangling allForbidProduce
-        "Produce-Use" "Deliver-Dangling" "Forbid-Produce" "Irreversibles Dependencies"
+        allDeliverDelete allDeliverDangling allForbidProduce
+        "DeliverDelete" "Deliver-Dangling" "Forbid-Produce" "Irreversibles Dependencies"
   in mapM_
        putStrLn $
        (if calculateConflicts action then confMatrix else [])
