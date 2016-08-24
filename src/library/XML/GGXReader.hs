@@ -46,12 +46,12 @@ readGrammar fileName = do
 
   _ <- (case L.elemIndices False (map valid rules) of
           []  -> []
-          [a] -> error $ "Rule " ++ show a ++ " is not valid"
-          l   -> error $ "Rules " ++ show l ++ " are not valid"
+          [a] -> error $ "Rule " ++ show a ++ " is not valid (starting from 0)."
+          l   -> error $ "Rules " ++ show l ++ " are not valid (starting from 0)."
           ) `seq` return ()
 
   let typeGraph = if L.null rules
-                    then error "Not found first order rules, at least one is needed"
+                    then error "Not found first order rules, at least one is needed."
                     else codomain . domain . left $ head rules
       initGraph = GM.empty typeGraph typeGraph
       sndOrderRules = instantiateSndOrderRules parsedTypeGraph sndOrdRules
