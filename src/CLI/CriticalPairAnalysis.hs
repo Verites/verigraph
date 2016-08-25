@@ -8,11 +8,11 @@ import           Abstract.AdhesiveHLR      (EpiPairs)
 import           Abstract.DPO
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
---import           Analysis.InterLevelCP
+import           Analysis.InterLevelCP
 import           GlobalOptions
---import           Data.List
---import           Data.List.Split
---import           Data.List.Utils
+import           Data.List
+import           Data.List.Split
+import           Data.List.Utils
 import           Data.Matrix               hiding ((<|>))
 import           Options.Applicative
 import           SndOrder.Rule
@@ -78,14 +78,15 @@ execute globalOpts opts = do
         rules = map snd (GG.rules gg)
 
         -- Inter Level conflicts
-        --conf = applySecondOrder (interLevelConflict nacInj onlyInj) (GG.rules gg) (GG.sndOrderRules gg)
-        --f str = join "_" (take 2 (splitOn "_" str))
-        --printILCP = "Interlevel Critical Pairs" :
-        --            "2rule_rule (number of conflicts)" :
-        --            map (\x -> f (head x) ++ " " ++ show (length x))
-        --                (groupBy (\x y -> f x == f y) (map fst conf))
+        conf = applySecondOrder (interLevelConflict dpoConf) (GG.rules gg) (GG.sndOrderRules gg)
+        --conf = applySecondOrder (\x -> error "asd") (GG.rules gg) (GG.sndOrderRules gg)
+        f str = join "_" (take 2 (splitOn "_" str))
+        printILCP = "Interlevel Critical Pairs" :
+                    "2rule_rule (number of conflicts)" :
+                    map (\x -> f (head x) ++ " " ++ show (length x))
+                        (groupBy (\x y -> f x == f y) (map fst conf))
 
-        --evoConflicts = map (\r1 -> map (evo nacInj onlyInj r1) (GG.sndOrderRules gg)) (GG.sndOrderRules gg)
+        evoConflicts = map (\r1 -> map (evo dpoConf r1) (GG.sndOrderRules gg)) (GG.sndOrderRules gg)
 
         -- Second order conflicts/dependencies
         newNacs =
@@ -122,13 +123,14 @@ execute globalOpts opts = do
                    then sndOrderAnalysis
                    else fstOrderAnalysis
 
-    --case (secondOrder, matchRestriction dpoConf) of
-    --  (True, AnyMatches) -> mapM_ putStrLn printILCP
-    --  (True, MonoMatches) -> putStrLn "Interlevel CP not defined for only injective matches"
-    --  _ -> mapM_ putStrLn []
-
-    --putStrLn "Evolution Interlevel CP"
-    --print evoConflicts
+    case (secondOrder, matchRestriction dpoConf) of
+      (True, AnyMatches) -> mapM_ putStrLn printILCP
+      (True, MonoMatches) -> putStrLn "Interlevel CP not defined for only injective matches"
+      _ -> mapM_ putStrLn []
+    
+    
+    putStrLn "Evolution Interlevel CP"
+    print evoConflicts
 
 printAnalysis :: (EpiPairs m, DPO m) =>
   AnalysisType -> DPOConfig -> [Production m] -> IO ()
