@@ -164,9 +164,7 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
 
   -- | Given a production /L ←l- K -r→ R/ and a NAC morphism /n : L -> N/, obtain
   -- a set of NACs /n'i : R -> N'i/ that is equivalent to the original NAC.
-  --
-  -- TODO: review name
-  shiftLeftNac :: DPO m => DPOConfig -> Production m -> m -> [m]
+  shiftNacOverProduction :: DPO m => DPOConfig -> Production m -> m -> [m]
 
   -- | Check if the second morphism is monomorphic outside the image of the
   -- first morphism.

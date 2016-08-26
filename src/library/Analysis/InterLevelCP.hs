@@ -53,8 +53,8 @@ evo config (n1,r1) (n2,r2) = (n1 ++ "_" ++ n2, map (classify config r1 r2) xs'')
     r1Right = codomain (right r1)
     r2Right = codomain (right r2)
 
-    leftR1 = production (mappingLeft (left r1)) (mappingLeft (right r1)) []
-    leftR2 = production (mappingLeft (left r2)) (mappingLeft (right r2)) []
+    leftR1 = constructProduction (mappingLeft (left r1)) (mappingLeft (right r1)) []
+    leftR2 = constructProduction (mappingLeft (left r2)) (mappingLeft (right r2)) []
 
     pairs = createPairs (matchRestriction config == MonoMatches) leftR1 leftR2
 

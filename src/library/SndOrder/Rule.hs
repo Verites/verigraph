@@ -72,16 +72,16 @@ applySecondOrderListRules f sndRule = concatMap (f sndRule)
 instance DPO (RuleMorphism a b) where
   invertProduction config r = addMinimalSafetyNacs config newRule
     where
-      newRule = production (right r) (left r) (concatMap (shiftLeftNac config r) (nacs r))
+      newRule = constructProduction (right r) (left r) (concatMap (shiftNacOverProduction config r) (nacs r))
 
   -- | Needs the satisfiesNACs extra verification because not every satisfiesGluingConditions nac can be shifted
-  shiftLeftNac config rule n =
+  shiftNacOverProduction config rule n =
     [calculateComatch n rule |
       satisfiesGluingConditions config rule n &&
       satisfiesNACs config ruleWithOnlyMinimalSafetyNacs n]
 
     where
-      ruleWithOnlyMinimalSafetyNacs = production (left rule) (right rule) (minimalSafetyNacs rule)
+      ruleWithOnlyMinimalSafetyNacs = constructProduction (left rule) (right rule) (minimalSafetyNacs rule)
 
   partiallyMonomorphic m l =
     partiallyMonomorphic (mappingLeft m)      (mappingLeft l)      &&
@@ -106,7 +106,7 @@ applySndOrderRule config (sndName,sndRule) (fstName,fstRule) =
 -- If the nacs to be added not satisfies the others nacs, then it do not need to be added.
 addMinimalSafetyNacs :: DPOConfig -> SndOrderRule a b -> SndOrderRule a b
 addMinimalSafetyNacs nacInj sndRule =
-  production
+  constructProduction
     (left sndRule)
     (right sndRule)
     (nacs sndRule ++
@@ -202,7 +202,7 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
                         (tgt e) (typeTgt e) (tgtInK e) (tgtInR e))
         side otherSide
 
-    nacRule = production updateLeft updateRight []
+    nacRule = constructProduction updateLeft updateRight []
     mapL = idMap graphL (codomain updateLeft)
     mapK = idMap graphK (domain updateLeft)
     mapR = idMap graphR (codomain updateRight)
@@ -258,7 +258,7 @@ newNacsPairL sndRule = map createNac ret
 
     createNac e = SO.ruleMorphism ruleL ruleNac e mapK mapR
       where
-        ruleNac = production (compose (left ruleL) e) (right ruleL) []
+        ruleNac = constructProduction (compose (left ruleL) e) (right ruleL) []
         mapK = idMap (domain (left ruleL)) (domain (left ruleL))
         mapR = idMap (codomain (right ruleL)) (codomain (right ruleL))
 

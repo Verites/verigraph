@@ -18,7 +18,7 @@ instantiateSndOrderRules parsedTypeGraph sndOrdRules = zip sndOrderNames d
   where
     a = SO.parseSndOrderRules sndOrdRules
     c = map (instantiateSndOrderRule parsedTypeGraph) a
-    d = map (\(_,(l,r),n) -> production l r n) c
+    d = map (\(_,(l,r),n) -> constructProduction l r n) c
     sndOrderNames = map fstOfThree c
 
 instantiateSndOrderRule :: ParsedTypeGraph -> (SndOrderRuleSide, SndOrderRuleSide,[SndOrderRuleSide]) -> (String,(RuleMorphism a b, RuleMorphism a b),[RuleMorphism a b])
@@ -67,7 +67,7 @@ instantiateRuleMorphisms (parsedLeft, l) (parsedRight, r) =
       mappingBetweenLeft = SO.getLeftObjNameMapping parsedLeft parsedRight
       mappingBetweenRight = SO.getRightObjNameMapping parsedLeft parsedRight
 
-      ruleK = production leftK rightK []
+      ruleK = constructProduction leftK rightK []
 
       graphLRuleK = domain leftKtoLeftL
       graphRRuleK = domain rightKtoRightL
