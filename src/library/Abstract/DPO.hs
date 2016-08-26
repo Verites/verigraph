@@ -7,7 +7,7 @@
 module Abstract.DPO
   (
     Production
-  , production
+  , constructProduction
 
   , left
   , right
@@ -46,7 +46,7 @@ module Abstract.DPO
 
   -- ** Manipulating
   , invertProductionWithoutNacs
-  , downwardShift
+  , nacDownwardShift
   ) where
 
 import Abstract.Morphism
@@ -68,8 +68,8 @@ data Production m = Production
 -- the morphism /r : K -> R/, and the nacs /L -> Ni/, respectively.
 --
 -- Note: this doesn't check that the production is valid.
-production :: (DPO m, Eq (Obj m)) => m -> m -> [m] -> Production m
-production = Production
+constructProduction :: (DPO m, Eq (Obj m)) => m -> m -> [m] -> Production m
+constructProduction = Production
 
 -- | Obtain all matches from the production into the given object, even if they
 -- aren't applicable.
@@ -222,8 +222,10 @@ satisfiesSingleNac config match nac =
 -- | Given a morphism /m : L -> L'/ and a NAC /n : L -> N/, obtains
 -- an equivalent set of NACs /n'i : L' -> N'i/ that is equivalent to the
 -- original NAC.
-downwardShift :: EpiPairs m => DPOConfig -> m -> m -> [m]
-downwardShift config m n = newNacs
+
+-- TODO: Is this really a DPO feature?
+nacDownwardShift :: EpiPairs m => DPOConfig -> m -> m -> [m]
+nacDownwardShift config m n = newNacs
   where
     pairs = commutingPairsAlt (n,True) (m, matchRestriction config == MonoMatches)
     newNacs = map snd pairs
