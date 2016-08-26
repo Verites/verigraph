@@ -127,7 +127,7 @@ interLevelConflictOneMatch config sndRule match = m0s
     sndOrderL = getLHS sndRule
     sndOrderR = getRHS sndRule
 
-    (k,l') = pushoutComplement match sndOrderL
+    (k,l') = calculatePushoutComplement match sndOrderL
     (m',r') = calculatePushout k sndOrderR
 
     p = codomain match

@@ -74,7 +74,7 @@ class (Morphism m) => AdhesiveHLR m where
   --     X──────▶C
   --        f'
   -- @
-  pushoutComplement :: m -> m -> (m, m)
+  calculatePushoutComplement :: m -> m -> (m, m)
 
   -- | Calculate the pullback between the two given morphisms
   --

@@ -127,7 +127,7 @@ instance (Morphism m, Valid m, Eq (Obj m)) => Valid (Production m) where
 -- nor if the match satisfies all application conditions.
 calculateDPO :: AdhesiveHLR m => m -> Production m -> (m, m, m, m)
 calculateDPO m (Production l r _) =
-  let (k, f) = pushoutComplement m l
+  let (k, f) = calculatePushoutComplement m l
       (n, g) = calculatePushout k r
   in (k, n, f, g)
 

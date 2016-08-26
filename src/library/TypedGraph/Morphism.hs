@@ -213,7 +213,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
      3. delete all edges
      4. delete all nodes
   -}
-  pushoutComplement m l =
+  calculatePushoutComplement m l =
     let ml       = compose l m                                                         -- compose l and m obtaining ml
         delEdges = mapMaybe (GM.applyEdge $ mapping m) (orphanEdgesTyped l) -- obtain list of edges to be deleted in G
         delNodes = mapMaybe (GM.applyNode $ mapping m) (orphanNodesTyped l) -- obtain list of nodes to be deleted in G

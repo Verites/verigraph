@@ -59,8 +59,8 @@ epiPairsForConcurrentRule AllOverlapings config c n =
 concurrentRuleForPair :: (DPO m, EpiPairs m, Eq (Obj m)) => DPOConfig -> Production m -> Production m -> (m, m) -> Production m
 concurrentRuleForPair config c n pair = constructProduction l r (dmc ++ lp)
   where
-    pocC = pushoutComplement (fst pair) (getRHS c)
-    pocN = pushoutComplement (snd pair) (getLHS n)
+    pocC = calculatePushoutComplement (fst pair) (getRHS c)
+    pocN = calculatePushoutComplement (snd pair) (getLHS n)
     poC = calculatePushout (fst pocC) (getLHS c)
     poN = calculatePushout (fst pocN) (getRHS n)
     pb = injectivePullback (snd pocC) (snd pocN)

@@ -221,11 +221,11 @@ createSideRule inj k1 sideM1 s1 k2 sideM2 s2 = d
 
 
 instance AdhesiveHLR (RuleMorphism a b) where
-  pushoutComplement (RuleMorphism _ ruleG matchL matchK matchR) (RuleMorphism ruleK _ leftL leftK leftR) = (k,l')
+  calculatePushoutComplement (RuleMorphism _ ruleG matchL matchK matchR) (RuleMorphism ruleK _ leftL leftK leftR) = (k,l')
      where
-       (matchL', leftL') = pushoutComplement matchL leftL
-       (matchK', leftK') = pushoutComplement matchK leftK
-       (matchR', leftR') = pushoutComplement matchR leftR
+       (matchL', leftL') = calculatePushoutComplement matchL leftL
+       (matchK', leftK') = calculatePushoutComplement matchK leftK
+       (matchR', leftR') = calculatePushoutComplement matchR leftR
        l = commutingMorphismSameCodomain
              (compose leftK' (getLHS ruleG)) leftL'
              matchK' (compose (getLHS ruleK) matchL')
