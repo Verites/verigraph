@@ -160,7 +160,7 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
   -- | Inverts a production, adjusting the NACs accordingly.
   -- Needs information of nac injective satisfaction (in second order)
   -- and matches injective.
-  inverse :: DPO m => DPOConfig -> Production m -> Production m
+  invertProduction :: DPO m => DPOConfig -> Production m -> Production m
 
   -- | Given a production /L ←l- K -r→ R/ and a NAC morphism /n : L -> N/, obtain
   -- a set of NACs /n'i : R -> N'i/ that is equivalent to the original NAC.

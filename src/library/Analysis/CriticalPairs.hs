@@ -183,7 +183,7 @@ allProduceForbid config pLeft pRight =
     (produceForbid config pLeft inverseLeft pRight)
     (zip (nacs pRight) [0..])
   where
-    inverseLeft = inverse config pLeft
+    inverseLeft = invertProduction config pLeft
 
 -- | Check ProduceForbid for a NAC @n@ in @pRight@.
 produceForbid :: (EpiPairs m, DPO m) => DPOConfig -> Production m

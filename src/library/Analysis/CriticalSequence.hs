@@ -148,7 +148,7 @@ allProduceUse config pLeft pRight =
     (\m -> CriticalSequence Nothing m Nothing ProduceUse)
     prodUse
   where
-    invLeft = inverse config pLeft
+    invLeft = invertProduction config pLeft
     pairs = createPairsCodomain (matchRestriction config) (left invLeft) (left pRight)
     gluing =
       filter
@@ -169,7 +169,7 @@ allRemoveDangling config pLeft pRight =
     (\m -> CriticalSequence Nothing m Nothing RemoveDangling)
     remDang
   where
-    invLeft = inverse config pLeft
+    invLeft = invertProduction config pLeft
     pairs = createPairsCodomain (matchRestriction config) (left invLeft) (left pRight)
     gluing =
       filter
@@ -190,7 +190,7 @@ allProdUseAndDang config pLeft pRight =
       (Right m) -> CriticalSequence Nothing m Nothing RemoveDangling)
     dependencies
   where
-    invLeft = inverse config pLeft
+    invLeft = invertProduction config pLeft
     pairs = createPairsCodomain (matchRestriction config) (left invLeft) (left pRight)
     gluing =
       filter
@@ -210,7 +210,7 @@ allDeleteForbid config pLeft pRight =
     (deleteForbid config pLeft inverseLeft pRight)
     (zip (nacs pRight) [0..])
   where
-    inverseLeft = inverse config pLeft
+    inverseLeft = invertProduction config pLeft
 
 -- | Check DeleteForbid for a NAC @n@ in @pRight@
 deleteForbid :: (EpiPairs m, DPO m) => DPOConfig -> Production m
@@ -222,7 +222,7 @@ deleteForbid config pLeft inverseLeft pRight nac =
 
 -- ** Irreversible Dependencies
 
--- It occurs when applying pLeft and pRight, pLeft inverse cannot be applied.
+-- It occurs when applying pLeft and pRight, pLeft invertProduction cannot be applied.
 -- Capture cases of two rules only can be applied in a prefixed order.
 -- (DeliverDelete, DeliverDangling, ForbidProduce)
 
@@ -235,12 +235,12 @@ deleteForbid config pLeft inverseLeft pRight nac =
 -- Verify the non existence of h12: L1 -> D2 such that d2 . h12 = m1'.
 allDeliverDelete :: (DPO m, EpiPairs m) => DPOConfig
   -> Production m -> Production m -> [CriticalSequence m]
-allDeliverDelete config pLeft pRight = 
+allDeliverDelete config pLeft pRight =
   map
     (\m -> CriticalSequence Nothing m Nothing DeliverDelete)
     delDel
   where
-    invLeft = inverse config pLeft
+    invLeft = invertProduction config pLeft
     pairs = createPairsCodomain (matchRestriction config) (right pLeft) (left pRight)
     gluing =
       filter
@@ -253,15 +253,15 @@ allDeliverDelete config pLeft pRight =
 -- | All DeliverDangling caused by the derivation of @pLeft@ before @pRight@.
 --
 -- Rule @pLeft@ causes a deliver-delete dependency with @pRight@ if
--- rule @pRight@ creates something that unable inverse of @pLeft@.
+-- rule @pRight@ creates something that disables the inverse of @pLeft@.
 allDeliverDangling :: (DPO m, EpiPairs m) => DPOConfig
   -> Production m -> Production m -> [CriticalSequence m]
-allDeliverDangling config pLeft pRight = 
+allDeliverDangling config pLeft pRight =
   map
     (\m -> CriticalSequence Nothing m Nothing DeliverDangling)
     delDang
   where
-    invLeft = inverse config pLeft
+    invLeft = invertProduction config pLeft
     pairs = createPairsCodomain (matchRestriction config) (right pLeft) (left pRight)
     gluing =
       filter
@@ -287,8 +287,8 @@ allForbidProduce config pLeft pRight =
     (forbidProduce config inverseLeft inverseRight pRight)
     (zip (nacs inverseLeft) [0..])
     where
-      inverseLeft = inverse config pLeft
-      inverseRight = inverse config pRight
+      inverseLeft = invertProduction config pLeft
+      inverseRight = invertProduction config pRight
 
 -- | Check ForbidProduce for a NAC @n@ in right of @pLeft@
 forbidProduce :: (EpiPairs m, DPO m) => DPOConfig -> Production m

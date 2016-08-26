@@ -43,7 +43,7 @@ createdEdges :: GraphRule a b -> [G.EdgeId]
 createdEdges r = TGM.orphanEdgesTyped (right r)
 
 instance DPO (TypedGraphMorphism a b) where
-  inverse config r = production (right r) (left r) (concatMap (shiftLeftNac config r) (nacs r))
+  invertProduction config r = production (right r) (left r) (concatMap (shiftLeftNac config r) (nacs r))
 
   shiftLeftNac config rule n = [calculateComatch n rule | satisfiesGluingConditions config rule n]
 

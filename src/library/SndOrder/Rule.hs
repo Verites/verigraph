@@ -70,7 +70,7 @@ applySecondOrderListRules ::
 applySecondOrderListRules f sndRule = concatMap (f sndRule)
 
 instance DPO (RuleMorphism a b) where
-  inverse config r = addMinimalSafetyNacs config newRule
+  invertProduction config r = addMinimalSafetyNacs config newRule
     where
       newRule = production (right r) (left r) (concatMap (shiftLeftNac config r) (nacs r))
 
