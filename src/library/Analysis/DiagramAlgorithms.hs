@@ -35,7 +35,7 @@ module Analysis.DiagramAlgorithms (
 import           Abstract.Morphism
 import           Data.Maybe                (mapMaybe)
 import           Abstract.AdhesiveHLR      as RW
-import           Abstract.DPO              as RW hiding (comatch)
+import           Abstract.DPO              as RW hiding (calculateComatch)
 
 -- | Rule @p1@ is in a delete-use conflict with @p2@ if @p1@ deletes
 -- something that is used by @p2@.
@@ -111,7 +111,7 @@ produceForbidOneNac config l inverseLeft r (n,idx) =
       validG =
         mapMaybe
           (\(m1', q21) ->
-            let (k, m1, r', l') = RW.dpo m1' inverseLeft --allG
+            let (k, m1, r', l') = RW.calculateDPO m1' inverseLeft --allG
             in
               if satisfiesNACs config l m1
                 then Just (m1', q21, k, r', m1, l')

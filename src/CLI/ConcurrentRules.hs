@@ -39,10 +39,10 @@ crGenerationType :: Parser CRGenerationType
 crGenerationType =
       flag' MaxConcurrentRule
         ( long "max-rule"
-         <> help "Generate only the concurrent rule with maximum overlap between comatch and match")
+         <> help "Generate only the concurrent rule with maximum overlap between calculateComatch and match")
   <|> flag' AllConcurrentRules
         ( long "all-rules"
-          <> help "Generate concurrent rules for all possible overlaps between comatch and match")
+          <> help "Generate concurrent rules for all possible overlaps between calculateComatch and match")
 
 crDependencies :: Parser CRDependencies
 crDependencies =

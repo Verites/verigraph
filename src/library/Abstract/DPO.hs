@@ -37,15 +37,15 @@ module Abstract.DPO
   -- | Given a production and a match for its left side, it may be possible
   -- to apply the production and obtain a transformation of the matched graph.
   -- This section provides functions that calculate such transformations.
-  , allMatches
-  , applicableMatches
-  , dpo
-  , comatch
+  , findAllMatches
+  , findApplicableMatches
+  , calculateDPO
+  , calculateComatch
   , rewrite
 
 
   -- ** Manipulating
-  , inverseWithoutNacs
+  , invertProductionWithoutNacs
   , downwardShift
   ) where
 
@@ -75,8 +75,8 @@ production = Production
 -- aren't applicable.
 --
 -- When given `MonoMatches`, only obtains monomorphic matches.
-allMatches :: (DPO m) => DPOConfig -> Production m -> Obj m -> [m]
-allMatches config production =
+findAllMatches :: (DPO m) => DPOConfig -> Production m -> Obj m -> [m]
+findAllMatches config production =
   findMorphisms
     (matchRestrictionToProp $ matchRestriction config)
     (codomain $ left production)
@@ -86,9 +86,9 @@ allMatches config production =
 -- and gluing conditions.
 --
 -- When given `MonoMatches`, only obtains monomorphic matches.
-applicableMatches :: (DPO m) => DPOConfig -> Production m -> Obj m -> [m]
-applicableMatches config production obj =
-  filter (satisfiesRewritingConditions config production) (allMatches config production obj)
+findApplicableMatches :: (DPO m) => DPOConfig -> Production m -> Obj m -> [m]
+findApplicableMatches config production obj =
+  filter (satisfiesRewritingConditions config production) (findAllMatches config production obj)
 
 
 instance (Morphism m, Valid m, Eq (Obj m)) => Valid (Production m) where
@@ -116,13 +116,13 @@ instance (Morphism m, Valid m, Eq (Obj m)) => Valid (Production m) where
 --
 -- Note: this doesn't test whether the match is for the actual production,
 -- nor if the match satisfies all application conditions.
-dpo :: AdhesiveHLR m => m -> Production m -> (m, m, m, m)
-dpo m (Production l r _) =
+calculateDPO :: AdhesiveHLR m => m -> Production m -> (m, m, m, m)
+calculateDPO m (Production l r _) =
   let (k, f) = pushoutComplement m l
       (n, g) = pushout k r
   in (k, n, f, g)
 
--- | Given a match and a production, calculate the comatch for the
+-- | Given a match and a production, calculate the calculateComatch for the
 -- corresponding transformation.
 --
 -- Given match /m : L -> G/ and the production @p = /L ←l- K -r→ R/@ such that
@@ -140,19 +140,19 @@ dpo m (Production l r _) =
 --
 -- Note: this doesn't test whether the match is for the actual production,
 -- nor if the match satisfies all application conditions.
-comatch :: AdhesiveHLR m => m -> Production m -> m
-comatch m prod = let (_,m',_,_) = dpo m prod in m'
+calculateComatch :: AdhesiveHLR m => m -> Production m -> m
+calculateComatch m prod = let (_,m',_,_) = calculateDPO m prod in m'
 
 -- | Given a match and a production, obtain the rewritten object.
 --
--- @rewrite match production@ is equivalent to @'codomain' ('comatch' match production)@
+-- @rewrite match production@ is equivalent to @'codomain' ('calculateComatch' match production)@
 rewrite :: AdhesiveHLR m => m -> Production m -> Obj m
 rewrite m prod =
-  codomain (comatch m prod)
+  codomain (calculateComatch m prod)
 
 -- | Discards the NACs of a production and inverts it.
-inverseWithoutNacs :: Production m -> Production m
-inverseWithoutNacs p = Production (right p) (left p) []
+invertProductionWithoutNacs :: Production m -> Production m
+invertProductionWithoutNacs p = Production (right p) (left p) []
 
 -- | Class for morphisms whose category is Adhesive-HLR, and which can be
 -- used for double-pushout transformations.

@@ -53,7 +53,7 @@ epiPairsForConcurrentRule OnlyDependency config c n =
 epiPairsForConcurrentRule AllOverlapings config c n =
   let matchInj = matchRestriction config == MonoMatches
       allPairs = createPairs matchInj (codomain (right c)) (codomain (left n))
-      isValidPair (lp, rp) = satisfiesGluingConditions config (inverseWithoutNacs c) lp && satisfiesRewritingConditions config n rp
+      isValidPair (lp, rp) = satisfiesGluingConditions config (invertProductionWithoutNacs c) lp && satisfiesRewritingConditions config n rp
   in filter isValidPair allPairs
 
 concurrentRuleForPair :: (DPO m, EpiPairs m, Eq (Obj m)) => DPOConfig -> Production m -> Production m -> (m, m) -> Production m

@@ -15,7 +15,7 @@ module Analysis.CriticalPairs
    ) where
 
 import           Abstract.AdhesiveHLR      as RW
-import           Abstract.DPO              as RW hiding (comatch)
+import           Abstract.DPO              as RW hiding (calculateComatch)
 import           Analysis.DiagramAlgorithms
 import           Data.Maybe                (mapMaybe)
 
@@ -58,7 +58,7 @@ data CP =
 
 data CriticalPair m = CriticalPair {
     match  :: (m, m),
-    comatch :: Maybe (m, m),
+    calculateComatch :: Maybe (m, m),
     nacMatch :: Maybe (m, Int), --if is ProduceForbid, here is the index of the nac
     cp  :: CP
     } deriving (Eq,Show)
@@ -69,7 +69,7 @@ getMatch = match
 
 -- | Returns the comatches (m1',m2')
 getComatch :: CriticalPair m -> Maybe (m, m)
-getComatch = comatch
+getComatch = calculateComatch
 
 -- | Returns the type of a 'CriticalPair'
 getCP :: CriticalPair m -> CP

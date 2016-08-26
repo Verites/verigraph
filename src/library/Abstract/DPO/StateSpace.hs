@@ -199,7 +199,7 @@ putState object =
         return (index, True)
   where
     isTrueAt config object (_, production) =
-      not . null $ applicableMatches config production object
+      not . null $ findApplicableMatches config production object
 
 
 -- | Adds a transition between the states with the given indices. Does __not__ check if
@@ -229,7 +229,7 @@ expandSuccessors (index, object) =
     applyProduction prod =
       do
         config <- getDpoConfig
-        forM (applicableMatches config prod object) $ \match -> do
+        forM (findApplicableMatches config prod object) $ \match -> do
           let object' = rewrite match prod
 
           (index', isNew) <- putState object'

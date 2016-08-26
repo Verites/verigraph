@@ -76,7 +76,7 @@ instance DPO (RuleMorphism a b) where
 
   -- | Needs the satisfiesNACs extra verification because not every satisfiesGluingConditions nac can be shifted
   shiftLeftNac config rule n =
-    [comatch n rule |
+    [calculateComatch n rule |
       satisfiesGluingConditions config rule n &&
       satisfiesNACs config ruleWithOnlyMinimalSafetyNacs n]
 
@@ -92,7 +92,7 @@ applySndOrderRule :: DPOConfig -> (String, SndOrderRule a b) -> (String, GraphRu
 applySndOrderRule config (sndName,sndRule) (fstName,fstRule) =
   let
     matches =
-      applicableMatches config sndRule fstRule
+      findApplicableMatches config sndRule fstRule
 
     newRules =
       map (`rewrite` sndRule) matches

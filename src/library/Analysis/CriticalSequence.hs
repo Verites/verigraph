@@ -19,7 +19,7 @@ module Analysis.CriticalSequence
    ) where
 
 import           Abstract.AdhesiveHLR      as RW
-import           Abstract.DPO              as RW hiding (comatch)
+import           Abstract.DPO              as RW hiding (calculateComatch)
 import           Analysis.DiagramAlgorithms
 import           Data.Maybe                (mapMaybe)
 
@@ -64,7 +64,7 @@ data CS =
 
 data CriticalSequence m = CriticalSequence {
     match :: Maybe (m, m),
-    comatch :: (m, m),
+    calculateComatch :: (m, m),
     nac :: Maybe (m, Int), --if is DeleteForbid or ForbidProduce, here is the index of the nac
     cs  :: CS
     } deriving (Eq,Show)
@@ -75,7 +75,7 @@ getMatch = match
 
 -- | Returns the comatches (m1', m2')
 getComatch :: CriticalSequence m -> (m, m)
-getComatch = comatch
+getComatch = calculateComatch
 
 -- | Returns the type of a 'CriticalSequence'
 getCS :: CriticalSequence m -> CS

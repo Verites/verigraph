@@ -110,7 +110,7 @@ interLevelConflict config (sndName, sndRule) (fstName, fstRule) =
 
   where
     validMatches =
-      applicableMatches config sndRule fstRule
+      findApplicableMatches config sndRule fstRule
 
     conflictsForMatch match =
       do
@@ -148,11 +148,11 @@ interLevelConflictOneMatch config sndRule match = m0s
 
     defineMatches ax = filter conflicts validMatches
       where
-        validMatches = applicableMatches config p (codomain ax)
+        validMatches = findApplicableMatches config p (codomain ax)
 
         conflicts m0 = Prelude.null validM0''-- or all (==False) (map (\m'' -> satisfiesGluingConditions inj bigL'' m'') validM0'') --thesis def
           where
-            matchesM0'' = allMatches config p'' (codomain m0)
+            matchesM0'' = findAllMatches config p'' (codomain m0)
             validMatch = satisfiesRewritingConditions config p''
 
             commutes m0'' = compose fl m0 == compose gl m0''
