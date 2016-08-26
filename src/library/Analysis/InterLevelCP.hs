@@ -56,7 +56,7 @@ evo config (n1,r1) (n2,r2) = (n1 ++ "_" ++ n2, map (classify config r1 r2) xs'')
     leftR1 = constructProduction (mappingLeft (getLHS r1)) (mappingLeft (getRHS r1)) []
     leftR2 = constructProduction (mappingLeft (getLHS r2)) (mappingLeft (getRHS r2)) []
 
-    pairs = createPairs (matchRestriction config == MonoMatches) leftR1 leftR2
+    pairs = createJointlyEpimorphicPairs (matchRestriction config == MonoMatches) leftR1 leftR2
 
     xs = filter (\(m1,_) -> valid (codomain m1)) pairs
     xs' = filter (\(m1,m2) -> satisfyRewritingConditions config (r1Left, mappingLeft m1) (r2Left, mappingLeft m2)) xs
@@ -164,7 +164,7 @@ interLevelConflictOneMatch config sndRule match = m0s
 relevantGraphs :: DPOConfig -> TypedGraphMorphism a b -> TypedGraphMorphism a b
                -> [TypedGraphMorphism a b]
 --relevantGraphs inj dangFl dangGl = concatMap (\ax -> partitions inj (codomain ax)) axs
-relevantGraphs config dangFl dangGl = concatMap (partitions matchInjective) axs
+relevantGraphs config dangFl dangGl = concatMap (createAllSubobjects matchInjective) axs
   where
     matchInjective = matchRestriction config == MonoMatches
     (_,al) = calculatePushout dangFl dangGl

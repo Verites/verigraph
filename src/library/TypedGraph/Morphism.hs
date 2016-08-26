@@ -222,7 +222,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
                            delNodes
     in (k, idMap (codomain k) (codomain m))
 
-  injectivePullback f g = (delNodesFromF', delNodesFromG')
+  monomorphicPullback f g = (delNodesFromF', delNodesFromG')
     where
       f' = invertTGM f
       g' = invertTGM g
@@ -303,9 +303,9 @@ ruleDeletes l m apply list n = inL && not isPreserv
 
 instance EpiPairs (TypedGraphMorphism a b) where
   -- | Create all jointly surjective pairs of @m1@ and @m2@
-  createPairs inj m1 m2 = map (mountTGMBoth m1 m2) (genGraphEqClass (mixGM (m1,inj) (m2,inj)))
+  createJointlyEpimorphicPairs inj m1 m2 = map (mountTGMBoth m1 m2) (genGraphEqClass (mixGM (m1,inj) (m2,inj)))
 
-  partitions inj m1 = map fst part
+  createAllSubobjects inj m1 = map fst part
     where
       m2 = gmbuild G.empty G.empty [] []
       part = map (mountTGMBoth m1 m2) (genGraphEqClass (mixGM (m1,inj) (m2,inj)))

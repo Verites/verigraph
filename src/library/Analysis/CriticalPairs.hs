@@ -94,7 +94,7 @@ getCPNacIdx cp =
 -- The flag indicates only monomorphic morphisms.
 createPairsCodomain :: (EpiPairs m) => MatchRestriction -> m -> m -> [(m, m)]
 createPairsCodomain inj m1 m2 =
-  createPairs (inj == MonoMatches) (codomain m1) (codomain m2)
+  createJointlyEpimorphicPairs (inj == MonoMatches) (codomain m1) (codomain m2)
 
 -- | Returns the Critical Pairs with rule names
 namedCriticalPairs :: (EpiPairs m, DPO m) => DPOConfig

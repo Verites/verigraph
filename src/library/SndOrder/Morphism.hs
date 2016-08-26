@@ -148,7 +148,7 @@ buildPair l g (m1,m2,m3) = ruleMorphism l g m1 m2 m3
 
 
 instance EpiPairs (RuleMorphism a b) where
-  createPairs inj m1 m2 = ret
+  createJointlyEpimorphicPairs inj m1 m2 = ret
     where
       l1 = codomain (getLHS m1)
       l2 = codomain (getLHS m2)
@@ -157,7 +157,7 @@ instance EpiPairs (RuleMorphism a b) where
       r1 = codomain (getRHS m1)
       r2 = codomain (getRHS m2)
 
-      ks = createPairs inj k1 k2
+      ks = createJointlyEpimorphicPairs inj k1 k2
 
       lefts = concatMap
                 (\(k1,k2) -> let ls = createSideRule inj k1 (getLHS m1) l1 k2 (getLHS m2) l2
@@ -171,12 +171,12 @@ instance EpiPairs (RuleMorphism a b) where
                    in (ruleMorphism m1 rule l1 k1 r1,
                        ruleMorphism m2 rule l2 k2 r2)) rights
 
-  partitions _ _ = error "Not implemented"
+  createAllSubobjects _ _ = error "Not implemented"
 
   --FIXME
   createPairsNac _ r nac = allPairs
     where
-      allPairs = createPairs True r (codomain nac)
+      allPairs = createJointlyEpimorphicPairs True r (codomain nac)
   {-createPairsNac nacInj inj r nac = satsMorphisms
     where
       allPairs = createPairs False r (codomain nac)
@@ -213,7 +213,7 @@ createSideRule :: Bool -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> Gr
             -> [(TypedGraphMorphism a b, TypedGraphMorphism a b, TypedGraphMorphism a b)]
 createSideRule inj k1 sideM1 s1 k2 sideM2 s2 = d
   where
-    a = createPairs inj s1 s2
+    a = createJointlyEpimorphicPairs inj s1 s2
     b = concatMap (\(s1,s2) -> sequence [[s1],[s2], findMorphisms MonoMorphisms (codomain k1) (codomain s1)]) a
     c = map (\(x:y:z:_) -> (x,y,z)) b
     d = filter (\(ss1,ss2,m) -> compose sideM1 ss1 == compose k1 m &&
@@ -252,7 +252,7 @@ instance AdhesiveHLR (RuleMorphism a b) where
        r' = RuleMorphism ruleD newRule rightL' rightK' rightR'
 
   -- TODO
-  injectivePullback _ _ = error "injectivePullback not implemented in RuleMorphism"
+  monomorphicPullback _ _ = error "monomorphicPullback not implemented in RuleMorphism"
 
   hasPushoutComplement (restrictionG, g) (restrictionF, f) =
     hasPushoutComplement (restrictionG, mappingLeft g) (restrictionF, mappingLeft f)

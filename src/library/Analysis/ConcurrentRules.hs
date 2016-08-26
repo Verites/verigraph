@@ -52,7 +52,7 @@ epiPairsForConcurrentRule OnlyDependency config c n =
 
 epiPairsForConcurrentRule AllOverlapings config c n =
   let matchInj = matchRestriction config == MonoMatches
-      allPairs = createPairs matchInj (codomain (getRHS c)) (codomain (getLHS n))
+      allPairs = createJointlyEpimorphicPairs matchInj (codomain (getRHS c)) (codomain (getLHS n))
       isValidPair (lp, rp) = satisfiesGluingConditions config (invertProductionWithoutNacs c) lp && satisfiesRewritingConditions config n rp
   in filter isValidPair allPairs
 
@@ -63,7 +63,7 @@ concurrentRuleForPair config c n pair = constructProduction l r (dmc ++ lp)
     pocN = calculatePushoutComplement (snd pair) (getLHS n)
     poC = calculatePushout (fst pocC) (getLHS c)
     poN = calculatePushout (fst pocN) (getRHS n)
-    pb = injectivePullback (snd pocC) (snd pocN)
+    pb = monomorphicPullback (snd pocC) (snd pocN)
     l = compose (fst pb) (snd poC)
     r = compose (snd pb) (snd poN)
     dmc = concatMap (nacDownwardShift config (fst poC)) (getNACs c)

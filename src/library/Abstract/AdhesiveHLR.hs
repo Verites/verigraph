@@ -91,19 +91,18 @@ class (Morphism m) => AdhesiveHLR m where
   --     B──────▶C
   --        g
   --
-  -- TODO: rename to /monoPullback/ to use category-theoretical names?
   -- @
-  injectivePullback :: m -> m -> (m, m)
+  monomorphicPullback :: m -> m -> (m, m)
 
 class Morphism m => EpiPairs m where
   -- | Create all jointly epimorphic pairs of morphisms from the given objects.
   --
   -- If the first argument is true, only pairs of monomorphisms are created. Otherwise,
   -- pairs of arbitrary morphisms are created.
-  createPairs :: Bool -> Obj m -> Obj m -> [(m, m)]
+  createJointlyEpimorphicPairs :: Bool -> Obj m -> Obj m -> [(m, m)]
 
   -- TODO: document
-  partitions :: Bool -> Obj m -> [m]
+  createAllSubobjects :: Bool -> Obj m -> [m]
 
   -- | Create a special case of jointly epimorphic pairs, where the second morphism is a Nac
   -- The first flag indicates Nac satisfability with a monomorphic morphism
@@ -118,22 +117,21 @@ class Morphism m => EpiPairs m where
   --
   -- Given /f : X -> A/ and /g : X -> B/, obtain all jointly epimorphic pairs
   -- /(f', g')/ such that the following diagram commutes.
-  --
   -- @
-  --       g
-  --    X----->B
-  --    |      |
-  --  f |      | f'
-  --    v      v
-  --    A----->Y
-  --       g'
+  --        g
+  --     X──────▶B
+  --     │       │
+  --   f │       │ f'
+  --     ▼       ▼
+  --     A──────▶Y
+  --        g'
   -- @
   --
   -- Bool indicates injective
   commutingPairs :: Bool -> m -> m -> [(m, m)]
   commutingPairs inj m1 m2 = filt
     where
-      allPairs = createPairs inj (codomain m1) (codomain m2)
+      allPairs = createJointlyEpimorphicPairs inj (codomain m1) (codomain m2)
       filt = filter (\(x,y) -> compose m1 x == compose m2 y) allPairs
 
   -- Similar to commutingPairs but indicating which morphism is injective
