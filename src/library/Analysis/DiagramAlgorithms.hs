@@ -52,10 +52,10 @@ deleteUse config l (m1,m2) = null matchD
 -- | Rule @p1@ is in a produce-dangling conflict with @p2@ if @p1@
 -- produces something that unable @p2@.
 --
--- Gets the match of @p1@ from L2 to P1, checks if satsNacs and not satsGluing
+-- Gets the match of @p1@ from L2 to P1, checks if satisfiesNACs and not satisfiesGluingConditions
 produceDangling :: DPO m => DPOConfig -> Production m -> Production m -> (m, m) -> Bool
 produceDangling config l r (m1,m2) =
-  not (null matchD) && not (satsGluing config r m2') && satsNacs config r m2'
+  not (null matchD) && not (satisfiesGluingConditions config r m2') && satisfiesNACs config r m2'
   where
     (k,l') = RW.pushoutComplement m1 (left l)
     morphismRestriction = matchRestrictionToProp (matchRestriction config)
@@ -82,7 +82,7 @@ deleteUseDangling config l r (m1,m2) =
     matchD = filter (\x -> m2 == compose x l') lTOd
     (_,r') = RW.pushout k (right l)
     m2' = compose (head matchD) r'
-    dang = not (satsGluing config r m2') && satsNacs config r m2'
+    dang = not (satisfiesGluingConditions config r m2') && satisfiesNACs config r m2'
 
 -- | Rule @p1@ is in a produce-forbid conflict with @p2@ if @p1@
 -- produces something that able some nac of @p2@.
@@ -97,7 +97,7 @@ produceForbidOneNac config l inverseLeft r (n,idx) =
       -- common names
       r1 = right l
       restriction = matchRestrictionToProp (matchRestriction config)
-      satsGluingNacs = satsGluingAndNacs config
+      satsGluingNacs = satisfiesRewritingConditions config
 
       -- Consider for a NAC n (L2 -> N2) of r any jointly surjective
       -- pair of morphisms (m1',q21) with q21 (part)inj
@@ -113,7 +113,7 @@ produceForbidOneNac config l inverseLeft r (n,idx) =
           (\(m1', q21) ->
             let (k, m1, r', l') = RW.dpo m1' inverseLeft --allG
             in
-              if satsNacs config l m1
+              if satisfiesNACs config l m1
                 then Just (m1', q21, k, r', m1, l')
                 else Nothing)
         validP1

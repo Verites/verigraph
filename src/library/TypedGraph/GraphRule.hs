@@ -45,7 +45,7 @@ createdEdges r = TGM.orphanEdgesTyped (right r)
 instance DPO (TypedGraphMorphism a b) where
   inverse config r = production (right r) (left r) (concatMap (shiftLeftNac config r) (nacs r))
 
-  shiftLeftNac config rule n = [comatch n rule | satsGluing config rule n]
+  shiftLeftNac config rule n = [comatch n rule | satisfiesGluingConditions config rule n]
 
   partiallyMonomorphic = partialInjectiveTGM
 

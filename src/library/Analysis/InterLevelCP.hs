@@ -59,8 +59,8 @@ evo config (n1,r1) (n2,r2) = (n1 ++ "_" ++ n2, map (classify config r1 r2) xs'')
     pairs = createPairs (matchRestriction config == MonoMatches) leftR1 leftR2
 
     xs = filter (\(m1,_) -> valid (codomain m1)) pairs
-    xs' = filter (\(m1,m2) -> satsGluingNacsBoth config (r1Left, mappingLeft m1) (r2Left, mappingLeft m2)) xs
-    xs'' = filter (\(m1,m2) -> satsGluingNacsBoth config (r1Right, mappingLeft m1) (r2Right, mappingLeft m2)) xs'
+    xs' = filter (\(m1,m2) -> satisfyRewritingConditions config (r1Left, mappingLeft m1) (r2Left, mappingLeft m2)) xs
+    xs'' = filter (\(m1,m2) -> satisfyRewritingConditions config (r1Right, mappingLeft m1) (r2Right, mappingLeft m2)) xs'
 
 danglingExtension :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 danglingExtension gl l = tlUpdated
@@ -150,10 +150,10 @@ interLevelConflictOneMatch config sndRule match = m0s
       where
         validMatches = applicableMatches config p (codomain ax)
 
-        conflicts m0 = Prelude.null validM0''-- or all (==False) (map (\m'' -> satsGluing inj bigL'' m'') validM0'') --thesis def
+        conflicts m0 = Prelude.null validM0''-- or all (==False) (map (\m'' -> satisfiesGluingConditions inj bigL'' m'') validM0'') --thesis def
           where
             matchesM0'' = allMatches config p'' (codomain m0)
-            validMatch = satsGluingAndNacs config p''
+            validMatch = satisfiesRewritingConditions config p''
 
             commutes m0'' = compose fl m0 == compose gl m0''
 

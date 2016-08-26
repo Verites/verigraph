@@ -43,7 +43,7 @@ a fn = do
           pairs = createPairsCodomain True (left r1) (left r2)
           --dgs = Partitions.GraphPart.edges mix2
           inj = filter (\(m1,m2) -> monomorphism m1 && monomorphism m2) pairs
-          gluing = filter (\(m1,m2) -> satsGluing True r1 m1 && satsGluing True r2 m2) inj
+          gluing = filter (\(m1,m2) -> satisfiesGluingConditions True r1 m1 && satisfiesGluingConditions True r2 m2) inj
           delUse = filter (deleteUse r1 r2) gluing
       return (r1,r2)
       --print (fst cp)
@@ -485,7 +485,7 @@ pushout inverseLeft x = map (\(h1,q21,k,r') ->
  let (m1,l') = RW.pushout k (right inverseLeft) in
  (h1,q21,k,r',m1,l')) x
 
-filtM1 l x = filter (\(_,_,_,_,m1,_) -> satsNacs l m1) x
+filtM1 l x = filter (\(_,_,_,_,m1,_) -> satisfiesNACs l m1) x
 
 h21 x n = concat
  (map (\(h1,q21,k,r',m1,l') ->
@@ -541,7 +541,7 @@ l' = map snd ml'
 
 m1k = zip mm1 k
 
-filtM1 = filter (\(m1,_) -> satsNacs le m1) m1k
+filtM1 = filter (\(m1,_) -> satisfiesNACs le m1) m1k
 
 h12 = map (\(_,k) -> matches (M.codomain (left ri)) (M.codomain k) FREE) filtM1
 filtH12 = map (\(x,y,z) -> validH12 x y z) (zip3 h12 (map snd filtPairs) r')

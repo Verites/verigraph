@@ -128,7 +128,7 @@ allDeleteUse config pLeft pRight =
     pairs = createPairsCodomain (matchRestriction config) (left pLeft) (left pRight)
     gluing =
       filter
-        (\(m1,m2) -> satsGluingNacsBoth config (pLeft,m1) (pRight,m2))
+        (\(m1,m2) -> satisfyRewritingConditions config (pLeft,m1) (pRight,m2))
         pairs
     delUse = filter (deleteUse config pLeft) gluing
 
@@ -146,7 +146,7 @@ allProduceDangling config pLeft pRight =
     pairs = createPairsCodomain (matchRestriction config) (left pLeft) (left pRight)
     gluing =
       filter
-        (\(m1,m2) -> satsGluingNacsBoth config (pLeft,m1) (pRight,m2))
+        (\(m1,m2) -> satisfyRewritingConditions config (pLeft,m1) (pRight,m2))
         pairs
     prodDang = filter (produceDangling config pLeft pRight) gluing
 
@@ -166,7 +166,7 @@ allDeleteUseAndDang config pLeft pRight =
     pairs = createPairsCodomain (matchRestriction config) (left pLeft) (left pRight)
     gluing =
       filter
-        (\(m1,m2) -> satsGluingNacsBoth config (pLeft,m1) (pRight,m2))
+        (\(m1,m2) -> satisfyRewritingConditions config (pLeft,m1) (pRight,m2))
         pairs
     conflicts = mapMaybe (deleteUseDangling config pLeft pRight) gluing
 

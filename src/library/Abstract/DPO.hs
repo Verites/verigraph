@@ -27,10 +27,10 @@ module Abstract.DPO
   -- if such conditions are met.
 
   , DPO(..)
-  , satsGluing
-  , satsNacs
-  , satsGluingAndNacs
-  , satsGluingNacsBoth
+  , satisfiesGluingConditions
+  , satisfiesNACs
+  , satisfiesRewritingConditions
+  , satisfyRewritingConditions
 
 
   -- *** Transform
@@ -88,7 +88,7 @@ allMatches config production =
 -- When given `MonoMatches`, only obtains monomorphic matches.
 applicableMatches :: (DPO m) => DPOConfig -> Production m -> Obj m -> [m]
 applicableMatches config production obj =
-  filter (satsGluingAndNacs config production) (allMatches config production obj)
+  filter (satisfiesRewritingConditions config production) (allMatches config production obj)
 
 
 instance (Morphism m, Valid m, Eq (Obj m)) => Valid (Production m) where
@@ -101,7 +101,7 @@ instance (Morphism m, Valid m, Eq (Obj m)) => Valid (Production m) where
 -- for the corresponding transformation.
 --
 -- Given match /m : L -> G/ and the production /L ←l- K -r→ R/ such that
--- @'satsGluingAndNacs' _ _ p m == True@, returns /k/, /n/, /f/ and /g/ (respectively)
+-- @'satisfiesRewritingConditions' _ _ p m == True@, returns /k/, /n/, /f/ and /g/ (respectively)
 -- such that the following two squares are pushouts.
 --
 -- @
@@ -126,7 +126,7 @@ dpo m (Production l r _) =
 -- corresponding transformation.
 --
 -- Given match /m : L -> G/ and the production @p = /L ←l- K -r→ R/@ such that
--- @'satsGluingAndNacs' _ _ p m == True@, returns /n/ such that the following two
+-- @'satisfiesRewritingConditions' _ _ p m == True@, returns /n/ such that the following two
 -- squares are pushouts.
 --
 -- @
@@ -173,16 +173,16 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
   partiallyMonomorphic :: m -> m -> Bool
 --{-# WARNING partiallyMonomorphic "Only necessary until 'partInjMatches' is corrected" #-}
 
-satsGluing :: DPO m => DPOConfig -> Production m -> m -> Bool
-satsGluing config production match =
+satisfiesGluingConditions :: DPO m => DPOConfig -> Production m -> m -> Bool
+satisfiesGluingConditions config production match =
   hasPushoutComplement (matchIsMono, match) (AnyMorphisms, left production)
   where
     matchIsMono =
       matchRestrictionToProp (matchRestriction config)
 
 -- | True if the given match satisfies all NACs of the given production.
-satsNacs :: DPO m => DPOConfig -> Production m -> m -> Bool
-satsNacs config production match =
+satisfiesNACs :: DPO m => DPOConfig -> Production m -> m -> Bool
+satisfiesNACs config production match =
   all (satisfiesSingleNac config match) (nacs production)
 
 
@@ -190,16 +190,16 @@ satsNacs config production match =
 -- @inj@ only indicates if the match is injective, this function does not checks it
 --
 -- TODO: deprecate? why do we need this __here__?
-satsGluingNacsBoth :: DPO m => DPOConfig -> (Production m, m) -> (Production m, m) -> Bool
-satsGluingNacsBoth config (l,m1) (r,m2) =
-  satsGluingAndNacs config l m1 && satsGluingAndNacs config r m2
+satisfyRewritingConditions :: DPO m => DPOConfig -> (Production m, m) -> (Production m, m) -> Bool
+satisfyRewritingConditions config (l,m1) (r,m2) =
+  satisfiesRewritingConditions config l m1 && satisfiesRewritingConditions config r m2
 
 
 -- | True if the given match satisfies the gluing condition and NACs of the
 -- given production.
-satsGluingAndNacs :: DPO m => DPOConfig -> Production m -> m -> Bool
-satsGluingAndNacs config production match =
-  satsGluing config production match && satsNacs config production match
+satisfiesRewritingConditions :: DPO m => DPOConfig -> Production m -> m -> Bool
+satisfiesRewritingConditions config production match =
+  satisfiesGluingConditions config production match && satisfiesNACs config production match
 
 
 satisfiesSingleNac :: DPO m => DPOConfig -> m -> m -> Bool

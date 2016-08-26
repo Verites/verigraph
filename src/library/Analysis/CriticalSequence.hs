@@ -152,7 +152,7 @@ allProduceUse config pLeft pRight =
     pairs = createPairsCodomain (matchRestriction config) (left invLeft) (left pRight)
     gluing =
       filter
-        (\(m1',m2') -> satsGluingNacsBoth config (invLeft,m1') (pRight,m2'))
+        (\(m1',m2') -> satisfyRewritingConditions config (invLeft,m1') (pRight,m2'))
         pairs
     prodUse = filter (deleteUse config invLeft) gluing
 
@@ -173,7 +173,7 @@ allRemoveDangling config pLeft pRight =
     pairs = createPairsCodomain (matchRestriction config) (left invLeft) (left pRight)
     gluing =
       filter
-        (\(m1,m2) -> satsGluingNacsBoth config (invLeft,m1) (pRight,m2))
+        (\(m1,m2) -> satisfyRewritingConditions config (invLeft,m1) (pRight,m2))
         pairs
     remDang = filter (produceDangling config invLeft pRight) gluing
 
@@ -194,7 +194,7 @@ allProdUseAndDang config pLeft pRight =
     pairs = createPairsCodomain (matchRestriction config) (left invLeft) (left pRight)
     gluing =
       filter
-        (\(m1,m2) -> satsGluingNacsBoth config (invLeft,m1) (pRight,m2))
+        (\(m1,m2) -> satisfyRewritingConditions config (invLeft,m1) (pRight,m2))
         pairs
     dependencies = mapMaybe (deleteUseDangling config invLeft pRight) gluing
 
@@ -244,7 +244,7 @@ allDeliverDelete config pLeft pRight =
     pairs = createPairsCodomain (matchRestriction config) (right pLeft) (left pRight)
     gluing =
       filter
-        (\(m1',m2') -> satsGluingNacsBoth config (invLeft,m1') (pRight,m2'))
+        (\(m1',m2') -> satisfyRewritingConditions config (invLeft,m1') (pRight,m2'))
         pairs
     delDel = filter (\(m1,m2) -> deleteUse config pRight (m2,m1)) gluing
 
@@ -265,7 +265,7 @@ allDeliverDangling config pLeft pRight =
     pairs = createPairsCodomain (matchRestriction config) (right pLeft) (left pRight)
     gluing =
       filter
-        (\(m1',m2') -> satsGluingNacsBoth config (invLeft,m1') (pRight,m2'))
+        (\(m1',m2') -> satisfyRewritingConditions config (invLeft,m1') (pRight,m2'))
         pairs
     delDang =
       filter

@@ -74,11 +74,11 @@ instance DPO (RuleMorphism a b) where
     where
       newRule = production (right r) (left r) (concatMap (shiftLeftNac config r) (nacs r))
 
-  -- | Needs the satsNacs extra verification because not every satsGluing nac can be shifted
+  -- | Needs the satisfiesNACs extra verification because not every satisfiesGluingConditions nac can be shifted
   shiftLeftNac config rule n =
     [comatch n rule |
-      satsGluing config rule n &&
-      satsNacs config ruleWithOnlyMinimalSafetyNacs n]
+      satisfiesGluingConditions config rule n &&
+      satisfiesNACs config ruleWithOnlyMinimalSafetyNacs n]
 
     where
       ruleWithOnlyMinimalSafetyNacs = production (left rule) (right rule) (minimalSafetyNacs rule)
@@ -110,7 +110,7 @@ addMinimalSafetyNacs nacInj sndRule =
     (left sndRule)
     (right sndRule)
     (nacs sndRule ++
-     filter (satsNacs nacInj sndRule) (minimalSafetyNacs sndRule))
+     filter (satisfiesNACs nacInj sndRule) (minimalSafetyNacs sndRule))
 
 -- | Generates the minimal safety NACs of a 2-rule.
 -- probL and probR done, pairL and pairR to do.
