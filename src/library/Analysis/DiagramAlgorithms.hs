@@ -61,7 +61,7 @@ produceDangling config l r (m1,m2) =
     morphismRestriction = matchRestrictionToProp (matchRestriction config)
     l2TOd1 = findMorphisms morphismRestriction (domain m2) (domain l')
     matchD = filter (\x -> m2 == compose x l') l2TOd1
-    (_,r') = RW.pushout k (getRHS l)
+    (_,r') = RW.calculatePushout k (getRHS l)
     m2' = if length matchD > 1
             then error "produceDangling: non unique h21 morphism"
             else compose (head matchD) r' --matchD is unique if exists
@@ -80,7 +80,7 @@ deleteUseDangling config l r (m1,m2) =
     morphismRestriction = matchRestrictionToProp (matchRestriction config)
     lTOd = findMorphisms morphismRestriction (domain m2) (domain l')
     matchD = filter (\x -> m2 == compose x l') lTOd
-    (_,r') = RW.pushout k (getRHS l)
+    (_,r') = RW.calculatePushout k (getRHS l)
     m2' = compose (head matchD) r'
     dang = not (satisfiesGluingConditions config r m2') && satisfiesNACs config r m2'
 

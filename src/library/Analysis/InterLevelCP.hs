@@ -128,7 +128,7 @@ interLevelConflictOneMatch config sndRule match = m0s
     sndOrderR = getRHS sndRule
 
     (k,l') = pushoutComplement match sndOrderL
-    (m',r') = pushout k sndOrderR
+    (m',r') = calculatePushout k sndOrderR
 
     p = codomain match
     p'' = codomain m'
@@ -167,6 +167,6 @@ relevantGraphs :: DPOConfig -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 relevantGraphs config dangFl dangGl = concatMap (partitions matchInjective) axs
   where
     matchInjective = matchRestriction config == MonoMatches
-    (_,al) = pushout dangFl dangGl
+    (_,al) = calculatePushout dangFl dangGl
     --axs = induzedSubgraphs al
     axs = subgraphs (codomain al)

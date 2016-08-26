@@ -32,7 +32,7 @@ class (Morphism m) => AdhesiveHLR m where
   --    B──────▶X
   --       f'
   -- @
-  pushout :: m -> m -> (m, m)
+  calculatePushout :: m -> m -> (m, m)
 
 
   -- | Checks if the given sequential morphisms have a pushout complement, assuming they satsify

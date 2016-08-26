@@ -128,7 +128,7 @@ instance (Morphism m, Valid m, Eq (Obj m)) => Valid (Production m) where
 calculateDPO :: AdhesiveHLR m => m -> Production m -> (m, m, m, m)
 calculateDPO m (Production l r _) =
   let (k, f) = pushoutComplement m l
-      (n, g) = pushout k r
+      (n, g) = calculatePushout k r
   in (k, n, f, g)
 
 -- | Given a match and a production, calculate the calculateComatch for the

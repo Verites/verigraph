@@ -172,7 +172,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
      6. associate edges
   -}
 
-  pushout k r =
+  calculatePushout k r =
     let
         kr = compose (invertTGM r) k                                 -- invert r and compose with k, obtain kr : R -> D
         createdNodes = orphanNodesTyped r                                -- nodes in R to be created

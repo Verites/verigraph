@@ -481,8 +481,8 @@ filtPairs inverseLeft x = filter (\(h1,_) -> satsGluingCond inverseLeft h1) x
 pushoutComplement inverseLeft x = map (\(h1,q21) -> let (k,r') = RW.pushoutComplement h1 (left inverseLeft) in
  (h1,q21,k,r')) x
 
-pushout inverseLeft x = map (\(h1,q21,k,r') ->
- let (m1,l') = RW.pushout k (right inverseLeft) in
+calculatePushout inverseLeft x = map (\(h1,q21,k,r') ->
+ let (m1,l') = RW.calculatePushout k (right inverseLeft) in
  (h1,q21,k,r',m1,l')) x
 
 filtM1 l x = filter (\(_,_,_,_,m1,_) -> satisfiesNACs l m1) x
@@ -535,7 +535,7 @@ kr' = map (\m'1 -> RW.pushoutComplement m'1 (left inverseRule)) m'
 k = map fst kr'
 r' = map snd kr'
 
-ml' = map (\x -> RW.pushout x (right inverseRule)) k
+ml' = map (\x -> RW.calculatePushout x (right inverseRule)) k
 mm1 = map fst ml'
 l' = map snd ml'
 

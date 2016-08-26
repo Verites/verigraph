@@ -236,11 +236,11 @@ instance AdhesiveHLR (RuleMorphism a b) where
        k = RuleMorphism ruleK newRule matchL' matchK' matchR'
        l' = RuleMorphism newRule ruleG leftL' leftK' leftR'
 
-  pushout (RuleMorphism _ ruleD matchL matchK matchR) (RuleMorphism _ ruleR rightL rightK rightR) =  (m',r')
+  calculatePushout (RuleMorphism _ ruleD matchL matchK matchR) (RuleMorphism _ ruleR rightL rightK rightR) =  (m',r')
      where
-       (matchL', rightL') = pushout matchL rightL
-       (matchK', rightK') = pushout matchK rightK
-       (matchR', rightR') = pushout matchR rightR
+       (matchL', rightL') = calculatePushout matchL rightL
+       (matchK', rightK') = calculatePushout matchK rightK
+       (matchR', rightR') = calculatePushout matchR rightR
        l = commutingMorphismSameDomain
              rightK' (compose (getLHS ruleD) rightL')
              matchK' (compose (getLHS ruleR) matchL')
