@@ -52,7 +52,7 @@ readGrammar fileName = do
 
   let typeGraph = if L.null rules
                     then error "Not found first order rules, at least one is needed."
-                    else codomain . domain . left $ head rules
+                    else codomain . domain . getLHS $ head rules
       initGraph = GM.empty typeGraph typeGraph
       sndOrderRules = instantiateSndOrderRules parsedTypeGraph sndOrdRules
 

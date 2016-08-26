@@ -20,7 +20,7 @@ import           Analysis.DiagramAlgorithms
 import           Data.Maybe                (mapMaybe)
 
 -- | Data representing the type of a 'CriticalPair'
-data CP = 
+data CP =
     FOL
   | DeleteUse
   | ProduceForbid
@@ -125,7 +125,7 @@ allDeleteUse config pLeft pRight =
     (\m -> CriticalPair m Nothing Nothing DeleteUse)
     delUse
   where
-    pairs = createPairsCodomain (matchRestriction config) (left pLeft) (left pRight)
+    pairs = createPairsCodomain (matchRestriction config) (getLHS pLeft) (getLHS pRight)
     gluing =
       filter
         (\(m1,m2) -> satisfyRewritingConditions config (pLeft,m1) (pRight,m2))
@@ -143,7 +143,7 @@ allProduceDangling config pLeft pRight =
     (\m -> CriticalPair m Nothing Nothing ProduceDangling)
     prodDang
   where
-    pairs = createPairsCodomain (matchRestriction config) (left pLeft) (left pRight)
+    pairs = createPairsCodomain (matchRestriction config) (getLHS pLeft) (getLHS pRight)
     gluing =
       filter
         (\(m1,m2) -> satisfyRewritingConditions config (pLeft,m1) (pRight,m2))
@@ -163,7 +163,7 @@ allDeleteUseAndDang config pLeft pRight =
       (Right m) -> CriticalPair m Nothing Nothing ProduceDangling)
     conflicts
   where
-    pairs = createPairsCodomain (matchRestriction config) (left pLeft) (left pRight)
+    pairs = createPairsCodomain (matchRestriction config) (getLHS pLeft) (getLHS pRight)
     gluing =
       filter
         (\(m1,m2) -> satisfyRewritingConditions config (pLeft,m1) (pRight,m2))
@@ -181,7 +181,7 @@ allProduceForbid :: (EpiPairs m, DPO m) => DPOConfig
 allProduceForbid config pLeft pRight =
   concatMap
     (produceForbid config pLeft inverseLeft pRight)
-    (zip (nacs pRight) [0..])
+    (zip (getNACs pRight) [0..])
   where
     inverseLeft = invertProduction config pLeft
 

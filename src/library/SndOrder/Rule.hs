@@ -72,7 +72,7 @@ applySecondOrderListRules f sndRule = concatMap (f sndRule)
 instance DPO (RuleMorphism a b) where
   invertProduction config r = addMinimalSafetyNacs config newRule
     where
-      newRule = constructProduction (right r) (left r) (concatMap (shiftNacOverProduction config r) (nacs r))
+      newRule = constructProduction (getRHS r) (getLHS r) (concatMap (shiftNacOverProduction config r) (getNACs r))
 
   -- | Needs the satisfiesNACs extra verification because not every satisfiesGluingConditions nac can be shifted
   shiftNacOverProduction config rule n =
@@ -81,7 +81,7 @@ instance DPO (RuleMorphism a b) where
       satisfiesNACs config ruleWithOnlyMinimalSafetyNacs n]
 
     where
-      ruleWithOnlyMinimalSafetyNacs = constructProduction (left rule) (right rule) (minimalSafetyNacs rule)
+      ruleWithOnlyMinimalSafetyNacs = constructProduction (getLHS rule) (getRHS rule) (minimalSafetyNacs rule)
 
   partiallyMonomorphic m l =
     partiallyMonomorphic (mappingLeft m)      (mappingLeft l)      &&
@@ -107,9 +107,9 @@ applySndOrderRule config (sndName,sndRule) (fstName,fstRule) =
 addMinimalSafetyNacs :: DPOConfig -> SndOrderRule a b -> SndOrderRule a b
 addMinimalSafetyNacs nacInj sndRule =
   constructProduction
-    (left sndRule)
-    (right sndRule)
-    (nacs sndRule ++
+    (getLHS sndRule)
+    (getRHS sndRule)
+    (getNACs sndRule ++
      filter (satisfiesNACs nacInj sndRule) (minimalSafetyNacs sndRule))
 
 -- | Generates the minimal safety NACs of a 2-rule.
@@ -122,18 +122,18 @@ newNacsProb side sndRule = nacNodes ++ nacEdges
   where
     (mapSide, getSide) =
       case side of
-        LeftSide -> (SO.mappingLeft, left)
-        RightSide -> (SO.mappingRight, right)
+        LeftSide -> (SO.mappingLeft, getLHS)
+        RightSide -> (SO.mappingRight, getRHS)
 
     applyNode = applyNodeTGMUnsafe
     applyEdge = applyEdgeTGMUnsafe
 
-    ruleL = codomain (left sndRule)
-    ruleK = domain (left sndRule)
-    ruleR = codomain (right sndRule)
+    ruleL = codomain (getLHS sndRule)
+    ruleK = domain (getLHS sndRule)
+    ruleR = codomain (getRHS sndRule)
 
-    f = mapSide (left sndRule)
-    g = mapSide (right sndRule)
+    f = mapSide (getLHS sndRule)
+    g = mapSide (getRHS sndRule)
 
     sa = getSide ruleL
     sb = getSide ruleK
@@ -157,8 +157,8 @@ newNacsProb side sndRule = nacNodes ++ nacEdges
 createNacProb :: Side -> GraphRule a b -> Either NodeId EdgeId -> SO.RuleMorphism a b
 createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
   where
-    l = left ruleL
-    r = right ruleL
+    l = getLHS ruleL
+    r = getRHS ruleL
 
     graphL = codomain l
     graphK = domain l
@@ -228,45 +228,6 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
         updateLeft = createNodeDomTGM srcInK typeSrc src side
         updateLeft2 = createNodeDomTGM tgtInK typeTgt tgt updateLeft
         updateLeftEdge = createEdgeDomTGM x' srcInK tgtInK tp x updateLeft2
-
-{-newNacsPairL :: SndOrderRule a b -> [SO.RuleMorphism a b]
-newNacsPairL sndRule = map createNac ret
-  where
-    apply = applyNodeTGMUnsafe
-
-    ruleL = codomain (left sndRule)
-    ruleK = domain (left sndRule)
-    ruleR = codomain (right sndRule)
-
-    fl = SO.mappingLeft (left sndRule)
-    gl = SO.mappingLeft (right sndRule)
-
-    lb = left ruleK
-    lc = left ruleR
-
-    pairL = [(apply fl x, apply fl y) |
-                     x <- nodesCodomain lb
-                   , y <- nodesCodomain lb
-                   , x /= y
-                   , orphanNode lb x
-                   , not (orphanNode lc (apply gl x))
-                   , not (orphanNode lc (apply gl y))]
-
-    epis = calculateAllPartitions (codomain (left ruleL))
-
-    ret = [e | e <- epis, any (\(a,b) -> (apply e) a == (apply e) b) pairL]
-
-    createNac e = SO.ruleMorphism ruleL ruleNac e mapK mapR
-      where
-        ruleNac = constructProduction (compose (left ruleL) e) (right ruleL) []
-        mapK = idMap (domain (left ruleL)) (domain (left ruleL))
-        mapR = idMap (codomain (right ruleL)) (codomain (right ruleL))
-
-calculateAllPartitions :: GM.TypedGraph a b -> [TypedGraphMorphism a b]
-calculateAllPartitions graph = map fst (createPairs inj graph graphNull)
-  where
-    inj = False
-    graphNull = GM.empty G.empty G.empty-}
 
 orphanNode :: TypedGraphMorphism a b -> NodeId -> Bool
 orphanNode m n = n `elem` orphanNodesTyped m

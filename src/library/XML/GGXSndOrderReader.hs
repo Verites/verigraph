@@ -35,9 +35,9 @@ instantiateSndOrderNac (parsedLeft, l) (n, nacRule) = ruleMorphism l nacRule nac
   where
     mapL = SO.getLeftObjNameMapping parsedLeft n
     mapR = SO.getRightObjNameMapping parsedLeft n
-    nacL = instantiateNacMorphisms (codomain (left l)) (codomain (left nacRule)) mapL
-    nacK = instantiateNacMorphisms (domain (left l)) (domain (left nacRule)) mapL
-    nacR = instantiateNacMorphisms (codomain (right l)) (codomain (right nacRule)) mapR
+    nacL = instantiateNacMorphisms (codomain (getLHS l)) (codomain (getLHS nacRule)) mapL
+    nacK = instantiateNacMorphisms (domain (getLHS l)) (domain (getLHS nacRule)) mapL
+    nacR = instantiateNacMorphisms (codomain (getRHS l)) (codomain (getRHS nacRule)) mapR
 
 instantiateNacMorphisms :: TypedGraph a b -> TypedGraph a b
                         -> [Mapping] -> TypedGraphMorphism a b
@@ -57,12 +57,12 @@ instantiateRuleMorphisms (parsedLeft, l) (parsedRight, r) =
   (ruleMorphism ruleK l leftKtoLeftL interfaceKtoL rightKtoRightL,
    ruleMorphism ruleK r leftKtoLeftR interfaceKtoR rightKtoRightR)
     where
-      graphKRuleL = domain (left l)
-      graphKRuleR = domain (left r)
-      graphLRuleL = codomain (left l)
-      graphLRuleR = codomain (left r)
-      graphRRuleL = codomain (right l)
-      graphRRuleR = codomain (right r)
+      graphKRuleL = domain (getLHS l)
+      graphKRuleR = domain (getLHS r)
+      graphLRuleL = codomain (getLHS l)
+      graphLRuleR = codomain (getLHS r)
+      graphRRuleL = codomain (getRHS l)
+      graphRRuleR = codomain (getRHS r)
 
       mappingBetweenLeft = SO.getLeftObjNameMapping parsedLeft parsedRight
       mappingBetweenRight = SO.getRightObjNameMapping parsedLeft parsedRight

@@ -16,7 +16,7 @@ This diagram shows objects and morphisms names used in the algorithms below:
      P1◀─────D1───────▶G◀───────D2──────▶P2
          r'       l'
  @
- 
+
 q21 : N2 -> P1
 m2' : L2 -> P1
 
@@ -44,7 +44,7 @@ import           Abstract.DPO              as RW hiding (calculateComatch)
 deleteUse :: DPO m => DPOConfig -> Production m -> (m, m) -> Bool
 deleteUse config l (m1,m2) = null matchD
     where
-        (_,l') = RW.pushoutComplement m1 (left l) --get only the morphism D2 to G
+        (_,l') = RW.pushoutComplement m1 (getLHS l) --get only the morphism D2 to G
         restriction = matchRestrictionToProp (matchRestriction config)
         l2TOd1 = findMorphisms restriction (domain m2) (domain l')
         matchD = filter (\x -> m2 == compose x l') l2TOd1
@@ -57,11 +57,11 @@ produceDangling :: DPO m => DPOConfig -> Production m -> Production m -> (m, m) 
 produceDangling config l r (m1,m2) =
   not (null matchD) && not (satisfiesGluingConditions config r m2') && satisfiesNACs config r m2'
   where
-    (k,l') = RW.pushoutComplement m1 (left l)
+    (k,l') = RW.pushoutComplement m1 (getLHS l)
     morphismRestriction = matchRestrictionToProp (matchRestriction config)
     l2TOd1 = findMorphisms morphismRestriction (domain m2) (domain l')
     matchD = filter (\x -> m2 == compose x l') l2TOd1
-    (_,r') = RW.pushout k (right l)
+    (_,r') = RW.pushout k (getRHS l)
     m2' = if length matchD > 1
             then error "produceDangling: non unique h21 morphism"
             else compose (head matchD) r' --matchD is unique if exists
@@ -76,11 +76,11 @@ deleteUseDangling config l r (m1,m2) =
     (False,True) -> Just (Right (m1,m2)) -- produce dangling case
     _            -> Nothing              -- free overlap case
   where
-    (k,l') = RW.pushoutComplement m1 (left l)
+    (k,l') = RW.pushoutComplement m1 (getLHS l)
     morphismRestriction = matchRestrictionToProp (matchRestriction config)
     lTOd = findMorphisms morphismRestriction (domain m2) (domain l')
     matchD = filter (\x -> m2 == compose x l') lTOd
-    (_,r') = RW.pushout k (right l)
+    (_,r') = RW.pushout k (getRHS l)
     m2' = compose (head matchD) r'
     dang = not (satisfiesGluingConditions config r m2') && satisfiesNACs config r m2'
 
@@ -95,7 +95,7 @@ produceForbidOneNac config l inverseLeft r (n,idx) =
   map (\(q21,h1,m2',m1,m2) -> ((m1,m2), (h1,m2'), (q21,idx))) prodForbids
     where
       -- common names
-      r1 = right l
+      r1 = getRHS l
       restriction = matchRestrictionToProp (matchRestriction config)
       satsGluingNacs = satisfiesRewritingConditions config
 

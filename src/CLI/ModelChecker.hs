@@ -224,7 +224,7 @@ splitPredicates ((name, rule) : rest) =
     (productions, predicates) =
       splitPredicates rest
   in
-    if isomorphism (left rule) && isomorphism (right rule) then
+    if isomorphism (getLHS rule) && isomorphism (getRHS rule) then
       (productions, (name, rule):predicates)
     else
       ((name, rule):productions, predicates)

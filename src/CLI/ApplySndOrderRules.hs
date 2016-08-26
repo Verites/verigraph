@@ -38,8 +38,8 @@ execute globalOpts opts = do
     let dpoConf = dpoConfig globalOpts
         newNacs =
           map (\(n,r) -> let newRule = SO.addMinimalSafetyNacs dpoConf r
-                             tamNewNacs = length (nacs newRule)
-                             tamNacs = length (nacs r) in
+                             tamNewNacs = length (getNACs newRule)
+                             tamNacs = length (getNACs r) in
            ((n, newRule), (n, tamNewNacs - tamNacs)))
            (GG.sndOrderRules gg)
         addNacs = map fst newNacs

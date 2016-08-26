@@ -52,21 +52,21 @@ epiPairsForConcurrentRule OnlyDependency config c n =
 
 epiPairsForConcurrentRule AllOverlapings config c n =
   let matchInj = matchRestriction config == MonoMatches
-      allPairs = createPairs matchInj (codomain (right c)) (codomain (left n))
+      allPairs = createPairs matchInj (codomain (getRHS c)) (codomain (getLHS n))
       isValidPair (lp, rp) = satisfiesGluingConditions config (invertProductionWithoutNacs c) lp && satisfiesRewritingConditions config n rp
   in filter isValidPair allPairs
 
 concurrentRuleForPair :: (DPO m, EpiPairs m, Eq (Obj m)) => DPOConfig -> Production m -> Production m -> (m, m) -> Production m
 concurrentRuleForPair config c n pair = constructProduction l r (dmc ++ lp)
   where
-    pocC = pushoutComplement (fst pair) (right c)
-    pocN = pushoutComplement (snd pair) (left n)
-    poC = pushout (fst pocC) (left c)
-    poN = pushout (fst pocN) (right n)
+    pocC = pushoutComplement (fst pair) (getRHS c)
+    pocN = pushoutComplement (snd pair) (getLHS n)
+    poC = pushout (fst pocC) (getLHS c)
+    poN = pushout (fst pocN) (getRHS n)
     pb = injectivePullback (snd pocC) (snd pocN)
     l = compose (fst pb) (snd poC)
     r = compose (snd pb) (snd poN)
-    dmc = concatMap (nacDownwardShift config (fst poC)) (nacs c)
+    dmc = concatMap (nacDownwardShift config (fst poC)) (getNACs c)
     inverseP = constructProduction (snd pocC) (snd poC) []
-    den = concatMap (nacDownwardShift config (snd pair)) (nacs n)
+    den = concatMap (nacDownwardShift config (snd pair)) (getNACs n)
     lp = concatMap (shiftNacOverProduction config inverseP) den

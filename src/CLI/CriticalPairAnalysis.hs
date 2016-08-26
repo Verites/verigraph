@@ -91,8 +91,8 @@ execute globalOpts opts = do
         newNacs =
           map (\(n,r) ->
             let newRule = addMinimalSafetyNacs dpoConf r
-                tamNewNacs = length (nacs newRule)
-                tamNacs = length (nacs r)
+                tamNewNacs = length (getNACs newRule)
+                tamNacs = length (getNACs r)
              in ((n, newRule), (n, tamNewNacs - tamNacs))
              ) (GG.sndOrderRules gg)
         rules2 = map (snd . fst) newNacs
@@ -166,7 +166,7 @@ analysisMatrix dpoConf rules f1 f2 f3 n1 n2 n3 n4 =
         liftMatrix3
           (\x y z -> x ++ y ++ z)
           f1Matrix f2Matrix f3Matrix
-          
+
   in  [ n1 ++ ":"
       , show (length <$> f1Matrix)
       , ""

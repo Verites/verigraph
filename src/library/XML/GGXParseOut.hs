@@ -2,8 +2,8 @@ module XML.GGXParseOut
  ( parseCPGraph
  , parseCSGraph
  , serializeGraph
- , getLHS
- , getRHS
+ , XML.GGXParseOut.getLHS
+ , XML.GGXParseOut.getRHS
  , getNacs
  , getMappings
  ) where
@@ -75,15 +75,15 @@ getTgmMappings prefix tgm = nodesMorph ++ edgesMorph
     edgesMorph = map (\e -> ("E" ++ show (edgeMap e), prefix, "E" ++ show e)) (edgesDomain tgm)
 
 getLHS :: [Mapping] -> GR.GraphRule a b -> ParsedTypedGraph
-getLHS objName rule = serializeGraph objName $ left rule
+getLHS objName rule = serializeGraph objName $ GR.getLHS rule
 
 getRHS :: [Mapping] -> GR.GraphRule a b -> ParsedTypedGraph
-getRHS objName rule = serializeGraph objName $ right rule
+getRHS objName rule = serializeGraph objName $ GR.getRHS rule
 
 getNacs :: String -> GR.GraphRule a b -> [(ParsedTypedGraph,[Mapping])]
 getNacs ruleName rule = map getNac nacsWithIds
   where
-    zipIds = zip ([0..]::[Int]) (nacs rule)
+    zipIds = zip ([0..]::[Int]) (getNACs rule)
     nacsWithIds = map (\(x,y) -> ("NAC_" ++ ruleName ++ "_" ++ show x, y)) zipIds
 
 getNac :: (String, TypedGraphMorphism a b) -> (ParsedTypedGraph, [Mapping])
@@ -97,8 +97,8 @@ getMappings :: GR.GraphRule a b -> [Mapping]
 getMappings rule = nodesMorph ++ edgesMorph
   where
     no = Nothing
-    invL = invertTGM (left rule)
-    lr = M.compose invL (right rule)
+    invL = invertTGM (GR.getLHS rule)
+    lr = M.compose invL (GR.getRHS rule)
     nodeMap = applyNodeTGMUnsafe lr
     nodes = filter (isJust . applyNodeTGM lr) (nodesDomain lr)
     nodesMorph = map (\n -> ("N" ++ show (nodeMap n), no, "N" ++ show n)) nodes

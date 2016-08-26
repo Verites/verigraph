@@ -9,9 +9,9 @@ module Abstract.DPO
     Production
   , constructProduction
 
-  , left
-  , right
-  , nacs
+  , getLHS
+  , getRHS
+  , getNACs
 
   , DPOConfig(..)
   , MatchRestriction(..)
@@ -63,6 +63,15 @@ data Production m = Production
   , nacs :: [m] -- ^ The set of nacs /L -> Ni/ of a production
   }
   deriving (Eq, Show, Read)
+
+getLHS :: Production m -> m
+getLHS = left
+
+getRHS :: Production m -> m
+getRHS = right
+
+getNACs :: Production m -> [m]
+getNACs = nacs
 
 -- | Construct a production from the morphism /l : K -> L/,
 -- the morphism /r : K -> R/, and the nacs /L -> Ni/, respectively.

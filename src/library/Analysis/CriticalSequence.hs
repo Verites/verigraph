@@ -149,7 +149,7 @@ allProduceUse config pLeft pRight =
     prodUse
   where
     invLeft = invertProduction config pLeft
-    pairs = createPairsCodomain (matchRestriction config) (left invLeft) (left pRight)
+    pairs = createPairsCodomain (matchRestriction config) (getLHS invLeft) (getLHS pRight)
     gluing =
       filter
         (\(m1',m2') -> satisfyRewritingConditions config (invLeft,m1') (pRight,m2'))
@@ -170,7 +170,7 @@ allRemoveDangling config pLeft pRight =
     remDang
   where
     invLeft = invertProduction config pLeft
-    pairs = createPairsCodomain (matchRestriction config) (left invLeft) (left pRight)
+    pairs = createPairsCodomain (matchRestriction config) (getLHS invLeft) (getLHS pRight)
     gluing =
       filter
         (\(m1,m2) -> satisfyRewritingConditions config (invLeft,m1) (pRight,m2))
@@ -191,7 +191,7 @@ allProdUseAndDang config pLeft pRight =
     dependencies
   where
     invLeft = invertProduction config pLeft
-    pairs = createPairsCodomain (matchRestriction config) (left invLeft) (left pRight)
+    pairs = createPairsCodomain (matchRestriction config) (getLHS invLeft) (getLHS pRight)
     gluing =
       filter
         (\(m1,m2) -> satisfyRewritingConditions config (invLeft,m1) (pRight,m2))
@@ -208,7 +208,7 @@ allDeleteForbid :: (DPO m, EpiPairs m) => DPOConfig
 allDeleteForbid config pLeft pRight =
   concatMap
     (deleteForbid config pLeft inverseLeft pRight)
-    (zip (nacs pRight) [0..])
+    (zip (getNACs pRight) [0..])
   where
     inverseLeft = invertProduction config pLeft
 
@@ -241,7 +241,7 @@ allDeliverDelete config pLeft pRight =
     delDel
   where
     invLeft = invertProduction config pLeft
-    pairs = createPairsCodomain (matchRestriction config) (right pLeft) (left pRight)
+    pairs = createPairsCodomain (matchRestriction config) (getRHS pLeft) (getLHS pRight)
     gluing =
       filter
         (\(m1',m2') -> satisfyRewritingConditions config (invLeft,m1') (pRight,m2'))
@@ -262,7 +262,7 @@ allDeliverDangling config pLeft pRight =
     delDang
   where
     invLeft = invertProduction config pLeft
-    pairs = createPairsCodomain (matchRestriction config) (right pLeft) (left pRight)
+    pairs = createPairsCodomain (matchRestriction config) (getRHS pLeft) (getLHS pRight)
     gluing =
       filter
         (\(m1',m2') -> satisfyRewritingConditions config (invLeft,m1') (pRight,m2'))
@@ -285,7 +285,7 @@ allForbidProduce :: (DPO m, EpiPairs m) => DPOConfig
 allForbidProduce config pLeft pRight =
   concatMap
     (forbidProduce config inverseLeft inverseRight pRight)
-    (zip (nacs inverseLeft) [0..])
+    (zip (getNACs inverseLeft) [0..])
     where
       inverseLeft = invertProduction config pLeft
       inverseRight = invertProduction config pRight
