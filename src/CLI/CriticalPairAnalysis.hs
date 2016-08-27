@@ -79,10 +79,9 @@ execute globalOpts opts = do
 
         -- Inter Level conflicts
         conf = applySecondOrder (interLevelConflict dpoConf) (GG.rules gg) (GG.sndOrderRules gg)
-        --conf = applySecondOrder (\x -> error "asd") (GG.rules gg) (GG.sndOrderRules gg)
-        f str = join "_" (take 2 (splitOn "_" str))
+        f str = join ";" (take 2 (splitOn ";" str))
         printILCP = "Interlevel Critical Pairs" :
-                    "2rule_rule (number of conflicts)" :
+                    "2rule;rule (number of conflicts)" :
                     map (\x -> f (head x) ++ " " ++ show (length x))
                         (groupBy (\x y -> f x == f y) (map fst conf))
 
@@ -109,7 +108,7 @@ execute globalOpts opts = do
       then mapM_
         putStrLn $
         ["Adding minimal safety nacs to second order rules:"]
-        ++ (if matchRestriction dpoConf == MonoMatches then [] else ["Warning, some nacs for non injective matches are not implemented"])
+        ++ (if matchRestriction dpoConf == MonoMatches then [] else ["Warning, some safety nacs for non injective matches are not implemented"])
         ++ map (\(r,n) -> "Rule " ++ r ++ ", added " ++ show n ++ " nacs") printNewNacs
         ++ ["All minimal safety nacs added!", ""]
       else
@@ -129,6 +128,10 @@ execute globalOpts opts = do
       _ -> mapM_ putStrLn []
     
     
+    putStrLn ""
+    
+    --print conf
+    
     putStrLn "Evolution Interlevel CP"
     print evoConflicts
 
@@ -144,14 +147,14 @@ printAnalysis action dpoConf rules =
         "Produce-Use" "Remove-Dangling" "Deliver-Forbid" "Triggereds Dependencies"
       irrDepMatrix = analysisMatrix dpoConf rules
         findAllDeliverDelete findAllDeliverDangling findAllForbidProduce
-        "DeliverDelete" "Deliver-Dangling" "Forbid-Produce" "Irreversibles Dependencies"
+        "Deliver-Delete" "Deliver-Dangling" "Forbid-Produce" "Irreversibles Dependencies"
   in mapM_
        putStrLn $
        (if calculateConflicts action then confMatrix else [])
        ++ (if calculateDependencies action then depMatrix else [])
        ++ ["Done!"]
 
--- Receives functions that theirs names,
+-- Receives functions and theirs names,
 -- and returns they applicated to the rules
 analysisMatrix :: (EpiPairs m, DPO m)
   => DPOConfig -> [Production m]
