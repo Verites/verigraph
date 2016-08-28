@@ -1,11 +1,11 @@
 module Main (main) where
 
-import           Options.Applicative
 import           GlobalOptions
+import           Options.Applicative
 
-import qualified ConcurrentRules       as CR
-import qualified CriticalPairAnalysis  as CPA
-import qualified ApplySndOrderRules    as ASO
+import qualified ApplySndOrderRules   as ASO
+import qualified ConcurrentRules      as CR
+import qualified CriticalPairAnalysis as CPA
 
 main :: IO ()
 main = execParser opts >>= execute

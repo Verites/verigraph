@@ -53,15 +53,15 @@ module XML.ParseSndOrderRule (
   , getObjectNameMorphism
   ) where
 
-import Abstract.Morphism
-import Data.Char         (toLower)
-import Data.List         ((\\),find,groupBy,sortOn)
-import Data.Maybe        (mapMaybe,fromMaybe)
-import Data.String.Utils (join,split)
-import Graph.Graph
-import Graph.GraphMorphism
-import TypedGraph.Morphism
-import XML.ParsedTypes
+import           Abstract.Morphism
+import           Data.Char           (toLower)
+import           Data.List           (find, groupBy, sortOn, (\\))
+import           Data.Maybe          (fromMaybe, mapMaybe)
+import           Data.String.Utils   (join, split)
+import           Graph.Graph
+import           Graph.GraphMorphism
+import           TypedGraph.Morphism
+import           XML.ParsedTypes
 
 -- | Gets the object name map between the left of two rules
 getLeftObjNameMapping :: SndOrderRuleSide -> SndOrderRuleSide -> [Mapping]

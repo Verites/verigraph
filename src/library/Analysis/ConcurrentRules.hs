@@ -5,10 +5,11 @@ module Analysis.ConcurrentRules
   maxConcurrentRule
 ) where
 
-import           Abstract.Morphism
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
-import           Analysis.CriticalSequence (triggeredCriticalSequences,getComatch)
+import           Abstract.Morphism
+import           Analysis.CriticalSequence (getComatch,
+                                            triggeredCriticalSequences)
 
 data CRDependencies = AllOverlapings | OnlyDependency
 

@@ -8,11 +8,11 @@ module ApplySndOrderRules
 
 import           Abstract.DPO
 import           GlobalOptions
-import qualified TypedGraph.GraphGrammar        as GG
-import qualified SndOrder.Rule        as SO
 import           Options.Applicative
-import qualified XML.GGXReader             as XML
-import qualified XML.GGXWriter             as GW
+import qualified SndOrder.Rule           as SO
+import qualified TypedGraph.GraphGrammar as GG
+import qualified XML.GGXReader           as XML
+import qualified XML.GGXWriter           as GW
 
 data Options = Options
   { outputFile :: String }

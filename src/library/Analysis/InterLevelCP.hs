@@ -12,12 +12,12 @@ import           Abstract.Valid
 import           Analysis.DiagramAlgorithms
 import           Graph.Graph
 import           Graph.GraphMorphism
-import           TypedGraph.GraphRule
-import           TypedGraph.Graph
-import           TypedGraph.Morphism
-import           TypedGraph.Subgraph
 import           SndOrder.Morphism
 import           SndOrder.Rule
+import           TypedGraph.Graph
+import           TypedGraph.GraphRule
+import           TypedGraph.Morphism
+import           TypedGraph.Subgraph
 
 -- TODO: Decent names, please
 -- TODO: Follow naming convention for haskell: CamelCase

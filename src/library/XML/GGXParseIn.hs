@@ -14,8 +14,8 @@ module XML.GGXParseIn
 import           Data.Tree.NTree.TypeDefs
 import           Text.XML.HXT.Core
 import           XML.ParsedTypes
+import           XML.Utilities            (clearIdUnsafe)
 import           XML.XMLUtilities
-import           XML.Utilities (clearIdUnsafe)
 
 clearId :: String -> String
 clearId = clearIdUnsafe

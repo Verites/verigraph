@@ -33,7 +33,7 @@ module Logic.Model
   , findById
   ) where
 
-import Data.Maybe
+import           Data.Maybe
 
 
 -- | A Kripke structure is composed of a list of states and a list of
@@ -45,7 +45,7 @@ import Data.Maybe
 --
 -- This structure is polymorphic on the type of atomic propositions.
 data KripkeStructure a = KripkeStructure
-  { states :: [State a] -- ^ List of labeled states of the Kripke structure
+  { states      :: [State a] -- ^ List of labeled states of the Kripke structure
   , transitions :: [Transition a] -- ^ List of transitions of the Kripke structure
   }
   deriving (Show, Read, Eq)
@@ -60,9 +60,9 @@ data State a
 
 -- | A transition contains the identifiers of the source and target states.
 data Transition a = Transition
-  { transitionId :: Int
-  , source :: Int
-  , target :: Int
+  { transitionId      :: Int
+  , source            :: Int
+  , target            :: Int
   , transitionPayload :: [a]
   }
   deriving (Show, Read, Eq)

@@ -6,13 +6,13 @@ module ConcurrentRules
 
 import           GlobalOptions
 
-import           Analysis.ConcurrentRules
 import           Abstract.AdhesiveHLR
-import qualified TypedGraph.GraphGrammar        as GG
-import           TypedGraph.GraphRule
+import           Analysis.ConcurrentRules
 import           Options.Applicative
-import qualified XML.GGXReader             as XML
-import qualified XML.GGXWriter             as GW
+import qualified TypedGraph.GraphGrammar  as GG
+import           TypedGraph.GraphRule
+import qualified XML.GGXReader            as XML
+import qualified XML.GGXWriter            as GW
 
 data Options = Options
   { outputFile     :: String

@@ -32,10 +32,10 @@ module Analysis.DiagramAlgorithms (
   , produceForbidOneNac
   ) where
 
+import           Abstract.AdhesiveHLR as RW
+import           Abstract.DPO         as RW hiding (calculateComatch)
 import           Abstract.Morphism
-import           Data.Maybe                (mapMaybe)
-import           Abstract.AdhesiveHLR      as RW
-import           Abstract.DPO              as RW hiding (calculateComatch)
+import           Data.Maybe           (mapMaybe)
 
 -- | Rule @p1@ is in a delete-use conflict with @p2@ if @p1@ deletes
 -- something that is used by @p2@.

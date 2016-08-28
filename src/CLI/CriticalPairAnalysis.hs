@@ -14,9 +14,9 @@ import           GlobalOptions
 --import           Data.List.Split
 --import           Data.List.Utils
 import           Data.Matrix               hiding ((<|>))
-import qualified TypedGraph.GraphGrammar        as GG
-import           SndOrder.Rule
 import           Options.Applicative
+import           SndOrder.Rule
+import qualified TypedGraph.GraphGrammar   as GG
 import qualified XML.GGXReader             as XML
 import qualified XML.GGXWriter             as GW
 

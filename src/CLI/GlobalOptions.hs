@@ -6,8 +6,9 @@ module GlobalOptions
   , inputFile
   ) where
 
+import           Abstract.AdhesiveHLR (DPOConfig (..), MatchRestriction (..),
+                                       NacSatisfaction (..))
 import           Options.Applicative
-import           Abstract.AdhesiveHLR (NacSatisfaction(..), MatchRestriction(..), DPOConfig(..))
 
 data GlobalOptions = GOpts
   { arbitraryMatches         :: MatchRestriction

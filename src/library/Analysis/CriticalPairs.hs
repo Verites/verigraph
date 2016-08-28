@@ -14,10 +14,10 @@ module Analysis.CriticalPairs
    deleteUse
    ) where
 
-import           Abstract.AdhesiveHLR      as RW
-import           Abstract.DPO              as RW hiding (calculateComatch)
+import           Abstract.AdhesiveHLR       as RW
+import           Abstract.DPO               as RW hiding (calculateComatch)
 import           Analysis.DiagramAlgorithms
-import           Data.Maybe                (mapMaybe)
+import           Data.Maybe                 (mapMaybe)
 
 -- | Data representing the type of a 'CriticalPair'
 data CP =
@@ -57,10 +57,10 @@ data CP =
 -- q21 (nacMatch) :: from N2 to P1
 
 data CriticalPair m = CriticalPair {
-    match  :: (m, m),
+    match            :: (m, m),
     calculateComatch :: Maybe (m, m),
-    nacMatch :: Maybe (m, Int), --if is ProduceForbid, here is the index of the nac
-    cp  :: CP
+    nacMatch         :: Maybe (m, Int), --if is ProduceForbid, here is the index of the nac
+    cp               :: CP
     } deriving (Eq,Show)
 
 -- | Returns the matches (m1,m2)

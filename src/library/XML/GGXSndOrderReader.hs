@@ -2,15 +2,15 @@ module XML.GGXSndOrderReader (instantiateSndOrderRules) where
 
 import           Abstract.DPO
 import           Abstract.Morphism
-import           Graph.GraphMorphism      as GM
-import           TypedGraph.GraphRule          as GR
-import           SndOrder.Rule            ()
+import           Graph.GraphMorphism   as GM
 import           SndOrder.Morphism
+import           SndOrder.Rule         ()
 import           TypedGraph.Graph
+import           TypedGraph.GraphRule  as GR
 import           TypedGraph.Morphism
-import {-# SOURCE #-} XML.GGXReader
+import  {-# SOURCE #-}         XML.GGXReader -- TODO remove the dependency that causes this
 import           XML.ParsedTypes
-import qualified XML.ParseSndOrderRule    as SO
+import qualified XML.ParseSndOrderRule as SO
 import           XML.Utilities
 
 instantiateSndOrderRules :: ParsedTypeGraph -> [RuleWithNacs] -> [(String, Production (RuleMorphism a b))]

@@ -18,10 +18,10 @@ module Analysis.CriticalSequence
    getCS
    ) where
 
-import           Abstract.AdhesiveHLR      as RW
-import           Abstract.DPO              as RW hiding (calculateComatch)
+import           Abstract.AdhesiveHLR       as RW
+import           Abstract.DPO               as RW hiding (calculateComatch)
 import           Analysis.DiagramAlgorithms
-import           Data.Maybe                (mapMaybe)
+import           Data.Maybe                 (mapMaybe)
 
 -- | Data representing the type of a 'CriticalPair'
 data CS =
@@ -63,10 +63,10 @@ data CS =
 -- q21 (nacMatch) :: from N2 to P1
 
 data CriticalSequence m = CriticalSequence {
-    match :: Maybe (m, m),
+    match            :: Maybe (m, m),
     calculateComatch :: (m, m),
-    nac :: Maybe (m, Int), --if is DeleteForbid or ForbidProduce, here is the index of the nac
-    cs  :: CS
+    nac              :: Maybe (m, Int), --if is DeleteForbid or ForbidProduce, here is the index of the nac
+    cs               :: CS
     } deriving (Eq,Show)
 
 -- | Returns the matches (m1, m2)

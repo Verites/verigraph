@@ -8,14 +8,14 @@ module SndOrder.Rule (
   , applySecondOrder
   ) where
 
-import Data.Maybe (fromMaybe)
+import           Data.Maybe           (fromMaybe)
 
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
-import           Graph.Graph as G
+import           Graph.Graph          as G
+import qualified Graph.GraphMorphism  as GM
+import           SndOrder.Morphism    as SO
 import           TypedGraph.GraphRule
-import qualified Graph.GraphMorphism as GM
-import           SndOrder.Morphism as SO
 import           TypedGraph.Morphism
 
 -- | A second order rule:

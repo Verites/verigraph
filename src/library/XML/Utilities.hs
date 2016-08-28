@@ -1,6 +1,6 @@
 module XML.Utilities where
 
-import           Text.Read                (readMaybe)
+import           Text.Read (readMaybe)
 
 fstOfThree :: (t1, t2, t3) -> t1
 fstOfThree (x,_,_) = x

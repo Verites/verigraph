@@ -9,7 +9,7 @@ module Abstract.AdhesiveHLR
   , DPOConfig(..)
   ) where
 
-import Abstract.Morphism
+import           Abstract.Morphism
 
 -- | Type class for morphisms whose category Adhesive and suitable for
 -- High-Level Replacement Systems.
@@ -152,5 +152,5 @@ data NacSatisfaction = MonoNacSatisfaction | PartMonoNacSatisfaction deriving (E
 
 data DPOConfig = DPOConfig
   { matchRestriction :: MatchRestriction
-  , nacSatisfaction :: NacSatisfaction
+  , nacSatisfaction  :: NacSatisfaction
   }

@@ -12,9 +12,9 @@ module TypedGraph.Graph
   , edgesWithType
   ) where
 
-import Abstract.Morphism
-import Graph.Graph as G
-import Graph.GraphMorphism
+import           Abstract.Morphism
+import           Graph.Graph         as G
+import           Graph.GraphMorphism
 
 
 -- | A typed graph is a morphism whose codomain is the type graph.

@@ -1,16 +1,16 @@
 {-# LANGUAGE TypeFamilies #-}
 module TypedGraph.MorphismCore where
 
-import Abstract.Morphism as M
-import Abstract.Valid
-import Graph.Graph
-import Graph.GraphMorphism
-import TypedGraph.Graph
+import           Abstract.Morphism   as M
+import           Abstract.Valid
+import           Graph.Graph
+import           Graph.GraphMorphism
+import           TypedGraph.Graph
 
 data TypedGraphMorphism a b = TypedGraphMorphism {
                               getDomain   :: TypedGraph a b
                             , getCodomain :: TypedGraph a b
-                            , mapping  :: GraphMorphism a b
+                            , mapping     :: GraphMorphism a b
                          } deriving (Eq, Show, Read)
 
 typedMorphism :: TypedGraph a b -> TypedGraph a b -> GraphMorphism a b -> TypedGraphMorphism a b

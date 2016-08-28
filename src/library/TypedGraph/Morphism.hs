@@ -30,17 +30,17 @@ module TypedGraph.Morphism (
     , orphanEdgesTyped
 ) where
 
-import           Abstract.Morphism   as M
 import           Abstract.AdhesiveHLR
+import           Abstract.Morphism               as M
+import           Data.List                       as L
 import           Data.Maybe
-import           Data.List           as L
-import           Graph.Graph         as G
-import           Graph.GraphMorphism as GM
+import           Graph.Graph                     as G
+import           Graph.GraphMorphism             as GM
 import           TypedGraph.Graph
 import           TypedGraph.MorphismCore
-import           TypedGraph.Partitions.GPToVeri      (mountTGMBoth)
-import           TypedGraph.Partitions.GraphPart     (genGraphEqClass)
-import           TypedGraph.Partitions.VeriToGP      (mixGM,mixNac)
+import           TypedGraph.Partitions.GPToVeri  (mountTGMBoth)
+import           TypedGraph.Partitions.GraphPart (genGraphEqClass)
+import           TypedGraph.Partitions.VeriToGP  (mixGM, mixNac)
 
 
 -- | Return the graph domain

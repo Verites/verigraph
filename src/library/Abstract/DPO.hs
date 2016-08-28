@@ -1,5 +1,5 @@
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 -- | Provides definitions for the Double-Pushout approach to
@@ -49,18 +49,18 @@ module Abstract.DPO
   , nacDownwardShift
   ) where
 
-import Abstract.Morphism
-import Abstract.AdhesiveHLR
-import Abstract.Valid
+import           Abstract.AdhesiveHLR
+import           Abstract.Morphism
+import           Abstract.Valid
 
 -- | A Double-Pushout production.
 --
 -- Consists of two morphisms /'left' : K -> L/ and /'right' : K -> R/,
 -- as well as a set of 'nacs' /L -> Ni/.
 data Production m = Production
-  { left :: m   -- ^ The morphism /K -> L/ of a production
+  { left  :: m   -- ^ The morphism /K -> L/ of a production
   , right :: m  -- ^ The morphism /K -> R/ of a production
-  , nacs :: [m] -- ^ The set of nacs /L -> Ni/ of a production
+  , nacs  :: [m] -- ^ The set of nacs /L -> Ni/ of a production
   }
   deriving (Eq, Show, Read)
 

@@ -4,12 +4,12 @@ module TypedGraph.Partitions.GPToVeri (
 
 {-Converts from GraphPart to Verigraph structures-}
 
-import qualified Abstract.Morphism        as M
-import qualified Graph.Graph              as G
-import qualified Graph.GraphMorphism      as GM
+import qualified Abstract.Morphism               as M
+import qualified Graph.Graph                     as G
+import qualified Graph.GraphMorphism             as GM
 import           TypedGraph.Graph
-import qualified TypedGraph.MorphismCore as TGM
-import           TypedGraph.Partitions.GraphPart     as GP
+import qualified TypedGraph.MorphismCore         as TGM
+import           TypedGraph.Partitions.GraphPart as GP
 
 -- | For two typed graphs and a EpiPair (in GraphPart format) return two TypedGraphMorphism for the graph in verigraph format
 mountTGMBoth :: GM.GraphMorphism a b -> GM.GraphMorphism a b

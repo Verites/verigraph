@@ -57,7 +57,7 @@ module Graph.Graph (
 import           Abstract.Valid
 import           Data.List
 import           Data.List.Utils
-import           Data.Maybe (fromMaybe)
+import           Data.Maybe      (fromMaybe)
 
 data Node a = Node { getNodePayload :: Maybe a
               } deriving (Show, Read)

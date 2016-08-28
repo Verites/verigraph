@@ -11,7 +11,7 @@ exploration.
 -}
 
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 module Abstract.DPO.StateSpace
   (
   -- * State spaces
@@ -45,14 +45,14 @@ module Abstract.DPO.StateSpace
 
 import           Control.Monad
 import qualified Control.Monad.State as Monad
-import           Data.IntMap (IntMap)
-import qualified Data.IntMap as IntMap
-import           Data.Set (Set)
-import qualified Data.Set as Set
+import           Data.IntMap         (IntMap)
+import qualified Data.IntMap         as IntMap
+import           Data.Set            (Set)
+import qualified Data.Set            as Set
 
-import           Abstract.Morphism
 import           Abstract.DPO
-import qualified Logic.Model as Logic
+import           Abstract.Morphism
+import qualified Logic.Model         as Logic
 
 
 
@@ -67,12 +67,12 @@ import qualified Logic.Model as Logic
 -- The states are annotated with the set of predicates that hold in them. Predicates
 -- are expressed as rules, and a predicate holds in a state if the rule is applicable.
 data StateSpace m = SS
-  { states :: IntMap (State m) -- ^ Obtain the set of (explored) indexed states in a state space.
+  { states      :: IntMap (State m) -- ^ Obtain the set of (explored) indexed states in a state space.
   , transitions :: Set (Int, Int) -- ^ Obtain the set of (explored) transitions in a state space.
-  , uid :: Int -- ^ Provides an unused state index.
-  , dpoConfig :: DPOConfig -- ^ Obtain the configuration of DPO semantics for the state space.
+  , uid         :: Int -- ^ Provides an unused state index.
+  , dpoConfig   :: DPOConfig -- ^ Obtain the configuration of DPO semantics for the state space.
   , productions :: [Production m] -- ^ Obtain the productions of the HLR system of the state space.
-  , predicates :: [(String, Production m)] -- ^ Obtain the predicates of the state space.
+  , predicates  :: [(String, Production m)] -- ^ Obtain the predicates of the state space.
   }
 
 

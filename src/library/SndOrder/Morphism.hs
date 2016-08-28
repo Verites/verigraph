@@ -10,13 +10,13 @@ module SndOrder.Morphism (
   , commutingMorphismSameCodomain
   ) where
 
-import Abstract.AdhesiveHLR
-import Abstract.DPO
-import Abstract.Morphism
-import Abstract.Valid
-import Graph.GraphMorphism
-import TypedGraph.Morphism
-import TypedGraph.GraphRule
+import           Abstract.AdhesiveHLR
+import           Abstract.DPO
+import           Abstract.Morphism
+import           Abstract.Valid
+import           Graph.GraphMorphism
+import           TypedGraph.GraphRule
+import           TypedGraph.Morphism
 
 -- | A morphism between two rules.
 --
@@ -45,8 +45,8 @@ import TypedGraph.GraphRule
 -- TODO: Make polymorphic on the type of morphism?
 data RuleMorphism a b =
   RuleMorphism {
-    rmDomain   :: Production (TypedGraphMorphism a b)
-  , rmCodomain :: Production (TypedGraphMorphism a b)
+    rmDomain         :: Production (TypedGraphMorphism a b)
+  , rmCodomain       :: Production (TypedGraphMorphism a b)
   , mappingLeft      :: TypedGraphMorphism a b
   , mappingInterface :: TypedGraphMorphism a b
   , mappingRight     :: TypedGraphMorphism a b

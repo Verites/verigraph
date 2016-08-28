@@ -4,7 +4,7 @@ module Logic.Ctl.Base
   , StateQuantified(..)
   ) where
 
-import Text.PrettyPrint.Leijen as PP
+import           Text.PrettyPrint.Leijen as PP
 
 
 -- | CTL expressions

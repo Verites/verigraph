@@ -19,10 +19,10 @@ module TypedGraph.GraphRule (
 ) where
 
 
-import           Abstract.DPO             as DPO
+import           Abstract.DPO        as DPO
 import           Abstract.Morphism
-import           Graph.Graph              as G
-import           TypedGraph.Morphism      as TGM
+import           Graph.Graph         as G
+import           TypedGraph.Morphism as TGM
 
 type GraphRule a b = Production (TypedGraphMorphism a b)
 
