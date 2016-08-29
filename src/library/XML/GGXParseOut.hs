@@ -51,9 +51,9 @@ overlapsCS :: String -> CS.CriticalSequence (TypedGraphMorphism a b)
 overlapsCS name2 cs = (graph, mapM1, mapM2 ++ mapM2WithNac, nacName cs, csType cs)
   where
     (m1,m2) = case CS.getCS cs of
-                CS.DeleteForbid -> fromMaybe (error "Error when exporting DeleteForbid") (CS.getMatch cs)
-                CS.ForbidProduce -> fromMaybe (error "Error when exporting ForbidProduce") (CS.getMatch cs)
-                _ -> CS.getComatch cs
+                CS.DeleteForbid -> fromMaybe (error "Error when exporting DeleteForbid") (CS.getCriticalSequenceMatches cs)
+                CS.ForbidProduce -> fromMaybe (error "Error when exporting ForbidProduce") (CS.getCriticalSequenceMatches cs)
+                _ -> CS.getCriticalSequenceComatches cs
     graph = serializeGraph [] m1
     mapM1 = getTgmMappings Nothing m1
     mapM2 = getTgmMappings Nothing m2
