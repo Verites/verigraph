@@ -107,11 +107,17 @@ namedCriticalPairs conf namedRules =
       getCPs (n1,r1) (n2,r2) =
         (n1, n2, findCriticalPairs conf r1 r2)
 
+-- TODO: Use this as an auxiliary function to optimize the search for critical pairs
+findPotentialCriticalPairs :: (DPO m, EpiPairs m) => DPOConfig -> Production m -> Production m -> [(m, m)]
+findPotentialCriticalPairs conf p1 p2 = satisfyingPairs
+  where
+    pairs = createJointlyEpimorphicPairsFromCodomains (matchRestriction conf) (getLHS p1) (getLHS p2)
+    satisfyingPairs = filter (\(m1,m2) -> satisfyRewritingConditions conf (p1,m1) (p2,m2)) pairs
+
 -- | Finds all Critical Pairs between two given Productions
 findCriticalPairs :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> [CriticalPair m]
 findCriticalPairs conf p1 p2 =
-  findAllDeleteUseAndProduceDangling conf p1 p2 ++
-  findAllProduceForbid conf p1 p2
+  findAllDeleteUseAndProduceDangling conf p1 p2 ++ findAllProduceForbid conf p1 p2
 
 -- ** Conflicts
 
