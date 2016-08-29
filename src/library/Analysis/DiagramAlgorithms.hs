@@ -45,7 +45,7 @@ deleteUse :: DPO m => DPOConfig -> Production m -> (m, m) -> Bool
 deleteUse config l (m1,m2) = null matchD
     where
         (_,l') = RW.calculatePushoutComplement m1 (getLHS l) --get only the morphism D2 to G
-        restriction = matchRestrictionToProp (matchRestriction config)
+        restriction = matchRestrictionToMorphismType (matchRestriction config)
         l2TOd1 = findMorphisms restriction (domain m2) (domain l')
         matchD = filter (\x -> m2 == compose x l') l2TOd1
 
@@ -58,7 +58,7 @@ produceDangling config l r (m1,m2) =
   not (null matchD) && not (satisfiesGluingConditions config r m2') && satisfiesNACs config r m2'
   where
     (k,l') = RW.calculatePushoutComplement m1 (getLHS l)
-    morphismRestriction = matchRestrictionToProp (matchRestriction config)
+    morphismRestriction = matchRestrictionToMorphismType (matchRestriction config)
     l2TOd1 = findMorphisms morphismRestriction (domain m2) (domain l')
     matchD = filter (\x -> m2 == compose x l') l2TOd1
     (_,r') = RW.calculatePushout k (getRHS l)
@@ -77,7 +77,7 @@ deleteUseDangling config l r (m1,m2) =
     _            -> Nothing              -- free overlap case
   where
     (k,l') = RW.calculatePushoutComplement m1 (getLHS l)
-    morphismRestriction = matchRestrictionToProp (matchRestriction config)
+    morphismRestriction = matchRestrictionToMorphismType (matchRestriction config)
     lTOd = findMorphisms morphismRestriction (domain m2) (domain l')
     matchD = filter (\x -> m2 == compose x l') lTOd
     (_,r') = RW.calculatePushout k (getRHS l)
@@ -96,7 +96,7 @@ produceForbidOneNac config l inverseLeft r (n,idx) =
     where
       -- common names
       r1 = getRHS l
-      restriction = matchRestrictionToProp (matchRestriction config)
+      restriction = matchRestrictionToMorphismType (matchRestriction config)
       satsGluingNacs = satisfiesRewritingConditions config
 
       -- Consider for a NAC n (L2 -> N2) of r any jointly surjective

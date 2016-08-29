@@ -4,7 +4,7 @@ module Abstract.AdhesiveHLR
   , AdhesiveHLR(..)
 
   , MatchRestriction(..)
-  , matchRestrictionToProp
+  , matchRestrictionToMorphismType
   , NacSatisfaction(..)
   , DPOConfig(..)
   ) where
@@ -111,7 +111,7 @@ class Morphism m => EpiPairs m where
   -- FIXME: nacs don't belong in this module
   createPairsNac :: DPOConfig -> Obj m -> m -> [(m, m)]
 
-  -- | Given two morphisms from the same domain, create all jointly epimorphic
+  -- | Given two morphisms with the same domain, it creates all jointly epimorphic
   -- pairs of morphisms from their codomains, such that the square formed by
   -- all these morphisms commutes.
   --
@@ -141,10 +141,10 @@ class Morphism m => EpiPairs m where
 -- | Flag indicating what restrictions are required or assumed of matches.
 data MatchRestriction = MonoMatches | AnyMatches deriving (Eq, Show)
 
--- | Converts a match restriction to the corresponding restriction for morphism search
-matchRestrictionToProp :: MatchRestriction -> MorphismType
-matchRestrictionToProp MonoMatches = Monomorphism
-matchRestrictionToProp AnyMatches = GenericMorphism
+-- | Converts a match restriction to the corresponding MorphismType
+matchRestrictionToMorphismType :: MatchRestriction -> MorphismType
+matchRestrictionToMorphismType MonoMatches = Monomorphism
+matchRestrictionToMorphismType AnyMatches = GenericMorphism
 
 -- | Flag indicating the semantics of NAC satisfaction.
 data NacSatisfaction = MonoNacSatisfaction | PartMonoNacSatisfaction deriving (Eq, Show)

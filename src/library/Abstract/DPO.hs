@@ -15,7 +15,7 @@ module Abstract.DPO
 
   , DPOConfig(..)
   , MatchRestriction(..)
-  , matchRestrictionToProp
+  , matchRestrictionToMorphismType
   , NacSatisfaction(..)
 
   -- ** Application
@@ -88,7 +88,7 @@ constructProduction = Production
 findAllMatches :: (DPO m) => DPOConfig -> Production m -> Obj m -> [m]
 findAllMatches config production =
   findMorphisms
-    (matchRestrictionToProp $ matchRestriction config)
+    (matchRestrictionToMorphismType $ matchRestriction config)
     (codomain $ left production)
 
 
@@ -186,7 +186,7 @@ satisfiesGluingConditions config production match =
   hasPushoutComplement (matchIsMono, match) (GenericMorphism, left production)
   where
     matchIsMono =
-      matchRestrictionToProp (matchRestriction config)
+      matchRestrictionToMorphismType (matchRestriction config)
 
 -- | True if the given match satisfies all NACs of the given production.
 satisfiesNACs :: DPO m => DPOConfig -> Production m -> m -> Bool
@@ -216,7 +216,7 @@ satisfiesSingleNac config match nac =
     nacMatches =
       case nacSatisfaction config of
         MonoNacSatisfaction ->
-          findMorphisms Monomorphism (codomain nac) (codomain match)
+          findMonomorphisms (codomain nac) (codomain match)
 
         PartMonoNacSatisfaction ->
           partInjMatches nac match

@@ -121,7 +121,7 @@ instance FindMorphism (RuleMorphism a b) where
         partiallyMonomorphic (mappingLeft n) (mappingLeft q) &&
         partiallyMonomorphic (mappingInterface n) (mappingInterface q) &&
         partiallyMonomorphic (mappingRight n) (mappingRight q))
-      (findMorphisms GenericMorphism (codomain n) (codomain m))
+      (findAllMorphisms (codomain n) (codomain m))
 
 -- commutes left side
 leftM :: FindMorphism t => MorphismType -> Production t -> Production t -> t -> [(t, t)]
@@ -214,7 +214,7 @@ createSideRule :: Bool -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> Gr
 createSideRule inj k1 sideM1 s1 k2 sideM2 s2 = d
   where
     a = createJointlyEpimorphicPairs inj s1 s2
-    b = concatMap (\(s1,s2) -> sequence [[s1],[s2], findMorphisms Monomorphism (codomain k1) (codomain s1)]) a
+    b = concatMap (\(s1,s2) -> sequence [[s1],[s2], findMonomorphisms (codomain k1) (codomain s1)]) a
     c = map (\(x:y:z:_) -> (x,y,z)) b
     d = filter (\(ss1,ss2,m) -> compose sideM1 ss1 == compose k1 m &&
                                 compose sideM2 ss2 == compose k2 m) c
@@ -294,7 +294,7 @@ commutingMorphismSameDomain :: TypedGraphMorphism a b -> TypedGraphMorphism a b
                             -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 commutingMorphismSameDomain k1 s1 k2 s2 = typedMorphism (codomain k1) (codomain s1) select
   where
-    mats = findMorphisms Monomorphism (codomain k1) (codomain s1)
+    mats = findMonomorphisms (codomain k1) (codomain s1)
     filt = filter (\m -> compose k1 m == s1 && compose k2 m == s2) mats
     select = case filt of
                 [] -> error "(domain) Error when commuting monomorphic morphisms (must be generating an invalid rule)"
@@ -321,7 +321,7 @@ commutingMorphismSameCodomain :: TypedGraphMorphism a b -> TypedGraphMorphism a 
                               -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 commutingMorphismSameCodomain k1 s1 k2 s2 = typedMorphism (domain k1) (domain s1) select
   where
-    mats = findMorphisms Monomorphism (domain k1) (domain s1)
+    mats = findMonomorphisms (domain k1) (domain s1)
     filt = filter (\m -> compose m s1 == k1 && compose k2 m == s2) mats
     select = case filt of
                 [] -> error "(domain) Error when commuting monomorphic morphisms (must be generating an invalid rule)"

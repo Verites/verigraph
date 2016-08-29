@@ -28,8 +28,21 @@ class Morphism m => FindMorphism m where
   -- m : A -> B in which m is of the type t
   findMorphisms :: MorphismType -> Obj m -> Obj m -> [m]
 
+  -- | Given two objects A and B, finds all monomorphisms from A to B
   findMonomorphisms :: Obj m -> Obj m -> [m]
   findMonomorphisms = findMorphisms Monomorphism
+
+  -- | Given two objects A and B, finds all epimorphisms from A to B
+  findEpimorphisms :: Obj m -> Obj m -> [m]
+  findEpimorphisms = findMorphisms Epimorphism
+
+  -- | Given two objects A and B, finds all isomorphisms from A to B
+  findIsomorphisms :: Obj m -> Obj m -> [m]
+  findIsomorphisms = findMorphisms Isomorphism
+
+  -- | Given two objects A and B, finds all morphisms from A to B
+  findAllMorphisms :: Obj m -> Obj m -> [m]
+  findAllMorphisms = findMorphisms GenericMorphism
 
   -- | Finds matches __/q/__ .
   --
