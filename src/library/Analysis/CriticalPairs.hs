@@ -162,11 +162,11 @@ findAllDeleteUseAndProduceDangling conf p1 p2 =
 -- NAC in @p2@ fails to be satisfied after the aplication of @p1@.
 findAllProduceForbid :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> [CriticalPair m]
 findAllProduceForbid conf p1 p2 =
-  concatMap (produceForbid conf p1 p2) (zip (getNACs p2) [0..])
+  concatMap (findProduceForbidForNAC conf p1 p2) (zip (getNACs p2) [0..])
 
 -- | Check ProduceForbid for a NAC @n@ in @p2@.
-produceForbid :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> (m, Int) -> [CriticalPair m]
-produceForbid conf p1 p2 nac =
+findProduceForbidForNAC :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> (m, Int) -> [CriticalPair m]
+findProduceForbidForNAC conf p1 p2 nac =
   map
     (\(m,m',nac) -> CriticalPair m (Just m') (Just nac) ProduceForbid)
     (produceForbidOneNac conf p1 p2 nac)
