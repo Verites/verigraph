@@ -25,7 +25,7 @@ import qualified TypedGraph.GraphGrammar as GG
 import           TypedGraph.GraphRule    as GR
 import           TypedGraph.Morphism
 import           XML.GGXParseIn
---import           XML.GGXSndOrderReader
+import           XML.GGXSndOrderReader
 import           XML.ParsedTypes
 import           XML.Utilities
 import           XML.XMLUtilities

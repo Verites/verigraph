@@ -32,7 +32,6 @@ module Abstract.DPO
   , satisfiesRewritingConditions
   , satisfyRewritingConditions
 
-
   -- *** Transform
   -- | Given a production and a match for its left side, it may be possible
   -- to apply the production and obtain a transformation of the matched graph.
@@ -43,8 +42,7 @@ module Abstract.DPO
   , calculateComatch
   , rewrite
 
-
-  -- ** Manipulating
+  -- ** Manipulation
   , invertProductionWithoutNacs
   , nacDownwardShift
   ) where
@@ -64,12 +62,15 @@ data Production m = Production
   }
   deriving (Eq, Show, Read)
 
+-- | Returns the morphism /K -> L/ of the given production
 getLHS :: Production m -> m
 getLHS = left
 
+-- | Returns the morphism /K -> R/ of the given production
 getRHS :: Production m -> m
 getRHS = right
 
+-- | Returns the set of nacs /L -> Ni/ of the given production
 getNACs :: Production m -> [m]
 getNACs = nacs
 
@@ -106,7 +107,7 @@ instance (Morphism m, Valid m, Eq (Obj m)) => Valid (Production m) where
     valid l && valid r && all valid nacs &&
     domain l == domain r && all (==codomain l) (map domain nacs)
 
--- | Given a match and a production, calculate the double-pushout diagram
+-- | Given a match and a production, calculates the double-pushout diagram
 -- for the corresponding transformation.
 --
 -- Given match /m : L -> G/ and the production /L ←l- K -r→ R/ such that
@@ -182,7 +183,7 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
 
 satisfiesGluingConditions :: DPO m => DPOConfig -> Production m -> m -> Bool
 satisfiesGluingConditions config production match =
-  hasPushoutComplement (matchIsMono, match) (AnyMorphisms, left production)
+  hasPushoutComplement (matchIsMono, match) (GenericMorphism, left production)
   where
     matchIsMono =
       matchRestrictionToProp (matchRestriction config)
@@ -215,7 +216,7 @@ satisfiesSingleNac config match nac =
     nacMatches =
       case nacSatisfaction config of
         MonoNacSatisfaction ->
-          findMorphisms MonoMorphisms (codomain nac) (codomain match)
+          findMorphisms Monomorphism (codomain nac) (codomain match)
 
         PartMonoNacSatisfaction ->
           partInjMatches nac match

@@ -92,7 +92,7 @@ searchForState obj space =
   let
     isIso (_, (obj', _)) =
       let
-        isomorphisms = findMorphisms IsoMorphisms obj obj' :: [m]
+        isomorphisms = findMorphisms Isomorphism obj obj' :: [m]
       in
         not (null isomorphisms)
   in

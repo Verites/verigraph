@@ -54,7 +54,7 @@ class (Morphism m) => AdhesiveHLR m where
   --
   -- If restrictions are known of one of the morphisms, they should be given. The implementation
   -- of this operation may then assume such restrictions for more efficient calculation.
-  hasPushoutComplement :: (MorphismRestriction, m) -> (MorphismRestriction, m) -> Bool
+  hasPushoutComplement :: (MorphismType, m) -> (MorphismType, m) -> Bool
 
 
   -- | Calculate the pushout complement for two sequential morphisms, __assumes it exists__.
@@ -142,9 +142,9 @@ class Morphism m => EpiPairs m where
 data MatchRestriction = MonoMatches | AnyMatches deriving (Eq, Show)
 
 -- | Converts a match restriction to the corresponding restriction for morphism search
-matchRestrictionToProp :: MatchRestriction -> MorphismRestriction
-matchRestrictionToProp MonoMatches = MonoMorphisms
-matchRestrictionToProp AnyMatches = AnyMorphisms
+matchRestrictionToProp :: MatchRestriction -> MorphismType
+matchRestrictionToProp MonoMatches = Monomorphism
+matchRestrictionToProp AnyMatches = GenericMorphism
 
 -- | Flag indicating the semantics of NAC satisfaction.
 data NacSatisfaction = MonoNacSatisfaction | PartMonoNacSatisfaction deriving (Eq, Show)

@@ -237,7 +237,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
       delEdgesFromG' = foldr removeEdgeDomTyped g' delEdges
       delNodesFromG' = foldr removeNodeDomTyped delEdgesFromG' delNodes
 
-  hasPushoutComplement (MonoMorphisms, g) (_, f) =
+  hasPushoutComplement (Monomorphism, g) (_, f) =
     satisfiesDanglingCondition f g
 
   hasPushoutComplement (_, g) (_, f) =
@@ -435,7 +435,7 @@ partInjMatches' nac match =
 
     case q'' of
       Nothing -> []
-      Just q2 -> buildMappings MonoMorphisms nodesSrc edgesSrc nodesTgt edgesTgt q2
+      Just q2 -> buildMappings Monomorphism nodesSrc edgesSrc nodesTgt edgesTgt q2
         where
           --DELETE FROM QUEUE ALREADY MAPPED SOURCE NODES (NODES FROM NAC)
           nodesSrc = filter (notMappedNodes q2) (nodes $ domain domQ)
@@ -457,7 +457,7 @@ partInjMatches' nac match =
 -- | Finds matches __/m/__
 --
 --   Injective, surjective, isomorphic or all possible matches
-matches' :: MorphismRestriction -> GM.GraphMorphism a b-> GM.GraphMorphism a b
+matches' :: MorphismType -> GM.GraphMorphism a b-> GM.GraphMorphism a b
         -> [TypedGraphMorphism a b]
 matches' prop graph1 graph2 =
   buildMappings prop nodesSrc edgesSrc nodesTgt edgesTgt tgm
@@ -477,16 +477,16 @@ matches' prop graph1 graph2 =
 
 ---------------------------------------------------------------------------------
 
-buildMappings :: MorphismRestriction -> [G.NodeId] -> [G.EdgeId] -> [G.NodeId] -> [G.EdgeId]
+buildMappings :: MorphismType -> [G.NodeId] -> [G.EdgeId] -> [G.NodeId] -> [G.EdgeId]
               -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
 
 --IF NO HAS FREE NODES OR FREE EDGES TO MAP, RETURN THE FOUND MORPHISMO
 buildMappings prop [] [] nodesT edgesT tgm =
       case prop of
-        AnyMorphisms  -> all
-        MonoMorphisms -> all
-        EpiMorphisms  -> epimorphism
-        IsoMorphisms  -> isomorphism
+        GenericMorphism  -> all
+        Monomorphism -> all
+        Epimorphism  -> epimorphism
+        Isomorphism  -> isomorphism
       where
         all = return tgm
 
@@ -499,23 +499,23 @@ buildMappings prop [] [] nodesT edgesT tgm =
 
 ---------------------------------------------------------------------------------
 
---IF HAS FREE NODES, MAP AnyMorphisms FREE NODES TO AnyMorphisms DESTINATION NODES
+--IF HAS FREE NODES, MAP GenericMorphism FREE NODES TO GenericMorphism DESTINATION NODES
 buildMappings prop (h:t) [] nodesT edgesT tgm
   | L.null nodesT = []
   | otherwise  = do
       y <- nodesT
 
-      --MAP FREE NODES TO AnyMorphisms TYPE COMPATIBLE DESTINATION NODES
+      --MAP FREE NODES TO GenericMorphism TYPE COMPATIBLE DESTINATION NODES
       let tgmN = updateNodesMapping h y nodesT tgm
 
       case tgmN of
         Just tgm' ->
           --CHOSE BETWEEN INJECTIVE OR NOT
           case prop of
-            AnyMorphisms  -> all
-            MonoMorphisms -> monomorphism
-            EpiMorphisms  -> all
-            IsoMorphisms  -> monomorphism
+            GenericMorphism  -> all
+            Monomorphism -> monomorphism
+            Epimorphism  -> all
+            Isomorphism  -> monomorphism
           where
             monomorphism = buildMappings prop t [] nodesT' edgesT tgm'
             all          = buildMappings prop t [] nodesT  edgesT tgm'
@@ -540,10 +540,10 @@ buildMappings prop nodes (h:t) nodesT edgesT tgm
                   d = domain $ domain tgm
                   c = domain $ codomain tgm
                   nodesT' = case prop of
-                    MonoMorphisms -> L.delete (srcE c y) nodesT
-                    IsoMorphisms  -> L.delete (srcE c y) nodesT
-                    EpiMorphisms  -> nodesT
-                    AnyMorphisms  -> nodesT
+                    Monomorphism -> L.delete (srcE c y) nodesT
+                    Isomorphism  -> L.delete (srcE c y) nodesT
+                    Epimorphism  -> nodesT
+                    GenericMorphism  -> nodesT
 
           --MAPPING SRC EDGE AND TGT EDGE
           tgmE
@@ -563,10 +563,10 @@ buildMappings prop nodes (h:t) nodesT edgesT tgm
               all          = buildMappings prop nodes' t nodesT  edgesT  tgm'
               --CHOSE BETWEEN INJECTIVE OR NOT
           case prop of
-            AnyMorphisms  -> all
-            MonoMorphisms -> monomorphism
-            EpiMorphisms  -> all
-            IsoMorphisms  -> monomorphism
+            GenericMorphism  -> all
+            Monomorphism -> monomorphism
+            Epimorphism  -> all
+            Isomorphism  -> monomorphism
         Nothing  -> []
 
 ---------------------------------------------------------------------------------
