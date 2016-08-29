@@ -44,13 +44,8 @@ class Morphism m => FindMorphism m where
   findAllMorphisms :: Obj m -> Obj m -> [m]
   findAllMorphisms = findMorphisms GenericMorphism
 
-  -- | Finds matches __/q/__ .
-  --
-  --   Partially injective. (Injective out of __/m/__)
-  --
-  -- TODO: replace by data constructor @PartMono :: m -> MorphismType@?
-  --
-  -- TODO: what is the second argument??
-  --
   -- TODO: properly explain partial injectivity
-  partInjMatches :: m -> m -> [m]
+  -- TODO: replace by data constructor @PartMono :: m -> MorphismType@?
+  -- | Given a NAC /n : L -> N / and a match /m : L -> G/, finds the morphisms
+  -- from /N/ to /G/ that are injective out of the image of /n/
+  partialInjectiveMatches :: m -> m -> [m]

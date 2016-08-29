@@ -333,7 +333,7 @@ instance EpiPairs (TypedGraphMorphism a b) where
 
 instance FindMorphism (TypedGraphMorphism a b) where
   findMorphisms = matches'
-  partInjMatches = partInjMatches'
+  partialInjectiveMatches = partialInjectiveMatches'
 
 --ALIAS OF MOST USED FUNCTIONS --
 
@@ -355,9 +355,9 @@ typeE gm e = fromMaybe (error "EDGE NOT TYPED") $ GM.applyEdge gm e
 -- | Finds matches __/q/__ .
 --
 --   Partially injective. (Injective out of __/m/__)
-partInjMatches' :: TypedGraphMorphism a b -> TypedGraphMorphism a b
+partialInjectiveMatches' :: TypedGraphMorphism a b -> TypedGraphMorphism a b
                -> [TypedGraphMorphism a b]
-partInjMatches' nac match =
+partialInjectiveMatches' nac match =
   do
     let
       --NODES AND EDGES FROM lhs OF A RULE

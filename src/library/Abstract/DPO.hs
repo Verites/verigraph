@@ -180,7 +180,7 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
   -- | Check if the second morphism is monomorphic outside the image of the
   -- first morphism.
   partiallyMonomorphic :: m -> m -> Bool
---{-# WARNING partiallyMonomorphic "Only necessary until 'partInjMatches' is corrected" #-}
+--{-# WARNING partiallyMonomorphic "Only necessary until 'partialInjectiveMatches' is corrected" #-}
 
 -- | Verifies if the gluing conditions for a production /p/ are satisfied by a match /m/
 satisfiesGluingConditions :: DPO m => DPOConfig -> Production m -> m -> Bool
@@ -217,7 +217,7 @@ satisfiesSingleNac config match nac =
           MonomorphicNAC ->
             findMonomorphisms (codomain nac) (codomain match)
           PartiallyMonomorphicNAC ->
-            partInjMatches nac match
+            partialInjectiveMatches nac match
       commutes nacMatch =
         compose nac nacMatch == match
   in

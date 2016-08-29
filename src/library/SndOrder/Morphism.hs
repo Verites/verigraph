@@ -115,7 +115,7 @@ instance FindMorphism (RuleMorphism a b) where
       leftMatch = concatMap (leftM prop l g) matchesK
       rightMatch = concatMap (rightM prop l g) leftMatch
 
-  partInjMatches n m =
+  partialInjectiveMatches n m =
     filter
       (\q ->
         partiallyMonomorphic (mappingLeft n) (mappingLeft q) &&
