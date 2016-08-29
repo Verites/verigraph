@@ -30,7 +30,7 @@ appendSndOrderConflicts :: DPOConfig -> GraphGrammar a b -> GraphGrammar a b
 appendSndOrderConflicts config gg = newGG
   where
     conflicts = CP.namedCriticalPairs config (sndOrderRules gg)
-    matches = concatMap (\(n1,n2,c) -> map (\ol -> (n1, n2, CP.getCP ol, codomain (fst (CP.getMatch ol)))) c) conflicts
+    matches = concatMap (\(n1,n2,c) -> map (\ol -> (n1, n2, CP.getCriticalPairType ol, codomain (fst (CP.getCriticalPairMatches ol)))) c) conflicts
     conflictRules = map (\(idx,(n1,n2,tp,rule)) -> ("conflict_"++(show tp)++"_"++n1++"_"++n2++"_"++(show idx), rule)) (zip ([0..]::[Int]) matches)
     newGG = graphGrammar (initialGraph gg) ((rules gg) ++ conflictRules) (sndOrderRules gg)
 

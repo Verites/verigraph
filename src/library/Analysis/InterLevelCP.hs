@@ -37,11 +37,11 @@ classify config r1 r2 (m1,m2) =
     r2Right = codomain (getRHS r2)
 
     deleteUseFlGl =
-      deleteUse config r1Left (mappingLeft m1, mappingLeft m2) ||
-      deleteUse config r2Left (mappingLeft m2, mappingLeft m1)
+      isDeleteUse config r1Left (mappingLeft m1, mappingLeft m2) ||
+      isDeleteUse config r2Left (mappingLeft m2, mappingLeft m1)
     deleteUseFlGl'' =
-      deleteUse config r1Right (mappingRight m1, mappingRight m2) ||
-      deleteUse config r2Right (mappingRight m2, mappingRight m1)
+      isDeleteUse config r1Right (mappingRight m1, mappingRight m2) ||
+      isDeleteUse config r2Right (mappingRight m2, mappingRight m1)
 
 -- TODO: Decent names, please
 -- TODO: Remove duplication (as per hlint)

@@ -154,7 +154,7 @@ allProduceUse config pLeft pRight =
       filter
         (\(m1',m2') -> satisfyRewritingConditions config (invLeft,m1') (pRight,m2'))
         pairs
-    prodUse = filter (deleteUse config invLeft) gluing
+    prodUse = filter (isDeleteUse config invLeft) gluing
 
 -- *** RemoveDangling
 
@@ -203,8 +203,7 @@ allProdUseAndDang config pLeft pRight =
 -- | All DeleteForbid caused by the derivation of @pLeft@ before @r@.
 -- Rule @pLeft@ causes a delete-forbid dependency with @pRight@ if
 -- some NAC in @pRight@ turns satisfied after the aplication of @pLeft@
-allDeleteForbid :: (DPO m, EpiPairs m) => DPOConfig
-  -> Production m -> Production m -> [CriticalSequence m]
+allDeleteForbid :: (DPO m, EpiPairs m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
 allDeleteForbid config pLeft pRight =
   concatMap
     (deleteForbid config pLeft inverseLeft pRight)
@@ -213,12 +212,11 @@ allDeleteForbid config pLeft pRight =
     inverseLeft = invertProduction config pLeft
 
 -- | Check DeleteForbid for a NAC @n@ in @pRight@
-deleteForbid :: (EpiPairs m, DPO m) => DPOConfig -> Production m
-  -> Production m -> Production m -> (m, Int) -> [CriticalSequence m]
+deleteForbid :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> Production m -> (m, Int) -> [CriticalSequence m]
 deleteForbid config pLeft inverseLeft pRight nac =
   map
     (\(m,m',nac) -> CriticalSequence (Just m) m' (Just nac) DeleteForbid)
-    (produceForbidOneNac config inverseLeft pLeft pRight nac)
+    (produceForbidOneNac config inverseLeft pRight nac)
 
 -- ** Irreversible Dependencies
 
@@ -246,7 +244,7 @@ allDeliverDelete config pLeft pRight =
       filter
         (\(m1',m2') -> satisfyRewritingConditions config (invLeft,m1') (pRight,m2'))
         pairs
-    delDel = filter (\(m1,m2) -> deleteUse config pRight (m2,m1)) gluing
+    delDel = filter (\(m1,m2) -> isDeleteUse config pRight (m2,m1)) gluing
 
 -- *** DeliverDangling
 
@@ -291,9 +289,8 @@ allForbidProduce config pLeft pRight =
       inverseRight = invertProduction config pRight
 
 -- | Check ForbidProduce for a NAC @n@ in right of @pLeft@
-forbidProduce :: (EpiPairs m, DPO m) => DPOConfig -> Production m
-  -> Production m -> Production m -> (m, Int) -> [CriticalSequence m]
+forbidProduce :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> Production m -> (m, Int) -> [CriticalSequence m]
 forbidProduce config inverseLeft inverseRight pRight nac =
   map
     (\(m,m',nac) -> CriticalSequence (Just m) m' (Just nac) ForbidProduce)
-    (produceForbidOneNac config pRight inverseRight inverseLeft nac)
+    (produceForbidOneNac config pRight inverseLeft nac)

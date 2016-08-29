@@ -27,19 +27,19 @@ parseCPGraph (name1,name2,cps) = (name1,name2,overlaps)
 overlapsCP :: String -> CP.CriticalPair (TypedGraphMorphism a b) -> (ParsedTypedGraph, [Mapping], [Mapping], String, String)
 overlapsCP name2 cs = (graph, mapM1, mapM2 ++ mapM2WithNac, nacName cs, csType cs)
   where
-    (m1,m2) = case CP.getCP cs of
-                CP.ProduceForbid -> fromMaybe (error "Error when exporting ProduceForbid") (CP.getComatch cs)
-                _ -> CP.getMatch cs
+    (m1,m2) = case CP.getCriticalPairType cs of
+                CP.ProduceForbid -> fromMaybe (error "Error when exporting ProduceForbid") (CP.getCriticalPairComatches cs)
+                _ -> CP.getCriticalPairMatches cs
     graph = serializeGraph [] m1
     mapM1 = getTgmMappings Nothing m1
     mapM2 = getTgmMappings Nothing m2
-    mapM2WithNac = case CP.getCP cs of
+    mapM2WithNac = case CP.getCriticalPairType cs of
                      CP.ProduceForbid -> addNacMap
                      _ -> []
-    nacMatch = fromMaybe (error "Error when exporting ProduceForbid") (CP.getCPNac cs)
+    nacMatch = fromMaybe (error "Error when exporting ProduceForbid") (CP.getNacMatchOfCriticalPair cs)
     addNacMap = getTgmMappings (Just (nacName cs)) nacMatch
-    nacName = parseNacName name2 CP.getCPNacIdx
-    csType = show . CP.getCP
+    nacName = parseNacName name2 CP.getNacIndexOfCriticalPair
+    csType = show . CP.getCriticalPairType
 
 parseCSGraph :: (String,String,[CS.CriticalSequence (TypedGraphMorphism a b)]) -> Overlappings
 parseCSGraph (name1,name2,cps) = (name1,name2,overlaps)

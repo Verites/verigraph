@@ -134,7 +134,7 @@ printAnalysis :: (EpiPairs m, DPO m) =>
   AnalysisType -> DPOConfig -> [Production m] -> IO ()
 printAnalysis action dpoConf rules =
   let confMatrix = analysisMatrix dpoConf rules
-        allDeleteUse allProduceDangling allProduceForbid
+        findAllDeleteUse findAllProduceDangling findAllProduceForbid
         "Delete-Use" "Produce-Dangling" "Produce-Forbid" "Conflicts"
       depMatrix = triDepMatrix ++ irrDepMatrix
       triDepMatrix = analysisMatrix dpoConf rules

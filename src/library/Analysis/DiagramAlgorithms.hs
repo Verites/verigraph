@@ -26,7 +26,7 @@ prod2 = l2 r2 {n2}
 -}
 
 module Analysis.DiagramAlgorithms (
-    deleteUse
+    isDeleteUse
   , produceDangling
   , deleteUseDangling
   , produceForbidOneNac
@@ -41,8 +41,8 @@ import           Data.Maybe           (mapMaybe)
 -- something that is used by @p2@.
 --
 -- Verifies the non existence of h21: L2 -> D1 such that l' . h21 = m2
-deleteUse :: DPO m => DPOConfig -> Production m -> (m, m) -> Bool
-deleteUse config l (m1,m2) = null matchD
+isDeleteUse :: DPO m => DPOConfig -> Production m -> (m, m) -> Bool
+isDeleteUse config l (m1,m2) = null matchD
     where
         (_,l') = RW.calculatePushoutComplement m1 (getLHS l) --get only the morphism D2 to G
         restriction = matchRestrictionToMorphismType (matchRestriction config)
@@ -88,13 +88,12 @@ deleteUseDangling config l r (m1,m2) =
 -- produces something that able some nac of @p2@.
 --
 -- Checks produce-forbid for a NAC @n@ in @p2@
-produceForbidOneNac :: (EpiPairs m, DPO m) => DPOConfig
-                    -> Production m -> Production m -> Production m
-                    -> (m, Int) -> [((m,m), (m,m), (m,Int))]
-produceForbidOneNac config l inverseLeft r (n,idx) =
+produceForbidOneNac :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> (m, Int) -> [((m,m), (m,m), (m,Int))]
+produceForbidOneNac config l r (n,idx) =
   map (\(q21,h1,m2',m1,m2) -> ((m1,m2), (h1,m2'), (q21,idx))) prodForbids
     where
       -- common names
+      inverseL = invertProduction config l
       r1 = getRHS l
       restriction = matchRestrictionToMorphismType (matchRestriction config)
       satsGluingNacs = satisfiesRewritingConditions config
@@ -104,14 +103,14 @@ produceForbidOneNac config l inverseLeft r (n,idx) =
       allP1 = createJointlyEpimorphicPairsFromNAC config (codomain r1) n
 
       -- Check gluing cond for (m1',r1)
-      validP1 = filter (\(m1', _) -> satsGluingNacs inverseLeft m1') allP1
+      validP1 = filter (\(m1', _) -> satsGluingNacs inverseL m1') allP1
 
       -- Construct PO complement D1
       -- Construct PO K and abort if m1 not sats NACs l
       validG =
         mapMaybe
           (\(m1', q21) ->
-            let (k, m1, r', l') = RW.calculateDPO m1' inverseLeft --allG
+            let (k, m1, r', l') = RW.calculateDPO m1' inverseL --allG
             in
               if satisfiesNACs config l m1
                 then Just (m1', q21, k, r', m1, l')
