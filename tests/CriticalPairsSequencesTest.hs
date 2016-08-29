@@ -22,7 +22,7 @@ testTeseRodrigo dpoConf rules =
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"
- ~=? show (pairwise (allDeleteUse dpoConf) rules)],
+ ~=? show (pairwise (findAllDeleteUse dpoConf) rules)],
        ["Test teseRodrigo Produce-Dangling "++(printConf dpoConf)  ~:
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"++
@@ -32,7 +32,7 @@ testTeseRodrigo dpoConf rules =
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"
- ~=? show (pairwise (allProduceDangling dpoConf) rules)],
+ ~=? show (pairwise (findAllProduceDangling dpoConf) rules)],
        ["Test teseRodrigo Produce-Forbid "++(printConf dpoConf)  ~:
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 2 0 0 0 0 0 0 0 )\n"++
@@ -42,7 +42,7 @@ testTeseRodrigo dpoConf rules =
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 1 0 0 )\n"
- ~=? show (pairwise (allProduceForbid dpoConf) rules)],
+ ~=? show (pairwise (findAllProduceForbid dpoConf) rules)],
        ["Test teseRodrigo Produce-Use "++(printConf dpoConf)  ~:
          "( 0 1 0 0 0 0 0 0 )\n"++
          "( 0 0 3 0 0 0 0 0 )\n"++
