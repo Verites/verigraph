@@ -321,12 +321,12 @@ instance EpiPairs (TypedGraphMorphism a b) where
         matchRestriction config == MonoMatches
 
       nacInj =
-        nacSatisfaction config == MonoNacSatisfaction
+        nacSatisfaction config == MonomorphicNAC
 
   -- | Create all jointly surjective pairs of @m1@ and @m2@ that commutes,
   -- considering they have same domain
   -- and flags indicating the injective of each morphism
-  commutingPairsAlt (m1,inj1) (m2,inj2) = filt
+  calculateCommutativeSquaresAlongMonomorphism (m1,inj1) (m2,inj2) = filt
     where
       cod1 = codomain m1
       cod2 = codomain m2

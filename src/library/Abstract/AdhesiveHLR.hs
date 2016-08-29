@@ -52,8 +52,8 @@ class (Morphism m) => AdhesiveHLR m where
   --        f'
   -- @
   --
-  -- If restrictions are known of one of the morphisms, they should be given. The implementation
-  -- of this operation may then assume such restrictions for more efficient calculation.
+  -- If the types of the morphisms are known, they should be given. The implementation
+  -- of this operation may then use them for more efficient calculation.
   hasPushoutComplement :: (MorphismType, m) -> (MorphismType, m) -> Bool
 
 
@@ -78,8 +78,8 @@ class (Morphism m) => AdhesiveHLR m where
 
   -- | Calculate the pullback between the two given morphisms
   --
-  -- Given the morphisms /f : A -> C/ and /g : B -> C/, respectively, returns
-  -- the pair of morphisms /f' : X -> B/ and /g': X -> A/ such that the
+  -- Given two monomorphic morphisms /f : A -> C/ and /g : B -> C/, respectively, returns
+  -- the pair of monomorphic morphisms /f' : X -> B/ and /g': X -> A/ such that the
   -- following square is a pullback.
   --
   -- @
@@ -111,12 +111,9 @@ class Morphism m => EpiPairs m where
   -- FIXME: nacs don't belong in this module
   createPairsNac :: DPOConfig -> Obj m -> m -> [(m, m)]
 
-  -- | Given two morphisms with the same domain, it creates all jointly epimorphic
-  -- pairs of morphisms from their codomains, such that the square formed by
-  -- all these morphisms commutes.
-  --
-  -- Given /f : X -> A/ and /g : X -> B/, obtain all jointly epimorphic pairs
-  -- /(f', g')/ such that the following diagram commutes.
+  -- Given the morphisms /f : X -> A/ and /g : X -> B/ with the same domain,
+  -- obtain all jointly epimorphic pairs /(f', g')/ such that the following
+  -- diagram commutes.
   -- @
   --        g
   --     X──────▶B
@@ -128,14 +125,14 @@ class Morphism m => EpiPairs m where
   -- @
   --
   -- Bool indicates injective
-  commutingPairs :: Bool -> m -> m -> [(m, m)]
-  commutingPairs inj m1 m2 = filt
+  calculateCommutativeSquares :: Bool -> m -> m -> [(m, m)]
+  calculateCommutativeSquares inj m1 m2 = filt
     where
       allPairs = createJointlyEpimorphicPairs inj (codomain m1) (codomain m2)
       filt = filter (\(x,y) -> compose m1 x == compose m2 y) allPairs
 
-  -- Similar to commutingPairs but indicating which morphism is injective
-  commutingPairsAlt :: (m,Bool) -> (m,Bool) -> [(m, m)]
+  -- Similar to calculateCommutativeSquares but indicating which morphism is injective
+  calculateCommutativeSquaresAlongMonomorphism :: (m,Bool) -> (m,Bool) -> [(m, m)]
 
 
 -- | Flag indicating what restrictions are required or assumed of matches.
@@ -147,7 +144,7 @@ matchRestrictionToMorphismType MonoMatches = Monomorphism
 matchRestrictionToMorphismType AnyMatches = GenericMorphism
 
 -- | Flag indicating the semantics of NAC satisfaction.
-data NacSatisfaction = MonoNacSatisfaction | PartMonoNacSatisfaction deriving (Eq, Show)
+data NacSatisfaction = MonomorphicNAC | PartiallyMonomorphicNAC deriving (Eq, Show)
 
 
 data DPOConfig = DPOConfig

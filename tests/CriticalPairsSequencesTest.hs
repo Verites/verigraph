@@ -105,17 +105,17 @@ testTeseRodrigo dpoConf rules =
  ~=? show (pairwise (allForbidProduce dpoConf) rules)]]
 
 tests dpoConf rules = test $
-  (testTeseRodrigo (DPOConfig MonoMatches PartMonoNacSatisfaction) rules) ++
-  (testTeseRodrigo (DPOConfig MonoMatches MonoNacSatisfaction) rules) ++
-  (testTeseRodrigo (DPOConfig AnyMatches PartMonoNacSatisfaction) rules) ++
-  (testTeseRodrigo (DPOConfig AnyMatches MonoNacSatisfaction) rules)
+  (testTeseRodrigo (DPOConfig MonoMatches PartiallyMonomorphicNAC) rules) ++
+  (testTeseRodrigo (DPOConfig MonoMatches MonomorphicNAC) rules) ++
+  (testTeseRodrigo (DPOConfig AnyMatches PartiallyMonomorphicNAC) rules) ++
+  (testTeseRodrigo (DPOConfig AnyMatches MonomorphicNAC) rules)
 
 main :: IO Counts
 main = do
   let fileName = "grammars/teseRodrigo.ggx"
   gg <- XML.readGrammar fileName
 
-  let dpoConf = DPOConfig MonoMatches PartMonoNacSatisfaction
+  let dpoConf = DPOConfig MonoMatches PartiallyMonomorphicNAC
       rules = map snd (GG.rules gg)
   
   runTestTT (tests dpoConf rules)

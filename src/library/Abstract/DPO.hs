@@ -215,10 +215,10 @@ satisfiesSingleNac config match nac =
   let
     nacMatches =
       case nacSatisfaction config of
-        MonoNacSatisfaction ->
+        MonomorphicNAC ->
           findMonomorphisms (codomain nac) (codomain match)
 
-        PartMonoNacSatisfaction ->
+        PartiallyMonomorphicNAC ->
           partInjMatches nac match
 
     commutes nacMatch =
@@ -235,5 +235,5 @@ satisfiesSingleNac config match nac =
 nacDownwardShift :: EpiPairs m => DPOConfig -> m -> m -> [m]
 nacDownwardShift config m n = newNacs
   where
-    pairs = commutingPairsAlt (n,True) (m, matchRestriction config == MonoMatches)
+    pairs = calculateCommutativeSquaresAlongMonomorphism (n,True) (m, matchRestriction config == MonoMatches)
     newNacs = map snd pairs

@@ -184,9 +184,9 @@ instance EpiPairs (RuleMorphism a b) where
       satsNac = if nacInj then monomorphism else partiallyMonomorphic nac
       satsMorphisms = filter (\(h,q) -> satsR h && satsNac q) allPairs-}
 
-  commutingPairsAlt (m1,inj1) (m2,inj2) = filt
+  calculateCommutativeSquaresAlongMonomorphism (m1,inj1) (m2,inj2) = filt
     where
-      allCommutingPairs = commutingPairs False m1 m2
+      allCommutingPairs = calculateCommutativeSquares False m1 m2
       satsM1 = if inj1 then monomorphism else const True
       satsM2 = if inj2 then monomorphism else const True
       filt = filter (\(m1,m2) -> satsM1 m1 && satsM2 m2) allCommutingPairs
