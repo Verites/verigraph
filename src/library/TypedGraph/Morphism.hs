@@ -310,10 +310,7 @@ instance EpiPairs (TypedGraphMorphism a b) where
       m2 = gmbuild G.empty G.empty [] []
       part = map (mountTGMBoth m1 m2) (genGraphEqClass (mixGM (m1,inj) (m2,inj)))
 
-  -- | Create all jointly surjective pairs of @m1@ and @m2@ with some of both injective
-  --createPairsAlt (m1,inj1) (m2,inj2) = map (mountTGMBoth m1 m2) (genGraphEqClass (mixGM (m1,inj1) (m2,inj2)))
-
-  createPairsNac config r nac =
+  createJointlyEpimorphicPairsFromNAC config r nac =
     map (mountTGMBoth r (codomain nac)) (genGraphEqClass (mixNac (r, matchInj) (nac, nacInj)))
 
     where

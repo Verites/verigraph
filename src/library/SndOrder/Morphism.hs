@@ -174,15 +174,9 @@ instance EpiPairs (RuleMorphism a b) where
   createAllSubobjects _ _ = error "Not implemented"
 
   --FIXME
-  createPairsNac _ r nac = allPairs
+  createJointlyEpimorphicPairsFromNAC _ r nac = allPairs
     where
       allPairs = createJointlyEpimorphicPairs True r (codomain nac)
-  {-createPairsNac nacInj inj r nac = satsMorphisms
-    where
-      allPairs = createPairs False r (codomain nac)
-      satsR = if inj then monomorphism else (\_ -> True)
-      satsNac = if nacInj then monomorphism else partiallyMonomorphic nac
-      satsMorphisms = filter (\(h,q) -> satsR h && satsNac q) allPairs-}
 
   calculateCommutativeSquaresAlongMonomorphism (m1,inj1) (m2,inj2) = filt
     where

@@ -101,7 +101,7 @@ produceForbidOneNac config l inverseLeft r (n,idx) =
 
       -- Consider for a NAC n (L2 -> N2) of r any jointly surjective
       -- pair of morphisms (m1',q21) with q21 (part)inj
-      allP1 = createPairsNac config (codomain r1) n
+      allP1 = createJointlyEpimorphicPairsFromNAC config (codomain r1) n
 
       -- Check gluing cond for (m1',r1)
       validP1 = filter (\(m1', _) -> satsGluingNacs inverseLeft m1') allP1

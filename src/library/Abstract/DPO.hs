@@ -32,7 +32,7 @@ module Abstract.DPO
   , satisfiesRewritingConditions
   , satisfyRewritingConditions
 
-  -- *** Transform
+  -- *** Transformation
   -- | Given a production and a match for its left side, it may be possible
   -- to apply the production and obtain a transformation of the matched graph.
   -- This section provides functions that calculate such transformations.
@@ -176,11 +176,13 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
   -- a set of NACs /n'i : R -> N'i/ that is equivalent to the original NAC.
   shiftNacOverProduction :: DPO m => DPOConfig -> Production m -> m -> [m]
 
+  -- TODO : Verify why this function continues to be used
   -- | Check if the second morphism is monomorphic outside the image of the
   -- first morphism.
   partiallyMonomorphic :: m -> m -> Bool
 --{-# WARNING partiallyMonomorphic "Only necessary until 'partInjMatches' is corrected" #-}
 
+-- | Verifies if the gluing conditions for a production /p/ are satisfied by a match /m/
 satisfiesGluingConditions :: DPO m => DPOConfig -> Production m -> m -> Bool
 satisfiesGluingConditions config production match =
   hasPushoutComplement (matchIsMono, match) (GenericMorphism, left production)
@@ -193,11 +195,9 @@ satisfiesNACs :: DPO m => DPOConfig -> Production m -> m -> Bool
 satisfiesNACs config production match =
   all (satisfiesSingleNac config match) (nacs production)
 
-
+-- TODO: deprecate? why do we need this __here__?
 -- | Check gluing conditions and the NACs satisfaction for a pair of matches
 -- @inj@ only indicates if the match is injective, this function does not checks it
---
--- TODO: deprecate? why do we need this __here__?
 satisfyRewritingConditions :: DPO m => DPOConfig -> (Production m, m) -> (Production m, m) -> Bool
 satisfyRewritingConditions config (l,m1) (r,m2) =
   satisfiesRewritingConditions config l m1 && satisfiesRewritingConditions config r m2
@@ -212,26 +212,21 @@ satisfiesRewritingConditions config production match =
 
 satisfiesSingleNac :: DPO m => DPOConfig -> m -> m -> Bool
 satisfiesSingleNac config match nac =
-  let
-    nacMatches =
-      case nacSatisfaction config of
-        MonomorphicNAC ->
-          findMonomorphisms (codomain nac) (codomain match)
-
-        PartiallyMonomorphicNAC ->
-          partInjMatches nac match
-
-    commutes nacMatch =
-      compose nac nacMatch == match
+  let nacMatches =
+        case nacSatisfaction config of
+          MonomorphicNAC ->
+            findMonomorphisms (codomain nac) (codomain match)
+          PartiallyMonomorphicNAC ->
+            partInjMatches nac match
+      commutes nacMatch =
+        compose nac nacMatch == match
   in
     not $ any commutes nacMatches
 
-
+-- TODO: Is this really a DPO feature?
 -- | Given a morphism /m : L -> L'/ and a NAC /n : L -> N/, obtains
 -- an equivalent set of NACs /n'i : L' -> N'i/ that is equivalent to the
 -- original NAC.
-
--- TODO: Is this really a DPO feature?
 nacDownwardShift :: EpiPairs m => DPOConfig -> m -> m -> [m]
 nacDownwardShift config m n = newNacs
   where

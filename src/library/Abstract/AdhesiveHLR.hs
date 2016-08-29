@@ -109,7 +109,7 @@ class Morphism m => EpiPairs m where
   -- The second flag indicates that the other morphism is monomorphic
   --
   -- FIXME: nacs don't belong in this module
-  createPairsNac :: DPOConfig -> Obj m -> m -> [(m, m)]
+  createJointlyEpimorphicPairsFromNAC :: DPOConfig -> Obj m -> m -> [(m, m)]
 
   -- Given the morphisms /f : X -> A/ and /g : X -> B/ with the same domain,
   -- obtain all jointly epimorphic pairs /(f', g')/ such that the following
