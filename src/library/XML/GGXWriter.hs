@@ -38,7 +38,7 @@ appendSndOrderDependencies :: DPOConfig -> GraphGrammar a b -> GraphGrammar a b
 appendSndOrderDependencies config gg = newGG
   where
     conflicts = CS.namedCriticalSequences config (sndOrderRules gg)
-    matches = concatMap (\(n1,n2,c) -> map (\ol -> (n1, n2, CS.getCS ol, codomain (fst (CS.getCriticalSequenceComatches ol)))) c) conflicts
+    matches = concatMap (\(n1,n2,c) -> map (\ol -> (n1, n2, CS.getCriticalSequenceType ol, codomain (fst (CS.getCriticalSequenceComatches ol)))) c) conflicts
     conflictRules = map (\(idx,(n1,n2,tp,rule)) -> ("dependency_"++(show tp)++"_"++n1++"_"++n2++"_"++(show idx), rule)) (zip ([0..]::[Int]) matches)
     newGG = graphGrammar (initialGraph gg) ((rules gg) ++ conflictRules) (sndOrderRules gg)
 

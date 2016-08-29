@@ -17,6 +17,7 @@ module Analysis.CriticalPairs
 import           Abstract.AdhesiveHLR       as RW
 import           Abstract.DPO               as RW hiding (calculateComatch)
 import           Analysis.DiagramAlgorithms
+import           Analysis.EpimorphicPairs
 import           Data.Maybe                 (mapMaybe)
 
 -- | Data representing the type of a 'CriticalPair'
@@ -91,13 +92,6 @@ getNacIndexOfCriticalPair criticalPair =
   case nacMatch criticalPair of
     Just (_,idx) -> Just idx
     Nothing -> Nothing
-
--- | Create all jointly epimorphic pairs of morphisms from the codomains of
--- the given morphisms.
--- The flag indicates only monomorphic morphisms.
-createJointlyEpimorphicPairsFromCodomains :: (EpiPairs m) => MatchRestriction -> m -> m -> [(m, m)]
-createJointlyEpimorphicPairsFromCodomains inj m1 m2 =
-  createJointlyEpimorphicPairs (inj == MonoMatches) (codomain m1) (codomain m2)
 
 -- | Returns the Critical Pairs with rule names
 namedCriticalPairs :: (EpiPairs m, DPO m) => DPOConfig -> [NamedRule m] -> [NamedCriticalPairs m]

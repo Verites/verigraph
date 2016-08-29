@@ -53,6 +53,7 @@ library
                        XML.GGXWriter
   other-modules:
                        Analysis.DiagramAlgorithms
+                       Analysis.EpimorphicPairs
                        Logic.Ctl.Base
                        Logic.Ctl.Parser
                        Logic.Ctl.Semantics

@@ -50,21 +50,21 @@ overlapsCS :: String -> CS.CriticalSequence (TypedGraphMorphism a b)
           -> (ParsedTypedGraph, [Mapping], [Mapping], String, String)
 overlapsCS name2 cs = (graph, mapM1, mapM2 ++ mapM2WithNac, nacName cs, csType cs)
   where
-    (m1,m2) = case CS.getCS cs of
+    (m1,m2) = case CS.getCriticalSequenceType cs of
                 CS.DeleteForbid -> fromMaybe (error "Error when exporting DeleteForbid") (CS.getCriticalSequenceMatches cs)
                 CS.ForbidProduce -> fromMaybe (error "Error when exporting ForbidProduce") (CS.getCriticalSequenceMatches cs)
                 _ -> CS.getCriticalSequenceComatches cs
     graph = serializeGraph [] m1
     mapM1 = getTgmMappings Nothing m1
     mapM2 = getTgmMappings Nothing m2
-    mapM2WithNac = case CS.getCS cs of
+    mapM2WithNac = case CS.getCriticalSequenceType cs of
                      CS.DeleteForbid -> addNacMap
                      CS.ForbidProduce -> addNacMap
                      _ -> []
-    nacMatch = fromMaybe (error "Error when exporting DeleteForbid or ForbidProduce") (CS.getCSNac cs)
+    nacMatch = fromMaybe (error "Error when exporting DeleteForbid or ForbidProduce") (CS.getNacMatchOfCriticalSequence cs)
     addNacMap = getTgmMappings (Just (nacName cs)) nacMatch
-    nacName = parseNacName name2 CS.getCSNacIdx
-    csType = show . CS.getCS
+    nacName = parseNacName name2 CS.getNacIndexOfCriticalSequence
+    csType = show . CS.getCriticalSequenceType
 
 getTgmMappings :: Maybe String -> TypedGraphMorphism a b -> [Mapping]
 getTgmMappings prefix tgm = nodesMorph ++ edgesMorph
