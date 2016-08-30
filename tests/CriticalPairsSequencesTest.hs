@@ -62,7 +62,7 @@ testTeseRodrigo dpoConf rules =
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"
- ~=? show (pairwise (allDeleteForbid dpoConf) rules)],
+ ~=? show (pairwise (findAllDeleteForbid dpoConf) rules)],
         ["Test teseRodrigo Remove-Dangling "++(printConf dpoConf)  ~:
          "( 0 0 0 0 1 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"++
@@ -82,7 +82,7 @@ testTeseRodrigo dpoConf rules =
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 1 0 0 0 )\n"
- ~=? show (pairwise (allDeliverDelete dpoConf) rules)],
+ ~=? show (pairwise (findAllDeliverDelete dpoConf) rules)],
        ["Test teseRodrigo Deliver-Dangling "++(printConf dpoConf)  ~:
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"++
@@ -92,7 +92,7 @@ testTeseRodrigo dpoConf rules =
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 1 0 0 0 0 0 )\n"
- ~=? show (pairwise (allDeliverDangling dpoConf) rules)],
+ ~=? show (pairwise (findAllDeliverDangling dpoConf) rules)],
         ["Test teseRodrigo Forbid-Produce "++(printConf dpoConf)  ~:
          "( 0 3 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"++
@@ -102,7 +102,7 @@ testTeseRodrigo dpoConf rules =
          "( 0 0 0 0 0 0 0 1 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"
- ~=? show (pairwise (allForbidProduce dpoConf) rules)]]
+ ~=? show (pairwise (findAllForbidProduce dpoConf) rules)]]
 
 tests dpoConf rules = test $
   (testTeseRodrigo (DPOConfig MonoMatches PartiallyMonomorphicNAC) rules) ++

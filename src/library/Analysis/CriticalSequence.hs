@@ -1,16 +1,14 @@
 module Analysis.CriticalSequence
  ( CriticalSequenceType (..),
    CriticalSequence,
-   criticalSequences,
-   triggeredCriticalSequences,
+   findTriggeringCriticalSequences,
    namedCriticalSequences,
    allProduceUse,
    allRemoveDangling,
-   allProdUseAndDang,
-   allDeleteForbid,
-   allDeliverDelete,
-   allForbidProduce,
-   allDeliverDangling,
+   findAllDeleteForbid,
+   findAllDeliverDelete,
+   findAllForbidProduce,
+   findAllDeliverDangling,
    getCriticalSequenceMatches,
    getCriticalSequenceComatches,
    getNacMatchOfCriticalSequence,
@@ -33,6 +31,9 @@ data CriticalSequenceType =
   | DeliverDangling -- ^ resp. inverted produce-dangling
   | ForbidProduce   -- ^ resp. inverted produce-forbid
   deriving (Eq,Show)
+
+type NamedRule m = (String, Production m)
+type NamedCriticalPairs m = (String,String,[CriticalSequence m])
 
 -- | A Critical Sequence is defined as two matches (m1,m2) from the
 -- left side of their rules to a same graph.
@@ -97,29 +98,30 @@ getNacIndexOfCriticalSequence cs =
     Nothing -> Nothing
 
 -- | Returns the Critical Sequences with rule names
-namedCriticalSequences :: (EpiPairs m, DPO m) => DPOConfig -> [(String, Production m)] -> [(String, String, [CriticalSequence m])]
+namedCriticalSequences :: (EpiPairs m, DPO m) => DPOConfig -> [NamedRule m] -> [NamedCriticalPairs m]
 namedCriticalSequences conf rules =
   map (uncurry getCPs) [(a,b) | a <- rules, b <- rules]
   where
-    getCPs (n1,r1) (n2,r2) = (n1, n2, criticalSequences conf r1 r2)
+    getCPs (n1,r1) (n2,r2) = (n1, n2, findCriticalSequences conf r1 r2)
 
--- | All Triggered Critical Sequences
-triggeredCriticalSequences :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
-triggeredCriticalSequences conf p1 p2 =
-  allProdUseAndDang conf p1 p2 ++
-  allDeleteForbid conf p1 p2
+-- | Given two productions @p1@ and @p2@, finds the Critical sequences in which the application of @p1@
+-- enables the application of @p2@
+findTriggeringCriticalSequences :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
+findTriggeringCriticalSequences conf p1 p2 =
+  findAllProduceUseAndDangling conf p1 p2 ++
+  findAllDeleteForbid conf p1 p2
 
--- | All Critical Sequences
-criticalSequences :: (EpiPairs m, DPO m) => DPOConfig
-  -> Production m -> Production m -> [CriticalSequence m]
-criticalSequences conf p1 p2 =
-  allProdUseAndDang conf p1 p2 ++
-  allDeleteForbid conf p1 p2 ++
-  allDeliverDelete conf p1 p2 ++
-  allDeliverDangling conf p1 p2 ++
-  allForbidProduce conf p1 p2
+-- TODO : verify if this doc is right
+-- | Given two productions @p1@ and @p2@, finds all the Critical Sequences of @p1@ and @p2@ in this order
+findCriticalSequences :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
+findCriticalSequences conf p1 p2 =
+  findAllProduceUseAndDangling conf p1 p2 ++
+  findAllDeleteForbid conf p1 p2 ++
+  findAllDeliverDelete conf p1 p2 ++
+  findAllDeliverDangling conf p1 p2 ++
+  findAllForbidProduce conf p1 p2
 
--- ** Triggered Dependencies
+-- ** Triggering Dependencies
 
 -- It occurs when p1 enables p2.
 -- (ProduceUse, RemoveDangling, DeleteForbid)
@@ -131,19 +133,13 @@ criticalSequences conf p1 p2 =
 -- Rule @p1@ causes a produce-use dependency with @p2@
 -- if rule @p1@ creates something that is used by @p2@.
 -- Verify the non existence of h21: L2 -> D1 such that d1 . h21 = m2'.
-allProduceUse :: (DPO m, EpiPairs m) => DPOConfig
-  -> Production m -> Production m -> [CriticalSequence m]
+allProduceUse :: (DPO m, EpiPairs m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
 allProduceUse conf p1 p2 =
-  map
-    (\m -> CriticalSequence Nothing m Nothing ProduceUse)
-    prodUse
+  map (\m -> CriticalSequence Nothing m Nothing ProduceUse) prodUse
   where
     invLeft = invertProduction conf p1
     pairs = createJointlyEpimorphicPairsFromCodomains (matchRestriction conf) (getLHS invLeft) (getLHS p2)
-    gluing =
-      filter
-        (\(m1',m2') -> satisfyRewritingConditions conf (invLeft,m1') (p2,m2'))
-        pairs
+    gluing = filter (\(m1',m2') -> satisfyRewritingConditions conf (invLeft,m1') (p2,m2')) pairs
     prodUse = filter (isDeleteUse conf invLeft) gluing
 
 -- *** RemoveDangling
@@ -152,28 +148,21 @@ allProduceUse conf p1 p2 =
 --
 -- Rule @p1@ causes a remove-dangling dependency with @p2@
 -- if rule @p1@ deletes something that enables @p2@.
-allRemoveDangling :: (EpiPairs m, DPO m) => DPOConfig
-  -> Production m -> Production m -> [CriticalSequence m]
+allRemoveDangling :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
 allRemoveDangling conf p1 p2 =
-  map
-    (\m -> CriticalSequence Nothing m Nothing RemoveDangling)
-    remDang
+  map (\m -> CriticalSequence Nothing m Nothing RemoveDangling) remDang
   where
     invLeft = invertProduction conf p1
     pairs = createJointlyEpimorphicPairsFromCodomains (matchRestriction conf) (getLHS invLeft) (getLHS p2)
-    gluing =
-      filter
-        (\(m1,m2) -> satisfyRewritingConditions conf (invLeft,m1) (p2,m2))
-        pairs
+    gluing = filter (\(m1,m2) -> satisfyRewritingConditions conf (invLeft,m1) (p2,m2)) pairs
     remDang = filter (produceDangling conf invLeft p2) gluing
 
 -- ProduceUse and RemoveDangling
 
 -- | Tests ProduceUse and RemoveDangling for the same pairs,
 -- more efficient than deal separately.
-allProdUseAndDang :: (EpiPairs m, DPO m) => DPOConfig
-  -> Production m -> Production m -> [CriticalSequence m]
-allProdUseAndDang conf p1 p2 =
+findAllProduceUseAndDangling :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
+findAllProduceUseAndDangling conf p1 p2 =
   map
     (\x -> case x of
       (Left m) -> CriticalSequence Nothing m Nothing ProduceUse
@@ -182,10 +171,7 @@ allProdUseAndDang conf p1 p2 =
   where
     invLeft = invertProduction conf p1
     pairs = createJointlyEpimorphicPairsFromCodomains (matchRestriction conf) (getLHS invLeft) (getLHS p2)
-    gluing =
-      filter
-        (\(m1,m2) -> satisfyRewritingConditions conf (invLeft,m1) (p2,m2))
-        pairs
+    gluing = filter (\(m1,m2) -> satisfyRewritingConditions conf (invLeft,m1) (p2,m2)) pairs
     dependencies = mapMaybe (deleteUseDangling conf invLeft p2) gluing
 
 -- *** DeleteForbid
@@ -193,11 +179,9 @@ allProdUseAndDang conf p1 p2 =
 -- | All DeleteForbid caused by the derivation of @p1@ before @r@.
 -- Rule @p1@ causes a delete-forbid dependency with @p2@ if
 -- some NAC in @p2@ turns satisfied after the aplication of @p1@
-allDeleteForbid :: (DPO m, EpiPairs m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
-allDeleteForbid conf p1 p2 =
-  concatMap
-    (deleteForbid conf p1 inverseLeft p2)
-    (zip (getNACs p2) [0..])
+findAllDeleteForbid :: (DPO m, EpiPairs m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
+findAllDeleteForbid conf p1 p2 =
+  concatMap (deleteForbid conf p1 inverseLeft p2) (zip (getNACs p2) [0..])
   where
     inverseLeft = invertProduction conf p1
 
@@ -221,19 +205,13 @@ deleteForbid conf p1 inverseLeft p2 nac =
 -- Rule @p1@ causes a deliver-delete dependency with @p2@ if
 -- rule @p2@ deletes something that is used by @p2@,
 -- Verify the non existence of h12: L1 -> D2 such that d2 . h12 = m1'.
-allDeliverDelete :: (DPO m, EpiPairs m) => DPOConfig
-  -> Production m -> Production m -> [CriticalSequence m]
-allDeliverDelete conf p1 p2 =
-  map
-    (\m -> CriticalSequence Nothing m Nothing DeliverDelete)
-    delDel
+findAllDeliverDelete :: (DPO m, EpiPairs m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
+findAllDeliverDelete conf p1 p2 =
+  map (\m -> CriticalSequence Nothing m Nothing DeliverDelete) delDel
   where
     invLeft = invertProduction conf p1
     pairs = createJointlyEpimorphicPairsFromCodomains (matchRestriction conf) (getRHS p1) (getLHS p2)
-    gluing =
-      filter
-        (\(m1',m2') -> satisfyRewritingConditions conf (invLeft,m1') (p2,m2'))
-        pairs
+    gluing = filter (\(m1',m2') -> satisfyRewritingConditions conf (invLeft,m1') (p2,m2')) pairs
     delDel = filter (\(m1,m2) -> isDeleteUse conf p2 (m2,m1)) gluing
 
 -- *** DeliverDangling
@@ -242,23 +220,14 @@ allDeliverDelete conf p1 p2 =
 --
 -- Rule @p1@ causes a deliver-delete dependency with @p2@ if
 -- rule @p2@ creates something that disables the inverse of @p1@.
-allDeliverDangling :: (DPO m, EpiPairs m) => DPOConfig
-  -> Production m -> Production m -> [CriticalSequence m]
-allDeliverDangling conf p1 p2 =
-  map
-    (\m -> CriticalSequence Nothing m Nothing DeliverDangling)
-    delDang
+findAllDeliverDangling :: (DPO m, EpiPairs m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
+findAllDeliverDangling conf p1 p2 =
+  map (\m -> CriticalSequence Nothing m Nothing DeliverDangling) delDang
   where
     invLeft = invertProduction conf p1
     pairs = createJointlyEpimorphicPairsFromCodomains (matchRestriction conf) (getRHS p1) (getLHS p2)
-    gluing =
-      filter
-        (\(m1',m2') -> satisfyRewritingConditions conf (invLeft,m1') (p2,m2'))
-        pairs
-    delDang =
-      filter
-        (\(m1,m2) -> produceDangling conf p2 invLeft (m2,m1))
-        gluing
+    gluing = filter (\(m1',m2') -> satisfyRewritingConditions conf (invLeft,m1') (p2,m2')) pairs
+    delDang = filter (\(m1,m2) -> produceDangling conf p2 invLeft (m2,m1)) gluing
 
 -- TODO: DeliverDelete and DeliverDangling together
 
@@ -268,12 +237,9 @@ allDeliverDangling conf p1 p2 =
 --
 -- Rule @p1@ causes a forbid-produce dependency with @p2@ if some
 -- NAC in right of @p1@ turns satisfied after the aplication of @p2@.
-allForbidProduce :: (DPO m, EpiPairs m) => DPOConfig
-  -> Production m -> Production m -> [CriticalSequence m]
-allForbidProduce conf p1 p2 =
-  concatMap
-    (forbidProduce conf inverseLeft inverseRight p2)
-    (zip (getNACs inverseLeft) [0..])
+findAllForbidProduce :: (DPO m, EpiPairs m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
+findAllForbidProduce conf p1 p2 =
+  concatMap (forbidProduce conf inverseLeft inverseRight p2) (zip (getNACs inverseLeft) [0..])
     where
       inverseLeft = invertProduction conf p1
       inverseRight = invertProduction conf p2

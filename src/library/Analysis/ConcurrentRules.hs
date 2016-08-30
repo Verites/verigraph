@@ -8,7 +8,7 @@ module Analysis.ConcurrentRules
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Analysis.CriticalSequence (getCriticalSequenceComatches,
-                                            triggeredCriticalSequences)
+                                            findTriggeringCriticalSequences)
 
 data CRDependencies = AllOverlapings | OnlyDependency
 
@@ -47,7 +47,7 @@ epiPairsForConcurrentRule :: (DPO m, EpiPairs m)
   => CRDependencies -> DPOConfig -> Production m -> Production m -> [(m, m)]
 -- it only considers triggered dependencies because is the most intuitive and natural behaviour expected until now.
 epiPairsForConcurrentRule OnlyDependency config c n =
-  let dependencies = triggeredCriticalSequences config c n
+  let dependencies = findTriggeringCriticalSequences config c n
   in map getCriticalSequenceComatches dependencies
 
 epiPairsForConcurrentRule AllOverlapings config c n =

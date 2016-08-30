@@ -138,10 +138,10 @@ printAnalysis action dpoConf rules =
         "Delete-Use" "Produce-Dangling" "Produce-Forbid" "Conflicts"
       depMatrix = triDepMatrix ++ irrDepMatrix
       triDepMatrix = analysisMatrix dpoConf rules
-        allProduceUse allRemoveDangling allDeleteForbid
+        allProduceUse allRemoveDangling findAllDeleteForbid
         "Produce-Use" "Remove-Dangling" "Deliver-Forbid" "Triggereds Dependencies"
       irrDepMatrix = analysisMatrix dpoConf rules
-        allDeliverDelete allDeliverDangling allForbidProduce
+        findAllDeliverDelete findAllDeliverDangling findAllForbidProduce
         "DeliverDelete" "Deliver-Dangling" "Forbid-Produce" "Irreversibles Dependencies"
   in mapM_
        putStrLn $
