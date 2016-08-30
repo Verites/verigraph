@@ -138,7 +138,7 @@ printAnalysis action dpoConf rules =
         "Delete-Use" "Produce-Dangling" "Produce-Forbid" "Conflicts"
       depMatrix = triDepMatrix ++ irrDepMatrix
       triDepMatrix = analysisMatrix dpoConf rules
-        findAllProduceUse allRemoveDangling findAllDeleteForbid
+        findAllProduceUse findAllRemoveDangling findAllDeleteForbid
         "Produce-Use" "Remove-Dangling" "Deliver-Forbid" "Triggereds Dependencies"
       irrDepMatrix = analysisMatrix dpoConf rules
         findAllDeliverDelete findAllDeliverDangling findAllForbidProduce

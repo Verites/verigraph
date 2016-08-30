@@ -72,7 +72,7 @@ testTeseRodrigo dpoConf rules =
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"
- ~=? show (pairwise (allRemoveDangling dpoConf) rules)],
+ ~=? show (pairwise (findAllRemoveDangling dpoConf) rules)],
  ["Test teseRodrigo Deliver-Delete "++(printConf dpoConf)  ~:
          "( 0 0 0 0 1 0 0 0 )\n"++
          "( 0 0 3 0 0 0 0 0 )\n"++

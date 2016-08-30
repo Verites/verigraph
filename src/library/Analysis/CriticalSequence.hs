@@ -4,7 +4,7 @@ module Analysis.CriticalSequence
    findTriggeringCriticalSequences,
    namedCriticalSequences,
    findAllProduceUse,
-   allRemoveDangling,
+   findAllRemoveDangling,
    findAllDeleteForbid,
    findAllDeliverDelete,
    findAllForbidProduce,
@@ -100,9 +100,9 @@ getNacIndexOfCriticalSequence cs =
 -- | Returns the Critical Sequences with rule names
 namedCriticalSequences :: (EpiPairs m, DPO m) => DPOConfig -> [NamedRule m] -> [NamedCriticalPairs m]
 namedCriticalSequences conf rules =
-  map (uncurry getCPs) [(a,b) | a <- rules, b <- rules]
+  map (uncurry getCSs) [(a,b) | a <- rules, b <- rules]
   where
-    getCPs (n1,r1) (n2,r2) = (n1, n2, findCriticalSequences conf r1 r2)
+    getCSs (n1,r1) (n2,r2) = (n1, n2, findCriticalSequences conf r1 r2)
 
 -- | Given two productions @p1@ and @p2@, finds the Critical sequences in which the application of @p1@
 -- enables the application of @p2@
@@ -137,10 +137,10 @@ findAllProduceUse :: (DPO m, EpiPairs m) => DPOConfig -> Production m -> Product
 findAllProduceUse conf p1 p2 =
   map (\m -> CriticalSequence Nothing m Nothing ProduceUse) prodUse
   where
-    invLeft = invertProduction conf p1
-    pairs = createJointlyEpimorphicPairsFromCodomains (matchRestriction conf) (getLHS invLeft) (getLHS p2)
-    gluing = filter (\(m1',m2') -> satisfyRewritingConditions conf (invLeft,m1') (p2,m2')) pairs
-    prodUse = filter (isDeleteUse conf invLeft) gluing
+    p1' = invertProduction conf p1
+    pairs = createJointlyEpimorphicPairsFromCodomains (matchRestriction conf) (getLHS p1') (getLHS p2)
+    gluing = filter (\(m1',m2') -> satisfyRewritingConditions conf (p1',m1') (p2,m2')) pairs
+    prodUse = filter (isDeleteUse conf p1') gluing
 
 -- *** RemoveDangling
 
@@ -148,14 +148,14 @@ findAllProduceUse conf p1 p2 =
 --
 -- Rule @p1@ causes a remove-dangling dependency with @p2@
 -- if rule @p1@ deletes something that enables @p2@.
-allRemoveDangling :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
-allRemoveDangling conf p1 p2 =
+findAllRemoveDangling :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
+findAllRemoveDangling conf p1 p2 =
   map (\m -> CriticalSequence Nothing m Nothing RemoveDangling) remDang
   where
-    invLeft = invertProduction conf p1
-    pairs = createJointlyEpimorphicPairsFromCodomains (matchRestriction conf) (getLHS invLeft) (getLHS p2)
-    gluing = filter (\(m1,m2) -> satisfyRewritingConditions conf (invLeft,m1) (p2,m2)) pairs
-    remDang = filter (produceDangling conf invLeft p2) gluing
+    p1' = invertProduction conf p1
+    pairs = createJointlyEpimorphicPairsFromCodomains (matchRestriction conf) (getLHS p1') (getLHS p2)
+    gluing = filter (\(m1,m2) -> satisfyRewritingConditions conf (p1',m1) (p2,m2)) pairs
+    remDang = filter (produceDangling conf p1' p2) gluing
 
 -- ProduceUse and RemoveDangling
 
@@ -163,16 +163,15 @@ allRemoveDangling conf p1 p2 =
 -- more efficient than deal separately.
 findAllProduceUseAndDangling :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
 findAllProduceUseAndDangling conf p1 p2 =
-  map
-    (\x -> case x of
-      (Left m) -> CriticalSequence Nothing m Nothing ProduceUse
-      (Right m) -> CriticalSequence Nothing m Nothing RemoveDangling)
-    dependencies
+  map categorizeDependency dependencies
   where
-    invLeft = invertProduction conf p1
-    pairs = createJointlyEpimorphicPairsFromCodomains (matchRestriction conf) (getLHS invLeft) (getLHS p2)
-    gluing = filter (\(m1,m2) -> satisfyRewritingConditions conf (invLeft,m1) (p2,m2)) pairs
-    dependencies = mapMaybe (deleteUseDangling conf invLeft p2) gluing
+    p1' = invertProduction conf p1
+    pairs = createJointlyEpimorphicPairsFromCodomains (matchRestriction conf) (getLHS p1') (getLHS p2)
+    gluing = filter (\(m1,m2) -> satisfyRewritingConditions conf (p1',m1) (p2,m2)) pairs
+    dependencies = mapMaybe (deleteUseDangling conf p1' p2) gluing
+    categorizeDependency x = case x of
+      (Left m) -> CriticalSequence Nothing m Nothing ProduceUse
+      (Right m) -> CriticalSequence Nothing m Nothing RemoveDangling
 
 -- *** DeleteForbid
 
@@ -181,16 +180,16 @@ findAllProduceUseAndDangling conf p1 p2 =
 -- some NAC in @p2@ turns satisfied after the aplication of @p1@
 findAllDeleteForbid :: (DPO m, EpiPairs m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
 findAllDeleteForbid conf p1 p2 =
-  concatMap (deleteForbid conf p1 inverseLeft p2) (zip (getNACs p2) [0..])
+  concatMap (findDeleteForbidForNAC conf p1' p2) (zip (getNACs p2) [0..])
   where
-    inverseLeft = invertProduction conf p1
+    p1' = invertProduction conf p1
 
 -- | Check DeleteForbid for a NAC @n@ in @p2@
-deleteForbid :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> Production m -> (m, Int) -> [CriticalSequence m]
-deleteForbid conf p1 inverseLeft p2 nac =
+findDeleteForbidForNAC :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> (m, Int) -> [CriticalSequence m]
+findDeleteForbidForNAC conf p1' p2 nac =
   map
     (\(m,m',nac) -> CriticalSequence (Just m) m' (Just nac) DeleteForbid)
-    (produceForbidOneNac conf inverseLeft p2 nac)
+    (produceForbidOneNac conf p1' p2 nac)
 
 -- ** Irreversible Dependencies
 
@@ -209,9 +208,9 @@ findAllDeliverDelete :: (DPO m, EpiPairs m) => DPOConfig -> Production m -> Prod
 findAllDeliverDelete conf p1 p2 =
   map (\m -> CriticalSequence Nothing m Nothing DeliverDelete) delDel
   where
-    invLeft = invertProduction conf p1
+    p1' = invertProduction conf p1
     pairs = createJointlyEpimorphicPairsFromCodomains (matchRestriction conf) (getRHS p1) (getLHS p2)
-    gluing = filter (\(m1',m2') -> satisfyRewritingConditions conf (invLeft,m1') (p2,m2')) pairs
+    gluing = filter (\(m1',m2') -> satisfyRewritingConditions conf (p1',m1') (p2,m2')) pairs
     delDel = filter (\(m1,m2) -> isDeleteUse conf p2 (m2,m1)) gluing
 
 -- *** DeliverDangling
@@ -224,10 +223,10 @@ findAllDeliverDangling :: (DPO m, EpiPairs m) => DPOConfig -> Production m -> Pr
 findAllDeliverDangling conf p1 p2 =
   map (\m -> CriticalSequence Nothing m Nothing DeliverDangling) delDang
   where
-    invLeft = invertProduction conf p1
+    p1' = invertProduction conf p1
     pairs = createJointlyEpimorphicPairsFromCodomains (matchRestriction conf) (getRHS p1) (getLHS p2)
-    gluing = filter (\(m1',m2') -> satisfyRewritingConditions conf (invLeft,m1') (p2,m2')) pairs
-    delDang = filter (\(m1,m2) -> produceDangling conf p2 invLeft (m2,m1)) gluing
+    gluing = filter (\(m1',m2') -> satisfyRewritingConditions conf (p1',m1') (p2,m2')) pairs
+    delDang = filter (\(m1,m2) -> produceDangling conf p2 p1' (m2,m1)) gluing
 
 -- TODO: DeliverDelete and DeliverDangling together
 
@@ -239,14 +238,13 @@ findAllDeliverDangling conf p1 p2 =
 -- NAC in right of @p1@ turns satisfied after the aplication of @p2@.
 findAllForbidProduce :: (DPO m, EpiPairs m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
 findAllForbidProduce conf p1 p2 =
-  concatMap (forbidProduce conf inverseLeft inverseRight p2) (zip (getNACs inverseLeft) [0..])
+  concatMap (findForbidProduceForNAC conf p1' p2) (zip (getNACs p1') [0..])
     where
-      inverseLeft = invertProduction conf p1
-      inverseRight = invertProduction conf p2
+      p1' = invertProduction conf p1
 
 -- | Check ForbidProduce for a NAC @n@ in right of @p1@
-forbidProduce :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> Production m -> (m, Int) -> [CriticalSequence m]
-forbidProduce conf inverseLeft inverseRight p2 nac =
+findForbidProduceForNAC :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> (m, Int) -> [CriticalSequence m]
+findForbidProduceForNAC conf p1' p2 nac =
   map
     (\(m,m',nac) -> CriticalSequence (Just m) m' (Just nac) ForbidProduce)
-    (produceForbidOneNac conf p2 inverseLeft nac)
+    (produceForbidOneNac conf p2 p1' nac)
