@@ -3,7 +3,6 @@
 module SndOrder.Rule (
     SndOrderRule
   , addMinimalSafetyNacs
-  , minimalSafetyNacs
   , applySndOrderRule
   , applySecondOrder
   ) where
@@ -101,6 +100,8 @@ applySndOrderRule config (sndName,sndRule) (fstName,fstRule) =
       map (\number -> fstName ++ "_" ++ sndName ++ "_" ++ show number) ([0..] :: [Int])
   in
     zip newNames newRules
+
+-- *** Minimal Safety Nacs
 
 -- | Adds the minimal safety nacs needed to this production always produce a second order rule.
 -- If the nacs to be added not satisfies the others nacs, then it do not need to be added.

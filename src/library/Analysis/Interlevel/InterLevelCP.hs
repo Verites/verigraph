@@ -1,6 +1,6 @@
 {-|
 Module      : InterLevelCP
-Description : Implements the inter-level conflict
+Description : Implements the inter-level critical pairs
 Stability   : development
 -}
 

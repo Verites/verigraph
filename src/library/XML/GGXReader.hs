@@ -8,7 +8,9 @@ module XML.GGXReader
    readGraphs,
    readSequences,
    instantiateRule,
-   instantiateSpan
+   instantiateSpan,
+   minimalSafetyNacsWithLog,
+   printMinimalSafetyNacsLog
    ) where
 
 import           Abstract.DPO
@@ -19,7 +21,7 @@ import           Data.Maybe              (fromMaybe, mapMaybe)
 import           Data.String.Utils       (startswith)
 import qualified Graph.Graph             as G
 import           Graph.GraphMorphism     as GM
-import           Text.XML.HXT.Core       hiding (left, right)
+import           SndOrder.Rule
 import           TypedGraph.Graph
 import qualified TypedGraph.GraphGrammar as GG
 import           TypedGraph.GraphRule    as GR
@@ -30,8 +32,10 @@ import           XML.ParsedTypes
 import           XML.Utilities
 import           XML.XMLUtilities
 
-readGrammar :: String -> IO (GG.GraphGrammar a b)
-readGrammar fileName = do
+-- | Reads the grammar in the XML, adds the needed minimal safety nacs
+--   to second order, and returns the grammar and a log
+readGrammar :: String -> DPOConfig -> IO (GG.GraphGrammar a b, [(String, Int)])
+readGrammar fileName dpoConfig = do
   parsedTypeGraphs <- readTypeGraph fileName
   let parsedTypeGraph = case parsedTypeGraphs of
                          []    -> error "error, type graph not found"
@@ -55,8 +59,9 @@ readGrammar fileName = do
                     else codomain . domain . getLHS $ head rules
       initGraph = GM.empty typeGraph typeGraph
       sndOrderRules = instantiateSndOrderRules parsedTypeGraph sndOrdRules
-
-  return $ GG.graphGrammar initGraph (zip rulesNames rules) sndOrderRules
+      gg = GG.graphGrammar initGraph (zip rulesNames rules) sndOrderRules
+  
+  return $ minimalSafetyNacsWithLog dpoConfig gg
 
 readGGName :: String -> IO String
 readGGName fileName = do
@@ -65,6 +70,32 @@ readGGName fileName = do
               n:_ -> n
               _   -> "GraGra"
   return ret
+
+-- Minimal Safety Nacs Logs
+
+-- FIX: find a better place for this two functions
+minimalSafetyNacsWithLog :: DPOConfig -> GG.GraphGrammar a b -> (GG.GraphGrammar a b, [(String, Int)])
+minimalSafetyNacsWithLog config oldGG = (newGG, printNewNacs)
+  where
+    newNacs =
+      map (\(n,r) ->
+        let newRule = addMinimalSafetyNacs config r
+            tamNewNacs = length (nacs newRule)
+            tamNacs = length (nacs r)
+         in ((n, newRule), (n, tamNewNacs - tamNacs))
+        ) (GG.sndOrderRules oldGG)
+    newGG = oldGG {GG.sndOrderRules = map fst newNacs}
+    printNewNacs = map snd newNacs
+
+printMinimalSafetyNacsLog :: DPOConfig -> [(String, Int)] -> [String]
+printMinimalSafetyNacsLog dpoConf printNewNacs =
+    ["Adding minimal safety nacs to second order rules:"]
+    ++ [if matchRestriction dpoConf == MonoMatches
+          then ""
+          else "Warning, some safety nacs for non injective matches are not implemented"]
+    ++ map (\(r,n) -> "Rule " ++ r ++ ", added " ++ show n ++ " nacs") printNewNacs
+    ++ ["All minimal safety nacs added!"]
+
 
 -- | Reads the names of node/edge types and NACs, which are necessary when reexporting this grammar.
 --

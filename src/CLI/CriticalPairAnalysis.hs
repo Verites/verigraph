@@ -10,6 +10,7 @@ import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
 import           Analysis.Interlevel.EvolutionarySpans
 import           Analysis.Interlevel.InterLevelCP
+import           Control.Monad (when)
 import           GlobalOptions
 import           Data.List
 import           Data.List.Split
@@ -64,76 +65,62 @@ calculateDependencies flag = flag `elem` [Both,Dependencies]
 
 execute :: GlobalOptions -> Options -> IO ()
 execute globalOpts opts = do
-    gg <- XML.readGrammar (inputFile globalOpts)
+    let dpoConf = dpoConfig globalOpts
+    
+    (gg,printNewNacs) <- XML.readGrammar (inputFile globalOpts) dpoConf
     ggName <- XML.readGGName (inputFile globalOpts)
     names <- XML.readNames (inputFile globalOpts)
 
     putStrLn "Analyzing the graph grammar..."
     putStrLn ""
 
-    let dpoConf = dpoConfig globalOpts
-        action = analysisType opts
+    let action = analysisType opts
         secondOrder = sndOrder opts
         writer = defWriterFun secondOrder dpoConf action
-        -- First order conflicts/dependencies
         rules = map snd (GG.rules gg)
+        rules2 = map snd (GG.sndOrderRules gg)
 
-        -- Inter Level conflicts
-        conf = applySecondOrder (interLevelConflict dpoConf) (GG.rules gg) (GG.sndOrderRules gg)
-        f str = join ";" (take 2 (splitOn ";" str))
-        printILCP = "Interlevel Critical Pairs" :
-                    "2rule;rule (number of conflicts)" :
-                    map (\x -> f (head x) ++ " " ++ show (length x))
-                        (groupBy (\x y -> f x == f y) (map fst conf))
-        
+        interlevelCPs = applySecondOrder (interLevelConflict dpoConf) (GG.rules gg) (GG.sndOrderRules gg)
         evoConflicts = allEvolSpans dpoConf (GG.sndOrderRules gg)
 
-        -- Second order conflicts/dependencies
-        newNacs =
-          map (\(n,r) ->
-            let newRule = addMinimalSafetyNacs dpoConf r
-                tamNewNacs = length (getNACs newRule)
-                tamNacs = length (getNACs r)
-             in ((n, newRule), (n, tamNewNacs - tamNacs))
-             ) (GG.sndOrderRules gg)
-        rules2 = map (snd . fst) newNacs
-        newGG = gg {GG.sndOrderRules = map fst newNacs}
-
-        printNewNacs = map snd newNacs
 
     putStrLn $ "injective satisfability of nacs: " ++ show (nacSatisfaction dpoConf)
     putStrLn $ "only injective matches morphisms: " ++ show (matchRestriction dpoConf)
     putStrLn ""
-
-    if secondOrder
-      then mapM_
-        putStrLn $
-        ["Adding minimal safety nacs to second order rules:"]
-        ++ (if matchRestriction dpoConf == MonoMatches then [] else ["Warning, some safety nacs for non injective matches are not implemented"])
-        ++ map (\(r,n) -> "Rule " ++ r ++ ", added " ++ show n ++ " nacs") printNewNacs
-        ++ ["All minimal safety nacs added!", ""]
-      else
-        putStrLn ""
+    
+    when secondOrder $ mapM_ putStrLn (XML.printMinimalSafetyNacsLog dpoConf printNewNacs)
 
     let fstOrderAnalysis = printAnalysis action dpoConf rules
         sndOrderAnalysis = printAnalysis action dpoConf rules2
     case outputFile opts of
-      Just file -> writer newGG ggName names file
+      Just file -> writer gg ggName names file
       Nothing -> if secondOrder
                    then sndOrderAnalysis
                    else fstOrderAnalysis
-
-    case (secondOrder, matchRestriction dpoConf) of
-      (True, AnyMatches) -> mapM_ putStrLn printILCP
-      (True, MonoMatches) -> putStrLn "Interlevel CP not defined for only injective matches"
-      _ -> mapM_ putStrLn []
+    
+    when secondOrder $
+      if matchRestriction dpoConf == AnyMatches
+        then mapM_ putStrLn (printILCP interlevelCPs)
+        else putStrLn "Inter-level CP not defined for only injective matches"
     
     putStrLn ""
-        
-    putStrLn "Evolutionary Spans Interlevel CP"
-    mapM_ putStrLn (printEvoConflicts evoConflicts)
     
-    putStrLn "CriticalPairAnalysis done."
+    when secondOrder $
+      mapM_ putStrLn $
+        "Evolutionary Spans Interlevel CP" : (printEvoConflicts evoConflicts)
+    
+    putStrLn ""
+    putStrLn "Critical Pair Analysis done!"
+
+-- | Inter-level CP to Strings
+printILCP :: [(String, b)] -> [String]
+printILCP conf =
+  "Inter-level Critical Pairs" :
+  "2rule rule (number of conflicts)" :
+    map (\x -> f (head x) ++ " " ++ show (length x))
+      (groupBy (\x y -> f x == f y) (map fst conf))
+  where
+    f str = join ";" (take 2 (splitOn ";" str))
 
 -- | Evolutionary Spans to Strings
 printEvoConflicts :: [(String, [EvoSpan a b])] -> [String]
@@ -165,7 +152,6 @@ printAnalysis action dpoConf rules =
        putStrLn $
        (if calculateConflicts action then confMatrix else [])
        ++ (if calculateDependencies action then depMatrix else [])
-       ++ ["Done!"]
 
 -- Receives functions and theirs names,
 -- and returns they applicated to the rules
