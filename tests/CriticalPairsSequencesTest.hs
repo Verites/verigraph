@@ -52,7 +52,7 @@ testTeseRodrigo dpoConf rules =
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 1 0 2 0 0 0 )\n"
- ~=? show (pairwise (allProduceUse dpoConf) rules)],
+ ~=? show (pairwise (findAllProduceUse dpoConf) rules)],
        ["Test teseRodrigo Delete-Forbid "++(printConf dpoConf)  ~:
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"++

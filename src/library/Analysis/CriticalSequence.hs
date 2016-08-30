@@ -3,7 +3,7 @@ module Analysis.CriticalSequence
    CriticalSequence,
    findTriggeringCriticalSequences,
    namedCriticalSequences,
-   allProduceUse,
+   findAllProduceUse,
    allRemoveDangling,
    findAllDeleteForbid,
    findAllDeliverDelete,
@@ -133,8 +133,8 @@ findCriticalSequences conf p1 p2 =
 -- Rule @p1@ causes a produce-use dependency with @p2@
 -- if rule @p1@ creates something that is used by @p2@.
 -- Verify the non existence of h21: L2 -> D1 such that d1 . h21 = m2'.
-allProduceUse :: (DPO m, EpiPairs m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
-allProduceUse conf p1 p2 =
+findAllProduceUse :: (DPO m, EpiPairs m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
+findAllProduceUse conf p1 p2 =
   map (\m -> CriticalSequence Nothing m Nothing ProduceUse) prodUse
   where
     invLeft = invertProduction conf p1
