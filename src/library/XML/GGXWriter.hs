@@ -15,12 +15,12 @@ import qualified Analysis.CriticalSequence as CS
 import           Data.List.Utils           (startswith)
 import           Data.Maybe
 import qualified Graph.Graph               as G
-import           TypedGraph.GraphGrammar
-import qualified TypedGraph.GraphRule           as GR
-import           TypedGraph.Morphism
-import qualified SndOrder.Rule             as SO
 import           SndOrder.Morphism
-import           Text.XML.HXT.Core         hiding (left,right)
+import qualified SndOrder.Rule             as SO
+import           Text.XML.HXT.Core
+import           TypedGraph.GraphGrammar
+import qualified TypedGraph.GraphRule      as GR
+import           TypedGraph.Morphism
 import           XML.GGXParseOut
 import           XML.ParsedTypes
 import           XML.ParseSndOrderRule
@@ -30,7 +30,7 @@ appendSndOrderConflicts :: DPOConfig -> GraphGrammar a b -> GraphGrammar a b
 appendSndOrderConflicts config gg = newGG
   where
     conflicts = CP.namedCriticalPairs config (sndOrderRules gg)
-    matches = concatMap (\(n1,n2,c) -> map (\ol -> (n1, n2, CP.getCP ol, codomain (fst (CP.getMatch ol)))) c) conflicts
+    matches = concatMap (\(n1,n2,c) -> map (\ol -> (n1, n2, CP.getCriticalPairType ol, codomain (fst (CP.getCriticalPairMatches ol)))) c) conflicts
     conflictRules = map (\(idx,(n1,n2,tp,rule)) -> ("conflict_"++(show tp)++"_"++n1++"_"++n2++"_"++(show idx), rule)) (zip ([0..]::[Int]) matches)
     newGG = graphGrammar (initialGraph gg) ((rules gg) ++ conflictRules) (sndOrderRules gg)
 
@@ -38,7 +38,7 @@ appendSndOrderDependencies :: DPOConfig -> GraphGrammar a b -> GraphGrammar a b
 appendSndOrderDependencies config gg = newGG
   where
     conflicts = CS.namedCriticalSequences config (sndOrderRules gg)
-    matches = concatMap (\(n1,n2,c) -> map (\ol -> (n1, n2, CS.getCS ol, codomain (fst (CS.getComatch ol)))) c) conflicts
+    matches = concatMap (\(n1,n2,c) -> map (\ol -> (n1, n2, CS.getCriticalSequenceType ol, codomain (fst (CS.getCriticalSequenceComatches ol)))) c) conflicts
     conflictRules = map (\(idx,(n1,n2,tp,rule)) -> ("dependency_"++(show tp)++"_"++n1++"_"++n2++"_"++(show idx), rule)) (zip ([0..]::[Int]) matches)
     newGG = graphGrammar (initialGraph gg) ((rules gg) ++ conflictRules) (sndOrderRules gg)
 
@@ -437,26 +437,26 @@ writeSndOrderRule (name, sndOrderRule) =
     ("2rule_left_" ++ name)
     objNameMapLeftLeft
     objNameMapLeftRight
-    (left sndOrderRule)] ++
+    (GR.getLHS sndOrderRule)] ++
   [writeSndOrderRuleSide
     ("2rule_right_" ++ name)
     objNameMapRightLeft
     objNameMapRightRight
-    (right sndOrderRule)] ++
+    (GR.getRHS sndOrderRule)] ++
   (map (\(n,idx) ->
           writeSndOrderRuleSide
             ("2rule_nac" ++ show idx ++ "_" ++ name)
             (objNameMapNacLeft n)
             (objNameMapNacRight n)
             n)
-       (zip (nacs sndOrderRule) ([0..] :: [Int]))))
+       (zip (getNACs sndOrderRule) ([0..] :: [Int]))))
     where
       objNameMapNacLeft n = getObjectNacNameMorphism (mapping (mappingLeft n))
       objNameMapNacRight n = getObjectNacNameMorphism (mapping (mappingRight n))
-      objNameMapRightLeft = getObjectNameMorphism (mappingLeft (left sndOrderRule)) (mappingLeft (right sndOrderRule))
-      objNameMapRightRight = getObjectNameMorphism (mappingRight (left sndOrderRule)) (mappingRight (right sndOrderRule))
-      graphLRuleL = codomain (mappingLeft (left sndOrderRule))
-      graphRRuleL = codomain (mappingRight (left sndOrderRule))
+      objNameMapRightLeft = getObjectNameMorphism (mappingLeft (GR.getLHS sndOrderRule)) (mappingLeft (GR.getRHS sndOrderRule))
+      objNameMapRightRight = getObjectNameMorphism (mappingRight (GR.getLHS sndOrderRule)) (mappingRight (GR.getRHS sndOrderRule))
+      graphLRuleL = codomain (mappingLeft (GR.getLHS sndOrderRule))
+      graphRRuleL = codomain (mappingRight (GR.getLHS sndOrderRule))
       twice f x = f x x
       objNameMapLeftLeft = twice getObjectNameMorphism (idMap graphLRuleL graphLRuleL)
       objNameMapLeftRight = twice getObjectNameMorphism (idMap graphRRuleL graphRRuleL)
@@ -475,8 +475,8 @@ writeRule objNameLeft objNameRight nacNames (ruleName, rule) =
       [writeMorphism ("RightOf_"++ruleName, "LeftOf_"++ruleName) ruleName "" morphism] ++
       [writeConditions nacNames ruleName rule]
   where
-    lhs = getLHS objNameLeft rule
-    rhs = getRHS objNameRight rule
+    lhs = XML.GGXParseOut.getLHS objNameLeft rule
+    rhs = XML.GGXParseOut.getRHS objNameRight rule
     morphism = getMappings rule
 
 writeLHS :: ArrowXml a => String -> ParsedTypedGraph -> a XmlTree XmlTree

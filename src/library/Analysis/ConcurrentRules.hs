@@ -5,10 +5,10 @@ module Analysis.ConcurrentRules
   maxConcurrentRule
 ) where
 
-import           Abstract.Morphism
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
-import           Analysis.CriticalSequence (triggeredCriticalSequences,getComatch)
+import           Analysis.CriticalSequence (getCriticalSequenceComatches,
+                                            findTriggeringCriticalSequences)
 
 data CRDependencies = AllOverlapings | OnlyDependency
 
@@ -47,26 +47,26 @@ epiPairsForConcurrentRule :: (DPO m, EpiPairs m)
   => CRDependencies -> DPOConfig -> Production m -> Production m -> [(m, m)]
 -- it only considers triggered dependencies because is the most intuitive and natural behaviour expected until now.
 epiPairsForConcurrentRule OnlyDependency config c n =
-  let dependencies = triggeredCriticalSequences config c n
-  in map getComatch dependencies
+  let dependencies = findTriggeringCriticalSequences config c n
+  in map getCriticalSequenceComatches dependencies
 
 epiPairsForConcurrentRule AllOverlapings config c n =
   let matchInj = matchRestriction config == MonoMatches
-      allPairs = createPairs matchInj (codomain (right c)) (codomain (left n))
-      isValidPair (lp, rp) = satsGluing config (inverseWithoutNacs c) lp && satsGluingAndNacs config n rp
+      allPairs = createJointlyEpimorphicPairs matchInj (codomain (getRHS c)) (codomain (getLHS n))
+      isValidPair (lp, rp) = satisfiesGluingConditions config (invertProductionWithoutNacs c) lp && satisfiesRewritingConditions config n rp
   in filter isValidPair allPairs
 
 concurrentRuleForPair :: (DPO m, EpiPairs m, Eq (Obj m)) => DPOConfig -> Production m -> Production m -> (m, m) -> Production m
-concurrentRuleForPair config c n pair = production l r (dmc ++ lp)
+concurrentRuleForPair config c n pair = constructProduction l r (dmc ++ lp)
   where
-    pocC = pushoutComplement (fst pair) (right c)
-    pocN = pushoutComplement (snd pair) (left n)
-    poC = pushout (fst pocC) (left c)
-    poN = pushout (fst pocN) (right n)
-    pb = injectivePullback (snd pocC) (snd pocN)
+    pocC = calculatePushoutComplement (fst pair) (getRHS c)
+    pocN = calculatePushoutComplement (snd pair) (getLHS n)
+    poC = calculatePushout (fst pocC) (getLHS c)
+    poN = calculatePushout (fst pocN) (getRHS n)
+    pb = monomorphicPullback (snd pocC) (snd pocN)
     l = compose (fst pb) (snd poC)
     r = compose (snd pb) (snd poN)
-    dmc = concatMap (downwardShift config (fst poC)) (nacs c)
-    inverseP = production (snd pocC) (snd poC) []
-    den = concatMap (downwardShift config (snd pair)) (nacs n)
-    lp = concatMap (shiftLeftNac config inverseP) den
+    dmc = concatMap (nacDownwardShift config (fst poC)) (getNACs c)
+    inverseP = constructProduction (snd pocC) (snd poC) []
+    den = concatMap (nacDownwardShift config (snd pair)) (getNACs n)
+    lp = concatMap (shiftNacOverProduction config inverseP) den

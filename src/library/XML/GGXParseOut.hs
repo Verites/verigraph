@@ -2,8 +2,8 @@ module XML.GGXParseOut
  ( parseCPGraph
  , parseCSGraph
  , serializeGraph
- , getLHS
- , getRHS
+ , XML.GGXParseOut.getLHS
+ , XML.GGXParseOut.getRHS
  , getNacs
  , getMappings
  ) where
@@ -15,7 +15,7 @@ import qualified Analysis.CriticalSequence as CS
 import           Data.Maybe                (fromMaybe, isJust)
 import qualified Graph.Graph               as G
 import qualified Graph.GraphMorphism       as GM
-import qualified TypedGraph.GraphRule           as GR
+import qualified TypedGraph.GraphRule      as GR
 import           TypedGraph.Morphism
 import           XML.ParsedTypes
 
@@ -27,19 +27,19 @@ parseCPGraph (name1,name2,cps) = (name1,name2,overlaps)
 overlapsCP :: String -> CP.CriticalPair (TypedGraphMorphism a b) -> (ParsedTypedGraph, [Mapping], [Mapping], String, String)
 overlapsCP name2 cs = (graph, mapM1, mapM2 ++ mapM2WithNac, nacName cs, csType cs)
   where
-    (m1,m2) = case CP.getCP cs of
-                CP.ProduceForbid -> fromMaybe (error "Error when exporting ProduceForbid") (CP.getComatch cs)
-                _ -> CP.getMatch cs
+    (m1,m2) = case CP.getCriticalPairType cs of
+                CP.ProduceForbid -> fromMaybe (error "Error when exporting ProduceForbid") (CP.getCriticalPairComatches cs)
+                _ -> CP.getCriticalPairMatches cs
     graph = serializeGraph [] m1
     mapM1 = getTgmMappings Nothing m1
     mapM2 = getTgmMappings Nothing m2
-    mapM2WithNac = case CP.getCP cs of
+    mapM2WithNac = case CP.getCriticalPairType cs of
                      CP.ProduceForbid -> addNacMap
                      _ -> []
-    nacMatch = fromMaybe (error "Error when exporting ProduceForbid") (CP.getCPNac cs)
+    nacMatch = fromMaybe (error "Error when exporting ProduceForbid") (CP.getNacMatchOfCriticalPair cs)
     addNacMap = getTgmMappings (Just (nacName cs)) nacMatch
-    nacName = parseNacName name2 CP.getCPNacIdx
-    csType = show . CP.getCP
+    nacName = parseNacName name2 CP.getNacIndexOfCriticalPair
+    csType = show . CP.getCriticalPairType
 
 parseCSGraph :: (String,String,[CS.CriticalSequence (TypedGraphMorphism a b)]) -> Overlappings
 parseCSGraph (name1,name2,cps) = (name1,name2,overlaps)
@@ -50,21 +50,21 @@ overlapsCS :: String -> CS.CriticalSequence (TypedGraphMorphism a b)
           -> (ParsedTypedGraph, [Mapping], [Mapping], String, String)
 overlapsCS name2 cs = (graph, mapM1, mapM2 ++ mapM2WithNac, nacName cs, csType cs)
   where
-    (m1,m2) = case CS.getCS cs of
-                CS.DeleteForbid -> fromMaybe (error "Error when exporting DeleteForbid") (CS.getMatch cs)
-                CS.ForbidProduce -> fromMaybe (error "Error when exporting ForbidProduce") (CS.getMatch cs)
-                _ -> CS.getComatch cs
+    (m1,m2) = case CS.getCriticalSequenceType cs of
+                CS.DeleteForbid -> fromMaybe (error "Error when exporting DeleteForbid") (CS.getCriticalSequenceMatches cs)
+                CS.ForbidProduce -> fromMaybe (error "Error when exporting ForbidProduce") (CS.getCriticalSequenceMatches cs)
+                _ -> CS.getCriticalSequenceComatches cs
     graph = serializeGraph [] m1
     mapM1 = getTgmMappings Nothing m1
     mapM2 = getTgmMappings Nothing m2
-    mapM2WithNac = case CS.getCS cs of
+    mapM2WithNac = case CS.getCriticalSequenceType cs of
                      CS.DeleteForbid -> addNacMap
                      CS.ForbidProduce -> addNacMap
                      _ -> []
-    nacMatch = fromMaybe (error "Error when exporting DeleteForbid or ForbidProduce") (CS.getCSNac cs)
+    nacMatch = fromMaybe (error "Error when exporting DeleteForbid or ForbidProduce") (CS.getNacMatchOfCriticalSequence cs)
     addNacMap = getTgmMappings (Just (nacName cs)) nacMatch
-    nacName = parseNacName name2 CS.getCSNacIdx
-    csType = show . CS.getCS
+    nacName = parseNacName name2 CS.getNacIndexOfCriticalSequence
+    csType = show . CS.getCriticalSequenceType
 
 getTgmMappings :: Maybe String -> TypedGraphMorphism a b -> [Mapping]
 getTgmMappings prefix tgm = nodesMorph ++ edgesMorph
@@ -75,15 +75,15 @@ getTgmMappings prefix tgm = nodesMorph ++ edgesMorph
     edgesMorph = map (\e -> ("E" ++ show (edgeMap e), prefix, "E" ++ show e)) (edgesDomain tgm)
 
 getLHS :: [Mapping] -> GR.GraphRule a b -> ParsedTypedGraph
-getLHS objName rule = serializeGraph objName $ left rule
+getLHS objName rule = serializeGraph objName $ GR.getLHS rule
 
 getRHS :: [Mapping] -> GR.GraphRule a b -> ParsedTypedGraph
-getRHS objName rule = serializeGraph objName $ right rule
+getRHS objName rule = serializeGraph objName $ GR.getRHS rule
 
 getNacs :: String -> GR.GraphRule a b -> [(ParsedTypedGraph,[Mapping])]
 getNacs ruleName rule = map getNac nacsWithIds
   where
-    zipIds = zip ([0..]::[Int]) (nacs rule)
+    zipIds = zip ([0..]::[Int]) (getNACs rule)
     nacsWithIds = map (\(x,y) -> ("NAC_" ++ ruleName ++ "_" ++ show x, y)) zipIds
 
 getNac :: (String, TypedGraphMorphism a b) -> (ParsedTypedGraph, [Mapping])
@@ -97,8 +97,8 @@ getMappings :: GR.GraphRule a b -> [Mapping]
 getMappings rule = nodesMorph ++ edgesMorph
   where
     no = Nothing
-    invL = invertTGM (left rule)
-    lr = M.compose invL (right rule)
+    invL = invertTGM (GR.getLHS rule)
+    lr = M.compose invL (GR.getRHS rule)
     nodeMap = applyNodeTGMUnsafe lr
     nodes = filter (isJust . applyNodeTGM lr) (nodesDomain lr)
     nodesMorph = map (\n -> ("N" ++ show (nodeMap n), no, "N" ++ show n)) nodes

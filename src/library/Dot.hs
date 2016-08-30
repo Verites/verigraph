@@ -1,13 +1,13 @@
 module Dot where
 
-import Abstract.DPO.StateSpace
-import Graph.Graph
-import TypedGraph.Graph
-import TypedGraph.Morphism
+import           Abstract.DPO.StateSpace
+import           Graph.Graph
+import           TypedGraph.Graph
+import           TypedGraph.Morphism
 
-import qualified Data.IntMap as IntMap
-import qualified Data.Set as Set
-import Text.PrettyPrint.Leijen
+import qualified Data.IntMap             as IntMap
+import qualified Data.Set                as Set
+import           Text.PrettyPrint.Leijen
 
 
 data NamingContext = Ctx

@@ -7,11 +7,11 @@ module TypedGraph.GraphGrammar (
     , typeGraph
 ) where
 
-import qualified Abstract.Morphism   as M
-import           Graph.Graph         (Graph)
+import qualified Abstract.Morphism    as M
+import           Graph.Graph          (Graph)
 import           Graph.GraphMorphism
-import           TypedGraph.GraphRule     (GraphRule)
-import           SndOrder.Rule  (SndOrderRule)
+import           SndOrder.Rule        (SndOrderRule)
+import           TypedGraph.GraphRule (GraphRule)
 
 -- TODO: extract as DPO grammar?
 data GraphGrammar a b = GraphGrammar {

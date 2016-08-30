@@ -117,7 +117,7 @@ graphMorphism = GraphMorphism
 -- | The inverse graph morphism.
 inverse :: GraphMorphism a b -> GraphMorphism a b
 inverse (GraphMorphism dom cod nm em) =
-    GraphMorphism cod dom (R.inverse nm) (R.inverse em)
+    GraphMorphism cod dom (R.inverseRelation nm) (R.inverseRelation em)
 
 -- | Set a new codomain.
 updateCodomain :: Graph a b -> GraphMorphism a b -> GraphMorphism a b
@@ -132,7 +132,7 @@ updateDomain g gm = gm { getDomain = g }
 -- morphism.
 updateNodes :: NodeId -> NodeId -> GraphMorphism a b -> GraphMorphism a b
 updateNodes ln gn morphism@(GraphMorphism l g nm em)
-    | G.isNodeOf l ln && G.isNodeOf g gn && notMapped morphism ln = GraphMorphism l g (R.update ln gn nm) em
+    | G.isNodeOf l ln && G.isNodeOf g gn && notMapped morphism ln = GraphMorphism l g (R.updateRelation ln gn nm) em
     | otherwise = morphism
   where
     notMapped m = isNothing . applyNode m
@@ -142,7 +142,7 @@ updateNodes ln gn morphism@(GraphMorphism l g nm em)
 -- morphism.
 updateEdges :: EdgeId -> EdgeId -> GraphMorphism a b -> GraphMorphism a b
 updateEdges le ge morphism@(GraphMorphism l g nm em)
-    | G.isEdgeOf l le && G.isEdgeOf g ge && notMapped morphism le = GraphMorphism l g nm (R.update le ge em)
+    | G.isEdgeOf l le && G.isEdgeOf g ge && notMapped morphism le = GraphMorphism l g nm (R.updateRelation le ge em)
     | otherwise = morphism
   where
     notMapped m = isNothing . applyEdge m
@@ -151,14 +151,14 @@ updateEdges le ge morphism@(GraphMorphism l g nm em)
 removeEdgeDom :: G.EdgeId -> GraphMorphism a b -> GraphMorphism a b
 removeEdgeDom e gm =
   gm { getDomain = removeEdge e (domain gm)
-     , edgeRelation = R.removeDom e (edgeRelation gm)
+     , edgeRelation = R.removeFromDomain e (edgeRelation gm)
      }
 
 -- | Remove an edge from the codomain of the morphism
 removeEdgeCod :: G.EdgeId -> GraphMorphism a b -> GraphMorphism a b
 removeEdgeCod e gm =
   gm { getCodomain = G.removeEdge e (codomain gm)
-     , edgeRelation = R.removeCod e (edgeRelation gm)
+     , edgeRelation = R.removeFromCodomain e (edgeRelation gm)
      }
 
 -- | Remove a node from the domain of the morphism
@@ -167,7 +167,7 @@ removeEdgeCod e gm =
 removeNodeDom :: G.NodeId -> GraphMorphism a b -> GraphMorphism a b
 removeNodeDom n gm =
   gm { getDomain = removeNode n (domain gm)
-     , nodeRelation = R.removeDom n (nodeRelation gm) }
+     , nodeRelation = R.removeFromDomain n (nodeRelation gm) }
 
 -- | Remove a node from the codomain of the morphism
 --
@@ -175,7 +175,7 @@ removeNodeDom n gm =
 removeNodeCod :: G.NodeId -> GraphMorphism a b -> GraphMorphism a b
 removeNodeCod n gm =
   gm { getCodomain = removeNode n (codomain gm)
-     , nodeRelation = R.removeCod n (nodeRelation gm)
+     , nodeRelation = R.removeFromCodomain n (nodeRelation gm)
      }
 
 -- | Insertion of nodes in graph morphisms
@@ -184,7 +184,7 @@ updateNodeRelationGM :: G.NodeId -> G.NodeId -> GraphMorphism a b -> GraphMorphi
 updateNodeRelationGM n1 n2 gm =
   gm { getDomain = G.insertNode n1 (domain gm)
      , getCodomain = G.insertNode n2 (codomain gm)
-     , nodeRelation = R.update n1 n2 (nodeRelation gm)
+     , nodeRelation = R.updateRelation n1 n2 (nodeRelation gm)
      }
 
 -- | This function adds an edge e1 (with source s1 and target t1) to the domain of the morphism, and associate it to e2
@@ -192,7 +192,7 @@ updateNodeRelationGM n1 n2 gm =
 createEdgeDom :: G.EdgeId -> G.NodeId -> G.NodeId -> G.EdgeId -> GraphMorphism a b -> GraphMorphism a b
 createEdgeDom e1 s1 t1 e2 gm =
   gm { getDomain = G.insertEdge e1 s1 t1 (domain gm)
-     , edgeRelation = R.update e1 e2 (edgeRelation gm)
+     , edgeRelation = R.updateRelation e1 e2 (edgeRelation gm)
      }
 
 -- | This function adds an edge e2 (with source s2 and target t2) to the codomain of the morphism.
@@ -200,7 +200,7 @@ createEdgeDom e1 s1 t1 e2 gm =
 createEdgeCod :: G.EdgeId -> G.NodeId -> G.NodeId -> GraphMorphism a b -> GraphMorphism a b
 createEdgeCod e2 s2 t2 gm =
   gm { getCodomain = G.insertEdge e2 s2 t2 (codomain gm)
-     , edgeRelation = R.insertCod e2 (edgeRelation gm)
+     , edgeRelation = R.insertOnCodomain e2 (edgeRelation gm)
      }
 
 -- | This function adds an edge e1 (with source s1 and target t1) to the domain of the morphism, and associate it to e2
@@ -208,7 +208,7 @@ createEdgeCod e2 s2 t2 gm =
 createNodeDom :: G.NodeId -> G.NodeId -> GraphMorphism a b -> GraphMorphism a b
 createNodeDom n1 n2 gm =
   gm { getDomain = G.insertNode n1 (domain gm)
-     , nodeRelation = R.update n1 n2 (nodeRelation gm)
+     , nodeRelation = R.updateRelation n1 n2 (nodeRelation gm)
      }
 
 -- | This function adds an edge e2 (with source s2 and target t2) to the codomain of the morphism.
@@ -216,13 +216,13 @@ createNodeDom n1 n2 gm =
 createNodeCod :: G.NodeId -> GraphMorphism a b -> GraphMorphism a b
 createNodeCod n2 gm =
   gm { getCodomain = G.insertNode n2 (codomain gm)
-     , nodeRelation = R.insertCod n2 (nodeRelation gm)
+     , nodeRelation = R.insertOnCodomain n2 (nodeRelation gm)
      }
 
 -- | modifies a graph morphism, mapping edge e1 to edge e2. It assumes both edges already exist.
 updateEdgeRelationGM :: G.EdgeId -> G.EdgeId -> GraphMorphism a b -> GraphMorphism a b
 updateEdgeRelationGM e1 e2 gm =
-  gm { edgeRelation = R.update e1 e2 (edgeRelation gm) }
+  gm { edgeRelation = R.updateRelation e1 e2 (edgeRelation gm) }
 
 -- | Test if a @nac@ is partial injective (injective out of @q@)
 partialInjectiveGM :: GraphMorphism a b -> GraphMorphism a b -> Bool
@@ -237,7 +237,7 @@ partialInjectiveGM nac q = disjointCodomain && injective
     disjointNodes = Prelude.null (codN nodes `intersect` codN nodesI)
     disjointEdges = Prelude.null (codE edges `intersect` codE edgesI)
     disjointCodomain = disjointNodes && disjointEdges
-    injective = R.partInjectiveR nodes (nodeRelation q) && R.partInjectiveR edges (edgeRelation q)
+    injective = R.partialInjectiveRelation nodes (nodeRelation q) && R.partialInjectiveRelation edges (edgeRelation q)
 
 instance Morphism (GraphMorphism a b) where
     type Obj (GraphMorphism a b) = Graph a b
@@ -251,11 +251,11 @@ instance Morphism (GraphMorphism a b) where
                       (R.compose (edgeRelation m1) (edgeRelation m2))
     id g = GraphMorphism g g (R.id $ nodes g) (R.id $ edges g)
     monomorphism m =
-        R.injective (nodeRelation m) &&
-        R.injective (edgeRelation m)
+        R.injectiveRelation (nodeRelation m) &&
+        R.injectiveRelation (edgeRelation m)
     epimorphism m =
-        R.surjective (nodeRelation m) &&
-        R.surjective (edgeRelation m)
+        R.surjectiveRelation (nodeRelation m) &&
+        R.surjectiveRelation (edgeRelation m)
     isomorphism m =
         monomorphism m && epimorphism m
 
@@ -263,10 +263,10 @@ instance Morphism (GraphMorphism a b) where
 
 instance Valid (GraphMorphism a b) where
     valid m@(GraphMorphism dom cod nm em) =
-        R.total nm &&
-        R.functional nm &&
-        R.total em &&
-        R.functional em &&
+        R.totalRelation nm &&
+        R.functionalRelation nm &&
+        R.totalRelation em &&
+        R.functionalRelation em &&
         valid dom &&
         valid cod &&
         all (\e -> (G.sourceOf cod =<< applyEdge m e) ==

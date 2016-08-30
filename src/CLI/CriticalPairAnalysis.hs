@@ -14,9 +14,9 @@ import           GlobalOptions
 --import           Data.List.Split
 --import           Data.List.Utils
 import           Data.Matrix               hiding ((<|>))
-import qualified TypedGraph.GraphGrammar        as GG
-import           SndOrder.Rule
 import           Options.Applicative
+import           SndOrder.Rule
+import qualified TypedGraph.GraphGrammar   as GG
 import qualified XML.GGXReader             as XML
 import qualified XML.GGXWriter             as GW
 
@@ -91,8 +91,8 @@ execute globalOpts opts = do
         newNacs =
           map (\(n,r) ->
             let newRule = addMinimalSafetyNacs dpoConf r
-                tamNewNacs = length (nacs newRule)
-                tamNacs = length (nacs r)
+                tamNewNacs = length (getNACs newRule)
+                tamNacs = length (getNACs r)
              in ((n, newRule), (n, tamNewNacs - tamNacs))
              ) (GG.sndOrderRules gg)
         rules2 = map (snd . fst) newNacs
@@ -134,14 +134,14 @@ printAnalysis :: (EpiPairs m, DPO m) =>
   AnalysisType -> DPOConfig -> [Production m] -> IO ()
 printAnalysis action dpoConf rules =
   let confMatrix = analysisMatrix dpoConf rules
-        allDeleteUse allProduceDangling allProduceForbid
+        findAllDeleteUse findAllProduceDangling findAllProduceForbid
         "Delete-Use" "Produce-Dangling" "Produce-Forbid" "Conflicts"
       depMatrix = triDepMatrix ++ irrDepMatrix
       triDepMatrix = analysisMatrix dpoConf rules
-        allProduceUse allRemoveDangling allDeleteForbid
+        findAllProduceUse findAllRemoveDangling findAllDeleteForbid
         "Produce-Use" "Remove-Dangling" "Deliver-Forbid" "Triggereds Dependencies"
       irrDepMatrix = analysisMatrix dpoConf rules
-        allDeliverDelete allDeliverDangling allForbidProduce
+        findAllDeliverDelete findAllDeliverDangling findAllForbidProduce
         "DeliverDelete" "Deliver-Dangling" "Forbid-Produce" "Irreversibles Dependencies"
   in mapM_
        putStrLn $
@@ -166,7 +166,7 @@ analysisMatrix dpoConf rules f1 f2 f3 n1 n2 n3 n4 =
         liftMatrix3
           (\x y z -> x ++ y ++ z)
           f1Matrix f2Matrix f3Matrix
-          
+
   in  [ n1 ++ ":"
       , show (length <$> f1Matrix)
       , ""

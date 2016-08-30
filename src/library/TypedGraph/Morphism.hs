@@ -30,17 +30,17 @@ module TypedGraph.Morphism (
     , orphanEdgesTyped
 ) where
 
-import           Abstract.Morphism   as M
 import           Abstract.AdhesiveHLR
+import           Abstract.Morphism               as M
+import           Data.List                       as L
 import           Data.Maybe
-import           Data.List           as L
-import           Graph.Graph         as G
-import           Graph.GraphMorphism as GM
+import           Graph.Graph                     as G
+import           Graph.GraphMorphism             as GM
 import           TypedGraph.Graph
 import           TypedGraph.MorphismCore
-import           TypedGraph.Partitions.GPToVeri      (mountTGMBoth)
-import           TypedGraph.Partitions.GraphPart     (genGraphEqClass)
-import           TypedGraph.Partitions.VeriToGP      (mixGM,mixNac)
+import           TypedGraph.Partitions.GPToVeri  (mountTGMBoth)
+import           TypedGraph.Partitions.GraphPart (genGraphEqClass)
+import           TypedGraph.Partitions.VeriToGP  (mixGM, mixNac)
 
 
 -- | Return the graph domain
@@ -172,7 +172,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
      6. associate edges
   -}
 
-  pushout k r =
+  calculatePushout k r =
     let
         kr = compose (invertTGM r) k                                 -- invert r and compose with k, obtain kr : R -> D
         createdNodes = orphanNodesTyped r                                -- nodes in R to be created
@@ -213,7 +213,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
      3. delete all edges
      4. delete all nodes
   -}
-  pushoutComplement m l =
+  calculatePushoutComplement m l =
     let ml       = compose l m                                                         -- compose l and m obtaining ml
         delEdges = mapMaybe (GM.applyEdge $ mapping m) (orphanEdgesTyped l) -- obtain list of edges to be deleted in G
         delNodes = mapMaybe (GM.applyNode $ mapping m) (orphanNodesTyped l) -- obtain list of nodes to be deleted in G
@@ -222,7 +222,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
                            delNodes
     in (k, idMap (codomain k) (codomain m))
 
-  injectivePullback f g = (delNodesFromF', delNodesFromG')
+  monomorphicPullback f g = (delNodesFromF', delNodesFromG')
     where
       f' = invertTGM f
       g' = invertTGM g
@@ -237,7 +237,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
       delEdgesFromG' = foldr removeEdgeDomTyped g' delEdges
       delNodesFromG' = foldr removeNodeDomTyped delEdgesFromG' delNodes
 
-  hasPushoutComplement (MonoMorphisms, g) (_, f) =
+  hasPushoutComplement (Monomorphism, g) (_, f) =
     satisfiesDanglingCondition f g
 
   hasPushoutComplement (_, g) (_, f) =
@@ -303,17 +303,14 @@ ruleDeletes l m apply list n = inL && not isPreserv
 
 instance EpiPairs (TypedGraphMorphism a b) where
   -- | Create all jointly surjective pairs of @m1@ and @m2@
-  createPairs inj m1 m2 = map (mountTGMBoth m1 m2) (genGraphEqClass (mixGM (m1,inj) (m2,inj)))
+  createJointlyEpimorphicPairs inj m1 m2 = map (mountTGMBoth m1 m2) (genGraphEqClass (mixGM (m1,inj) (m2,inj)))
 
-  partitions inj m1 = map fst part
+  createAllSubobjects inj m1 = map fst part
     where
       m2 = gmbuild G.empty G.empty [] []
       part = map (mountTGMBoth m1 m2) (genGraphEqClass (mixGM (m1,inj) (m2,inj)))
 
-  -- | Create all jointly surjective pairs of @m1@ and @m2@ with some of both injective
-  --createPairsAlt (m1,inj1) (m2,inj2) = map (mountTGMBoth m1 m2) (genGraphEqClass (mixGM (m1,inj1) (m2,inj2)))
-
-  createPairsNac config r nac =
+  createJointlyEpimorphicPairsFromNAC config r nac =
     map (mountTGMBoth r (codomain nac)) (genGraphEqClass (mixNac (r, matchInj) (nac, nacInj)))
 
     where
@@ -321,12 +318,12 @@ instance EpiPairs (TypedGraphMorphism a b) where
         matchRestriction config == MonoMatches
 
       nacInj =
-        nacSatisfaction config == MonoNacSatisfaction
+        nacSatisfaction config == MonomorphicNAC
 
   -- | Create all jointly surjective pairs of @m1@ and @m2@ that commutes,
   -- considering they have same domain
   -- and flags indicating the injective of each morphism
-  commutingPairsAlt (m1,inj1) (m2,inj2) = filt
+  calculateCommutativeSquaresAlongMonomorphism (m1,inj1) (m2,inj2) = filt
     where
       cod1 = codomain m1
       cod2 = codomain m2
@@ -336,7 +333,7 @@ instance EpiPairs (TypedGraphMorphism a b) where
 
 instance FindMorphism (TypedGraphMorphism a b) where
   findMorphisms = matches'
-  partInjMatches = partInjMatches'
+  partialInjectiveMatches = partialInjectiveMatches'
 
 --ALIAS OF MOST USED FUNCTIONS --
 
@@ -358,9 +355,9 @@ typeE gm e = fromMaybe (error "EDGE NOT TYPED") $ GM.applyEdge gm e
 -- | Finds matches __/q/__ .
 --
 --   Partially injective. (Injective out of __/m/__)
-partInjMatches' :: TypedGraphMorphism a b -> TypedGraphMorphism a b
+partialInjectiveMatches' :: TypedGraphMorphism a b -> TypedGraphMorphism a b
                -> [TypedGraphMorphism a b]
-partInjMatches' nac match =
+partialInjectiveMatches' nac match =
   do
     let
       --NODES AND EDGES FROM lhs OF A RULE
@@ -435,7 +432,7 @@ partInjMatches' nac match =
 
     case q'' of
       Nothing -> []
-      Just q2 -> buildMappings MonoMorphisms nodesSrc edgesSrc nodesTgt edgesTgt q2
+      Just q2 -> buildMappings Monomorphism nodesSrc edgesSrc nodesTgt edgesTgt q2
         where
           --DELETE FROM QUEUE ALREADY MAPPED SOURCE NODES (NODES FROM NAC)
           nodesSrc = filter (notMappedNodes q2) (nodes $ domain domQ)
@@ -457,7 +454,7 @@ partInjMatches' nac match =
 -- | Finds matches __/m/__
 --
 --   Injective, surjective, isomorphic or all possible matches
-matches' :: MorphismRestriction -> GM.GraphMorphism a b-> GM.GraphMorphism a b
+matches' :: MorphismType -> GM.GraphMorphism a b-> GM.GraphMorphism a b
         -> [TypedGraphMorphism a b]
 matches' prop graph1 graph2 =
   buildMappings prop nodesSrc edgesSrc nodesTgt edgesTgt tgm
@@ -477,16 +474,16 @@ matches' prop graph1 graph2 =
 
 ---------------------------------------------------------------------------------
 
-buildMappings :: MorphismRestriction -> [G.NodeId] -> [G.EdgeId] -> [G.NodeId] -> [G.EdgeId]
+buildMappings :: MorphismType -> [G.NodeId] -> [G.EdgeId] -> [G.NodeId] -> [G.EdgeId]
               -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
 
 --IF NO HAS FREE NODES OR FREE EDGES TO MAP, RETURN THE FOUND MORPHISMO
 buildMappings prop [] [] nodesT edgesT tgm =
       case prop of
-        AnyMorphisms  -> all
-        MonoMorphisms -> all
-        EpiMorphisms  -> epimorphism
-        IsoMorphisms  -> isomorphism
+        GenericMorphism  -> all
+        Monomorphism -> all
+        Epimorphism  -> epimorphism
+        Isomorphism  -> isomorphism
       where
         all = return tgm
 
@@ -499,23 +496,23 @@ buildMappings prop [] [] nodesT edgesT tgm =
 
 ---------------------------------------------------------------------------------
 
---IF HAS FREE NODES, MAP AnyMorphisms FREE NODES TO AnyMorphisms DESTINATION NODES
+--IF HAS FREE NODES, MAP GenericMorphism FREE NODES TO GenericMorphism DESTINATION NODES
 buildMappings prop (h:t) [] nodesT edgesT tgm
   | L.null nodesT = []
   | otherwise  = do
       y <- nodesT
 
-      --MAP FREE NODES TO AnyMorphisms TYPE COMPATIBLE DESTINATION NODES
+      --MAP FREE NODES TO GenericMorphism TYPE COMPATIBLE DESTINATION NODES
       let tgmN = updateNodesMapping h y nodesT tgm
 
       case tgmN of
         Just tgm' ->
           --CHOSE BETWEEN INJECTIVE OR NOT
           case prop of
-            AnyMorphisms  -> all
-            MonoMorphisms -> monomorphism
-            EpiMorphisms  -> all
-            IsoMorphisms  -> monomorphism
+            GenericMorphism  -> all
+            Monomorphism -> monomorphism
+            Epimorphism  -> all
+            Isomorphism  -> monomorphism
           where
             monomorphism = buildMappings prop t [] nodesT' edgesT tgm'
             all          = buildMappings prop t [] nodesT  edgesT tgm'
@@ -540,10 +537,10 @@ buildMappings prop nodes (h:t) nodesT edgesT tgm
                   d = domain $ domain tgm
                   c = domain $ codomain tgm
                   nodesT' = case prop of
-                    MonoMorphisms -> L.delete (srcE c y) nodesT
-                    IsoMorphisms  -> L.delete (srcE c y) nodesT
-                    EpiMorphisms  -> nodesT
-                    AnyMorphisms  -> nodesT
+                    Monomorphism -> L.delete (srcE c y) nodesT
+                    Isomorphism  -> L.delete (srcE c y) nodesT
+                    Epimorphism  -> nodesT
+                    GenericMorphism  -> nodesT
 
           --MAPPING SRC EDGE AND TGT EDGE
           tgmE
@@ -563,10 +560,10 @@ buildMappings prop nodes (h:t) nodesT edgesT tgm
               all          = buildMappings prop nodes' t nodesT  edgesT  tgm'
               --CHOSE BETWEEN INJECTIVE OR NOT
           case prop of
-            AnyMorphisms  -> all
-            MonoMorphisms -> monomorphism
-            EpiMorphisms  -> all
-            IsoMorphisms  -> monomorphism
+            GenericMorphism  -> all
+            Monomorphism -> monomorphism
+            Epimorphism  -> all
+            Isomorphism  -> monomorphism
         Nothing  -> []
 
 ---------------------------------------------------------------------------------

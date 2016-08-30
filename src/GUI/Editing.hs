@@ -30,12 +30,12 @@ import qualified Abstract.Relation        as R
 import           Data.Label
 import           Data.List.Utils
 import qualified Graph.Graph              as G
-import qualified TypedGraph.GraphGrammar       as GG
 import qualified Graph.GraphMorphism      as GM
-import qualified TypedGraph.GraphRule          as GR
 import           Graphics.Rendering.Cairo (Render)
 import           Graphics.UI.Gtk          (Color, TreeStore, treeStoreInsert,
                                            treeStoreNew)
+import qualified TypedGraph.GraphGrammar  as GG
+import qualified TypedGraph.GraphRule     as GR
 
 defGraphName = "g0"
 type Grammar = GG.GraphGrammar NodePayload EdgePayload

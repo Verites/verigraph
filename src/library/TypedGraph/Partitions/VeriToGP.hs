@@ -4,12 +4,12 @@ module TypedGraph.Partitions.VeriToGP (
    mixNac
    ) where
 
-import qualified Abstract.Morphism        as M
-import           Graph.Graph              as G
+import qualified Abstract.Morphism               as M
+import           Graph.Graph                     as G
 import           Graph.GraphMorphism
 import           TypedGraph.Graph
 import           TypedGraph.MorphismCore
-import qualified TypedGraph.Partitions.GraphPart     as GP
+import qualified TypedGraph.Partitions.GraphPart as GP
 
 --from verigraph to GraphPart
 

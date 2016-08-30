@@ -21,16 +21,16 @@ genericLenTest src tgt = (length $ mono src tgt,
                           length $ allm src tgt)
   where
     mono :: GM a b -> GM a b -> [TGM a b ]
-    mono src tgt = findMorphisms MonoMorphisms src tgt
+    mono src tgt = findMonomorphisms src tgt
 
     surj :: GM a b -> GM a b -> [TGM a b ]
-    surj src tgt = findMorphisms EpiMorphisms src tgt
+    surj src tgt = findMorphisms Epimorphism src tgt
 
     isom :: GM a b -> GM a b -> [TGM a b ]
-    isom src tgt = findMorphisms IsoMorphisms src tgt
+    isom src tgt = findIsomorphisms src tgt
 
     allm :: GM a b -> GM a b -> [TGM a b ]
-    allm src tgt = findMorphisms AnyMorphisms src tgt
+    allm src tgt = findAllMorphisms src tgt
 
 
 --Generic test with number of results
@@ -41,16 +41,16 @@ genericTest src tgt = (sort . map toCanonical $ mono src tgt,
                        sort . map toCanonical $ allm src tgt)
   where
     mono :: GM a b -> GM a b -> [TGM a b]
-    mono src tgt = findMorphisms MonoMorphisms src tgt
+    mono src tgt = findMonomorphisms src tgt
 
     surj :: GM a b -> GM a b -> [TGM a b]
-    surj src tgt = findMorphisms EpiMorphisms src tgt
+    surj src tgt = findMorphisms Epimorphism src tgt
 
     isom :: GM a b -> GM a b -> [TGM a b]
-    isom src tgt = findMorphisms IsoMorphisms src tgt
+    isom src tgt = findIsomorphisms src tgt
 
     allm :: GM a b -> GM a b -> [TGM a b]
-    allm src tgt = findMorphisms AnyMorphisms src tgt
+    allm src tgt = findAllMorphisms src tgt
 
     toCanonical :: TGM a b -> CanonicalMorphism
     toCanonical tgm =

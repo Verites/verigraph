@@ -3,10 +3,10 @@ module Logic.Ctl.Semantics
   , satisfyExpr'
   ) where
 
-import Data.List
+import           Data.List
 
-import Logic.Ctl.Base
-import Logic.Model
+import           Logic.Ctl.Base
+import           Logic.Model
 
 
 -- | Obtain all states that satisfy the given CTL expression.

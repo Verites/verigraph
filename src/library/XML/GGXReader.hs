@@ -14,21 +14,21 @@ module XML.GGXReader
 import           Abstract.DPO
 import           Abstract.Morphism
 import           Abstract.Valid
-import qualified Data.List                as L
-import           Data.Maybe               (fromMaybe, mapMaybe)
-import           Data.String.Utils        (startswith)
-import qualified Graph.Graph              as G
-import qualified TypedGraph.GraphGrammar       as GG
-import           Graph.GraphMorphism      as GM
-import           TypedGraph.GraphRule          as GR
+import qualified Data.List               as L
+import           Data.Maybe              (fromMaybe, mapMaybe)
+import           Data.String.Utils       (startswith)
+import qualified Graph.Graph             as G
+import           Graph.GraphMorphism     as GM
+import           Text.XML.HXT.Core       hiding (left, right)
 import           TypedGraph.Graph
+import qualified TypedGraph.GraphGrammar as GG
+import           TypedGraph.GraphRule    as GR
 import           TypedGraph.Morphism
-import           Text.XML.HXT.Core        hiding (left,right)
 import           XML.GGXParseIn
 import           XML.GGXSndOrderReader
 import           XML.ParsedTypes
-import           XML.XMLUtilities
 import           XML.Utilities
+import           XML.XMLUtilities
 
 readGrammar :: String -> IO (GG.GraphGrammar a b)
 readGrammar fileName = do
@@ -51,8 +51,8 @@ readGrammar fileName = do
           ) `seq` return ()
 
   let typeGraph = if L.null rules
-                    then error "Not found first order rules, at least one is needed."
-                    else codomain . domain . left $ head rules
+                    then error "No first order rules were found, at least one is needed."
+                    else codomain . domain . getLHS $ head rules
       initGraph = GM.empty typeGraph typeGraph
       sndOrderRules = instantiateSndOrderRules parsedTypeGraph sndOrdRules
 
@@ -129,7 +129,7 @@ lookupNodes nodes n = fromMaybe
     changeToListOfPairs = map (\(x,_,y) -> (x,y)) nodes
 
 instantiateRule :: ParsedTypeGraph -> RuleWithNacs -> GraphRule a b
-instantiateRule typeGraph ((_, lhs, rhs, mappings), nacs) = production lhsTgm rhsTgm nacsTgm
+instantiateRule typeGraph ((_, lhs, rhs, mappings), nacs) = constructProduction lhsTgm rhsTgm nacsTgm
   where
     tg = instantiateTypeGraph typeGraph
     lm = instantiateTypedGraph lhs tg

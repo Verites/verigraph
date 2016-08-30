@@ -6,8 +6,9 @@ module GlobalOptions
   , inputFile
   ) where
 
+import           Abstract.AdhesiveHLR (DPOConfig (..), MatchRestriction (..),
+                                       NacSatisfaction (..))
 import           Options.Applicative
-import           Abstract.AdhesiveHLR (NacSatisfaction(..), MatchRestriction(..), DPOConfig(..))
 
 data GlobalOptions = GOpts
   { arbitraryMatches         :: MatchRestriction
@@ -26,7 +27,7 @@ globalOpts = GOpts
   <$> flag MonoMatches AnyMatches
     ( long "all-matches"
     <> help "Set the matches for arbitrary morphisms")
-  <*> flag MonoNacSatisfaction PartMonoNacSatisfaction
+  <*> flag MonomorphicNAC PartiallyMonomorphicNAC
     ( long "inj-nac-satisfaction"
     <> help ("Restrict the analysis of NAC satisfaction to injective " ++
             "morphisms between the NAC graph and the instance graph"))

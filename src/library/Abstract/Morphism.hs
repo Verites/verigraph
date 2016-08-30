@@ -14,28 +14,38 @@ class (Eq m) => Morphism m where
     epimorphism :: m -> Bool
     isomorphism :: m -> Bool
 
--- | Restriction to morphisms that may be considered when searching for them.
-data MorphismRestriction
-  = AnyMorphisms -- ^ Allows all morphisms
-  | MonoMorphisms -- ^ Allows only monomorphisms
-  | EpiMorphisms -- ^ Allows only epimorphisms
-  | IsoMorphisms -- ^ Allows only isomorphisms
-  deriving (Show)
+-- | Enum for the types of morphisms that can be used / found
+data MorphismType
+  = GenericMorphism
+  | Monomorphism
+  | Epimorphism
+  | Isomorphism
+  deriving (Show, Enum)
 
 
 class Morphism m => FindMorphism m where
-  -- | Finds matches __/m/__
-  --
-  --   Injective, surjective, isomorphic or all possible matches
-  findMorphisms :: MorphismRestriction -> Obj m -> Obj m -> [m]
+  -- | Given a type __/t/__ of @MorphismType@ and two objects __/A/__ and __/B/__, it finds all the matches
+  -- m : A -> B in which m is of the type t
+  findMorphisms :: MorphismType -> Obj m -> Obj m -> [m]
 
-  -- | Finds matches __/q/__ .
-  --
-  --   Partially injective. (Injective out of __/m/__)
-  --
-  -- TODO: replace by data constructor @PartMono :: m -> MorphismRestriction@?
-  --
-  -- TODO: what is the second argument??
-  --
+  -- | Given two objects A and B, finds all monomorphisms from A to B
+  findMonomorphisms :: Obj m -> Obj m -> [m]
+  findMonomorphisms = findMorphisms Monomorphism
+
+  -- | Given two objects A and B, finds all epimorphisms from A to B
+  findEpimorphisms :: Obj m -> Obj m -> [m]
+  findEpimorphisms = findMorphisms Epimorphism
+
+  -- | Given two objects A and B, finds all isomorphisms from A to B
+  findIsomorphisms :: Obj m -> Obj m -> [m]
+  findIsomorphisms = findMorphisms Isomorphism
+
+  -- | Given two objects A and B, finds all morphisms from A to B
+  findAllMorphisms :: Obj m -> Obj m -> [m]
+  findAllMorphisms = findMorphisms GenericMorphism
+
   -- TODO: properly explain partial injectivity
-  partInjMatches :: m -> m -> [m]
+  -- TODO: replace by data constructor @PartMono :: m -> MorphismType@?
+  -- | Given a NAC /n : L -> N / and a match /m : L -> G/, finds the morphisms
+  -- from /N/ to /G/ that are injective out of the image of /n/
+  partialInjectiveMatches :: m -> m -> [m]

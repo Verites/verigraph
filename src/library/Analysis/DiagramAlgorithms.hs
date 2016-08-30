@@ -16,7 +16,7 @@ This diagram shows objects and morphisms names used in the algorithms below:
      P1◀─────D1───────▶G◀───────D2──────▶P2
          r'       l'
  @
- 
+
 q21 : N2 -> P1
 m2' : L2 -> P1
 
@@ -26,42 +26,42 @@ prod2 = l2 r2 {n2}
 -}
 
 module Analysis.DiagramAlgorithms (
-    deleteUse
+    isDeleteUse
   , produceDangling
   , deleteUseDangling
   , produceForbidOneNac
   ) where
 
+import           Abstract.AdhesiveHLR as RW
+import           Abstract.DPO         as RW hiding (calculateComatch)
 import           Abstract.Morphism
-import           Data.Maybe                (mapMaybe)
-import           Abstract.AdhesiveHLR      as RW
-import           Abstract.DPO              as RW hiding (comatch)
+import           Data.Maybe           (mapMaybe)
 
 -- | Rule @p1@ is in a delete-use conflict with @p2@ if @p1@ deletes
 -- something that is used by @p2@.
 --
 -- Verifies the non existence of h21: L2 -> D1 such that l' . h21 = m2
-deleteUse :: DPO m => DPOConfig -> Production m -> (m, m) -> Bool
-deleteUse config l (m1,m2) = null matchD
+isDeleteUse :: DPO m => DPOConfig -> Production m -> (m, m) -> Bool
+isDeleteUse config l (m1,m2) = null matchD
     where
-        (_,l') = RW.pushoutComplement m1 (left l) --get only the morphism D2 to G
-        restriction = matchRestrictionToProp (matchRestriction config)
+        (_,l') = RW.calculatePushoutComplement m1 (getLHS l) --get only the morphism D2 to G
+        restriction = matchRestrictionToMorphismType (matchRestriction config)
         l2TOd1 = findMorphisms restriction (domain m2) (domain l')
         matchD = filter (\x -> m2 == compose x l') l2TOd1
 
 -- | Rule @p1@ is in a produce-dangling conflict with @p2@ if @p1@
 -- produces something that unable @p2@.
 --
--- Gets the match of @p1@ from L2 to P1, checks if satsNacs and not satsGluing
+-- Gets the match of @p1@ from L2 to P1, checks if satisfiesNACs and not satisfiesGluingConditions
 produceDangling :: DPO m => DPOConfig -> Production m -> Production m -> (m, m) -> Bool
 produceDangling config l r (m1,m2) =
-  not (null matchD) && not (satsGluing config r m2') && satsNacs config r m2'
+  not (null matchD) && not (satisfiesGluingConditions config r m2') && satisfiesNACs config r m2'
   where
-    (k,l') = RW.pushoutComplement m1 (left l)
-    morphismRestriction = matchRestrictionToProp (matchRestriction config)
+    (k,l') = RW.calculatePushoutComplement m1 (getLHS l)
+    morphismRestriction = matchRestrictionToMorphismType (matchRestriction config)
     l2TOd1 = findMorphisms morphismRestriction (domain m2) (domain l')
     matchD = filter (\x -> m2 == compose x l') l2TOd1
-    (_,r') = RW.pushout k (right l)
+    (_,r') = RW.calculatePushout k (getRHS l)
     m2' = if length matchD > 1
             then error "produceDangling: non unique h21 morphism"
             else compose (head matchD) r' --matchD is unique if exists
@@ -76,44 +76,43 @@ deleteUseDangling config l r (m1,m2) =
     (False,True) -> Just (Right (m1,m2)) -- produce dangling case
     _            -> Nothing              -- free overlap case
   where
-    (k,l') = RW.pushoutComplement m1 (left l)
-    morphismRestriction = matchRestrictionToProp (matchRestriction config)
+    (k,l') = RW.calculatePushoutComplement m1 (getLHS l)
+    morphismRestriction = matchRestrictionToMorphismType (matchRestriction config)
     lTOd = findMorphisms morphismRestriction (domain m2) (domain l')
     matchD = filter (\x -> m2 == compose x l') lTOd
-    (_,r') = RW.pushout k (right l)
+    (_,r') = RW.calculatePushout k (getRHS l)
     m2' = compose (head matchD) r'
-    dang = not (satsGluing config r m2') && satsNacs config r m2'
+    dang = not (satisfiesGluingConditions config r m2') && satisfiesNACs config r m2'
 
 -- | Rule @p1@ is in a produce-forbid conflict with @p2@ if @p1@
 -- produces something that able some nac of @p2@.
 --
 -- Checks produce-forbid for a NAC @n@ in @p2@
-produceForbidOneNac :: (EpiPairs m, DPO m) => DPOConfig
-                    -> Production m -> Production m -> Production m
-                    -> (m, Int) -> [((m,m), (m,m), (m,Int))]
-produceForbidOneNac config l inverseLeft r (n,idx) =
+produceForbidOneNac :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> (m, Int) -> [((m,m), (m,m), (m,Int))]
+produceForbidOneNac config l r (n,idx) =
   map (\(q21,h1,m2',m1,m2) -> ((m1,m2), (h1,m2'), (q21,idx))) prodForbids
     where
       -- common names
-      r1 = right l
-      restriction = matchRestrictionToProp (matchRestriction config)
-      satsGluingNacs = satsGluingAndNacs config
+      inverseL = invertProduction config l
+      r1 = getRHS l
+      restriction = matchRestrictionToMorphismType (matchRestriction config)
+      satsGluingNacs = satisfiesRewritingConditions config
 
       -- Consider for a NAC n (L2 -> N2) of r any jointly surjective
       -- pair of morphisms (m1',q21) with q21 (part)inj
-      allP1 = createPairsNac config (codomain r1) n
+      allP1 = createJointlyEpimorphicPairsFromNAC config (codomain r1) n
 
       -- Check gluing cond for (m1',r1)
-      validP1 = filter (\(m1', _) -> satsGluingNacs inverseLeft m1') allP1
+      validP1 = filter (\(m1', _) -> satsGluingNacs inverseL m1') allP1
 
       -- Construct PO complement D1
       -- Construct PO K and abort if m1 not sats NACs l
       validG =
         mapMaybe
           (\(m1', q21) ->
-            let (k, m1, r', l') = RW.dpo m1' inverseLeft --allG
+            let (k, m1, r', l') = RW.calculateDPO m1' inverseL --allG
             in
-              if satsNacs config l m1
+              if satisfiesNACs config l m1
                 then Just (m1', q21, k, r', m1, l')
                 else Nothing)
         validP1

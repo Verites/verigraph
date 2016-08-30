@@ -7,15 +7,15 @@ module TypedGraph.Partitions.GraphPart (
    genGraphEqClass
    ) where
 
-import Data.Maybe (mapMaybe)
+import           Data.Maybe (mapMaybe)
 
 -- | A Node with the needed informations for the generating equivalence classes algorithm
 data Node = Node {
-    ntype    :: Int,
-    nname    :: Int,
-    nid      :: Int,
-    injn     :: Bool, --injective flag
-    inLeftn   :: Bool
+    ntype   :: Int,
+    nname   :: Int,
+    nid     :: Int,
+    injn    :: Bool, --injective flag
+    inLeftn :: Bool
     }
 
 instance Show Node where
@@ -29,13 +29,13 @@ instance Eq Node where
 
 -- | An Edge with the needed informations for the generating equivalence classes algorithm
 data Edge = Edge {
-    etype    :: Int,
-    label    :: Int,
-    eid      :: Int,
-    source   :: Node,
-    target   :: Node,
-    inje     :: Bool, --injective flag
-    inLefte  :: Bool
+    etype   :: Int,
+    label   :: Int,
+    eid     :: Int,
+    source  :: Node,
+    target  :: Node,
+    inje    :: Bool, --injective flag
+    inLefte :: Bool
     } deriving (Eq)
 
 instance Show Edge where

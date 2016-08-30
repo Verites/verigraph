@@ -9,8 +9,8 @@ module XML.XMLUtilities
 
 where
 
-import           Text.XML.HXT.Core
 import           Data.Tree.NTree.TypeDefs
+import           Text.XML.HXT.Core
 
 atTag :: ArrowXml cat => String -> cat (NTree XNode) XmlTree
 atTag tag = deep (isElem >>> hasName tag)

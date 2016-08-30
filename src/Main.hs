@@ -1,20 +1,20 @@
 --{-# LANGUAGE TypeFamilies #-}
 
 --import Analysis.ConcurrentRules
-import qualified XML.GGXReader as XML
+import qualified XML.GGXReader        as XML
 --import           Abstract.Valid
 --import qualified Analysis.CriticalSequence as CS
 --import qualified Analysis.CriticalPairs as CP
 --import           Partitions.GPToVeri
 --import           Partitions.GraphPart
 --import           Partitions.VeriToGP
-import           Graph.Graph as G
+import           Graph.Graph          as G
 --import qualified TypedGraph.GraphRule as GR
-import qualified Graph.GraphMorphism as GM
-import           TypedGraph.Morphism as TGM
+import qualified Graph.GraphMorphism  as GM
+import           TypedGraph.Morphism  as TGM
 --import qualified TypedGraph.GraphGrammar as GG
 --import qualified XML.GGXWriter as GW
-import TypedGraph.GraphRule
+import           TypedGraph.GraphRule
 --import System.Process
 --import System.Environment
 --import System.Exit
@@ -22,11 +22,11 @@ import           Abstract.Morphism
 
 
 
-import           Abstract.AdhesiveHLR      as RW
-import           Abstract.DPO              as RW
+import           Abstract.AdhesiveHLR as RW
+import           Abstract.DPO         as RW
 --import Data.Matrix
-import Data.Maybe
-import qualified Data.List as L
+import qualified Data.List            as L
+import           Data.Maybe
 
 --import qualified XML.GGXReader as XML
 
@@ -43,7 +43,7 @@ a fn = do
           pairs = createPairsCodomain True (left r1) (left r2)
           --dgs = Partitions.GraphPart.edges mix2
           inj = filter (\(m1,m2) -> monomorphism m1 && monomorphism m2) pairs
-          gluing = filter (\(m1,m2) -> satsGluing True r1 m1 && satsGluing True r2 m2) inj
+          gluing = filter (\(m1,m2) -> satisfiesGluingConditions True r1 m1 && satisfiesGluingConditions True r2 m2) inj
           delUse = filter (deleteUse r1 r2) gluing
       return (r1,r2)
       --print (fst cp)
@@ -60,8 +60,8 @@ deleteUse :: GraphRule a b -> GraphRule a b
            -> Bool
 deleteUse l _ (m1,m2) = Prelude.null matchD
     where
-        (_,d1) = RW.pushoutComplement m1 (left l) --get only the morphism D2 to G
-        l2TOd1 = matches AnyMorphisms (domain m2) (domain d1)
+        (_,d1) = RW.calculatePushoutComplement m1 (left l) --get only the morphism D2 to G
+        l2TOd1 = matches GenericMorphism (domain m2) (domain d1)
         matchD = filter (\x -> m2 == compose x d1) l2TOd1
 
 
@@ -89,7 +89,7 @@ typeE gm e = fromMaybe (error "EDGE NOT TYPED") $ GM.applyEdge gm e
 -- | Finds matches __/m/__
 --
 --   Injective, surjective, isomorphic or all possible matches
-matches' :: MorphismRestriction -> GM.GraphMorphism a b-> GM.GraphMorphism a b
+matches' :: MorphismType -> GM.GraphMorphism a b-> GM.GraphMorphism a b
         -> [TGM.TypedGraphMorphism a b]
 matches' prop graph1 graph2 =
   buildMappings prop nodesSrc edgesSrc nodesTgt edgesTgt tgm
@@ -109,16 +109,16 @@ matches' prop graph1 graph2 =
 
 ---------------------------------------------------------------------------------
 
-buildMappings :: MorphismRestriction -> [G.NodeId] -> [G.EdgeId] -> [G.NodeId] -> [G.EdgeId]
+buildMappings :: MorphismType -> [G.NodeId] -> [G.EdgeId] -> [G.NodeId] -> [G.EdgeId]
               -> TGM.TypedGraphMorphism a b -> [TGM.TypedGraphMorphism a b]
 
 --IF NO HAS FREE NODES OR FREE EDGES TO MAP, RETURN THE FOUND MORPHISMO
 buildMappings prop [] [] nodesT edgesT tgm =
       case prop of
-        AnyMorphisms  -> all
-        MonoMorphisms -> all
-        EpiMorphisms  -> epimorphism
-        IsoMorphisms  -> isomorphism
+        GenericMorphism  -> all
+        Monomorphism -> all
+        Epimorphism  -> epimorphism
+        Isomorphism  -> isomorphism
       where
         all = return tgm
 
@@ -131,23 +131,23 @@ buildMappings prop [] [] nodesT edgesT tgm =
 
 ---------------------------------------------------------------------------------
 
---IF HAS FREE NODES, MAP AnyMorphisms FREE NODES TO AnyMorphisms DESTINATION NODES
+--IF HAS FREE NODES, MAP GenericMorphism FREE NODES TO GenericMorphism DESTINATION NODES
 buildMappings prop (h:t) [] nodesT edgesT tgm
   | L.null nodesT = []
   | otherwise  = do
       y <- nodesT
 
-      --MAP FREE NODES TO AnyMorphisms TYPE COMPATIBLE DESTINATION NODES
+      --MAP FREE NODES TO GenericMorphism TYPE COMPATIBLE DESTINATION NODES
       let tgmN = updateNodesMapping h y nodesT tgm
 
       case tgmN of
         Just tgm' ->
           --CHOSE BETWEEN INJECTIVE OR NOT
           case prop of
-            AnyMorphisms  -> all
-            MonoMorphisms -> monomorphism
-            EpiMorphisms  -> all
-            IsoMorphisms  -> monomorphism
+            GenericMorphism  -> all
+            Monomorphism -> monomorphism
+            Epimorphism  -> all
+            Isomorphism  -> monomorphism
           where
             monomorphism = buildMappings prop t [] nodesT' edgesT tgm'
             all          = buildMappings prop t [] nodesT  edgesT tgm'
@@ -172,10 +172,10 @@ buildMappings prop nodes (h:t) nodesT edgesT tgm
                   d = domain $ domain tgm
                   c = domain $ codomain tgm
                   nodesT' = case prop of
-                    MonoMorphisms -> L.delete (srcE c y) nodesT
-                    IsoMorphisms  -> L.delete (srcE c y) nodesT
-                    EpiMorphisms  -> nodesT
-                    AnyMorphisms  -> nodesT
+                    Monomorphism -> L.delete (srcE c y) nodesT
+                    Isomorphism  -> L.delete (srcE c y) nodesT
+                    Epimorphism  -> nodesT
+                    GenericMorphism  -> nodesT
 
           --MAPPING SRC EDGE AND TGT EDGE
           tgmE
@@ -195,10 +195,10 @@ buildMappings prop nodes (h:t) nodesT edgesT tgm
               all          = buildMappings prop nodes' t nodesT  edgesT  tgm'
               --CHOSE BETWEEN INJECTIVE OR NOT
           case prop of
-            AnyMorphisms  -> all
-            MonoMorphisms -> monomorphism
-            EpiMorphisms  -> all
-            IsoMorphisms  -> monomorphism
+            GenericMorphism  -> all
+            Monomorphism -> monomorphism
+            Epimorphism  -> all
+            Isomorphism  -> monomorphism
         Nothing  -> []
 
 ---------------------------------------------------------------------------------
@@ -478,14 +478,14 @@ filtMono x = filter (\(_,q) -> M.monomorphism q) x
 
 filtPairs inverseLeft x = filter (\(h1,_) -> satsGluingCond inverseLeft h1) x
 
-pushoutComplement inverseLeft x = map (\(h1,q21) -> let (k,r') = RW.pushoutComplement h1 (left inverseLeft) in
+calculatePushoutComplement inverseLeft x = map (\(h1,q21) -> let (k,r') = RW.calculatePushoutComplement h1 (left inverseLeft) in
  (h1,q21,k,r')) x
 
-pushout inverseLeft x = map (\(h1,q21,k,r') ->
- let (m1,l') = RW.pushout k (right inverseLeft) in
+calculatePushout inverseLeft x = map (\(h1,q21,k,r') ->
+ let (m1,l') = RW.calculatePushout k (right inverseLeft) in
  (h1,q21,k,r',m1,l')) x
 
-filtM1 l x = filter (\(_,_,_,_,m1,_) -> satsNacs l m1) x
+filtM1 l x = filter (\(_,_,_,_,m1,_) -> satisfiesNACs l m1) x
 
 h21 x n = concat
  (map (\(h1,q21,k,r',m1,l') ->
@@ -531,17 +531,17 @@ filtPairs = filter (\(m'1,_) -> satsGluingCond inverseRule m'1) pairs
 m' = map fst filtPairs
 q = map snd filtPairs
 
-kr' = map (\m'1 -> RW.pushoutComplement m'1 (left inverseRule)) m'
+kr' = map (\m'1 -> RW.calculatePushoutComplement m'1 (left inverseRule)) m'
 k = map fst kr'
 r' = map snd kr'
 
-ml' = map (\x -> RW.pushout x (right inverseRule)) k
+ml' = map (\x -> RW.calculatePushout x (right inverseRule)) k
 mm1 = map fst ml'
 l' = map snd ml'
 
 m1k = zip mm1 k
 
-filtM1 = filter (\(m1,_) -> satsNacs le m1) m1k
+filtM1 = filter (\(m1,_) -> satisfiesNACs le m1) m1k
 
 h12 = map (\(_,k) -> matches (M.codomain (left ri)) (M.codomain k) FREE) filtM1
 filtH12 = map (\(x,y,z) -> validH12 x y z) (zip3 h12 (map snd filtPairs) r')
@@ -559,7 +559,7 @@ ajeita (h:hs) (m1:m1s) (l:ls) = (if Prelude.null h then [] else [(head h,m1,l)])
 ---
 
 {-g = fst (head filtPairs)
-k = fst (RW.pushoutComplement g (left inverseRule))
+k = fst (RW.calculatePushoutComplement g (left inverseRule))
 r = right inverseRule
 
 kr = M.compose (TGM.invertTGM r) k                                 -- invert r and compose with k, obtain kr : R -> D

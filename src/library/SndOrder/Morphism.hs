@@ -10,13 +10,13 @@ module SndOrder.Morphism (
   , commutingMorphismSameCodomain
   ) where
 
-import Abstract.AdhesiveHLR
-import Abstract.DPO
-import Abstract.Morphism
-import Abstract.Valid
-import Graph.GraphMorphism
-import TypedGraph.Morphism
-import TypedGraph.GraphRule
+import           Abstract.AdhesiveHLR
+import           Abstract.DPO
+import           Abstract.Morphism
+import           Abstract.Valid
+import           Graph.GraphMorphism
+import           TypedGraph.GraphRule
+import           TypedGraph.Morphism
 
 -- | A morphism between two rules.
 --
@@ -45,8 +45,8 @@ import TypedGraph.GraphRule
 -- TODO: Make polymorphic on the type of morphism?
 data RuleMorphism a b =
   RuleMorphism {
-    rmDomain   :: Production (TypedGraphMorphism a b)
-  , rmCodomain :: Production (TypedGraphMorphism a b)
+    rmDomain         :: Production (TypedGraphMorphism a b)
+  , rmCodomain       :: Production (TypedGraphMorphism a b)
   , mappingLeft      :: TypedGraphMorphism a b
   , mappingInterface :: TypedGraphMorphism a b
   , mappingRight     :: TypedGraphMorphism a b
@@ -67,8 +67,8 @@ instance Valid (RuleMorphism a b) where
         valid mapL &&
         valid mapK &&
         valid mapR &&
-        compose mapK (left cod) == compose (left dom) mapL &&
-        compose mapK (right cod) == compose (right dom) mapR
+        compose mapK (getLHS cod) == compose (getLHS dom) mapL &&
+        compose mapK (getRHS cod) == compose (getRHS dom) mapR
 
 instance Morphism (RuleMorphism a b) where
     type Obj (RuleMorphism a b) = Production (TypedGraphMorphism a b)
@@ -84,9 +84,9 @@ instance Morphism (RuleMorphism a b) where
                      (compose (mappingRight t1) (mappingRight t2))
 
     id t = RuleMorphism t t
-             (idMap (codomain (left t)) (codomain (left t)))
-             (idMap (domain (left t)) (domain (left t)))
-             (idMap (codomain (right t)) (codomain (right t)))
+             (idMap (codomain (getLHS t)) (codomain (getLHS t)))
+             (idMap (domain (getLHS t)) (domain (getLHS t)))
+             (idMap (codomain (getRHS t)) (codomain (getRHS t)))
 
     monomorphism rm =
       monomorphism (mappingLeft rm) &&
@@ -102,8 +102,8 @@ instance Morphism (RuleMorphism a b) where
       isomorphism mapL &&
       isomorphism mapK &&
       isomorphism mapR &&
-      compose (left dom) mapL == compose mapK (left cod) &&
-      compose (right dom) mapR == compose mapK (right cod)
+      compose (getLHS dom) mapL == compose mapK (getLHS cod) &&
+      compose (getRHS dom) mapR == compose mapK (getRHS cod)
 
 
 instance FindMorphism (RuleMorphism a b) where
@@ -111,31 +111,31 @@ instance FindMorphism (RuleMorphism a b) where
   -- (desconsidering the NACs)
   findMorphisms prop l g = map (buildPair l g) rightMatch
     where
-      matchesK = findMorphisms prop (domain (left l)) (domain (left g))
+      matchesK = findMorphisms prop (domain (getLHS l)) (domain (getLHS g))
       leftMatch = concatMap (leftM prop l g) matchesK
       rightMatch = concatMap (rightM prop l g) leftMatch
 
-  partInjMatches n m =
+  partialInjectiveMatches n m =
     filter
       (\q ->
         partiallyMonomorphic (mappingLeft n) (mappingLeft q) &&
         partiallyMonomorphic (mappingInterface n) (mappingInterface q) &&
         partiallyMonomorphic (mappingRight n) (mappingRight q))
-      (findMorphisms AnyMorphisms (codomain n) (codomain m))
+      (findAllMorphisms (codomain n) (codomain m))
 
 -- commutes left side
-leftM :: FindMorphism t => MorphismRestriction -> Production t -> Production t -> t -> [(t, t)]
+leftM :: FindMorphism t => MorphismType -> Production t -> Production t -> t -> [(t, t)]
 leftM prop l g mapK = map (\m -> (m, mapK)) commuting
   where
-    matchesL = findMorphisms prop (codomain (left l)) (codomain (left g))
-    commuting = filter (\m -> compose (left l) m == compose mapK (left g)) matchesL
+    matchesL = findMorphisms prop (codomain (getLHS l)) (codomain (getLHS g))
+    commuting = filter (\m -> compose (getLHS l) m == compose mapK (getLHS g)) matchesL
 
 -- commutes right side
-rightM :: FindMorphism t =>  MorphismRestriction -> Production t -> Production t -> (t, t) -> [(t, t, t)]
+rightM :: FindMorphism t =>  MorphismType -> Production t -> Production t -> (t, t) -> [(t, t, t)]
 rightM prop l g (mapL,mapK) = map (\m -> (mapL, mapK, m)) commuting
   where
-    matchesR = findMorphisms prop (codomain (right l)) (codomain (right g))
-    commuting = filter (\m -> compose (right l) m == compose mapK (right g)) matchesR
+    matchesR = findMorphisms prop (codomain (getRHS l)) (codomain (getRHS g))
+    commuting = filter (\m -> compose (getRHS l) m == compose mapK (getRHS g)) matchesR
 
 -- kind of curry for three arguments
 buildPair :: Production (TypedGraphMorphism a b)
@@ -148,45 +148,39 @@ buildPair l g (m1,m2,m3) = ruleMorphism l g m1 m2 m3
 
 
 instance EpiPairs (RuleMorphism a b) where
-  createPairs inj m1 m2 = ret
+  createJointlyEpimorphicPairs inj m1 m2 = ret
     where
-      l1 = codomain (left m1)
-      l2 = codomain (left m2)
-      k1 = domain (left m1)
-      k2 = domain (left m2)
-      r1 = codomain (right m1)
-      r2 = codomain (right m2)
+      l1 = codomain (getLHS m1)
+      l2 = codomain (getLHS m2)
+      k1 = domain (getLHS m1)
+      k2 = domain (getLHS m2)
+      r1 = codomain (getRHS m1)
+      r2 = codomain (getRHS m2)
 
-      ks = createPairs inj k1 k2
+      ks = createJointlyEpimorphicPairs inj k1 k2
 
       lefts = concatMap
-                (\(k1,k2) -> let ls = createSideRule inj k1 (left m1) l1 k2 (left m2) l2
+                (\(k1,k2) -> let ls = createSideRule inj k1 (getLHS m1) l1 k2 (getLHS m2) l2
                              in map (\(ll1,ll2,m) -> (k1, k2, ll1, ll2, m)) ls) ks
       rights = concatMap
-                (\(k1,k2,ll1,ll2,l) -> let rs = createSideRule inj k1 (right m1) r1 k2 (right m2) r2
+                (\(k1,k2,ll1,ll2,l) -> let rs = createSideRule inj k1 (getRHS m1) r1 k2 (getRHS m2) r2
                                        in map (\(rr1,rr2,r) -> (k1,k2,ll1,ll2,l,rr1,rr2,r)) rs) lefts
 
       ret = map (\(k1,k2,l1,l2,l,r1,r2,r) ->
-                   let rule = production l r []
+                   let rule = constructProduction l r []
                    in (ruleMorphism m1 rule l1 k1 r1,
                        ruleMorphism m2 rule l2 k2 r2)) rights
 
-  partitions _ _ = error "Not implemented"
+  createAllSubobjects _ _ = error "Not implemented"
 
   --FIXME
-  createPairsNac _ r nac = allPairs
+  createJointlyEpimorphicPairsFromNAC _ r nac = allPairs
     where
-      allPairs = createPairs True r (codomain nac)
-  {-createPairsNac nacInj inj r nac = satsMorphisms
-    where
-      allPairs = createPairs False r (codomain nac)
-      satsR = if inj then monomorphism else (\_ -> True)
-      satsNac = if nacInj then monomorphism else partiallyMonomorphic nac
-      satsMorphisms = filter (\(h,q) -> satsR h && satsNac q) allPairs-}
+      allPairs = createJointlyEpimorphicPairs True r (codomain nac)
 
-  commutingPairsAlt (m1,inj1) (m2,inj2) = filt
+  calculateCommutativeSquaresAlongMonomorphism (m1,inj1) (m2,inj2) = filt
     where
-      allCommutingPairs = commutingPairs False m1 m2
+      allCommutingPairs = calculateCommutativeSquares False m1 m2
       satsM1 = if inj1 then monomorphism else const True
       satsM2 = if inj2 then monomorphism else const True
       filt = filter (\(m1,m2) -> satsM1 m1 && satsM2 m2) allCommutingPairs
@@ -213,53 +207,53 @@ createSideRule :: Bool -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> Gr
             -> [(TypedGraphMorphism a b, TypedGraphMorphism a b, TypedGraphMorphism a b)]
 createSideRule inj k1 sideM1 s1 k2 sideM2 s2 = d
   where
-    a = createPairs inj s1 s2
-    b = concatMap (\(s1,s2) -> sequence [[s1],[s2], findMorphisms MonoMorphisms (codomain k1) (codomain s1)]) a
+    a = createJointlyEpimorphicPairs inj s1 s2
+    b = concatMap (\(s1,s2) -> sequence [[s1],[s2], findMonomorphisms (codomain k1) (codomain s1)]) a
     c = map (\(x:y:z:_) -> (x,y,z)) b
     d = filter (\(ss1,ss2,m) -> compose sideM1 ss1 == compose k1 m &&
                                 compose sideM2 ss2 == compose k2 m) c
 
 
 instance AdhesiveHLR (RuleMorphism a b) where
-  pushoutComplement (RuleMorphism _ ruleG matchL matchK matchR) (RuleMorphism ruleK _ leftL leftK leftR) = (k,l')
+  calculatePushoutComplement (RuleMorphism _ ruleG matchL matchK matchR) (RuleMorphism ruleK _ leftL leftK leftR) = (k,l')
      where
-       (matchL', leftL') = pushoutComplement matchL leftL
-       (matchK', leftK') = pushoutComplement matchK leftK
-       (matchR', leftR') = pushoutComplement matchR leftR
+       (matchL', leftL') = calculatePushoutComplement matchL leftL
+       (matchK', leftK') = calculatePushoutComplement matchK leftK
+       (matchR', leftR') = calculatePushoutComplement matchR leftR
        l = commutingMorphismSameCodomain
-             (compose leftK' (left ruleG)) leftL'
-             matchK' (compose (left ruleK) matchL')
+             (compose leftK' (getLHS ruleG)) leftL'
+             matchK' (compose (getLHS ruleK) matchL')
        r = commutingMorphismSameCodomain
-             (compose leftK' (right ruleG)) leftR'
-             matchK' (compose (right ruleK) matchR')
-       newRule = production l r []
+             (compose leftK' (getRHS ruleG)) leftR'
+             matchK' (compose (getRHS ruleK) matchR')
+       newRule = constructProduction l r []
        k = RuleMorphism ruleK newRule matchL' matchK' matchR'
        l' = RuleMorphism newRule ruleG leftL' leftK' leftR'
 
-  pushout (RuleMorphism _ ruleD matchL matchK matchR) (RuleMorphism _ ruleR rightL rightK rightR) =  (m',r')
+  calculatePushout (RuleMorphism _ ruleD matchL matchK matchR) (RuleMorphism _ ruleR rightL rightK rightR) =  (m',r')
      where
-       (matchL', rightL') = pushout matchL rightL
-       (matchK', rightK') = pushout matchK rightK
-       (matchR', rightR') = pushout matchR rightR
+       (matchL', rightL') = calculatePushout matchL rightL
+       (matchK', rightK') = calculatePushout matchK rightK
+       (matchR', rightR') = calculatePushout matchR rightR
        l = commutingMorphismSameDomain
-             rightK' (compose (left ruleD) rightL')
-             matchK' (compose (left ruleR) matchL')
+             rightK' (compose (getLHS ruleD) rightL')
+             matchK' (compose (getLHS ruleR) matchL')
        r = commutingMorphismSameDomain
-             rightK' (compose (right ruleD) rightR')
-             matchK' (compose (right ruleR) matchR')
-       newRule = production l r []
+             rightK' (compose (getRHS ruleD) rightR')
+             matchK' (compose (getRHS ruleR) matchR')
+       newRule = constructProduction l r []
        m' = RuleMorphism ruleR newRule matchL' matchK' matchR'
        r' = RuleMorphism ruleD newRule rightL' rightK' rightR'
 
   -- TODO
-  injectivePullback _ _ = error "injectivePullback not implemented in RuleMorphism"
+  monomorphicPullback _ _ = error "monomorphicPullback not implemented in RuleMorphism"
 
   hasPushoutComplement (restrictionG, g) (restrictionF, f) =
     hasPushoutComplement (restrictionG, mappingLeft g) (restrictionF, mappingLeft f)
     && hasPushoutComplement (restrictionG, mappingRight g) (restrictionF, mappingRight f)
     && hasPushoutComplement (restrictionG, mappingInterface g) (restrictionF, mappingInterface f)
-    && danglingSpan (left $ codomain g) (mappingLeft g) (mappingInterface g) (mappingLeft f) (mappingInterface f)
-    && danglingSpan (right $ codomain g) (mappingRight g) (mappingInterface g) (mappingRight f) (mappingInterface f)
+    && danglingSpan (getLHS $ codomain g) (mappingLeft g) (mappingInterface g) (mappingLeft f) (mappingInterface f)
+    && danglingSpan (getRHS $ codomain g) (mappingRight g) (mappingInterface g) (mappingRight f) (mappingInterface f)
 
 -- | A gluing condition for pushout complements of rule morphisms
 danglingSpan :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
@@ -294,7 +288,7 @@ commutingMorphismSameDomain :: TypedGraphMorphism a b -> TypedGraphMorphism a b
                             -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 commutingMorphismSameDomain k1 s1 k2 s2 = typedMorphism (codomain k1) (codomain s1) select
   where
-    mats = findMorphisms MonoMorphisms (codomain k1) (codomain s1)
+    mats = findMonomorphisms (codomain k1) (codomain s1)
     filt = filter (\m -> compose k1 m == s1 && compose k2 m == s2) mats
     select = case filt of
                 [] -> error "(domain) Error when commuting monomorphic morphisms (must be generating an invalid rule)"
@@ -321,7 +315,7 @@ commutingMorphismSameCodomain :: TypedGraphMorphism a b -> TypedGraphMorphism a 
                               -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 commutingMorphismSameCodomain k1 s1 k2 s2 = typedMorphism (domain k1) (domain s1) select
   where
-    mats = findMorphisms MonoMorphisms (domain k1) (domain s1)
+    mats = findMonomorphisms (domain k1) (domain s1)
     filt = filter (\m -> compose m s1 == k1 && compose k2 m == s2) mats
     select = case filt of
                 [] -> error "(domain) Error when commuting monomorphic morphisms (must be generating an invalid rule)"

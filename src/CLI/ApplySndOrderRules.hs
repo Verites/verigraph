@@ -8,11 +8,11 @@ module ApplySndOrderRules
 
 import           Abstract.DPO
 import           GlobalOptions
-import qualified TypedGraph.GraphGrammar        as GG
-import qualified SndOrder.Rule        as SO
 import           Options.Applicative
-import qualified XML.GGXReader             as XML
-import qualified XML.GGXWriter             as GW
+import qualified SndOrder.Rule           as SO
+import qualified TypedGraph.GraphGrammar as GG
+import qualified XML.GGXReader           as XML
+import qualified XML.GGXWriter           as GW
 
 data Options = Options
   { outputFile :: String }
@@ -38,8 +38,8 @@ execute globalOpts opts = do
     let dpoConf = dpoConfig globalOpts
         newNacs =
           map (\(n,r) -> let newRule = SO.addMinimalSafetyNacs dpoConf r
-                             tamNewNacs = length (nacs newRule)
-                             tamNacs = length (nacs r) in
+                             tamNewNacs = length (getNACs newRule)
+                             tamNacs = length (getNACs r) in
            ((n, newRule), (n, tamNewNacs - tamNacs)))
            (GG.sndOrderRules gg)
         addNacs = map fst newNacs

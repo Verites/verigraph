@@ -16,10 +16,10 @@ module Logic.Ctl
   ) where
 
 
-import Logic.Ctl.Parser
-import Logic.Ctl.Base
-import Logic.Ctl.Semantics
-import Logic.Model
+import           Logic.Ctl.Base
+import           Logic.Ctl.Parser
+import           Logic.Ctl.Semantics
+import           Logic.Model
 
 
 -- | Check if the given expression holds in the given state of the Kripke structure.

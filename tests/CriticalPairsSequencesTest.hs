@@ -22,7 +22,7 @@ testTeseRodrigo dpoConf rules =
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"
- ~=? show (pairwise (allDeleteUse dpoConf) rules)],
+ ~=? show (pairwise (findAllDeleteUse dpoConf) rules)],
        ["Test teseRodrigo Produce-Dangling "++(printConf dpoConf)  ~:
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"++
@@ -32,7 +32,7 @@ testTeseRodrigo dpoConf rules =
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"
- ~=? show (pairwise (allProduceDangling dpoConf) rules)],
+ ~=? show (pairwise (findAllProduceDangling dpoConf) rules)],
        ["Test teseRodrigo Produce-Forbid "++(printConf dpoConf)  ~:
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 2 0 0 0 0 0 0 0 )\n"++
@@ -42,7 +42,7 @@ testTeseRodrigo dpoConf rules =
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 1 0 0 )\n"
- ~=? show (pairwise (allProduceForbid dpoConf) rules)],
+ ~=? show (pairwise (findAllProduceForbid dpoConf) rules)],
        ["Test teseRodrigo Produce-Use "++(printConf dpoConf)  ~:
          "( 0 1 0 0 0 0 0 0 )\n"++
          "( 0 0 3 0 0 0 0 0 )\n"++
@@ -52,7 +52,7 @@ testTeseRodrigo dpoConf rules =
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 1 0 2 0 0 0 )\n"
- ~=? show (pairwise (allProduceUse dpoConf) rules)],
+ ~=? show (pairwise (findAllProduceUse dpoConf) rules)],
        ["Test teseRodrigo Delete-Forbid "++(printConf dpoConf)  ~:
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"++
@@ -62,7 +62,7 @@ testTeseRodrigo dpoConf rules =
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"
- ~=? show (pairwise (allDeleteForbid dpoConf) rules)],
+ ~=? show (pairwise (findAllDeleteForbid dpoConf) rules)],
         ["Test teseRodrigo Remove-Dangling "++(printConf dpoConf)  ~:
          "( 0 0 0 0 1 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"++
@@ -72,7 +72,7 @@ testTeseRodrigo dpoConf rules =
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"
- ~=? show (pairwise (allRemoveDangling dpoConf) rules)],
+ ~=? show (pairwise (findAllRemoveDangling dpoConf) rules)],
  ["Test teseRodrigo Deliver-Delete "++(printConf dpoConf)  ~:
          "( 0 0 0 0 1 0 0 0 )\n"++
          "( 0 0 3 0 0 0 0 0 )\n"++
@@ -82,7 +82,7 @@ testTeseRodrigo dpoConf rules =
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 1 0 0 0 )\n"
- ~=? show (pairwise (allDeliverDelete dpoConf) rules)],
+ ~=? show (pairwise (findAllDeliverDelete dpoConf) rules)],
        ["Test teseRodrigo Deliver-Dangling "++(printConf dpoConf)  ~:
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"++
@@ -92,7 +92,7 @@ testTeseRodrigo dpoConf rules =
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 1 0 0 0 0 0 )\n"
- ~=? show (pairwise (allDeliverDangling dpoConf) rules)],
+ ~=? show (pairwise (findAllDeliverDangling dpoConf) rules)],
         ["Test teseRodrigo Forbid-Produce "++(printConf dpoConf)  ~:
          "( 0 3 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"++
@@ -102,20 +102,20 @@ testTeseRodrigo dpoConf rules =
          "( 0 0 0 0 0 0 0 1 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"++
          "( 0 0 0 0 0 0 0 0 )\n"
- ~=? show (pairwise (allForbidProduce dpoConf) rules)]]
+ ~=? show (pairwise (findAllForbidProduce dpoConf) rules)]]
 
 tests dpoConf rules = test $
-  (testTeseRodrigo (DPOConfig MonoMatches PartMonoNacSatisfaction) rules) ++
-  (testTeseRodrigo (DPOConfig MonoMatches MonoNacSatisfaction) rules) ++
-  (testTeseRodrigo (DPOConfig AnyMatches PartMonoNacSatisfaction) rules) ++
-  (testTeseRodrigo (DPOConfig AnyMatches MonoNacSatisfaction) rules)
+  (testTeseRodrigo (DPOConfig MonoMatches PartiallyMonomorphicNAC) rules) ++
+  (testTeseRodrigo (DPOConfig MonoMatches MonomorphicNAC) rules) ++
+  (testTeseRodrigo (DPOConfig AnyMatches PartiallyMonomorphicNAC) rules) ++
+  (testTeseRodrigo (DPOConfig AnyMatches MonomorphicNAC) rules)
 
 main :: IO Counts
 main = do
   let fileName = "grammars/teseRodrigo.ggx"
   gg <- XML.readGrammar fileName
 
-  let dpoConf = DPOConfig MonoMatches PartMonoNacSatisfaction
+  let dpoConf = DPOConfig MonoMatches PartiallyMonomorphicNAC
       rules = map snd (GG.rules gg)
   
   runTestTT (tests dpoConf rules)

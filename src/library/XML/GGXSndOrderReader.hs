@@ -2,15 +2,15 @@ module XML.GGXSndOrderReader (instantiateSndOrderRules) where
 
 import           Abstract.DPO
 import           Abstract.Morphism
-import           Graph.GraphMorphism      as GM
-import           TypedGraph.GraphRule          as GR
-import           SndOrder.Rule            ()
+import           Graph.GraphMorphism   as GM
 import           SndOrder.Morphism
+import           SndOrder.Rule         ()
 import           TypedGraph.Graph
+import           TypedGraph.GraphRule  as GR
 import           TypedGraph.Morphism
-import {-# SOURCE #-} XML.GGXReader
+import  {-# SOURCE #-}         XML.GGXReader -- TODO remove the dependency that causes this
 import           XML.ParsedTypes
-import qualified XML.ParseSndOrderRule    as SO
+import qualified XML.ParseSndOrderRule as SO
 import           XML.Utilities
 
 instantiateSndOrderRules :: ParsedTypeGraph -> [RuleWithNacs] -> [(String, Production (RuleMorphism a b))]
@@ -18,7 +18,7 @@ instantiateSndOrderRules parsedTypeGraph sndOrdRules = zip sndOrderNames d
   where
     a = SO.parseSndOrderRules sndOrdRules
     c = map (instantiateSndOrderRule parsedTypeGraph) a
-    d = map (\(_,(l,r),n) -> production l r n) c
+    d = map (\(_,(l,r),n) -> constructProduction l r n) c
     sndOrderNames = map fstOfThree c
 
 instantiateSndOrderRule :: ParsedTypeGraph -> (SndOrderRuleSide, SndOrderRuleSide,[SndOrderRuleSide]) -> (String,(RuleMorphism a b, RuleMorphism a b),[RuleMorphism a b])
@@ -35,9 +35,9 @@ instantiateSndOrderNac (parsedLeft, l) (n, nacRule) = ruleMorphism l nacRule nac
   where
     mapL = SO.getLeftObjNameMapping parsedLeft n
     mapR = SO.getRightObjNameMapping parsedLeft n
-    nacL = instantiateNacMorphisms (codomain (left l)) (codomain (left nacRule)) mapL
-    nacK = instantiateNacMorphisms (domain (left l)) (domain (left nacRule)) mapL
-    nacR = instantiateNacMorphisms (codomain (right l)) (codomain (right nacRule)) mapR
+    nacL = instantiateNacMorphisms (codomain (getLHS l)) (codomain (getLHS nacRule)) mapL
+    nacK = instantiateNacMorphisms (domain (getLHS l)) (domain (getLHS nacRule)) mapL
+    nacR = instantiateNacMorphisms (codomain (getRHS l)) (codomain (getRHS nacRule)) mapR
 
 instantiateNacMorphisms :: TypedGraph a b -> TypedGraph a b
                         -> [Mapping] -> TypedGraphMorphism a b
@@ -57,17 +57,17 @@ instantiateRuleMorphisms (parsedLeft, l) (parsedRight, r) =
   (ruleMorphism ruleK l leftKtoLeftL interfaceKtoL rightKtoRightL,
    ruleMorphism ruleK r leftKtoLeftR interfaceKtoR rightKtoRightR)
     where
-      graphKRuleL = domain (left l)
-      graphKRuleR = domain (left r)
-      graphLRuleL = codomain (left l)
-      graphLRuleR = codomain (left r)
-      graphRRuleL = codomain (right l)
-      graphRRuleR = codomain (right r)
+      graphKRuleL = domain (getLHS l)
+      graphKRuleR = domain (getLHS r)
+      graphLRuleL = codomain (getLHS l)
+      graphLRuleR = codomain (getLHS r)
+      graphRRuleL = codomain (getRHS l)
+      graphRRuleR = codomain (getRHS r)
 
       mappingBetweenLeft = SO.getLeftObjNameMapping parsedLeft parsedRight
       mappingBetweenRight = SO.getRightObjNameMapping parsedLeft parsedRight
 
-      ruleK = production leftK rightK []
+      ruleK = constructProduction leftK rightK []
 
       graphLRuleK = domain leftKtoLeftL
       graphRRuleK = domain rightKtoRightL

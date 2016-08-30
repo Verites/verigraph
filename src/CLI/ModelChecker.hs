@@ -1,26 +1,26 @@
 module Main (main) where
 
-import           Options.Applicative
 import           GlobalOptions
+import           Options.Applicative
 
-import           Abstract.Valid
-import           Abstract.Morphism
 import           Abstract.DPO
 import           Abstract.DPO.StateSpace as StateSpace
-import qualified Logic.Model as Logic
-import qualified Logic.Ctl as Logic
-import           TypedGraph.Graph
-import           TypedGraph.Morphism
-import           TypedGraph.GraphRule
-import           TypedGraph.GraphGrammar
+import           Abstract.Morphism
+import           Abstract.Valid
 import qualified Dot
-import qualified XML.GGXReader             as XML
+import qualified Logic.Ctl               as Logic
+import qualified Logic.Model             as Logic
+import           TypedGraph.Graph
+import           TypedGraph.GraphGrammar
+import           TypedGraph.GraphRule
+import           TypedGraph.Morphism
+import qualified XML.GGXReader           as XML
 
 import           Control.Monad
-import qualified Data.IntMap as IntMap
-import qualified Data.List as List
-import           System.IO
+import qualified Data.IntMap             as IntMap
+import qualified Data.List               as List
 import           System.Exit
+import           System.IO
 import           Text.PrettyPrint.Leijen (hPutDoc)
 
 
@@ -37,8 +37,8 @@ main =
 
 data Options = Options
   { maxDepth :: Int
-  , drawTo :: Maybe FilePath
-  , formula :: Maybe String
+  , drawTo   :: Maybe FilePath
+  , formula  :: Maybe String
   }
 
 
@@ -224,7 +224,7 @@ splitPredicates ((name, rule) : rest) =
     (productions, predicates) =
       splitPredicates rest
   in
-    if isomorphism (left rule) && isomorphism (right rule) then
+    if isomorphism (getLHS rule) && isomorphism (getRHS rule) then
       (productions, (name, rule):predicates)
     else
       ((name, rule):productions, predicates)

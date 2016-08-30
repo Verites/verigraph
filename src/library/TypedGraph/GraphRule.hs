@@ -4,12 +4,12 @@
 module TypedGraph.GraphRule (
     -- * Types
       GraphRule
-    , left
-    , right
-    , nacs
+    , getLHS
+    , getRHS
+    , getNACs
 
     -- * Basic Functions
-    , inverseWithoutNacs
+    , invertProductionWithoutNacs
     , deletedNodes
     , deletedEdges
     , createdNodes
@@ -19,33 +19,33 @@ module TypedGraph.GraphRule (
 ) where
 
 
-import           Abstract.DPO             as DPO
+import           Abstract.DPO        as DPO
 import           Abstract.Morphism
-import           Graph.Graph              as G
-import           TypedGraph.Morphism      as TGM
+import           Graph.Graph         as G
+import           TypedGraph.Morphism as TGM
 
 type GraphRule a b = Production (TypedGraphMorphism a b)
 
 -- | Return the nodes deleted by a rule
 deletedNodes :: GraphRule a b -> [G.NodeId]
-deletedNodes r = TGM.orphanNodesTyped (left r)
+deletedNodes r = TGM.orphanNodesTyped (getLHS r)
 
 -- | Return the nodes created by a rule
 createdNodes :: GraphRule a b -> [G.NodeId]
-createdNodes r = TGM.orphanNodesTyped (right r)
+createdNodes r = TGM.orphanNodesTyped (getRHS r)
 
 -- | Return the edges deleted by a rule
 deletedEdges :: GraphRule a b -> [G.EdgeId]
-deletedEdges r = TGM.orphanEdgesTyped (left r)
+deletedEdges r = TGM.orphanEdgesTyped (getLHS r)
 
 -- | Return the edges created by a rule
 createdEdges :: GraphRule a b -> [G.EdgeId]
-createdEdges r = TGM.orphanEdgesTyped (right r)
+createdEdges r = TGM.orphanEdgesTyped (getRHS r)
 
 instance DPO (TypedGraphMorphism a b) where
-  inverse config r = production (right r) (left r) (concatMap (shiftLeftNac config r) (nacs r))
+  invertProduction config r = constructProduction (getRHS r) (getLHS r) (concatMap (shiftNacOverProduction config r) (getNACs r))
 
-  shiftLeftNac config rule n = [comatch n rule | satsGluing config rule n]
+  shiftNacOverProduction config rule n = [calculateComatch n rule | satisfiesGluingConditions config rule n]
 
   partiallyMonomorphic = partialInjectiveTGM
 

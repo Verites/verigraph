@@ -1,4 +1,5 @@
 dist/
+org/
 .stack-work/
 *.hp
 *.prof
