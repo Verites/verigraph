@@ -18,7 +18,7 @@ This diagram shows objects and morphisms names used in the algorithms below:
  @
 
 q21 : N2 -> P1
-m2' : L2 -> P1
+h21e1 : L2 -> P1
 
 prod1 = l1 r1 {n1}
 
@@ -88,60 +88,55 @@ deleteUseDangling conf p1 p2 (m1,m2) =
     dangling = not (satisfiesGluingConditions conf p2 h21_e1) && satisfiesNACs conf p2 h21_e1
 
 -- | Rule @p1@ is in a produce-forbid conflict with @p2@ if @p1@
--- produces something that able some nac of @p2@.
+-- produces something that enables some nac of @p2@.
 --
 -- Checks produce-forbid for a NAC @n@ in @p2@
 produceForbidOneNac :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> (m, Int) -> [((m,m), (m,m), (m,Int))]
 produceForbidOneNac conf p1 p2 (n,idx) =
-  map (\(q21,h1,e1,m1,m2) -> ((m1,m2), (h1,e1), (q21,idx))) prodForbids
+  map (\(q21,h1,e1,m1,m2) -> ((m1,m2), (h1,e1), (q21,idx))) produceForbids
     where
-      -- common names
       p1' = invertProduction conf p1
       r1 = getRHS p1
-      restriction = matchRestrictionToMorphismType (matchRestriction conf)
-      satsGluingNacs = satisfiesRewritingConditions conf
+      validP1 = calculatesAllValidP1s conf p1' r1 n
+      validG = calculateRewritingsFromP1ToG conf p1 p1' validP1
+      checkH21 = calculateH21InRewriting conf n validG
+      produceForbids = calcultateValidProduceForbids conf p2 checkH21
 
-      -- Consider for a NAC n (L2 -> N2) of r any jointly surjective
-      -- pair of morphisms (m1',q21) with q21 (part)inj
-      allP1 = createJointlyEpimorphicPairsFromNAC conf (codomain r1) n
+-- | Consider for a NAC n (L2 -> N2) of r any jointly surjective
+-- pair of morphisms (m1',q21) with q21 (part)inj
+-- Check gluing cond for (m1',r1)
+calculatesAllValidP1s :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> m -> m -> [(m,m)]
+calculatesAllValidP1s conf p1' r1 n = validP1
+  where
+    allP1 = createJointlyEpimorphicPairsFromNAC conf (codomain r1) n
+    validP1 = filter (\(m1', _) -> satisfiesRewritingConditions conf p1' m1') allP1
 
-      -- Check gluing cond for (m1',r1)
-      validP1 = filter (\(m1', _) -> satsGluingNacs p1' m1') allP1
+-- | Construct PO complement D1
+-- Construct PO K and abort if m1 not sats NACs l
+calculateRewritingsFromP1ToG :: (DPO m) => DPOConfig -> Production m -> Production m -> [(m,m)] -> [(m,m,m,m,m,m)]
+calculateRewritingsFromP1ToG conf p1 p1' = mapMaybe (\(m1', q21) ->
+  let (k1, m1, e1, d1) = calculateDPO m1' p1' in
+    if satisfiesNACs conf p1 m1 then Just (m1', q21, k1, e1, m1, d1)
+    else Nothing)
 
-      -- Construct PO complement D1
-      -- Construct PO K and abort if m1 not sats NACs l
-      validG =
-        mapMaybe
-          (\(m1', q21) ->
-            let (k, m1, r', l') = calculateDPO m1' p1' --allG
-            in
-              if satisfiesNACs conf p1 m1
-                then Just (m1', q21, k, r', m1, l')
-                else Nothing)
-        validP1
+-- | Check existence of h21: L2 -> D1, st: e1 . h21 = q21 . n2
+calculateH21InRewriting :: DPO m => DPOConfig -> m -> [(m,m,m,m,m,m)] -> [(m,m,m,m,m,m,m)]
+calculateH21InRewriting conf n = mapMaybe
+  (\(m1', q21, k, e1, m1, d1) ->
+    let restriction = matchRestrictionToMorphismType (matchRestriction conf)
+        h21Candidates = findMorphisms restriction (domain n) (codomain k)
+        composeNQ21 = compose n q21
+        validH21 = filter (\h21Cand -> compose h21Cand e1 == composeNQ21) h21Candidates
+    in case validH21 of --if exists it is unique
+      [] -> Nothing
+      (h21:_) -> Just (m1', q21, k, e1, m1, d1, h21))
 
-      -- Check existence of h21: L2 -> D1, st: e1 . h21 = q21 . n2
-      checkH21 =
-        mapMaybe
-          (\(m1', q21, k, r', m1, l') ->
-            let h21Candidates = findMorphisms restriction (domain n) (codomain k)
-                composeNQ21 = compose n q21
-                validH21 = filter (\h21Cand -> compose h21Cand r' == composeNQ21) h21Candidates
-             in
-               case validH21 of --if exists it is unique
-                 [] -> Nothing
-                 (h21:_) -> Just (m1', q21, k, r', m1, l', h21))
-        validG
-
-      -- Define m2 = d1 . h21: L2 -> K
-      -- Check gluing condition for m2 and r
-      prodForbids =
-        mapMaybe
-          (\(m1', q21, _, r', m1, l', h21) ->
-            let m2  = compose h21 l'
-                m2' = compose h21 r'
-            in
-              if satsGluingNacs p2 m2
-                then Just (q21, m1', m2', m1, m2)
-                else Nothing)
-          checkH21
+-- | Define m2 = d1 . h21: L2 -> K
+-- Check gluing condition for m2 and p2
+calcultateValidProduceForbids :: DPO m => DPOConfig -> Production m -> [(m,m,m,m,m,m,m)] -> [(m,m,m,m,m)]
+calcultateValidProduceForbids conf p2 = mapMaybe (\(m1', q21, _, e1, m1, d1, h21) ->
+  let m2  = compose h21 d1
+      m2' = compose h21 e1
+  in if satisfiesRewritingConditions conf p2 m2
+        then Just (q21, m1', m2', m1, m2)
+        else Nothing)
