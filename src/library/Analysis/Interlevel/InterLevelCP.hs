@@ -1,12 +1,10 @@
-{-# LANGUAGE TypeFamilies          #-}
-
 {-|
 Module      : InterLevelCP
 Description : Implements the inter-level conflict
 Stability   : development
 -}
 
-module Analysis.InterLevelCP (interLevelConflict, evo) where
+module Analysis.Interlevel.InterLevelCP (interLevelConflict) where
 
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
@@ -22,49 +20,23 @@ import           TypedGraph.GraphRule
 import           TypedGraph.Morphism
 import           TypedGraph.Subgraph
 
--- TODO: Decent names, please
--- TODO: Follow naming convention for haskell: CamelCase
-data CPE = FOL_FOL | DUSE_DUSE | FOL_DUSE | DUSE_FOL deriving(Show)
-
-classify :: DPOConfig -> SndOrderRule a b -> SndOrderRule a b -> (RuleMorphism a b, RuleMorphism a b) -> CPE
-classify config r1 r2 (m1,m2) =
-  case (deleteUseFlGl, deleteUseFlGl'') of
-    (True,True) -> DUSE_DUSE
-    (True,False) -> DUSE_FOL
-    (False,True) -> FOL_DUSE
-    (False,False) -> FOL_FOL
-  where
-    r1Left = codomain (getLHS r1)
-    r2Left = codomain (getLHS r2)
-    r1Right = codomain (getRHS r1)
-    r2Right = codomain (getRHS r2)
-
-    deleteUseFlGl =
+    r1Left = codomain (left r1)
+    r2Left = codomain (left r2)
+    r1Right = codomain (right r1)
+    r2Right = codomain (right r2)
       isDeleteUse config r1Left (mappingLeft m1, mappingLeft m2) ||
       isDeleteUse config r2Left (mappingLeft m2, mappingLeft m1)
-    deleteUseFlGl'' =
       isDeleteUse config r1Right (mappingRight m1, mappingRight m2) ||
       isDeleteUse config r2Right (mappingRight m2, mappingRight m1)
-
--- TODO: Decent names, please
--- TODO: Remove duplication (as per hlint)
-evo :: DPOConfig -> (String, SndOrderRule a b) -> (String, SndOrderRule a b) -> (String, [CPE])
-evo config (n1,r1) (n2,r2) = (n1 ++ "_" ++ n2, map (classify config r1 r2) xs'')
-  where
     r1Left = codomain (getLHS r1)
     r2Left = codomain (getLHS r2)
     r1Right = codomain (getRHS r1)
     r2Right = codomain (getRHS r2)
-
     leftR1 = constructProduction (mappingLeft (getLHS r1)) (mappingLeft (getRHS r1)) []
     leftR2 = constructProduction (mappingLeft (getLHS r2)) (mappingLeft (getRHS r2)) []
-
     pairs = createJointlyEpimorphicPairs (matchRestriction config == MonoMatches) leftR1 leftR2
-
-    xs = filter (\(m1,_) -> valid (codomain m1)) pairs
     xs' = filter (\(m1,m2) -> satisfyRewritingConditions config (r1Left, mappingLeft m1) (r2Left, mappingLeft m2)) xs
     xs'' = filter (\(m1,m2) -> satisfyRewritingConditions config (r1Right, mappingLeft m1) (r2Right, mappingLeft m2)) xs'
-
 danglingExtension :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 danglingExtension gl l = tlUpdated
   where
@@ -149,22 +121,24 @@ interLevelConflictOneMatch config sndRule match = m0s
 
     m0s = concatMap defineMatches (removeDuplicatedGM axs [])
 
-    defineMatches ax = filter conflicts validMatches
-      where
+    defineMatches = allILCP config p p'' fl gl
+
+allILCP :: DPO m => DPOConfig -> Production m -> Production m -> m -> m -> Obj m -> [m]
+allILCP config p p'' fl gl ax = filter conflicts validMatches
+  where
         validMatches = findApplicableMatches config p ax
-        conflicts m0 = Prelude.null validM0''-- or all (==False) (map (\m'' -> satisfiesGluingConditions inj bigL'' m'') validM0'') --thesis def
-          where
-            matchesM0'' = findAllMatches config p'' (codomain m0)
-            validMatch = satisfiesRewritingConditions config p''
+    conflicts = ilCP config fl gl p''
+ilCP :: DPO m => DPOConfig -> m -> m -> Production m -> m -> Bool
+ilCP config fl gl p'' m0 = Prelude.null validM0''-- or all (==False) (map (\m'' -> satsGluing inj bigL'' m'') validM0'') --thesis def
+  where
+    matchesM0'' = allMatches config p'' (codomain m0)
+    validMatch = satsGluingAndNacs config p''
 
-            commutes m0'' = compose fl m0 == compose gl m0''
+    commutes m0'' = compose fl m0 == compose gl m0''
 
-            --paper definition
-            --validM0'' = filter (\m0'' -> not ((validMatch m0'') && (commutes m0''))) matchesM0''
-            validM0'' = filter (\m0'' -> commutes m0'' && validMatch m0'') matchesM0''
-
-parts :: [GraphMorphism a b] -> [[TypedGraphMorphism a b]]
-parts = map (partitions False)
+    --paper definition
+    --validM0'' = filter (\m0'' -> not ((validMatch m0'') && (commutes m0''))) matchesM0''
+    validM0'' = filter (\m0'' -> commutes m0'' && validMatch m0'') matchesM0''
 
 relevantGraphs :: DPOConfig -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
 --relevantGraphs inj dangFl dangGl = concatMap (\ax -> partitions inj (codomain ax)) axs

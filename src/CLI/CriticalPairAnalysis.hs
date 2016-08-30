@@ -8,7 +8,8 @@ import           Abstract.AdhesiveHLR      (EpiPairs)
 import           Abstract.DPO
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
-import           Analysis.InterLevelCP
+import           Analysis.Interlevel.EvolutionarySpans
+import           Analysis.Interlevel.InterLevelCP
 import           GlobalOptions
 import           Data.List
 import           Data.List.Split
@@ -84,8 +85,8 @@ execute globalOpts opts = do
                     "2rule;rule (number of conflicts)" :
                     map (\x -> f (head x) ++ " " ++ show (length x))
                         (groupBy (\x y -> f x == f y) (map fst conf))
-
-        evoConflicts = map (\r1 -> map (evo dpoConf r1) (GG.sndOrderRules gg)) (GG.sndOrderRules gg)
+        
+        evoConflicts = allEvolSpans dpoConf (GG.sndOrderRules gg)
 
         -- Second order conflicts/dependencies
         newNacs =
@@ -127,13 +128,25 @@ execute globalOpts opts = do
       (True, MonoMatches) -> putStrLn "Interlevel CP not defined for only injective matches"
       _ -> mapM_ putStrLn []
     
-    
     putStrLn ""
+        
+    putStrLn "Evolutionary Spans Interlevel CP"
+    mapM_ putStrLn (printEvoConflicts evoConflicts)
     
-    --print conf
-    
-    putStrLn "Evolution Interlevel CP"
-    print evoConflicts
+    putStrLn "CriticalPairAnalysis done."
+
+-- | Evolutionary Spans to Strings
+printEvoConflicts :: [(String, [EvoSpan a b])] -> [String]
+printEvoConflicts evo = map printOneEvo evo
+  where
+    printOneEvo e = fst e ++ "\n" ++ (printEvos (snd e))
+    -- FIX: test with CPE type, not with String
+    printEvos evos =
+      printConf "FolFol" evos ++
+      printConf "DuseFol" evos ++
+      printConf "FolDuse" evos ++
+      printConf "DuseDuse" evos
+    printConf str evos = str ++ " : " ++ show (countElem str (map (show . cpe) evos)) ++ "\n"
 
 printAnalysis :: (EpiPairs m, DPO m) =>
   AnalysisType -> DPOConfig -> [Production m] -> IO ()
