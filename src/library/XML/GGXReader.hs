@@ -22,6 +22,7 @@ import           Data.String.Utils       (startswith)
 import qualified Graph.Graph             as G
 import           Graph.GraphMorphism     as GM
 import           SndOrder.Rule
+import           Text.XML.HXT.Core        hiding (left,right)
 import           TypedGraph.Graph
 import qualified TypedGraph.GraphGrammar as GG
 import           TypedGraph.GraphRule    as GR
@@ -80,8 +81,8 @@ minimalSafetyNacsWithLog config oldGG = (newGG, printNewNacs)
     newNacs =
       map (\(n,r) ->
         let newRule = addMinimalSafetyNacs config r
-            tamNewNacs = length (nacs newRule)
-            tamNacs = length (nacs r)
+            tamNewNacs = length (getNACs newRule)
+            tamNacs = length (getNACs r)
          in ((n, newRule), (n, tamNewNacs - tamNacs))
         ) (GG.sndOrderRules oldGG)
     newGG = oldGG {GG.sndOrderRules = map fst newNacs}
