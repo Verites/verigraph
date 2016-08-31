@@ -9,6 +9,7 @@ module Analysis.Interlevel.InterLevelCP (interLevelCP, InterLevelCP()) where
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Morphism
+import           Data.List (nubBy)
 import           Graph.Graph
 import           Graph.GraphMorphism
 import           SndOrder.Morphism
@@ -24,11 +25,13 @@ data InterLevelCP a b = InterLevelCP {
   fstOrderMatch :: TypedGraphMorphism a b
   } deriving (Eq,Show)
 
+-- | Matches the second order rule with the first order, and calls theirs critical pairs
 interLevelCP :: DPOConfig -> (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String,String,Int,InterLevelCP a b)]
 interLevelCP config (sndName, sndRule) (fstName, fstRule) =
   map (\((x,y,z),w) -> (x,y,z,w)) unformattedConflicts
   
   where
+    newNames = map (\number -> (fstName, sndName, number)) ([0..] :: [Int])
     unformattedConflicts = zip newNames (concatMap conflictsForMatch validMatches)
     
     validMatches = findApplicableMatches config sndRule fstRule
@@ -38,8 +41,9 @@ interLevelCP config (sndName, sndRule) (fstName, fstRule) =
         conflicts <- interLevelConflictOneMatch config sndRule match
         return $ InterLevelCP match conflicts
 
-    newNames = map (\number -> (fstName, sndName, number)) ([0..] :: [Int])
-
+-- | Calculates the second order rewriting,
+-- defines the dangling extension for L and L'',
+-- gets all relevant graphs from L
 interLevelConflictOneMatch :: DPOConfig -> SndOrderRule a b -> RuleMorphism a b -> [TypedGraphMorphism a b]
 interLevelConflictOneMatch config sndRule match = m0s
   where
@@ -61,18 +65,27 @@ interLevelConflictOneMatch config sndRule match = m0s
     danglingExtFl = compose fl (danglingExtension fl bigL)
     danglingExtGl = compose gl (danglingExtension gl bigL'')
     
-    axs = relevantGraphs config danglingExtFl danglingExtGl
-
-    m0s = concatMap defineMatches (removeDuplicatedGM axs [])
-
+    axs = relevantMatches config danglingExtFl danglingExtGl
+    relevantGraphs = map codomain axs
+    
     defineMatches = allILCP config p p'' fl gl
+    
+    m0s = concatMap defineMatches (removeDuplicated relevantGraphs)
 
+removeDuplicated :: [GraphMorphism a b] -> [GraphMorphism a b]
+removeDuplicated = nubBy (\x y -> not $ Prelude.null $ find x y)
+  where
+    find :: GraphMorphism a b -> GraphMorphism a b -> [TypedGraphMorphism a b]
+    find = findMorphisms Isomorphism
+
+-- | For a relevant graph, gets all matches and check conflict
 allILCP :: DPO m => DPOConfig -> Production m -> Production m -> m -> m -> Obj m -> [m]
 allILCP config p p'' fl gl ax = filter conflicts validMatches
   where
     validMatches = findApplicableMatches config p ax
     conflicts = ilCP config fl gl p''
 
+-- | For a m0, checks if exists a conflicting m''0
 ilCP :: DPO m => DPOConfig -> m -> m -> Production m -> m -> Bool
 ilCP config fl gl p'' m0 = Prelude.null validM0''-- or all (==False) (map (\m'' -> satsGluing inj bigL'' m'') validM0'') --thesis def
   where
@@ -85,24 +98,14 @@ ilCP config fl gl p'' m0 = Prelude.null validM0''-- or all (==False) (map (\m'' 
     --validM0'' = filter (\m0'' -> not ((validMatch m0'') && (commutes m0''))) matchesM0''
     validM0'' = filter (\m0'' -> commutes m0'' && validMatch m0'') matchesM0''
 
-relevantGraphs :: DPOConfig -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
---relevantGraphs inj dangFl dangGl = concatMap (\ax -> partitions inj (codomain ax)) axs
-relevantGraphs config dangFl dangGl = concatMap (createAllSubobjects matchInjective) axs
+relevantMatches :: DPOConfig -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
+--relevantMatches inj dangFl dangGl = concatMap (\ax -> partitions inj (codomain ax)) axs
+relevantMatches config dangFl dangGl = concatMap (createAllSubobjects matchInjective) axs
   where
     matchInjective = matchRestriction config == MonoMatches
     (_,al) = calculatePushout dangFl dangGl
     --axs = induzedSubgraphs al
     axs = subgraphs (codomain al)
-
-removeDuplicatedGM :: [TypedGraphMorphism a b] -> [GraphMorphism a b] -> [GraphMorphism a b]
-removeDuplicatedGM [] act = act
-removeDuplicatedGM (x:xs) act = removeDuplicatedGM xs add
-  where
-    isos = concatMap (find (codomain x)) act
-    add = if Prelude.null isos then (codomain x):act else act
-
-find :: GraphMorphism a b -> GraphMorphism a b -> [TypedGraphMorphism a b]
-find = findMorphisms Isomorphism
 
 danglingExtension :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 danglingExtension gl l = tlUpdated
