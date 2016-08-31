@@ -11,11 +11,9 @@ import           Analysis.CriticalSequence
 import           Analysis.Interlevel.EvolutionarySpans
 import           Analysis.Interlevel.InterLevelCP
 import           Control.Monad (when)
-import           GlobalOptions
-import           Data.List
-import           Data.List.Split
 import           Data.List.Utils
 import           Data.Matrix               hiding ((<|>))
+import           GlobalOptions
 import           Options.Applicative
 import           SndOrder.Rule
 import qualified TypedGraph.GraphGrammar   as GG
@@ -80,7 +78,7 @@ execute globalOpts opts = do
         rules = map snd (GG.rules gg)
         rules2 = map snd (GG.sndOrderRules gg)
 
-        interlevelCPs = applySecondOrder (interLevelConflict dpoConf) (GG.rules gg) (GG.sndOrderRules gg)
+        interlevelCPs = applySecondOrder (interLevelCP dpoConf) (GG.rules gg) (GG.sndOrderRules gg)
         evoConflicts = allEvolSpans dpoConf (GG.sndOrderRules gg)
 
 
@@ -89,7 +87,9 @@ execute globalOpts opts = do
     putStrLn ""
     
     when secondOrder $ mapM_ putStrLn (XML.printMinimalSafetyNacsLog dpoConf printNewNacs)
-
+    
+    putStrLn ""
+    
     let fstOrderAnalysis = printAnalysis action dpoConf rules
         sndOrderAnalysis = printAnalysis action dpoConf rules2
     case outputFile opts of
@@ -100,27 +100,25 @@ execute globalOpts opts = do
     
     when secondOrder $
       if matchRestriction dpoConf == AnyMatches
-        then mapM_ putStrLn (printILCP interlevelCPs)
+        then mapM_ putStrLn $
+          "Inter-level Critical Pairs Analysis:" :
+          "(First Order Rule) (Sencond Order Rule) (Conflict Index)" :
+          (map printILCP interlevelCPs)
         else putStrLn "Inter-level CP not defined for only injective matches"
     
     putStrLn ""
     
     when secondOrder $
       mapM_ putStrLn $
-        "Evolutionary Spans Interlevel CP" : (printEvoConflicts evoConflicts)
+        "Evolutionary Spans Interlevel CP:" : (printEvoConflicts evoConflicts)
     
     putStrLn ""
     putStrLn "Critical Pair Analysis done!"
 
 -- | Inter-level CP to Strings
-printILCP :: [(String, b)] -> [String]
-printILCP conf =
-  "Inter-level Critical Pairs" :
-  "2rule rule (number of conflicts)" :
-    map (\x -> f (head x) ++ " " ++ show (length x))
-      (groupBy (\x y -> f x == f y) (map fst conf))
-  where
-    f str = join ";" (take 2 (splitOn ";" str))
+printILCP :: (String, String, Int, InterLevelCP a b) -> String
+printILCP (fstName, sndName, idx, _) =
+  fstName ++ " " ++ sndName ++ " (id:" ++ show idx ++ ") ... (conflict omitted)"
 
 -- | Evolutionary Spans to Strings
 printEvoConflicts :: [(String, [EvoSpan a b])] -> [String]

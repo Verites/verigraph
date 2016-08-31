@@ -4,7 +4,7 @@ Description : Implements the inter-level critical pairs
 Stability   : development
 -}
 
-module Analysis.Interlevel.InterLevelCP (interLevelConflict) where
+module Analysis.Interlevel.InterLevelCP (interLevelCP, InterLevelCP()) where
 
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
@@ -18,63 +18,27 @@ import           TypedGraph.GraphRule
 import           TypedGraph.Morphism
 import           TypedGraph.Subgraph
 
-danglingExtension :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
-danglingExtension gl l = tlUpdated
+
+data InterLevelCP a b = InterLevelCP {
+  sndOrderMatch :: RuleMorphism a b,
+  fstOrderMatch :: TypedGraphMorphism a b
+  } deriving (Eq,Show)
+
+interLevelCP :: DPOConfig -> (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String,String,Int,InterLevelCP a b)]
+interLevelCP config (sndName, sndRule) (fstName, fstRule) =
+  map (\((x,y,z),w) -> (x,y,z,w)) unformattedConflicts
+  
   where
-    ld = orphanNodesTyped l
-    tl = codomain l
-    t = codomain tl
-    tlx n' = any (\n -> applyNodeUnsafe tl n == n') ld
-    dangT = filter (\e -> tlx (sourceOfUnsafe t e) || tlx (targetOfUnsafe t e)) (edges t)
-
-    edgesToAdd = concatMap (\n -> map (\e -> (n,e)) dangT) ld
-
-    tlUpdated = foldl addEdge gl edgesToAdd
-
-    addEdge tgm (n,e) =
-      case (isSrc,isTgt) of
-        (True,True) -> createSrcTgt tgm e n
-        (True,False) -> createSrc tgm e n
-        (False,True) -> createTgt tgm e n
-        (False,False) -> error "danglingExtension: it's not supposed to be here"
-      where
-        typeNode = applyNodeUnsafe (codomain tgm) n
-        isSrc = typeNode == sourceOfUnsafe t e
-        isTgt = typeNode == targetOfUnsafe t e
-
-        createEdge tgm e s t = createEdgeCodTGM edgeId s t e tgm
-          where
-            edgeId = head (newEdgesTyped (codomain tgm))
-
-        createSrcTgt tgm e n = createTgt (createSrc tgm e n) e n
-
-        createSrc tgm e n = createEdge newGraph e n nodeId
-          where
-            nodeId = head (newNodesTyped (codomain tgm))
-            typeNewNode = targetOfUnsafe (codomain (codomain tgm)) e
-            newGraph = createNodeCodTGM nodeId typeNewNode tgm
-
-        createTgt tgm e n = createEdge newGraph e nodeId n
-          where
-            nodeId = head (newNodesTyped (codomain tgm))
-            typeNewNode = sourceOfUnsafe (codomain (codomain tgm)) e
-            newGraph = createNodeCodTGM nodeId typeNewNode tgm
-
-interLevelConflict :: DPOConfig -> (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String,(RuleMorphism a b, TypedGraphMorphism a b))]
-interLevelConflict config (sndName, sndRule) (fstName, fstRule) =
-  zip newNames (concatMap conflictsForMatch validMatches)
-
-  where
-    validMatches =
-      findApplicableMatches config sndRule fstRule
+    unformattedConflicts = zip newNames (concatMap conflictsForMatch validMatches)
+    
+    validMatches = findApplicableMatches config sndRule fstRule
 
     conflictsForMatch match =
       do
         conflicts <- interLevelConflictOneMatch config sndRule match
-        return (match, conflicts)
+        return $ InterLevelCP match conflicts
 
-    newNames =
-      map (\number -> fstName ++ ";" ++ sndName ++ ";" ++ show number) ([0..] :: [Int])
+    newNames = map (\number -> (fstName, sndName, number)) ([0..] :: [Int])
 
 interLevelConflictOneMatch :: DPOConfig -> SndOrderRule a b -> RuleMorphism a b -> [TypedGraphMorphism a b]
 interLevelConflictOneMatch config sndRule match = m0s
@@ -139,3 +103,45 @@ removeDuplicatedGM (x:xs) act = removeDuplicatedGM xs add
 
 find :: GraphMorphism a b -> GraphMorphism a b -> [TypedGraphMorphism a b]
 find = findMorphisms Isomorphism
+
+danglingExtension :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+danglingExtension gl l = tlUpdated
+  where
+    ld = orphanNodesTyped l
+    tl = codomain l
+    t = codomain tl
+    tlx n' = any (\n -> applyNodeUnsafe tl n == n') ld
+    dangT = filter (\e -> tlx (sourceOfUnsafe t e) || tlx (targetOfUnsafe t e)) (edges t)
+
+    edgesToAdd = concatMap (\n -> map (\e -> (n,e)) dangT) ld
+
+    tlUpdated = foldl addEdge gl edgesToAdd
+
+    addEdge tgm (n,e) =
+      case (isSrc,isTgt) of
+        (True,True) -> createSrcTgt tgm e n
+        (True,False) -> createSrc tgm e n
+        (False,True) -> createTgt tgm e n
+        (False,False) -> error "danglingExtension: it's not supposed to be here"
+      where
+        typeNode = applyNodeUnsafe (codomain tgm) n
+        isSrc = typeNode == sourceOfUnsafe t e
+        isTgt = typeNode == targetOfUnsafe t e
+
+        createEdge tgm e s t = createEdgeCodTGM edgeId s t e tgm
+          where
+            edgeId = head (newEdgesTyped (codomain tgm))
+
+        createSrcTgt tgm e n = createTgt (createSrc tgm e n) e n
+
+        createSrc tgm e n = createEdge newGraph e n nodeId
+          where
+            nodeId = head (newNodesTyped (codomain tgm))
+            typeNewNode = targetOfUnsafe (codomain (codomain tgm)) e
+            newGraph = createNodeCodTGM nodeId typeNewNode tgm
+
+        createTgt tgm e n = createEdge newGraph e nodeId n
+          where
+            nodeId = head (newNodesTyped (codomain tgm))
+            typeNewNode = sourceOfUnsafe (codomain (codomain tgm)) e
+            newGraph = createNodeCodTGM nodeId typeNewNode tgm
