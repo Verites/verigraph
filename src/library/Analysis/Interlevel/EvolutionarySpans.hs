@@ -31,9 +31,14 @@ data EvoSpan a b = EvoSpan {
   } deriving (Eq,Show)
 
 -- | Given a list of second order rules, calculate all Evolutionary Spans
--- (FIX: check if is needed to calculate symetric cases)
+-- This analysis is supposed to be symmetric, only considering this case
 allEvolSpans :: DPOConfig -> [(String, SndOrderRule a b)] -> [(String, [EvoSpan a b])]
-allEvolSpans dpoConf sndOrderRules = concatMap (\r1 -> map (evolSpans dpoConf r1) sndOrderRules) sndOrderRules
+-- combine rules symmetrically
+allEvolSpans dpoConf [] = []
+allEvolSpans dpoConf rules@(r:rs) = map (evolSpans dpoConf r) rules ++ allEvolSpans dpoConf rs
+
+-- combine rules asymmetrically
+--allEvolSpans dpoConf sndOrderRules = concatMap (\r1 -> map (evolSpans dpoConf r1) sndOrderRules) sndOrderRules
 
 -- | Gets all Evolutionary Spans of two Second Order Rules
 evolSpans :: DPOConfig -> (String, SndOrderRule a b) -> (String, SndOrderRule a b) -> (String, [EvoSpan a b])
