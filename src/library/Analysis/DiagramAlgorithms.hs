@@ -128,7 +128,7 @@ calculateH21InRewriting conf n = mapMaybe
         composeNQ21 = compose n q21
         validH21 = filter (\h21Cand -> compose h21Cand e1 == composeNQ21) h21Candidates
     in case validH21 of --if exists it is unique
-      [] -> Nothing
+      []      -> Nothing
       (h21:_) -> Just (m1', q21, k, e1, m1, d1, h21))
 
 -- | Define m2 = d1 . h21: L2 -> K

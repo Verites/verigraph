@@ -64,7 +64,7 @@ calculateDependencies flag = flag `elem` [Both,Dependencies]
 execute :: GlobalOptions -> Options -> IO ()
 execute globalOpts opts = do
     let dpoConf = dpoConfig globalOpts
-    
+
     (gg,printNewNacs) <- XML.readGrammar (inputFile globalOpts) dpoConf
     ggName <- XML.readGGName (inputFile globalOpts)
     names <- XML.readNames (inputFile globalOpts)
@@ -85,11 +85,11 @@ execute globalOpts opts = do
     putStrLn $ "injective satisfability of nacs: " ++ show (nacSatisfaction dpoConf)
     putStrLn $ "only injective matches morphisms: " ++ show (matchRestriction dpoConf)
     putStrLn ""
-    
+
     when secondOrder $ mapM_ putStrLn (XML.printMinimalSafetyNacsLog dpoConf printNewNacs)
-    
+
     putStrLn ""
-    
+
     let fstOrderAnalysis = printAnalysis action dpoConf rules
         sndOrderAnalysis = printAnalysis action dpoConf rules2
     case outputFile opts of
@@ -97,7 +97,7 @@ execute globalOpts opts = do
       Nothing -> if secondOrder
                    then sndOrderAnalysis
                    else fstOrderAnalysis
-    
+
     when secondOrder $
       if matchRestriction dpoConf == AnyMatches
         then mapM_ putStrLn $
@@ -105,13 +105,13 @@ execute globalOpts opts = do
           "(First Order Rule) (Sencond Order Rule) (Conflict Index)" :
           (map printILCP interlevelCPs)
         else putStrLn "Inter-level CP not defined for only injective matches"
-    
+
     putStrLn ""
-    
+
     when secondOrder $
       mapM_ putStrLn $
         "Evolutionary Spans Interlevel CP:" : (printEvoConflicts evoConflicts)
-    
+
     putStrLn ""
     putStrLn "Critical Pair Analysis done!"
 
