@@ -62,6 +62,12 @@ readGrammar fileName dpoConfig = do
       sndOrderRules = instantiateSndOrderRules parsedTypeGraph sndOrdRules
       gg = GG.graphGrammar initGraph (zip rulesNames rules) sndOrderRules
   
+  _ <- (case L.elemIndices False (map valid (map snd sndOrderRules)) of
+          []  -> []
+          [a] -> error $ "Second Order Rule " ++ show a ++ " is not valid (starting from 0)."
+          l   -> error $ "Second Order Rules " ++ show l ++ " are not valid (starting from 0)."
+          ) `seq` return ()
+  
   return $ minimalSafetyNacsWithLog dpoConfig gg
 
 readGGName :: String -> IO String
