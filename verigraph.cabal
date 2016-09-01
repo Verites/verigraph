@@ -37,7 +37,8 @@ library
                        Analysis.ConcurrentRules
                        Analysis.CriticalPairs
                        Analysis.CriticalSequence
-                       Analysis.InterLevelCP
+                       Analysis.Interlevel.EvolutionarySpans
+                       Analysis.Interlevel.InterLevelCP
                        Dot
                        Graph.Graph
                        Graph.GraphMorphism

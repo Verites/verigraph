@@ -52,7 +52,9 @@ crDependencies =
 
 execute :: GlobalOptions -> Options -> IO ()
 execute globalOpts opts = do
-    gg <- XML.readGrammar (inputFile globalOpts)
+    let dpoConf = dpoConfig globalOpts
+    
+    (gg,_) <- XML.readGrammar (inputFile globalOpts) dpoConf
     ggName <- XML.readGGName (inputFile globalOpts)
     names <- XML.readNames (inputFile globalOpts)
     sequences <- XML.readSequences gg (inputFile globalOpts)

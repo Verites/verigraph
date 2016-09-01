@@ -64,7 +64,9 @@ allOptions =
 execute :: (GlobalOptions, Options) -> IO ()
 execute (globalOpts, options) =
   do
-    grammar <- XML.readGrammar (inputFile globalOpts)
+    let dpoConf = dpoConfig globalOpts
+    
+    (grammar,_) <- XML.readGrammar (inputFile globalOpts) dpoConf
     ensureAllValid (rules grammar) $ \name -> "Invalid rule '" ++ name ++ "'"
 
     graphs <- XML.readGraphs (inputFile globalOpts)

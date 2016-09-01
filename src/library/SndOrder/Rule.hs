@@ -3,7 +3,6 @@
 module SndOrder.Rule (
     SndOrderRule
   , addMinimalSafetyNacs
-  , minimalSafetyNacs
   , applySndOrderRule
   , applySecondOrder
   ) where
@@ -55,8 +54,6 @@ import           TypedGraph.Morphism
 -- right = interface rule, codomain rule, rightL, rightK, rightR
 type SndOrderRule a b = Production (RuleMorphism a b)
 
-data Side = LeftSide | RightSide
-
 -- | Receives a function that works with a second order and a first order rule.
 -- Apply this function on all possible combinations of rules.
 applySecondOrder ::
@@ -102,6 +99,8 @@ applySndOrderRule config (sndName,sndRule) (fstName,fstRule) =
   in
     zip newNames newRules
 
+-- *** Minimal Safety Nacs
+
 -- | Adds the minimal safety nacs needed to this production always produce a second order rule.
 -- If the nacs to be added not satisfies the others nacs, then it do not need to be added.
 addMinimalSafetyNacs :: DPOConfig -> SndOrderRule a b -> SndOrderRule a b
@@ -111,6 +110,8 @@ addMinimalSafetyNacs nacInj sndRule =
     (getRHS sndRule)
     (getNACs sndRule ++
      filter (satisfiesNACs nacInj sndRule) (minimalSafetyNacs sndRule))
+
+data Side = LeftSide | RightSide
 
 -- | Generates the minimal safety NACs of a 2-rule.
 -- probL and probR done, pairL and pairR to do.
