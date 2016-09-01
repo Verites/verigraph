@@ -182,7 +182,7 @@ instantiateNac lhs tg (nacGraph, maps) = nacTgm
     (_,nacTgm) = instantiateSpan lhs nacMorphism maps
 
 instantiateTypedGraph :: ParsedTypedGraph -> G.Graph a b -> GraphMorphism a b
-instantiateTypedGraph (_, nodes, edges) tg = gmbuild g tg nodeTyping edgeTyping
+instantiateTypedGraph (_, nodes, edges) tg = buildGraphMorphism g tg nodeTyping edgeTyping
   where
     g = G.build nodesG edgesG
 

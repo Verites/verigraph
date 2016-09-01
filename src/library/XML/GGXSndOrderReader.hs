@@ -44,7 +44,7 @@ instantiateNacMorphisms :: TypedGraph a b -> TypedGraph a b
 instantiateNacMorphisms graphL graphN mapping = typedMorphism graphL graphN maps
   where
     mapElements = map (\(x,_,y) -> (read y :: Int, read x :: Int)) mapping
-    maps = gmbuild
+    maps = buildGraphMorphism
              (domain graphL)
              (domain graphN)
              mapElements

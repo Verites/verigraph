@@ -6,7 +6,7 @@ module Graph.GraphMorphism (
     -- * Construction
     , Graph.GraphMorphism.empty
     , graphMorphism
-    , gmbuild
+    , buildGraphMorphism
     -- * Transformation
     , inverse
     , updateCodomain
@@ -58,8 +58,6 @@ instance Eq (GraphMorphism a b) where
 
 instance Show (GraphMorphism a b) where
     show m =
---        "Domain: " ++ (show $ getDomain m) ++
---        "\nCodomain: " ++ (show $ getCodomain m) ++
         "\nNode mappings: \n" ++
         concatMap (\n -> show n ++ " --> " ++ show (applyNode m n) ++ "\n")
                   (G.nodes $ getDomain m) ++
@@ -82,14 +80,14 @@ applyNode :: GraphMorphism a b -> G.NodeId -> Maybe G.NodeId
 applyNode m ln =
     case R.apply (nodeRelation m) ln of
         (x:_) -> Just x
-        _ -> Nothing
+        _     -> Nothing
 
 -- | Return the edge to which @le@ gets mapped.
 applyEdge :: GraphMorphism a b -> G.EdgeId -> Maybe G.EdgeId
 applyEdge m le =
     case R.apply (edgeRelation m) le of
         (x:_) -> Just x
-        _ -> Nothing
+        _     -> Nothing
 
 -- | Return the node to which @le@ gets mapped or error in the case of undefined
 applyNodeUnsafe :: GraphMorphism a b -> NodeId -> NodeId
@@ -104,8 +102,8 @@ empty :: Graph a b -> Graph a b -> GraphMorphism a b
 empty gA gB = GraphMorphism gA gB (R.empty (nodes gA) (nodes gB)) (R.empty (edges gA) (edges gB))
 
 -- | Construct a graph morphism
-gmbuild :: Graph a b -> Graph a b -> [(Int,Int)] -> [(Int,Int)] -> GraphMorphism a b
-gmbuild gA gB n = foldr (uncurry updateEdges . (\(x,y) -> (EdgeId x,EdgeId y))) g
+buildGraphMorphism :: Graph a b -> Graph a b -> [(Int,Int)] -> [(Int,Int)] -> GraphMorphism a b
+buildGraphMorphism gA gB n = foldr (uncurry updateEdges . (\(x,y) -> (EdgeId x,EdgeId y))) g
     where
         g = foldr (uncurry updateNodes . (\(x,y) -> (NodeId x,NodeId y))) (Graph.GraphMorphism.empty gA gB) n
 

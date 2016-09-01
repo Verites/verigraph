@@ -307,7 +307,7 @@ instance EpiPairs (TypedGraphMorphism a b) where
 
   createAllSubobjects inj m1 = map fst part
     where
-      m2 = gmbuild G.empty G.empty [] []
+      m2 = buildGraphMorphism G.empty G.empty [] []
       part = map (mountTGMBoth m1 m2) (genGraphEqClass (mixGM (m1,inj) (m2,inj)))
 
   createJointlyEpimorphicPairsFromNAC config r nac =

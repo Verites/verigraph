@@ -31,13 +31,13 @@ mountG (nodes,edges) = G.build nods edgs
     nameAndSrc node = (nname node, inLeftn node)
 
 mountTypeGraph :: GP.EqClassGraph -> G.Graph a b -> G.Graph a b -> TypedGraph a b
-mountTypeGraph gp g typeG = GM.gmbuild g typeG nodes edges
+mountTypeGraph gp g typeG = GM.buildGraphMorphism g typeG nodes edges
   where
     nodes = map (\(n:_) -> (GP.nid n, GP.ntype n)) (fst gp)
     edges = map (\(e:_) -> (GP.eid e, GP.etype e)) (snd gp)
 
 mountMapping :: Bool -> GP.EqClassGraph -> GM.GraphMorphism a b -> GM.GraphMorphism a b
-mountMapping side g@(nodes,edges) m = GM.gmbuild (M.domain m) (mountG g) nods edgs
+mountMapping side g@(nodes,edges) m = GM.buildGraphMorphism (M.domain m) (mountG g) nods edgs
   where
     nods = map (\(G.NodeId n) -> (n, nodeId n)) (G.nodes (M.domain m))
     nodeId n = GP.nid $ head $ getListNodeName (side,n) nodes
