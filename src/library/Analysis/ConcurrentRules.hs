@@ -57,7 +57,7 @@ epiPairsForConcurrentRule AllOverlapings config c n =
   in filter isValidPair allPairs
 
 concurrentRuleForPair :: (DPO m, EpiPairs m, Eq (Obj m)) => DPOConfig -> Production m -> Production m -> (m, m) -> Production m
-concurrentRuleForPair config c n pair = constructProduction l r (dmc ++ lp)
+concurrentRuleForPair config c n pair = buildProduction l r (dmc ++ lp)
   where
     pocC = calculatePushoutComplement (fst pair) (getRHS c)
     pocN = calculatePushoutComplement (snd pair) (getLHS n)
@@ -67,6 +67,6 @@ concurrentRuleForPair config c n pair = constructProduction l r (dmc ++ lp)
     l = compose (fst pb) (snd poC)
     r = compose (snd pb) (snd poN)
     dmc = concatMap (nacDownwardShift config (fst poC)) (getNACs c)
-    inverseP = constructProduction (snd pocC) (snd poC) []
+    inverseP = buildProduction (snd pocC) (snd poC) []
     den = concatMap (nacDownwardShift config (snd pair)) (getNACs n)
     lp = concatMap (shiftNacOverProduction config inverseP) den

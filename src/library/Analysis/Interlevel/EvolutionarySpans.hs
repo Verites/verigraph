@@ -55,8 +55,8 @@ evolSpans config (n1,r1) (n2,r2) = (ruleNames, spans)
     r1Right = codomain (getRHS r1)
     r2Right = codomain (getRHS r2)
 
-    leftR1 = constructProduction (mappingLeft (getLHS r1)) (mappingLeft (getRHS r1)) []
-    leftR2 = constructProduction (mappingLeft (getLHS r2)) (mappingLeft (getRHS r2)) []
+    leftR1 = buildProduction (mappingLeft (getLHS r1)) (mappingLeft (getRHS r1)) []
+    leftR2 = buildProduction (mappingLeft (getLHS r2)) (mappingLeft (getRHS r2)) []
 
     pairs = createJointlyEpimorphicPairs (matchRestriction config == MonoMatches) leftR1 leftR2
 

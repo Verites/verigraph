@@ -167,7 +167,7 @@ instance EpiPairs (RuleMorphism a b) where
                                        in map (\(rr1,rr2,r) -> (k1,k2,ll1,ll2,l,rr1,rr2,r)) rs) lefts
 
       ret = map (\(k1,k2,l1,l2,l,r1,r2,r) ->
-                   let rule = constructProduction l r []
+                   let rule = buildProduction l r []
                    in (ruleMorphism m1 rule l1 k1 r1,
                        ruleMorphism m2 rule l2 k2 r2)) rights
 
@@ -226,7 +226,7 @@ instance AdhesiveHLR (RuleMorphism a b) where
        r = commutingMorphismSameCodomain
              (compose leftK' (getRHS ruleG)) leftR'
              matchK' (compose (getRHS ruleK) matchR')
-       newRule = constructProduction l r []
+       newRule = buildProduction l r []
        k = RuleMorphism ruleK newRule matchL' matchK' matchR'
        l' = RuleMorphism newRule ruleG leftL' leftK' leftR'
 
@@ -241,7 +241,7 @@ instance AdhesiveHLR (RuleMorphism a b) where
        r = commutingMorphismSameDomain
              rightK' (compose (getRHS ruleD) rightR')
              matchK' (compose (getRHS ruleR) matchR')
-       newRule = constructProduction l r []
+       newRule = buildProduction l r []
        m' = RuleMorphism ruleR newRule matchL' matchK' matchR'
        r' = RuleMorphism ruleD newRule rightL' rightK' rightR'
 

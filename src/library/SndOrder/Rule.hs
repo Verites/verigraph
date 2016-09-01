@@ -69,7 +69,7 @@ applySecondOrderListRules f sndRule = concatMap (f sndRule)
 instance DPO (RuleMorphism a b) where
   invertProduction config r = addMinimalSafetyNacs config newRule
     where
-      newRule = constructProduction (getRHS r) (getLHS r) (concatMap (shiftNacOverProduction config r) (getNACs r))
+      newRule = buildProduction (getRHS r) (getLHS r) (concatMap (shiftNacOverProduction config r) (getNACs r))
 
   -- | Needs the satisfiesNACs extra verification because not every satisfiesGluingConditions nac can be shifted
   shiftNacOverProduction config rule n =
@@ -78,7 +78,7 @@ instance DPO (RuleMorphism a b) where
       satisfiesNACs config ruleWithOnlyMinimalSafetyNacs n]
 
     where
-      ruleWithOnlyMinimalSafetyNacs = constructProduction (getLHS rule) (getRHS rule) (minimalSafetyNacs rule)
+      ruleWithOnlyMinimalSafetyNacs = buildProduction (getLHS rule) (getRHS rule) (minimalSafetyNacs rule)
 
   partiallyMonomorphic m l =
     partiallyMonomorphic (mappingLeft m)      (mappingLeft l)      &&
@@ -105,7 +105,7 @@ applySndOrderRule config (sndName,sndRule) (fstName,fstRule) =
 -- If the nacs to be added not satisfies the others nacs, then it do not need to be added.
 addMinimalSafetyNacs :: DPOConfig -> SndOrderRule a b -> SndOrderRule a b
 addMinimalSafetyNacs nacInj sndRule =
-  constructProduction
+  buildProduction
     (getLHS sndRule)
     (getRHS sndRule)
     (getNACs sndRule ++
@@ -203,7 +203,7 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
                         (tgt e) (typeTgt e) (tgtInK e) (tgtInR e))
         side otherSide
 
-    nacRule = constructProduction updateLeft updateRight []
+    nacRule = buildProduction updateLeft updateRight []
     mapL = idMap graphL (codomain updateLeft)
     mapK = idMap graphK (domain updateLeft)
     mapR = idMap graphR (codomain updateRight)

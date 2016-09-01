@@ -7,7 +7,7 @@
 module Abstract.DPO
   (
     Production
-  , constructProduction
+  , buildProduction
 
   , getLHS
   , getRHS
@@ -78,8 +78,8 @@ getNACs = nacs
 -- the morphism /r : K -> R/, and the nacs /L -> Ni/, respectively.
 --
 -- Note: this doesn't check that the production is valid.
-constructProduction :: (DPO m, Eq (Obj m)) => m -> m -> [m] -> Production m
-constructProduction = Production
+buildProduction :: (DPO m, Eq (Obj m)) => m -> m -> [m] -> Production m
+buildProduction = Production
 
 -- | Obtain all matches from the production into the given object, even if they
 -- aren't applicable.

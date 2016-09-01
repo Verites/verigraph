@@ -167,7 +167,7 @@ lookupNodes nodes n = fromMaybe
     changeToListOfPairs = map (\(x,_,y) -> (x,y)) nodes
 
 instantiateRule :: ParsedTypeGraph -> RuleWithNacs -> GraphRule a b
-instantiateRule typeGraph ((_, lhs, rhs, mappings), nacs) = constructProduction lhsTgm rhsTgm nacsTgm
+instantiateRule typeGraph ((_, lhs, rhs, mappings), nacs) = buildProduction lhsTgm rhsTgm nacsTgm
   where
     tg = instantiateTypeGraph typeGraph
     lm = instantiateTypedGraph lhs tg
