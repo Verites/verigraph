@@ -72,84 +72,84 @@ invertTGM :: TypedGraphMorphism a b -> TypedGraphMorphism a b
 invertTGM tgm =
   TypedGraphMorphism { getDomain = codomain tgm
                      , getCodomain = codomain tgm
-                     , mapping = GM.inverse (mapping tgm)
+                     , mapping = invertGraphMorphism (mapping tgm)
                      }
 
 -- | This function adds an edge e1 (with source s1, target t1 and type tp) to the domain of the typed graph morphism, and associate it to e2
 --   It assumes s1, t1, e2, tp already exist, and that e1 does not exist.
 createEdgeDomTGM :: G.EdgeId -> G.NodeId -> G.NodeId -> G.EdgeId -> G.EdgeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 createEdgeDomTGM e1 s1 t1 tp e2 tgm =
-  tgm { getDomain = GM.createEdgeDom e1 s1 t1 tp (domain tgm)
-      , mapping = GM.createEdgeDom e1 s1 t1 e2 (mapping tgm)
+  tgm { getDomain = GM.createEdgeOnDomain e1 s1 t1 tp (domain tgm)
+      , mapping = GM.createEdgeOnDomain e1 s1 t1 e2 (mapping tgm)
       }
 
 -- | This function adds an edge e2 (with source s2, target t2 and type tp) to the codomain of the typed graph morphism
 --   It assumes s2, t2, tp already exist, and that e2 does not exist.
 createEdgeCodTGM :: G.EdgeId -> G.NodeId -> G.NodeId -> G.EdgeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 createEdgeCodTGM e2 s2 t2 tp tgm =
-  tgm { getCodomain = GM.createEdgeDom e2 s2 t2 tp (codomain tgm)
-      , mapping = GM.createEdgeCod e2 s2 t2 (mapping tgm)
+  tgm { getCodomain = GM.createEdgeOnDomain e2 s2 t2 tp (codomain tgm)
+      , mapping = GM.createEdgeOnCodomain e2 s2 t2 (mapping tgm)
       }
 
 -- | This function adds a node n1 (type tp) to the domain of the typed graph morphism, and associate it to n2
 --   It assumes n2 and tp already exist, and that n1 does not exist.
 createNodeDomTGM :: G.NodeId -> G.NodeId -> G.NodeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 createNodeDomTGM n1 tp n2 tgm =
-  tgm { getDomain = GM.createNodeDom n1 tp (domain tgm)
-      , mapping = GM.createNodeDom n1 n2 (mapping tgm)
+  tgm { getDomain = GM.createNodeOnDomain n1 tp (domain tgm)
+      , mapping = GM.createNodeOnDomain n1 n2 (mapping tgm)
       }
 
 -- | This function adds a node n2 (type tp) to the codomain of the typed graph morphism
 --   It assumes tp already exist, and that n2 does not exist.
 createNodeCodTGM :: G.NodeId -> G.NodeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 createNodeCodTGM n2 tp tgm =
-  tgm { getCodomain = GM.createNodeDom n2 tp (codomain tgm)
-      , mapping = GM.createNodeCod n2 (mapping tgm)
+  tgm { getCodomain = GM.createNodeOnDomain n2 tp (codomain tgm)
+      , mapping = GM.createNodeOnCodomain n2 (mapping tgm)
       }
 
 -- | updates a typed graph morphism, mapping node n1 to node n2. It assumes both nodes already exist.
 updateNodeRelationTGM :: G.NodeId -> G.NodeId -> G.NodeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 updateNodeRelationTGM n1 n2 tp tgm =
-  TypedGraphMorphism { getDomain = GM.updateNodeRelationGM n1 tp (domain tgm)
-                     , getCodomain = GM.updateNodeRelationGM n2 tp (codomain tgm)
-                     , mapping = GM.updateNodeRelationGM n1 n2 (mapping tgm)
+  TypedGraphMorphism { getDomain = GM.updateNodeRelation n1 tp (domain tgm)
+                     , getCodomain = GM.updateNodeRelation n2 tp (codomain tgm)
+                     , mapping = GM.updateNodeRelation n1 n2 (mapping tgm)
                      }
 
 -- | updates a typed graph morphism, mapping edge e1 to edge e2. It assumes both edges already exist.
 updateEdgeRelationTGM :: G.EdgeId -> G.EdgeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 updateEdgeRelationTGM e1 e2 tgm =
-  tgm { mapping = GM.updateEdgeRelationGM e1 e2 (mapping tgm) }
+  tgm { mapping = GM.updateEdgeRelation e1 e2 (mapping tgm) }
 
 -- | Remove a node from the domain of a typed graph morphism
 removeNodeDomTyped :: G.NodeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 removeNodeDomTyped n tgm =
-  tgm { getDomain = GM.removeNodeDom n (domain tgm)
-      , mapping = GM.removeNodeDom n (mapping tgm)
+  tgm { getDomain = GM.removeNodeFromDomain n (domain tgm)
+      , mapping = GM.removeNodeFromDomain n (mapping tgm)
       }
 
 -- | Remove an edge from the domain of a typed graph morphism
 removeEdgeDomTyped :: G.EdgeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 removeEdgeDomTyped e tgm =
-  tgm { getDomain = GM.removeEdgeDom e (domain tgm)
-      , mapping = GM.removeEdgeDom e (mapping tgm)
+  tgm { getDomain = removeEdgeFromDomain e (domain tgm)
+      , mapping = removeEdgeFromDomain e (mapping tgm)
       }
 
 -- | Remove a node from the codomain of a typed graph morphism
 removeNodeCodTyped :: G.NodeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 removeNodeCodTyped n tgm =
-  tgm { getCodomain = GM.removeNodeDom n (codomain tgm)
-      , mapping = GM.removeNodeCod n (mapping tgm)
+  tgm { getCodomain = GM.removeNodeFromDomain n (codomain tgm)
+      , mapping = GM.removeNodeFromCodomain n (mapping tgm)
       }
 
 -- | Remove an edge from the domain of a typed graph morphism
 removeEdgeCodTyped :: G.EdgeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 removeEdgeCodTyped e tgm =
-  tgm { getCodomain = GM.removeEdgeDom e (codomain tgm)
-      , mapping = GM.removeEdgeCod e (mapping tgm) }
+  tgm { getCodomain = removeEdgeFromDomain e (codomain tgm)
+      , mapping = removeEdgeFromCodomain e (mapping tgm) }
 
 -- | Test if a @nac@ is partial injective (injective out of @m@)
 partialInjectiveTGM :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
-partialInjectiveTGM nac q = GM.partialInjectiveGM (mapping nac) (mapping q)
+partialInjectiveTGM nac q = GM.isPartialInjective (mapping nac) (mapping q)
 
 -- | Creates a TGM mapping the same elements of theirs codomains, from @tgm1@ to @tgm2@
 idMap :: GraphMorphism a b -> GraphMorphism a b -> TypedGraphMorphism a b
