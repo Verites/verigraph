@@ -58,7 +58,7 @@ instance Renderable REdge where
     render (REdge state gstate e) =
         let gr = get getGraph gstate
             coords = do
-                (src, tgt) <- G.nodesConnectedTo gr e
+                (src, tgt) <- G.nodesOf gr e
                 srcC <- get nodeCoords Control.Applicative.<$> G.nodePayload gr src
                 tgtC <- get nodeCoords Control.Applicative.<$> G.nodePayload gr tgt
                 p <- G.edgePayload gr e
