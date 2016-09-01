@@ -113,10 +113,10 @@ tests dpoConf rules = test $
 main :: IO Counts
 main = do
   let fileName = "grammars/teseRodrigo.ggx"
-  gg <- XML.readGrammar fileName
+      dpoConf = DPOConfig MonoMatches PartiallyMonomorphicNAC
+  (gg,_) <- XML.readGrammar fileName dpoConf
 
-  let dpoConf = DPOConfig MonoMatches PartiallyMonomorphicNAC
-      rules = map snd (GG.rules gg)
+  let rules = map snd (GG.rules gg)
   
   runTestTT (tests dpoConf rules)
 
