@@ -1,10 +1,10 @@
 module TypedGraph.Partitions.GPToVeri (
-   mountTGMBoth
+   mountTypedGraphMorphisms
    ) where
 
 {-Converts from GraphPart to Verigraph structures-}
 
-import qualified Abstract.Morphism               as M
+import           Abstract.Morphism
 import qualified Graph.Graph                     as G
 import qualified Graph.GraphMorphism             as GM
 import           TypedGraph.Graph
@@ -12,17 +12,15 @@ import qualified TypedGraph.MorphismCore         as TGM
 import           TypedGraph.Partitions.GraphPart as GP
 
 -- | For two typed graphs and a EpiPair (in GraphPart format) return two TypedGraphMorphism for the graph in verigraph format
-mountTGMBoth :: GM.GraphMorphism a b -> GM.GraphMorphism a b
-             -> GP.EqClassGraph
-             -> (TGM.TypedGraphMorphism a b, TGM.TypedGraphMorphism a b)
-mountTGMBoth l r g = (mountTGM True l, mountTGM False r)
+mountTypedGraphMorphisms :: TypedGraph a b -> TypedGraph a b -> GP.EqClassGraph -> (TGM.TypedGraphMorphism a b, TGM.TypedGraphMorphism a b)
+mountTypedGraphMorphisms tg1 tg2 graphPartition = (mountTGM True tg1, mountTGM False tg2)
   where
-    typeGraph = M.codomain l
-    typedG = mountTypeGraph g (mountG g) typeGraph
-    mountTGM side match = TGM.typedMorphism match typedG (mountMapping side g match)
+    typeGraph = codomain tg1
+    typedGraph = mountTypedGraph graphPartition typeGraph
+    mountTGM side match = TGM.typedMorphism match typedGraph (mountMapping side graphPartition match)
 
-mountG :: GP.EqClassGraph -> G.Graph a b
-mountG (nodes,edges) = G.build nods edgs
+mountGraph :: GP.EqClassGraph -> G.Graph a b
+mountGraph (nodes,edges) = G.build nods edgs
   where
     nods = map (\(n:_) -> GP.nid n) nodes
     edgs = map (\(e:_) -> (GP.eid e, nodeSrc e, nodeTgt e)) edges
@@ -30,18 +28,19 @@ mountG (nodes,edges) = G.build nods edgs
     nodeTgt e = GP.nid $ GP.getNode (nameAndSrc (GP.target e)) nodes
     nameAndSrc node = (nname node, inLeftn node)
 
-mountTypeGraph :: GP.EqClassGraph -> G.Graph a b -> G.Graph a b -> TypedGraph a b
-mountTypeGraph gp g typeG = GM.buildGraphMorphism g typeG nodes edges
+mountTypedGraph :: GP.EqClassGraph -> G.Graph a b -> TypedGraph a b
+mountTypedGraph graphPartition typeGraph = GM.buildGraphMorphism graph typeGraph nodes edges
   where
-    nodes = map (\(n:_) -> (GP.nid n, GP.ntype n)) (fst gp)
-    edges = map (\(e:_) -> (GP.eid e, GP.etype e)) (snd gp)
+    nodes = map (\(n:_) -> (GP.nid n, GP.ntype n)) (fst graphPartition)
+    edges = map (\(e:_) -> (GP.eid e, GP.etype e)) (snd graphPartition)
+    graph = mountGraph graphPartition
 
 mountMapping :: Bool -> GP.EqClassGraph -> GM.GraphMorphism a b -> GM.GraphMorphism a b
-mountMapping side g@(nodes,edges) m = GM.buildGraphMorphism (M.domain m) (mountG g) nods edgs
+mountMapping side g@(nodes,edges) m = GM.buildGraphMorphism (domain m) (mountGraph g) nods edgs
   where
-    nods = map (\(G.NodeId n) -> (n, nodeId n)) (G.nodes (M.domain m))
+    nods = map (\(G.NodeId n) -> (n, nodeId n)) (G.nodes (domain m))
     nodeId n = GP.nid $ head $ getListNodeName (side,n) nodes
-    edgs = map (\(G.EdgeId e) -> (e, edgeId e)) (G.edges (M.domain m))
+    edgs = map (\(G.EdgeId e) -> (e, edgeId e)) (G.edges (domain m))
     edgeId e = GP.eid $ head $ getListEdgeName (side,e) edges
 
 -- | Returns the list which Node is in [[Node]]

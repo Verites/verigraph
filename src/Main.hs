@@ -611,7 +611,7 @@ kr''      = foldr (\(a,sa,ta,b,sb,tb,tp) tgm -> TGM.updateEdgeRelationTGM a b (T
 -----
 
 --graphEqClass = map (\x -> GP.genEqClass (mixTGM (right getDATA) x)) (nacs sendMsg)
---md = map (\x -> (map (mountTGMBoth (right getDATA) x graphEqClass))) (nacs sendMsg)
+--md = map (\x -> (map (mountTypedGraphMorphisms (right getDATA) x graphEqClass))) (nacs sendMsg)
 --ms = map (map (mountTGM (right getDATA) "Right")) (map(\x -> GP.genEqClass (mixTGM x (right getDATA))) (nacs sendMsg))
 
 --injectiveMatches = True
