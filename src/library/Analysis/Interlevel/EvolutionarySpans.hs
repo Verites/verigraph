@@ -34,7 +34,7 @@ data EvoSpan a b = EvoSpan {
 -- This analysis is supposed to be symmetric, here is considering only this case
 allEvolSpans :: DPOConfig -> [(String, SndOrderRule a b)] -> [(String, [EvoSpan a b])]
 -- combine rules symmetrically
-allEvolSpans dpoConf [] = []
+allEvolSpans _ [] = []
 allEvolSpans dpoConf rules@(r:rs) = map (evolSpans dpoConf r) rules ++ allEvolSpans dpoConf rs
 
 -- combine rules asymmetrically

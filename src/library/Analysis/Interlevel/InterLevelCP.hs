@@ -4,7 +4,7 @@ Description : Implements the inter-level critical pairs
 Stability   : development
 -}
 
-module Analysis.Interlevel.InterLevelCP (interLevelCP, InterLevelCP()) where
+module Analysis.Interlevel.InterLevelCP (interLevelCP, InterLevelCP(..)) where
 
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO

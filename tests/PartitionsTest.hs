@@ -29,7 +29,7 @@ tests =
         )
 
 getPart :: GraphMorphism a b -> [TypedGraphMorphism a b]
-getPart = partitions False
+getPart = createAllSubobjects False
 
 limitBellNumber = 8
 ids = [1..limitBellNumber]
@@ -47,7 +47,6 @@ graph2 = foldr
            (\e -> createEdgeDom (EdgeId e) (NodeId 0) (NodeId 0) (EdgeId 0))
            (updateNodes (NodeId 0) (NodeId 0) initGraph2)
 
-main :: IO()
+main :: IO Counts
 main = do
-  runTestTT tests  
-  return ()
+  runTestTT tests
