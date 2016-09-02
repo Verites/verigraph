@@ -1,4 +1,4 @@
-module TypedGraph.Partitions.VeriToGP (
+module TypedGraph.Partitions.VerigraphToGraphPartition (
    --  mixLeftRule,
    mixGM,
    mixNac

@@ -61,7 +61,7 @@ library
                        TypedGraph.MorphismCore
                        TypedGraph.Partitions.GraphPartitionToVerigraph
                        TypedGraph.Partitions.GraphPartition
-                       TypedGraph.Partitions.VeriToGP
+                       TypedGraph.Partitions.VerigraphToGraphPartition
                        TypedGraph.Subgraph
                        XML.GGXParseIn
                        XML.GGXParseOut

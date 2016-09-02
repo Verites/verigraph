@@ -9,17 +9,18 @@ module TypedGraph.Partitions.GraphPartition (
 
 import           Data.Maybe (mapMaybe)
 
--- | A Node with the needed informations for the generating equivalence classes algorithm
+-- | A Node with the needed information for generating equivalence classes
 data Node = Node {
-    ntype   :: Int,
-    nname   :: Int,
-    nid     :: Int,
-    injn    :: Bool, --injective flag
-    inLeftn :: Bool
+    nodeType   :: Int,
+    nodeName   :: Int,
+    nodeId     :: Int,
+    injectiveNode    :: Bool, --injective flag
+    fromLeft :: Bool
     }
 
 instance Show Node where
-  show (Node a b id f c) = show b ++ ":" ++ show a ++ ":" ++ (if c then "Left" else "Right") ++ " (id:" ++ show id ++") {"++ show f ++"}"
+  show (Node nodeType nodeName nodeId injectiveNode fromLeft) =
+    show nodeName ++ ":" ++ show nodeType ++ ":" ++ (if fromLeft then "Left" else "Right") ++ " (id:" ++ show nodeId ++") {"++ show injectiveNode ++"}"
 
 instance Eq Node where
   (Node a1 b1 _ _ d1) == (Node a2 b2 _ _ d2) =
@@ -74,7 +75,7 @@ checkEdge nodes (Edge type1 _ _ s1 t1 inj side) l@(Edge type2 _ _ s2 t2 _ _ : _)
     exp1 = type1 == type2 && (not inj || not checkInj)
     --checks if another inj edge is in this list
     checkInj = any (\(Edge _ _ _ _ _ inj side2) -> inj && side == side2) l
-    nameAndSrc node = (nname node, inLeftn node)
+    nameAndSrc node = (nodeName node, fromLeft node)
     l1   = getNode (nameAndSrc s1) nodes
     l2   = getNode (nameAndSrc s2) nodes
     exp2 = l1 == l2
@@ -125,7 +126,7 @@ replace idx new l = take idx l ++ [new] ++ drop (idx+1) l
 -- GraphPartitionToVerigraph use to discover source and target of edges
 getNode :: (Int,Bool) -> [[Node]] -> Node
 getNode p@(name,source) (x:xs) =
-  if any (\n -> nname n == name && inLeftn n == source) x
+  if any (\n -> nodeName n == name && fromLeft n == source) x
     then
       head x
     else

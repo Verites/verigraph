@@ -22,16 +22,16 @@ mountTypedGraphMorphisms tg1 tg2 graphPartition = (mountTGM True tg1, mountTGM F
 mountGraph :: GP.EqClassGraph -> G.Graph a b
 mountGraph (nodes,edges) = G.build nods edgs
   where
-    nods = map (\(n:_) -> GP.nid n) nodes
+    nods = map (\(n:_) -> GP.nodeId n) nodes
     edgs = map (\(e:_) -> (GP.eid e, nodeSrc e, nodeTgt e)) edges
-    nodeSrc e = GP.nid $ GP.getNode (nameAndSrc (GP.source e)) nodes
-    nodeTgt e = GP.nid $ GP.getNode (nameAndSrc (GP.target e)) nodes
-    nameAndSrc node = (nname node, inLeftn node)
+    nodeSrc e = GP.nodeId $ GP.getNode (nameAndSrc (GP.source e)) nodes
+    nodeTgt e = GP.nodeId $ GP.getNode (nameAndSrc (GP.target e)) nodes
+    nameAndSrc node = (nodeName node, fromLeft node)
 
 mountTypedGraph :: GP.EqClassGraph -> G.Graph a b -> TypedGraph a b
 mountTypedGraph graphPartition typeGraph = GM.buildGraphMorphism graph typeGraph nodes edges
   where
-    nodes = map (\(n:_) -> (GP.nid n, GP.ntype n)) (fst graphPartition)
+    nodes = map (\(n:_) -> (GP.nodeId n, GP.nodeType n)) (fst graphPartition)
     edges = map (\(e:_) -> (GP.eid e, GP.etype e)) (snd graphPartition)
     graph = mountGraph graphPartition
 
@@ -39,7 +39,7 @@ mountMapping :: Bool -> GP.EqClassGraph -> GM.GraphMorphism a b -> GM.GraphMorph
 mountMapping side g@(nodes,edges) m = GM.buildGraphMorphism (domain m) (mountGraph g) nods edgs
   where
     nods = map (\(G.NodeId n) -> (n, nodeId n)) (G.nodes (domain m))
-    nodeId n = GP.nid $ head $ getListNodeName (side,n) nodes
+    nodeId n = GP.nodeId $ head $ getListNodeName (side,n) nodes
     edgs = map (\(G.EdgeId e) -> (e, edgeId e)) (G.edges (domain m))
     edgeId e = GP.eid $ head $ getListEdgeName (side,e) edges
 

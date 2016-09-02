@@ -40,7 +40,7 @@ import           TypedGraph.Graph
 import           TypedGraph.MorphismCore
 import           TypedGraph.Partitions.GraphPartitionToVerigraph  (mountTypedGraphMorphisms)
 import           TypedGraph.Partitions.GraphPartition (genGraphEqClass)
-import           TypedGraph.Partitions.VeriToGP  (mixGM, mixNac)
+import           TypedGraph.Partitions.VerigraphToGraphPartition  (mixGM, mixNac)
 
 
 -- | Return the graph domain
