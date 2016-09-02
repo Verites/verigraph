@@ -1,4 +1,4 @@
-module TypedGraph.Partitions.GPToVeri (
+module TypedGraph.Partitions.GraphPartitionToVerigraph (
    mountTypedGraphMorphisms
    ) where
 

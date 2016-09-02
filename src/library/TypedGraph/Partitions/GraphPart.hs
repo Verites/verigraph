@@ -122,7 +122,7 @@ replace idx new l = take idx l ++ [new] ++ drop (idx+1) l
 
 -- | Returns the node that this @p@ was collapsed in partitions
 -- Used to compare if an edge can be mixed with another
--- GPToVeri use to discover source and target of edges
+-- GraphPartitionToVerigraph use to discover source and target of edges
 getNode :: (Int,Bool) -> [[Node]] -> Node
 getNode p@(name,source) (x:xs) =
   if any (\n -> nname n == name && inLeftn n == source) x

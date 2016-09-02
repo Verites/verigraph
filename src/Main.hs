@@ -5,7 +5,7 @@ import qualified XML.GGXReader        as XML
 --import           Abstract.Valid
 --import qualified Analysis.CriticalSequence as CS
 --import qualified Analysis.CriticalPairs as CP
---import           Partitions.GPToVeri
+--import           Partitions.GraphPartitionToVerigraph
 --import           Partitions.GraphPart
 --import           Partitions.VeriToGP
 import           Graph.Graph          as G

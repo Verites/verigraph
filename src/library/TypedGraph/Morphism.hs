@@ -38,7 +38,7 @@ import           Graph.Graph                     as G
 import           Graph.GraphMorphism             as GM
 import           TypedGraph.Graph
 import           TypedGraph.MorphismCore
-import           TypedGraph.Partitions.GPToVeri  (mountTypedGraphMorphisms)
+import           TypedGraph.Partitions.GraphPartitionToVerigraph  (mountTypedGraphMorphisms)
 import           TypedGraph.Partitions.GraphPart (genGraphEqClass)
 import           TypedGraph.Partitions.VeriToGP  (mixGM, mixNac)
 

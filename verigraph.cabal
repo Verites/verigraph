@@ -59,7 +59,7 @@ library
                        Logic.Ctl.Parser
                        Logic.Ctl.Semantics
                        TypedGraph.MorphismCore
-                       TypedGraph.Partitions.GPToVeri
+                       TypedGraph.Partitions.GraphPartitionToVerigraph
                        TypedGraph.Partitions.GraphPart
                        TypedGraph.Partitions.VeriToGP
                        TypedGraph.Subgraph
