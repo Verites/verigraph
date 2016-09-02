@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module SndOrder.Morphism (
     RuleMorphism
@@ -213,6 +214,12 @@ createSideRule inj k1 sideM1 s1 k2 sideM2 s2 = d
     d = filter (\(ss1,ss2,m) -> compose sideM1 ss1 == compose k1 m &&
                                 compose sideM2 ss2 == compose k2 m) c
 
+satisfiesNACRewriting :: (Eq (Obj m), DPO m) => m -> m -> Bool
+satisfiesNACRewriting l = satisfiesGluingConditions dpoConf prod
+  where
+    -- Production just to test satisfiesGluingConditions, note that right side is not used.
+    prod = buildProduction l l []
+    dpoConf = DPOConfig AnyMatches MonomorphicNAC
 
 instance AdhesiveHLR (RuleMorphism a b) where
   calculatePushoutComplement (RuleMorphism _ ruleG matchL matchK matchR) (RuleMorphism ruleK _ leftL leftK leftR) = (k,l')
@@ -226,7 +233,11 @@ instance AdhesiveHLR (RuleMorphism a b) where
        r = commutingMorphismSameCodomain
              (compose leftK' (getRHS ruleG)) leftR'
              matchK' (compose (getRHS ruleK) matchR')
-       newRule = buildProduction l r []
+       
+       validNACs = filter (satisfiesNACRewriting leftL') (getNACs ruleG)
+       newRuleNACs = map (\nac -> fst (calculatePushoutComplement nac leftL')) validNACs
+       
+       newRule = buildProduction l r newRuleNACs
        k = RuleMorphism ruleK newRule matchL' matchK' matchR'
        l' = RuleMorphism newRule ruleG leftL' leftK' leftR'
 
@@ -241,7 +252,10 @@ instance AdhesiveHLR (RuleMorphism a b) where
        r = commutingMorphismSameDomain
              rightK' (compose (getRHS ruleD) rightR')
              matchK' (compose (getRHS ruleR) matchR')
-       newRule = buildProduction l r []
+       
+       newRuleNACs = map (\nac -> fst (calculatePushout nac rightL')) (getNACs ruleD)
+       
+       newRule = buildProduction l r newRuleNACs
        m' = RuleMorphism ruleR newRule matchL' matchK' matchR'
        r' = RuleMorphism ruleD newRule rightL' rightK' rightR'
 
