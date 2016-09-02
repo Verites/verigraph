@@ -1,4 +1,4 @@
-module TypedGraph.Partitions.GraphPart (
+module TypedGraph.Partitions.GraphPartition (
    Node (..),
    Edge (..),
    Graph,
@@ -59,7 +59,7 @@ type EqClassGraph = ([[Node]],[[Edge]])
 
 -- | Checks if two nodes are in the same equivalence class
 checkNode :: Node -> [Node] -> Bool
-checkNode _ [] = error "error checkNode in GraphPart"
+checkNode _ [] = error "error checkNode in GraphPartition"
 checkNode (Node type1 _ _ inj side) l@(Node type2 _ _ _ _ : _) =
   type1 == type2 && (not inj || not checkInj)
   where --checks if another inj node is in this list
@@ -68,7 +68,7 @@ checkNode (Node type1 _ _ inj side) l@(Node type2 _ _ _ _ : _) =
 -- | Checks if two edges are in the same equivalence class
 -- Needs @nodes@ to know if a source or target was collapsed
 checkEdge :: [[Node]] -> Edge -> [Edge] -> Bool
-checkEdge _ _ [] = error "error checkEdge in GraphPart"
+checkEdge _ _ [] = error "error checkEdge in GraphPartition"
 checkEdge nodes (Edge type1 _ _ s1 t1 inj side) l@(Edge type2 _ _ s2 t2 _ _ : _) = exp1 && exp2 && exp3
   where
     exp1 = type1 == type2 && (not inj || not checkInj)

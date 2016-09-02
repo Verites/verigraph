@@ -2,16 +2,16 @@ module TypedGraph.Partitions.GraphPartitionToVerigraph (
    mountTypedGraphMorphisms
    ) where
 
-{-Converts from GraphPart to Verigraph structures-}
+{-Converts from GraphPartition to Verigraph structures-}
 
 import           Abstract.Morphism
 import qualified Graph.Graph                     as G
 import qualified Graph.GraphMorphism             as GM
 import           TypedGraph.Graph
 import qualified TypedGraph.MorphismCore         as TGM
-import           TypedGraph.Partitions.GraphPart as GP
+import           TypedGraph.Partitions.GraphPartition as GP
 
--- | For two typed graphs and a EpiPair (in GraphPart format) return two TypedGraphMorphism for the graph in verigraph format
+-- | For two typed graphs and a EpiPair (in GraphPartition format) return two TypedGraphMorphism for the graph in verigraph format
 mountTypedGraphMorphisms :: TypedGraph a b -> TypedGraph a b -> GP.EqClassGraph -> (TGM.TypedGraphMorphism a b, TGM.TypedGraphMorphism a b)
 mountTypedGraphMorphisms tg1 tg2 graphPartition = (mountTGM True tg1, mountTGM False tg2)
   where

@@ -6,7 +6,7 @@ import qualified XML.GGXReader        as XML
 --import qualified Analysis.CriticalSequence as CS
 --import qualified Analysis.CriticalPairs as CP
 --import           Partitions.GraphPartitionToVerigraph
---import           Partitions.GraphPart
+--import           Partitions.GraphPartition
 --import           Partitions.VeriToGP
 import           Graph.Graph          as G
 --import qualified TypedGraph.GraphRule as GR
@@ -41,7 +41,7 @@ a fn = do
           r1 = rs!!0
           r2 = rs!!1
           pairs = createPairsCodomain True (left r1) (left r2)
-          --dgs = Partitions.GraphPart.edges mix2
+          --dgs = Partitions.GraphPartition.edges mix2
           inj = filter (\(m1,m2) -> monomorphism m1 && monomorphism m2) pairs
           gluing = filter (\(m1,m2) -> satisfiesGluingConditions True r1 m1 && satisfiesGluingConditions True r2 m2) inj
           delUse = filter (deleteUse r1 r2) gluing

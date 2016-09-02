@@ -60,7 +60,7 @@ library
                        Logic.Ctl.Semantics
                        TypedGraph.MorphismCore
                        TypedGraph.Partitions.GraphPartitionToVerigraph
-                       TypedGraph.Partitions.GraphPart
+                       TypedGraph.Partitions.GraphPartition
                        TypedGraph.Partitions.VeriToGP
                        TypedGraph.Subgraph
                        XML.GGXParseIn
