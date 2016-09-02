@@ -2,7 +2,7 @@ module TypedGraph.Partitions.GraphPartition (
    Node (..),
    Edge (..),
    Graph,
-   EqClassGraph,
+   GraphPartition,
    getNode,
    genGraphEqClass
    ) where
@@ -15,46 +15,45 @@ data Node = Node {
     nodeName   :: Int,
     nodeId     :: Int,
     injectiveNode    :: Bool, --injective flag
-    fromLeft :: Bool
+    nodeFromLeft :: Bool
     }
 
 instance Show Node where
-  show (Node nodeType nodeName nodeId injectiveNode fromLeft) =
-    show nodeName ++ ":" ++ show nodeType ++ ":" ++ (if fromLeft then "Left" else "Right") ++ " (id:" ++ show nodeId ++") {"++ show injectiveNode ++"}"
+  show (Node nodeType nodeName nodeId injectiveNode nodeFromLeft) =
+    show nodeName ++ ":" ++ show nodeType ++ ":" ++
+    (if nodeFromLeft then "Left" else "Right") ++ " (id:" ++ show nodeId ++") {"++ show injectiveNode ++"}"
 
 instance Eq Node where
-  (Node a1 b1 _ _ d1) == (Node a2 b2 _ _ d2) =
-    a1 == a2 &&
-    b1 == b2 &&
-    d1 == d2
+  (Node nodeType1 nodeName1 _ _ fromLeft1) == (Node nodeType2 nodeName2 _ _ fromLeft2) =
+    nodeType1 == nodeType2 && nodeName1 == nodeName2 && fromLeft1 == fromLeft2
 
 -- | An Edge with the needed informations for the generating equivalence classes algorithm
 data Edge = Edge {
-    etype   :: Int,
+    edgeType   :: Int,
     label   :: Int,
-    eid     :: Int,
+    edgeId     :: Int,
     source  :: Node,
     target  :: Node,
-    inje    :: Bool, --injective flag
-    inLefte :: Bool
+    injectiveEdge    :: Bool, --injective flag
+    edgeFromLeft :: Bool
     } deriving (Eq)
 
 instance Show Edge where
-  show (Edge t a id (Node _ b2 _ _ _) (Node _ c2 _ _ _) f s) =
-    show a ++ ":" ++
-    show t ++ "(" ++
-    show b2 ++ "->" ++
-    show c2 ++ ")" ++
-    (if s then "Left" else "Right") ++
-    " (id:" ++ show id ++") {"++ show f ++"}"
+  show (Edge edgeType label edgeId (Node _ sourceName _ _ _) (Node _ targetName _ _ _) injectiveEdge edgeFromLeft) =
+    show label ++ ":" ++
+    show edgeType ++ "(" ++
+    show sourceName ++ "->" ++
+    show targetName ++ ")" ++
+    (if edgeFromLeft then "Left" else "Right") ++
+    " (id:" ++ show edgeId ++") {"++ show injectiveEdge ++"}"
 
--- | Graph for the generating equivalence classes algorithm
+-- | Graph data for generating equivalence classes
 type Graph = ([Node],[Edge])
 
 -- | An equivalence class of a 'Graph'
 
 -- | TODO: use Data.Set?
-type EqClassGraph = ([[Node]],[[Edge]])
+type GraphPartition = ([[Node]],[[Edge]])
 
 {-partitions-}
 
@@ -75,7 +74,7 @@ checkEdge nodes (Edge type1 _ _ s1 t1 inj side) l@(Edge type2 _ _ s2 t2 _ _ : _)
     exp1 = type1 == type2 && (not inj || not checkInj)
     --checks if another inj edge is in this list
     checkInj = any (\(Edge _ _ _ _ _ inj side2) -> inj && side == side2) l
-    nameAndSrc node = (nodeName node, fromLeft node)
+    nameAndSrc node = (nodeName node, nodeFromLeft node)
     l1   = getNode (nameAndSrc s1) nodes
     l2   = getNode (nameAndSrc s2) nodes
     exp2 = l1 == l2
@@ -84,7 +83,7 @@ checkEdge nodes (Edge type1 _ _ s1 t1 inj side) l@(Edge type2 _ _ s2 t2 _ _ : _)
     exp3 = l3 == l4
 
 -- | Runs generator of partitions for nodes, and after for edges according to the nodes generated
-genGraphEqClass :: Graph -> [EqClassGraph]
+genGraphEqClass :: Graph -> [GraphPartition]
 genGraphEqClass gra = concatMap f a
   where
     nodes = fst
@@ -126,7 +125,7 @@ replace idx new l = take idx l ++ [new] ++ drop (idx+1) l
 -- GraphPartitionToVerigraph use to discover source and target of edges
 getNode :: (Int,Bool) -> [[Node]] -> Node
 getNode p@(name,source) (x:xs) =
-  if any (\n -> nodeName n == name && fromLeft n == source) x
+  if any (\n -> nodeName n == name && nodeFromLeft n == source) x
     then
       head x
     else
