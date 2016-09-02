@@ -4,7 +4,7 @@ module TypedGraph.Partitions.GraphPartition (
    Graph,
    GraphPartition,
    getNode,
-   genGraphEqClass
+   generateGraphPartitions
    ) where
 
 import           Data.Maybe (mapMaybe)
@@ -57,39 +57,40 @@ type GraphPartition = ([[Node]],[[Edge]])
 
 {-partitions-}
 
--- | Checks if two nodes are in the same equivalence class
-checkNode :: Node -> [Node] -> Bool
-checkNode _ [] = error "error checkNode in GraphPartition"
-checkNode (Node type1 _ _ inj side) l@(Node type2 _ _ _ _ : _) =
-  type1 == type2 && (not inj || not checkInj)
-  where --checks if another inj node is in this list
-    checkInj = any (\(Node _ _ _ inj side2) -> inj && side == side2) l
+-- | Checks if a node belongs to an equivalence class
+nodeBelongsToEquivalenceClass :: Node -> [Node] -> Bool
+nodeBelongsToEquivalenceClass _ [] = error "error 'nodeBelongsToEquivalenceClass' in GraphPartition"
+nodeBelongsToEquivalenceClass (Node type1 _ _ injectiveNode side1) l@(Node type2 _ _ _ _ : _) =
+  type1 == type2 && (not injectiveNode || not thereIsAnotherInjectiveNode)
+  where
+    thereIsAnotherInjectiveNode = any (\(Node _ _ _ injectiveNode side2) -> injectiveNode && side1 == side2) l
 
 -- | Checks if two edges are in the same equivalence class
 -- Needs @nodes@ to know if a source or target was collapsed
-checkEdge :: [[Node]] -> Edge -> [Edge] -> Bool
-checkEdge _ _ [] = error "error checkEdge in GraphPartition"
-checkEdge nodes (Edge type1 _ _ s1 t1 inj side) l@(Edge type2 _ _ s2 t2 _ _ : _) = exp1 && exp2 && exp3
+edgeBelongsToEquivalenceClass :: [[Node]] -> Edge -> [Edge] -> Bool
+edgeBelongsToEquivalenceClass _ _ [] = error "error 'edgeBelongsToEquivalenceClass' in GraphPartition"
+edgeBelongsToEquivalenceClass nodes (Edge type1 _ _ s1 t1 injectiveEdge side) l@(Edge type2 _ _ s2 t2 _ _ : _) =
+  equalTypes && canBeAddedToList && hasEquivalentSource && hasEquivalentTarget
   where
-    exp1 = type1 == type2 && (not inj || not checkInj)
-    --checks if another inj edge is in this list
-    checkInj = any (\(Edge _ _ _ _ _ inj side2) -> inj && side == side2) l
-    nameAndSrc node = (nodeName node, nodeFromLeft node)
-    l1   = getNode (nameAndSrc s1) nodes
-    l2   = getNode (nameAndSrc s2) nodes
-    exp2 = l1 == l2
-    l3   = getNode (nameAndSrc t1) nodes
-    l4   = getNode (nameAndSrc t2) nodes
-    exp3 = l3 == l4
+    equalTypes = type1 == type2
+    canBeAddedToList = not injectiveEdge || not thereIsAnotherInjectiveEdge
+    thereIsAnotherInjectiveEdge = any (\(Edge _ _ _ _ _ inj side2) -> inj && side == side2) l
+    nodeNameAndSource node = (nodeName node, nodeFromLeft node)
+    l1   = getNode (nodeNameAndSource s1) nodes
+    l2   = getNode (nodeNameAndSource s2) nodes
+    hasEquivalentSource = l1 == l2
+    l3   = getNode (nodeNameAndSource t1) nodes
+    l4   = getNode (nodeNameAndSource t2) nodes
+    hasEquivalentTarget = l3 == l4
 
 -- | Runs generator of partitions for nodes, and after for edges according to the nodes generated
-genGraphEqClass :: Graph -> [GraphPartition]
-genGraphEqClass gra = concatMap f a
+generateGraphPartitions :: Graph -> [GraphPartition]
+generateGraphPartitions gra = concatMap f a
   where
     nodes = fst
     edges = snd
-    a = part checkNode (nodes gra)
-    b x = part (checkEdge x) (edges gra)
+    a = part nodeBelongsToEquivalenceClass (nodes gra)
+    b x = part (edgeBelongsToEquivalenceClass x) (edges gra)
     f :: [[Node]] -> [([[Node]],[[Edge]])]
     f a = zip (replicate (length (b a)) a) (b a)
 
@@ -124,10 +125,10 @@ replace idx new l = take idx l ++ [new] ++ drop (idx+1) l
 -- Used to compare if an edge can be mixed with another
 -- GraphPartitionToVerigraph use to discover source and target of edges
 getNode :: (Int,Bool) -> [[Node]] -> Node
+getNode _ [] = error "error when generating overlapping pairs (getListNode)"
 getNode p@(name,source) (x:xs) =
   if any (\n -> nodeName n == name && nodeFromLeft n == source) x
     then
       head x
     else
       getNode p xs
-getNode _ [] = error "error when generating overlapping pairs (getListNode)"

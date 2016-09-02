@@ -24,9 +24,9 @@ mountGraph (nodes,edges) = G.build nods edgs
   where
     nods = map (\(n:_) -> GP.nodeId n) nodes
     edgs = map (\(e:_) -> (GP.edgeId e, nodeSrc e, nodeTgt e)) edges
-    nodeSrc e = GP.nodeId $ GP.getNode (nameAndSrc (GP.source e)) nodes
-    nodeTgt e = GP.nodeId $ GP.getNode (nameAndSrc (GP.target e)) nodes
-    nameAndSrc node = (nodeName node, nodeFromLeft node)
+    nodeSrc e = GP.nodeId $ GP.getNode (nodeNameAndSource (GP.source e)) nodes
+    nodeTgt e = GP.nodeId $ GP.getNode (nodeNameAndSource (GP.target e)) nodes
+    nodeNameAndSource node = (nodeName node, nodeFromLeft node)
 
 mountTypedGraph :: GP.GraphPartition -> G.Graph a b -> TypedGraph a b
 mountTypedGraph graphPartition typeGraph = GM.buildGraphMorphism graph typeGraph nodes edges
