@@ -74,7 +74,7 @@ typegraph = build [1,2] [(3,1,1),(4,2,2),(5,1,2),(6,2,1)]
 -- |  1 -> 2;
 -- |}
 g1 :: GM a b
-g1 = GM.gmbuild g1' typegraph [(1,1),(2,1)] [(3,3),(4,3)]
+g1 = GM.buildGraphMorphism g1' typegraph [(1,1),(2,1)] [(3,3),(4,3)]
   where
     g1' = build [1,2] [(3,1,2),(4,1,2)]
 
@@ -85,7 +85,7 @@ g1 = GM.gmbuild g1' typegraph [(1,1),(2,1)] [(3,3),(4,3)]
 -- |  1 -> 2;
 -- |}
 g2 :: GM a b
-g2 = GM.gmbuild g2' typegraph [(1,1),(2,1)] [(3,3)]
+g2 = GM.buildGraphMorphism g2' typegraph [(1,1),(2,1)] [(3,3)]
   where
     g2' = build [1,2] [(3,1,2)]
 
@@ -99,7 +99,7 @@ g2 = GM.gmbuild g2' typegraph [(1,1),(2,1)] [(3,3)]
 -- |  3 -> 4;
 -- |}
 g3 :: GM a b
-g3 = GM.gmbuild g3' typegraph [(1,1),(2,2),(3,1),(4,2)] [(5,5), (6,5)]
+g3 = GM.buildGraphMorphism g3' typegraph [(1,1),(2,2),(3,1),(4,2)] [(5,5), (6,5)]
   where
     g3' = build [1,2,3,4] [(5,1,2),(6,3,4)]
 
@@ -112,7 +112,7 @@ g3 = GM.gmbuild g3' typegraph [(1,1),(2,2),(3,1),(4,2)] [(5,5), (6,5)]
 -- |  2 -> 3;
 -- |}
 g4 :: GM a b
-g4 = GM.gmbuild g4' typegraph [(1,1),(2,1),(3,2)] [(4,5),(5,5)]
+g4 = GM.buildGraphMorphism g4' typegraph [(1,1),(2,1),(3,2)] [(4,5),(5,5)]
   where
     g4' = build [1,2,3] [(4,1,3),(5,2,3)]
 
@@ -125,7 +125,7 @@ g4 = GM.gmbuild g4' typegraph [(1,1),(2,1),(3,2)] [(4,5),(5,5)]
 -- |  1 -> 3;
 -- |}
 g5 :: GM a b
-g5 = GM.gmbuild g5' typegraph [(1,1),(2,2),(3,2)] [(4,5),(5,5)]
+g5 = GM.buildGraphMorphism g5' typegraph [(1,1),(2,2),(3,2)] [(4,5),(5,5)]
   where
     g5' = build [1,2,3] [(4,1,2),(5,1,3)]
 
@@ -141,7 +141,7 @@ g5 = GM.gmbuild g5' typegraph [(1,1),(2,2),(3,2)] [(4,5),(5,5)]
 -- |  3 -> 4;
 -- |}
 g9 :: GM a b
-g9 = GM.gmbuild g9' typegraph [(1,1),(2,2),(3,1),(4,2)] [(5,5),(6,5),(7,5),(8,5)]
+g9 = GM.buildGraphMorphism g9' typegraph [(1,1),(2,2),(3,1),(4,2)] [(5,5),(6,5),(7,5),(8,5)]
   where
     g9' = build [1,2,3,4] [(5,1,2),(6,3,4),(7,3,2),(8,1,4)]
 
@@ -151,7 +151,7 @@ g9 = GM.gmbuild g9' typegraph [(1,1),(2,2),(3,1),(4,2)] [(5,5),(6,5),(7,5),(8,5)
 -- |  1 -> 1;
 -- |}
 g12 :: GM a b
-g12 = GM.gmbuild g12' typegraph [(1,1)] [(2,3)]
+g12 = GM.buildGraphMorphism g12' typegraph [(1,1)] [(2,3)]
   where
     g12' = build [1] [(2,1,1)]
 
@@ -162,7 +162,7 @@ g12 = GM.gmbuild g12' typegraph [(1,1)] [(2,3)]
 -- |  1 -> 2;
 -- |}
 g13 :: GM a b
-g13 = GM.gmbuild g13' typegraph [(1,1),(2,2)] [(3,5)]
+g13 = GM.buildGraphMorphism g13' typegraph [(1,1),(2,2)] [(3,5)]
   where
     g13' = build [1,2] [(3,1,2)]
 

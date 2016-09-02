@@ -25,14 +25,14 @@ module Graph.Graph (
     -- * Extraction
     , edges
     , nodes
-    , edgesFromNode
-    , edgesIntoNode
+    , outgoingEdges
+    , incomingEdges
     , edgesWithPayload
     , incidentEdges
     , neighbourNodes
-    , nodesConnectedTo
-    , nodesFromNode
-    , nodesIntoNode
+    , nodesOf
+    , targetedNodes
+    , sourceNodes
     , nodesWithPayload
 
     -- * Query
@@ -228,24 +228,24 @@ edges :: Graph a b -> [EdgeId]
 edges (Graph _ es) = keysAL es
 
 -- | Return a list of all edges with @n@ as a source node.
-edgesFromNode :: Graph a b -> NodeId -> [EdgeId]
-edgesFromNode g n = filter (\e -> sourceOf g e == Just n) (edges g)
+outgoingEdges :: Graph a b -> NodeId -> [EdgeId]
+outgoingEdges g n = filter (\e -> sourceOf g e == Just n) (edges g)
 
 -- | Return a list of all edges with @n@ as a target node.
-edgesIntoNode :: Graph a b -> NodeId -> [EdgeId]
-edgesIntoNode g n = filter (\e -> targetOf g e == Just n) (edges g)
+incomingEdges :: Graph a b -> NodeId -> [EdgeId]
+incomingEdges g n = filter (\e -> targetOf g e == Just n) (edges g)
 
 -- | Return a list of all nodes that are target of any edge going out from @n@.
-nodesFromNode :: Graph a b -> NodeId -> [NodeId]
-nodesFromNode g n = filter (isAdjacentTo g n) (nodes g)
+targetedNodes :: Graph a b -> NodeId -> [NodeId]
+targetedNodes g n = filter (isAdjacentTo g n) (nodes g)
 
 -- | Return a list of all nodes that are source of any edge going into @n@.
-nodesIntoNode :: Graph a b -> NodeId -> [NodeId]
-nodesIntoNode g n = filter (\v -> isAdjacentTo g v n) (nodes g)
+sourceNodes :: Graph a b -> NodeId -> [NodeId]
+sourceNodes g n = filter (\v -> isAdjacentTo g v n) (nodes g)
 
 -- | Return a list of all neighbour nodes from @n@.
 neighbourNodes :: Graph a b -> NodeId -> [NodeId]
-neighbourNodes g n = nub $ nodesIntoNode g n ++ nodesFromNode g n
+neighbourNodes g n = nub $ sourceNodes g n ++ targetedNodes g n
 
 -- | Return @n@'s payload.
 nodePayload :: Graph a b -> NodeId -> Maybe a
@@ -266,8 +266,8 @@ edgesWithPayload (Graph _ edgeMap) =
     map (\(k, e) -> (k, getEdgePayload e)) edgeMap
 
 -- | Return a pair containing @e@'s source and target nodes.
-nodesConnectedTo :: Graph a b -> EdgeId -> Maybe (NodeId, NodeId)
-nodesConnectedTo (Graph _ es) e =
+nodesOf :: Graph a b -> EdgeId -> Maybe (NodeId, NodeId)
+nodesOf (Graph _ es) e =
     let ed = lookup e es
     in case ed of
         Just (Edge src tgt _) -> Just (src, tgt)
@@ -315,7 +315,7 @@ isEdgeOf g e  = e `elem` edges g
 -- | Test if @n1@ and @n2@ are adjacent.
 isAdjacentTo :: Graph a b -> NodeId -> NodeId -> Bool
 isAdjacentTo g n1 n2 =
-    any (\e -> nodesConnectedTo g e == Just (n1,n2)) (edges g)
+    any (\e -> nodesOf g e == Just (n1,n2)) (edges g)
 
 -- | Test if @n@ is connected to edge @e@.
 isIncidentTo :: Graph a b -> NodeId -> EdgeId -> Bool
@@ -324,11 +324,11 @@ isIncidentTo g n e =
         Just (s, t) -> n == s || n == t
         _ -> False
   where
-    res = nodesConnectedTo g e
+    res = nodesOf g e
 
 -- | Return a list of all incident edges on @n@.
 incidentEdges :: Graph a b -> NodeId -> [EdgeId]
-incidentEdges g n = nub $ edgesIntoNode g n ++ edgesFromNode g n
+incidentEdges g n = nub $ incomingEdges g n ++ outgoingEdges g n
 
 instance Valid (Graph a b) where
     valid g =

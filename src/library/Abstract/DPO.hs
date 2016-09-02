@@ -7,7 +7,7 @@
 module Abstract.DPO
   (
     Production
-  , constructProduction
+  , buildProduction
 
   , getLHS
   , getRHS
@@ -78,8 +78,8 @@ getNACs = nacs
 -- the morphism /r : K -> R/, and the nacs /L -> Ni/, respectively.
 --
 -- Note: this doesn't check that the production is valid.
-constructProduction :: (DPO m, Eq (Obj m)) => m -> m -> [m] -> Production m
-constructProduction = Production
+buildProduction :: (DPO m, Eq (Obj m)) => m -> m -> [m] -> Production m
+buildProduction = Production
 
 -- | Obtain all matches from the production into the given object, even if they
 -- aren't applicable.
@@ -103,7 +103,7 @@ findApplicableMatches config production obj =
 
 instance (Morphism m, Valid m, Eq (Obj m)) => Valid (Production m) where
   valid (Production l r nacs) =
-    monomorphism l && monomorphism r &&
+    isMonomorphism l && isMonomorphism r &&
     valid l && valid r && all valid nacs &&
     domain l == domain r && all (==codomain l) (map domain nacs)
 
@@ -179,8 +179,8 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
   -- TODO : Verify why this function continues to be used
   -- | Check if the second morphism is monomorphic outside the image of the
   -- first morphism.
-  partiallyMonomorphic :: m -> m -> Bool
---{-# WARNING partiallyMonomorphic "Only necessary until 'partialInjectiveMatches' is corrected" #-}
+  isPartiallyMonomorphic :: m -> m -> Bool
+--{-# WARNING isPartiallyMonomorphic "Only necessary until 'partialInjectiveMatches' is corrected" #-}
 
 -- | Verifies if the gluing conditions for a production /p/ are satisfied by a match /m/
 satisfiesGluingConditions :: DPO m => DPOConfig -> Production m -> m -> Bool

@@ -49,7 +49,7 @@ decisionTreeNodes :: [(NodeId,NodeId)] -> TypedGraph a b -> [TypedGraph a b]
 decisionTreeNodes [] g = [g]
 decisionTreeNodes ((n,tp):ns) g = decisionTreeNodes ns g ++ decisionTreeNodes ns added
   where
-    added = createNodeDom n tp g
+    added = createNodeOnDomain n tp g
 
 decisionTreeEdges :: [(EdgeId,NodeId,NodeId,EdgeId)] -> TypedGraph a b -> [TypedGraph a b]
 decisionTreeEdges [] g = [g]
@@ -58,4 +58,4 @@ decisionTreeEdges ((e,s,t,tp):es) g = decisionTreeEdges es g ++
     then decisionTreeEdges es added else []
   where
     graph = domain g
-    added = createEdgeDom e s t tp g
+    added = createEdgeOnDomain e s t tp g

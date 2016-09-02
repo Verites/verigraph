@@ -43,11 +43,11 @@ createdEdges :: GraphRule a b -> [G.EdgeId]
 createdEdges r = TGM.orphanEdgesTyped (getRHS r)
 
 instance DPO (TypedGraphMorphism a b) where
-  invertProduction config r = constructProduction (getRHS r) (getLHS r) (concatMap (shiftNacOverProduction config r) (getNACs r))
+  invertProduction config r = buildProduction (getRHS r) (getLHS r) (concatMap (shiftNacOverProduction config r) (getNACs r))
 
   shiftNacOverProduction config rule n = [calculateComatch n rule | satisfiesGluingConditions config rule n]
 
-  partiallyMonomorphic = partialInjectiveTGM
+  isPartiallyMonomorphic = partialInjectiveTGM
 
 
 -- | Return True if the element @n@ is deleted by the rule @rule@ with match @m@

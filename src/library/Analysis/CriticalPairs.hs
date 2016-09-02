@@ -137,7 +137,7 @@ findAllProduceDangling conf p1 p2 =
   where
     pairs = createJointlyEpimorphicPairsFromCodomains (matchRestriction conf) (getLHS p1) (getLHS p2)
     satisfyingPairs = filter (\(m1,m2) -> satisfyRewritingConditions conf (p1,m1) (p2,m2)) pairs
-    produceDanglingPairs = filter (produceDangling conf p1 p2) satisfyingPairs
+    produceDanglingPairs = filter (isProduceDangling conf p1 p2) satisfyingPairs
 
 -- DeleteUse and Produce-Dangling
 

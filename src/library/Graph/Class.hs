@@ -15,7 +15,3 @@ class Graph gr where
   type EdgeMetadata gr :: *
 
   empty :: gr
-
-  isEmpty :: gr
-
-  makeGraph :: [LNode (NodeMetadata gr)] -> [LEdge (EdgeMetadata gr)] -> gr

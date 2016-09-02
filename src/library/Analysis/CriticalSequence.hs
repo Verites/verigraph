@@ -155,7 +155,7 @@ findAllRemoveDangling conf p1 p2 =
     p1' = invertProduction conf p1
     pairs = createJointlyEpimorphicPairsFromCodomains (matchRestriction conf) (getLHS p1') (getLHS p2)
     gluing = filter (\(m1,m2) -> satisfyRewritingConditions conf (p1',m1) (p2,m2)) pairs
-    remDang = filter (produceDangling conf p1' p2) gluing
+    remDang = filter (isProduceDangling conf p1' p2) gluing
 
 -- ProduceUse and RemoveDangling
 
@@ -226,7 +226,7 @@ findAllDeliverDangling conf p1 p2 =
     p1' = invertProduction conf p1
     pairs = createJointlyEpimorphicPairsFromCodomains (matchRestriction conf) (getRHS p1) (getLHS p2)
     gluing = filter (\(m1',m2') -> satisfyRewritingConditions conf (p1',m1') (p2,m2')) pairs
-    delDang = filter (\(m1,m2) -> produceDangling conf p2 p1' (m2,m1)) gluing
+    delDang = filter (\(m1,m2) -> isProduceDangling conf p2 p1' (m2,m1)) gluing
 
 -- TODO: DeliverDelete and DeliverDangling together
 
