@@ -47,7 +47,7 @@ instance DPO (TypedGraphMorphism a b) where
 
   shiftNacOverProduction config rule n = [calculateComatch n rule | satisfiesGluingConditions config rule n]
 
-  partiallyMonomorphic = partialInjectiveTGM
+  isPartiallyMonomorphic = partialInjectiveTGM
 
 
 -- | Return True if the element @n@ is deleted by the rule @rule@ with match @m@

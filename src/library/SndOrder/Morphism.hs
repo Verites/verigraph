@@ -88,20 +88,20 @@ instance Morphism (RuleMorphism a b) where
              (idMap (domain (getLHS t)) (domain (getLHS t)))
              (idMap (codomain (getRHS t)) (codomain (getRHS t)))
 
-    monomorphism rm =
-      monomorphism (mappingLeft rm) &&
-      monomorphism (mappingInterface rm) &&
-      monomorphism (mappingRight rm)
+    isMonomorphism rm =
+      isMonomorphism (mappingLeft rm) &&
+      isMonomorphism (mappingInterface rm) &&
+      isMonomorphism (mappingRight rm)
 
-    epimorphism rm =
-      epimorphism (mappingLeft rm) &&
-      epimorphism (mappingInterface rm) &&
-      epimorphism (mappingRight rm)
+    isEpimorphism rm =
+      isEpimorphism (mappingLeft rm) &&
+      isEpimorphism (mappingInterface rm) &&
+      isEpimorphism (mappingRight rm)
 
-    isomorphism (RuleMorphism dom cod mapL mapK mapR) =
-      isomorphism mapL &&
-      isomorphism mapK &&
-      isomorphism mapR &&
+    isIsomorphism (RuleMorphism dom cod mapL mapK mapR) =
+      isIsomorphism mapL &&
+      isIsomorphism mapK &&
+      isIsomorphism mapR &&
       compose (getLHS dom) mapL == compose mapK (getLHS cod) &&
       compose (getRHS dom) mapR == compose mapK (getRHS cod)
 
@@ -118,9 +118,9 @@ instance FindMorphism (RuleMorphism a b) where
   partialInjectiveMatches n m =
     filter
       (\q ->
-        partiallyMonomorphic (mappingLeft n) (mappingLeft q) &&
-        partiallyMonomorphic (mappingInterface n) (mappingInterface q) &&
-        partiallyMonomorphic (mappingRight n) (mappingRight q))
+        isPartiallyMonomorphic (mappingLeft n) (mappingLeft q) &&
+        isPartiallyMonomorphic (mappingInterface n) (mappingInterface q) &&
+        isPartiallyMonomorphic (mappingRight n) (mappingRight q))
       (findAllMorphisms (codomain n) (codomain m))
 
 -- commutes left side
@@ -181,8 +181,8 @@ instance EpiPairs (RuleMorphism a b) where
   calculateCommutativeSquaresAlongMonomorphism (m1,inj1) (m2,inj2) = filt
     where
       allCommutingPairs = calculateCommutativeSquares False m1 m2
-      satsM1 = if inj1 then monomorphism else const True
-      satsM2 = if inj2 then monomorphism else const True
+      satsM1 = if inj1 then isMonomorphism else const True
+      satsM2 = if inj2 then isMonomorphism else const True
       filt = filter (\(m1,m2) -> satsM1 m1 && satsM2 m2) allCommutingPairs
 
 -- | Generates all (ss1,ss2,m) morphisms that commute with all EpiPairs of S1 and S2.

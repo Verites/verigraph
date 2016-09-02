@@ -65,7 +65,7 @@ execute :: (GlobalOptions, Options) -> IO ()
 execute (globalOpts, options) =
   do
     let dpoConf = dpoConfig globalOpts
-    
+
     (grammar,_) <- XML.readGrammar (inputFile globalOpts) dpoConf
     ensureAllValid (rules grammar) $ \name -> "Invalid rule '" ++ name ++ "'"
 
@@ -226,7 +226,7 @@ splitPredicates ((name, rule) : rest) =
     (productions, predicates) =
       splitPredicates rest
   in
-    if isomorphism (getLHS rule) && isomorphism (getRHS rule) then
+    if isIsomorphism (getLHS rule) && isIsomorphism (getRHS rule) then
       (productions, (name, rule):predicates)
     else
       ((name, rule):productions, predicates)

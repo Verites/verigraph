@@ -80,10 +80,10 @@ instance DPO (RuleMorphism a b) where
     where
       ruleWithOnlyMinimalSafetyNacs = buildProduction (getLHS rule) (getRHS rule) (minimalSafetyNacs rule)
 
-  partiallyMonomorphic m l =
-    partiallyMonomorphic (mappingLeft m)      (mappingLeft l)      &&
-    partiallyMonomorphic (mappingInterface m) (mappingInterface l) &&
-    partiallyMonomorphic (mappingRight m)     (mappingRight l)
+  isPartiallyMonomorphic m l =
+    isPartiallyMonomorphic (mappingLeft m)      (mappingLeft l)      &&
+    isPartiallyMonomorphic (mappingInterface m) (mappingInterface l) &&
+    isPartiallyMonomorphic (mappingRight m)     (mappingRight l)
 
 applySndOrderRule :: DPOConfig -> (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String, GraphRule a b)]
 applySndOrderRule config (sndName,sndRule) (fstName,fstRule) =
@@ -142,15 +142,15 @@ newNacsProb side sndRule = nacNodes ++ nacEdges
 
     nodeProb = [applyNode f n |
                  n <- nodesCodomain sb
-               , orphanNode sa (applyNode f n)
-               , orphanNode sb n
-               , not (orphanNode sc (applyNode g n))]
+               , isOrphanNode sa (applyNode f n)
+               , isOrphanNode sb n
+               , not (isOrphanNode sc (applyNode g n))]
 
     edgeProb = [applyEdge f n |
                  n <- edgesCodomain sb
-               , orphanEdge sa (applyEdge f n)
-               , orphanEdge sb n
-               , not (orphanEdge sc (applyEdge g n))]
+               , isOrphanEdge sa (applyEdge f n)
+               , isOrphanEdge sb n
+               , not (isOrphanEdge sc (applyEdge g n))]
 
     nacNodes = map (createNacProb side ruleL . Left) nodeProb
     nacEdges = map (createNacProb side ruleL . Right) edgeProb
@@ -230,8 +230,8 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
         updateLeft2 = createNodeDomTGM tgtInK typeTgt tgt updateLeft
         updateLeftEdge = createEdgeDomTGM x' srcInK tgtInK tp x updateLeft2
 
-orphanNode :: TypedGraphMorphism a b -> NodeId -> Bool
-orphanNode m n = n `elem` orphanNodesTyped m
+isOrphanNode :: TypedGraphMorphism a b -> NodeId -> Bool
+isOrphanNode m n = n `elem` orphanNodesTyped m
 
-orphanEdge :: TypedGraphMorphism a b -> EdgeId -> Bool
-orphanEdge m n = n `elem` orphanEdgesTyped m
+isOrphanEdge :: TypedGraphMorphism a b -> EdgeId -> Bool
+isOrphanEdge m n = n `elem` orphanEdgesTyped m

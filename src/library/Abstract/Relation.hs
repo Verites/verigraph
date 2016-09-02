@@ -23,11 +23,11 @@ module Abstract.Relation (
     , mapping
     , orphans
     -- ** Predicates
-    , functionalRelation
-    , injectiveRelation
-    , partialInjectiveRelation
-    , surjectiveRelation
-    , totalRelation
+    , isFunctional
+    , isInjective
+    , isPartialInjective
+    , isSurjective
+    , isTotal
 ) where
 
 
@@ -127,26 +127,26 @@ removeFromCodomain x r = r { codomain = L.delete x (codomain r)
 insertOnCodomain :: Ord a => a -> Relation a -> Relation a
 insertOnCodomain x r = r { codomain = [x] `union` codomain r }
 
--- | Test if @r@ is functionalRelation.
-functionalRelation :: Relation a -> Bool
-functionalRelation r = all containsOne $ Map.elems (mapping r)
+-- | Test if @r@ is functional.
+isFunctional :: Relation a -> Bool
+isFunctional r = all containsOne $ Map.elems (mapping r)
   where
     containsOne [_] = True
     containsOne _ = False
 
 -- | Test if @r@ is injective out of domain @list@
-partialInjectiveRelation :: Ord a => [a] -> Relation a -> Bool
-partialInjectiveRelation list r = injectiveRelation (foldr removeFromDomain r list)
+isPartialInjective :: Ord a => [a] -> Relation a -> Bool
+isPartialInjective list r = isInjective (foldr removeFromDomain r list)
 
 -- | Test if @r@ is injective.
-injectiveRelation :: (Ord a) => Relation a -> Bool
-injectiveRelation = functionalRelation . inverseRelation
+isInjective :: (Ord a) => Relation a -> Bool
+isInjective = isFunctional . inverseRelation
 
 -- | Test if @r@ is surjective.
-surjectiveRelation :: (Ord a) => Relation a -> Bool
-surjectiveRelation = totalRelation . inverseRelation
+isSurjective :: (Ord a) => Relation a -> Bool
+isSurjective = isTotal . inverseRelation
 
 -- | Test if @r@ is total.
-totalRelation :: (Ord a) => Relation a -> Bool
-totalRelation r =
+isTotal :: (Ord a) => Relation a -> Bool
+isTotal r =
     sort (domain r) == sort (listDomain r)

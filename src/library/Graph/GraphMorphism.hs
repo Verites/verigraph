@@ -228,7 +228,7 @@ isPartialInjective nac q = disjointCodomain && injective
     disjointNodes = Prelude.null (codN nodes `intersect` codN nodesI)
     disjointEdges = Prelude.null (codE edges `intersect` codE edgesI)
     disjointCodomain = disjointNodes && disjointEdges
-    injective = R.partialInjectiveRelation nodes (nodeRelation q) && R.partialInjectiveRelation edges (edgeRelation q)
+    injective = R.isPartialInjective nodes (nodeRelation q) && R.isPartialInjective edges (edgeRelation q)
 
 instance Morphism (GraphMorphism a b) where
     type Obj (GraphMorphism a b) = Graph a b
@@ -241,23 +241,23 @@ instance Morphism (GraphMorphism a b) where
                       (R.compose (nodeRelation m1) (nodeRelation m2))
                       (R.compose (edgeRelation m1) (edgeRelation m2))
     id g = GraphMorphism g g (R.id $ nodes g) (R.id $ edges g)
-    monomorphism m =
-        R.injectiveRelation (nodeRelation m) &&
-        R.injectiveRelation (edgeRelation m)
-    epimorphism m =
-        R.surjectiveRelation (nodeRelation m) &&
-        R.surjectiveRelation (edgeRelation m)
-    isomorphism m =
-        monomorphism m && epimorphism m
+    isMonomorphism m =
+        R.isInjective (nodeRelation m) &&
+        R.isInjective (edgeRelation m)
+    isEpimorphism m =
+        R.isSurjective (nodeRelation m) &&
+        R.isSurjective (edgeRelation m)
+    isIsomorphism m =
+        isMonomorphism m && isEpimorphism m
 
 
 
 instance Valid (GraphMorphism a b) where
     valid m@(GraphMorphism dom cod nm em) =
-        R.totalRelation nm &&
-        R.functionalRelation nm &&
-        R.totalRelation em &&
-        R.functionalRelation em &&
+        R.isTotal nm &&
+        R.isFunctional nm &&
+        R.isTotal em &&
+        R.isFunctional em &&
         valid dom &&
         valid cod &&
         all (\e -> (G.sourceOf cod =<< applyEdge m e) ==

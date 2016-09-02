@@ -10,9 +10,9 @@ class (Eq m) => Morphism m where
     domain   :: m -> Obj m
     codomain :: m -> Obj m
     id       :: Obj m -> m
-    monomorphism :: m -> Bool
-    epimorphism :: m -> Bool
-    isomorphism :: m -> Bool
+    isMonomorphism :: m -> Bool
+    isEpimorphism :: m -> Bool
+    isIsomorphism :: m -> Bool
 
 -- | Enum for the types of morphisms that can be used / found
 data MorphismType

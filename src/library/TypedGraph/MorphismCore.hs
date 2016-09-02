@@ -27,9 +27,9 @@ instance Morphism (TypedGraphMorphism a b) where
                       $ compose (mapping t1)
                                 (mapping t2)
     id t = TypedGraphMorphism t t (M.id $ domain t)
-    monomorphism = monomorphism . mapping
-    epimorphism = epimorphism . mapping
-    isomorphism = isomorphism . mapping
+    isMonomorphism = isMonomorphism . mapping
+    isEpimorphism = isEpimorphism . mapping
+    isIsomorphism = isIsomorphism . mapping
 
 instance Valid (TypedGraphMorphism a b) where
     valid (TypedGraphMorphism dom cod m) =
