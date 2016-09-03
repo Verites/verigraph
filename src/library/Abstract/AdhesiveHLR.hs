@@ -141,7 +141,7 @@ data MatchRestriction = MonoMatches | AnyMatches deriving (Eq, Show)
 -- | Converts a match restriction to the corresponding MorphismType
 matchRestrictionToMorphismType :: MatchRestriction -> MorphismType
 matchRestrictionToMorphismType MonoMatches = Monomorphism
-matchRestrictionToMorphismType AnyMatches = GenericMorphism
+matchRestrictionToMorphismType AnyMatches  = GenericMorphism
 
 -- | Flag indicating the semantics of NAC satisfaction.
 data NacSatisfaction = MonomorphicNAC | PartiallyMonomorphicNAC deriving (Eq, Show)

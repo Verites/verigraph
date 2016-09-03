@@ -93,7 +93,7 @@ parseNode = atTag "Node" >>>
     nodeId <- getAttrValue "ID" -< node
     nodeName <- getAttrValue "name" -< node
     let setNodeName = case nodeName of
-                       "" -> Nothing
+                       ""  -> Nothing
                        str -> Just str
     nodeType <- getAttrValue "type" -< node
     returnA -< (clearId nodeId, setNodeName, clearId nodeType)
@@ -104,7 +104,7 @@ parseEdge = atTag "Edge" >>>
     edgeId <- getAttrValue "ID" -< node
     edgeName <- getAttrValue "name" -< node
     let setEdgeName = case edgeName of
-                        "" -> Nothing
+                        ""  -> Nothing
                         str -> Just str
     edgeType <- getAttrValue "type" -< node
     edgeSource <- getAttrValue "source" -< node

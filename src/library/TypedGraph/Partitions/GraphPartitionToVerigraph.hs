@@ -5,10 +5,10 @@ module TypedGraph.Partitions.GraphPartitionToVerigraph (
 {-Converts from GraphPartition to Verigraph structures-}
 
 import           Abstract.Morphism
-import qualified Graph.Graph                     as G
-import qualified Graph.GraphMorphism             as GM
+import qualified Graph.Graph                          as G
+import qualified Graph.GraphMorphism                  as GM
 import           TypedGraph.Graph
-import qualified TypedGraph.MorphismCore         as TGM
+import qualified TypedGraph.MorphismCore              as TGM
 import           TypedGraph.Partitions.GraphPartition as GP
 
 -- | For two typed graphs and a EpiPair (in GraphPartition format) return two TypedGraphMorphism for the graph in verigraph format

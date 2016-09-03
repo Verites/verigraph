@@ -27,7 +27,7 @@ data CPE = FolFol | DuseDuse | FolDuse | DuseFol deriving(Eq,Show)
 data EvoSpan a b = EvoSpan {
   leftMatch  :: RuleMorphism a b,
   rightMatch :: RuleMorphism a b,
-  cpe :: CPE
+  cpe        :: CPE
   } deriving (Eq,Show)
 
 -- | Given a list of second order rules, calculate all Evolutionary Spans
@@ -46,10 +46,10 @@ evolSpans config (n1,r1) (n2,r2) = (ruleNames, spans)
   where
     ruleNames = n1 ++ " (evoSpan) " ++ n2
     spans = map (\m@(m1,m2) -> EvoSpan m1 m2 (classify config r1 r2 m)) xs''
-    
+
     -- filter to catch only interesting situations
     --filteredSpans = filter (\s -> cpe s `elem` [FolDuse, DuseFol]) spans
-    
+
     r1Left = codomain (getLHS r1)
     r2Left = codomain (getLHS r2)
     r1Right = codomain (getRHS r1)
@@ -68,9 +68,9 @@ evolSpans config (n1,r1) (n2,r2) = (ruleNames, spans)
 classify :: DPOConfig -> SndOrderRule a b -> SndOrderRule a b -> (RuleMorphism a b, RuleMorphism a b) -> CPE
 classify config r1 r2 (m1,m2) =
   case (deleteUseFlGl, deleteUseFlGl'') of
-    (True,True) -> DuseDuse
-    (True,False) -> DuseFol
-    (False,True) -> FolDuse
+    (True,True)   -> DuseDuse
+    (True,False)  -> DuseFol
+    (False,True)  -> FolDuse
     (False,False) -> FolFol
   where
     deleteUseFlGl =
@@ -80,7 +80,7 @@ classify config r1 r2 (m1,m2) =
       isDeleteUse config
         (codomain (getLHS r2))
         (mappingLeft m2, mappingLeft m1)
-    
+
     deleteUseFlGl'' =
       isDeleteUse config
         (codomain (getRHS r1))

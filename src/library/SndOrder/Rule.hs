@@ -123,7 +123,7 @@ newNacsProb side sndRule = nacNodes ++ nacEdges
   where
     (mapSide, getSide) =
       case side of
-        LeftSide -> (SO.mappingLeft, getLHS)
+        LeftSide  -> (SO.mappingLeft, getLHS)
         RightSide -> (SO.mappingRight, getRHS)
 
     applyNode = applyNodeTGMUnsafe
@@ -173,7 +173,7 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
 
     (graphSide, side, otherSide) =
       case sideChoose of
-        LeftSide -> (graphR, l, r)
+        LeftSide  -> (graphR, l, r)
         RightSide -> (graphL, r, l)
 
     typeSrc x = GM.applyNodeUnsafe graphL (src x)

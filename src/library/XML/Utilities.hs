@@ -21,5 +21,5 @@ clearId l = if isNum (last l) then (clearId (init l)) ++ [last l] else ""
 
 toN :: String -> Int
 toN x = case readMaybe x :: Maybe Int of
-          Just n -> n
+          Just n  -> n
           Nothing -> error $ "Error converting id (" ++ x ++ ") to number"

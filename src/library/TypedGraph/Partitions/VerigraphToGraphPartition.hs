@@ -4,8 +4,8 @@ module TypedGraph.Partitions.VerigraphToGraphPartition (
    mixNac
    ) where
 
-import qualified Abstract.Morphism               as M
-import           Graph.Graph                     as G
+import qualified Abstract.Morphism                    as M
+import           Graph.Graph                          as G
 import           Graph.GraphMorphism
 import           TypedGraph.Graph
 import           TypedGraph.MorphismCore

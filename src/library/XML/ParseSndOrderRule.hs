@@ -76,7 +76,7 @@ getObjNameMapping :: ParsedTypedGraph -> ParsedTypedGraph -> [Mapping]
 getObjNameMapping (_,nodesL,edgesL) (_,nodesR,edgesR) = mapNodes ++ mapEdges
   where
     f id (Just n) = Just (id,n)
-    f _ _ = Nothing
+    f _ _         = Nothing
 
     fNodes (id,m,_) = f id m
     fEdges (id,m,_,_,_) = f id m
@@ -90,7 +90,7 @@ getObjNameMapping (_,nodesL,edgesL) (_,nodesR,edgesR) = mapNodes ++ mapEdges
                  (\(id,n) ->
                    case find (\(_,b) -> n == b) f of
                      Just (x,_) -> Just (x, Nothing, id)
-                     _ -> Nothing)
+                     _          -> Nothing)
 
     nonMono = concatMap
                 (\(id,objName) ->

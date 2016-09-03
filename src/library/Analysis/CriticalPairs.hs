@@ -61,10 +61,10 @@ type NamedCriticalPairs m = (String,String,[CriticalPair m])
 -- q21 (nacMatch) :: from N2 to P1
 
 data CriticalPair m = CriticalPair {
-    matches          :: (m, m),
-    comatches        :: Maybe (m, m),
-    nacMatch         :: Maybe (m, Int), --if it is a ProduceForbid, here is the index of the nac
-    cpType           :: CriticalPairType
+    matches   :: (m, m),
+    comatches :: Maybe (m, m),
+    nacMatch  :: Maybe (m, Int), --if it is a ProduceForbid, here is the index of the nac
+    cpType    :: CriticalPairType
     } deriving (Eq,Show)
 
 -- | Returns the matches (m1,m2)
@@ -84,14 +84,14 @@ getNacMatchOfCriticalPair :: CriticalPair m -> Maybe m
 getNacMatchOfCriticalPair criticalPair =
   case nacMatch criticalPair of
     Just (nac,_) -> Just nac
-    Nothing -> Nothing
+    Nothing      -> Nothing
 
 -- | Returns the nac index of a 'CriticalPair'
 getNacIndexOfCriticalPair :: CriticalPair m -> Maybe Int
 getNacIndexOfCriticalPair criticalPair =
   case nacMatch criticalPair of
     Just (_,idx) -> Just idx
-    Nothing -> Nothing
+    Nothing      -> Nothing
 
 -- | Returns the Critical Pairs with rule names
 namedCriticalPairs :: (EpiPairs m, DPO m) => DPOConfig -> [NamedRule m] -> [NamedCriticalPairs m]
@@ -151,7 +151,7 @@ findAllDeleteUseAndProduceDangling conf p1 p2 =
     gluing = filter (\(m1,m2) -> satisfyRewritingConditions conf (p1,m1) (p2,m2)) pairs
     conflicts = mapMaybe (deleteUseDangling conf p1 p2) gluing
     categorizeConflict x = case x of
-      (Left m) -> CriticalPair m Nothing Nothing DeleteUse
+      (Left m)  -> CriticalPair m Nothing Nothing DeleteUse
       (Right m) -> CriticalPair m Nothing Nothing ProduceDangling
 
 -- *** Produce-Forbid

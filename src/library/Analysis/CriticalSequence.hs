@@ -65,10 +65,10 @@ type NamedCriticalPairs m = (String,String,[CriticalSequence m])
 -- q21 (nacMatch) :: from N2 to P1
 
 data CriticalSequence m = CriticalSequence {
-    matches          :: Maybe (m, m),
-    comatches        :: (m, m),
-    nac              :: Maybe (m, Int), --if is DeleteForbid or ForbidProduce, here is the index of the nac
-    csType           :: CriticalSequenceType
+    matches   :: Maybe (m, m),
+    comatches :: (m, m),
+    nac       :: Maybe (m, Int), --if is DeleteForbid or ForbidProduce, here is the index of the nac
+    csType    :: CriticalSequenceType
     } deriving (Eq,Show)
 
 -- | Returns the matches (m1, m2)
@@ -88,14 +88,14 @@ getNacMatchOfCriticalSequence :: CriticalSequence m -> Maybe m
 getNacMatchOfCriticalSequence cs =
   case nac cs of
     Just (nac,_) -> Just nac
-    Nothing -> Nothing
+    Nothing      -> Nothing
 
 -- | Returns the nac index of a 'CriticalSequence'
 getNacIndexOfCriticalSequence :: CriticalSequence m -> Maybe Int
 getNacIndexOfCriticalSequence cs =
   case nac cs of
     Just (_,idx) -> Just idx
-    Nothing -> Nothing
+    Nothing      -> Nothing
 
 -- | Returns the Critical Sequences with rule names
 namedCriticalSequences :: (EpiPairs m, DPO m) => DPOConfig -> [NamedRule m] -> [NamedCriticalPairs m]
@@ -170,7 +170,7 @@ findAllProduceUseAndDangling conf p1 p2 =
     gluing = filter (\(m1,m2) -> satisfyRewritingConditions conf (p1',m1) (p2,m2)) pairs
     dependencies = mapMaybe (deleteUseDangling conf p1' p2) gluing
     categorizeDependency x = case x of
-      (Left m) -> CriticalSequence Nothing m Nothing ProduceUse
+      (Left m)  -> CriticalSequence Nothing m Nothing ProduceUse
       (Right m) -> CriticalSequence Nothing m Nothing RemoveDangling
 
 -- *** DeleteForbid

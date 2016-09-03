@@ -29,25 +29,25 @@ options = Options
 execute :: GlobalOptions -> Options -> IO ()
 execute globalOpts opts = do
     let dpoConf = dpoConfig globalOpts
-    
+
     (gg,printNewNacs) <- XML.readGrammar (inputFile globalOpts) dpoConf
     ggName <- XML.readGGName (inputFile globalOpts)
     names <- XML.readNames (inputFile globalOpts)
 
     putStrLn "Reading the second order graph grammar..."
     putStrLn ""
-    
+
     putStrLn $ "injective satisfability of nacs: " ++ show (nacSatisfaction dpoConf)
     putStrLn $ "only injective matches morphisms: " ++ show (matchRestriction dpoConf)
     putStrLn ""
-    
+
     mapM_ putStrLn (XML.printMinimalSafetyNacsLog dpoConf printNewNacs)
-    
+
     let newRules = SO.applySecondOrder (SO.applySndOrderRule dpoConf) (GG.rules gg) (GG.sndOrderRules gg)
         gg2 = gg {GG.rules = GG.rules gg ++ newRules}
-    
+
     putStrLn ""
-    
+
     GW.writeGrammarFile gg2 ggName names (outputFile opts)
 
     putStrLn "Done!"

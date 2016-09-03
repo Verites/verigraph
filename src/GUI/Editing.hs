@@ -70,7 +70,7 @@ type CtrlPoint = Int
 data Obj = Node G.NodeId NodePayload | Edge G.EdgeId EdgePayload [CtrlPoint]
 
 instance Show Obj where
-    show (Node id _) = show id
+    show (Node id _)   = show id
     show (Edge id _ _) = show id
 
 instance Eq Obj where
@@ -86,9 +86,9 @@ data TreeNode
 
 instance Show TreeNode where
     show (TNInitialGraph _ s ) = s
-    show TNTypeGraph = "Type Graph"
-    show (TNRule _ s) = s
-    show (TNRoot s) = s
+    show TNTypeGraph           = "Type Graph"
+    show (TNRule _ s)          = s
+    show (TNRoot s)            = s
 
 
 -- To keep it uniform, typegraphs are also described as GraphEditState
@@ -140,8 +140,8 @@ currentGraphState :: GramState -> Maybe GraphEditState
 currentGraphState state =
     case _canvasMode state of
         IGraphMode k -> lookup k iGraphs
-        TGraphMode -> Just tGraph
-        RuleMode k -> lookup k rules
+        TGraphMode   -> Just tGraph
+        RuleMode k   -> lookup k rules
   where
     iGraphs = _getInitialGraphs state
     tGraph = _getTypeGraph state
@@ -162,7 +162,7 @@ modCurGraphState :: (GraphEditState -> GraphEditState) -> GramState -> GramState
 modCurGraphState f state =
     case gstate' of
         Just gstate' -> setCurGraphState gstate' state
-        Nothing -> state
+        Nothing      -> state
   where
     gstate' = f Control.Applicative.<$> currentGraphState state
 

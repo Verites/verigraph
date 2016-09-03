@@ -4,21 +4,21 @@ module CriticalPairAnalysis
   , execute
   ) where
 
-import           Abstract.AdhesiveHLR      (EpiPairs)
+import           Abstract.AdhesiveHLR                  (EpiPairs)
 import           Abstract.DPO
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
 import           Analysis.Interlevel.EvolutionarySpans
 import           Analysis.Interlevel.InterLevelCP
-import           Control.Monad (when)
+import           Control.Monad                         (when)
 import           Data.List.Utils
-import           Data.Matrix               hiding ((<|>))
+import           Data.Matrix                           hiding ((<|>))
 import           GlobalOptions
 import           Options.Applicative
 import           SndOrder.Rule
-import qualified TypedGraph.GraphGrammar   as GG
-import qualified XML.GGXReader             as XML
-import qualified XML.GGXWriter             as GW
+import qualified TypedGraph.GraphGrammar               as GG
+import qualified XML.GGXReader                         as XML
+import qualified XML.GGXWriter                         as GW
 
 data Options = Options
   { outputFile   :: Maybe String

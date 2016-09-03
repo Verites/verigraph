@@ -93,8 +93,8 @@ inverseRelation (Relation dom cod m) =
 apply :: (Ord a) => Relation a -> a -> [a]
 apply (Relation _ _ m) x =
     case Map.lookup x m of
-        Just l    -> l
-        _ -> []
+        Just l -> l
+        _      -> []
 
 -- | Compose @r1@ and @r2@.
 compose :: (Ord a) => Relation a -> Relation a -> Relation a
@@ -132,7 +132,7 @@ isFunctional :: Relation a -> Bool
 isFunctional r = all containsOne $ Map.elems (mapping r)
   where
     containsOne [_] = True
-    containsOne _ = False
+    containsOne _   = False
 
 -- | Test if @r@ is injective out of domain @list@
 isPartialInjective :: Ord a => [a] -> Relation a -> Bool

@@ -15,9 +15,9 @@ main = execParser opts >>= execute
       <> progDesc "Software specification and verification tool based on graph rewriting")
 
 execute :: (GlobalOptions, Command) -> IO ()
-execute (globalOpts, CPAnalysis opts) = CPA.execute globalOpts opts
+execute (globalOpts, CPAnalysis opts)         = CPA.execute globalOpts opts
 execute (globalOpts, ApplySndOrderRules opts) = ASO.execute globalOpts opts
-execute (globalOpts, ConcurrentRules opts) = CR.execute globalOpts opts
+execute (globalOpts, ConcurrentRules opts)    = CR.execute globalOpts opts
 
 options :: Parser (GlobalOptions, Command)
 options = (\cmd opts -> (opts, cmd)) <$> commands <*> globalOpts

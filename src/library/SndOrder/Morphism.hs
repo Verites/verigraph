@@ -1,5 +1,5 @@
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module SndOrder.Morphism (
     RuleMorphism
@@ -233,10 +233,10 @@ instance AdhesiveHLR (RuleMorphism a b) where
        r = commutingMorphismSameCodomain
              (compose leftK' (getRHS ruleG)) leftR'
              matchK' (compose (getRHS ruleK) matchR')
-       
+
        validNACs = filter (satisfiesNACRewriting leftL') (getNACs ruleG)
        newRuleNACs = map (\nac -> fst (calculatePushoutComplement nac leftL')) validNACs
-       
+
        newRule = buildProduction l r newRuleNACs
        k = RuleMorphism ruleK newRule matchL' matchK' matchR'
        l' = RuleMorphism newRule ruleG leftL' leftK' leftR'
@@ -252,9 +252,9 @@ instance AdhesiveHLR (RuleMorphism a b) where
        r = commutingMorphismSameDomain
              rightK' (compose (getRHS ruleD) rightR')
              matchK' (compose (getRHS ruleR) matchR')
-       
+
        newRuleNACs = map (\nac -> fst (calculatePushout nac rightL')) (getNACs ruleD)
-       
+
        newRule = buildProduction l r newRuleNACs
        m' = RuleMorphism ruleR newRule matchL' matchK' matchR'
        r' = RuleMorphism ruleD newRule rightL' rightK' rightR'

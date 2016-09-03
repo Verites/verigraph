@@ -11,11 +11,11 @@ import           Data.Maybe (mapMaybe)
 
 -- | A Node with the needed information for generating equivalence classes
 data Node = Node {
-    nodeType   :: Int,
-    nodeName   :: Int,
-    nodeId     :: Int,
-    injectiveNode    :: Bool, --injective flag
-    nodeFromLeft :: Bool
+    nodeType      :: Int,
+    nodeName      :: Int,
+    nodeId        :: Int,
+    injectiveNode :: Bool, --injective flag
+    nodeFromLeft  :: Bool
     }
 
 instance Show Node where
@@ -29,13 +29,13 @@ instance Eq Node where
 
 -- | An Edge with the needed informations for the generating equivalence classes algorithm
 data Edge = Edge {
-    edgeType   :: Int,
-    label   :: Int,
-    edgeId     :: Int,
-    source  :: Node,
-    target  :: Node,
-    injectiveEdge    :: Bool, --injective flag
-    edgeFromLeft :: Bool
+    edgeType      :: Int,
+    label         :: Int,
+    edgeId        :: Int,
+    source        :: Node,
+    target        :: Node,
+    injectiveEdge :: Bool, --injective flag
+    edgeFromLeft  :: Bool
     } deriving (Eq)
 
 instance Show Edge where

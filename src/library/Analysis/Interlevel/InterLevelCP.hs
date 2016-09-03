@@ -9,7 +9,7 @@ module Analysis.Interlevel.InterLevelCP (interLevelCP, InterLevelCP(..)) where
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Morphism
-import           Data.List (nubBy)
+import           Data.List            (nubBy)
 import           Graph.Graph
 import           Graph.GraphMorphism
 import           SndOrder.Morphism
@@ -29,11 +29,11 @@ data InterLevelCP a b = InterLevelCP {
 interLevelCP :: DPOConfig -> (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String,String,Int,InterLevelCP a b)]
 interLevelCP config (sndName, sndRule) (fstName, fstRule) =
   map (\((x,y,z),w) -> (x,y,z,w)) unformattedConflicts
-  
+
   where
     newNames = map (\number -> (fstName, sndName, number)) ([0..] :: [Int])
     unformattedConflicts = zip newNames (concatMap conflictsForMatch validMatches)
-    
+
     validMatches = findApplicableMatches config sndRule fstRule
 
     conflictsForMatch match =
@@ -61,15 +61,15 @@ interLevelConflictOneMatch config sndRule match = m0s
 
     fl = mappingLeft l'
     gl = mappingLeft r'
-    
+
     danglingExtFl = compose fl (danglingExtension fl bigL)
     danglingExtGl = compose gl (danglingExtension gl bigL'')
-    
+
     axs = relevantMatches config danglingExtFl danglingExtGl
     relevantGraphs = map codomain axs
-    
+
     defineMatches = allILCP config p p'' fl gl
-    
+
     m0s = concatMap defineMatches (removeDuplicated relevantGraphs)
 
 removeDuplicated :: [GraphMorphism a b] -> [GraphMorphism a b]

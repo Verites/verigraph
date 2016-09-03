@@ -277,7 +277,7 @@ writeOverlapping nacNames overlap@(_,_,(_,_,_,_,t),_) =
     "DeliverDelete"   -> writeDelDel
     "DeliverDangling" -> writeDelDangling
     "ForbidProduce"   -> writeForbProd nacNames
-    _ -> error $ "Unexpected type of overlapping: " ++ t)
+    _                 -> error $ "Unexpected type of overlapping: " ++ t)
   overlap
 
 writeProdForbid :: ArrowXml a => [(String,String)] -> Overlapping -> a XmlTree XmlTree
@@ -413,7 +413,7 @@ writeEdge prefix (edgeId, objName, edgeType, source, target) =
 
 writeObjName :: ArrowXml a => Maybe String -> [a XmlTree XmlTree]
 writeObjName (Just n) = [sattr "name" n]
-writeObjName _ = []
+writeObjName _        = []
 
 writeEdgesConflict :: ArrowXml a => String -> [ParsedTypedEdge] -> [a XmlTree XmlTree]
 writeEdgesConflict graphId = map (writeEdgeConflict graphId)

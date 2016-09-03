@@ -208,13 +208,13 @@ nodeRenderType :: GramState -> GraphEditState -> G.NodeId -> Render ()
 nodeRenderType state gstate n =
     case newP of
         Just p -> get nodeRender p state gstate n
-        _ -> return ()
+        _      -> return ()
   where
     nodeTypes = R.apply (_getNodeRelation gstate) n
     tGraph = get (getGraph . getTypeGraph) state
     newP = case nodeTypes of
                (x:xs) -> G.nodePayload tGraph x
-               _ -> Nothing
+               _      -> Nothing
 
 angle :: Coords -> Double
 angle (dx, dy)

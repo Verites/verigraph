@@ -35,7 +35,7 @@ overlapsCP name2 cs = (graph, mapM1, mapM2 ++ mapM2WithNac, nacName cs, csType c
     mapM2 = getTgmMappings Nothing m2
     mapM2WithNac = case CP.getCriticalPairType cs of
                      CP.ProduceForbid -> addNacMap
-                     _ -> []
+                     _                -> []
     nacMatch = fromMaybe (error "Error when exporting ProduceForbid") (CP.getNacMatchOfCriticalPair cs)
     addNacMap = getTgmMappings (Just (nacName cs)) nacMatch
     nacName = parseNacName name2 CP.getNacIndexOfCriticalPair
@@ -58,9 +58,9 @@ overlapsCS name2 cs = (graph, mapM1, mapM2 ++ mapM2WithNac, nacName cs, csType c
     mapM1 = getTgmMappings Nothing m1
     mapM2 = getTgmMappings Nothing m2
     mapM2WithNac = case CS.getCriticalSequenceType cs of
-                     CS.DeleteForbid -> addNacMap
+                     CS.DeleteForbid  -> addNacMap
                      CS.ForbidProduce -> addNacMap
-                     _ -> []
+                     _                -> []
     nacMatch = fromMaybe (error "Error when exporting DeleteForbid or ForbidProduce") (CS.getNacMatchOfCriticalSequence cs)
     addNacMap = getTgmMappings (Just (nacName cs)) nacMatch
     nacName = parseNacName name2 CS.getNacIndexOfCriticalSequence

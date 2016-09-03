@@ -31,16 +31,16 @@ module TypedGraph.Morphism (
 ) where
 
 import           Abstract.AdhesiveHLR
-import           Abstract.Morphism               as M
-import           Data.List                       as L
+import           Abstract.Morphism                               as M
+import           Data.List                                       as L
 import           Data.Maybe
-import           Graph.Graph                     as G
-import           Graph.GraphMorphism             as GM
+import           Graph.Graph                                     as G
+import           Graph.GraphMorphism                             as GM
 import           TypedGraph.Graph
 import           TypedGraph.MorphismCore
-import           TypedGraph.Partitions.GraphPartitionToVerigraph  (mountTypedGraphMorphisms)
-import           TypedGraph.Partitions.GraphPartition (generateGraphPartitions)
-import           TypedGraph.Partitions.VerigraphToGraphPartition  (mixGM, mixNac)
+import           TypedGraph.Partitions.GraphPartition            (generateGraphPartitions)
+import           TypedGraph.Partitions.GraphPartitionToVerigraph (mountTypedGraphMorphisms)
+import           TypedGraph.Partitions.VerigraphToGraphPartition (mixGM, mixNac)
 
 
 -- | Return the graph domain
@@ -394,7 +394,7 @@ partialInjectiveMatches' nac match =
 
           case tgm' of
             Just tgm'' -> composeEdges tgm'' t
-            Nothing -> Nothing
+            Nothing    -> Nothing
 
       --VERIFY NODES MAPPING N <- l AND L -> G AND BUILD A N -> G
       --PARTIAL NODES MORPHISM
@@ -420,7 +420,7 @@ partialInjectiveMatches' nac match =
                      else Nothing
           case tgm' of
             Just tgm'' -> composeNodes tgm'' t
-            Nothing -> Nothing
+            Nothing    -> Nothing
 
       --PRE-BUILD EDGES MAPPING OF @q@
       q' = composeEdges q edgesL
@@ -480,10 +480,10 @@ buildMappings :: MorphismType -> [G.NodeId] -> [G.EdgeId] -> [G.NodeId] -> [G.Ed
 --IF NO HAS FREE NODES OR FREE EDGES TO MAP, RETURN THE FOUND MORPHISMO
 buildMappings prop [] [] nodesT edgesT tgm =
       case prop of
-        GenericMorphism  -> all
-        Monomorphism -> all
-        Epimorphism  -> epimorphism
-        Isomorphism  -> isomorphism
+        GenericMorphism -> all
+        Monomorphism    -> all
+        Epimorphism     -> epimorphism
+        Isomorphism     -> isomorphism
       where
         all = return tgm
 
@@ -509,10 +509,10 @@ buildMappings prop (h:t) [] nodesT edgesT tgm
         Just tgm' ->
           --CHOSE BETWEEN INJECTIVE OR NOT
           case prop of
-            GenericMorphism  -> all
-            Monomorphism -> monomorphism
-            Epimorphism  -> all
-            Isomorphism  -> monomorphism
+            GenericMorphism -> all
+            Monomorphism    -> monomorphism
+            Epimorphism     -> all
+            Isomorphism     -> monomorphism
           where
             monomorphism = buildMappings prop t [] nodesT' edgesT tgm'
             all          = buildMappings prop t [] nodesT  edgesT tgm'
@@ -537,10 +537,10 @@ buildMappings prop nodes (h:t) nodesT edgesT tgm
                   d = domain $ domain tgm
                   c = domain $ codomain tgm
                   nodesT' = case prop of
-                    Monomorphism -> L.delete (srcE c y) nodesT
-                    Isomorphism  -> L.delete (srcE c y) nodesT
-                    Epimorphism  -> nodesT
-                    GenericMorphism  -> nodesT
+                    Monomorphism    -> L.delete (srcE c y) nodesT
+                    Isomorphism     -> L.delete (srcE c y) nodesT
+                    Epimorphism     -> nodesT
+                    GenericMorphism -> nodesT
 
           --MAPPING SRC EDGE AND TGT EDGE
           tgmE
@@ -560,10 +560,10 @@ buildMappings prop nodes (h:t) nodesT edgesT tgm
               all          = buildMappings prop nodes' t nodesT  edgesT  tgm'
               --CHOSE BETWEEN INJECTIVE OR NOT
           case prop of
-            GenericMorphism  -> all
-            Monomorphism -> monomorphism
-            Epimorphism  -> all
-            Isomorphism  -> monomorphism
+            GenericMorphism -> all
+            Monomorphism    -> monomorphism
+            Epimorphism     -> all
+            Isomorphism     -> monomorphism
         Nothing  -> []
 
 ---------------------------------------------------------------------------------

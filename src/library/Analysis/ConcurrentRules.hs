@@ -7,8 +7,8 @@ module Analysis.ConcurrentRules
 
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
-import           Analysis.CriticalSequence (getCriticalSequenceComatches,
-                                            findTriggeringCriticalSequences)
+import           Analysis.CriticalSequence (findTriggeringCriticalSequences,
+                                            getCriticalSequenceComatches)
 
 data CRDependencies = AllOverlapings | OnlyDependency
 

@@ -115,10 +115,10 @@ buildMappings :: MorphismType -> [G.NodeId] -> [G.EdgeId] -> [G.NodeId] -> [G.Ed
 --IF NO HAS FREE NODES OR FREE EDGES TO MAP, RETURN THE FOUND MORPHISMO
 buildMappings prop [] [] nodesT edgesT tgm =
       case prop of
-        GenericMorphism  -> all
-        Monomorphism -> all
-        Epimorphism  -> epimorphism
-        Isomorphism  -> isomorphism
+        GenericMorphism -> all
+        Monomorphism    -> all
+        Epimorphism     -> epimorphism
+        Isomorphism     -> isomorphism
       where
         all = return tgm
 
@@ -144,10 +144,10 @@ buildMappings prop (h:t) [] nodesT edgesT tgm
         Just tgm' ->
           --CHOSE BETWEEN INJECTIVE OR NOT
           case prop of
-            GenericMorphism  -> all
-            Monomorphism -> monomorphism
-            Epimorphism  -> all
-            Isomorphism  -> monomorphism
+            GenericMorphism -> all
+            Monomorphism    -> monomorphism
+            Epimorphism     -> all
+            Isomorphism     -> monomorphism
           where
             monomorphism = buildMappings prop t [] nodesT' edgesT tgm'
             all          = buildMappings prop t [] nodesT  edgesT tgm'
@@ -172,10 +172,10 @@ buildMappings prop nodes (h:t) nodesT edgesT tgm
                   d = domain $ domain tgm
                   c = domain $ codomain tgm
                   nodesT' = case prop of
-                    Monomorphism -> L.delete (srcE c y) nodesT
-                    Isomorphism  -> L.delete (srcE c y) nodesT
-                    Epimorphism  -> nodesT
-                    GenericMorphism  -> nodesT
+                    Monomorphism    -> L.delete (srcE c y) nodesT
+                    Isomorphism     -> L.delete (srcE c y) nodesT
+                    Epimorphism     -> nodesT
+                    GenericMorphism -> nodesT
 
           --MAPPING SRC EDGE AND TGT EDGE
           tgmE
@@ -195,10 +195,10 @@ buildMappings prop nodes (h:t) nodesT edgesT tgm
               all          = buildMappings prop nodes' t nodesT  edgesT  tgm'
               --CHOSE BETWEEN INJECTIVE OR NOT
           case prop of
-            GenericMorphism  -> all
-            Monomorphism -> monomorphism
-            Epimorphism  -> all
-            Isomorphism  -> monomorphism
+            GenericMorphism -> all
+            Monomorphism    -> monomorphism
+            Epimorphism     -> all
+            Isomorphism     -> monomorphism
         Nothing  -> []
 
 ---------------------------------------------------------------------------------

@@ -53,13 +53,13 @@ crDependencies =
 execute :: GlobalOptions -> Options -> IO ()
 execute globalOpts opts = do
     let dpoConf = dpoConfig globalOpts
-    
+
     (gg,_) <- XML.readGrammar (inputFile globalOpts) dpoConf
     ggName <- XML.readGGName (inputFile globalOpts)
     names <- XML.readNames (inputFile globalOpts)
     sequences <- XML.readSequences gg (inputFile globalOpts)
     let makeConcurrentRules = case generationType opts of
-                                MaxConcurrentRule -> makeMaxConcurrentRule
+                                MaxConcurrentRule  -> makeMaxConcurrentRule
                                 AllConcurrentRules -> makeAllConcurrentRules
         dependencies = concRulesbyDep opts
         newRules = concatMap (makeConcurrentRules dependencies $ dpoConfig globalOpts) sequences
