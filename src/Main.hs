@@ -5,9 +5,9 @@ import qualified XML.GGXReader        as XML
 --import           Abstract.Valid
 --import qualified Analysis.CriticalSequence as CS
 --import qualified Analysis.CriticalPairs as CP
---import           Partitions.GPToVeri
---import           Partitions.GraphPart
---import           Partitions.VeriToGP
+--import           Partitions.GraphPartitionToVerigraph
+--import           Partitions.GraphPartition
+--import           Partitions.VerigraphToGraphPartition
 import           Graph.Graph          as G
 --import qualified TypedGraph.GraphRule as GR
 import qualified Graph.GraphMorphism  as GM
@@ -41,7 +41,7 @@ a fn = do
           r1 = rs!!0
           r2 = rs!!1
           pairs = createPairsCodomain True (left r1) (left r2)
-          --dgs = Partitions.GraphPart.edges mix2
+          --dgs = Partitions.GraphPartition.edges mix2
           inj = filter (\(m1,m2) -> monomorphism m1 && monomorphism m2) pairs
           gluing = filter (\(m1,m2) -> satisfiesGluingConditions True r1 m1 && satisfiesGluingConditions True r2 m2) inj
           delUse = filter (deleteUse r1 r2) gluing
@@ -611,7 +611,7 @@ kr''      = foldr (\(a,sa,ta,b,sb,tb,tp) tgm -> TGM.updateEdgeRelationTGM a b (T
 -----
 
 --graphEqClass = map (\x -> GP.genEqClass (mixTGM (right getDATA) x)) (nacs sendMsg)
---md = map (\x -> (map (mountTGMBoth (right getDATA) x graphEqClass))) (nacs sendMsg)
+--md = map (\x -> (map (mountTypedGraphMorphisms (right getDATA) x graphEqClass))) (nacs sendMsg)
 --ms = map (map (mountTGM (right getDATA) "Right")) (map(\x -> GP.genEqClass (mixTGM x (right getDATA))) (nacs sendMsg))
 
 --injectiveMatches = True

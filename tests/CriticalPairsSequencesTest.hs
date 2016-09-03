@@ -117,7 +117,7 @@ main = do
   (gg,_) <- XML.readGrammar fileName dpoConf
 
   let rules = map snd (GG.rules gg)
-  
+
   runTestTT (tests dpoConf rules)
 
 pairwise :: (a -> a -> [b]) -> [a] -> Matrix Int

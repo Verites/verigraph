@@ -38,9 +38,9 @@ import           Graph.Graph                     as G
 import           Graph.GraphMorphism             as GM
 import           TypedGraph.Graph
 import           TypedGraph.MorphismCore
-import           TypedGraph.Partitions.GPToVeri  (mountTGMBoth)
-import           TypedGraph.Partitions.GraphPart (genGraphEqClass)
-import           TypedGraph.Partitions.VeriToGP  (mixGM, mixNac)
+import           TypedGraph.Partitions.GraphPartitionToVerigraph  (mountTypedGraphMorphisms)
+import           TypedGraph.Partitions.GraphPartition (generateGraphPartitions)
+import           TypedGraph.Partitions.VerigraphToGraphPartition  (mixGM, mixNac)
 
 
 -- | Return the graph domain
@@ -303,15 +303,15 @@ ruleDeletes l m apply list n = inL && not isPreserv
 
 instance EpiPairs (TypedGraphMorphism a b) where
   -- | Create all jointly surjective pairs of @m1@ and @m2@
-  createJointlyEpimorphicPairs inj m1 m2 = map (mountTGMBoth m1 m2) (genGraphEqClass (mixGM (m1,inj) (m2,inj)))
+  createJointlyEpimorphicPairs inj m1 m2 = map (mountTypedGraphMorphisms m1 m2) (generateGraphPartitions (mixGM (m1,inj) (m2,inj)))
 
   createAllSubobjects inj m1 = map fst part
     where
       m2 = buildGraphMorphism G.empty G.empty [] []
-      part = map (mountTGMBoth m1 m2) (genGraphEqClass (mixGM (m1,inj) (m2,inj)))
+      part = map (mountTypedGraphMorphisms m1 m2) (generateGraphPartitions (mixGM (m1,inj) (m2,inj)))
 
   createJointlyEpimorphicPairsFromNAC config r nac =
-    map (mountTGMBoth r (codomain nac)) (genGraphEqClass (mixNac (r, matchInj) (nac, nacInj)))
+    map (mountTypedGraphMorphisms r (codomain nac)) (generateGraphPartitions (mixNac (r, matchInj) (nac, nacInj)))
 
     where
       matchInj =
@@ -327,7 +327,7 @@ instance EpiPairs (TypedGraphMorphism a b) where
     where
       cod1 = codomain m1
       cod2 = codomain m2
-      allPairs = map (mountTGMBoth cod1 cod2) (genGraphEqClass (mixGM (cod1,inj1) (cod2,inj2)))
+      allPairs = map (mountTypedGraphMorphisms cod1 cod2) (generateGraphPartitions (mixGM (cod1,inj1) (cod2,inj2)))
       filt = filter (\(x,y) -> compose m1 x == compose m2 y) allPairs
 
 

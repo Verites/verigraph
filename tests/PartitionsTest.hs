@@ -39,12 +39,12 @@ typegraph = insertEdge (EdgeId 0) (NodeId 0) (NodeId 0) (insertNode (NodeId 0) G
 
 --graph1: typed graph with 'limitBellNumber' nodes of same type
 initGraph1 = Graph.GraphMorphism.empty Graph.Graph.empty typegraph
-graph1 = foldr (\n -> createNodeDom (NodeId n) (NodeId 0)) initGraph1
+graph1 = foldr (\n -> createNodeOnDomain (NodeId n) (NodeId 0)) initGraph1
 
 --graph2: typed graph with 'limitBellNumber' edges of same type with the same source and target
 initGraph2 = Graph.GraphMorphism.empty (insertNode (NodeId 0) Graph.Graph.empty) typegraph
 graph2 = foldr
-           (\e -> createEdgeDom (EdgeId e) (NodeId 0) (NodeId 0) (EdgeId 0))
+           (\e -> createEdgeOnDomain (EdgeId e) (NodeId 0) (NodeId 0) (EdgeId 0))
            (updateNodes (NodeId 0) (NodeId 0) initGraph2)
 
 main :: IO Counts
