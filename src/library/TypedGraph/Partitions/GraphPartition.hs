@@ -106,7 +106,7 @@ generatePartitions equivalenceChecker equivalenceList =
 -- | Runs a backtracking algorithm to create all partitions
 -- receives a function of restriction to know when a element can be combined with other
 backtracking :: (a -> [a] -> Bool) -> [a] -> [[a]] -> [[[a]]]
-backtracking equivalenceChecker toAdd []      = backtracking equivalenceChecker (init toAdd) [[last toAdd]]
+backtracking equivalenceChecker toAdd []      = backtracking equivalenceChecker (tail toAdd) [[head toAdd]]
 backtracking _ [] eqClass                     = [eqClass]
 backtracking equivalenceChecker toAdd eqClass =
   backtracking equivalenceChecker initAdd ([ad]:eqClass) ++
@@ -119,8 +119,8 @@ backtracking equivalenceChecker toAdd eqClass =
                         Nothing)
       (zip eqClass [0..]))
   where
-    initAdd = init toAdd
-    ad = last toAdd
+    initAdd = tail toAdd
+    ad = head toAdd
 
 -- | Returns the node that this @p@ was collapsed in partitions
 -- Used to compare if an edge can be mixed with another
