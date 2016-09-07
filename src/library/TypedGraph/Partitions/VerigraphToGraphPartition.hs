@@ -1,7 +1,6 @@
 module TypedGraph.Partitions.VerigraphToGraphPartition (
-   --  mixLeftRule,
-   mixGM,
-   mixNac
+   createDisjointUnion,
+   createSatisfyingNacsDisjointUnion
    ) where
 
 import qualified Abstract.Morphism                    as M
@@ -12,24 +11,24 @@ import           TypedGraph.MorphismCore
 import qualified TypedGraph.Partitions.GraphPartition as GP
 
 -- | Creates the disjoint union of two verigraph graphs in 'GraphPartition' format
-mixGM :: (GraphMorphism a b,Bool) -> (GraphMorphism a b,Bool) -> GP.Graph
-mixGM (l,injL) (r,injR) = disjUnionGraphs left right
+createDisjointUnion :: (GraphMorphism a b,Bool) -> (GraphMorphism a b,Bool) -> GP.Graph
+createDisjointUnion (m1,injL) (m2,injR) = disjUnionGraphs left right
    where
-     (left,id) = tgmToGP injectiveL l True 0
-     (right,_) = tgmToGP injectiveR r False id
-     injectiveL = if injL then (G.nodes (M.domain l), G.edges (M.domain l)) else ([],[])
-     injectiveR = if injR then (G.nodes (M.domain r), G.edges (M.domain r)) else ([],[])
+     (left,id) = tgmToGP injectiveL m1 True 0
+     (right,_) = tgmToGP injectiveR m2 False id
+     injectiveL = if injL then (G.nodes (M.domain m1), G.edges (M.domain m1)) else ([],[])
+     injectiveR = if injR then (G.nodes (M.domain m2), G.edges (M.domain m2)) else ([],[])
      nodes = fst
      edges = snd
      disjUnionGraphs a b = (nodes a ++ nodes b, edges a ++ edges b)
 
 -- | Creates the disjoint union of two verigraph graphs in 'GraphPartition' format, with restriction to @nac@
-mixNac :: (GraphMorphism a b,Bool) -> (TypedGraphMorphism a b,Bool) -> GP.Graph
-mixNac (r,injR) (nac,injN) = disjUnionGraphs left right
+createSatisfyingNacsDisjointUnion :: (GraphMorphism a b,Bool) -> (TypedGraphMorphism a b,Bool) -> GP.Graph
+createSatisfyingNacsDisjointUnion (m2,injR) (nac,injN) = disjUnionGraphs left right
    where
-     (left,id) = tgmToGP injectiveR r True 0
+     (left,id) = tgmToGP injectiveR m2 True 0
      (right,_) = tgmToGP injectiveN (M.codomain nac) False id
-     injectiveR = if injR then (G.nodes (M.domain r), G.edges (M.domain r)) else ([],[])
+     injectiveR = if injR then (G.nodes (M.domain m2), G.edges (M.domain m2)) else ([],[])
      injectiveN = if injN then (nodesCodomain nac, edgesCodomain nac) else (injNodes, injEdges)
      injNodes = filter (\n -> countIncidentMap (applyNodeTGM nac) (nodesDomain nac) n < 2) (nodesCodomain nac)
      injEdges = filter (\n -> countIncidentMap (applyEdgeTGM nac) (edgesCodomain nac) n < 2) (edgesCodomain nac)
@@ -41,12 +40,12 @@ countIncidentMap :: Eq a => (a -> Maybe a) -> [a] -> a -> Int
 countIncidentMap f l y = length $ filter (\x -> f x == Just y) l
 
 tgmToGP :: ([NodeId],[EdgeId]) -> GraphMorphism a b -> Bool -> Int -> (GP.Graph,Int)
-tgmToGP inj@(injNodes,_) morfL side id = ((nods,edgs), nextId)
+tgmToGP inj@(injNodes,_) morfL side id = ((nodes',edges'), nextId)
    where
-      nods   = nodesToGP injNodes morfL side id $ nodes graphL
-      edgs   = edgesToGP inj morfL side graphL id $ edges graphL
+      nodes'   = nodesToGP injNodes morfL side id $ nodes graphL
+      edges'   = edgesToGP inj morfL side graphL id $ edges graphL
       graphL = M.domain morfL
-      nextId = max (length nods) (length edgs)
+      nextId = max (length nodes') (length edges')
 
 nodesToGP :: [NodeId] -> TypedGraph a b -> Bool -> Int -> [NodeId] -> [GP.Node]
 nodesToGP _        _  _    _  []            = []
