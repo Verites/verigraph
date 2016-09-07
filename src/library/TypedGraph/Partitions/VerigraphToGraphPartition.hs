@@ -11,14 +11,6 @@ import           TypedGraph.Graph
 import           TypedGraph.MorphismCore
 import qualified TypedGraph.Partitions.GraphPartition as GP
 
---from verigraph to GraphPartition
-
-{- TODO: this function seems to be unnecessary, and causes a cyclic dependency between modules
--- | Creates the disjoint union of left sides of two rules in 'GraphPartition' format
-mixLeftRule :: Bool -> GraphRule a b -> GraphRule a b -> GP.Graph
-mixLeftRule inj l r = mixGM (M.codomain (left l), inj) (M.codomain (left r), inj)
--}
-
 -- | Creates the disjoint union of two verigraph graphs in 'GraphPartition' format
 mixGM :: (GraphMorphism a b,Bool) -> (GraphMorphism a b,Bool) -> GP.Graph
 mixGM (l,injL) (r,injR) = disjUnionGraphs left right
