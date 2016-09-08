@@ -273,13 +273,13 @@ instance AdhesiveHLR (RuleMorphism a b) where
 danglingSpan :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
 danglingSpan matchRuleSide matchMorp matchK l k = deletedNodesInK && deletedEdgesInK
   where
-    deletedNodes = filter (ruleDeletes l matchMorp applyNodeTGM nodesDomain) (nodesCodomain matchMorp)
+    deletedNodes = filter (checkDeletion l matchMorp applyNodeTGM nodesDomain) (nodesCodomain matchMorp)
     nodesInK = [a | a <- nodesDomain matchRuleSide, applyNodeTGMUnsafe matchRuleSide a `elem` deletedNodes]
-    deletedNodesInK = all (ruleDeletes k matchK applyNodeTGM nodesDomain) nodesInK
+    deletedNodesInK = all (checkDeletion k matchK applyNodeTGM nodesDomain) nodesInK
 
-    deletedEdges = filter (ruleDeletes l matchMorp applyEdgeTGM edgesDomain) (edgesCodomain matchMorp)
+    deletedEdges = filter (checkDeletion l matchMorp applyEdgeTGM edgesDomain) (edgesCodomain matchMorp)
     edgesInK = [a | a <- edgesDomain matchRuleSide, applyEdgeTGMUnsafe matchRuleSide a `elem` deletedEdges]
-    deletedEdgesInK = all (ruleDeletes k matchK applyEdgeTGM edgesDomain) edgesInK
+    deletedEdgesInK = all (checkDeletion k matchK applyEdgeTGM edgesDomain) edgesInK
 
 
 -- | Given the morphisms /k1 : X -> Y/, /s1 : X -> Z/,

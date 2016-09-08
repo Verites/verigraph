@@ -283,20 +283,20 @@ satisfiesDanglingCondition leftR m = all (==True) (concat incidentEdgesDel)
         l = graphDomain m
         g = graphCodomain m
         matchedLInG = mapMaybe (applyNodeTGM m) (nodes l)
-        delNodes = filter (ruleDeletes leftR m applyNodeTGM nodesDomain) matchedLInG
+        delNodes = filter (checkDeletion leftR m applyNodeTGM nodesDomain) matchedLInG
         hasIncEdges = map (incidentEdges g) delNodes
-        verEdgeDel = map (ruleDeletes leftR m applyEdgeTGM edgesDomain)
+        verEdgeDel = map (checkDeletion leftR m applyEdgeTGM edgesDomain)
         incidentEdgesDel = map verEdgeDel hasIncEdges
 
 -- | Return True if the element @n@ is deleted by the rule @rule@ with match @m@
 -- assumes that @n@ has type NodeId or EdgeId
 -- @n@ not is necessarily element of G (the graph matched by @m@), in this case return False
 -- @list@ must get all element in the domain of @m@
-ruleDeletes :: Eq t => TypedGraphMorphism a b -> TypedGraphMorphism a b
+checkDeletion :: Eq t => TypedGraphMorphism a b -> TypedGraphMorphism a b
                   -> (TypedGraphMorphism a b -> t -> Maybe t)
                   -> (TypedGraphMorphism a b -> [t])
                   -> t -> Bool
-ruleDeletes l m apply list n = inL && not isPreserv
+checkDeletion l m apply list n = inL && not isPreserv
     where
         inL = any (\x -> apply m x == Just n) (list m)
         kToG = compose l m

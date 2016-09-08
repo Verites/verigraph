@@ -15,7 +15,7 @@ module TypedGraph.GraphRule (
     , createdNodes
     , createdEdges
 
-    , ruleDeletes
+    , checkDeletion
 ) where
 
 
@@ -43,27 +43,22 @@ createdEdges :: GraphRule a b -> [G.EdgeId]
 createdEdges r = TGM.orphanEdgesTyped (getRHS r)
 
 instance DPO (TypedGraphMorphism a b) where
-  invertProduction conf r = buildProduction (getRHS r) (getLHS r) (concatMap (shiftNacOverProduction conf r) (getNACs r))
 
-  shiftNacOverProduction conf rule n = [calculateComatch n rule | satisfiesGluingConditions conf rule n]
+  invertProduction conf rule =
+    buildProduction (getRHS rule) (getLHS rule) (concatMap (shiftNacOverProduction conf rule) (getNACs rule))
+
+  shiftNacOverProduction conf rule nac = [calculateComatch nac rule | satisfiesGluingConditions conf rule nac]
 
   isPartiallyMonomorphic = partialInjectiveTGM
 
 
--- | Return True if the element @n@ is deleted by the rule @rule@ with match @m@
--- assumes that @n@ has type NodeId or EdgeId
--- @n@ not is necessarily element of G (the graph matched by @m@), in this case return False
--- @list@ must get all element in the domain of @m@
---
--- FIXME: documentation doesn't match implementation
-ruleDeletes :: Eq t => TypedGraphMorphism a b -> TypedGraphMorphism a b
-          -> (TypedGraphMorphism a b -> t -> Maybe t)
-          -> (TypedGraphMorphism a b -> [t])
-          -> t -> Bool
-ruleDeletes l m apply list n =
-  inL && not isPreserv
-
+-- | Given the left-hand-side morphism of a rule /l : K -> L/, a match /m : L -> G/ for this rule, an element __/e/__
+-- (that can be either a __/Node/__ or an __/Edge/__) and two functions /apply/ (for applying that element in a TypedGraphMorphism) and
+-- /list/ (to get all the corresponding elements in the domain of m), it returns true if /e/ is deleted by this rule for the given match
+checkDeletion :: Eq t => TypedGraphMorphism a b -> TypedGraphMorphism a b -> (TypedGraphMorphism a b -> t -> Maybe t)
+          -> (TypedGraphMorphism a b -> [t]) -> t -> Bool
+checkDeletion l m apply list e = elementInL && not elementInK
   where
-    inL = any (\x -> apply m x == Just n) (list m)
+    elementInL = any (\x -> apply m x == Just e) (list m)
     kToG = compose l m
-    isPreserv = any (\x -> apply kToG x == Just n) (list kToG)
+    elementInK = any (\x -> apply kToG x == Just e) (list kToG)
