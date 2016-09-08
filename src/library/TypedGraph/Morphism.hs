@@ -4,10 +4,10 @@ module TypedGraph.Morphism (
     , idMap
     , partialInjectiveTGM
     , invertTGM
-    , nodesDomain
-    , edgesDomain
-    , nodesCodomain
-    , edgesCodomain
+    , nodesFromDomain
+    , edgesFromDomain
+    , nodesFromCodomain
+    , edgesFromCodomain
     , graphDomain
     , graphCodomain
     , mapping
@@ -227,8 +227,8 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
     where
       f' = invertTGM f
       g' = invertTGM g
-      nodes = nodesDomain f'
-      edges = edgesDomain f'
+      nodes = nodesFromDomain f'
+      edges = edgesFromDomain f'
       knodes = filter (\n -> isJust (MC.applyNode f' n) && isJust (MC.applyNode g' n)) nodes
       kedges = filter (\e -> isJust (MC.applyEdge f' e) && isJust (MC.applyEdge g' e)) edges
       delNodes = nodes \\ knodes
@@ -255,10 +255,10 @@ satisfiesIdentificationCondition l m =
 
   where
     nodesDelPres =
-      map (satsDelItemsAux l m nodesDomain MC.applyNode) (nodesCodomain m)
+      map (satsDelItemsAux l m nodesFromDomain MC.applyNode) (nodesFromCodomain m)
 
     edgesDelPres =
-      map (satsDelItemsAux l m edgesDomain MC.applyEdge) (edgesCodomain m)
+      map (satsDelItemsAux l m edgesFromDomain MC.applyEdge) (edgesFromCodomain m)
 
     -- | Check if in the match @m@, a element @n@ is deleted and at same time have another incident element on himself
     satsDelItemsAux :: Eq t => TypedGraphMorphism a b -> TypedGraphMorphism a b
@@ -283,9 +283,9 @@ satisfiesDanglingCondition leftR m = all (==True) (concat incidentEdgesDel)
         l = graphDomain m
         g = graphCodomain m
         matchedLInG = mapMaybe (MC.applyNode m) (nodes l)
-        delNodes = filter (checkDeletion leftR m MC.applyNode nodesDomain) matchedLInG
+        delNodes = filter (checkDeletion leftR m MC.applyNode nodesFromDomain) matchedLInG
         hasIncEdges = map (incidentEdges g) delNodes
-        verEdgeDel = map (checkDeletion leftR m MC.applyEdge edgesDomain)
+        verEdgeDel = map (checkDeletion leftR m MC.applyEdge edgesFromDomain)
         incidentEdgesDel = map verEdgeDel hasIncEdges
 
 -- | Return True if the element @n@ is deleted by the rule @rule@ with match @m@

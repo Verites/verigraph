@@ -28,10 +28,10 @@ createSatisfyingNacsDisjointUnion (g,injG) (n,injN) = disjointUnionGraphs left r
    where
      nodes = fst
      edges = snd
-     injNodes = filter (\x -> countIncidentMap (TGM.applyNode n) (nodesDomain n) x < 2) (nodesCodomain n)
-     injEdges = filter (\x -> countIncidentMap (TGM.applyEdge n) (edgesCodomain n) x < 2) (edgesCodomain n)
+     injNodes = filter (\x -> countIncidentMap (TGM.applyNode n) (nodesFromDomain n) x < 2) (nodesFromCodomain n)
+     injEdges = filter (\x -> countIncidentMap (TGM.applyEdge n) (edgesFromCodomain n) x < 2) (edgesFromCodomain n)
      injectiveR = if injG then (G.nodes (M.domain g), G.edges (M.domain g)) else ([],[])
-     injectiveN = if injN then (nodesCodomain n, edgesCodomain n) else (injNodes, injEdges)
+     injectiveN = if injN then (nodesFromCodomain n, edgesFromCodomain n) else (injNodes, injEdges)
      (left,id) = graphMorphismToPartitionGraph injectiveR g True 0
      (right,_) = graphMorphismToPartitionGraph injectiveN (M.codomain n) False id
      disjointUnionGraphs a b = (nodes a ++ nodes b, edges a ++ edges b)

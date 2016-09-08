@@ -141,13 +141,13 @@ newNacsProb side sndRule = nacNodes ++ nacEdges
     sc = getSide ruleR
 
     nodeProb = [applyNode f n |
-                 n <- nodesCodomain sb
+                 n <- nodesFromCodomain sb
                , isOrphanNode sa (applyNode f n)
                , isOrphanNode sb n
                , not (isOrphanNode sc (applyNode g n))]
 
     edgeProb = [applyEdge f n |
-                 n <- edgesCodomain sb
+                 n <- edgesFromCodomain sb
                , isOrphanEdge sa (applyEdge f n)
                , isOrphanEdge sb n
                , not (isOrphanEdge sc (applyEdge g n))]

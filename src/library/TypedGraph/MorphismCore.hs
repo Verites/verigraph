@@ -34,20 +34,20 @@ instance Valid (TypedGraphMorphism a b) where
         dom == compose m cod
 
 -- | Return the nodes in the domain of this TGM
-nodesDomain :: TypedGraphMorphism a b -> [NodeId]
-nodesDomain = nodes . domain . getDomain
+nodesFromDomain :: TypedGraphMorphism a b -> [NodeId]
+nodesFromDomain = nodes . domain . getDomain
 
 -- | Return the edges in the domain of this TGM
-edgesDomain :: TypedGraphMorphism a b -> [EdgeId]
-edgesDomain = edges . domain . getDomain
+edgesFromDomain :: TypedGraphMorphism a b -> [EdgeId]
+edgesFromDomain = edges . domain . getDomain
 
 -- | Return the nodes in the codomain of this TGM
-nodesCodomain :: TypedGraphMorphism a b -> [NodeId]
-nodesCodomain = nodes . domain . getCodomain
+nodesFromCodomain :: TypedGraphMorphism a b -> [NodeId]
+nodesFromCodomain = nodes . domain . getCodomain
 
 -- | Return the edges in the codomain of this TGM
-edgesCodomain :: TypedGraphMorphism a b -> [EdgeId]
-edgesCodomain = edges . domain . getCodomain
+edgesFromCodomain :: TypedGraphMorphism a b -> [EdgeId]
+edgesFromCodomain = edges . domain . getCodomain
 
 -- | Given a TypedGraphMorphism @/__t__: G1 -> G2/@ and a node @__n__@ in @G1@, it returns the node in @G2@ to which @__n__@ gets mapped
 applyNode :: TypedGraphMorphism a b -> NodeId -> Maybe NodeId

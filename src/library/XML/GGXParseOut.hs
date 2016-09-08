@@ -71,8 +71,8 @@ getTgmMappings prefix tgm = nodesMorph ++ edgesMorph
   where
     nodeMap = applyNodeTGMUnsafe tgm
     edgeMap = applyEdgeTGMUnsafe tgm
-    nodesMorph = map (\n -> ("N" ++ show (nodeMap n), prefix, "N" ++ show n)) (nodesDomain tgm)
-    edgesMorph = map (\e -> ("E" ++ show (edgeMap e), prefix, "E" ++ show e)) (edgesDomain tgm)
+    nodesMorph = map (\n -> ("N" ++ show (nodeMap n), prefix, "N" ++ show n)) (nodesFromDomain tgm)
+    edgesMorph = map (\e -> ("E" ++ show (edgeMap e), prefix, "E" ++ show e)) (edgesFromDomain tgm)
 
 getLHS :: [Mapping] -> GR.GraphRule a b -> ParsedTypedGraph
 getLHS objName rule = serializeGraph objName $ GR.getLHS rule
@@ -100,10 +100,10 @@ getMappings rule = nodesMorph ++ edgesMorph
     invL = invertTGM (GR.getLHS rule)
     lr = M.compose invL (GR.getRHS rule)
     nodeMap = applyNodeTGMUnsafe lr
-    nodes = filter (isJust . applyNode lr) (nodesDomain lr)
+    nodes = filter (isJust . applyNode lr) (nodesFromDomain lr)
     nodesMorph = map (\n -> ("N" ++ show (nodeMap n), no, "N" ++ show n)) nodes
     edgeMap = applyEdgeTGMUnsafe lr
-    edges = filter (isJust . applyEdge lr) (edgesDomain lr)
+    edges = filter (isJust . applyEdge lr) (edgesFromDomain lr)
     edgesMorph = map (\e -> ("E" ++ show (edgeMap e), no, "E" ++ show e)) edges
 
 parseNacName :: String -> (t -> Maybe Int) -> t -> String
