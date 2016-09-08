@@ -126,8 +126,8 @@ newNacsProb side sndRule = nacNodes ++ nacEdges
         LeftSide  -> (SO.mappingLeft, getLHS)
         RightSide -> (SO.mappingRight, getRHS)
 
-    applyNode = applyNodeTGMUnsafe
-    applyEdge = applyEdgeTGMUnsafe
+    applyNode = applyNodeUnsafe
+    applyEdge = applyEdgeUnsafe
 
     ruleL = codomain (getLHS sndRule)
     ruleK = domain (getLHS sndRule)

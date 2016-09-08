@@ -12,9 +12,9 @@ module TypedGraph.Morphism (
     , graphCodomain
     , mapping
     , MC.applyNode
-    , applyNodeTGMUnsafe
+    , TypedGraph.Morphism.applyNodeUnsafe
     , MC.applyEdge
-    , applyEdgeTGMUnsafe
+    , TypedGraph.Morphism.applyEdgeUnsafe
     , buildTypedGraphMorphism
     , removeNodeDomTyped
     , removeEdgeDomTyped
@@ -53,12 +53,12 @@ graphCodomain :: TypedGraphMorphism a b -> Graph a b
 graphCodomain = untypedGraph . codomain
 
 -- | Return the node to which @ln@ gets mapped or error in the case of undefined
-applyNodeTGMUnsafe :: TypedGraphMorphism a b -> G.NodeId -> G.NodeId
-applyNodeTGMUnsafe m n = fromMaybe (error "Error, apply node in a non total morphism") $ MC.applyNode m n
+applyNodeUnsafe :: TypedGraphMorphism a b -> G.NodeId -> G.NodeId
+applyNodeUnsafe m n = fromMaybe (error "Error, apply node in a non total morphism") $ MC.applyNode m n
 
 -- | Return the edge to which @le@ gets mapped or error in the case of undefined
-applyEdgeTGMUnsafe :: TypedGraphMorphism a b -> G.EdgeId -> G.EdgeId
-applyEdgeTGMUnsafe m e = fromMaybe (error "Error, apply edge in a non total morphism") $ MC.applyEdge m e
+applyEdgeUnsafe :: TypedGraphMorphism a b -> G.EdgeId -> G.EdgeId
+applyEdgeUnsafe m e = fromMaybe (error "Error, apply edge in a non total morphism") $ MC.applyEdge m e
 
 -- | Return the orphan nodes in a typed graph morphism
 orphanNodesTyped :: TypedGraphMorphism a b -> [G.NodeId]

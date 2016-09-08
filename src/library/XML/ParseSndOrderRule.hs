@@ -59,8 +59,8 @@ import           Data.List           (find, groupBy, sortOn, (\\))
 import           Data.Maybe          (fromMaybe, mapMaybe)
 import           Data.String.Utils   (join, split)
 import           Graph.Graph
-import           Graph.GraphMorphism
-import           TypedGraph.Morphism
+import           Graph.GraphMorphism as GM
+import           TypedGraph.Morphism as TGM
 import           XML.ParsedTypes
 
 -- | Gets the object name map between the left of two rules
@@ -142,8 +142,8 @@ getObjectNacNameMorphism :: GraphMorphism a b -> [Mapping]
 getObjectNacNameMorphism m = nodesMap m ++ edgesMap m
   where
     adjustNonMono = parseNonMonoObjNames . group
-    nodesMap = adjustNonMono . getMap applyNodeUnsafe . nodes . domain
-    edgesMap = adjustNonMono . getMap applyEdgeUnsafe . edges . domain
+    nodesMap = adjustNonMono . getMap GM.applyNodeUnsafe . nodes . domain
+    edgesMap = adjustNonMono . getMap GM.applyEdgeUnsafe . edges . domain
 
     getMap f = map (\e -> (show (f m e), Nothing, show e))
     group = groupBy (\(x,_,_) (y,_,_) -> x == y)
@@ -162,6 +162,6 @@ parseNonMonoObjNames (x:xs) = (a,b,newObjName) : parseNonMonoObjNames xs
 getObjectNameMorphism :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [Mapping]
 getObjectNameMorphism left right = nodesMap ++ edgesMap
   where
-    nodesMap = getMap applyNodeTGMUnsafe (nodesFromDomain left)
-    edgesMap = getMap applyEdgeTGMUnsafe (edgesFromDomain left)
+    nodesMap = getMap TGM.applyNodeUnsafe (nodesFromDomain left)
+    edgesMap = getMap TGM.applyEdgeUnsafe (edgesFromDomain left)
     getMap f = map (\e -> (show (f right e), Nothing, show (f left e)))

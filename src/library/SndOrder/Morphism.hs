@@ -15,7 +15,7 @@ import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Morphism
 import           Abstract.Valid
-import           Graph.GraphMorphism hiding (applyNode, applyEdge)
+import           Graph.GraphMorphism hiding (applyNode, applyEdge, applyNodeUnsafe, applyEdgeUnsafe)
 import           TypedGraph.GraphRule
 import           TypedGraph.Morphism
 
@@ -274,11 +274,11 @@ danglingSpan :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMo
 danglingSpan matchRuleSide matchMorp matchK l k = deletedNodesInK && deletedEdgesInK
   where
     deletedNodes = filter (checkDeletion l matchMorp applyNode nodesFromDomain) (nodesFromCodomain matchMorp)
-    nodesInK = [a | a <- nodesFromDomain matchRuleSide, applyNodeTGMUnsafe matchRuleSide a `elem` deletedNodes]
+    nodesInK = [a | a <- nodesFromDomain matchRuleSide, applyNodeUnsafe matchRuleSide a `elem` deletedNodes]
     deletedNodesInK = all (checkDeletion k matchK applyNode nodesFromDomain) nodesInK
 
     deletedEdges = filter (checkDeletion l matchMorp applyEdge edgesFromDomain) (edgesFromCodomain matchMorp)
-    edgesInK = [a | a <- edgesFromDomain matchRuleSide, applyEdgeTGMUnsafe matchRuleSide a `elem` deletedEdges]
+    edgesInK = [a | a <- edgesFromDomain matchRuleSide, applyEdgeUnsafe matchRuleSide a `elem` deletedEdges]
     deletedEdgesInK = all (checkDeletion k matchK applyEdge edgesFromDomain) edgesInK
 
 
