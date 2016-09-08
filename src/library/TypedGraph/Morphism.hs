@@ -13,7 +13,7 @@ module TypedGraph.Morphism (
     , mapping
     , MC.applyNode
     , applyNodeTGMUnsafe
-    , applyEdgeTGM
+    , MC.applyEdge
     , applyEdgeTGMUnsafe
     , typedMorphism
     , removeNodeDomTyped
@@ -58,7 +58,7 @@ applyNodeTGMUnsafe m n = fromMaybe (error "Error, apply node in a non total morp
 
 -- | Return the edge to which @le@ gets mapped or error in the case of undefined
 applyEdgeTGMUnsafe :: TypedGraphMorphism a b -> G.EdgeId -> G.EdgeId
-applyEdgeTGMUnsafe m e = fromMaybe (error "Error, apply edge in a non total morphism") $ applyEdgeTGM m e
+applyEdgeTGMUnsafe m e = fromMaybe (error "Error, apply edge in a non total morphism") $ MC.applyEdge m e
 
 -- | Return the orphan nodes in a typed graph morphism
 orphanNodesTyped :: TypedGraphMorphism a b -> [G.NodeId]
@@ -230,7 +230,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
       nodes = nodesDomain f'
       edges = edgesDomain f'
       knodes = filter (\n -> isJust (MC.applyNode f' n) && isJust (MC.applyNode g' n)) nodes
-      kedges = filter (\e -> isJust (applyEdgeTGM f' e) && isJust (applyEdgeTGM g' e)) edges
+      kedges = filter (\e -> isJust (MC.applyEdge f' e) && isJust (MC.applyEdge g' e)) edges
       delNodes = nodes \\ knodes
       delEdges = edges \\ kedges
       delEdgesFromF' = foldr removeEdgeDomTyped f' delEdges
@@ -258,7 +258,7 @@ satisfiesIdentificationCondition l m =
       map (satsDelItemsAux l m nodesDomain MC.applyNode) (nodesCodomain m)
 
     edgesDelPres =
-      map (satsDelItemsAux l m edgesDomain applyEdgeTGM) (edgesCodomain m)
+      map (satsDelItemsAux l m edgesDomain MC.applyEdge) (edgesCodomain m)
 
     -- | Check if in the match @m@, a element @n@ is deleted and at same time have another incident element on himself
     satsDelItemsAux :: Eq t => TypedGraphMorphism a b -> TypedGraphMorphism a b
@@ -274,7 +274,7 @@ satisfiesIdentificationCondition l m =
       where
         incident = [a | a <- dom m, apply m a == Just n]
         ruleDel = apply (invertTGM l)
-        someIsDel = any (==Nothing) (map ruleDel incident)
+        someIsDel = Nothing `elem` map ruleDel incident
 
 -- | Return True if do not exist dangling edges by the derivation of @r@ with match @m@
 satisfiesDanglingCondition :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
@@ -285,7 +285,7 @@ satisfiesDanglingCondition leftR m = all (==True) (concat incidentEdgesDel)
         matchedLInG = mapMaybe (MC.applyNode m) (nodes l)
         delNodes = filter (checkDeletion leftR m MC.applyNode nodesDomain) matchedLInG
         hasIncEdges = map (incidentEdges g) delNodes
-        verEdgeDel = map (checkDeletion leftR m applyEdgeTGM edgesDomain)
+        verEdgeDel = map (checkDeletion leftR m MC.applyEdge edgesDomain)
         incidentEdgesDel = map verEdgeDel hasIncEdges
 
 -- | Return True if the element @n@ is deleted by the rule @rule@ with match @m@
@@ -379,16 +379,16 @@ partialInjectiveMatches' nac match =
       composeEdges tgm (h:t) =
         do
           let edgeNac = fromMaybe (error "EDGE NOT MAPPING L -> N") $
-                                  applyEdgeTGM nac h
+                                  MC.applyEdge nac h
               edgeG   = fromMaybe (error "EDGE NOT MAPPING L -> G") $
-                                  applyEdgeTGM match h
+                                  MC.applyEdge match h
 
               dom     = domain tgm
               cod     = codomain tgm
 
               tgm' = if (typeE dom edgeNac == typeE cod edgeG) &&
-                        (isNothing (applyEdgeTGM tgm edgeNac) ||
-                         (applyEdgeTGM tgm edgeNac == Just edgeG))
+                        (isNothing (MC.applyEdge tgm edgeNac) ||
+                         (MC.applyEdge tgm edgeNac == Just edgeG))
                      then Just $ typedMorphism dom cod
                                  (GM.updateEdges edgeNac edgeG $ mapping tgm)
                      else Nothing
@@ -442,7 +442,7 @@ partialInjectiveMatches' nac match =
           --DELETE FROM QUEUE ALREADY MAPPED SOURCE EDGES (EDGES FROM NAC)
           edgesSrc = filter (notMappedEdges q2) (edges $ domain domQ)
             where
-              notMappedEdges tgm edge = isNothing $ applyEdgeTGM tgm edge
+              notMappedEdges tgm edge = isNothing $ MC.applyEdge tgm edge
 
           --REMOVE FROM TARGET LIST NODES ALREADY MAPPED (NODES FROM G)
           nodesTgt = orphanNodesTyped q2
@@ -598,7 +598,7 @@ updateEdgesMapping e1 e2 edgesT tgm =
         m = mapping tgm
 
     if typeE d e1 == typeE c e2 &&
-       ((isNothing (applyEdgeTGM tgm e1) && L.elem e2 edgesT ) ||
-        applyEdgeTGM tgm e1 == Just e2)
+       ((isNothing (MC.applyEdge tgm e1) && L.elem e2 edgesT ) ||
+        MC.applyEdge tgm e1 == Just e2)
       then Just $ typedMorphism d c (GM.updateEdges e1 e2 m)
       else Nothing

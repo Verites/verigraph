@@ -103,7 +103,7 @@ getMappings rule = nodesMorph ++ edgesMorph
     nodes = filter (isJust . applyNode lr) (nodesDomain lr)
     nodesMorph = map (\n -> ("N" ++ show (nodeMap n), no, "N" ++ show n)) nodes
     edgeMap = applyEdgeTGMUnsafe lr
-    edges = filter (isJust . applyEdgeTGM lr) (edgesDomain lr)
+    edges = filter (isJust . applyEdge lr) (edgesDomain lr)
     edgesMorph = map (\e -> ("E" ++ show (edgeMap e), no, "E" ++ show e)) edges
 
 parseNacName :: String -> (t -> Maybe Int) -> t -> String

@@ -29,7 +29,7 @@ createSatisfyingNacsDisjointUnion (g,injG) (n,injN) = disjointUnionGraphs left r
      nodes = fst
      edges = snd
      injNodes = filter (\x -> countIncidentMap (TGM.applyNode n) (nodesDomain n) x < 2) (nodesCodomain n)
-     injEdges = filter (\x -> countIncidentMap (applyEdgeTGM n) (edgesCodomain n) x < 2) (edgesCodomain n)
+     injEdges = filter (\x -> countIncidentMap (TGM.applyEdge n) (edgesCodomain n) x < 2) (edgesCodomain n)
      injectiveR = if injG then (G.nodes (M.domain g), G.edges (M.domain g)) else ([],[])
      injectiveN = if injN then (nodesCodomain n, edgesCodomain n) else (injNodes, injEdges)
      (left,id) = graphMorphismToPartitionGraph injectiveR g True 0
@@ -58,7 +58,7 @@ edgesToPartitionEdges :: ([NodeId],[EdgeId]) -> TypedGraph a b -> Bool -> Graph 
 edgesToPartitionEdges _        _  _    _ _  []            = []
 edgesToPartitionEdges inj@(injNodes,injEdges) tg side g id (EdgeId b:xs) = GP.Edge typ b id src tgt flag side : edgesToPartitionEdges inj tg side g (id+1) xs
    where
-      Just (EdgeId typ) = applyEdge tg (EdgeId b)
+      Just (EdgeId typ) = GM.applyEdge tg (EdgeId b)
       Just (NodeId src_) = sourceOf g (EdgeId b)
       src = GP.Node n1 src_ (-1) flagSrc side
       Just (NodeId tgt_) = targetOf g (EdgeId b)

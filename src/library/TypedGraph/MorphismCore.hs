@@ -54,5 +54,5 @@ applyNode :: TypedGraphMorphism a b -> NodeId -> Maybe NodeId
 applyNode tgm = GM.applyNode (mapping tgm)
 
 -- | Given a TypedGraphMorphism @/__t__: G1 -> G2/@ and an edge @__e__@ in @G1@, it returns the edge in @G2@ to which @__e__@ gets mapped
-applyEdgeTGM :: TypedGraphMorphism a b -> EdgeId -> Maybe EdgeId
-applyEdgeTGM tgm = applyEdge (mapping tgm)
+applyEdge :: TypedGraphMorphism a b -> EdgeId -> Maybe EdgeId
+applyEdge tgm = GM.applyEdge (mapping tgm)

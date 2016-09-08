@@ -15,7 +15,7 @@ import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Morphism
 import           Abstract.Valid
-import           Graph.GraphMorphism hiding (applyNode)
+import           Graph.GraphMorphism hiding (applyNode, applyEdge)
 import           TypedGraph.GraphRule
 import           TypedGraph.Morphism
 
@@ -277,9 +277,9 @@ danglingSpan matchRuleSide matchMorp matchK l k = deletedNodesInK && deletedEdge
     nodesInK = [a | a <- nodesDomain matchRuleSide, applyNodeTGMUnsafe matchRuleSide a `elem` deletedNodes]
     deletedNodesInK = all (checkDeletion k matchK applyNode nodesDomain) nodesInK
 
-    deletedEdges = filter (checkDeletion l matchMorp applyEdgeTGM edgesDomain) (edgesCodomain matchMorp)
+    deletedEdges = filter (checkDeletion l matchMorp applyEdge edgesDomain) (edgesCodomain matchMorp)
     edgesInK = [a | a <- edgesDomain matchRuleSide, applyEdgeTGMUnsafe matchRuleSide a `elem` deletedEdges]
-    deletedEdgesInK = all (checkDeletion k matchK applyEdgeTGM edgesDomain) edgesInK
+    deletedEdgesInK = all (checkDeletion k matchK applyEdge edgesDomain) edgesInK
 
 
 -- | Given the morphisms /k1 : X -> Y/, /s1 : X -> Z/,
