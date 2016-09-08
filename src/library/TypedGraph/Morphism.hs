@@ -26,8 +26,8 @@ module TypedGraph.Morphism (
     , createNodeCodTGM
     , updateEdgeRelationTGM
     , updateNodeRelationTGM
-    , orphanNodesTyped
-    , orphanEdgesTyped
+    , orphanTypedNodes
+    , orphanTypedEdges
 ) where
 
 import           Abstract.AdhesiveHLR
@@ -61,12 +61,12 @@ applyEdgeUnsafe :: TypedGraphMorphism a b -> G.EdgeId -> G.EdgeId
 applyEdgeUnsafe m e = fromMaybe (error "Error, apply edge in a non total morphism") $ MC.applyEdge m e
 
 -- | Return the orphan nodes in a typed graph morphism
-orphanNodesTyped :: TypedGraphMorphism a b -> [G.NodeId]
-orphanNodesTyped tgm = GM.orphanNodes (mapping tgm)
+orphanTypedNodes :: TypedGraphMorphism a b -> [G.NodeId]
+orphanTypedNodes tgm = GM.orphanNodes (mapping tgm)
 
 -- | Return the orphan edges in a typed graph morphism
-orphanEdgesTyped :: TypedGraphMorphism a b -> [G.EdgeId]
-orphanEdgesTyped tgm = GM.orphanEdges (mapping tgm)
+orphanTypedEdges :: TypedGraphMorphism a b -> [G.EdgeId]
+orphanTypedEdges tgm = GM.orphanEdges (mapping tgm)
 
 -- | Invert a typed graph morphism
 invertTGM :: TypedGraphMorphism a b -> TypedGraphMorphism a b
@@ -176,8 +176,8 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
   calculatePushout k r =
     let
         kr = compose (invertTGM r) k                                 -- invert r and compose with k, obtain kr : R -> D
-        createdNodes = orphanNodesTyped r                                -- nodes in R to be created
-        createdEdges = orphanEdgesTyped r                                -- edges in R to be created
+        createdNodes = orphanTypedNodes r                                -- nodes in R to be created
+        createdEdges = orphanTypedEdges r                                -- edges in R to be created
         nodeTable    = zip createdNodes (newTypedNodes $ codomain kr) -- table mapping NodeIds in R to NodeIds in G'
         edgeTable    = zip createdEdges (newTypedEdges $ codomain kr) -- table mapping EdgeIds in R to EdgeIds in G'
 
@@ -216,8 +216,8 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
   -}
   calculatePushoutComplement m l =
     let ml       = compose l m                                                         -- compose l and m obtaining ml
-        delEdges = mapMaybe (GM.applyEdge $ mapping m) (orphanEdgesTyped l) -- obtain list of edges to be deleted in G
-        delNodes = mapMaybe (GM.applyNode $ mapping m) (orphanNodesTyped l) -- obtain list of nodes to be deleted in G
+        delEdges = mapMaybe (GM.applyEdge $ mapping m) (orphanTypedEdges l) -- obtain list of edges to be deleted in G
+        delNodes = mapMaybe (GM.applyNode $ mapping m) (orphanTypedNodes l) -- obtain list of nodes to be deleted in G
         k        = foldr removeNodeCodTyped                                          -- delete all edges, then all nodes from ml
                        (foldr removeEdgeCodTyped ml delEdges)
                            delNodes
@@ -445,10 +445,10 @@ partialInjectiveMatches' nac match =
               notMappedEdges tgm edge = isNothing $ MC.applyEdge tgm edge
 
           --REMOVE FROM TARGET LIST NODES ALREADY MAPPED (NODES FROM G)
-          nodesTgt = orphanNodesTyped q2
+          nodesTgt = orphanTypedNodes q2
 
           --REMOVE FROM TARGET LIST EDGES ALREADY MAPPED (EDGES FROM G)
-          edgesTgt = orphanEdgesTyped q2
+          edgesTgt = orphanTypedEdges q2
 
 ---------------------------------------------------------------------------------
 
@@ -491,8 +491,8 @@ buildMappings prop [] [] nodesT edgesT tgm =
         isomorphism | L.null nodesT && L.null edgesT = return tgm
                     | otherwise = []
 
-        epimorphism | L.null (orphanNodesTyped tgm) &&
-                      L.null (orphanEdgesTyped tgm) = return tgm
+        epimorphism | L.null (orphanTypedNodes tgm) &&
+                      L.null (orphanTypedEdges tgm) = return tgm
                     | otherwise = []
 
 ---------------------------------------------------------------------------------

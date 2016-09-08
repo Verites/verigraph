@@ -231,7 +231,7 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
         updateLeftEdge = createEdgeDomTGM x' srcInK tgtInK tp x updateLeft2
 
 isOrphanNode :: TypedGraphMorphism a b -> NodeId -> Bool
-isOrphanNode m n = n `elem` orphanNodesTyped m
+isOrphanNode m n = n `elem` orphanTypedNodes m
 
 isOrphanEdge :: TypedGraphMorphism a b -> EdgeId -> Bool
-isOrphanEdge m n = n `elem` orphanEdgesTyped m
+isOrphanEdge m n = n `elem` orphanTypedEdges m

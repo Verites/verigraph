@@ -125,8 +125,8 @@ buildMappings prop [] [] nodesT edgesT tgm =
         isomorphism | L.null nodesT && L.null edgesT = return tgm
                     | otherwise = []
 
-        epimorphism | L.null (orphanNodesTyped tgm) &&
-                      L.null (orphanEdgesTyped tgm) = return tgm
+        epimorphism | L.null (orphanTypedNodes tgm) &&
+                      L.null (orphanTypedEdges tgm) = return tgm
                     | otherwise = []
 
 ---------------------------------------------------------------------------------
@@ -563,8 +563,8 @@ k = fst (RW.calculatePushoutComplement g (left inverseRule))
 r = right inverseRule
 
 kr = M.compose (TGM.invertTGM r) k                                 -- invert r and compose with k, obtain kr : R -> D
-createdNodess = TGM.orphanNodesTyped r                                -- nodes in R to be created
-createdEdgess = TGM.orphanEdgesTyped r                                -- edges in R to be created
+createdNodess = TGM.orphanTypedNodes r                                -- nodes in R to be created
+createdEdgess = TGM.orphanTypedEdges r                                -- edges in R to be created
 nodeTable    = zip createdNodess (GM.newTypedNodes $ M.codomain kr) -- table mapping NodeIds in R to NodeIds in G'
 edgeTable    = zip createdEdgess (GM.newTypedEdges $ M.codomain kr) -- table mapping EdgeIds in R to EdgeIds in G'
 

@@ -110,7 +110,7 @@ relevantMatches conf dangFl dangGl = concatMap (createAllSubobjects matchInjecti
 danglingExtension :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 danglingExtension gl l = tlUpdated
   where
-    ld = orphanNodesTyped l
+    ld = orphanTypedNodes l
     tl = codomain l
     t = codomain tl
     tlx n' = any (\n -> getNodeType tl n == n') ld

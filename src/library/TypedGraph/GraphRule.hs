@@ -28,19 +28,19 @@ type GraphRule a b = Production (TypedGraphMorphism a b)
 
 -- | Return the nodes deleted by a rule
 deletedNodes :: GraphRule a b -> [G.NodeId]
-deletedNodes r = TGM.orphanNodesTyped (getLHS r)
+deletedNodes r = TGM.orphanTypedNodes (getLHS r)
 
 -- | Return the nodes created by a rule
 createdNodes :: GraphRule a b -> [G.NodeId]
-createdNodes r = TGM.orphanNodesTyped (getRHS r)
+createdNodes r = TGM.orphanTypedNodes (getRHS r)
 
 -- | Return the edges deleted by a rule
 deletedEdges :: GraphRule a b -> [G.EdgeId]
-deletedEdges r = TGM.orphanEdgesTyped (getLHS r)
+deletedEdges r = TGM.orphanTypedEdges (getLHS r)
 
 -- | Return the edges created by a rule
 createdEdges :: GraphRule a b -> [G.EdgeId]
-createdEdges r = TGM.orphanEdgesTyped (getRHS r)
+createdEdges r = TGM.orphanTypedEdges (getRHS r)
 
 instance DPO (TypedGraphMorphism a b) where
 
