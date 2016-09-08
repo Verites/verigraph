@@ -188,7 +188,7 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
     newNodesK = newNodes (domain graphK)
     newNodesSide = newNodes (domain graphSide)
 
-    invertSide = invertTGM side
+    invertSide = invert side
 
     srcInK x = fromMaybe (newNodesK !! 0) (applyNode invertSide (src x))
     tgtInK x = fromMaybe (newNodesK !! 1) (applyNode invertSide (tgt x))
@@ -210,25 +210,25 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
 
     createNodes x x' x'' tp side otherSide = (updateSide1, updateSide2Map)
       where
-        updateSide1 = createNodeDomTGM x' tp x side
-        updateSide2Cod = createNodeCodTGM x'' tp otherSide
-        updateSide2Map = updateNodeRelationTGM x' x'' tp updateSide2Cod
+        updateSide1 = createNodeOnDomain x' tp x side
+        updateSide2Cod = createNodeOnCodomain x'' tp otherSide
+        updateSide2Map = updateNodeRelation x' x'' tp updateSide2Cod
 
     createEdges x x' x'' tp
         src typeSrc srcInK srcInR
         tgt typeTgt tgtInK tgtInR
         side otherSide = (updateLeftEdge, updateRightMap)
       where
-        srcRight = createNodeCodTGM srcInR typeSrc otherSide
-        tgtRight = createNodeCodTGM tgtInR typeTgt srcRight
-        updateRight = createNodeDomTGM srcInK typeSrc srcInR tgtRight
-        updateRight2 = createNodeDomTGM tgtInK typeTgt tgtInR updateRight
-        updateRightCod = createEdgeCodTGM x'' srcInR tgtInR tp updateRight2
-        updateRightMap = createEdgeDomTGM x' srcInK tgtInK tp x'' updateRightCod
+        srcRight = createNodeOnCodomain srcInR typeSrc otherSide
+        tgtRight = createNodeOnCodomain tgtInR typeTgt srcRight
+        updateRight = createNodeOnDomain srcInK typeSrc srcInR tgtRight
+        updateRight2 = createNodeOnDomain tgtInK typeTgt tgtInR updateRight
+        updateRightCod = createEdgeOnCodomain x'' srcInR tgtInR tp updateRight2
+        updateRightMap = createEdgeOnDomain x' srcInK tgtInK tp x'' updateRightCod
 
-        updateLeft = createNodeDomTGM srcInK typeSrc src side
-        updateLeft2 = createNodeDomTGM tgtInK typeTgt tgt updateLeft
-        updateLeftEdge = createEdgeDomTGM x' srcInK tgtInK tp x updateLeft2
+        updateLeft = createNodeOnDomain srcInK typeSrc src side
+        updateLeft2 = createNodeOnDomain tgtInK typeTgt tgt updateLeft
+        updateLeftEdge = createEdgeOnDomain x' srcInK tgtInK tp x updateLeft2
 
 isOrphanNode :: TypedGraphMorphism a b -> NodeId -> Bool
 isOrphanNode m n = n `elem` orphanTypedNodes m

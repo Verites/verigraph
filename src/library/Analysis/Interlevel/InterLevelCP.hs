@@ -11,7 +11,7 @@ import           Abstract.DPO
 import           Abstract.Morphism
 import           Data.List            (nubBy)
 import           Graph.Graph
-import           Graph.GraphMorphism
+import           Graph.GraphMorphism hiding (createEdgeOnCodomain, createNodeOnCodomain)
 import           SndOrder.Morphism
 import           SndOrder.Rule
 import           TypedGraph.Graph
@@ -131,7 +131,7 @@ danglingExtension gl l = tlUpdated
         isSrc = typeNode == sourceOfUnsafe t e
         isTgt = typeNode == targetOfUnsafe t e
 
-        createEdge tgm e s t = createEdgeCodTGM edgeId s t e tgm
+        createEdge tgm e s t = createEdgeOnCodomain edgeId s t e tgm
           where
             edgeId = head (newTypedEdges (codomain tgm))
 
@@ -141,10 +141,10 @@ danglingExtension gl l = tlUpdated
           where
             nodeId = head (newTypedNodes (codomain tgm))
             typeNewNode = targetOfUnsafe (codomain (codomain tgm)) e
-            newGraph = createNodeCodTGM nodeId typeNewNode tgm
+            newGraph = createNodeOnCodomain nodeId typeNewNode tgm
 
         createTgt tgm e n = createEdge newGraph e nodeId n
           where
             nodeId = head (newTypedNodes (codomain tgm))
             typeNewNode = sourceOfUnsafe (codomain (codomain tgm)) e
-            newGraph = createNodeCodTGM nodeId typeNewNode tgm
+            newGraph = createNodeOnCodomain nodeId typeNewNode tgm

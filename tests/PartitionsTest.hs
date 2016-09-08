@@ -3,7 +3,7 @@
 import           Abstract.AdhesiveHLR
 import           Graph.Graph
 import           Graph.GraphMorphism
-import           TypedGraph.Morphism
+import           TypedGraph.Morphism hiding (createEdgeOnDomain, createNodeOnDomain)
 import           Math.Combinat.Numbers (bellNumber)
 import           Test.HUnit
 

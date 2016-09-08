@@ -97,7 +97,7 @@ getMappings :: GR.GraphRule a b -> [Mapping]
 getMappings rule = nodesMorph ++ edgesMorph
   where
     no = Nothing
-    invL = invertTGM (GR.getLHS rule)
+    invL = invert (GR.getLHS rule)
     lr = M.compose invL (GR.getRHS rule)
     nodeMap = applyNodeUnsafe lr
     nodes = filter (isJust . applyNode lr) (nodesFromDomain lr)

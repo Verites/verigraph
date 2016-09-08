@@ -1,10 +1,10 @@
 module TypedGraph.Subgraph (subgraphs, inducedSubgraphs) where
 
-import           Abstract.Morphism   as M
+import           Abstract.Morphism
 import           Graph.Graph
 import           Graph.GraphMorphism
 import           TypedGraph.Graph
-import           TypedGraph.Morphism
+import           TypedGraph.Morphism hiding (createEdgeOnDomain, createNodeOnDomain)
 
 -- | Generates all subgraphs of a typed graph.
 subgraphs :: TypedGraph a b -> [TypedGraph a b]

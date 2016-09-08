@@ -49,7 +49,7 @@ instance DPO (TypedGraphMorphism a b) where
 
   shiftNacOverProduction conf rule nac = [calculateComatch nac rule | satisfiesGluingConditions conf rule nac]
 
-  isPartiallyMonomorphic = partialInjectiveTGM
+  isPartiallyMonomorphic = isPartialInjective
 
 
 -- | Given the left-hand-side morphism of a rule /l : K -> L/, a match /m : L -> G/ for this rule, an element __/e/__

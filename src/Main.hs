@@ -562,7 +562,7 @@ ajeita (h:hs) (m1:m1s) (l:ls) = (if Prelude.null h then [] else [(head h,m1,l)])
 k = fst (RW.calculatePushoutComplement g (left inverseRule))
 r = right inverseRule
 
-kr = M.compose (TGM.invertTGM r) k                                 -- invert r and compose with k, obtain kr : R -> D
+kr = M.compose (TGM.invert r) k                                 -- invert r and compose with k, obtain kr : R -> D
 createdNodess = TGM.orphanTypedNodes r                                -- nodes in R to be created
 createdEdgess = TGM.orphanTypedEdges r                                -- edges in R to be created
 nodeTable    = zip createdNodess (GM.newTypedNodes $ M.codomain kr) -- table mapping NodeIds in R to NodeIds in G'
@@ -570,7 +570,7 @@ edgeTable    = zip createdEdgess (GM.newTypedEdges $ M.codomain kr) -- table map
 
 -- generate new node instances in G', associating them to the "created" nodes in R
 kr'          = foldr (\(a,b) tgm -> let tp = fromJust $ GM.applyNode (M.domain kr) a
- in TGM.updateNodeRelationTGM a b tp tgm)
+ in TGM.updateNodeRelation a b tp tgm)
  kr
  nodeTable
 
@@ -604,7 +604,7 @@ n1000 = NodeId 1000
 e3 = EdgeId 3
 
 -- create new morphism adding all edges
-kr''      = foldr (\(a,sa,ta,b,sb,tb,tp) tgm -> TGM.updateEdgeRelationTGM a b (TGM.createEdgeCodTGM b sb tb tp tgm) )
+kr''      = foldr (\(a,sa,ta,b,sb,tb,tp) tgm -> TGM.updateEdgeRelation a b (TGM.createEdgeOnCodomain b sb tb tp tgm) )
  kr'
  edgeTable'-}
 
