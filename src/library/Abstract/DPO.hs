@@ -86,9 +86,9 @@ buildProduction = Production
 --
 -- When given `MonoMatches`, only obtains monomorphic matches.
 findAllMatches :: (DPO m) => DPOConfig -> Production m -> Obj m -> [m]
-findAllMatches config production =
+findAllMatches conf production =
   findMorphisms
-    (matchRestrictionToMorphismType $ matchRestriction config)
+    (matchRestrictionToMorphismType $ matchRestriction conf)
     (codomain $ left production)
 
 
@@ -97,8 +97,8 @@ findAllMatches config production =
 --
 -- When given `MonoMatches`, only obtains monomorphic matches.
 findApplicableMatches :: (DPO m) => DPOConfig -> Production m -> Obj m -> [m]
-findApplicableMatches config production obj =
-  filter (satisfiesRewritingConditions config production) (findAllMatches config production obj)
+findApplicableMatches conf production obj =
+  filter (satisfiesRewritingConditions conf production) (findAllMatches conf production obj)
 
 
 instance (Morphism m, Valid m, Eq (Obj m)) => Valid (Production m) where
@@ -184,36 +184,36 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
 
 -- | Verifies if the gluing conditions for a production /p/ are satisfied by a match /m/
 satisfiesGluingConditions :: DPO m => DPOConfig -> Production m -> m -> Bool
-satisfiesGluingConditions config production match =
+satisfiesGluingConditions conf production match =
   hasPushoutComplement (matchIsMono, match) (GenericMorphism, left production)
   where
     matchIsMono =
-      matchRestrictionToMorphismType (matchRestriction config)
+      matchRestrictionToMorphismType (matchRestriction conf)
 
 -- | True if the given match satisfies all NACs of the given production.
 satisfiesNACs :: DPO m => DPOConfig -> Production m -> m -> Bool
-satisfiesNACs config production match =
-  all (satisfiesSingleNac config match) (nacs production)
+satisfiesNACs conf production match =
+  all (satisfiesSingleNac conf match) (nacs production)
 
 -- TODO: deprecate? why do we need this __here__?
 -- | Check gluing conditions and the NACs satisfaction for a pair of matches
 -- @inj@ only indicates if the match is injective, this function does not checks it
 satisfyRewritingConditions :: DPO m => DPOConfig -> (Production m, m) -> (Production m, m) -> Bool
-satisfyRewritingConditions config (l,m1) (r,m2) =
-  satisfiesRewritingConditions config l m1 && satisfiesRewritingConditions config r m2
+satisfyRewritingConditions conf (l,m1) (r,m2) =
+  satisfiesRewritingConditions conf l m1 && satisfiesRewritingConditions conf r m2
 
 
 -- | True if the given match satisfies the gluing condition and NACs of the
 -- given production.
 satisfiesRewritingConditions :: DPO m => DPOConfig -> Production m -> m -> Bool
-satisfiesRewritingConditions config production match =
-  satisfiesGluingConditions config production match && satisfiesNACs config production match
+satisfiesRewritingConditions conf production match =
+  satisfiesGluingConditions conf production match && satisfiesNACs conf production match
 
 
 satisfiesSingleNac :: DPO m => DPOConfig -> m -> m -> Bool
-satisfiesSingleNac config match nac =
+satisfiesSingleNac conf match nac =
   let nacMatches =
-        case nacSatisfaction config of
+        case nacSatisfaction conf of
           MonomorphicNAC ->
             findMonomorphisms (codomain nac) (codomain match)
           PartiallyMonomorphicNAC ->
@@ -228,7 +228,7 @@ satisfiesSingleNac config match nac =
 -- an equivalent set of NACs /n'i : L' -> N'i/ that is equivalent to the
 -- original NAC.
 nacDownwardShift :: EpiPairs m => DPOConfig -> m -> m -> [m]
-nacDownwardShift config m n = newNacs
+nacDownwardShift conf m n = newNacs
   where
-    pairs = calculateCommutativeSquaresAlongMonomorphism (n,True) (m, matchRestriction config == MonoMatches)
+    pairs = calculateCommutativeSquaresAlongMonomorphism (n,True) (m, matchRestriction conf == MonoMatches)
     newNacs = map snd pairs

@@ -67,8 +67,8 @@ execute globalOpts opts = do
     GW.writeGrammarFile gg' ggName names (outputFile opts)
 
 makeAllConcurrentRules :: CRDependencies -> DPOConfig -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
-makeAllConcurrentRules dep config (baseName, sequence) = zipWith makeName (allConcurrentRules dep config sequence) [0::Int ..]
+makeAllConcurrentRules dep conf (baseName, sequence) = zipWith makeName (allConcurrentRules dep conf sequence) [0::Int ..]
   where makeName rule idx = (baseName++"_"++show idx, rule)
 
 makeMaxConcurrentRule :: CRDependencies -> DPOConfig -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
-makeMaxConcurrentRule dep config (baseName, sequence) = [(baseName, maxConcurrentRule dep config sequence)]
+makeMaxConcurrentRule dep conf (baseName, sequence) = [(baseName, maxConcurrentRule dep conf sequence)]

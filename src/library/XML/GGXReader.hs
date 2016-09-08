@@ -82,11 +82,11 @@ readGGName fileName = do
 
 -- FIX: find a better place for this two functions
 minimalSafetyNacsWithLog :: DPOConfig -> GG.GraphGrammar a b -> (GG.GraphGrammar a b, [(String, Int)])
-minimalSafetyNacsWithLog config oldGG = (newGG, printNewNacs)
+minimalSafetyNacsWithLog conf oldGG = (newGG, printNewNacs)
   where
     newNacs =
       map (\(n,r) ->
-        let newRule = addMinimalSafetyNacs config r
+        let newRule = addMinimalSafetyNacs conf r
             tamNewNacs = length (getNACs newRule)
             tamNacs = length (getNACs r)
          in ((n, newRule), (n, tamNewNacs - tamNacs))

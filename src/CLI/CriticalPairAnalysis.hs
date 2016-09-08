@@ -185,14 +185,14 @@ analysisMatrix dpoConf rules f1 f2 f3 n1 n2 n3 n4 =
 defWriterFun :: Bool -> DPOConfig -> AnalysisType
              -> GG.GraphGrammar a b -> String
              -> [(String,String)] -> String -> IO ()
-defWriterFun secondOrder config t =
+defWriterFun secondOrder conf t =
   case (secondOrder,t) of
-    (False, Conflicts)    -> GW.writeConflictsFile config
-    (False, Dependencies) -> GW.writeDependenciesFile config
-    (False, Both)         -> GW.writeConfDepFile config
-    (True, Conflicts)     -> GW.writeSndOderConflictsFile config
-    (True, Dependencies)  -> GW.writeSndOderDependenciesFile config
-    (True, Both)          -> GW.writeSndOderConfDepFile config
+    (False, Conflicts)    -> GW.writeConflictsFile conf
+    (False, Dependencies) -> GW.writeDependenciesFile conf
+    (False, Both)         -> GW.writeConfDepFile conf
+    (True, Conflicts)     -> GW.writeSndOderConflictsFile conf
+    (True, Dependencies)  -> GW.writeSndOderDependenciesFile conf
+    (True, Both)          -> GW.writeSndOderConfDepFile conf
     (_, None)             -> GW.writeGrammarFile
 
 -- | Combine three matrices with the given function. All matrices _must_ have

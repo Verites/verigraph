@@ -311,15 +311,15 @@ instance EpiPairs (TypedGraphMorphism a b) where
       m2 = buildGraphMorphism G.empty G.empty [] []
       part = map (mountTypedGraphMorphisms m1 m2) (generateGraphPartitions (createDisjointUnion (m1,inj) (m2,inj)))
 
-  createJointlyEpimorphicPairsFromNAC config r nac =
+  createJointlyEpimorphicPairsFromNAC conf r nac =
     map (mountTypedGraphMorphisms r (codomain nac)) (generateGraphPartitions (createSatisfyingNacsDisjointUnion (r, matchInj) (nac, nacInj)))
 
     where
       matchInj =
-        matchRestriction config == MonoMatches
+        matchRestriction conf == MonoMatches
 
       nacInj =
-        nacSatisfaction config == MonomorphicNAC
+        nacSatisfaction conf == MonomorphicNAC
 
   -- | Create all jointly surjective pairs of @m1@ and @m2@ that commutes,
   -- considering they have same domain

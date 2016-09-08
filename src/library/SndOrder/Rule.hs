@@ -67,15 +67,15 @@ applySecondOrderListRules ::
 applySecondOrderListRules f sndRule = concatMap (f sndRule)
 
 instance DPO (RuleMorphism a b) where
-  invertProduction config r = addMinimalSafetyNacs config newRule
+  invertProduction conf r = addMinimalSafetyNacs conf newRule
     where
-      newRule = buildProduction (getRHS r) (getLHS r) (concatMap (shiftNacOverProduction config r) (getNACs r))
+      newRule = buildProduction (getRHS r) (getLHS r) (concatMap (shiftNacOverProduction conf r) (getNACs r))
 
   -- | Needs the satisfiesNACs extra verification because not every satisfiesGluingConditions nac can be shifted
-  shiftNacOverProduction config rule n =
+  shiftNacOverProduction conf rule n =
     [calculateComatch n rule |
-      satisfiesGluingConditions config rule n &&
-      satisfiesNACs config ruleWithOnlyMinimalSafetyNacs n]
+      satisfiesGluingConditions conf rule n &&
+      satisfiesNACs conf ruleWithOnlyMinimalSafetyNacs n]
 
     where
       ruleWithOnlyMinimalSafetyNacs = buildProduction (getLHS rule) (getRHS rule) (minimalSafetyNacs rule)
@@ -86,10 +86,10 @@ instance DPO (RuleMorphism a b) where
     isPartiallyMonomorphic (mappingRight m)     (mappingRight l)
 
 applySndOrderRule :: DPOConfig -> (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String, GraphRule a b)]
-applySndOrderRule config (sndName,sndRule) (fstName,fstRule) =
+applySndOrderRule conf (sndName,sndRule) (fstName,fstRule) =
   let
     matches =
-      findApplicableMatches config sndRule fstRule
+      findApplicableMatches conf sndRule fstRule
 
     newRules =
       map (`rewrite` sndRule) matches

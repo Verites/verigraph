@@ -195,7 +195,7 @@ type Space = StateSpace (TypedGraphMorphism () ())
 
 
 exploreStateSpace :: DPOConfig -> Int -> GraphGrammar () () -> [(String, TypedGraph () ())] -> ([Int], Space)
-exploreStateSpace config maxDepth grammar graphs =
+exploreStateSpace conf maxDepth grammar graphs =
   let
     (productions, predicates) =
       splitPredicates (rules grammar)
@@ -210,7 +210,7 @@ exploreStateSpace config maxDepth grammar graphs =
       mapM searchFrom graphs
 
     initialSpace =
-      StateSpace.empty config (map snd productions) predicates
+      StateSpace.empty conf (map snd productions) predicates
   in
     runStateSpaceBuilder search initialSpace
 
