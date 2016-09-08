@@ -225,7 +225,7 @@ instantiateSpan left right mapping = (leftM, rightM)
         edgeTgt = G.EdgeId tgt
 
         nodeDom = G.insertNode nodeSrc (domain k)
-        nodeType = applyNodeUnsafe left nodeSrc
+        nodeType = getNodeType left nodeSrc
         newNodeK = updateNodes nodeSrc nodeType (updateDomain nodeDom k)
         updateNodesL = updateNodes nodeSrc nodeSrc (updateDomain nodeDom l)
         updateNodesR = updateNodes nodeSrc nodeTgt (updateDomain nodeDom r)
@@ -233,7 +233,7 @@ instantiateSpan left right mapping = (leftM, rightM)
         src_ e = fromMaybe (error (show e)) (G.sourceOf (domain left) e)
         tgt_ e = fromMaybe (error (show e)) (G.targetOf (domain left) e)
         edgeDom = G.insertEdge edgeSrc (src_ edgeSrc) (tgt_ edgeSrc) (domain k)
-        edgeType = applyEdgeUnsafe left edgeSrc
+        edgeType = getEdgeType left edgeSrc
         newEdgeK = updateEdges edgeSrc edgeType (updateDomain edgeDom k)
         updateEdgesL = updateEdges edgeSrc edgeSrc (updateDomain edgeDom l)
         updateEdgesR = updateEdges edgeSrc edgeTgt (updateDomain edgeDom r)

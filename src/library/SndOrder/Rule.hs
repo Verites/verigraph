@@ -12,8 +12,8 @@ import           Data.Maybe           (fromMaybe)
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Graph.Graph          as G
-import qualified Graph.GraphMorphism  as GM
 import           SndOrder.Morphism    as SO
+import           TypedGraph.Graph
 import           TypedGraph.GraphRule
 import           TypedGraph.Morphism
 
@@ -168,16 +168,16 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
     src = G.sourceOfUnsafe (domain graphL)
     tgt = G.targetOfUnsafe (domain graphL)
 
-    tpNode = GM.applyNodeUnsafe graphL
-    tpEdge = GM.applyEdgeUnsafe graphL
+    tpNode = getNodeType graphL
+    tpEdge = getEdgeType graphL
 
     (graphSide, side, otherSide) =
       case sideChoose of
         LeftSide  -> (graphR, l, r)
         RightSide -> (graphL, r, l)
 
-    typeSrc x = GM.applyNodeUnsafe graphL (src x)
-    typeTgt x = GM.applyNodeUnsafe graphL (tgt x)
+    typeSrc x = getNodeType graphL (src x)
+    typeTgt x = getNodeType graphL (tgt x)
 
     n' = head (newNodes (domain graphK))
     n'' = head (newNodes (domain graphSide))

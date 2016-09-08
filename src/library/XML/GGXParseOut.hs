@@ -14,7 +14,7 @@ import qualified Analysis.CriticalPairs    as CP
 import qualified Analysis.CriticalSequence as CS
 import           Data.Maybe                (fromMaybe, isJust)
 import qualified Graph.Graph               as G
-import qualified Graph.GraphMorphism       as GM
+import           TypedGraph.Graph
 import qualified TypedGraph.GraphRule      as GR
 import           TypedGraph.Morphism
 import           XML.ParsedTypes
@@ -118,14 +118,14 @@ serializeGraph objName morphism = ("", nodes, edges)
     nodes = map (serializeNode (map (\(x,_,y) -> (x,y)) objName) graph) (G.nodes $ M.domain graph)
     edges = map (serializeEdge (map (\(x,_,y) -> (x,y)) objName) graph) (G.edges $ M.domain graph)
 
-serializeNode :: [(String,String)] -> GM.GraphMorphism a b -> G.NodeId -> ParsedTypedNode
+serializeNode :: [(String,String)] -> TypedGraph a b -> G.NodeId -> ParsedTypedNode
 serializeNode objName graph n = ("N" ++ show n,
-                         (lookup (show n) objName),
-                         "N" ++ show (GM.applyNodeUnsafe graph n))
+                         lookup (show n) objName,
+                         "N" ++ show (getNodeType graph n))
 
-serializeEdge :: [(String,String)] -> GM.GraphMorphism a b -> G.EdgeId -> ParsedTypedEdge
+serializeEdge :: [(String,String)] -> TypedGraph a b -> G.EdgeId -> ParsedTypedEdge
 serializeEdge objName graph e = ("E" ++ show e,
-                         (lookup (show e) objName),
-                         "E" ++ show (GM.applyEdgeUnsafe graph e),
+                         lookup (show e) objName,
+                         "E" ++ show (getEdgeType graph e),
                          "N" ++ show (G.sourceOfUnsafe (M.domain graph) e),
                          "N" ++ show (G.targetOfUnsafe (M.domain graph) e))
