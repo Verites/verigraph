@@ -2,12 +2,9 @@ module TypedGraph.Graph
   ( TypedGraph
   , untypedGraph
   , typeGraph
-
   , TypedGraph.Graph.null
-
   , newNodesTyped
   , newEdgesTyped
-
   , nodesWithType
   , edgesWithType
   ) where

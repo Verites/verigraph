@@ -40,7 +40,8 @@ import           TypedGraph.Graph
 import           TypedGraph.MorphismCore
 import           TypedGraph.Partitions.GraphPartition            (generateGraphPartitions)
 import           TypedGraph.Partitions.GraphPartitionToVerigraph (mountTypedGraphMorphisms)
-import           TypedGraph.Partitions.VerigraphToGraphPartition (createDisjointUnion, createSatisfyingNacsDisjointUnion)
+import           TypedGraph.Partitions.VerigraphToGraphPartition (createDisjointUnion,
+                                                                  createSatisfyingNacsDisjointUnion)
 
 
 -- | Return the graph domain
