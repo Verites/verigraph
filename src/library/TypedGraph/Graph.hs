@@ -5,8 +5,8 @@ module TypedGraph.Graph
   , getNodeType
   , typeGraph
   , TypedGraph.Graph.null
-  , newNodesTyped
-  , newEdgesTyped
+  , newTypedNodes
+  , newTypedEdges
   , nodesWithType
   , edgesWithType
   ) where
@@ -40,12 +40,12 @@ getEdgeType :: TypedGraph a b -> EdgeId -> EdgeId
 getEdgeType = applyEdgeUnsafe
 
 -- | Infinite list of new node instances of a typed graph
-newNodesTyped :: TypedGraph a b -> [NodeId]
-newNodesTyped tg = newNodes $ untypedGraph tg
+newTypedNodes :: TypedGraph a b -> [NodeId]
+newTypedNodes tg = newNodes $ untypedGraph tg
 
 -- | Infinite list of new edge instances of a typed graph
-newEdgesTyped :: TypedGraph a b -> [EdgeId]
-newEdgesTyped tg = newEdges $ untypedGraph tg
+newTypedEdges :: TypedGraph a b -> [EdgeId]
+newTypedEdges tg = newEdges $ untypedGraph tg
 
 -- | Obtain a list of tuples @(nodeId, typeId)@ for nodes in the graph.
 nodesWithType :: TypedGraph a b -> [(NodeId, NodeId)]

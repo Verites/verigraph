@@ -178,8 +178,8 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
         kr = compose (invertTGM r) k                                 -- invert r and compose with k, obtain kr : R -> D
         createdNodes = orphanNodesTyped r                                -- nodes in R to be created
         createdEdges = orphanEdgesTyped r                                -- edges in R to be created
-        nodeTable    = zip createdNodes (newNodesTyped $ codomain kr) -- table mapping NodeIds in R to NodeIds in G'
-        edgeTable    = zip createdEdges (newEdgesTyped $ codomain kr) -- table mapping EdgeIds in R to EdgeIds in G'
+        nodeTable    = zip createdNodes (newTypedNodes $ codomain kr) -- table mapping NodeIds in R to NodeIds in G'
+        edgeTable    = zip createdEdges (newTypedEdges $ codomain kr) -- table mapping EdgeIds in R to EdgeIds in G'
 
         -- generate new node instances in G', associating them to the "created" nodes in R
         kr'          = foldr (\(a,b) tgm -> let tp = fromJust $ GM.applyNode (domain kr) a

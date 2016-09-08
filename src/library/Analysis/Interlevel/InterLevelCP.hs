@@ -133,18 +133,18 @@ danglingExtension gl l = tlUpdated
 
         createEdge tgm e s t = createEdgeCodTGM edgeId s t e tgm
           where
-            edgeId = head (newEdgesTyped (codomain tgm))
+            edgeId = head (newTypedEdges (codomain tgm))
 
         createSrcTgt tgm e n = createTgt (createSrc tgm e n) e n
 
         createSrc tgm e n = createEdge newGraph e n nodeId
           where
-            nodeId = head (newNodesTyped (codomain tgm))
+            nodeId = head (newTypedNodes (codomain tgm))
             typeNewNode = targetOfUnsafe (codomain (codomain tgm)) e
             newGraph = createNodeCodTGM nodeId typeNewNode tgm
 
         createTgt tgm e n = createEdge newGraph e nodeId n
           where
-            nodeId = head (newNodesTyped (codomain tgm))
+            nodeId = head (newTypedNodes (codomain tgm))
             typeNewNode = sourceOfUnsafe (codomain (codomain tgm)) e
             newGraph = createNodeCodTGM nodeId typeNewNode tgm

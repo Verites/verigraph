@@ -565,8 +565,8 @@ r = right inverseRule
 kr = M.compose (TGM.invertTGM r) k                                 -- invert r and compose with k, obtain kr : R -> D
 createdNodess = TGM.orphanNodesTyped r                                -- nodes in R to be created
 createdEdgess = TGM.orphanEdgesTyped r                                -- edges in R to be created
-nodeTable    = zip createdNodess (GM.newNodesTyped $ M.codomain kr) -- table mapping NodeIds in R to NodeIds in G'
-edgeTable    = zip createdEdgess (GM.newEdgesTyped $ M.codomain kr) -- table mapping EdgeIds in R to EdgeIds in G'
+nodeTable    = zip createdNodess (GM.newTypedNodes $ M.codomain kr) -- table mapping NodeIds in R to NodeIds in G'
+edgeTable    = zip createdEdgess (GM.newTypedEdges $ M.codomain kr) -- table mapping EdgeIds in R to EdgeIds in G'
 
 -- generate new node instances in G', associating them to the "created" nodes in R
 kr'          = foldr (\(a,b) tgm -> let tp = fromJust $ GM.applyNode (M.domain kr) a
