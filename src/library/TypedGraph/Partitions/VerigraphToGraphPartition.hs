@@ -5,9 +5,9 @@ module TypedGraph.Partitions.VerigraphToGraphPartition (
 
 import qualified Abstract.Morphism                    as M
 import           Graph.Graph                          as G
-import           Graph.GraphMorphism
+import           Graph.GraphMorphism                  as GM
 import           TypedGraph.Graph
-import           TypedGraph.MorphismCore
+import           TypedGraph.MorphismCore              as TGM
 import qualified TypedGraph.Partitions.GraphPartition as GP
 
 -- | Creates the disjoint union of two verigraph graphs in 'GraphPartition' format
@@ -28,7 +28,7 @@ createSatisfyingNacsDisjointUnion (g,injG) (n,injN) = disjointUnionGraphs left r
    where
      nodes = fst
      edges = snd
-     injNodes = filter (\x -> countIncidentMap (applyNodeTGM n) (nodesDomain n) x < 2) (nodesCodomain n)
+     injNodes = filter (\x -> countIncidentMap (TGM.applyNode n) (nodesDomain n) x < 2) (nodesCodomain n)
      injEdges = filter (\x -> countIncidentMap (applyEdgeTGM n) (edgesCodomain n) x < 2) (edgesCodomain n)
      injectiveR = if injG then (G.nodes (M.domain g), G.edges (M.domain g)) else ([],[])
      injectiveN = if injN then (nodesCodomain n, edgesCodomain n) else (injNodes, injEdges)
@@ -51,7 +51,7 @@ nodesToPartitionNodes :: [NodeId] -> TypedGraph a b -> Bool -> Int -> [NodeId] -
 nodesToPartitionNodes _        _  _    _  []            = []
 nodesToPartitionNodes injNodes tg side id (NodeId b:xs) = GP.Node n b id flag side : nodesToPartitionNodes injNodes tg side (id+1) xs
    where
-     Just (NodeId n) = applyNode tg (NodeId b)
+     Just (NodeId n) = GM.applyNode tg (NodeId b)
      flag = NodeId b `elem` injNodes
 
 edgesToPartitionEdges :: ([NodeId],[EdgeId]) -> TypedGraph a b -> Bool -> Graph a b -> Int -> [EdgeId] -> [GP.Edge]
@@ -63,8 +63,8 @@ edgesToPartitionEdges inj@(injNodes,injEdges) tg side g id (EdgeId b:xs) = GP.Ed
       src = GP.Node n1 src_ (-1) flagSrc side
       Just (NodeId tgt_) = targetOf g (EdgeId b)
       tgt = GP.Node n2 tgt_ (-1) flagTgt side
-      Just (NodeId n1) = applyNode tg (NodeId src_)
-      Just (NodeId n2) = applyNode tg (NodeId tgt_)
+      Just (NodeId n1) = GM.applyNode tg (NodeId src_)
+      Just (NodeId n2) = GM.applyNode tg (NodeId tgt_)
       flag = EdgeId b `elem` injEdges
       flagSrc = NodeId src_ `elem` injNodes
       flagTgt = NodeId tgt_ `elem` injNodes

@@ -190,10 +190,10 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
 
     invertSide = invertTGM side
 
-    srcInK x = fromMaybe (newNodesK !! 0) (applyNodeTGM invertSide (src x))
-    tgtInK x = fromMaybe (newNodesK !! 1) (applyNodeTGM invertSide (tgt x))
-    srcInR x = fromMaybe (newNodesSide !! 0) (applyNodeTGM otherSide (srcInK x))
-    tgtInR x = fromMaybe (newNodesSide !! 1) (applyNodeTGM otherSide (tgtInK x))
+    srcInK x = fromMaybe (newNodesK !! 0) (applyNode invertSide (src x))
+    tgtInK x = fromMaybe (newNodesK !! 1) (applyNode invertSide (tgt x))
+    srcInR x = fromMaybe (newNodesSide !! 0) (applyNode otherSide (srcInK x))
+    tgtInR x = fromMaybe (newNodesSide !! 1) (applyNode otherSide (tgtInK x))
 
     (updateLeft, updateRight) =
       (case x of

@@ -11,7 +11,7 @@ module TypedGraph.Morphism (
     , graphDomain
     , graphCodomain
     , mapping
-    , applyNodeTGM
+    , MC.applyNode
     , applyNodeTGMUnsafe
     , applyEdgeTGM
     , applyEdgeTGMUnsafe
@@ -37,7 +37,7 @@ import           Data.Maybe
 import           Graph.Graph                                     as G
 import           Graph.GraphMorphism                             as GM
 import           TypedGraph.Graph
-import           TypedGraph.MorphismCore
+import           TypedGraph.MorphismCore                         as MC
 import           TypedGraph.Partitions.GraphPartition            (generateGraphPartitions)
 import           TypedGraph.Partitions.GraphPartitionToVerigraph (mountTypedGraphMorphisms)
 import           TypedGraph.Partitions.VerigraphToGraphPartition (createDisjointUnion,
@@ -54,7 +54,7 @@ graphCodomain = untypedGraph . codomain
 
 -- | Return the node to which @ln@ gets mapped or error in the case of undefined
 applyNodeTGMUnsafe :: TypedGraphMorphism a b -> G.NodeId -> G.NodeId
-applyNodeTGMUnsafe m n = fromMaybe (error "Error, apply node in a non total morphism") $ applyNodeTGM m n
+applyNodeTGMUnsafe m n = fromMaybe (error "Error, apply node in a non total morphism") $ MC.applyNode m n
 
 -- | Return the edge to which @le@ gets mapped or error in the case of undefined
 applyEdgeTGMUnsafe :: TypedGraphMorphism a b -> G.EdgeId -> G.EdgeId
@@ -229,7 +229,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
       g' = invertTGM g
       nodes = nodesDomain f'
       edges = edgesDomain f'
-      knodes = filter (\n -> isJust (applyNodeTGM f' n) && isJust (applyNodeTGM g' n)) nodes
+      knodes = filter (\n -> isJust (MC.applyNode f' n) && isJust (MC.applyNode g' n)) nodes
       kedges = filter (\e -> isJust (applyEdgeTGM f' e) && isJust (applyEdgeTGM g' e)) edges
       delNodes = nodes \\ knodes
       delEdges = edges \\ kedges
@@ -255,7 +255,7 @@ satisfiesIdentificationCondition l m =
 
   where
     nodesDelPres =
-      map (satsDelItemsAux l m nodesDomain applyNodeTGM) (nodesCodomain m)
+      map (satsDelItemsAux l m nodesDomain MC.applyNode) (nodesCodomain m)
 
     edgesDelPres =
       map (satsDelItemsAux l m edgesDomain applyEdgeTGM) (edgesCodomain m)
@@ -282,8 +282,8 @@ satisfiesDanglingCondition leftR m = all (==True) (concat incidentEdgesDel)
     where
         l = graphDomain m
         g = graphCodomain m
-        matchedLInG = mapMaybe (applyNodeTGM m) (nodes l)
-        delNodes = filter (checkDeletion leftR m applyNodeTGM nodesDomain) matchedLInG
+        matchedLInG = mapMaybe (MC.applyNode m) (nodes l)
+        delNodes = filter (checkDeletion leftR m MC.applyNode nodesDomain) matchedLInG
         hasIncEdges = map (incidentEdges g) delNodes
         verEdgeDel = map (checkDeletion leftR m applyEdgeTGM edgesDomain)
         incidentEdgesDel = map verEdgeDel hasIncEdges
@@ -405,17 +405,17 @@ partialInjectiveMatches' nac match =
       composeNodes tgm (h:t) =
         do
           let nodeNac = fromMaybe (error "NODE NOT MAPPED L->N") $
-                        applyNodeTGM nac h
+                        MC.applyNode nac h
               nodeG   = fromMaybe (error "NODE NOT MAPPED L->G") $
-                        applyNodeTGM match h
+                        MC.applyNode match h
 
               dom     = domain tgm
               cod     = codomain tgm
               m       = mapping tgm
 
               tgm' = if (typeN dom nodeNac == typeN cod nodeG) &&
-                        (isNothing (applyNodeTGM tgm nodeNac) ||
-                         (applyNodeTGM tgm nodeNac == Just nodeG))
+                        (isNothing (MC.applyNode tgm nodeNac) ||
+                         (MC.applyNode tgm nodeNac == Just nodeG))
                      then Just $ typedMorphism dom cod
                                  (GM.updateNodes nodeNac nodeG m)
                      else Nothing
@@ -438,7 +438,7 @@ partialInjectiveMatches' nac match =
           --DELETE FROM QUEUE ALREADY MAPPED SOURCE NODES (NODES FROM NAC)
           nodesSrc = filter (notMappedNodes q2) (nodes $ domain domQ)
             where
-              notMappedNodes tgm node = isNothing $ applyNodeTGM tgm node
+              notMappedNodes tgm node = isNothing $ MC.applyNode tgm node
           --DELETE FROM QUEUE ALREADY MAPPED SOURCE EDGES (EDGES FROM NAC)
           edgesSrc = filter (notMappedEdges q2) (edges $ domain domQ)
             where
@@ -580,8 +580,8 @@ updateNodesMapping n1 n2 nodesT tgm =
         m = mapping tgm
 
     if typeN d n1 == typeN c n2 &&
-       ((isNothing (applyNodeTGM tgm n1) && L.elem n2 nodesT) ||
-        applyNodeTGM tgm n1 == Just n2)
+       ((isNothing (MC.applyNode tgm n1) && L.elem n2 nodesT) ||
+        MC.applyNode tgm n1 == Just n2)
       then Just $ typedMorphism d c $ GM.updateNodes n1 n2 m
       else Nothing
 
