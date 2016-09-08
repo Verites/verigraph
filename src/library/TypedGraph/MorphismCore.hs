@@ -13,8 +13,9 @@ data TypedGraphMorphism a b = TypedGraphMorphism {
                             , mapping     :: GraphMorphism a b
                          } deriving (Eq, Show, Read)
 
-typedMorphism :: TypedGraph a b -> TypedGraph a b -> GraphMorphism a b -> TypedGraphMorphism a b
-typedMorphism = TypedGraphMorphism
+-- | Given two @TypedGraph@s @G1@ and @G2@ and a simple @GraphMorphism@ between them, it returns a @TypedGraphMorphism@ from @G1@ to @G2@
+buildTypedGraphMorphism :: TypedGraph a b -> TypedGraph a b -> GraphMorphism a b -> TypedGraphMorphism a b
+buildTypedGraphMorphism = TypedGraphMorphism
 
 instance Morphism (TypedGraphMorphism a b) where
     type Obj (TypedGraphMorphism a b) = TypedGraph a b
@@ -33,19 +34,19 @@ instance Valid (TypedGraphMorphism a b) where
         valid cod &&
         dom == compose m cod
 
--- | Return the nodes in the domain of this TGM
+-- | Return the nodes in the domain of a given @TypedGraphMorphism@
 nodesFromDomain :: TypedGraphMorphism a b -> [NodeId]
 nodesFromDomain = nodes . domain . getDomain
 
--- | Return the edges in the domain of this TGM
+-- | Return the edges in the domain of a given @TypedGraphMorphism@
 edgesFromDomain :: TypedGraphMorphism a b -> [EdgeId]
 edgesFromDomain = edges . domain . getDomain
 
--- | Return the nodes in the codomain of this TGM
+-- | Return the nodes in the codomain of a given @TypedGraphMorphism@
 nodesFromCodomain :: TypedGraphMorphism a b -> [NodeId]
 nodesFromCodomain = nodes . domain . getCodomain
 
--- | Return the edges in the codomain of this TGM
+-- | Return the edges in the codomain of a given @TypedGraphMorphism@
 edgesFromCodomain :: TypedGraphMorphism a b -> [EdgeId]
 edgesFromCodomain = edges . domain . getCodomain
 

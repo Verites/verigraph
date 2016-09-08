@@ -197,8 +197,8 @@ instantiateSpan left right mapping = (leftM, rightM)
   where
     parsedMap = map (\(t,_,s) -> (toN t, toN s)) mapping
 
-    leftM = typedMorphism k left leftMap
-    rightM = typedMorphism k right rightMap
+    leftM = buildTypedGraphMorphism k left leftMap
+    rightM = buildTypedGraphMorphism k right rightMap
 
     nodesLeft = G.nodes (domain left)
     nodesRight = G.nodes (domain right)

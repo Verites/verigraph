@@ -300,7 +300,7 @@ danglingSpan matchRuleSide matchMorp matchK l k = deletedNodesInK && deletedEdge
 -- TODO: explain the errors in this function. what are preconditions for them not to occur?!?
 commutingMorphismSameDomain :: TypedGraphMorphism a b -> TypedGraphMorphism a b
                             -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
-commutingMorphismSameDomain k1 s1 k2 s2 = typedMorphism (codomain k1) (codomain s1) select
+commutingMorphismSameDomain k1 s1 k2 s2 = buildTypedGraphMorphism (codomain k1) (codomain s1) select
   where
     mats = findMonomorphisms (codomain k1) (codomain s1)
     filt = filter (\m -> compose k1 m == s1 && compose k2 m == s2) mats
@@ -327,7 +327,7 @@ commutingMorphismSameDomain k1 s1 k2 s2 = typedMorphism (codomain k1) (codomain 
 -- TODO: explain the errors in this function. what are preconditions for them not to occur?!?
 commutingMorphismSameCodomain :: TypedGraphMorphism a b -> TypedGraphMorphism a b
                               -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
-commutingMorphismSameCodomain k1 s1 k2 s2 = typedMorphism (domain k1) (domain s1) select
+commutingMorphismSameCodomain k1 s1 k2 s2 = buildTypedGraphMorphism (domain k1) (domain s1) select
   where
     mats = findMonomorphisms (domain k1) (domain s1)
     filt = filter (\m -> compose m s1 == k1 && compose k2 m == s2) mats

@@ -15,7 +15,7 @@ module TypedGraph.Morphism (
     , applyNodeTGMUnsafe
     , MC.applyEdge
     , applyEdgeTGMUnsafe
-    , typedMorphism
+    , buildTypedGraphMorphism
     , removeNodeDomTyped
     , removeEdgeDomTyped
     , removeNodeCodTyped
@@ -155,7 +155,7 @@ partialInjectiveTGM nac q = GM.isPartialInjective (mapping nac) (mapping q)
 -- | Creates a TGM mapping the same elements of theirs codomains, from @tgm1@ to @tgm2@
 idMap :: GraphMorphism a b -> GraphMorphism a b -> TypedGraphMorphism a b
 idMap gm1 gm2 =
-  typedMorphism gm1 gm2 edgesUpdate
+  buildTypedGraphMorphism gm1 gm2 edgesUpdate
     where
       init = GM.empty (domain gm1) (domain gm2)
       nodesUpdate = foldr (\n -> GM.updateNodes n n) init (G.nodes (domain gm1))
@@ -369,7 +369,7 @@ partialInjectiveMatches' nac match =
       domQ   = codomain nac
       codQ   = codomain match
       mapQ   = GM.empty (domain domQ) (domain codQ)
-      q      = typedMorphism domQ codQ mapQ
+      q      = buildTypedGraphMorphism domQ codQ mapQ
 
       --VERIFY EDGES MAPPING N <- l AND L -> G AND BUILD A N -> G
       --PARTIAL EDGES MORPHISM
@@ -389,7 +389,7 @@ partialInjectiveMatches' nac match =
               tgm' = if (typeE dom edgeNac == typeE cod edgeG) &&
                         (isNothing (MC.applyEdge tgm edgeNac) ||
                          (MC.applyEdge tgm edgeNac == Just edgeG))
-                     then Just $ typedMorphism dom cod
+                     then Just $ buildTypedGraphMorphism dom cod
                                  (GM.updateEdges edgeNac edgeG $ mapping tgm)
                      else Nothing
 
@@ -416,7 +416,7 @@ partialInjectiveMatches' nac match =
               tgm' = if (typeN dom nodeNac == typeN cod nodeG) &&
                         (isNothing (MC.applyNode tgm nodeNac) ||
                          (MC.applyNode tgm nodeNac == Just nodeG))
-                     then Just $ typedMorphism dom cod
+                     then Just $ buildTypedGraphMorphism dom cod
                                  (GM.updateNodes nodeNac nodeG m)
                      else Nothing
           case tgm' of
@@ -468,7 +468,7 @@ matches' prop graph1 graph2 =
     d   = graph1
     c   = graph2
     m   = GM.empty (domain graph1) (domain graph2)
-    tgm = typedMorphism d c m
+    tgm = buildTypedGraphMorphism d c m
 
 
 
@@ -582,7 +582,7 @@ updateNodesMapping n1 n2 nodesT tgm =
     if typeN d n1 == typeN c n2 &&
        ((isNothing (MC.applyNode tgm n1) && L.elem n2 nodesT) ||
         MC.applyNode tgm n1 == Just n2)
-      then Just $ typedMorphism d c $ GM.updateNodes n1 n2 m
+      then Just $ buildTypedGraphMorphism d c $ GM.updateNodes n1 n2 m
       else Nothing
 
 ---------------------------------------------------------------------------------
@@ -600,5 +600,5 @@ updateEdgesMapping e1 e2 edgesT tgm =
     if typeE d e1 == typeE c e2 &&
        ((isNothing (MC.applyEdge tgm e1) && L.elem e2 edgesT ) ||
         MC.applyEdge tgm e1 == Just e2)
-      then Just $ typedMorphism d c (GM.updateEdges e1 e2 m)
+      then Just $ buildTypedGraphMorphism d c (GM.updateEdges e1 e2 m)
       else Nothing

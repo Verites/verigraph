@@ -102,7 +102,7 @@ matches' prop graph1 graph2 =
     d   = graph1
     c   = graph2
     m   = GM.empty (domain graph1) (domain graph2)
-    tgm = TGM.typedMorphism d c m
+    tgm = buildTypedGraphMorphism d c m
 
 
 
@@ -216,7 +216,7 @@ updateNodesMapping n1 n2 nodesT tgm =
     if typeN d n1 == typeN c n2 &&
        (((isNothing $ applyNodeTGM tgm n1) && L.elem n2 nodesT) ||
         applyNodeTGM tgm n1 == Just n2)
-      then Just $ TGM.typedMorphism d c $ GM.updateNodes n1 n2 m
+      then Just $ buildTypedGraphMorphism d c $ GM.updateNodes n1 n2 m
       else Nothing
 
 ---------------------------------------------------------------------------------
@@ -234,7 +234,7 @@ updateEdgesMapping e1 e2 edgesT tgm =
     if typeE d e1 == typeE c e2 &&
        (((isNothing $ applyEdgeTGM tgm e1) && L.elem e2 edgesT ) ||
         applyEdgeTGM tgm e1 == Just e2)
-      then Just $ TGM.typedMorphism d c (GM.updateEdges e1 e2 m)
+      then Just $ buildTypedGraphMorphism d c (GM.updateEdges e1 e2 m)
       else Nothing
 
 {-
@@ -259,16 +259,16 @@ trr1 = GM.buildGraphMorphism rr1 grafotipo [(34,4),(33,3),(31,1)] [(35,5)]
 
 --span
 kr1_lr1 = GM.buildGraphMorphism kr1 lr1 [(24,14),(23,13),(21,11)] []
-l1 = TGM.typedMorphism tkr1 tlr1 kr1_lr1
+l1 = buildTypedGraphMorphism tkr1 tlr1 kr1_lr1
 
 kr1_rr1 = GM.buildGraphMorphism kr1 rr1 [(24,34),(23,33),(21,31)] []
-r1 = TGM.typedMorphism tkr1 trr1 kr1_rr1
+r1 = buildTypedGraphMorphism tkr1 trr1 kr1_rr1
 
 --nac
 nacGraph = build [501,502,503,504] [(501,503,501),(503,502,503)]
 nacType = GM.buildGraphMorphism nacGraph grafotipo [(501,1),(502,2),(503,3),(504,4)] [(501,1),(503,3)]
 nacMap = GM.buildGraphMorphism lr1 nacGraph [(11,501),(13,503),(14,504)] [(11,501)]
-nacSendMsg = TGM.typedMorphism tlr1 nacType nacMap
+nacSendMsg = buildTypedGraphMorphism tlr1 nacType nacMap
 
 sendMsg = graphRule l1 r1 [nacSendMsg]
 
@@ -284,10 +284,10 @@ trr2 = GM.buildGraphMorphism rr2 grafotipo [(64,4),(63,3),(62,2)] [(65,5),(63,3)
 
 --span
 kr2_lr2 = GM.buildGraphMorphism kr2 lr2 [(52,42),(53,43),(54,44)] [(55,45)]
-l2 = TGM.typedMorphism tkr2 tlr2 kr2_lr2
+l2 = buildTypedGraphMorphism tkr2 tlr2 kr2_lr2
 
 kr2_rr2 = GM.buildGraphMorphism kr2 rr2 [(54,64),(53,63),(52,62)] [(55,65)]
-r2 = TGM.typedMorphism tkr2 trr2 kr2_rr2
+r2 = buildTypedGraphMorphism tkr2 trr2 kr2_rr2
 
 getDATA = graphRule l2 r2 []
 
@@ -303,10 +303,10 @@ trr3 = GM.buildGraphMorphism rr3 grafotipo [(94,4),(93,3),(92,2),(91,1)] [(91,1)
 
 --span
 kr3_lr3 = GM.buildGraphMorphism kr3 lr3 [(84,74),(83,73),(82,72),(81,71)] [(83,73)]
-l3 = TGM.typedMorphism tkr3 tlr3 kr3_lr3
+l3 = buildTypedGraphMorphism tkr3 tlr3 kr3_lr3
 
 kr3_rr3 = GM.buildGraphMorphism kr3 rr3 [(84,94),(83,93),(82,92),(81,91)] [(83,93)]
-r3 = TGM.typedMorphism tkr3 trr3 kr3_rr3
+r3 = buildTypedGraphMorphism tkr3 trr3 kr3_rr3
 
 receiveMSG = graphRule l3 r3 []
 
@@ -322,10 +322,10 @@ trr4 = GM.buildGraphMorphism rr4 grafotipo [(121,1),(122,2)] [(122,2)]
 
 --span
 kr4_lr4 = GM.buildGraphMorphism kr4 lr4 [(111,101),(112,102)] []
-l4 = TGM.typedMorphism tkr4 tlr4 kr4_lr4
+l4 = buildTypedGraphMorphism tkr4 tlr4 kr4_lr4
 
 kr4_rr4 = GM.buildGraphMorphism kr4 rr4 [(111,121),(112,122)] []
-r4 = TGM.typedMorphism tkr4 trr4 kr4_rr4
+r4 = buildTypedGraphMorphism tkr4 trr4 kr4_rr4
 
 deleteMSG = graphRule l4 r4 []
 
@@ -341,10 +341,10 @@ trr5 = GM.buildGraphMorphism rr5 grafotipo [(400,1)] []
 
 --span
 kr5_lr5 = GM.buildGraphMorphism kr5 lr5 [(300,200)] []
-l5 = TGM.typedMorphism tkr5 tlr5 kr5_lr5
+l5 = buildTypedGraphMorphism tkr5 tlr5 kr5_lr5
 
 kr5_rr5 = GM.buildGraphMorphism kr5 rr5 [(300,400)] []
-r5 = TGM.typedMorphism tkr5 trr5 kr5_rr5
+r5 = buildTypedGraphMorphism tkr5 trr5 kr5_rr5
 
 teste = graphRule l5 r5 []
 
@@ -360,16 +360,16 @@ trr6 = GM.buildGraphMorphism rr6 grafotipo [(232,2)] []
 
 --span
 kr6_lr6 = GM.buildGraphMorphism kr6 lr6 [(222,212)] []
-l6 = TGM.typedMorphism tkr6 tlr6 kr6_lr6
+l6 = buildTypedGraphMorphism tkr6 tlr6 kr6_lr6
 
 kr6_rr6 = GM.buildGraphMorphism kr6 rr6 [(222,232)] []
-r6 = TGM.typedMorphism tkr6 trr6 kr6_rr6
+r6 = buildTypedGraphMorphism tkr6 trr6 kr6_rr6
 
 --nac
 ng6 = build [242,241] []
 nt6 = GM.buildGraphMorphism ng6 grafotipo [(242,2),(241,1)] []
 lr6_n6 = GM.buildGraphMorphism lr6 ng6 [(212,242)] []
-nac6 = TGM.typedMorphism tlr6 nt6 lr6_n6
+nac6 = buildTypedGraphMorphism tlr6 nt6 lr6_n6
 
 wnac = graphRule l6 r6 [nac6]
 
@@ -385,10 +385,10 @@ trr7 = GM.buildGraphMorphism rr7 grafotipo [(332,2)] []
 
 --span
 kr7_lr7 = GM.buildGraphMorphism kr7 lr7 [(322,312)] []
-l7 = TGM.typedMorphism tkr7 tlr7 kr7_lr7
+l7 = buildTypedGraphMorphism tkr7 tlr7 kr7_lr7
 
 kr7_rr7 = GM.buildGraphMorphism kr7 rr7 [(322,332)] []
-r7 = TGM.typedMorphism tkr7 trr7 kr7_rr7
+r7 = buildTypedGraphMorphism tkr7 trr7 kr7_rr7
 
 wnac2 = graphRule l7 r7 []
 
@@ -404,10 +404,10 @@ trr8 = GM.buildGraphMorphism rr8 grafotipo [(350,1)] []
 
 --span
 kr8_lr8 = GM.buildGraphMorphism kr8 lr8 [] []
-l8 = TGM.typedMorphism tkr8 tlr8 kr8_lr8
+l8 = buildTypedGraphMorphism tkr8 tlr8 kr8_lr8
 
 kr8_rr8 = GM.buildGraphMorphism kr8 rr8 [] []
-r8 = TGM.typedMorphism tkr8 trr8 kr8_rr8
+r8 = buildTypedGraphMorphism tkr8 trr8 kr8_rr8
 
 testeCreate = graphRule l8 r8 []
 
@@ -506,9 +506,9 @@ filtM2 r = filter (\(m1,m2) -> satsGluingCond r m2)
 mA = m1 (cpRT!!1)
 mB = m2 (cpRT!!1)
 kToG = M.compose (left receiveMSG) mA
-gToK = TGM.typedMorphism (M.codomain kToG) (M.domain kToG) (GM.inverse (TGM.mapping kToG))
+gToK = buildTypedGraphMorphism (M.codomain kToG) (M.domain kToG) (GM.inverse (TGM.mapping kToG))
 gToR = M.compose gToK (right receiveMSG)
-rToG = TGM.typedMorphism (M.codomain gToR) (M.domain gToR) (GM.inverse (TGM.mapping gToR))
+rToG = buildTypedGraphMorphism (M.codomain gToR) (M.domain gToR) (GM.inverse (TGM.mapping gToR))
 nvMB = M.compose mB gToR
 
 ---------

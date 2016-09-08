@@ -17,7 +17,7 @@ mountTypedGraphMorphisms tg1 tg2 graphPartition = (mountTGM True tg1, mountTGM F
   where
     typeGraph = codomain tg1
     typedGraph = mountTypedGraph graphPartition typeGraph
-    mountTGM side match = TGM.typedMorphism match typedGraph (mountMapping side graphPartition match)
+    mountTGM side match = TGM.buildTypedGraphMorphism match typedGraph (mountMapping side graphPartition match)
 
 mountGraph :: GP.GraphPartition -> G.Graph a b
 mountGraph (nodes,edges) = G.build nodes' edges'
