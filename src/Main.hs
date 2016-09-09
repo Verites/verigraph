@@ -66,17 +66,17 @@ deleteUse l _ (m1,m2) = Prelude.null matchD
 
 
 -- TODO: following functions should be part of the Graph interface
-srcE, tgtE :: G.Graph a b -> EdgeId -> NodeId
-srcE gm e = fromJust $ G.sourceOf gm e
-tgtE gm e = fromJust $ G.targetOf gm e
+extractSource, extractTarget :: G.Graph a b -> EdgeId -> NodeId
+extractSource gm e = fromJust $ G.sourceOf gm e
+extractTarget gm e = fromJust $ G.targetOf gm e
 
 -- TODO: following function should be part of TypedGraph interface
-typeN :: GM.GraphMorphism a b -> NodeId -> NodeId
-typeN gm n = fromMaybe (error "NODE NOT TYPED") $ GM.applyNode gm n
+extractNodeType :: GM.GraphMorphism a b -> NodeId -> NodeId
+extractNodeType gm n = fromMaybe (error "NODE NOT TYPED") $ GM.applyNode gm n
 
 -- TODO: following function should be part of TypedGraph interface
-typeE :: GM.GraphMorphism a b -> EdgeId -> EdgeId
-typeE gm e = fromMaybe (error "EDGE NOT TYPED") $ GM.applyEdge gm e
+extractEdgeType :: GM.GraphMorphism a b -> EdgeId -> EdgeId
+extractEdgeType gm e = fromMaybe (error "EDGE NOT TYPED") $ GM.applyEdge gm e
 
 
 
@@ -167,13 +167,13 @@ buildMappings prop nodes (h:t) nodesT edgesT tgm
       let tgmN
             | isNothing tgm1 = Nothing
             | otherwise = tgm2
-            where tgm1 = updateNodesMapping (srcE d h) (srcE c y) nodesT tgm
-                  tgm2 = updateNodesMapping (tgtE d h) (tgtE c y) nodesT' $ fromJust tgm1
+            where tgm1 = updateNodesMapping (extractSource d h) (extractSource c y) nodesT tgm
+                  tgm2 = updateNodesMapping (extractTarget d h) (extractTarget c y) nodesT' $ fromJust tgm1
                   d = domain $ domain tgm
                   c = domain $ codomain tgm
                   nodesT' = case prop of
-                    Monomorphism    -> L.delete (srcE c y) nodesT
-                    Isomorphism     -> L.delete (srcE c y) nodesT
+                    Monomorphism    -> L.delete (extractSource c y) nodesT
+                    Isomorphism     -> L.delete (extractSource c y) nodesT
                     Epimorphism     -> nodesT
                     GenericMorphism -> nodesT
 
@@ -185,12 +185,12 @@ buildMappings prop nodes (h:t) nodesT edgesT tgm
       --FOR THE COMPATIBLES MAPPINGS, GO TO THE NEXT STEP
       case tgmE of
         Just tgm' -> do
-          let nodes'       = L.delete (srcE d h) $ L.delete (tgtE d h) nodes
+          let nodes'       = L.delete (extractSource d h) $ L.delete (extractTarget d h) nodes
               d            = domain $ domain tgm
               c            = domain $ codomain tgm
               --REMOVE THE TARGET EDGES AND NODES MAPPED (INJECTIVE MODULE)
               edgesT'      = L.delete y edgesT
-              nodesT'      = L.delete (srcE c y) $ L.delete (tgtE c y) nodesT
+              nodesT'      = L.delete (extractSource c y) $ L.delete (extractTarget c y) nodesT
               monomorphism = buildMappings prop nodes' t nodesT' edgesT' tgm'
               all          = buildMappings prop nodes' t nodesT  edgesT  tgm'
               --CHOSE BETWEEN INJECTIVE OR NOT
@@ -213,7 +213,7 @@ updateNodesMapping n1 n2 nodesT tgm =
         c = codomain tgm
         m = mapping tgm
 
-    if typeN d n1 == typeN c n2 &&
+    if extractNodeType d n1 == extractNodeType c n2 &&
        (((isNothing $ applyNodeTGM tgm n1) && L.elem n2 nodesT) ||
         applyNodeTGM tgm n1 == Just n2)
       then Just $ buildTypedGraphMorphism d c $ GM.updateNodes n1 n2 m
@@ -231,7 +231,7 @@ updateEdgesMapping e1 e2 edgesT tgm =
         c = codomain tgm
         m = mapping tgm
 
-    if typeE d e1 == typeE c e2 &&
+    if extractEdgeType d e1 == extractEdgeType c e2 &&
        (((isNothing $ applyEdgeTGM tgm e1) && L.elem e2 edgesT ) ||
         applyEdgeTGM tgm e1 == Just e2)
       then Just $ buildTypedGraphMorphism d c (GM.updateEdges e1 e2 m)

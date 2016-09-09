@@ -43,6 +43,8 @@ module Graph.Graph (
     , sourceOfUnsafe
     , targetOf
     , targetOfUnsafe
+    , extractSource
+    , extractTarget
     -- ** Predicates
     , isEdgeOf
     , isNodeOf
@@ -57,7 +59,7 @@ module Graph.Graph (
 import           Abstract.Valid
 import           Data.List
 import           Data.List.Utils
-import           Data.Maybe      (fromMaybe)
+import           Data.Maybe      (fromMaybe, fromJust)
 
 data Node a = Node { getNodePayload :: Maybe a
               } deriving (Show, Read)
@@ -298,6 +300,13 @@ sourceOfUnsafe g e = fromMaybe (error "Error, graph with source edges function n
 -- | Return @e@'s target or error in the case of undefined
 targetOfUnsafe :: Graph a b -> EdgeId -> NodeId
 targetOfUnsafe g e = fromMaybe (error "Error, graph with target edges function non total") $ targetOf g e
+
+-- TODO: following functions should be part of the Graph interface
+extractSource :: Graph a b -> EdgeId -> NodeId
+extractSource gm e = fromJust $ sourceOf gm e
+
+extractTarget :: Graph a b -> EdgeId -> NodeId
+extractTarget gm e = fromJust $ targetOf gm e
 
 -- | Test whether a graph is empty.
 null :: Graph a b -> Bool

@@ -343,21 +343,6 @@ instance FindMorphism (TypedGraphMorphism a b) where
   findMorphisms = matches'
   partialInjectiveMatches = partialInjectiveMatches'
 
---ALIAS OF MOST USED FUNCTIONS --
-
--- TODO: following functions should be part of the Graph interface
-srcE, tgtE :: Graph a b -> EdgeId -> NodeId
-srcE gm e = fromJust $ G.sourceOf gm e
-tgtE gm e = fromJust $ G.targetOf gm e
-
--- TODO: following function should be part of TypedGraph interface
-typeN :: GM.GraphMorphism a b -> NodeId -> NodeId
-typeN gm n = fromMaybe (error "NODE NOT TYPED") $ GM.applyNode gm n
-
--- TODO: following function should be part of TypedGraph interface
-typeE :: GM.GraphMorphism a b -> EdgeId -> EdgeId
-typeE gm e = fromMaybe (error "EDGE NOT TYPED") $ GM.applyEdge gm e
-
 ---------------------------------------------------------------------------------
 
 -- | Finds matches __/q/__ .
@@ -393,7 +378,7 @@ partialInjectiveMatches' nac match =
               dom     = domain tgm
               cod     = codomain tgm
 
-              tgm' = if (typeE dom edgeNac == typeE cod edgeG) &&
+              tgm' = if (extractEdgeType dom edgeNac == extractEdgeType cod edgeG) &&
                         (isNothing (applyEdge tgm edgeNac) ||
                          (applyEdge tgm edgeNac == Just edgeG))
                      then Just $ buildTypedGraphMorphism dom cod
@@ -420,7 +405,7 @@ partialInjectiveMatches' nac match =
               cod     = codomain tgm
               m       = mapping tgm
 
-              tgm' = if (typeN dom nodeNac == typeN cod nodeG) &&
+              tgm' = if (extractNodeType dom nodeNac == extractNodeType cod nodeG) &&
                         (isNothing (applyNode tgm nodeNac) ||
                          (applyNode tgm nodeNac == Just nodeG))
                      then Just $ buildTypedGraphMorphism dom cod
@@ -540,13 +525,13 @@ buildMappings prop nodes (h:t) nodesT edgesT tgm
       let tgmN
             | isNothing tgm1 = Nothing
             | otherwise = tgm2
-            where tgm1 = updateNodesMapping (srcE d h) (srcE c y) nodesT tgm
-                  tgm2 = updateNodesMapping (tgtE d h) (tgtE c y) nodesT' $ fromJust tgm1
+            where tgm1 = updateNodesMapping (extractSource d h) (extractSource c y) nodesT tgm
+                  tgm2 = updateNodesMapping (extractTarget d h) (extractTarget c y) nodesT' $ fromJust tgm1
                   d = domain $ domain tgm
                   c = domain $ codomain tgm
                   nodesT' = case prop of
-                    Monomorphism    -> L.delete (srcE c y) nodesT
-                    Isomorphism     -> L.delete (srcE c y) nodesT
+                    Monomorphism    -> L.delete (extractSource c y) nodesT
+                    Isomorphism     -> L.delete (extractSource c y) nodesT
                     Epimorphism     -> nodesT
                     GenericMorphism -> nodesT
 
@@ -558,12 +543,12 @@ buildMappings prop nodes (h:t) nodesT edgesT tgm
       --FOR THE COMPATIBLES MAPPINGS, GO TO THE NEXT STEP
       case tgmE of
         Just tgm' -> do
-          let nodes'       = delete (srcE d h) $ delete (tgtE d h) nodes
+          let nodes'       = delete (extractSource d h) $ delete (extractTarget d h) nodes
               d            = domain $ domain tgm
               c            = domain $ codomain tgm
               --REMOVE THE TARGET EDGES AND NODES MAPPED (INJECTIVE MODULE)
               edgesT'      = delete y edgesT
-              nodesT'      = delete (srcE c y) $ delete (tgtE c y) nodesT
+              nodesT'      = delete (extractSource c y) $ delete (extractTarget c y) nodesT
               monomorphism = buildMappings prop nodes' t nodesT' edgesT' tgm'
               all          = buildMappings prop nodes' t nodesT  edgesT  tgm'
               --CHOSE BETWEEN INJECTIVE OR NOT
@@ -585,7 +570,7 @@ updateNodesMapping n1 n2 nodesT tgm =
         c = codomain tgm
         m = mapping tgm
 
-    if typeN d n1 == typeN c n2 &&
+    if extractNodeType d n1 == extractNodeType c n2 &&
        ((isNothing (applyNode tgm n1) && L.elem n2 nodesT) ||
         applyNode tgm n1 == Just n2)
       then Just $ buildTypedGraphMorphism d c $ GM.updateNodes n1 n2 m
@@ -602,7 +587,7 @@ updateEdgesMapping e1 e2 edgesT tgm =
         c = codomain tgm
         m = mapping tgm
 
-    if typeE d e1 == typeE c e2 &&
+    if extractEdgeType d e1 == extractEdgeType c e2 &&
        ((isNothing (applyEdge tgm e1) && L.elem e2 edgesT ) ||
         applyEdge tgm e1 == Just e2)
       then Just $ buildTypedGraphMorphism d c (GM.updateEdges e1 e2 m)

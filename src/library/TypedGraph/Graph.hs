@@ -3,6 +3,8 @@ module TypedGraph.Graph
   , untypedGraph
   , getEdgeType
   , getNodeType
+  , extractNodeType
+  , extractEdgeType
   , typeGraph
   , TypedGraph.Graph.null
   , newTypedNodes
@@ -12,6 +14,7 @@ module TypedGraph.Graph
   ) where
 
 import           Abstract.Morphism
+import           Data.Maybe          (fromMaybe)
 import           Graph.Graph         as G
 import           Graph.GraphMorphism
 
@@ -31,13 +34,21 @@ typeGraph = codomain
 null :: TypedGraph a b -> Bool
 null = G.null . untypedGraph
 
+{-# DEPRECATED getNodeType "Use extractNodeType instead" #-}
 -- | Given a TypedGraph and a Node in this graph, returns the type of the Node
 getNodeType :: TypedGraph a b -> NodeId -> NodeId
 getNodeType = applyNodeUnsafe
 
+{-# DEPRECATED getEdgeType "Use extractEdgeType instead" #-}
 --- | Given a TypedGraph and a Edge in this graph, returns the type of the Edge
 getEdgeType :: TypedGraph a b -> EdgeId -> EdgeId
 getEdgeType = applyEdgeUnsafe
+
+extractNodeType :: TypedGraph a b -> NodeId -> NodeId
+extractNodeType gm n = fromMaybe (error "NODE NOT TYPED") $ applyNode gm n
+
+extractEdgeType :: TypedGraph a b -> EdgeId -> EdgeId
+extractEdgeType gm e = fromMaybe (error "EDGE NOT TYPED") $ applyEdge gm e
 
 -- | Infinite list of new node instances of a typed graph
 newTypedNodes :: TypedGraph a b -> [NodeId]
