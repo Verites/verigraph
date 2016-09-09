@@ -20,7 +20,6 @@ module TypedGraph.GraphRule (
 
 
 import           Abstract.DPO        as DPO
-import           Abstract.Morphism
 import           Graph.Graph         as G
 import           TypedGraph.Morphism as TGM
 
@@ -50,15 +49,3 @@ instance DPO (TypedGraphMorphism a b) where
   shiftNacOverProduction conf rule nac = [calculateComatch nac rule | satisfiesGluingConditions conf rule nac]
 
   isPartiallyMonomorphic = isPartialInjective
-
-
--- | Given the left-hand-side morphism of a rule /l : K -> L/, a match /m : L -> G/ for this rule, an element __/e/__
--- (that can be either a __/Node/__ or an __/Edge/__) and two functions /apply/ (for applying that element in a TypedGraphMorphism) and
--- /list/ (to get all the corresponding elements in the domain of m), it returns true if /e/ is deleted by this rule for the given match
-checkDeletion :: Eq t => TypedGraphMorphism a b -> TypedGraphMorphism a b -> (TypedGraphMorphism a b -> t -> Maybe t)
-          -> (TypedGraphMorphism a b -> [t]) -> t -> Bool
-checkDeletion l m apply list e = elementInL && not elementInK
-  where
-    elementInL = any (\x -> apply m x == Just e) (list m)
-    kToG = compose l m
-    elementInK = any (\x -> apply kToG x == Just e) (list kToG)

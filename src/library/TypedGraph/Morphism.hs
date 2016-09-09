@@ -14,6 +14,7 @@ module TypedGraph.Morphism (
     , applyNode
     , applyEdge
     , buildTypedGraphMorphism
+    , checkDeletion
     , removeNodeFromDomain
     , removeEdgeFromDomain
     , removeNodeFromCodomain
@@ -177,8 +178,8 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
      PO algorithm:
      1. invert r
      2. compose k and r^-1
-     3. create node table  (R -> G')
-     5. create edge table  (R -> G')
+     3. create node table  (C -> D)
+     5. create edge table  (C -> D)
      4. associate nodes
      6. associate edges
   -}
@@ -265,56 +266,48 @@ generateNewEdgeInstances =
 -- a pushout complement
 satisfiesIdentificationCondition :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
 satisfiesIdentificationCondition l m =
-  all (==True) (nodesDelPres ++ edgesDelPres)
-
+  all (==True) (notIdentificatedNodes ++ notIdentificatedEdges)
   where
-    nodesDelPres =
-      map (satsDelItemsAux l m nodesFromDomain applyNode) (nodesFromCodomain m)
+    notIdentificatedNodes =
+      map (notIdentificatedElement l m nodesFromDomain applyNode) (nodesFromCodomain m)
+    notIdentificatedEdges =
+      map (notIdentificatedElement l m edgesFromDomain applyEdge) (edgesFromCodomain m)
 
-    edgesDelPres =
-      map (satsDelItemsAux l m edgesFromDomain applyEdge) (edgesFromCodomain m)
-
-    -- | Check if in the match @m@, a element @n@ is deleted and at same time have another incident element on himself
-    satsDelItemsAux :: Eq t => TypedGraphMorphism a b -> TypedGraphMorphism a b
-                             -> (TypedGraphMorphism a b -> [t])
-                             -> (TypedGraphMorphism a b -> t -> Maybe t)
-                             -> t -> Bool
-    -- if just one element is incident in @n@, so it is not deleted and preserved at same match
-    -- otherwise, is needed to verify if in the list of incident elements, if some is deleting @n@
-    -- if two or more incident elements delete the element @n@ return False
-    satsDelItemsAux l m dom apply n =
-      (length incident <= 1) || not someIsDel
-
-      where
-        incident = [a | a <- dom m, apply m a == Just n]
-        ruleDel = apply (invert l)
-        someIsDel = Nothing `elem` map ruleDel incident
+-- | Given a left-hand-side morphism /l : K -> L/, a match /m : L -> G/, two functions /domain/ (to get all elements
+-- in the domain of m) and /apply/ (for applying an element in a TypedGraphMorphism),
+-- and an element __/e/__ (that can be either a __/Node/__ or an __/Edge/__) it returns true if /e/ is
+-- identificated (i.e. __e__ has more than one incident element on itself and at least one of them deletes it)
+notIdentificatedElement :: Eq t => TypedGraphMorphism a b -> TypedGraphMorphism a b -> (TypedGraphMorphism a b -> [t])
+                         -> (TypedGraphMorphism a b -> t -> Maybe t) -> t -> Bool
+notIdentificatedElement l m domain apply e = (length incidentElements <= 1) || not eIsDeleted
+  where
+    incidentElements = [a | a <- domain m, apply m a == Just e]
+    l' = apply (invert l)
+    eIsDeleted = Nothing `elem` map l' incidentElements
 
 -- | Return True if do not exist dangling edges by the derivation of @r@ with match @m@
 satisfiesDanglingCondition :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
-satisfiesDanglingCondition leftR m = all (==True) (concat incidentEdgesDel)
+satisfiesDanglingCondition l m = all (==True) (concat incidentDeletedEdges)
     where
-        l = graphDomain m
-        g = graphCodomain m
-        matchedLInG = mapMaybe (applyNode m) (nodes l)
-        delNodes = filter (checkDeletion leftR m applyNode nodesFromDomain) matchedLInG
-        hasIncEdges = map (incidentEdges g) delNodes
-        verEdgeDel = map (checkDeletion leftR m applyEdge edgesFromDomain)
-        incidentEdgesDel = map verEdgeDel hasIncEdges
+        lhs = graphDomain m
+        instanceGraph = graphCodomain m
+        checkEdgeDeletion = map (checkDeletion l m applyEdge edgesFromDomain)
+        matchedNodes = mapMaybe (applyNode m) (nodes lhs)
+        deletedNodes = filter (checkDeletion l m applyNode nodesFromDomain) matchedNodes
+        incidentEdgesOnDeletedNodes = map (incidentEdges instanceGraph) deletedNodes
+        incidentDeletedEdges = map checkEdgeDeletion incidentEdgesOnDeletedNodes
 
--- | Return True if the element @n@ is deleted by the rule @rule@ with match @m@
--- assumes that @n@ has type NodeId or EdgeId
--- @n@ not is necessarily element of G (the graph matched by @m@), in this case return False
--- @list@ must get all element in the domain of @m@
-checkDeletion :: Eq t => TypedGraphMorphism a b -> TypedGraphMorphism a b
-                  -> (TypedGraphMorphism a b -> t -> Maybe t)
-                  -> (TypedGraphMorphism a b -> [t])
-                  -> t -> Bool
-checkDeletion l m apply list n = inL && not isPreserv
-    where
-        inL = any (\x -> apply m x == Just n) (list m)
-        kToG = compose l m
-        isPreserv = any (\x -> apply kToG x == Just n) (list kToG)
+-- | TODO: Find a better name for this function, that was repeated both here and in the GraphRule archive
+-- | Given the left-hand-side morphism of a rule /l : K -> L/, a match /m : L -> G/ for this rule, an element __/e/__
+-- (that can be either a __/Node/__ or an __/Edge/__) and two functions /apply/ (for applying that element in a TypedGraphMorphism) and
+-- /list/ (to get all the corresponding elements in the domain of m), it returns true if /e/ is deleted by this rule for the given match
+checkDeletion :: Eq t => TypedGraphMorphism a b -> TypedGraphMorphism a b -> (TypedGraphMorphism a b -> t -> Maybe t)
+          -> (TypedGraphMorphism a b -> [t]) -> t -> Bool
+checkDeletion l m apply list e = elementInL && not elementInK
+  where
+    elementInL = any (\x -> apply m x == Just e) (list m)
+    kToG = compose l m
+    elementInK = any (\x -> apply kToG x == Just e) (list kToG)
 
 instance EpiPairs (TypedGraphMorphism a b) where
   -- | Create all jointly surjective pairs of @m1@ and @m2@
@@ -585,8 +578,7 @@ buildMappings prop nodes (h:t) nodesT edgesT tgm
 
 -- VALIDATION OF A NODE MAPPING
 -- VERIFY IF THE TYPES OF n1 AND n2 ARE COMPATIBLE AND UPDATE MAPPING
-updateNodesMapping :: G.NodeId -> G.NodeId -> [G.NodeId] -> TypedGraphMorphism a b
-                   -> Maybe (TypedGraphMorphism a b)
+updateNodesMapping :: G.NodeId -> G.NodeId -> [G.NodeId] -> TypedGraphMorphism a b -> Maybe (TypedGraphMorphism a b)
 updateNodesMapping n1 n2 nodesT tgm =
   do
     let d = domain tgm
@@ -603,8 +595,7 @@ updateNodesMapping n1 n2 nodesT tgm =
 
 -- VALIDATION OF A EDGE MAPPING
 -- VERIFY IF THE TYPES OF e1 AND e2 ARE COMPATIBLE AND UPDATE MAPPING
-updateEdgesMapping :: G.EdgeId -> G.EdgeId -> [G.EdgeId] -> TypedGraphMorphism a b
-                   -> Maybe (TypedGraphMorphism a b)
+updateEdgesMapping :: G.EdgeId -> G.EdgeId -> [G.EdgeId] -> TypedGraphMorphism a b -> Maybe (TypedGraphMorphism a b)
 updateEdgesMapping e1 e2 edgesT tgm =
   do
     let d = domain tgm
