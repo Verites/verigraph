@@ -11,8 +11,8 @@ module TypedGraph.Morphism (
     , graphDomain
     , graphCodomain
     , mapping
-    , MC.applyNode
-    , MC.applyEdge
+    , applyNode
+    , applyEdge
     , buildTypedGraphMorphism
     , removeNodeFromDomain
     , removeEdgeFromDomain
@@ -37,7 +37,7 @@ import           Data.Maybe
 import           Graph.Graph                                     as G
 import qualified Graph.GraphMorphism                             as GM
 import           TypedGraph.Graph
-import           TypedGraph.MorphismCore                         as MC
+import           TypedGraph.MorphismCore
 import           TypedGraph.Partitions.GraphPartition            (generateGraphPartitions)
 import           TypedGraph.Partitions.GraphPartitionToVerigraph (mountTypedGraphMorphisms)
 import           TypedGraph.Partitions.VerigraphToGraphPartition (createDisjointUnion,
@@ -55,12 +55,12 @@ graphCodomain = untypedGraph . codomain
 -- | Given a @TypedGraphMorphism@ @__t__@and a node @n@ in the domain of @__t__@, return the node in the image
 --of @t@ to which @n@ gets mapped or error in the case of undefined
 applyNodeUnsafe :: TypedGraphMorphism a b -> G.NodeId -> G.NodeId
-applyNodeUnsafe m n = fromMaybe (error "Error, apply node in a non total morphism") $ MC.applyNode m n
+applyNodeUnsafe m n = fromMaybe (error "Error, apply node in a non total morphism") $ applyNode m n
 
 -- | Given a @TypedGraphMorphism@ @__t__@and an edge @e@ in the domain of @__t__@, return the edge in the image
 --of @t@ to which @e@ gets mapped or error in the case of undefined
 applyEdgeUnsafe :: TypedGraphMorphism a b -> G.EdgeId -> G.EdgeId
-applyEdgeUnsafe m e = fromMaybe (error "Error, apply edge in a non total morphism") $ MC.applyEdge m e
+applyEdgeUnsafe m e = fromMaybe (error "Error, apply edge in a non total morphism") $ applyEdge m e
 
 -- | Given a @TypedGraphMorphism@, return its orphan nodes
 orphanTypedNodes :: TypedGraphMorphism a b -> [G.NodeId]
@@ -166,12 +166,13 @@ idMap gm1 gm2 =
 instance AdhesiveHLR (TypedGraphMorphism a b) where
 
   {-
-          r
-      K──────▶R
+          g
+      A──────▶C
       │       │
-     k│   =   │
+     f│   =   │g'
       ▼       ▼
-      D──────▶G'
+      B──────▶D
+          g'
 
      PO algorithm:
      1. invert r
@@ -182,38 +183,33 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
      6. associate edges
   -}
 
-  calculatePushout k r =
+  calculatePushout f g =
     let
-        kr = compose (invert r) k                                 -- invert r and compose with k, obtain kr : R -> D
-        createdNodes = orphanTypedNodes r                                -- nodes in R to be created
-        createdEdges = orphanTypedEdges r                                -- edges in R to be created
-        nodeTable    = zip createdNodes (newTypedNodes $ codomain kr) -- table mapping NodeIds in R to NodeIds in G'
-        edgeTable    = zip createdEdges (newTypedEdges $ codomain kr) -- table mapping EdgeIds in R to EdgeIds in G'
+        gf = compose (invert g) f                                 -- invert g and compose with f, obtain gf : C -> B
+        cOnlyNodes = orphanTypedNodes g                           -- nodes in C that are not mapped from g
+        cOnlyEdges = orphanTypedEdges g                           -- edges in C that are not mapped from g
+        nodesInF'  = zip cOnlyNodes (newTypedNodes $ codomain gf) -- table mapping NodeIds in C to NodeIds in D
+        edgesInF'  = zip cOnlyEdges (newTypedEdges $ codomain gf) -- table mapping EdgeIds in C to EdgeIds in D
 
-        -- generate new node instances in G', associating them to the "created" nodes in R
-        kr'          = foldr (\(a,b) tgm -> let tp = fromJust $ GM.applyNode (domain kr) a
-                                            in updateNodeRelation a b tp tgm)
-                             kr
-                             nodeTable
+        -- generate new node instances in D, associating them to the "created" nodes in C
+        gf' = generateNewNodeInstances gf nodesInF'
 
-        -- query the instance graphs R
-        typemor = domain         kr'                     -- typemor is the typed graph (R -> T)
-        g       = domain         typemor                 -- g  is the instance graph R
-        mp      = mapping        kr'                     -- mp is the mapping of kr'  : (R -> D'), where D' = D + new nodes
-        s1 e = fromJust $ G.sourceOf g e                     -- obtain source of e in R
-        t1 e = fromJust $ G.targetOf g e                     -- obtain target of e in R
-        s2 e = fromJust $ GM.applyNode mp (s1 e)             -- obtain source of m'(e) in G'
-        t2 e = fromJust $ GM.applyNode mp (t1 e)             -- obtain target of m'(e) in G'
-        tp e = fromJust $ GM.applyEdge typemor e             -- obtain type of e in R
+        -- query the instance graphs C
+        typemor = domain         gf'                     -- typemor is the typed graph (C -> T)
+        d       = domain         typemor                 -- d  is the instance graph C
+        mp      = mapping        gf'                     -- mp is the mapping of gf'  : (C -> B'), where B' = B + new nodes
+        s1 e = fromJust $ G.sourceOf d e                 -- obtain source of e in C
+        t1 e = fromJust $ G.targetOf d e                 -- obtain target of e in C
+        s2 e = fromJust $ GM.applyNode mp (s1 e)         -- obtain source of m'(e) in D
+        t2 e = fromJust $ GM.applyNode mp (t1 e)         -- obtain target of m'(e) in D
+        tp e = fromJust $ GM.applyEdge typemor e         -- obtain type of e in C
 
         -- generate new edge table with new information
-        edgeTable' = map (\(e,e2) -> (e, s1 e, t1 e, e2, s2 e, t2 e, tp e)) edgeTable
+        edgeTable' = map (\(e,e2) -> (e, s1 e, t1 e, e2, s2 e, t2 e, tp e)) edgesInF'
 
         -- create new morphism adding all edges
-        kr''      = foldr (\(a,_,_,b,sb,tb,tp) tgm -> updateEdgeRelation a b (createEdgeOnCodomain b sb tb tp tgm) )
-                          kr'
-                          edgeTable'
-    in (kr'', idMap (codomain k) (codomain kr''))
+        kr''      = generateNewEdgeInstances gf' edgeTable'
+    in (kr'', idMap (codomain f) (codomain kr''))
 
   {-
      PO complement algorithm:
@@ -238,8 +234,8 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
       g' = invert g
       nodes = nodesFromDomain f'
       edges = edgesFromDomain f'
-      knodes = filter (\n -> isJust (MC.applyNode f' n) && isJust (MC.applyNode g' n)) nodes
-      kedges = filter (\e -> isJust (MC.applyEdge f' e) && isJust (MC.applyEdge g' e)) edges
+      knodes = filter (\n -> isJust (applyNode f' n) && isJust (applyNode g' n)) nodes
+      kedges = filter (\e -> isJust (applyEdge f' e) && isJust (applyEdge g' e)) edges
       delNodes = nodes \\ knodes
       delEdges = edges \\ kedges
       delEdgesFromF' = foldr removeEdgeFromDomain f' delEdges
@@ -253,6 +249,15 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
   hasPushoutComplement (_, g) (_, f) =
     satisfiesDanglingCondition f g && satisfiesIdentificationCondition f g
 
+generateNewNodeInstances :: TypedGraphMorphism a b -> [(NodeId, NodeId)] -> TypedGraphMorphism a b
+generateNewNodeInstances gf =
+  foldr (\(a,b) tgm -> let tp = fromJust $ GM.applyNode (domain gf) a
+                       in updateNodeRelation a b tp tgm) gf
+
+generateNewEdgeInstances :: TypedGraphMorphism a b -> [(EdgeId, NodeId, NodeId, EdgeId, NodeId, NodeId, EdgeId)]
+  -> TypedGraphMorphism a b
+generateNewEdgeInstances =
+  foldr (\(a,_,_,b,sb,tb,tp) tgm -> updateEdgeRelation a b (createEdgeOnCodomain b sb tb tp tgm) )
 
 ---- Gluing Conditions
 
@@ -264,10 +269,10 @@ satisfiesIdentificationCondition l m =
 
   where
     nodesDelPres =
-      map (satsDelItemsAux l m nodesFromDomain MC.applyNode) (nodesFromCodomain m)
+      map (satsDelItemsAux l m nodesFromDomain applyNode) (nodesFromCodomain m)
 
     edgesDelPres =
-      map (satsDelItemsAux l m edgesFromDomain MC.applyEdge) (edgesFromCodomain m)
+      map (satsDelItemsAux l m edgesFromDomain applyEdge) (edgesFromCodomain m)
 
     -- | Check if in the match @m@, a element @n@ is deleted and at same time have another incident element on himself
     satsDelItemsAux :: Eq t => TypedGraphMorphism a b -> TypedGraphMorphism a b
@@ -291,10 +296,10 @@ satisfiesDanglingCondition leftR m = all (==True) (concat incidentEdgesDel)
     where
         l = graphDomain m
         g = graphCodomain m
-        matchedLInG = mapMaybe (MC.applyNode m) (nodes l)
-        delNodes = filter (checkDeletion leftR m MC.applyNode nodesFromDomain) matchedLInG
+        matchedLInG = mapMaybe (applyNode m) (nodes l)
+        delNodes = filter (checkDeletion leftR m applyNode nodesFromDomain) matchedLInG
         hasIncEdges = map (incidentEdges g) delNodes
-        verEdgeDel = map (checkDeletion leftR m MC.applyEdge edgesFromDomain)
+        verEdgeDel = map (checkDeletion leftR m applyEdge edgesFromDomain)
         incidentEdgesDel = map verEdgeDel hasIncEdges
 
 -- | Return True if the element @n@ is deleted by the rule @rule@ with match @m@
@@ -388,16 +393,16 @@ partialInjectiveMatches' nac match =
       composeEdges tgm (h:t) =
         do
           let edgeNac = fromMaybe (error "EDGE NOT MAPPING L -> N") $
-                                  MC.applyEdge nac h
+                                  applyEdge nac h
               edgeG   = fromMaybe (error "EDGE NOT MAPPING L -> G") $
-                                  MC.applyEdge match h
+                                  applyEdge match h
 
               dom     = domain tgm
               cod     = codomain tgm
 
               tgm' = if (typeE dom edgeNac == typeE cod edgeG) &&
-                        (isNothing (MC.applyEdge tgm edgeNac) ||
-                         (MC.applyEdge tgm edgeNac == Just edgeG))
+                        (isNothing (applyEdge tgm edgeNac) ||
+                         (applyEdge tgm edgeNac == Just edgeG))
                      then Just $ buildTypedGraphMorphism dom cod
                                  (GM.updateEdges edgeNac edgeG $ mapping tgm)
                      else Nothing
@@ -414,17 +419,17 @@ partialInjectiveMatches' nac match =
       composeNodes tgm (h:t) =
         do
           let nodeNac = fromMaybe (error "NODE NOT MAPPED L->N") $
-                        MC.applyNode nac h
+                        applyNode nac h
               nodeG   = fromMaybe (error "NODE NOT MAPPED L->G") $
-                        MC.applyNode match h
+                        applyNode match h
 
               dom     = domain tgm
               cod     = codomain tgm
               m       = mapping tgm
 
               tgm' = if (typeN dom nodeNac == typeN cod nodeG) &&
-                        (isNothing (MC.applyNode tgm nodeNac) ||
-                         (MC.applyNode tgm nodeNac == Just nodeG))
+                        (isNothing (applyNode tgm nodeNac) ||
+                         (applyNode tgm nodeNac == Just nodeG))
                      then Just $ buildTypedGraphMorphism dom cod
                                  (GM.updateNodes nodeNac nodeG m)
                      else Nothing
@@ -447,11 +452,11 @@ partialInjectiveMatches' nac match =
           --DELETE FROM QUEUE ALREADY MAPPED SOURCE NODES (NODES FROM NAC)
           nodesSrc = filter (notMappedNodes q2) (nodes $ domain domQ)
             where
-              notMappedNodes tgm node = isNothing $ MC.applyNode tgm node
+              notMappedNodes tgm node = isNothing $ applyNode tgm node
           --DELETE FROM QUEUE ALREADY MAPPED SOURCE EDGES (EDGES FROM NAC)
           edgesSrc = filter (notMappedEdges q2) (edges $ domain domQ)
             where
-              notMappedEdges tgm edge = isNothing $ MC.applyEdge tgm edge
+              notMappedEdges tgm edge = isNothing $ applyEdge tgm edge
 
           --REMOVE FROM TARGET LIST NODES ALREADY MAPPED (NODES FROM G)
           nodesTgt = orphanTypedNodes q2
@@ -589,8 +594,8 @@ updateNodesMapping n1 n2 nodesT tgm =
         m = mapping tgm
 
     if typeN d n1 == typeN c n2 &&
-       ((isNothing (MC.applyNode tgm n1) && L.elem n2 nodesT) ||
-        MC.applyNode tgm n1 == Just n2)
+       ((isNothing (applyNode tgm n1) && L.elem n2 nodesT) ||
+        applyNode tgm n1 == Just n2)
       then Just $ buildTypedGraphMorphism d c $ GM.updateNodes n1 n2 m
       else Nothing
 
@@ -607,7 +612,7 @@ updateEdgesMapping e1 e2 edgesT tgm =
         m = mapping tgm
 
     if typeE d e1 == typeE c e2 &&
-       ((isNothing (MC.applyEdge tgm e1) && L.elem e2 edgesT ) ||
-        MC.applyEdge tgm e1 == Just e2)
+       ((isNothing (applyEdge tgm e1) && L.elem e2 edgesT ) ||
+        applyEdge tgm e1 == Just e2)
       then Just $ buildTypedGraphMorphism d c (GM.updateEdges e1 e2 m)
       else Nothing
