@@ -84,6 +84,7 @@ edgeBelongsToEquivalenceClass nodes (Edge type1 _ _ s1 t1 injectiveEdge side) l@
     source4   = getNode (nodeNameAndSource t2) nodes
     equivalentTargets = source3 == source4
 
+-- TODO: refact these funciton to with the createDisjointUnion and createSatisfyingNacsDisjointUnion more intuitively
 -- | Runs generator of partitions for nodes, and after for edges according to the nodes generated
 generateGraphPartitions :: Graph -> [GraphPartition]
 generateGraphPartitions graph = concatMap f nodeEquivalences

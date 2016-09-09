@@ -285,7 +285,8 @@ notIdentificatedElement l m domain apply e = (length incidentElements <= 1) || n
     l' = apply (invert l)
     eIsDeleted = Nothing `elem` map l' incidentElements
 
--- | Return True if do not exist dangling edges by the derivation of @r@ with match @m@
+-- | Given a left-hand-side morphism /l : K -> L/, a match /m : L -> G/, returns @true@ if
+-- there aren't dangling edges
 satisfiesDanglingCondition :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
 satisfiesDanglingCondition l m = all (==True) (concat incidentDeletedEdges)
     where
@@ -348,25 +349,15 @@ instance FindMorphism (TypedGraphMorphism a b) where
 -- | Finds matches __/q/__ .
 --
 --   Partially injective. (Injective out of __/m/__)
-partialInjectiveMatches' :: TypedGraphMorphism a b -> TypedGraphMorphism a b
-               -> [TypedGraphMorphism a b]
-partialInjectiveMatches' nac match =
-  do
+partialInjectiveMatches' :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
+partialInjectiveMatches' nac match = do
     let
-      --NODES AND EDGES FROM lhs OF A RULE
-      nodesL = nodes $ domain $ domain match
-      edgesL = edges $ domain $ domain match
-
       --PRÉ-BUILD @q@
-      domQ   = codomain nac
-      codQ   = codomain match
-      mapQ   = GM.empty (domain domQ) (domain codQ)
-      q      = buildTypedGraphMorphism domQ codQ mapQ
+
 
       --VERIFY EDGES MAPPING N <- l AND L -> G AND BUILD A N -> G
       --PARTIAL EDGES MORPHISM
-      composeEdges :: TypedGraphMorphism a b -> [G.EdgeId]
-                   -> Maybe (TypedGraphMorphism a b)
+      composeEdges :: TypedGraphMorphism a b -> [G.EdgeId] -> Maybe (TypedGraphMorphism a b)
       composeEdges tgm [] = Just tgm
       composeEdges tgm (h:t) =
         do
@@ -391,8 +382,7 @@ partialInjectiveMatches' nac match =
 
       --VERIFY NODES MAPPING N <- l AND L -> G AND BUILD A N -> G
       --PARTIAL NODES MORPHISM
-      composeNodes :: TypedGraphMorphism a b -> [G.NodeId]
-                   -> Maybe (TypedGraphMorphism a b)
+      composeNodes :: TypedGraphMorphism a b -> [G.NodeId] -> Maybe (TypedGraphMorphism a b)
       composeNodes tgm [] = Just tgm
       composeNodes tgm (h:t) =
         do
@@ -415,12 +405,16 @@ partialInjectiveMatches' nac match =
             Just tgm'' -> composeNodes tgm'' t
             Nothing    -> Nothing
 
-      --PRE-BUILD EDGES MAPPING OF @q@
-      q' = composeEdges q edgesL
 
+      --NODES AND EDGES FROM lhs OF A RULE
+      lhsNodes = nodes $ domain $ domain match
+      lhsEdges = edges $ domain $ domain match
+      q = preBuildQ nac match
+      --PRE-BUILD EDGES MAPPING OF @q@
+      q' = composeEdges q lhsEdges
       --PRE-BUILD NODES MAPPING OF @q@
       q'' = case q' of
-        Just q1 -> composeNodes q1 nodesL
+        Just q1 -> composeNodes q1 lhsNodes
         Nothing -> Nothing
 
     case q'' of
@@ -428,11 +422,12 @@ partialInjectiveMatches' nac match =
       Just q2 -> buildMappings Monomorphism nodesSrc edgesSrc nodesTgt edgesTgt q2
         where
           --DELETE FROM QUEUE ALREADY MAPPED SOURCE NODES (NODES FROM NAC)
-          nodesSrc = filter (notMappedNodes q2) (nodes $ domain domQ)
+          qDomain   = codomain nac
+          nodesSrc = filter (notMappedNodes q2) (nodes $ domain qDomain)
             where
               notMappedNodes tgm node = isNothing $ applyNode tgm node
           --DELETE FROM QUEUE ALREADY MAPPED SOURCE EDGES (EDGES FROM NAC)
-          edgesSrc = filter (notMappedEdges q2) (edges $ domain domQ)
+          edgesSrc = filter (notMappedEdges q2) (edges $ domain qDomain)
             where
               notMappedEdges tgm edge = isNothing $ applyEdge tgm edge
 
@@ -441,6 +436,13 @@ partialInjectiveMatches' nac match =
 
           --REMOVE FROM TARGET LIST EDGES ALREADY MAPPED (EDGES FROM G)
           edgesTgt = orphanTypedEdges q2
+
+preBuildQ :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+preBuildQ nac match = buildTypedGraphMorphism qDomain qCodomain qMapping
+  where
+    qDomain   = codomain nac
+    qCodomain = codomain match
+    qMapping  = GM.empty (domain qDomain) (domain qCodomain)
 
 ---------------------------------------------------------------------------------
 
