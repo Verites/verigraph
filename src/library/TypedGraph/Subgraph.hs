@@ -1,10 +1,10 @@
 module TypedGraph.Subgraph (subgraphs, inducedSubgraphs) where
 
-import           Abstract.Morphism   as M
+import           Abstract.Morphism
 import           Graph.Graph
 import           Graph.GraphMorphism
 import           TypedGraph.Graph
-import           TypedGraph.Morphism
+import           TypedGraph.Morphism hiding (createEdgeOnDomain, createNodeOnDomain)
 
 -- | Generates all subgraphs of a typed graph.
 subgraphs :: TypedGraph a b -> [TypedGraph a b]
@@ -13,14 +13,14 @@ subgraphs g = subEdges
     graph = domain g
     emptyGraph = Graph.GraphMorphism.empty Graph.Graph.empty (codomain g)
 
-    listNodesToAdd = [(n, applyNodeUnsafe g n) | n <- nodes graph]
+    listNodesToAdd = [(n, getNodeType g n) | n <- nodes graph]
 
     subNodes = decisionTreeNodes listNodesToAdd emptyGraph
 
     listEdgesToAdd = [(e,
                        sourceOfUnsafe graph e,
                        targetOfUnsafe graph e,
-                       applyEdgeUnsafe g e)
+                       getEdgeType g e)
                        | e <- edges graph]
 
     subEdges = concatMap (decisionTreeEdges listEdgesToAdd) subNodes
@@ -33,15 +33,15 @@ inducedSubgraphs m = map (idMap (domain m)) subEdges
     g = codomain m
     graph = domain g
 
-    listNodesToAdd = [(n, applyNodeUnsafe g n) | n <- orphanNodesTyped m]
+    listNodesToAdd = [(n, getNodeType g n) | n <- orphanTypedNodes m]
 
     subNodes = decisionTreeNodes listNodesToAdd (domain m)
 
     listEdgesToAdd = [(e,
                        sourceOfUnsafe graph e,
                        targetOfUnsafe graph e,
-                       applyEdgeUnsafe g e)
-                       | e <- orphanEdgesTyped m]
+                       getEdgeType g e)
+                       | e <- orphanTypedEdges m]
 
     subEdges = concatMap (decisionTreeEdges listEdgesToAdd) subNodes
 

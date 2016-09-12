@@ -17,13 +17,13 @@ mountTypedGraphMorphisms tg1 tg2 graphPartition = (mountTGM True tg1, mountTGM F
   where
     typeGraph = codomain tg1
     typedGraph = mountTypedGraph graphPartition typeGraph
-    mountTGM side match = TGM.typedMorphism match typedGraph (mountMapping side graphPartition match)
+    mountTGM side match = TGM.buildTypedGraphMorphism match typedGraph (mountMapping side graphPartition match)
 
 mountGraph :: GP.GraphPartition -> G.Graph a b
-mountGraph (nodes,edges) = G.build nods edgs
+mountGraph (nodes,edges) = G.build nodes' edges'
   where
-    nods = map (\(n:_) -> GP.nodeId n) nodes
-    edgs = map (\(e:_) -> (GP.edgeId e, nodeSrc e, nodeTgt e)) edges
+    nodes' = map (\(n:_) -> GP.nodeId n) nodes
+    edges' = map (\(e:_) -> (GP.edgeId e, nodeSrc e, nodeTgt e)) edges
     nodeSrc e = GP.nodeId $ GP.getNode (nodeNameAndSource (GP.source e)) nodes
     nodeTgt e = GP.nodeId $ GP.getNode (nodeNameAndSource (GP.target e)) nodes
     nodeNameAndSource node = (nodeName node, nodeFromLeft node)
@@ -39,17 +39,18 @@ mountMapping :: Bool -> GP.GraphPartition -> GM.GraphMorphism a b -> GM.GraphMor
 mountMapping side g@(nodes,edges) m = GM.buildGraphMorphism (domain m) (mountGraph g) nods edgs
   where
     nods = map (\(G.NodeId n) -> (n, nodeId n)) (G.nodes (domain m))
-    nodeId n = GP.nodeId $ head $ getListNodeName (side,n) nodes
+    nodeId n = GP.nodeId $ head $ getListContainingNode (side,n) nodes
     edgs = map (\(G.EdgeId e) -> (e, edgeId e)) (G.edges (domain m))
-    edgeId e = GP.edgeId $ head $ getListEdgeName (side,e) edges
+    edgeId e = GP.edgeId $ head $ getListContainingEdge (side,e) edges
 
 -- | Returns the list which Node is in [[Node]]
-getListNodeName :: (Bool,Int) -> [[Node]] -> [Node]
-getListNodeName p@(side,a) (x:xs) = if any (\(Node _ name _ _ src) -> name == a && src == side) x then x else getListNodeName p xs
-getListNodeName _ [] = error "error when mounting overlapping pairs (getListNodeName)" -- There must be at least one equivalence class of nodes
+getListContainingNode :: (Bool,Int) -> [[Node]] -> [Node]
+getListContainingNode p@(side,a) (x:xs) =
+  if any (\(Node _ name _ _ src) -> name == a && src == side) x then x else getListContainingNode p xs
+getListContainingNode _ [] = error "error when mounting overlapping pairs (getListContainingNode)" -- There must be at least one equivalence class of nodes
 
 
 -- | Returns the list which Edge is in [[Edge]]
-getListEdgeName :: (Bool,Int) -> [[Edge]] -> [Edge]
-getListEdgeName p@(side,a) (x:xs) = if any (\e -> (label e == a) && (edgeFromLeft e == side)) x then x else getListEdgeName p xs
-getListEdgeName _ [] = error "error when mounting overlapping pairs (getListNodeName)" -- There must be at least one equivalence class of edges
+getListContainingEdge :: (Bool,Int) -> [[Edge]] -> [Edge]
+getListContainingEdge p@(side,a) (x:xs) = if any (\e -> (label e == a) && (edgeFromLeft e == side)) x then x else getListContainingEdge p xs
+getListContainingEdge _ [] = error "error when mounting overlapping pairs (getListContainingNode)" -- There must be at least one equivalence class of edges

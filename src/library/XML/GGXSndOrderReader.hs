@@ -41,7 +41,7 @@ instantiateSndOrderNac (parsedLeft, l) (n, nacRule) = ruleMorphism l nacRule nac
 
 instantiateNacMorphisms :: TypedGraph a b -> TypedGraph a b
                         -> [Mapping] -> TypedGraphMorphism a b
-instantiateNacMorphisms graphL graphN mapping = typedMorphism graphL graphN maps
+instantiateNacMorphisms graphL graphN mapping = buildTypedGraphMorphism graphL graphN maps
   where
     mapElements = map (\(x,_,y) -> (read y :: Int, read x :: Int)) mapping
     maps = buildGraphMorphism

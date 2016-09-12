@@ -13,6 +13,7 @@ import           Graph.GraphMorphism
 import           SndOrder.Rule        (SndOrderRule)
 import           TypedGraph.GraphRule (GraphRule)
 
+-- TODO: use a list of initial Graphs instead of a single graph
 -- TODO: extract as DPO grammar?
 data GraphGrammar a b = GraphGrammar {
                             initialGraph  :: GraphMorphism a b

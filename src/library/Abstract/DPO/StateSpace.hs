@@ -185,10 +185,10 @@ putState object =
 
       Nothing -> do
         index <- Monad.gets uid
-        config <- getDpoConfig
+        conf <- getDpoConfig
         allPredicates <- getPredicates
 
-        let truePredicates = map fst . filter (isTrueAt config object) $ allPredicates
+        let truePredicates = map fst . filter (isTrueAt conf object) $ allPredicates
         let state = (object, truePredicates)
 
         Monad.modify $ \space ->
@@ -198,8 +198,8 @@ putState object =
           }
         return (index, True)
   where
-    isTrueAt config object (_, production) =
-      not . null $ findApplicableMatches config production object
+    isTrueAt conf object (_, production) =
+      not . null $ findApplicableMatches conf production object
 
 
 -- | Adds a transition between the states with the given indices. Does __not__ check if
@@ -228,8 +228,8 @@ expandSuccessors (index, object) =
   where
     applyProduction prod =
       do
-        config <- getDpoConfig
-        forM (findApplicableMatches config prod object) $ \match -> do
+        conf <- getDpoConfig
+        forM (findApplicableMatches conf prod object) $ \match -> do
           let object' = rewrite match prod
 
           (index', isNew) <- putState object'

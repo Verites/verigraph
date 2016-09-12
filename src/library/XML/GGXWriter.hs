@@ -27,66 +27,66 @@ import           XML.ParseSndOrderRule
 import           XML.Utilities
 
 appendSndOrderConflicts :: DPOConfig -> GraphGrammar a b -> GraphGrammar a b
-appendSndOrderConflicts config gg = newGG
+appendSndOrderConflicts conf gg = newGG
   where
-    conflicts = CP.namedCriticalPairs config (sndOrderRules gg)
+    conflicts = CP.namedCriticalPairs conf (sndOrderRules gg)
     matches = concatMap (\(n1,n2,c) -> map (\ol -> (n1, n2, CP.getCriticalPairType ol, codomain (fst (CP.getCriticalPairMatches ol)))) c) conflicts
     conflictRules = map (\(idx,(n1,n2,tp,rule)) -> ("conflict_"++(show tp)++"_"++n1++"_"++n2++"_"++(show idx), rule)) (zip ([0..]::[Int]) matches)
     newGG = graphGrammar (initialGraph gg) ((rules gg) ++ conflictRules) (sndOrderRules gg)
 
 appendSndOrderDependencies :: DPOConfig -> GraphGrammar a b -> GraphGrammar a b
-appendSndOrderDependencies config gg = newGG
+appendSndOrderDependencies conf gg = newGG
   where
-    conflicts = CS.namedCriticalSequences config (sndOrderRules gg)
+    conflicts = CS.namedCriticalSequences conf (sndOrderRules gg)
     matches = concatMap (\(n1,n2,c) -> map (\ol -> (n1, n2, CS.getCriticalSequenceType ol, codomain (fst (CS.getCriticalSequenceComatches ol)))) c) conflicts
     conflictRules = map (\(idx,(n1,n2,tp,rule)) -> ("dependency_"++(show tp)++"_"++n1++"_"++n2++"_"++(show idx), rule)) (zip ([0..]::[Int]) matches)
     newGG = graphGrammar (initialGraph gg) ((rules gg) ++ conflictRules) (sndOrderRules gg)
 
 -- | Writes grammar, second order conflicts and dependencies (.ggx)
 writeSndOderConfDepFile :: DPOConfig -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
-writeSndOderConfDepFile config gg name names fileName =
+writeSndOderConfDepFile conf gg name names fileName =
   do
-    let newGG = ((appendSndOrderDependencies config) . (appendSndOrderConflicts config)) gg
-    runX $ writeConfDep config newGG name names fileName
+    let newGG = ((appendSndOrderDependencies conf) . (appendSndOrderConflicts conf)) gg
+    runX $ writeConfDep conf newGG name names fileName
     putStrLn $ "Saved in " ++ fileName
     return ()
 
 -- | Writes the grammar and the second order conflicts (.ggx)
 writeSndOderConflictsFile :: DPOConfig -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
-writeSndOderConflictsFile config gg name names fileName =
+writeSndOderConflictsFile conf gg name names fileName =
   do
-    let newGG = appendSndOrderConflicts config gg
-    runX $ writeConf config newGG name names fileName
+    let newGG = appendSndOrderConflicts conf gg
+    runX $ writeConf conf newGG name names fileName
     putStrLn $ "Saved in " ++ fileName
     return ()
 
 -- | Writes the grammar and the second order dependencies (.ggx)
 writeSndOderDependenciesFile :: DPOConfig -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
-writeSndOderDependenciesFile config gg name names fileName =
+writeSndOderDependenciesFile conf gg name names fileName =
   do
-    let newGG = appendSndOrderDependencies config gg
-    runX $ writeDep config newGG name names fileName
+    let newGG = appendSndOrderDependencies conf gg
+    runX $ writeDep conf newGG name names fileName
     putStrLn $ "Saved in " ++ fileName
     return ()
 
 -- | Writes grammar, conflicts and dependencies (.cpx)
 writeConfDepFile :: DPOConfig -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
-writeConfDepFile config gg name names fileName = do
-  runX $ writeConfDep config gg name names fileName
+writeConfDepFile conf gg name names fileName = do
+  runX $ writeConfDep conf gg name names fileName
   putStrLn $ "Saved in " ++ fileName
   return ()
 
 -- | Writes the grammar and the conflicts (.cpx)
 writeConflictsFile :: DPOConfig -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
-writeConflictsFile config gg name names fileName = do
-  runX $ writeConf config gg name names fileName
+writeConflictsFile conf gg name names fileName = do
+  runX $ writeConf conf gg name names fileName
   putStrLn $ "Saved in " ++ fileName
   return ()
 
 -- | Writes the grammar and the dependencies (.cpx)
 writeDependenciesFile :: DPOConfig -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
-writeDependenciesFile config gg name names fileName = do
-  runX $ writeDep config gg name names fileName
+writeDependenciesFile conf gg name names fileName = do
+  runX $ writeDep conf gg name names fileName
   putStrLn $ "Saved in " ++ fileName
   return ()
 
@@ -98,20 +98,20 @@ writeGrammarFile gg name names fileName = do
   return ()
 
 writeConfDep :: DPOConfig -> GraphGrammar a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
-writeConfDep config gg name names fileName = root [] [writeCpx gg cps css name names] >>> writeDocument [withIndent yes] fileName
+writeConfDep conf gg name names fileName = root [] [writeCpx gg cps css name names] >>> writeDocument [withIndent yes] fileName
   where
-    cps = CP.namedCriticalPairs config (rules gg)
-    css = CS.namedCriticalSequences config (rules gg)
+    cps = CP.namedCriticalPairs conf (rules gg)
+    css = CS.namedCriticalSequences conf (rules gg)
 
 writeConf :: DPOConfig -> GraphGrammar a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
-writeConf config gg name names fileName = root [] [writeCpx gg cps [] name names] >>> writeDocument [withIndent yes] fileName
+writeConf conf gg name names fileName = root [] [writeCpx gg cps [] name names] >>> writeDocument [withIndent yes] fileName
   where
-    cps = CP.namedCriticalPairs config (rules gg)
+    cps = CP.namedCriticalPairs conf (rules gg)
 
 writeDep :: DPOConfig -> GraphGrammar a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
-writeDep config gg name names fileName = root [] [writeCpx gg [] cps name names] >>> writeDocument [withIndent yes] fileName
+writeDep conf gg name names fileName = root [] [writeCpx gg [] cps name names] >>> writeDocument [withIndent yes] fileName
   where
-    cps = CS.namedCriticalSequences config (rules gg)
+    cps = CS.namedCriticalSequences conf (rules gg)
 
 --Functions to deal with ggx format specificities
 writeRoot :: ArrowXml a => GraphGrammar b c -> String -> [(String,String)] -> a XmlTree XmlTree

@@ -59,8 +59,8 @@ import           Data.List           (find, groupBy, sortOn, (\\))
 import           Data.Maybe          (fromMaybe, mapMaybe)
 import           Data.String.Utils   (join, split)
 import           Graph.Graph
-import           Graph.GraphMorphism
-import           TypedGraph.Morphism
+import           Graph.GraphMorphism as GM
+import           TypedGraph.Morphism as TGM
 import           XML.ParsedTypes
 
 -- | Gets the object name map between the left of two rules
@@ -105,14 +105,14 @@ getObjNameMapping (_,nodesL,edgesL) (_,nodesR,edgesR) = mapNodes ++ mapEdges
 -- | Receives all parsed 2-rules in the agg format (first order rule with object name maps)
 -- and converts to second order rules on verigraph
 parseSndOrderRules :: [RuleWithNacs] -> [(SndOrderRuleSide,SndOrderRuleSide,[SndOrderRuleSide])]
-parseSndOrderRules = groupRules . (map getSndOrderRuleSide)
+parseSndOrderRules = groupRules . map getSndOrderRuleSide
 
 -- | Parse SndOrderRule names in the form: 2rule_left_ruleName or 2rule_nacName_ruleName
 getSndOrderRuleSide :: RuleWithNacs -> SndOrderRuleSide
 getSndOrderRuleSide (rule@(name,_,_,_),_) = (side, ruleName, rule)
   where
     splitted = split "_" name
-    side = if (length splitted) < 3
+    side = if length splitted < 3
              then error "Error parsing 2rule name"
              else map toLower $ splitted !! 1
     ruleName = join "_" (tail (tail splitted))
@@ -132,17 +132,18 @@ groupRules rules =
     name (_,x,_) = x
     sorted = sortOn name rules
     grouped = groupBy (\x y -> name x == name y) sorted
-    getLeft list = fromMaybe (error "Second order rule without left") ((findSide "left") list)
-    getRight list = fromMaybe (error "Second order rule without right") ((findSide "right") list)
+    getLeft list = fromMaybe (error "Second order rule without left") (findSide "left" list)
+    getRight list = fromMaybe (error "Second order rule without right") (findSide "right" list)
     findSide str = find (\x -> side x == str)
 
+-- TODO: replace applyNodeUnsafe for getNodeType?
 -- | Given a morphism from some graph in the rule left to nac extracts the mapping
 getObjectNacNameMorphism :: GraphMorphism a b -> [Mapping]
-getObjectNacNameMorphism m = (nodesMap m) ++ (edgesMap m)
+getObjectNacNameMorphism m = nodesMap m ++ edgesMap m
   where
     adjustNonMono = parseNonMonoObjNames . group
-    nodesMap = adjustNonMono . (getMap applyNodeUnsafe) . nodes . domain
-    edgesMap = adjustNonMono . (getMap applyEdgeUnsafe) . edges . domain
+    nodesMap = adjustNonMono . getMap GM.applyNodeUnsafe . nodes . domain
+    edgesMap = adjustNonMono . getMap GM.applyEdgeUnsafe . edges . domain
 
     getMap f = map (\e -> (show (f m e), Nothing, show e))
     group = groupBy (\(x,_,_) (y,_,_) -> x == y)
@@ -150,7 +151,7 @@ getObjectNacNameMorphism m = (nodesMap m) ++ (edgesMap m)
 -- | Glues the non mono maps
 parseNonMonoObjNames :: [[Mapping]] -> [Mapping]
 parseNonMonoObjNames [] = []
-parseNonMonoObjNames (x:xs) = (a,b,newObjName) : (parseNonMonoObjNames xs)
+parseNonMonoObjNames (x:xs) = (a,b,newObjName) : parseNonMonoObjNames xs
   where
     (a,b,_) = head x
     allObjNames = map (\(_,_,y) -> y) x
@@ -161,6 +162,6 @@ parseNonMonoObjNames (x:xs) = (a,b,newObjName) : (parseNonMonoObjNames xs)
 getObjectNameMorphism :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [Mapping]
 getObjectNameMorphism left right = nodesMap ++ edgesMap
   where
-    nodesMap = getMap applyNodeTGMUnsafe (nodesDomain left)
-    edgesMap = getMap applyEdgeTGMUnsafe (edgesDomain left)
+    nodesMap = getMap TGM.applyNodeUnsafe (nodesFromDomain left)
+    edgesMap = getMap TGM.applyEdgeUnsafe (edgesFromDomain left)
     getMap f = map (\e -> (show (f right e), Nothing, show (f left e)))

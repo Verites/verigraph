@@ -19,18 +19,18 @@ import           Abstract.Morphism
 class (Morphism m) => AdhesiveHLR m where
   -- | Calculate the pushout between the two given morphisms.
   --
-  -- Given the morphisms /f : C -> A/ and /g : C -> B/, respectively, returns
-  -- the pair of morphisms /f' : B -> X/ and /g': A -> X/ such that the
+  -- Given the morphisms /f : A -> B/ and /g : A -> C/, respectively, returns
+  -- the pair of morphisms /f' : C -> D/ and /g': B -> D/ such that the
   -- following square is a pushout.
   --
   -- @
-  --       f
-  --    C──────▶A
+  --       g
+  --    A──────▶C
   --    │       │
-  --  g │       │ g'
+  --  f │       │ f'
   --    ▼       ▼
-  --    B──────▶X
-  --       f'
+  --    B──────▶D
+  --       g'
   -- @
   calculatePushout :: m -> m -> (m, m)
 

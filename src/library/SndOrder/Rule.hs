@@ -12,8 +12,8 @@ import           Data.Maybe           (fromMaybe)
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Graph.Graph          as G
-import qualified Graph.GraphMorphism  as GM
 import           SndOrder.Morphism    as SO
+import           TypedGraph.Graph
 import           TypedGraph.GraphRule
 import           TypedGraph.Morphism
 
@@ -67,15 +67,15 @@ applySecondOrderListRules ::
 applySecondOrderListRules f sndRule = concatMap (f sndRule)
 
 instance DPO (RuleMorphism a b) where
-  invertProduction config r = addMinimalSafetyNacs config newRule
+  invertProduction conf r = addMinimalSafetyNacs conf newRule
     where
-      newRule = buildProduction (getRHS r) (getLHS r) (concatMap (shiftNacOverProduction config r) (getNACs r))
+      newRule = buildProduction (getRHS r) (getLHS r) (concatMap (shiftNacOverProduction conf r) (getNACs r))
 
   -- | Needs the satisfiesNACs extra verification because not every satisfiesGluingConditions nac can be shifted
-  shiftNacOverProduction config rule n =
+  shiftNacOverProduction conf rule n =
     [calculateComatch n rule |
-      satisfiesGluingConditions config rule n &&
-      satisfiesNACs config ruleWithOnlyMinimalSafetyNacs n]
+      satisfiesGluingConditions conf rule n &&
+      satisfiesNACs conf ruleWithOnlyMinimalSafetyNacs n]
 
     where
       ruleWithOnlyMinimalSafetyNacs = buildProduction (getLHS rule) (getRHS rule) (minimalSafetyNacs rule)
@@ -86,10 +86,10 @@ instance DPO (RuleMorphism a b) where
     isPartiallyMonomorphic (mappingRight m)     (mappingRight l)
 
 applySndOrderRule :: DPOConfig -> (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String, GraphRule a b)]
-applySndOrderRule config (sndName,sndRule) (fstName,fstRule) =
+applySndOrderRule conf (sndName,sndRule) (fstName,fstRule) =
   let
     matches =
-      findApplicableMatches config sndRule fstRule
+      findApplicableMatches conf sndRule fstRule
 
     newRules =
       map (`rewrite` sndRule) matches
@@ -126,8 +126,8 @@ newNacsProb side sndRule = nacNodes ++ nacEdges
         LeftSide  -> (SO.mappingLeft, getLHS)
         RightSide -> (SO.mappingRight, getRHS)
 
-    applyNode = applyNodeTGMUnsafe
-    applyEdge = applyEdgeTGMUnsafe
+    applyNode = applyNodeUnsafe
+    applyEdge = applyEdgeUnsafe
 
     ruleL = codomain (getLHS sndRule)
     ruleK = domain (getLHS sndRule)
@@ -141,13 +141,13 @@ newNacsProb side sndRule = nacNodes ++ nacEdges
     sc = getSide ruleR
 
     nodeProb = [applyNode f n |
-                 n <- nodesCodomain sb
+                 n <- nodesFromCodomain sb
                , isOrphanNode sa (applyNode f n)
                , isOrphanNode sb n
                , not (isOrphanNode sc (applyNode g n))]
 
     edgeProb = [applyEdge f n |
-                 n <- edgesCodomain sb
+                 n <- edgesFromCodomain sb
                , isOrphanEdge sa (applyEdge f n)
                , isOrphanEdge sb n
                , not (isOrphanEdge sc (applyEdge g n))]
@@ -168,16 +168,16 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
     src = G.sourceOfUnsafe (domain graphL)
     tgt = G.targetOfUnsafe (domain graphL)
 
-    tpNode = GM.applyNodeUnsafe graphL
-    tpEdge = GM.applyEdgeUnsafe graphL
+    tpNode = getNodeType graphL
+    tpEdge = getEdgeType graphL
 
     (graphSide, side, otherSide) =
       case sideChoose of
         LeftSide  -> (graphR, l, r)
         RightSide -> (graphL, r, l)
 
-    typeSrc x = GM.applyNodeUnsafe graphL (src x)
-    typeTgt x = GM.applyNodeUnsafe graphL (tgt x)
+    typeSrc x = getNodeType graphL (src x)
+    typeTgt x = getNodeType graphL (tgt x)
 
     n' = head (newNodes (domain graphK))
     n'' = head (newNodes (domain graphSide))
@@ -188,12 +188,12 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
     newNodesK = newNodes (domain graphK)
     newNodesSide = newNodes (domain graphSide)
 
-    invertSide = invertTGM side
+    invertSide = invert side
 
-    srcInK x = fromMaybe (newNodesK !! 0) (applyNodeTGM invertSide (src x))
-    tgtInK x = fromMaybe (newNodesK !! 1) (applyNodeTGM invertSide (tgt x))
-    srcInR x = fromMaybe (newNodesSide !! 0) (applyNodeTGM otherSide (srcInK x))
-    tgtInR x = fromMaybe (newNodesSide !! 1) (applyNodeTGM otherSide (tgtInK x))
+    srcInK x = fromMaybe (newNodesK !! 0) (applyNode invertSide (src x))
+    tgtInK x = fromMaybe (newNodesK !! 1) (applyNode invertSide (tgt x))
+    srcInR x = fromMaybe (newNodesSide !! 0) (applyNode otherSide (srcInK x))
+    tgtInR x = fromMaybe (newNodesSide !! 1) (applyNode otherSide (tgtInK x))
 
     (updateLeft, updateRight) =
       (case x of
@@ -210,28 +210,28 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
 
     createNodes x x' x'' tp side otherSide = (updateSide1, updateSide2Map)
       where
-        updateSide1 = createNodeDomTGM x' tp x side
-        updateSide2Cod = createNodeCodTGM x'' tp otherSide
-        updateSide2Map = updateNodeRelationTGM x' x'' tp updateSide2Cod
+        updateSide1 = createNodeOnDomain x' tp x side
+        updateSide2Cod = createNodeOnCodomain x'' tp otherSide
+        updateSide2Map = updateNodeRelation x' x'' tp updateSide2Cod
 
     createEdges x x' x'' tp
         src typeSrc srcInK srcInR
         tgt typeTgt tgtInK tgtInR
         side otherSide = (updateLeftEdge, updateRightMap)
       where
-        srcRight = createNodeCodTGM srcInR typeSrc otherSide
-        tgtRight = createNodeCodTGM tgtInR typeTgt srcRight
-        updateRight = createNodeDomTGM srcInK typeSrc srcInR tgtRight
-        updateRight2 = createNodeDomTGM tgtInK typeTgt tgtInR updateRight
-        updateRightCod = createEdgeCodTGM x'' srcInR tgtInR tp updateRight2
-        updateRightMap = createEdgeDomTGM x' srcInK tgtInK tp x'' updateRightCod
+        srcRight = createNodeOnCodomain srcInR typeSrc otherSide
+        tgtRight = createNodeOnCodomain tgtInR typeTgt srcRight
+        updateRight = createNodeOnDomain srcInK typeSrc srcInR tgtRight
+        updateRight2 = createNodeOnDomain tgtInK typeTgt tgtInR updateRight
+        updateRightCod = createEdgeOnCodomain x'' srcInR tgtInR tp updateRight2
+        updateRightMap = createEdgeOnDomain x' srcInK tgtInK tp x'' updateRightCod
 
-        updateLeft = createNodeDomTGM srcInK typeSrc src side
-        updateLeft2 = createNodeDomTGM tgtInK typeTgt tgt updateLeft
-        updateLeftEdge = createEdgeDomTGM x' srcInK tgtInK tp x updateLeft2
+        updateLeft = createNodeOnDomain srcInK typeSrc src side
+        updateLeft2 = createNodeOnDomain tgtInK typeTgt tgt updateLeft
+        updateLeftEdge = createEdgeOnDomain x' srcInK tgtInK tp x updateLeft2
 
 isOrphanNode :: TypedGraphMorphism a b -> NodeId -> Bool
-isOrphanNode m n = n `elem` orphanNodesTyped m
+isOrphanNode m n = n `elem` orphanTypedNodes m
 
 isOrphanEdge :: TypedGraphMorphism a b -> EdgeId -> Bool
-isOrphanEdge m n = n `elem` orphanEdgesTyped m
+isOrphanEdge m n = n `elem` orphanTypedEdges m

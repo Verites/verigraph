@@ -16,48 +16,48 @@ data CRDependencies = AllOverlapings | OnlyDependency
 allConcurrentRules :: (DPO m, EpiPairs m, Eq (Obj m)) => CRDependencies -> DPOConfig -> [Production m] -> [Production m]
 allConcurrentRules _ _ [] = []
 allConcurrentRules _ _ [x] = [x]
-allConcurrentRules dep config (x:xs) = concatMap (crs x) (allCRs xs)
+allConcurrentRules dep conf (x:xs) = concatMap (crs x) (allCRs xs)
   where
-    crs = concurrentRules dep config
-    allCRs = allConcurrentRules dep config
+    crs = concurrentRules dep conf
+    allCRs = allConcurrentRules dep conf
 
 -- | Generates the Concurrent Rule with the least disjoint EpiPair for a given list of GraphRules (following the order of the elements in the list). If the first argument evaluates to True, it will generate only the least disjoint injective EpiPair
 maxConcurrentRule :: (DPO m, EpiPairs m, Eq (Obj m)) => CRDependencies -> DPOConfig -> [Production m] -> Production m
-maxConcurrentRule dep config rules = last $ maxConcurrentRules dep config rules
+maxConcurrentRule dep conf rules = last $ maxConcurrentRules dep conf rules
 
 maxConcurrentRules :: (DPO m, EpiPairs m, Eq (Obj m)) => CRDependencies -> DPOConfig -> [Production m] -> [Production m]
 maxConcurrentRules _ _ [] = []
 maxConcurrentRules _ _ [x] = [x]
-maxConcurrentRules dep config (x:xs) = map (singleCR x) (maxCRs xs)
+maxConcurrentRules dep conf (x:xs) = map (singleCR x) (maxCRs xs)
   where
-    singleCR = maxConcurrentRuleForLastPair dep config
-    maxCRs = maxConcurrentRules dep config
+    singleCR = maxConcurrentRuleForLastPair dep conf
+    maxCRs = maxConcurrentRules dep conf
 
 concurrentRules :: (DPO m, EpiPairs m, Eq (Obj m)) => CRDependencies -> DPOConfig -> Production m -> Production m -> [Production m]
-concurrentRules dep config c n =
-  let epiPairs = epiPairsForConcurrentRule dep config c n
-  in map (concurrentRuleForPair config c n) epiPairs
+concurrentRules dep conf c n =
+  let epiPairs = epiPairsForConcurrentRule dep conf c n
+  in map (concurrentRuleForPair conf c n) epiPairs
 
 maxConcurrentRuleForLastPair :: (DPO m, EpiPairs m, Eq (Obj m)) => CRDependencies -> DPOConfig -> Production m -> Production m -> Production m
-maxConcurrentRuleForLastPair dep config c n =
-  let epiPair = last (epiPairsForConcurrentRule dep config c n)
-  in concurrentRuleForPair config c n epiPair
+maxConcurrentRuleForLastPair dep conf c n =
+  let epiPair = last (epiPairsForConcurrentRule dep conf c n)
+  in concurrentRuleForPair conf c n epiPair
 
 epiPairsForConcurrentRule :: (DPO m, EpiPairs m)
   => CRDependencies -> DPOConfig -> Production m -> Production m -> [(m, m)]
 -- it only considers triggered dependencies because is the most intuitive and natural behaviour expected until now.
-epiPairsForConcurrentRule OnlyDependency config c n =
-  let dependencies = findTriggeringCriticalSequences config c n
+epiPairsForConcurrentRule OnlyDependency conf c n =
+  let dependencies = findTriggeringCriticalSequences conf c n
   in map getCriticalSequenceComatches dependencies
 
-epiPairsForConcurrentRule AllOverlapings config c n =
-  let matchInj = matchRestriction config == MonoMatches
+epiPairsForConcurrentRule AllOverlapings conf c n =
+  let matchInj = matchRestriction conf == MonoMatches
       allPairs = createJointlyEpimorphicPairs matchInj (codomain (getRHS c)) (codomain (getLHS n))
-      isValidPair (lp, rp) = satisfiesGluingConditions config (invertProductionWithoutNacs c) lp && satisfiesRewritingConditions config n rp
+      isValidPair (lp, rp) = satisfiesGluingConditions conf (invertProductionWithoutNacs c) lp && satisfiesRewritingConditions conf n rp
   in filter isValidPair allPairs
 
 concurrentRuleForPair :: (DPO m, EpiPairs m, Eq (Obj m)) => DPOConfig -> Production m -> Production m -> (m, m) -> Production m
-concurrentRuleForPair config c n pair = buildProduction l r (dmc ++ lp)
+concurrentRuleForPair conf c n pair = buildProduction l r (dmc ++ lp)
   where
     pocC = calculatePushoutComplement (fst pair) (getRHS c)
     pocN = calculatePushoutComplement (snd pair) (getLHS n)
@@ -66,7 +66,7 @@ concurrentRuleForPair config c n pair = buildProduction l r (dmc ++ lp)
     pb = monomorphicPullback (snd pocC) (snd pocN)
     l = compose (fst pb) (snd poC)
     r = compose (snd pb) (snd poN)
-    dmc = concatMap (nacDownwardShift config (fst poC)) (getNACs c)
+    dmc = concatMap (nacDownwardShift conf (fst poC)) (getNACs c)
     inverseP = buildProduction (snd pocC) (snd poC) []
-    den = concatMap (nacDownwardShift config (snd pair)) (getNACs n)
-    lp = concatMap (shiftNacOverProduction config inverseP) den
+    den = concatMap (nacDownwardShift conf (snd pair)) (getNACs n)
+    lp = concatMap (shiftNacOverProduction conf inverseP) den

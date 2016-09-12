@@ -14,7 +14,7 @@ import qualified Analysis.CriticalPairs    as CP
 import qualified Analysis.CriticalSequence as CS
 import           Data.Maybe                (fromMaybe, isJust)
 import qualified Graph.Graph               as G
-import qualified Graph.GraphMorphism       as GM
+import           TypedGraph.Graph
 import qualified TypedGraph.GraphRule      as GR
 import           TypedGraph.Morphism
 import           XML.ParsedTypes
@@ -69,10 +69,10 @@ overlapsCS name2 cs = (graph, mapM1, mapM2 ++ mapM2WithNac, nacName cs, csType c
 getTgmMappings :: Maybe String -> TypedGraphMorphism a b -> [Mapping]
 getTgmMappings prefix tgm = nodesMorph ++ edgesMorph
   where
-    nodeMap = applyNodeTGMUnsafe tgm
-    edgeMap = applyEdgeTGMUnsafe tgm
-    nodesMorph = map (\n -> ("N" ++ show (nodeMap n), prefix, "N" ++ show n)) (nodesDomain tgm)
-    edgesMorph = map (\e -> ("E" ++ show (edgeMap e), prefix, "E" ++ show e)) (edgesDomain tgm)
+    nodeMap = applyNodeUnsafe tgm
+    edgeMap = applyEdgeUnsafe tgm
+    nodesMorph = map (\n -> ("N" ++ show (nodeMap n), prefix, "N" ++ show n)) (nodesFromDomain tgm)
+    edgesMorph = map (\e -> ("E" ++ show (edgeMap e), prefix, "E" ++ show e)) (edgesFromDomain tgm)
 
 getLHS :: [Mapping] -> GR.GraphRule a b -> ParsedTypedGraph
 getLHS objName rule = serializeGraph objName $ GR.getLHS rule
@@ -97,13 +97,13 @@ getMappings :: GR.GraphRule a b -> [Mapping]
 getMappings rule = nodesMorph ++ edgesMorph
   where
     no = Nothing
-    invL = invertTGM (GR.getLHS rule)
+    invL = invert (GR.getLHS rule)
     lr = M.compose invL (GR.getRHS rule)
-    nodeMap = applyNodeTGMUnsafe lr
-    nodes = filter (isJust . applyNodeTGM lr) (nodesDomain lr)
+    nodeMap = applyNodeUnsafe lr
+    nodes = filter (isJust . applyNode lr) (nodesFromDomain lr)
     nodesMorph = map (\n -> ("N" ++ show (nodeMap n), no, "N" ++ show n)) nodes
-    edgeMap = applyEdgeTGMUnsafe lr
-    edges = filter (isJust . applyEdgeTGM lr) (edgesDomain lr)
+    edgeMap = applyEdgeUnsafe lr
+    edges = filter (isJust . applyEdge lr) (edgesFromDomain lr)
     edgesMorph = map (\e -> ("E" ++ show (edgeMap e), no, "E" ++ show e)) edges
 
 parseNacName :: String -> (t -> Maybe Int) -> t -> String
@@ -118,14 +118,14 @@ serializeGraph objName morphism = ("", nodes, edges)
     nodes = map (serializeNode (map (\(x,_,y) -> (x,y)) objName) graph) (G.nodes $ M.domain graph)
     edges = map (serializeEdge (map (\(x,_,y) -> (x,y)) objName) graph) (G.edges $ M.domain graph)
 
-serializeNode :: [(String,String)] -> GM.GraphMorphism a b -> G.NodeId -> ParsedTypedNode
+serializeNode :: [(String,String)] -> TypedGraph a b -> G.NodeId -> ParsedTypedNode
 serializeNode objName graph n = ("N" ++ show n,
-                         (lookup (show n) objName),
-                         "N" ++ show (GM.applyNodeUnsafe graph n))
+                         lookup (show n) objName,
+                         "N" ++ show (getNodeType graph n))
 
-serializeEdge :: [(String,String)] -> GM.GraphMorphism a b -> G.EdgeId -> ParsedTypedEdge
+serializeEdge :: [(String,String)] -> TypedGraph a b -> G.EdgeId -> ParsedTypedEdge
 serializeEdge objName graph e = ("E" ++ show e,
-                         (lookup (show e) objName),
-                         "E" ++ show (GM.applyEdgeUnsafe graph e),
+                         lookup (show e) objName,
+                         "E" ++ show (getEdgeType graph e),
                          "N" ++ show (G.sourceOfUnsafe (M.domain graph) e),
                          "N" ++ show (G.targetOfUnsafe (M.domain graph) e))

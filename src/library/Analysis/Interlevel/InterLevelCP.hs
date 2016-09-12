@@ -11,7 +11,7 @@ import           Abstract.DPO
 import           Abstract.Morphism
 import           Data.List            (nubBy)
 import           Graph.Graph
-import           Graph.GraphMorphism
+import           Graph.GraphMorphism hiding (createEdgeOnCodomain, createNodeOnCodomain)
 import           SndOrder.Morphism
 import           SndOrder.Rule
 import           TypedGraph.Graph
@@ -27,25 +27,25 @@ data InterLevelCP a b = InterLevelCP {
 
 -- | Matches the second order rule with the first order, and calls theirs critical pairs
 interLevelCP :: DPOConfig -> (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String,String,Int,InterLevelCP a b)]
-interLevelCP config (sndName, sndRule) (fstName, fstRule) =
+interLevelCP conf (sndName, sndRule) (fstName, fstRule) =
   map (\((x,y,z),w) -> (x,y,z,w)) unformattedConflicts
 
   where
     newNames = map (\number -> (fstName, sndName, number)) ([0..] :: [Int])
     unformattedConflicts = zip newNames (concatMap conflictsForMatch validMatches)
 
-    validMatches = findApplicableMatches config sndRule fstRule
+    validMatches = findApplicableMatches conf sndRule fstRule
 
     conflictsForMatch match =
       do
-        conflicts <- interLevelConflictOneMatch config sndRule match
+        conflicts <- interLevelConflictOneMatch conf sndRule match
         return $ InterLevelCP match conflicts
 
 -- | Calculates the second order rewriting,
 -- defines the dangling extension for L and L'',
 -- gets all relevant graphs from L
 interLevelConflictOneMatch :: DPOConfig -> SndOrderRule a b -> RuleMorphism a b -> [TypedGraphMorphism a b]
-interLevelConflictOneMatch config sndRule match = m0s
+interLevelConflictOneMatch conf sndRule match = m0s
   where
     sndOrderL = getLHS sndRule
     sndOrderR = getRHS sndRule
@@ -65,10 +65,10 @@ interLevelConflictOneMatch config sndRule match = m0s
     danglingExtFl = compose fl (danglingExtension fl bigL)
     danglingExtGl = compose gl (danglingExtension gl bigL'')
 
-    axs = relevantMatches config danglingExtFl danglingExtGl
+    axs = relevantMatches conf danglingExtFl danglingExtGl
     relevantGraphs = map codomain axs
 
-    defineMatches = allILCP config p p'' fl gl
+    defineMatches = allILCP conf p p'' fl gl
 
     m0s = concatMap defineMatches (removeDuplicated relevantGraphs)
 
@@ -80,17 +80,17 @@ removeDuplicated = nubBy (\x y -> not $ Prelude.null $ find x y)
 
 -- | For a relevant graph, gets all matches and check conflict
 allILCP :: DPO m => DPOConfig -> Production m -> Production m -> m -> m -> Obj m -> [m]
-allILCP config p p'' fl gl ax = filter conflicts validMatches
+allILCP conf p p'' fl gl ax = filter conflicts validMatches
   where
-    validMatches = findApplicableMatches config p ax
-    conflicts = ilCP config fl gl p''
+    validMatches = findApplicableMatches conf p ax
+    conflicts = ilCP conf fl gl p''
 
 -- | For a m0, checks if exists a conflicting m''0
 ilCP :: DPO m => DPOConfig -> m -> m -> Production m -> m -> Bool
-ilCP config fl gl p'' m0 = Prelude.null validM0''-- or all (==False) (map (\m'' -> satsGluing inj bigL'' m'') validM0'') --thesis def
+ilCP conf fl gl p'' m0 = Prelude.null validM0''-- or all (==False) (map (\m'' -> satsGluing inj bigL'' m'') validM0'') --thesis def
   where
-    matchesM0'' = findApplicableMatches config p'' (codomain m0)
-    validMatch = satisfiesRewritingConditions config p''
+    matchesM0'' = findApplicableMatches conf p'' (codomain m0)
+    validMatch = satisfiesRewritingConditions conf p''
 
     commutes m0'' = compose fl m0 == compose gl m0''
 
@@ -100,9 +100,9 @@ ilCP config fl gl p'' m0 = Prelude.null validM0''-- or all (==False) (map (\m'' 
 
 relevantMatches :: DPOConfig -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
 --relevantMatches inj dangFl dangGl = concatMap (\ax -> partitions inj (codomain ax)) axs
-relevantMatches config dangFl dangGl = concatMap (createAllSubobjects matchInjective) axs
+relevantMatches conf dangFl dangGl = concatMap (createAllSubobjects matchInjective) axs
   where
-    matchInjective = matchRestriction config == MonoMatches
+    matchInjective = matchRestriction conf == MonoMatches
     (_,al) = calculatePushout dangFl dangGl
     --axs = induzedSubgraphs al
     axs = subgraphs (codomain al)
@@ -110,10 +110,10 @@ relevantMatches config dangFl dangGl = concatMap (createAllSubobjects matchInjec
 danglingExtension :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 danglingExtension gl l = tlUpdated
   where
-    ld = orphanNodesTyped l
+    ld = orphanTypedNodes l
     tl = codomain l
     t = codomain tl
-    tlx n' = any (\n -> applyNodeUnsafe tl n == n') ld
+    tlx n' = any (\n -> getNodeType tl n == n') ld
     dangT = filter (\e -> tlx (sourceOfUnsafe t e) || tlx (targetOfUnsafe t e)) (edges t)
 
     edgesToAdd = concatMap (\n -> map (\e -> (n,e)) dangT) ld
@@ -127,24 +127,24 @@ danglingExtension gl l = tlUpdated
         (False,True) -> createTgt tgm e n
         (False,False) -> error "danglingExtension: it's not supposed to be here"
       where
-        typeNode = applyNodeUnsafe (codomain tgm) n
+        typeNode = getNodeType (codomain tgm) n
         isSrc = typeNode == sourceOfUnsafe t e
         isTgt = typeNode == targetOfUnsafe t e
 
-        createEdge tgm e s t = createEdgeCodTGM edgeId s t e tgm
+        createEdge tgm e s t = createEdgeOnCodomain edgeId s t e tgm
           where
-            edgeId = head (newEdgesTyped (codomain tgm))
+            edgeId = head (newTypedEdges (codomain tgm))
 
         createSrcTgt tgm e n = createTgt (createSrc tgm e n) e n
 
         createSrc tgm e n = createEdge newGraph e n nodeId
           where
-            nodeId = head (newNodesTyped (codomain tgm))
+            nodeId = head (newTypedNodes (codomain tgm))
             typeNewNode = targetOfUnsafe (codomain (codomain tgm)) e
-            newGraph = createNodeCodTGM nodeId typeNewNode tgm
+            newGraph = createNodeOnCodomain nodeId typeNewNode tgm
 
         createTgt tgm e n = createEdge newGraph e nodeId n
           where
-            nodeId = head (newNodesTyped (codomain tgm))
+            nodeId = head (newTypedNodes (codomain tgm))
             typeNewNode = sourceOfUnsafe (codomain (codomain tgm)) e
-            newGraph = createNodeCodTGM nodeId typeNewNode tgm
+            newGraph = createNodeOnCodomain nodeId typeNewNode tgm

@@ -15,7 +15,7 @@ import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Morphism
 import           Abstract.Valid
-import           Graph.GraphMorphism
+import           Graph.GraphMorphism hiding (applyNode, applyEdge, applyNodeUnsafe, applyEdgeUnsafe)
 import           TypedGraph.GraphRule
 import           TypedGraph.Morphism
 
@@ -124,7 +124,6 @@ instance FindMorphism (RuleMorphism a b) where
         isPartiallyMonomorphic (mappingRight n) (mappingRight q))
       (findAllMorphisms (codomain n) (codomain m))
 
--- commutes left side
 leftM :: FindMorphism t => MorphismType -> Production t -> Production t -> t -> [(t, t)]
 leftM prop l g mapK = map (\m -> (m, mapK)) commuting
   where
@@ -273,13 +272,13 @@ instance AdhesiveHLR (RuleMorphism a b) where
 danglingSpan :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
 danglingSpan matchRuleSide matchMorp matchK l k = deletedNodesInK && deletedEdgesInK
   where
-    deletedNodes = filter (ruleDeletes l matchMorp applyNodeTGM nodesDomain) (nodesCodomain matchMorp)
-    nodesInK = [a | a <- nodesDomain matchRuleSide, applyNodeTGMUnsafe matchRuleSide a `elem` deletedNodes]
-    deletedNodesInK = all (ruleDeletes k matchK applyNodeTGM nodesDomain) nodesInK
+    deletedNodes = filter (checkDeletion l matchMorp applyNode nodesFromDomain) (nodesFromCodomain matchMorp)
+    nodesInK = [a | a <- nodesFromDomain matchRuleSide, applyNodeUnsafe matchRuleSide a `elem` deletedNodes]
+    deletedNodesInK = all (checkDeletion k matchK applyNode nodesFromDomain) nodesInK
 
-    deletedEdges = filter (ruleDeletes l matchMorp applyEdgeTGM edgesDomain) (edgesCodomain matchMorp)
-    edgesInK = [a | a <- edgesDomain matchRuleSide, applyEdgeTGMUnsafe matchRuleSide a `elem` deletedEdges]
-    deletedEdgesInK = all (ruleDeletes k matchK applyEdgeTGM edgesDomain) edgesInK
+    deletedEdges = filter (checkDeletion l matchMorp applyEdge edgesFromDomain) (edgesFromCodomain matchMorp)
+    edgesInK = [a | a <- edgesFromDomain matchRuleSide, applyEdgeUnsafe matchRuleSide a `elem` deletedEdges]
+    deletedEdgesInK = all (checkDeletion k matchK applyEdge edgesFromDomain) edgesInK
 
 
 -- | Given the morphisms /k1 : X -> Y/, /s1 : X -> Z/,
@@ -300,7 +299,7 @@ danglingSpan matchRuleSide matchMorp matchK l k = deletedNodesInK && deletedEdge
 -- TODO: explain the errors in this function. what are preconditions for them not to occur?!?
 commutingMorphismSameDomain :: TypedGraphMorphism a b -> TypedGraphMorphism a b
                             -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
-commutingMorphismSameDomain k1 s1 k2 s2 = typedMorphism (codomain k1) (codomain s1) select
+commutingMorphismSameDomain k1 s1 k2 s2 = buildTypedGraphMorphism (codomain k1) (codomain s1) select
   where
     mats = findMonomorphisms (codomain k1) (codomain s1)
     filt = filter (\m -> compose k1 m == s1 && compose k2 m == s2) mats
@@ -327,7 +326,7 @@ commutingMorphismSameDomain k1 s1 k2 s2 = typedMorphism (codomain k1) (codomain 
 -- TODO: explain the errors in this function. what are preconditions for them not to occur?!?
 commutingMorphismSameCodomain :: TypedGraphMorphism a b -> TypedGraphMorphism a b
                               -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
-commutingMorphismSameCodomain k1 s1 k2 s2 = typedMorphism (domain k1) (domain s1) select
+commutingMorphismSameCodomain k1 s1 k2 s2 = buildTypedGraphMorphism (domain k1) (domain s1) select
   where
     mats = findMonomorphisms (domain k1) (domain s1)
     filt = filter (\m -> compose m s1 == k1 && compose k2 m == s2) mats

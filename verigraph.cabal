@@ -63,6 +63,7 @@ library
                        TypedGraph.Partitions.GraphPartition
                        TypedGraph.Partitions.VerigraphToGraphPartition
                        TypedGraph.Subgraph
+                       Util.List
                        XML.GGXParseIn
                        XML.GGXParseOut
                        XML.GGXSndOrderReader

@@ -82,11 +82,11 @@ readGGName fileName = do
 
 -- FIX: find a better place for this two functions
 minimalSafetyNacsWithLog :: DPOConfig -> GG.GraphGrammar a b -> (GG.GraphGrammar a b, [(String, Int)])
-minimalSafetyNacsWithLog config oldGG = (newGG, printNewNacs)
+minimalSafetyNacsWithLog conf oldGG = (newGG, printNewNacs)
   where
     newNacs =
       map (\(n,r) ->
-        let newRule = addMinimalSafetyNacs config r
+        let newRule = addMinimalSafetyNacs conf r
             tamNewNacs = length (getNACs newRule)
             tamNacs = length (getNACs r)
          in ((n, newRule), (n, tamNewNacs - tamNacs))
@@ -197,8 +197,8 @@ instantiateSpan left right mapping = (leftM, rightM)
   where
     parsedMap = map (\(t,_,s) -> (toN t, toN s)) mapping
 
-    leftM = typedMorphism k left leftMap
-    rightM = typedMorphism k right rightMap
+    leftM = buildTypedGraphMorphism k left leftMap
+    rightM = buildTypedGraphMorphism k right rightMap
 
     nodesLeft = G.nodes (domain left)
     nodesRight = G.nodes (domain right)
@@ -225,7 +225,7 @@ instantiateSpan left right mapping = (leftM, rightM)
         edgeTgt = G.EdgeId tgt
 
         nodeDom = G.insertNode nodeSrc (domain k)
-        nodeType = applyNodeUnsafe left nodeSrc
+        nodeType = getNodeType left nodeSrc
         newNodeK = updateNodes nodeSrc nodeType (updateDomain nodeDom k)
         updateNodesL = updateNodes nodeSrc nodeSrc (updateDomain nodeDom l)
         updateNodesR = updateNodes nodeSrc nodeTgt (updateDomain nodeDom r)
@@ -233,7 +233,7 @@ instantiateSpan left right mapping = (leftM, rightM)
         src_ e = fromMaybe (error (show e)) (G.sourceOf (domain left) e)
         tgt_ e = fromMaybe (error (show e)) (G.targetOf (domain left) e)
         edgeDom = G.insertEdge edgeSrc (src_ edgeSrc) (tgt_ edgeSrc) (domain k)
-        edgeType = applyEdgeUnsafe left edgeSrc
+        edgeType = getEdgeType left edgeSrc
         newEdgeK = updateEdges edgeSrc edgeType (updateDomain edgeDom k)
         updateEdgesL = updateEdges edgeSrc edgeSrc (updateDomain edgeDom l)
         updateEdgesR = updateEdges edgeSrc edgeTgt (updateDomain edgeDom r)

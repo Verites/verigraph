@@ -8,6 +8,7 @@ module TypedGraph.Partitions.GraphPartition (
    ) where
 
 import           Data.Maybe (mapMaybe)
+import           Util.List
 
 -- | A Node with the needed information for generating equivalence classes
 data Node = Node {
@@ -70,62 +71,63 @@ nodeBelongsToEquivalenceClass (Node type1 _ _ injectiveNode side1) l@(Node type2
 edgeBelongsToEquivalenceClass :: [[Node]] -> Edge -> [Edge] -> Bool
 edgeBelongsToEquivalenceClass _ _ [] = error "error 'edgeBelongsToEquivalenceClass' in GraphPartition"
 edgeBelongsToEquivalenceClass nodes (Edge type1 _ _ s1 t1 injectiveEdge side) l@(Edge type2 _ _ s2 t2 _ _ : _) =
-  equalTypes && canBeAddedToList && hasEquivalentSource && hasEquivalentTarget
+  equalTypes && canBeAddedToClass && equivalentSources && equivalentTargets
   where
     equalTypes = type1 == type2
-    canBeAddedToList = not injectiveEdge || not thereIsAnotherInjectiveEdge
+    canBeAddedToClass = not injectiveEdge || not thereIsAnotherInjectiveEdge
     thereIsAnotherInjectiveEdge = any (\(Edge _ _ _ _ _ inj side2) -> inj && side == side2) l
     nodeNameAndSource node = (nodeName node, nodeFromLeft node)
-    l1   = getNode (nodeNameAndSource s1) nodes
-    l2   = getNode (nodeNameAndSource s2) nodes
-    hasEquivalentSource = l1 == l2
-    l3   = getNode (nodeNameAndSource t1) nodes
-    l4   = getNode (nodeNameAndSource t2) nodes
-    hasEquivalentTarget = l3 == l4
+    source1   = getNode (nodeNameAndSource s1) nodes
+    source2   = getNode (nodeNameAndSource s2) nodes
+    equivalentSources = source1 == source2
+    source3   = getNode (nodeNameAndSource t1) nodes
+    source4   = getNode (nodeNameAndSource t2) nodes
+    equivalentTargets = source3 == source4
 
+-- TODO: refact these funciton to with the createDisjointUnion and createSatisfyingNacsDisjointUnion more intuitively
 -- | Runs generator of partitions for nodes, and after for edges according to the nodes generated
 generateGraphPartitions :: Graph -> [GraphPartition]
-generateGraphPartitions gra = concatMap f a
+generateGraphPartitions graph = concatMap f nodeEquivalences
   where
-    nodes = fst
-    edges = snd
-    a = part nodeBelongsToEquivalenceClass (nodes gra)
-    b x = part (edgeBelongsToEquivalenceClass x) (edges gra)
-    f :: [[Node]] -> [([[Node]],[[Edge]])]
-    f a = zip (replicate (length (b a)) a) (b a)
+    nodes = fst graph
+    edges = snd graph
+    nodeEquivalences = generatePartitions nodeBelongsToEquivalenceClass nodes
+    edgeEquivalences x = generatePartitions (edgeBelongsToEquivalenceClass x) edges
+    f :: [[Node]] -> [GraphPartition]
+    f nodeEquivalences =
+      zip (replicate (length (edgeEquivalences nodeEquivalences)) nodeEquivalences) (edgeEquivalences nodeEquivalences)
 
 -- | Interface function to run the algorithm that generates the partitions
-part :: (a -> [a] -> Bool) -> [a] -> [[[a]]]
-part f l = if null l then [[]] else bt f l []
+generatePartitions :: (a -> [a] -> Bool) -> [a] -> [[[a]]]
+generatePartitions equivalenceChecker equivalenceList =
+  if null equivalenceList
+    then [[]]
+    else backtracking equivalenceChecker equivalenceList []
 
 -- | Runs a backtracking algorithm to create all partitions
--- receives a function of restriction, to know when a element can be combined with other
-bt :: (a -> [a] -> Bool) -> [a] -> [[a]] -> [[[a]]]
-bt f toAdd [] = bt f (init toAdd) [[last toAdd]]
-bt _ [] actual = [actual]
-bt f toAdd actual =
-  bt f initAdd ([ad]:actual) ++
+-- receives a function of restriction to know when a element can be combined with other
+backtracking :: (a -> [a] -> Bool) -> [a] -> [[a]] -> [[[a]]]
+backtracking equivalenceChecker toAdd []      = backtracking equivalenceChecker (tail toAdd) [[head toAdd]]
+backtracking _ [] eqClass                     = [eqClass]
+backtracking equivalenceChecker toAdd eqClass =
+  backtracking equivalenceChecker initAdd ([ad]:eqClass) ++
     concat
       (mapMaybe
-        (\(n,id) -> if f ad n
+        (\(n,id) -> if equivalenceChecker ad n
                       then
-                        Just (bt f initAdd (replace id (ad:n) actual))
+                        Just (backtracking equivalenceChecker initAdd (replace id (ad:n) eqClass))
                       else
                         Nothing)
-      (zip actual [0..]))
+      (zip eqClass [0..]))
   where
-    initAdd = init toAdd
-    ad = last toAdd
-
--- | Replaces the @idx@-th element by @new@ in the list @l@
-replace :: Int -> a -> [a] -> [a]
-replace idx new l = take idx l ++ [new] ++ drop (idx+1) l
+    initAdd = tail toAdd
+    ad = head toAdd
 
 -- | Returns the node that this @p@ was collapsed in partitions
 -- Used to compare if an edge can be mixed with another
 -- GraphPartitionToVerigraph use to discover source and target of edges
 getNode :: (Int,Bool) -> [[Node]] -> Node
-getNode _ [] = error "error when generating overlapping pairs (getListNode)"
+getNode _ [] = error "error when generating overlapping pairs (getNode)"
 getNode p@(name,source) (x:xs) =
   if any (\n -> nodeName n == name && nodeFromLeft n == source) x
     then
