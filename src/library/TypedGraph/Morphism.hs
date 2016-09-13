@@ -320,14 +320,11 @@ instance EpiPairs (TypedGraphMorphism a b) where
       part = map (mountTypedGraphMorphisms m1 m2) (generateGraphPartitions (createDisjointUnion (m1,inj) (m2,inj)))
 
   createJointlyEpimorphicPairsFromNAC conf r nac =
-    map (mountTypedGraphMorphisms r (codomain nac)) (generateGraphPartitions (createSatisfyingNacsDisjointUnion (r, matchInj) (nac, nacInj)))
-
+    map (mountTypedGraphMorphisms r (codomain nac))
+        (generateGraphPartitions (createSatisfyingNacsDisjointUnion (r, injectiveMatch) (nac, totalInjectiveNac)))
     where
-      matchInj =
-        matchRestriction conf == MonoMatches
-
-      nacInj =
-        nacSatisfaction conf == MonomorphicNAC
+      injectiveMatch = matchRestriction conf == MonoMatches
+      totalInjectiveNac = nacSatisfaction conf == MonomorphicNAC
 
   -- | Create all jointly surjective pairs of @m1@ and @m2@ that commutes,
   -- considering they have same domain
@@ -356,11 +353,9 @@ partialInjectiveMatches' nac match = do
     lhsNodes = nodes $ domain $ domain match
     lhsEdges = edges $ domain $ domain match
     q = preBuildQ nac match
-    --PRE-BUILD EDGES MAPPING OF @q@
-    q' = composeEdges q nac match lhsEdges
-    --PRE-BUILD NODES MAPPING OF @q@
+    q' = preBuildEdges q nac match lhsEdges
     q'' = case q' of
-      Just q1 -> composeNodes q1 nac match lhsNodes
+      Just q1 -> preBuildNodes q1 nac match lhsNodes
       Nothing -> Nothing
 
   case q'' of
@@ -392,9 +387,9 @@ preBuildQ nac match = buildTypedGraphMorphism qDomain qCodomain qMapping
 
 --VERIFY EDGES MAPPING N <- l AND L -> G AND BUILD A N -> G
 --PARTIAL EDGES MORPHISM
-composeEdges :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> [G.EdgeId] -> Maybe (TypedGraphMorphism a b)
-composeEdges tgm _ _ [] = Just tgm
-composeEdges tgm nac match (h:t) = do
+preBuildEdges :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> [G.EdgeId] -> Maybe (TypedGraphMorphism a b)
+preBuildEdges tgm _ _ [] = Just tgm
+preBuildEdges tgm nac match (h:t) = do
   let nacEdge = applyEdgeUnsafe nac h
       matchEdge   = applyEdgeUnsafe match h
       (dom, cod, _) = decomposeTypedGraphMorphism tgm
@@ -403,14 +398,14 @@ composeEdges tgm nac match (h:t) = do
              then Just $ buildTypedGraphMorphism dom cod (GM.updateEdges nacEdge matchEdge $ mapping tgm)
              else Nothing
   case tgm' of
-    Just tgm'' -> composeEdges tgm'' nac match t
+    Just tgm'' -> preBuildEdges tgm'' nac match t
     Nothing    -> Nothing
 
 --VERIFY NODE MAPPINGS N <- L AND L -> G AND BUILD A N -> G
 --PARTIAL NODES MORPHISM
-composeNodes :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> [G.NodeId] -> Maybe (TypedGraphMorphism a b)
-composeNodes tgm _   _     []    = Just tgm
-composeNodes tgm nac match (h:t) = do
+preBuildNodes :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> [G.NodeId] -> Maybe (TypedGraphMorphism a b)
+preBuildNodes tgm _   _     []    = Just tgm
+preBuildNodes tgm nac match (h:t) = do
   let nacNode   = applyNodeUnsafe nac h
       matchNode = applyNodeUnsafe match h
       (tgmDomain, tgmCodomain, tgmMapping) = decomposeTypedGraphMorphism tgm
@@ -419,7 +414,7 @@ composeNodes tgm nac match (h:t) = do
              then Just $ buildTypedGraphMorphism tgmDomain tgmCodomain (GM.updateNodes nacNode matchNode tgmMapping)
              else Nothing
   case tgm' of
-    Just tgm'' -> composeNodes tgm'' nac match t
+    Just tgm'' -> preBuildNodes tgm'' nac match t
     Nothing    -> Nothing
 
 ---------------------------------------------------------------------------------
@@ -546,10 +541,9 @@ updateNodesMapping n1 n2 nodesT tgm =
   do
     let (d, c, m) = decomposeTypedGraphMorphism tgm
     if extractNodeType d n1 == extractNodeType c n2 &&
-       ((isNothing (applyNode tgm n1) && L.elem n2 nodesT) ||
-        applyNode tgm n1 == Just n2)
-      then Just $ buildTypedGraphMorphism d c $ GM.updateNodes n1 n2 m
-      else Nothing
+       ((isNothing (applyNode tgm n1) && L.elem n2 nodesT) || applyNode tgm n1 == Just n2)
+    then Just $ buildTypedGraphMorphism d c $ GM.updateNodes n1 n2 m
+    else Nothing
 
 ---------------------------------------------------------------------------------
 
@@ -560,10 +554,9 @@ updateEdgesMapping e1 e2 edgesT tgm =
   do
     let (d, c, m) = decomposeTypedGraphMorphism tgm
     if extractEdgeType d e1 == extractEdgeType c e2 &&
-       ((isNothing (applyEdge tgm e1) && L.elem e2 edgesT ) ||
-        applyEdge tgm e1 == Just e2)
-      then Just $ buildTypedGraphMorphism d c (GM.updateEdges e1 e2 m)
-      else Nothing
+       ((isNothing (applyEdge tgm e1) && L.elem e2 edgesT ) || applyEdge tgm e1 == Just e2)
+    then Just $ buildTypedGraphMorphism d c (GM.updateEdges e1 e2 m)
+    else Nothing
 
 decomposeTypedGraphMorphism :: TypedGraphMorphism a b -> (GM.GraphMorphism a b, GM.GraphMorphism a b, GM.GraphMorphism a b)
 decomposeTypedGraphMorphism tgm = (domain tgm, codomain tgm, mapping tgm)
