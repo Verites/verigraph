@@ -360,23 +360,14 @@ partialInjectiveMatches' nac match = do
 
   case q'' of
     Nothing -> []
-    Just q2 -> buildMappings Monomorphism nodesSrc edgesSrc nodesTgt edgesTgt q2
+    Just q2 -> completeMappings Monomorphism q2 (sourceNodes, sourceEdges) (targetNodes, targetEdges)
       where
-        --DELETE FROM QUEUE ALREADY MAPPED SOURCE NODES (NODES FROM NAC)
-        qDomain   = codomain nac
-        nodesSrc = filter (notMappedNodes q2) (nodes $ domain qDomain)
-          where
-            notMappedNodes tgm node = isNothing $ applyNode tgm node
-        --DELETE FROM QUEUE ALREADY MAPPED SOURCE EDGES (EDGES FROM NAC)
-        edgesSrc = filter (notMappedEdges q2) (edges $ domain qDomain)
-          where
-            notMappedEdges tgm edge = isNothing $ applyEdge tgm edge
-
-        --REMOVE FROM TARGET LIST NODES ALREADY MAPPED (NODES FROM G)
-        nodesTgt = orphanTypedNodes q2
-
-        --REMOVE FROM TARGET LIST EDGES ALREADY MAPPED (EDGES FROM G)
-        edgesTgt = orphanTypedEdges q2
+        notMappedNodes tgm node = isNothing $ applyNode tgm node
+        notMappedEdges tgm edge = isNothing $ applyEdge tgm edge
+        sourceNodes = filter (notMappedNodes q2) (nodes $ domain $ domain q2)
+        sourceEdges = filter (notMappedEdges q2) (edges $ domain $ domain q2)
+        targetNodes = orphanTypedNodes q2
+        targetEdges = orphanTypedEdges q2
 
 preBuildQ :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 preBuildQ nac match = buildTypedGraphMorphism qDomain qCodomain qMapping
@@ -424,115 +415,104 @@ preBuildNodes tgm nac match (h:t) = do
 --   Injective, surjective, isomorphic or all possible matches
 findMatches :: MorphismType -> GM.GraphMorphism a b-> GM.GraphMorphism a b -> [TypedGraphMorphism a b]
 findMatches prop graph1 graph2 =
-  buildMappings prop nodesSrc edgesSrc nodesTgt edgesTgt tgm
+  completeMappings prop tgm (sourceNodes, sourceEdges) (targetNodes, targetEdges)
   where
-    nodesSrc = nodes $ domain graph1
-    nodesTgt = nodes $ domain graph2
-    edgesSrc = edges $ domain graph1
-    edgesTgt = edges $ domain graph2
+    sourceNodes = nodes $ domain graph1
+    targetNodes = nodes $ domain graph2
+    sourceEdges = edges $ domain graph1
+    targetEdges = edges $ domain graph2
 
     d   = graph1
     c   = graph2
     m   = GM.empty (domain graph1) (domain graph2)
     tgm = buildTypedGraphMorphism d c m
 
-
-
-
 ---------------------------------------------------------------------------------
 
-buildMappings :: MorphismType -> [G.NodeId] -> [G.EdgeId] -> [G.NodeId] -> [G.EdgeId]
-              -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
+type ExpandedGraph = ([G.NodeId], [G.EdgeId])
 
---IF NO HAS FREE NODES OR FREE EDGES TO MAP, RETURN THE FOUND MORPHISMO
-buildMappings prop [] [] nodesT edgesT tgm =
+-- | Given a TypedGraphMorphism @tgm@ from (A -> T) to (B -> T) and the two ExpandedGraphs of A and B, it completes the @tgm@
+-- with all the possible mappings from (A -> T) to (B -> T)
+completeMappings :: MorphismType -> TypedGraphMorphism a b -> ExpandedGraph -> ExpandedGraph -> [TypedGraphMorphism a b]
+completeMappings prop tgm ([], []) targetGraph = completeFromEmptySource prop tgm targetGraph
+completeMappings prop tgm (sourceNodes, []) targetGraph = completeWithRemainingNodes prop tgm (sourceNodes, []) targetGraph
+completeMappings prop tgm sourceGraph targetGraph = completeFromSourceEdges prop tgm sourceGraph targetGraph
+
+completeFromEmptySource :: MorphismType -> TypedGraphMorphism a b -> ExpandedGraph -> [TypedGraphMorphism a b]
+completeFromEmptySource prop tgm (nodesT, edgesT) =
+  case prop of
+    GenericMorphism -> all
+    Monomorphism    -> all
+    Epimorphism     -> epimorphism
+    Isomorphism     -> isomorphism
+  where
+    all = return tgm
+    isomorphism | L.null nodesT && L.null edgesT = return tgm
+                | otherwise = []
+
+    epimorphism | L.null (orphanTypedNodes tgm) && L.null (orphanTypedEdges tgm) = return tgm
+                | otherwise = []
+
+completeWithRemainingNodes :: MorphismType -> TypedGraphMorphism a b -> ExpandedGraph -> ExpandedGraph -> [TypedGraphMorphism a b]
+completeWithRemainingNodes prop tgm ([], _)  (nodesT, edgesT) = completeFromEmptySource prop tgm (nodesT, edgesT)
+completeWithRemainingNodes _    _    _       ([],     _)      = []
+completeWithRemainingNodes prop tgm (h:t, _) (nodesT, edgesT) = do
+  nodeFromTarget <- nodesT
+  let updatedTgm = updateNodesMapping h nodeFromTarget nodesT tgm
+  case updatedTgm of
+    Nothing  -> []
+    Just tgm' ->
       case prop of
         GenericMorphism -> all
-        Monomorphism    -> all
-        Epimorphism     -> epimorphism
-        Isomorphism     -> isomorphism
+        Monomorphism    -> monomorphism
+        Epimorphism     -> all
+        Isomorphism     -> monomorphism
       where
-        all = return tgm
-        isomorphism | L.null nodesT && L.null edgesT = return tgm
-                    | otherwise = []
+        nodesT'   = delete nodeFromTarget nodesT
+        monomorphism = completeMappings prop tgm' (t, []) (nodesT', edgesT)
+        all          = completeMappings prop tgm' (t, []) (nodesT , edgesT)
 
-        epimorphism | L.null (orphanTypedNodes tgm) &&
-                      L.null (orphanTypedEdges tgm) = return tgm
-                    | otherwise = []
-
----------------------------------------------------------------------------------
-
---IF HAS FREE NODES, MAP GenericMorphism FREE NODES TO GenericMorphism DESTINATION NODES
-buildMappings prop (h:t) [] nodesT edgesT tgm
-  | L.null nodesT = []
-  | otherwise  = do
-      y <- nodesT
-
-      --MAP FREE NODES TO GenericMorphism TYPE COMPATIBLE DESTINATION NODES
-      let tgmN = updateNodesMapping h y nodesT tgm
-
-      case tgmN of
-        Just tgm' ->
-          --CHOSE BETWEEN INJECTIVE OR NOT
-          case prop of
-            GenericMorphism -> all
-            Monomorphism    -> monomorphism
-            Epimorphism     -> all
-            Isomorphism     -> monomorphism
-          where
-            monomorphism = buildMappings prop t [] nodesT' edgesT tgm'
-            all          = buildMappings prop t [] nodesT  edgesT tgm'
-            --REMOVE THE TARGET NODES MAPPED (INJECTIVE MODULE)
-            nodesT'   = delete y nodesT
-        Nothing  -> []
-
----------------------------------------------------------------------------------
-
---IF HAS FREE NODES, AND FREE EDGES, VERIFY THE CURRENT STATUS
-buildMappings prop nodes (h:t) nodesT edgesT tgm
+completeFromSourceEdges ::  MorphismType -> TypedGraphMorphism a b -> ExpandedGraph -> ExpandedGraph -> [TypedGraphMorphism a b]
+completeFromSourceEdges prop tgm (nodes, h:t) (nodesT, edgesT)
   | L.null edgesT = []
-  | otherwise  =
-    do  --VERIFY THE POSSIBILITY OF A MAPPING BETWEEN h AND THE DESTINATION EDGES
-      y <- edgesT
-      --MAPPING SRC AND TGT NODES
-      let tgmN
-            | isNothing tgm1 = Nothing
-            | otherwise = tgm2
-            where tgm1 = updateNodesMapping (extractSource d h) (extractSource c y) nodesT tgm
-                  tgm2 = updateNodesMapping (extractTarget d h) (extractTarget c y) nodesT' $ fromJust tgm1
-                  d = domain $ domain tgm
-                  c = domain $ codomain tgm
-                  nodesT' = case prop of
-                    Monomorphism    -> L.delete (extractSource c y) nodesT
-                    Isomorphism     -> L.delete (extractSource c y) nodesT
-                    Epimorphism     -> nodesT
-                    GenericMorphism -> nodesT
+  | otherwise  = do
+    edgeFromTarget <- edgesT
+    let tgmN
+          | isNothing tgm1 = Nothing
+          | otherwise = tgm2
+          where tgm1 = updateNodesMapping (extractSource d h) (extractSource c edgeFromTarget) nodesT tgm
+                tgm2 = updateNodesMapping (extractTarget d h) (extractTarget c edgeFromTarget) nodesT' $ fromJust tgm1
+                d = domain $ domain tgm
+                c = domain $ codomain tgm
+                nodesT' = case prop of
+                  Monomorphism    -> L.delete (extractSource c edgeFromTarget) nodesT
+                  Isomorphism     -> L.delete (extractSource c edgeFromTarget) nodesT
+                  Epimorphism     -> nodesT
+                  GenericMorphism -> nodesT
 
-          --MAPPING SRC EDGE AND TGT EDGE
-          tgmE
-            | isNothing tgmN = Nothing
-            | otherwise = updateEdgesMapping h y edgesT $ fromJust tgmN
+        --MAPPING SRC EDGE AND TGT EDGE
+        tgmE
+          | isNothing tgmN = Nothing
+          | otherwise = updateEdgesMapping h edgeFromTarget edgesT $ fromJust tgmN
 
-      --FOR THE COMPATIBLES MAPPINGS, GO TO THE NEXT STEP
-      case tgmE of
-        Just tgm' -> do
-          let nodes'       = delete (extractSource d h) $ delete (extractTarget d h) nodes
-              d            = domain $ domain tgm
-              c            = domain $ codomain tgm
-              --REMOVE THE TARGET EDGES AND NODES MAPPED (INJECTIVE MODULE)
-              edgesT'      = delete y edgesT
-              nodesT'      = delete (extractSource c y) $ delete (extractTarget c y) nodesT
-              monomorphism = buildMappings prop nodes' t nodesT' edgesT' tgm'
-              all          = buildMappings prop nodes' t nodesT  edgesT  tgm'
-              --CHOSE BETWEEN INJECTIVE OR NOT
-          case prop of
-            GenericMorphism -> all
-            Monomorphism    -> monomorphism
-            Epimorphism     -> all
-            Isomorphism     -> monomorphism
-        Nothing  -> []
-
----------------------------------------------------------------------------------
+    --FOR THE COMPATIBLES MAPPINGS, GO TO THE NEXT STEP
+    case tgmE of
+      Just tgm' -> do
+        let nodes'       = delete (extractSource d h) $ delete (extractTarget d h) nodes
+            d            = domain $ domain tgm
+            c            = domain $ codomain tgm
+            --REMOVE THE TARGET EDGES AND NODES MAPPED (INJECTIVE MODULE)
+            edgesT'      = delete edgeFromTarget edgesT
+            nodesT'      = delete (extractSource c edgeFromTarget) $ delete (extractTarget c edgeFromTarget) nodesT
+            monomorphism = completeMappings prop tgm' (nodes', t) (nodesT', edgesT')
+            all          = completeMappings prop tgm' (nodes', t) (nodesT,  edgesT)
+            --CHOSE BETWEEN INJECTIVE OR NOT
+        case prop of
+          GenericMorphism -> all
+          Monomorphism    -> monomorphism
+          Epimorphism     -> all
+          Isomorphism     -> monomorphism
+      Nothing  -> []
 
 -- VALIDATION OF A NODE MAPPING
 -- VERIFY IF THE TYPES OF n1 AND n2 ARE COMPATIBLE AND UPDATE MAPPING
