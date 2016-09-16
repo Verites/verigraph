@@ -102,10 +102,21 @@ findApplicableMatches conf production obj =
 
 
 instance (Morphism m, Valid m, Eq (Obj m)) => Valid (Production m) where
-  valid (Production l r nacs) =
-    isMonomorphism l && isMonomorphism r &&
-    valid l && valid r && all valid nacs &&
-    domain l == domain r && all (==codomain l) (map domain nacs)
+  validate (Production l r nacs) =
+    mconcat $
+      [ withContext "left morphism" (validate l)
+      , withContext "right morphism" (validate r)
+      , ensure (isMonomorphism l) "The left side of the production is not monic"
+      , ensure (isMonomorphism r) "The right side of the production is not monic"
+      , ensure (domain l == domain r) "The domains of the left and right morphisms aren't the same"
+      ] ++ zipWith validateNac nacs ([1..] :: [Int])
+    where
+      validateNac nac index =
+        mconcat
+          [ withContext ("NAC #" ++ show index) (validate nac)
+          , ensure (codomain l == domain nac) ("The domain of NAC #" ++ show index ++ " is not the left side of the rule")
+          ]
+
 
 -- | Given a match and a production, calculates the double-pushout diagram
 -- for the corresponding transformation.

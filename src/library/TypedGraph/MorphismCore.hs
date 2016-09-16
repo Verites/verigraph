@@ -29,10 +29,12 @@ instance Morphism (TypedGraphMorphism a b) where
     isIsomorphism = isIsomorphism . mapping
 
 instance Valid (TypedGraphMorphism a b) where
-    valid (TypedGraphMorphism dom cod m) =
-        valid dom &&
-        valid cod &&
-        dom == compose m cod
+    validate (TypedGraphMorphism dom cod m) =
+      mconcat
+        [ withContext "domain" (validate dom)
+        , withContext "codomain" (validate cod)
+        , ensure (dom == compose m cod) "Morphism doesn't preserve typing"
+        ]
 
 -- | Return the nodes in the domain of a given @TypedGraphMorphism@
 nodesFromDomain :: TypedGraphMorphism a b -> [NodeId]

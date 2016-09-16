@@ -253,16 +253,21 @@ instance Morphism (GraphMorphism a b) where
 
 
 instance Valid (GraphMorphism a b) where
-    valid m@(GraphMorphism dom cod nm em) =
-        R.isTotal nm &&
-        R.isFunctional nm &&
-        R.isTotal em &&
-        R.isFunctional em &&
-        valid dom &&
-        valid cod &&
-        all (\e -> (G.sourceOf cod =<< applyEdge m e) ==
-                   (applyNode m =<< G.sourceOf dom e)
-                   &&
-                   (G.targetOf cod =<< applyEdge m e) ==
-                   (applyNode m =<< G.targetOf dom e))
-            (G.edges dom)
+    validate morphism@(GraphMorphism dom cod nodeMap edgeMap) =
+      mconcat
+        [ withContext "domain" (validate dom)
+        , withContext "codomain" (validate cod)
+        , ensure (R.isFunctional nodeMap) "The relation of nodes is not functional"
+        , ensure (R.isTotal nodeMap) "The function of nodes is not total on its domain"
+        , ensure (R.isFunctional edgeMap) "The relation of edges is not functional"
+        , ensure (R.isTotal edgeMap) "The function of edges is not total on its domain"
+        , ensure incidencePreserved "The morphism doesn't preserve incidence/adjacency"
+        ]
+      where
+        incidencePreserved =
+          all (\e -> (G.sourceOf cod =<< applyEdge morphism e) ==
+                     (applyNode morphism =<< G.sourceOf dom e)
+                  &&
+                     (G.targetOf cod =<< applyEdge morphism e) ==
+                     (applyNode morphism =<< G.targetOf dom e))
+              (G.edges dom)

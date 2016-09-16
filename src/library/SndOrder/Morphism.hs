@@ -62,14 +62,16 @@ ruleMorphism :: Production (TypedGraphMorphism a b)
 ruleMorphism = RuleMorphism
 
 instance Valid (RuleMorphism a b) where
-    valid (RuleMorphism dom cod mapL mapK mapR) =
-        valid dom &&
-        valid cod &&
-        valid mapL &&
-        valid mapK &&
-        valid mapR &&
-        compose mapK (getLHS cod) == compose (getLHS dom) mapL &&
-        compose mapK (getRHS cod) == compose (getRHS dom) mapR
+    validate (RuleMorphism dom cod mapL mapK mapR) =
+      mconcat
+        [ withContext "domain" (validate dom)
+        , withContext "codomain" (validate cod)
+        , withContext "left-hand graph morphism" (validate mapL)
+        , withContext "interface graph morphism" (validate mapK)
+        , withContext "right-hand graph morphism" (validate mapR)
+        , ensure (compose mapK (getLHS cod) == compose (getLHS dom) mapL) "Left square doesn't commute"
+        , ensure (compose mapK (getRHS cod) == compose (getRHS dom) mapR) "Right square doesn't commute"
+        ]
 
 instance Morphism (RuleMorphism a b) where
     type Obj (RuleMorphism a b) = Production (TypedGraphMorphism a b)
