@@ -21,11 +21,7 @@ satisfiesConstraint g a = Prelude.null ps || allPremisesAreSatisfied
   where
     ps = findConstraintMorphisms (premise a) g
     qs = findConstraintMorphisms (conclusion a) g
-    allPremisesAreSatisfied = all (satisfiesSingle qs a) ps
+    allPremisesAreSatisfied = all (\p -> any (\q -> compose a q == p) qs) ps
 
 findConstraintMorphisms :: TypedGraph a b -> TypedGraph a b -> [TypedGraphMorphism a b]
 findConstraintMorphisms = findMonomorphisms
-
-satisfiesSingle :: [TypedGraphMorphism a b] -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
-satisfiesSingle [] _ _ = False
-satisfiesSingle (q:qs) a p = compose a q == p || satisfiesSingle qs a p
