@@ -67,10 +67,10 @@ execute (globalOpts, options) =
     let dpoConf = dpoConfig globalOpts
 
     (grammar,_) <- XML.readGrammar (inputFile globalOpts) dpoConf
-    ensureAllValid (rules grammar) $ \name -> "Invalid rule '" ++ name ++ "'"
+    ensureValid $ validateNamed (\name -> "Rule '"++name++"'") (rules grammar)
 
     graphs <- XML.readGraphs (inputFile globalOpts)
-    ensureAllValid graphs $ \name -> "Invalid graph '" ++ name ++ "'"
+    ensureValid $ validateNamed (\name -> "Graph '"++name++"'") graphs
 
     let
       (initialStates, stateSpace) =
@@ -138,18 +138,6 @@ modelCheck model expr initialStates =
       badStates
       "All initial states satisfy the formula!"
       "The following initial states do NOT satisfy the formula:"
-
-
--- | Tests if all given graphs are valid. If one isn't, print a message and exit.
-ensureAllValid :: Valid a => [(String, a)] -> (String -> String) -> IO ()
-ensureAllValid items errorMessage =
-  let
-    invalid =
-      filter (not . valid . snd) items
-  in
-    unless (List.null invalid) $ do
-      mapM_ (putStrLn . errorMessage . fst) invalid
-      exitFailure
 
 
 -- | Creates .dot files for the given state space in the given directory.

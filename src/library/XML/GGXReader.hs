@@ -49,11 +49,7 @@ readGrammar fileName dpoConfig = do
       rulesNames = map (\((x,_,_,_),_) -> x) fstOrdRules
       rules = map (instantiateRule parsedTypeGraph) fstOrdRules
 
-  _ <- (case L.elemIndices False (map valid rules) of
-          []  -> []
-          [a] -> error $ "Rule " ++ show a ++ " is not valid (starting from 0)."
-          l   -> error $ "Rules " ++ show l ++ " are not valid (starting from 0)."
-          ) `seq` return ()
+  ensureValid $ validateNamed (\name -> "Rule '"++name++"'") (zip rulesNames rules)
 
   let typeGraph = if L.null rules
                     then error "No first order rules were found, at least one is needed."
@@ -62,7 +58,7 @@ readGrammar fileName dpoConfig = do
       sndOrderRules = instantiateSndOrderRules parsedTypeGraph sndOrdRules
       gg = GG.graphGrammar initGraph (zip rulesNames rules) sndOrderRules
 
-  _ <- (case L.elemIndices False (map valid (map snd sndOrderRules)) of
+  _ <- (case L.elemIndices False (map isValid (map snd sndOrderRules)) of
           []  -> []
           [a] -> error $ "Second Order Rule " ++ show a ++ " is not valid (starting from 0)."
           l   -> error $ "Second Order Rules " ++ show l ++ " are not valid (starting from 0)."

@@ -60,7 +60,7 @@ evolSpans conf (n1,r1) (n2,r2) = (ruleNames, spans)
 
     pairs = createJointlyEpimorphicPairs (matchRestriction conf == MonoMatches) leftR1 leftR2
 
-    xs = filter (\(m1,_) -> valid (codomain m1)) pairs
+    xs = filter (\(m1,_) -> isValid (codomain m1)) pairs
     xs' = filter (\(m1,m2) -> satisfyRewritingConditions conf (r1Left, mappingLeft m1) (r2Left, mappingLeft m2)) xs
     xs'' = filter (\(m1,m2) -> satisfyRewritingConditions conf (r1Right, mappingLeft m1) (r2Right, mappingLeft m2)) xs'
 

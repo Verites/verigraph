@@ -340,11 +340,11 @@ incidentEdges :: Graph a b -> NodeId -> [EdgeId]
 incidentEdges g n = nub $ incomingEdges g n ++ outgoingEdges g n
 
 instance Valid (Graph a b) where
-    valid g =
-        all (\e ->
-                let src = sourceOf g e
-                    tgt = targetOf g e
-                in case (src, tgt) of
-                    (Just s, Just t) -> isNodeOf g s && isNodeOf g t
-                    _ -> False)
-            (edges g)
+    validate graph =
+      mconcat $ map validateEdge (edgeMap graph)
+      where
+        validateEdge (edge, Edge src tgt _) =
+          mconcat
+            [ ensure (isNodeOf graph src) ("Source node #" ++ show src ++ " of edge #" ++ show edge ++ " is not a member of the graph")
+            , ensure (isNodeOf graph tgt) ("Target node #" ++ show src ++ " of edge #" ++ show edge ++ " is not a member of the graph")
+            ]
