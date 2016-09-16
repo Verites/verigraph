@@ -32,7 +32,7 @@ appendSndOrderConflicts conf gg = newGG
     conflicts = CP.namedCriticalPairs conf (sndOrderRules gg)
     matches = concatMap (\(n1,n2,c) -> map (\ol -> (n1, n2, CP.getCriticalPairType ol, codomain (fst (CP.getCriticalPairMatches ol)))) c) conflicts
     conflictRules = map (\(idx,(n1,n2,tp,rule)) -> ("conflict_"++(show tp)++"_"++n1++"_"++n2++"_"++(show idx), rule)) (zip ([0..]::[Int]) matches)
-    newGG = graphGrammar (initialGraph gg) ((rules gg) ++ conflictRules) (sndOrderRules gg)
+    newGG = graphGrammar (initialGraph gg) [] ((rules gg) ++ conflictRules) (sndOrderRules gg)
 
 appendSndOrderDependencies :: DPOConfig -> GraphGrammar a b -> GraphGrammar a b
 appendSndOrderDependencies conf gg = newGG
@@ -40,7 +40,7 @@ appendSndOrderDependencies conf gg = newGG
     conflicts = CS.namedCriticalSequences conf (sndOrderRules gg)
     matches = concatMap (\(n1,n2,c) -> map (\ol -> (n1, n2, CS.getCriticalSequenceType ol, codomain (fst (CS.getCriticalSequenceComatches ol)))) c) conflicts
     conflictRules = map (\(idx,(n1,n2,tp,rule)) -> ("dependency_"++(show tp)++"_"++n1++"_"++n2++"_"++(show idx), rule)) (zip ([0..]::[Int]) matches)
-    newGG = graphGrammar (initialGraph gg) ((rules gg) ++ conflictRules) (sndOrderRules gg)
+    newGG = graphGrammar (initialGraph gg) [] ((rules gg) ++ conflictRules) (sndOrderRules gg)
 
 -- | Writes grammar, second order conflicts and dependencies (.ggx)
 writeSndOderConfDepFile :: DPOConfig -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()

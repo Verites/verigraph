@@ -1,6 +1,5 @@
 module TypedGraph.Constraint
-( premise
-, conclusion
+( Constraint
 , satisfiesConstraint
 ) where
 

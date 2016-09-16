@@ -58,7 +58,7 @@ readGrammar fileName dpoConfig = do
 
   let initGraph = GM.empty typeGraph typeGraph
       sndOrderRules = instantiateSndOrderRules typeGraph sndOrdRules
-      gg = GG.graphGrammar initGraph (zip rulesNames rules) sndOrderRules
+      gg = GG.graphGrammar initGraph [] (zip rulesNames rules) sndOrderRules
 
   _ <- (case L.elemIndices False (map (isValid . snd) sndOrderRules) of
           []  -> []

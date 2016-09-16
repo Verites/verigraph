@@ -63,7 +63,7 @@ execute globalOpts opts = do
                                 AllConcurrentRules -> makeAllConcurrentRules
         dependencies = concRulesbyDep opts
         newRules = concatMap (makeConcurrentRules dependencies $ dpoConfig globalOpts) sequences
-        gg' = GG.graphGrammar (GG.initialGraph gg) (GG.rules gg ++ newRules) []
+        gg' = GG.graphGrammar (GG.initialGraph gg) [] (GG.rules gg ++ newRules) []
     GW.writeGrammarFile gg' ggName names (outputFile opts)
 
 makeAllConcurrentRules :: CRDependencies -> DPOConfig -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
