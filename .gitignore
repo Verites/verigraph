@@ -9,3 +9,7 @@ m.txt
 mpf.txt
 *.swp
 hellow.*
+
+# Cabal stuff
+.cabal-sandbox
+cabal.sandbox.config
