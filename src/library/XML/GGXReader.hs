@@ -23,6 +23,7 @@ import qualified Graph.Graph             as G
 import           Graph.GraphMorphism     as GM
 import           SndOrder.Rule
 import           Text.XML.HXT.Core       hiding (left, right)
+import           TypedGraph.Constraint
 import           TypedGraph.Graph
 import qualified TypedGraph.GraphGrammar as GG
 import           TypedGraph.GraphRule    as GR
@@ -177,6 +178,16 @@ instantiateNac lhs tg (nacGraph, maps) = nacTgm
   where
     nacMorphism = instantiateTypedGraph nacGraph tg
     (_,nacTgm) = instantiateSpan lhs nacMorphism maps
+
+instantiateAtomicConstraint :: TypeGraph a b -> AtomicConstraint -> Constraint a b
+instantiateAtomicConstraint tg (_, premise, conclusion, maps) = buildTypedGraphMorphism p c m
+  where
+    p = instantiateTypedGraph premise tg
+    c = instantiateTypedGraph conclusion tg
+    m = buildGraphMorphism (domain p) (domain c) (map mapToId mNodes) (map mapToId mEdges)
+    mapToId (a,_,b) = (toN a, toN b)
+    pNodes = G.nodes (domain p)
+    (mNodes, mEdges) = L.partition (\(x,_,_) -> G.NodeId (toN x) `elem` pNodes) maps
 
 instantiateTypedGraph :: ParsedTypedGraph -> G.Graph a b -> GraphMorphism a b
 instantiateTypedGraph (_, nodes, edges) tg = buildGraphMorphism g tg nodeTyping edgeTyping
