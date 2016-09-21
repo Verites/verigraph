@@ -15,6 +15,7 @@ premise = domain
 conclusion :: Constraint a b -> TypedGraph a b
 conclusion = codomain
 
+-- | Given a TypedGraph @G@ and an Constraint @a : P -> C@, check whether @G@ satisfies the Constraint @a@
 satisfiesConstraint :: TypedGraph a b -> Constraint a b -> Bool
 satisfiesConstraint g a = Prelude.null ps || allPremisesAreSatisfied
   where

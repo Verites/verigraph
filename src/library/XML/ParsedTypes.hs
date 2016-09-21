@@ -12,6 +12,7 @@ type ParsedRule = (String, String, ParsedTypedGraph,
 type ParsedNAC = ([ParsedTypedNode], [ParsedTypedEdge])
 
 type ParsedTypeGraph = ([ParsedTypedNode], [ParsedTypedEdge])
+type AtomicConstraint = (String, ParsedTypedGraph, ParsedTypedGraph, [Mapping])
 type Rule = (String, ParsedTypedGraph, ParsedTypedGraph, [Mapping])
 type RuleWithNacs = (Rule,[Nac])
 

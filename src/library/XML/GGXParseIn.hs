@@ -9,6 +9,7 @@ module XML.GGXParseIn
  , parseNacNames
  , parseRule
  , parseRuleSequence
+ , parseAtomicConstraints
  ) where
 
 import           Data.Tree.NTree.TypeDefs
@@ -123,6 +124,15 @@ parseGraph = atTag "Graph" >>>
     nodes <- listA parseNode -< graph
     edges <- listA parseEdge -< graph
     returnA -< (clearId graphId, nodes, edges)
+
+parseAtomicConstraints :: ArrowXml cat => cat (NTree XNode) AtomicConstraint
+parseAtomicConstraints = atTag "Graphconstraint_Atomic" >>>
+  proc atomic -> do
+    name <- getAttrValue "name" -< atomic
+    premise <- parseGraph <<< atTag "Premise" -< atomic
+    conclusion <- parseGraph <<< atTag "Conclusion" -< atomic
+    morphisms <- parseMorphism <<< atTag "Morphism" -< atomic
+    returnA -< (name, premise, conclusion, morphisms)
 
 -- | Parse all enabled rules of first order
 parseRule :: ArrowXml cat => cat (NTree XNode) RuleWithNacs
