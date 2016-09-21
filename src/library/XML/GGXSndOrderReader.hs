@@ -2,6 +2,7 @@ module XML.GGXSndOrderReader (instantiateSndOrderRules) where
 
 import           Abstract.DPO
 import           Abstract.Morphism
+import qualified Graph.Graph           as G
 import           Graph.GraphMorphism   as GM
 import           SndOrder.Morphism
 import           SndOrder.Rule         ()
@@ -13,15 +14,15 @@ import           XML.ParsedTypes
 import qualified XML.ParseSndOrderRule as SO
 import           XML.Utilities
 
-instantiateSndOrderRules :: ParsedTypeGraph -> [RuleWithNacs] -> [(String, Production (RuleMorphism a b))]
-instantiateSndOrderRules parsedTypeGraph sndOrdRules = zip sndOrderNames d
+instantiateSndOrderRules :: G.Graph a b -> [RuleWithNacs] -> [(String, Production (RuleMorphism a b))]
+instantiateSndOrderRules typeGraph sndOrdRules = zip sndOrderNames d
   where
     a = SO.parseSndOrderRules sndOrdRules
-    c = map (instantiateSndOrderRule parsedTypeGraph) a
+    c = map (instantiateSndOrderRule typeGraph) a
     d = map (\(_,(l,r),n) -> buildProduction l r n) c
     sndOrderNames = map fstOfThree c
 
-instantiateSndOrderRule :: ParsedTypeGraph -> (SndOrderRuleSide, SndOrderRuleSide,[SndOrderRuleSide]) -> (String,(RuleMorphism a b, RuleMorphism a b),[RuleMorphism a b])
+instantiateSndOrderRule :: G.Graph a b -> (SndOrderRuleSide, SndOrderRuleSide,[SndOrderRuleSide]) -> (String,(RuleMorphism a b, RuleMorphism a b),[RuleMorphism a b])
 instantiateSndOrderRule typegraph (l@(_,nameL,leftL),r@(_,_,rightR), n) = (nameL, instantiateMorphs, nacs)
   where
     ruleLeft = instantiateRule typegraph (leftL,[])

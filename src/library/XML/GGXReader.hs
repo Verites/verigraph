@@ -33,6 +33,8 @@ import           XML.ParsedTypes
 import           XML.Utilities
 import           XML.XMLUtilities
 
+type TypeGraph a b = G.Graph a b
+
 -- | Reads the grammar in the XML, adds the needed minimal safety nacs
 --   to second order, and returns the grammar and a log
 readGrammar :: String -> DPOConfig -> IO (GG.GraphGrammar a b, [(String, Int)])
@@ -43,22 +45,22 @@ readGrammar fileName dpoConfig = do
                          ptg:_ -> ptg
   _ <- parsedTypeGraph `seq` return ()
 
+  let typeGraph = instantiateTypeGraph parsedTypeGraph
+
   parsedRules <- readRules fileName
 
   let (sndOrdRules, fstOrdRules) = L.partition (\((x,_,_,_),_) -> startswith "2rule_" x) parsedRules
       rulesNames = map (\((x,_,_,_),_) -> x) fstOrdRules
-      rules = map (instantiateRule parsedTypeGraph) fstOrdRules
+      rules = map (instantiateRule typeGraph) fstOrdRules
 
   ensureValid $ validateNamed (\name -> "Rule '"++name++"'") (zip rulesNames rules)
+  _ <- (L.null rules && error "No first order rules were found, at least one is needed.") `seq` return ()
 
-  let typeGraph = if L.null rules
-                    then error "No first order rules were found, at least one is needed."
-                    else codomain . domain . getLHS $ head rules
-      initGraph = GM.empty typeGraph typeGraph
-      sndOrderRules = instantiateSndOrderRules parsedTypeGraph sndOrdRules
+  let initGraph = GM.empty typeGraph typeGraph
+      sndOrderRules = instantiateSndOrderRules typeGraph sndOrdRules
       gg = GG.graphGrammar initGraph (zip rulesNames rules) sndOrderRules
 
-  _ <- (case L.elemIndices False (map isValid (map snd sndOrderRules)) of
+  _ <- (case L.elemIndices False (map (isValid . snd) sndOrderRules) of
           []  -> []
           [a] -> error $ "Second Order Rule " ++ show a ++ " is not valid (starting from 0)."
           l   -> error $ "Second Order Rules " ++ show l ++ " are not valid (starting from 0)."
@@ -143,7 +145,7 @@ expandSequence grammar (name,s) = (name, mapMaybe lookupRule . concat $ map expa
     expandItens (i, r) = replicate i r
     lookupRule name = L.lookup name (GG.rules grammar)
 
-instantiateTypeGraph :: ParsedTypeGraph -> G.Graph a b
+instantiateTypeGraph :: ParsedTypeGraph -> TypeGraph a b
 instantiateTypeGraph (nodes, edges) = graphWithEdges
   where
     getNodeType = G.NodeId . toN . (lookupNodes nodes)
@@ -162,14 +164,13 @@ lookupNodes nodes n = fromMaybe
   where
     changeToListOfPairs = map (\(x,_,y) -> (x,y)) nodes
 
-instantiateRule :: ParsedTypeGraph -> RuleWithNacs -> GraphRule a b
+instantiateRule :: TypeGraph a b -> RuleWithNacs -> GraphRule a b
 instantiateRule typeGraph ((_, lhs, rhs, mappings), nacs) = buildProduction lhsTgm rhsTgm nacsTgm
   where
-    tg = instantiateTypeGraph typeGraph
-    lm = instantiateTypedGraph lhs tg
-    rm = instantiateTypedGraph rhs tg
+    lm = instantiateTypedGraph lhs typeGraph
+    rm = instantiateTypedGraph rhs typeGraph
     (lhsTgm, rhsTgm) = instantiateSpan lm rm mappings
-    nacsTgm = map (instantiateNac lm tg) nacs
+    nacsTgm = map (instantiateNac lm typeGraph) nacs
 
 instantiateNac :: TypedGraph a b -> G.Graph a b -> Nac -> TypedGraphMorphism a b
 instantiateNac lhs tg (nacGraph, maps) = nacTgm
