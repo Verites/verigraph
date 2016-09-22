@@ -28,8 +28,8 @@ globalOpts = GOpts
     ( long "all-matches"
     <> help "Set the matches for arbitrary morphisms")
   <*> flag MonomorphicNAC PartiallyMonomorphicNAC
-    ( long "inj-nac-satisfaction"
-    <> help ("Restrict the analysis of NAC satisfaction to injective " ++
+    ( long "partial-injective-nacs"
+    <> help ("Restrict the analysis of NAC satisfaction to partially injective " ++
             "morphisms between the NAC graph and the instance graph"))
   <*> flag False True
     ( long "verbose" <> short 'v')
