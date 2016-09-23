@@ -203,14 +203,16 @@ instantiateNac lhs tg (nacGraph, maps) = nacTgm
     (_,nacTgm) = instantiateSpan lhs nacMorphism maps
 
 instantiateAtomicConstraint :: TypeGraph a b -> AtomicConstraint -> Constraint a b
-instantiateAtomicConstraint tg (_, premise, conclusion, maps) = buildTypedGraphMorphism p c m --error $ show mNodes--
+instantiateAtomicConstraint tg (name, premise, conclusion, maps) = buildNamedConstraint name (buildTypedGraphMorphism p c m) isPositive
   where
     p = instantiateTypedGraph premise tg
     c = instantiateTypedGraph conclusion tg
     m = buildGraphMorphism (domain p) (domain c) (map mapToId mNodes) (map mapToId mEdges)
+    isPositive = not $ startswith "-" name
     mapToId (a,_,b) = (toN b, toN a)
     pNodes = G.nodes (domain p)
     (mNodes,mEdges) = L.partition (\(_,_,x) -> G.NodeId (toN x) `elem` pNodes) maps
+
 
 instantiateTypedGraph :: ParsedTypedGraph -> TypeGraph a b -> GraphMorphism a b
 instantiateTypedGraph (_, nodes, edges) tg = buildGraphMorphism g tg nodeTyping edgeTyping
