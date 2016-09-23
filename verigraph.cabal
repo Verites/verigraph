@@ -43,6 +43,7 @@ library
                        Logic.Ctl
                        SndOrder.Morphism
                        SndOrder.Rule
+                       TypedGraph.Constraint
                        TypedGraph.GraphGrammar
                        TypedGraph.GraphRule
                        TypedGraph.Graph

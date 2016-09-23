@@ -46,7 +46,11 @@ readGrammar fileName dpoConfig = do
                          ptg:_ -> ptg
   _ <- parsedTypeGraph `seq` return ()
 
+  let a tg g = instantiateTypedGraph g tg
   let typeGraph = instantiateTypeGraph parsedTypeGraph
+  graphs <- readGraphs' fileName
+  let initialGraphs = map (a typeGraph) $ concat graphs
+
 
   parsedRules <- readRules fileName
 
@@ -61,6 +65,9 @@ readGrammar fileName dpoConfig = do
 
   let cons = map (instantiateAtomicConstraint typeGraph) parsedConstraints
 
+  print "Validity"
+  print $ testeCons initialGraphs cons
+
   let initGraph = GM.empty typeGraph typeGraph
       sndOrderRules = instantiateSndOrderRules typeGraph sndOrdRules
       gg = GG.graphGrammar initGraph cons (zip rulesNames rules) sndOrderRules
@@ -72,6 +79,12 @@ readGrammar fileName dpoConfig = do
           ) `seq` return ()
 
   return $ minimalSafetyNacsWithLog dpoConfig gg
+
+testeCons :: [TypedGraph a b] -> [Constraint a b] -> [[Bool]]
+testeCons [] _      = []
+testeCons (g:gs) cs = satisfiesCons g cs : testeCons gs cs
+  where
+    satisfiesCons g cs = map (satisfiesConstraint g) cs
 
 readGGName :: String -> IO String
 readGGName fileName = do
@@ -129,6 +142,8 @@ readTypeNames fileName = concat <$> runX (parseXML fileName >>> parseNames)
 readConstraints :: String -> IO[AtomicConstraint]
 readConstraints fileName = runX (parseXML fileName >>> parseAtomicConstraints)
 
+readGraphs' :: String -> IO[[ParsedTypedGraph]]
+readGraphs' fileName = runX (parseXML fileName >>> parseGraphs)
 
 readGraphs :: String -> IO [(String, TypedGraph a b)]
 readGraphs fileName =
@@ -197,7 +212,7 @@ instantiateAtomicConstraint tg (_, premise, conclusion, maps) = buildTypedGraphM
     pNodes = G.nodes (domain p)
     (mNodes,mEdges) = L.partition (\(_,_,x) -> G.NodeId (toN x) `elem` pNodes) maps
 
-instantiateTypedGraph :: ParsedTypedGraph -> G.Graph a b -> GraphMorphism a b
+instantiateTypedGraph :: ParsedTypedGraph -> TypeGraph a b -> GraphMorphism a b
 instantiateTypedGraph (_, nodes, edges) tg = buildGraphMorphism g tg nodeTyping edgeTyping
   where
     g = G.build nodesG edgesG
