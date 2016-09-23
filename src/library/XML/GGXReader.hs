@@ -57,9 +57,13 @@ readGrammar fileName dpoConfig = do
   ensureValid $ validateNamed (\name -> "Rule '"++name++"'") (zip rulesNames rules)
   _ <- (L.null rules && error "No first order rules were found, at least one is needed.") `seq` return ()
 
+  parsedConstraints <- readConstraints fileName
+
+  let cons = map (instantiateAtomicConstraint typeGraph) parsedConstraints
+
   let initGraph = GM.empty typeGraph typeGraph
       sndOrderRules = instantiateSndOrderRules typeGraph sndOrdRules
-      gg = GG.graphGrammar initGraph [] (zip rulesNames rules) sndOrderRules
+      gg = GG.graphGrammar initGraph cons (zip rulesNames rules) sndOrderRules
 
   _ <- (case L.elemIndices False (map (isValid . snd) sndOrderRules) of
           []  -> []
@@ -122,6 +126,10 @@ readNacNames fileName = concat <$> runX (parseXML fileName >>> parseNacNames)
 readTypeNames :: String -> IO [(String,String)]
 readTypeNames fileName = concat <$> runX (parseXML fileName >>> parseNames)
 
+readConstraints :: String -> IO[AtomicConstraint]
+readConstraints fileName = runX (parseXML fileName >>> parseAtomicConstraints)
+
+
 readGraphs :: String -> IO [(String, TypedGraph a b)]
 readGraphs fileName =
   do
@@ -180,14 +188,14 @@ instantiateNac lhs tg (nacGraph, maps) = nacTgm
     (_,nacTgm) = instantiateSpan lhs nacMorphism maps
 
 instantiateAtomicConstraint :: TypeGraph a b -> AtomicConstraint -> Constraint a b
-instantiateAtomicConstraint tg (_, premise, conclusion, maps) = buildTypedGraphMorphism p c m
+instantiateAtomicConstraint tg (_, premise, conclusion, maps) = buildTypedGraphMorphism p c m --error $ show mNodes--
   where
     p = instantiateTypedGraph premise tg
     c = instantiateTypedGraph conclusion tg
     m = buildGraphMorphism (domain p) (domain c) (map mapToId mNodes) (map mapToId mEdges)
-    mapToId (a,_,b) = (toN a, toN b)
+    mapToId (a,_,b) = (toN b, toN a)
     pNodes = G.nodes (domain p)
-    (mNodes, mEdges) = L.partition (\(x,_,_) -> G.NodeId (toN x) `elem` pNodes) maps
+    (mNodes,mEdges) = L.partition (\(_,_,x) -> G.NodeId (toN x) `elem` pNodes) maps
 
 instantiateTypedGraph :: ParsedTypedGraph -> G.Graph a b -> GraphMorphism a b
 instantiateTypedGraph (_, nodes, edges) tg = buildGraphMorphism g tg nodeTyping edgeTyping

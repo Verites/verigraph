@@ -131,7 +131,7 @@ parseAtomicConstraints = atTag "Graphconstraint_Atomic" >>>
     name <- getAttrValue "name" -< atomic
     premise <- parseGraph <<< atTag "Premise" -< atomic
     conclusion <- parseGraph <<< atTag "Conclusion" -< atomic
-    morphisms <- parseMorphism <<< atTag "Morphism" -< atomic
+    morphisms <- parseMorphism <<< atTag "Conclusion" -< atomic
     returnA -< (name, premise, conclusion, morphisms)
 
 -- | Parse all enabled rules of first order
