@@ -8,12 +8,12 @@ module TypedGraph.GraphGrammar (
     , typeGraph
 ) where
 
-import qualified Abstract.Morphism    as M
-import           Graph.Graph          (Graph)
+import qualified Abstract.Morphism     as M
+import           Graph.Graph           (Graph)
 import           Graph.GraphMorphism
-import           SndOrder.Rule        (SndOrderRule)
+import           SndOrder.Rule         (SndOrderRule)
 import           TypedGraph.Constraint
-import           TypedGraph.GraphRule (GraphRule)
+import           TypedGraph.GraphRule  (GraphRule)
 
 -- TODO: use a list of initial Graphs instead of a single graph
 -- TODO: extract as DPO grammar?

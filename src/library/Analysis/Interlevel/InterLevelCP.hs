@@ -11,7 +11,8 @@ import           Abstract.DPO
 import           Abstract.Morphism
 import           Data.List            (nubBy)
 import           Graph.Graph
-import           Graph.GraphMorphism hiding (createEdgeOnCodomain, createNodeOnCodomain)
+import           Graph.GraphMorphism  hiding (createEdgeOnCodomain,
+                                       createNodeOnCodomain)
 import           SndOrder.Morphism
 import           SndOrder.Rule
 import           TypedGraph.Graph

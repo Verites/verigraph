@@ -9,7 +9,7 @@ import           TypedGraph.Graph
 import           TypedGraph.Morphism
 
 data Constraint a b = Constraint {
-      name :: String,
+      name     :: String,
       morphism :: TypedGraphMorphism a b,
       positive :: Bool
     } deriving (Show, Read)
