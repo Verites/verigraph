@@ -7,7 +7,6 @@ module XML.NewParser (
 
 import           Data.Tree.NTree.TypeDefs
 import           Text.XML.HXT.Core
-import           XML.ParsedTypes
 import           XML.Utilities            (clearIdUnsafe)
 import           XML.XMLUtilities
 
@@ -31,6 +30,7 @@ data VEdge = VEdge {
 data VGraph = VGraph {
   graphId :: String,
   graphName :: String,
+  graphKind :: String,
   nodes :: [VNode],
   edges :: [VEdge]
 } deriving (Show, Read)
@@ -50,6 +50,11 @@ data VRule = VRule {
   lhs :: VGraph,
   rhs :: VGraph,
   morphism :: VMorphism
+} deriving (Show, Read)
+
+data VNac = VNac {
+  nacGraph :: VGraph,
+  nacMorphism :: VMorphism
 } deriving (Show, Read)
 
 parseTypeGraph :: ArrowXml cat => cat (NTree XNode) VGraph
@@ -78,24 +83,25 @@ parseEdge = atTag "Edge" >>>
     returnA -< VEdge (clearId edgeId) setEdgeName (clearId edgeType) (clearId edgeSource) (clearId edgeTarget)
 
 parseGraph :: ArrowXml cat => cat (NTree XNode) VGraph
-parseGraph = atTag "Graph" >>>
+parseGraph = getChildren >>> isElem >>> hasName "Graph" >>>
   proc graph -> do
     graphId <- getAttrValue "ID" -< graph
     graphName <- getAttrValue "name" -< graph
+    graphKind <- getAttrValue "kind" -< graph
     nodes <- listA parseNode -< graph
     edges <- listA parseEdge -< graph
-    returnA -< VGraph (clearId graphId) graphName nodes edges
+    returnA -< VGraph (clearId graphId) graphName graphKind nodes edges
 
 parseMapping :: ArrowXml cat => cat (NTree XNode) VMapping
-parseMapping = atTag "Mapping" >>>
+parseMapping = getChildren >>> isElem >>> hasName "Mapping" >>>
   proc mapping -> do
     image <- getAttrValue "image" -< mapping
     orig <- getAttrValue "orig" -< mapping
     returnA -< VMapping (clearId orig) (clearId image)
 
 parseMorphism :: ArrowXml cat => cat (NTree XNode) VMorphism
-parseMorphism = atTag "Morphism" >>>
---parseMorphism = getChildren >>> isElem >>> hasName "Morphism" >>>
+--parseMorphism = atTag "Morphism" >>>
+parseMorphism = getChildren >>> isElem >>> hasName "Morphism" >>>
   proc morphism -> do
     name <- getAttrValue "name" -< morphism
     maps <- listA parseMapping -< morphism
@@ -107,5 +113,20 @@ parseRule = atTag "Rule" >>>
   proc rule -> do
     ruleName <- getAttrValue "name" -< rule
     graphs <- listA parseGraph -< rule
+    let (lhs,rhs) = splitGraphs ([],[]) graphs
     morphism <- parseMorphism -< rule
-    returnA -< VRule ruleName (head graphs) (head graphs) morphism
+    returnA -< VRule ruleName (head lhs) (head rhs) morphism
+
+parseNac :: ArrowXml cat => cat (NTree XNode) VNac
+parseNac = atTag "NAC" >>>
+  proc nac -> do
+    nacGraph <- parseGraph -< nac
+    nacMorphism <- parseMorphism -< nac
+    returnA -< VNac nacGraph nacMorphism
+
+splitGraphs :: ([VGraph], [VGraph]) -> [VGraph] -> ([VGraph], [VGraph])
+splitGraphs (l,r) []     = (l,r)
+splitGraphs (l,r) (v:vs) = case graphKind v of
+                    "LHS" -> splitGraphs (v:l,r) vs
+                    "RHS" -> splitGraphs (l,v:r) vs
+                    _     -> splitGraphs (l,r) vs

@@ -1,0 +1,28 @@
+[
+VTypedGraph
+  {graphId = "6",
+  graphName = "TypeGraph",
+  nodes = [ VNode {nodeId = "7", nodeName = "", nodeType = "2"},
+            VNode {nodeId = "8", nodeName = "", nodeType = "4"},
+            VNode {nodeId = "9", nodeName = "", nodeType = "3"}],
+  edges = [ VEdge {edgeId = "10", edgeName = "8>-->9", edgeType = "5", edgeSource = "8", edgeTarget = "9"},
+            VEdge {edgeId = "11", edgeName = "8>-->7", edgeType = "5", edgeSource = "8", edgeTarget = "7"}]},
+
+VTypedGraph 
+  {graphId = "12",
+  graphName = "Graph",
+  nodes = [], edges = []},
+
+VTypedGraph
+  {graphId = "15",
+  graphName = "Left",
+  nodes = [ VNode {nodeId = "16", nodeName = "", nodeType = "4"},
+            VNode {nodeId = "17", nodeName = "", nodeType = "2"}],
+  edges = [VEdge {edgeId = "18", edgeName = "16>-->17", edgeType = "5", edgeSource = "16", edgeTarget = "17"}]},
+
+VTypedGraph
+  {graphId = "19",
+  graphName = "Right",
+  nodes = [ VNode {nodeId = "20", nodeName = "", nodeType = "4"},
+            VNode {nodeId = "21", nodeName = "", nodeType = "3"}],
+  edges = [VEdge {edgeId = "22", edgeName = "20>-->21", edgeType = "5", edgeSource = "20", edgeTarget = "21"}]}]
