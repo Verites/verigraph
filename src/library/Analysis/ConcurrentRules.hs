@@ -37,13 +37,13 @@ maxConcurrentRules dep conf constraints (x:xs) = map (singleCR x) (maxCRs xs)
 concurrentRules :: (DPO m, EpiPairs m, Eq (Obj m), Valid m) => CRDependencies -> DPOConfig -> [Constraint m] -> Production m -> Production m -> [Production m]
 concurrentRules dep conf constraints c n =
   let epiPairs = epiPairsForConcurrentRule dep conf constraints c n
-  in map (concurrentRuleForPair conf c n) epiPairs
+  in map (concurrentRuleForPair conf constraints c n) epiPairs
 
 maxConcurrentRuleForLastPair :: (DPO m, EpiPairs m, Eq (Obj m), Valid m) => CRDependencies -> DPOConfig -> [Constraint m] ->
   Production m -> Production m -> Production m
 maxConcurrentRuleForLastPair dep conf constraints c n =
   let epiPair = last (epiPairsForConcurrentRule dep conf constraints c n)
-  in concurrentRuleForPair conf c n epiPair
+  in concurrentRuleForPair conf constraints c n epiPair
 
 epiPairsForConcurrentRule :: (DPO m, EpiPairs m, Eq (Obj m), Valid m)
   => CRDependencies -> DPOConfig -> [Constraint m] -> Production m -> Production m -> [(m, m)]
@@ -60,8 +60,8 @@ epiPairsForConcurrentRule AllOverlapings conf constraints c n =
         satisfiesGluingConditions conf (invertProductionWithoutNacs c) lp && satisfiesRewritingConditions conf n rp
   in filter isValidPair allPairs
 
-concurrentRuleForPair :: (DPO m, EpiPairs m) => DPOConfig -> Production m -> Production m -> (m, m) -> Production m
-concurrentRuleForPair conf c n pair = buildProduction l r (dmc ++ lp)
+concurrentRuleForPair :: (DPO m, EpiPairs m, Eq (Obj m), Valid m) => DPOConfig -> [Constraint m] -> Production m -> Production m -> (m, m) -> Production m
+concurrentRuleForPair conf constraints c n pair = buildProduction l r (dmc ++ lp)
   where
     pocC = calculatePushoutComplement (fst pair) (getRHS c)
     pocN = calculatePushoutComplement (snd pair) (getLHS n)
@@ -70,7 +70,8 @@ concurrentRuleForPair conf c n pair = buildProduction l r (dmc ++ lp)
     pb = monomorphicPullback (snd pocC) (snd pocN)
     l = compose (fst pb) (snd poC)
     r = compose (snd pb) (snd poN)
-    dmc = concatMap (nacDownwardShift conf (fst poC)) (getNACs c)
+    dmc = filter validNac $ concatMap (nacDownwardShift conf (fst poC)) (getNACs c)
     inverseP = buildProduction (snd pocC) (snd poC) []
-    den = concatMap (nacDownwardShift conf (snd pair)) (getNACs n)
-    lp = concatMap (shiftNacOverProduction conf inverseP) den
+    den = filter validNac $ concatMap (nacDownwardShift conf (snd pair)) (getNACs n)
+    lp = filter validNac $ concatMap (shiftNacOverProduction conf inverseP) den
+    validNac nac = satisfiesAllAtomicConstraints (codomain nac) constraints

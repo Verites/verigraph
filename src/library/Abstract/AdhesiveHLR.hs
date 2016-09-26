@@ -194,8 +194,9 @@ satisfiesConstraint graph constraint = Prelude.null ps || allPremisesAreSatisfie
     ps = findConstraintMorphisms (premise constraint) graph
     qs = findConstraintMorphisms (conclusion constraint) graph
     a = morphism constraint
-    triangleCommutes = all (\p -> any (\q -> compose a q == p) qs) ps
-    allPremisesAreSatisfied = if positive constraint then triangleCommutes else not triangleCommutes
+    positiveSatisfaction = all (\p ->       any (\q -> compose a q == p) qs) ps
+    negativeSatisfaction = all (\p -> not $ any (\q -> compose a q == p) qs) ps
+    allPremisesAreSatisfied = if positive constraint then positiveSatisfaction else negativeSatisfaction
 
 -- | Given a TypedGraph @G@ and a list of Constraints @a : P -> C@, check whether @G@ satisfies the all the Constraints
 satisfiesAllConstraints :: (Valid m, Eq (Obj m), FindMorphism m) => Obj m -> [Constraint m] -> Bool
