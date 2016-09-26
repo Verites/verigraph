@@ -65,8 +65,8 @@ readGrammar fileName dpoConfig = do
 
   let cons = map (instantiateAtomicConstraint typeGraph) parsedConstraints
 
-  print "Validity"
-  print $ testeCons initialGraphs cons
+  --print "Validity"
+  --print $ testeCons initialGraphs cons
 
   let initGraph = GM.empty typeGraph typeGraph
       sndOrderRules = instantiateSndOrderRules typeGraph sndOrdRules
