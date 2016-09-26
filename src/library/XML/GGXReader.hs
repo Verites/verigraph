@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts     #-}
 module XML.GGXReader
  ( readGrammar,
    readGGName,
@@ -13,8 +14,8 @@ module XML.GGXReader
    printMinimalSafetyNacsLog
    ) where
 
+import           Abstract.AdhesiveHLR
 import           Abstract.DPO
-import           Abstract.Morphism
 import           Abstract.Valid
 import qualified Data.List               as L
 import           Data.Maybe              (fromMaybe, mapMaybe)
@@ -23,7 +24,6 @@ import qualified Graph.Graph             as G
 import           Graph.GraphMorphism     as GM
 import           SndOrder.Rule
 import           Text.XML.HXT.Core       hiding (left, right)
-import           TypedGraph.Constraint
 import           TypedGraph.Graph
 import qualified TypedGraph.GraphGrammar as GG
 import           TypedGraph.GraphRule    as GR
@@ -80,11 +80,11 @@ readGrammar fileName dpoConfig = do
 
   return $ minimalSafetyNacsWithLog dpoConfig gg
 
-testeCons :: [TypedGraph a b] -> [Constraint a b] -> [[Bool]]
+testeCons :: [TypedGraph a b] -> [Constraint (TypedGraphMorphism a b)] -> [[Bool]]
 testeCons [] _      = []
 testeCons (g:gs) cs = satisfiesCons g cs : testeCons gs cs
   where
-    satisfiesCons g cs = map (satisfiesConstraint g) cs
+    satisfiesCons g cs = map (satisfiesAtomicConstraint g) cs
 
 readGGName :: String -> IO String
 readGGName fileName = do
@@ -139,7 +139,7 @@ readNacNames fileName = concat <$> runX (parseXML fileName >>> parseNacNames)
 readTypeNames :: String -> IO [(String,String)]
 readTypeNames fileName = concat <$> runX (parseXML fileName >>> parseNames)
 
-readConstraints :: String -> IO[AtomicConstraint]
+readConstraints :: String -> IO[ParsedAtomicConstraint]
 readConstraints fileName = runX (parseXML fileName >>> parseAtomicConstraints)
 
 readGraphs' :: String -> IO[[ParsedTypedGraph]]
@@ -202,8 +202,8 @@ instantiateNac lhs tg (nacGraph, maps) = nacTgm
     nacMorphism = instantiateTypedGraph nacGraph tg
     (_,nacTgm) = instantiateSpan lhs nacMorphism maps
 
-instantiateAtomicConstraint :: TypeGraph a b -> AtomicConstraint -> Constraint a b
-instantiateAtomicConstraint tg (name, premise, conclusion, maps) = buildNamedConstraint name (buildTypedGraphMorphism p c m) isPositive
+instantiateAtomicConstraint :: TypeGraph a b -> ParsedAtomicConstraint -> Constraint (TypedGraphMorphism a b)
+instantiateAtomicConstraint tg (name, premise, conclusion, maps) = buildNamedAtomicConstraint name (buildTypedGraphMorphism p c m) isPositive
   where
     p = instantiateTypedGraph premise tg
     c = instantiateTypedGraph conclusion tg

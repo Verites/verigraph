@@ -8,23 +8,24 @@ module TypedGraph.GraphGrammar (
     , typeGraph
 ) where
 
+import           Abstract.AdhesiveHLR
 import qualified Abstract.Morphism     as M
 import           Graph.Graph           (Graph)
 import           Graph.GraphMorphism
 import           SndOrder.Rule         (SndOrderRule)
-import           TypedGraph.Constraint
 import           TypedGraph.GraphRule  (GraphRule)
+import           TypedGraph.Morphism
 
 -- TODO: use a list of initial Graphs instead of a single graph
 -- TODO: extract as DPO grammar?
 data GraphGrammar a b = GraphGrammar {
                             initialGraph  :: GraphMorphism a b
-                          , constraints   :: [Constraint a b]
+                          , constraints   :: [Constraint (TypedGraphMorphism a b)]
                           , rules         :: [(String, GraphRule a b)]
                           , sndOrderRules :: [(String, SndOrderRule a b)]
-                        } deriving (Show, Read)
+                        } deriving (Show)
 
-graphGrammar :: GraphMorphism a b -> [Constraint a b] -> [(String, GraphRule a b)] -> [(String, SndOrderRule a b)]
+graphGrammar :: GraphMorphism a b -> [Constraint (TypedGraphMorphism a b)] -> [(String, GraphRule a b)] -> [(String, SndOrderRule a b)]
   -> GraphGrammar a b
 graphGrammar = GraphGrammar
 

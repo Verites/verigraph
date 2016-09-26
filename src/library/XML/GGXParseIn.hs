@@ -125,7 +125,7 @@ parseGraph = atTag "Graph" >>>
     edges <- listA parseEdge -< graph
     returnA -< (clearId graphId, nodes, edges)
 
-parseAtomicConstraints :: ArrowXml cat => cat (NTree XNode) AtomicConstraint
+parseAtomicConstraints :: ArrowXml cat => cat (NTree XNode) ParsedAtomicConstraint
 parseAtomicConstraints = atTag "Graphconstraint_Atomic" >>>
   proc atomic -> do
     name <- getAttrValue "name" -< atomic

@@ -1,5 +1,10 @@
+{-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Abstract.AdhesiveHLR
   ( Morphism(..)
+  , Constraint (..)
+  , AtomicConstraint(..)
   , EpiPairs(..)
   , AdhesiveHLR(..)
 
@@ -10,6 +15,7 @@ module Abstract.AdhesiveHLR
   ) where
 
 import           Abstract.Morphism
+import           Abstract.Valid
 
 -- | Type class for morphisms whose category Adhesive and suitable for
 -- High-Level Replacement Systems.
@@ -151,3 +157,49 @@ data DPOConfig = DPOConfig
   { matchRestriction :: MatchRestriction
   , nacSatisfaction  :: NacSatisfaction
   }
+
+data (Morphism m, FindMorphism m, Valid m, Eq (Obj m)) => Constraint m = Constraint {
+        name     :: String,
+        morphism :: m,
+        positive :: Bool
+      }
+
+instance Show (Constraint m) where
+  show = error "Not implemented"
+
+class Morphism m => AtomicConstraint m where
+
+  buildNamedAtomicConstraint :: String -> m -> Bool -> Constraint m
+  satisfiesAtomicConstraint :: Obj m -> Constraint m -> Bool
+  satisfiesAllAtomicConstraints :: Obj m -> [Constraint m] -> Bool
+
+instance (Morphism m, FindMorphism m, Valid m, Eq (Obj m)) => AtomicConstraint m where
+  buildNamedAtomicConstraint = buildNamedConstraint
+  satisfiesAtomicConstraint = satisfiesConstraint
+  satisfiesAllAtomicConstraints = satisfiesAllConstraints
+
+buildNamedConstraint :: (Valid m, FindMorphism m, Eq (Obj m)) => String -> m -> Bool -> Constraint m
+buildNamedConstraint = Constraint
+
+premise :: (Valid m, FindMorphism m, Eq (Obj m)) => Constraint m -> Obj m
+premise = domain . morphism
+
+conclusion :: (Valid m, FindMorphism m, Eq (Obj m)) => Constraint m -> Obj m
+conclusion = codomain . morphism
+
+-- | Given a TypedGraph @G@ and a Constraint @a : P -> C@, check whether @G@ satisfies the Constraint @a@
+satisfiesConstraint :: (Valid m, Eq (Obj m), Morphism m, FindMorphism m) => Obj m -> Constraint m -> Bool
+satisfiesConstraint graph constraint = Prelude.null ps || allPremisesAreSatisfied
+  where
+    ps = findConstraintMorphisms (premise constraint) graph
+    qs = findConstraintMorphisms (conclusion constraint) graph
+    a = morphism constraint
+    triangleCommutes = all (\p -> any (\q -> compose a q == p) qs) ps
+    allPremisesAreSatisfied = if positive constraint then triangleCommutes else not triangleCommutes
+
+-- | Given a TypedGraph @G@ and a list of Constraints @a : P -> C@, check whether @G@ satisfies the all the Constraints
+satisfiesAllConstraints :: (Valid m, Eq (Obj m), FindMorphism m) => Obj m -> [Constraint m] -> Bool
+satisfiesAllConstraints graph = all (satisfiesConstraint graph)
+
+findConstraintMorphisms :: (FindMorphism m) => Obj m -> Obj m -> [m]
+findConstraintMorphisms = findMonomorphisms
