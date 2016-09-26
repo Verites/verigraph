@@ -14,13 +14,19 @@ module TypedGraph.GraphRule (
     , deletedEdges
     , createdNodes
     , createdEdges
-
+    
+    , emptyGraphRule
+    , nullGraphRule
+    
     , checkDeletion
 ) where
 
 
 import           Abstract.DPO        as DPO
+import           Abstract.Morphism   as M
 import           Graph.Graph         as G
+import qualified Graph.GraphMorphism as GM
+import           TypedGraph.Graph as GM
 import           TypedGraph.Morphism as TGM
 
 type GraphRule a b = Production (TypedGraphMorphism a b)
@@ -40,6 +46,24 @@ deletedEdges r = TGM.orphanTypedEdges (getLHS r)
 -- | Return the edges created by a rule
 createdEdges :: GraphRule a b -> [G.EdgeId]
 createdEdges r = TGM.orphanTypedEdges (getRHS r)
+
+-- | Returns a empty GraphRule
+emptyGraphRule :: Graph a b -> Production (TypedGraphMorphism a b)
+emptyGraphRule typegraph = emptyRule
+  where
+    emptyGraph = empty
+    emptyGM = GM.empty emptyGraph typegraph
+    emptyTGM = idMap emptyGM emptyGM
+    emptyRule = buildProduction emptyTGM emptyTGM []
+
+-- | Checks if is a null rule
+nullGraphRule :: GraphRule a b -> Bool
+nullGraphRule rule = null l && null k && null r
+  where
+    null = G.null . untypedGraph
+    l = codomain $ getLHS rule
+    k = domain $ getLHS rule
+    r = codomain $ getRHS rule
 
 instance DPO (TypedGraphMorphism a b) where
 
