@@ -1,6 +1,7 @@
 module TypedGraph.Constraint
 ( Constraint
 , buildNamedConstraint
+, satisfiesAllConstraints
 , satisfiesConstraint
 ) where
 
@@ -32,6 +33,9 @@ satisfiesConstraint graph constraint = Prelude.null ps || allPremisesAreSatisfie
     a = morphism constraint
     triangleCommutes = all (\p -> any (\q -> compose a q == p) qs) ps
     allPremisesAreSatisfied = if positive constraint then triangleCommutes else not triangleCommutes
+
+satisfiesAllConstraints :: TypedGraph a b -> [Constraint a b] -> Bool
+satisfiesAllConstraints graph constraints = all (satisfiesConstraint graph) constraints
 
 findConstraintMorphisms :: TypedGraph a b -> TypedGraph a b -> [TypedGraphMorphism a b]
 findConstraintMorphisms = findMonomorphisms
