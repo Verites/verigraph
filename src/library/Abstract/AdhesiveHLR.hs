@@ -1,10 +1,11 @@
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE FlexibleInstances    #-}
-{-# LANGUAGE UndecidableInstances #-}
 module Abstract.AdhesiveHLR
   ( Morphism(..)
   , Constraint (..)
-  , AtomicConstraint(..)
+  , buildNamedAtomicConstraint
+  , satisfiesAtomicConstraint
+  , satisfiesAllAtomicConstraints
   , EpiPairs(..)
   , AdhesiveHLR(..)
 
@@ -158,38 +159,27 @@ data DPOConfig = DPOConfig
   , nacSatisfaction  :: NacSatisfaction
   }
 
-data (Morphism m, FindMorphism m, Valid m, Eq (Obj m)) => Constraint m = Constraint {
+data Constraint m = Constraint {
         name     :: String,
         morphism :: m,
         positive :: Bool
-      }
+      } deriving (Show)
 
-instance Show (Constraint m) where
-  show = error "Not implemented"
+instance Valid m => Valid (Constraint m) where
+  validate = validate . morphism
 
-class Morphism m => AtomicConstraint m where
+buildNamedAtomicConstraint :: String -> m -> Bool -> Constraint m
+buildNamedAtomicConstraint = Constraint
 
-  buildNamedAtomicConstraint :: String -> m -> Bool -> Constraint m
-  satisfiesAtomicConstraint :: Obj m -> Constraint m -> Bool
-  satisfiesAllAtomicConstraints :: Obj m -> [Constraint m] -> Bool
-
-instance (Morphism m, FindMorphism m, Valid m, Eq (Obj m)) => AtomicConstraint m where
-  buildNamedAtomicConstraint = buildNamedConstraint
-  satisfiesAtomicConstraint = satisfiesConstraint
-  satisfiesAllAtomicConstraints = satisfiesAllConstraints
-
-buildNamedConstraint :: (Valid m, FindMorphism m, Eq (Obj m)) => String -> m -> Bool -> Constraint m
-buildNamedConstraint = Constraint
-
-premise :: (Valid m, FindMorphism m, Eq (Obj m)) => Constraint m -> Obj m
+premise :: (Morphism m) => Constraint m -> Obj m
 premise = domain . morphism
 
-conclusion :: (Valid m, FindMorphism m, Eq (Obj m)) => Constraint m -> Obj m
+conclusion :: (Morphism m) => Constraint m -> Obj m
 conclusion = codomain . morphism
 
 -- | Given a TypedGraph @G@ and a Constraint @a : P -> C@, check whether @G@ satisfies the Constraint @a@
-satisfiesConstraint :: (Valid m, Eq (Obj m), Morphism m, FindMorphism m) => Obj m -> Constraint m -> Bool
-satisfiesConstraint graph constraint = Prelude.null ps || allPremisesAreSatisfied
+satisfiesAtomicConstraint :: (FindMorphism m) => Obj m -> Constraint m -> Bool
+satisfiesAtomicConstraint graph constraint = Prelude.null ps || allPremisesAreSatisfied
   where
     ps = findConstraintMorphisms (premise constraint) graph
     qs = findConstraintMorphisms (conclusion constraint) graph
@@ -199,8 +189,8 @@ satisfiesConstraint graph constraint = Prelude.null ps || allPremisesAreSatisfie
     allPremisesAreSatisfied = if positive constraint then positiveSatisfaction else negativeSatisfaction
 
 -- | Given a TypedGraph @G@ and a list of Constraints @a : P -> C@, check whether @G@ satisfies the all the Constraints
-satisfiesAllConstraints :: (Valid m, Eq (Obj m), FindMorphism m) => Obj m -> [Constraint m] -> Bool
-satisfiesAllConstraints graph = all (satisfiesConstraint graph)
+satisfiesAllAtomicConstraints :: (FindMorphism m) => Obj m -> [Constraint m] -> Bool
+satisfiesAllAtomicConstraints graph = all (satisfiesAtomicConstraint graph)
 
 findConstraintMorphisms :: (FindMorphism m) => Obj m -> Obj m -> [m]
 findConstraintMorphisms = findMonomorphisms
