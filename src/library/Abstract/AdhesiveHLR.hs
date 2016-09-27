@@ -181,8 +181,8 @@ conclusion = codomain . morphism
 satisfiesAtomicConstraint :: (FindMorphism m) => Obj m -> Constraint m -> Bool
 satisfiesAtomicConstraint graph constraint = Prelude.null ps || allPremisesAreSatisfied
   where
-    ps = findConstraintMorphisms (premise constraint) graph
-    qs = findConstraintMorphisms (conclusion constraint) graph
+    ps = findMonomorphisms (premise constraint) graph
+    qs = findMonomorphisms (conclusion constraint) graph
     a = morphism constraint
     positiveSatisfaction = all (\p ->       any (\q -> compose a q == p) qs) ps
     negativeSatisfaction = all (\p -> not $ any (\q -> compose a q == p) qs) ps
@@ -191,6 +191,3 @@ satisfiesAtomicConstraint graph constraint = Prelude.null ps || allPremisesAreSa
 -- | Given a TypedGraph @G@ and a list of Constraints @a : P -> C@, check whether @G@ satisfies the all the Constraints
 satisfiesAllAtomicConstraints :: (FindMorphism m) => Obj m -> [Constraint m] -> Bool
 satisfiesAllAtomicConstraints graph = all (satisfiesAtomicConstraint graph)
-
-findConstraintMorphisms :: (FindMorphism m) => Obj m -> Obj m -> [m]
-findConstraintMorphisms = findMonomorphisms
