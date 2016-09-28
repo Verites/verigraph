@@ -215,7 +215,7 @@ createSideRule inj k1 sideM1 s1 k2 sideM2 s2 = d
     d = filter (\(ss1,ss2,m) -> compose sideM1 ss1 == compose k1 m &&
                                 compose sideM2 ss2 == compose k2 m) c
 
-satisfiesNACRewriting :: (Eq (Obj m), DPO m) => m -> m -> Bool
+satisfiesNACRewriting :: DPO m => m -> m -> Bool
 satisfiesNACRewriting l = satisfiesGluingConditions dpoConf prod
   where
     -- Production just to test satisfiesGluingConditions, note that right side is not used.

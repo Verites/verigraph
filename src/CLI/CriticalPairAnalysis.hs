@@ -101,7 +101,7 @@ execute globalOpts opts = do
         if secondOrder
           then sndOrderAnalysis
           else fstOrderAnalysis
-    
+
     when secondOrder $
       if matchRestriction dpoConf == AnyMatches
         then mapM_ putStrLn $
@@ -157,8 +157,7 @@ printAnalysis action dpoConf rules =
 
 -- Receives functions and theirs names,
 -- and returns they applicated to the rules
-analysisMatrix :: (EpiPairs m, DPO m)
-  => DPOConfig -> [Production m]
+analysisMatrix :: DPOConfig -> [Production m]
   -> (DPOConfig -> Production m -> Production m -> [cps])
   -> (DPOConfig -> Production m -> Production m -> [cps])
   -> (DPOConfig -> Production m -> Production m -> [cps])

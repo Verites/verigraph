@@ -78,7 +78,7 @@ getNACs = nacs
 -- the morphism /r : K -> R/, and the nacs /L -> Ni/, respectively.
 --
 -- Note: this doesn't check that the production is valid.
-buildProduction :: (DPO m, Eq (Obj m)) => m -> m -> [m] -> Production m
+buildProduction :: m -> m -> [m] -> Production m
 buildProduction = Production
 
 -- | Obtain all matches from the production into the given object, even if they
@@ -181,11 +181,11 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
   -- | Inverts a production, adjusting the NACs accordingly.
   -- Needs information of nac injective satisfaction (in second order)
   -- and matches injective.
-  invertProduction :: DPO m => DPOConfig -> Production m -> Production m
+  invertProduction :: DPOConfig -> Production m -> Production m
 
   -- | Given a production /L ←l- K -r→ R/ and a NAC morphism /n : L -> N/, obtain
   -- a set of NACs /n'i : R -> N'i/ that is equivalent to the original NAC.
-  shiftNacOverProduction :: DPO m => DPOConfig -> Production m -> m -> [m]
+  shiftNacOverProduction :: DPOConfig -> Production m -> m -> [m]
 
   -- TODO : Verify why this function continues to be used
   -- | Check if the second morphism is monomorphic outside the image of the

@@ -33,12 +33,12 @@ maxConcurrentRules dep conf (x:xs) = map (singleCR x) (maxCRs xs)
     singleCR = maxConcurrentRuleForLastPair dep conf
     maxCRs = maxConcurrentRules dep conf
 
-concurrentRules :: (DPO m, EpiPairs m, Eq (Obj m)) => CRDependencies -> DPOConfig -> Production m -> Production m -> [Production m]
+concurrentRules :: (DPO m, EpiPairs m) => CRDependencies -> DPOConfig -> Production m -> Production m -> [Production m]
 concurrentRules dep conf c n =
   let epiPairs = epiPairsForConcurrentRule dep conf c n
   in map (concurrentRuleForPair conf c n) epiPairs
 
-maxConcurrentRuleForLastPair :: (DPO m, EpiPairs m, Eq (Obj m)) => CRDependencies -> DPOConfig -> Production m -> Production m -> Production m
+maxConcurrentRuleForLastPair :: (DPO m, EpiPairs m) => CRDependencies -> DPOConfig -> Production m -> Production m -> Production m
 maxConcurrentRuleForLastPair dep conf c n =
   let epiPair = last (epiPairsForConcurrentRule dep conf c n)
   in concurrentRuleForPair conf c n epiPair
@@ -56,7 +56,7 @@ epiPairsForConcurrentRule AllOverlapings conf c n =
       isValidPair (lp, rp) = satisfiesGluingConditions conf (invertProductionWithoutNacs c) lp && satisfiesRewritingConditions conf n rp
   in filter isValidPair allPairs
 
-concurrentRuleForPair :: (DPO m, EpiPairs m, Eq (Obj m)) => DPOConfig -> Production m -> Production m -> (m, m) -> Production m
+concurrentRuleForPair :: (DPO m, EpiPairs m) => DPOConfig -> Production m -> Production m -> (m, m) -> Production m
 concurrentRuleForPair conf c n pair = buildProduction l r (dmc ++ lp)
   where
     pocC = calculatePushoutComplement (fst pair) (getRHS c)
