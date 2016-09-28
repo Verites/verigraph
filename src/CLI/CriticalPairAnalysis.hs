@@ -93,11 +93,15 @@ execute globalOpts opts = do
     let fstOrderAnalysis = printAnalysis action dpoConf rules
         sndOrderAnalysis = printAnalysis action dpoConf rules2
     case outputFile opts of
-      Just file -> writer gg ggName names file
-      Nothing -> if secondOrder
-                   then sndOrderAnalysis
-                   else fstOrderAnalysis
-
+      Just file ->
+        do
+          putStrLn "Warning: exporting conflicts/dependencies to .cpx not fully supported."
+          writer gg ggName names file
+      Nothing ->
+        if secondOrder
+          then sndOrderAnalysis
+          else fstOrderAnalysis
+    
     when secondOrder $
       if matchRestriction dpoConf == AnyMatches
         then mapM_ putStrLn $

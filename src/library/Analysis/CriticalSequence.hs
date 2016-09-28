@@ -188,7 +188,7 @@ findAllDeleteForbid conf p1 p2 =
 findDeleteForbidForNAC :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> (m, Int) -> [CriticalSequence m]
 findDeleteForbidForNAC conf p1' p2 nac =
   map
-    (\(m,m',nac) -> CriticalSequence (Just m) m' (Just nac) DeleteForbid)
+    (\(m',m,nac) -> CriticalSequence (Just m) m' (Just nac) DeleteForbid)
     (produceForbidOneNac conf p1' p2 nac)
 
 -- ** Irreversible Dependencies
