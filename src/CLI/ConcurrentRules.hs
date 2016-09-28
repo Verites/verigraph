@@ -8,6 +8,7 @@ import           GlobalOptions
 
 import           Abstract.AdhesiveHLR
 import           Analysis.ConcurrentRules
+import           Control.Monad
 import           Options.Applicative
 import qualified TypedGraph.GraphGrammar  as GG
 import           TypedGraph.GraphRule
@@ -63,13 +64,23 @@ execute globalOpts opts = do
                                 MaxConcurrentRule  -> makeMaxConcurrentRule
                                 AllConcurrentRules -> makeAllConcurrentRules
         dependencies = concRulesbyDep opts
-        newRules = concatMap (makeConcurrentRules dependencies (dpoConfig globalOpts) (GG.constraints gg)) sequences
-        gg' = GG.graphGrammar (GG.initialGraph gg) [] (GG.rules gg ++ newRules) []
+        newRules = map (makeConcurrentRules dependencies (dpoConfig globalOpts) (GG.constraints gg)) sequences
+
+    forM_ (zip sequences newRules) $ \((name, _), rules) ->
+      when (null rules)
+        (putStrLn $ "No concurrent rules were found for rule sequence '" ++ name ++ "'")
+
+    let gg' = GG.graphGrammar (GG.initialGraph gg) [] (GG.rules gg ++ concat newRules) []
     GW.writeGrammarFile gg' ggName names (outputFile opts)
+
 
 makeAllConcurrentRules :: CRDependencies -> DPOConfig -> [Constraint (TypedGraphMorphism a b)] -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
 makeAllConcurrentRules dep conf constraints (baseName, sequence) = zipWith makeName (allConcurrentRules dep conf constraints sequence) [0::Int ..]
   where makeName rule idx = (baseName++"_"++show idx, rule)
 
 makeMaxConcurrentRule :: CRDependencies -> DPOConfig -> [Constraint (TypedGraphMorphism a b)] -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
-makeMaxConcurrentRule dep conf constraints (baseName, sequence) = [(baseName, maxConcurrentRule dep conf constraints sequence)]
+makeMaxConcurrentRule dep conf constraints (baseName, sequence) = case maxRule of
+  Nothing -> []
+  Just x -> [(baseName, x)]
+  where
+    maxRule = maxConcurrentRule dep conf constraints sequence
