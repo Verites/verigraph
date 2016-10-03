@@ -206,7 +206,7 @@ data Constraint m =
 instance Valid m => Valid (Constraint m) where
     validate cons = case cons of
       Atomic a -> validate a
-      Not b -> validate $ nc b
+      Not b -> validate (nc b)
       And a b -> mconcat [validate (lc a), validate (rc b)]
       Or a b -> mconcat [validate (lc a), validate (rc b)]
 

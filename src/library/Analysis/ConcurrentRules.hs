@@ -6,6 +6,7 @@ module Analysis.ConcurrentRules
 ) where
 
 import           Abstract.AdhesiveHLR
+import           Data.Maybe (mapMaybe)
 import           Abstract.DPO
 import           Abstract.Valid
 import           Analysis.CriticalSequence (findTriggeringCriticalSequences,
@@ -34,16 +35,10 @@ maxConcurrentRule dep conf constraints (r:rs) = concatRule r (maxConcurrentRule 
       Nothing -> Nothing
       Just x -> maxConcurrentRuleForLastPair dep conf constraints rule x
 
---auxConcurrentRule :: (DPO m, EpiPairs m, Eq (Obj m)) => CRDependencies -> DPOConfig ->
---  [AtomicConstraint m] -> Production m -> Maybe (Production m) -> Maybe (Production m)
---auxConcurrentRule dep conf constraints rule subMaxRule = case subMaxRule of
---  Nothing -> Nothing
---  Just x -> maxConcurrentRuleForLastPair dep conf constraints rule x
-
 concurrentRules :: (DPO m, EpiPairs m) => CRDependencies -> DPOConfig -> [AtomicConstraint m] -> Production m -> Production m -> [Production m]
 concurrentRules dep conf constraints c n =
   let epiPairs = epiPairsForConcurrentRule dep conf constraints c n
-  in map (concurrentRuleForPair conf constraints c n) epiPairs
+  in mapMaybe (concurrentRuleForPair conf constraints c n) epiPairs
 
 maxConcurrentRuleForLastPair :: (DPO m, EpiPairs m) => CRDependencies -> DPOConfig -> [AtomicConstraint m] ->
   Production m -> Production m -> Maybe (Production m)
@@ -52,7 +47,7 @@ maxConcurrentRuleForLastPair dep conf constraints c n =
       maxPair = last (epiPairsForConcurrentRule dep conf constraints c n)
       maxRule = if null epiPairs
         then  Nothing
-        else Just (concurrentRuleForPair conf constraints c n maxPair)
+        else concurrentRuleForPair conf constraints c n maxPair
   in maxRule
 
 epiPairsForConcurrentRule :: (DPO m, EpiPairs m)
@@ -70,8 +65,8 @@ epiPairsForConcurrentRule AllOverlapings conf constraints c n =
         satisfiesGluingConditions conf (invertProductionWithoutNacs c) lp && satisfiesRewritingConditions conf n rp
   in filter isValidPair allPairs
 
-concurrentRuleForPair :: (DPO m, EpiPairs m) => DPOConfig -> [AtomicConstraint m] -> Production m -> Production m -> (m, m) -> Production m
-concurrentRuleForPair conf constraints c n pair = buildProduction l r (dmc ++ lp)
+concurrentRuleForPair :: (DPO m, EpiPairs m) => DPOConfig -> [AtomicConstraint m] -> Production m -> Production m -> (m, m) -> Maybe (Production m)
+concurrentRuleForPair conf constraints c n pair = if invalidSides then Nothing else Just (buildProduction l r (dmc ++ lp))
   where
     pocC = calculatePushoutComplement (fst pair) (getRHS c)
     pocN = calculatePushoutComplement (snd pair) (getLHS n)
@@ -84,4 +79,7 @@ concurrentRuleForPair conf constraints c n pair = buildProduction l r (dmc ++ lp
     inverseP = buildProduction (snd pocC) (snd poC) []
     den = filter validNac $ concatMap (nacDownwardShift conf (snd pair)) (getNACs n)
     lp = filter validNac $ concatMap (shiftNacOverProduction conf inverseP) den
+    -- Filters that are not in the default algorithm, useful when dealing with injective morphisms only
     validNac nac = matchRestriction conf /= MonoMatches || satisfiesAllAtomicConstraints (codomain nac) constraints
+    invalidSides = matchRestriction conf == MonoMatches &&
+      (not (satisfiesAllAtomicConstraints (codomain l) constraints) || not (satisfiesAllAtomicConstraints (codomain r) constraints))
