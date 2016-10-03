@@ -20,12 +20,12 @@ import           TypedGraph.Morphism
 -- TODO: extract as DPO grammar?
 data GraphGrammar a b = GraphGrammar {
                             initialGraph  :: GraphMorphism a b
-                          , constraints   :: [Constraint (TypedGraphMorphism a b)]
+                          , constraints   :: [AtomicConstraint (TypedGraphMorphism a b)]
                           , rules         :: [(String, GraphRule a b)]
                           , sndOrderRules :: [(String, SndOrderRule a b)]
                         } deriving (Show)
 
-graphGrammar :: GraphMorphism a b -> [Constraint (TypedGraphMorphism a b)] -> [(String, GraphRule a b)] -> [(String, SndOrderRule a b)]
+graphGrammar :: GraphMorphism a b -> [AtomicConstraint (TypedGraphMorphism a b)] -> [(String, GraphRule a b)] -> [(String, SndOrderRule a b)]
   -> GraphGrammar a b
 graphGrammar = GraphGrammar
 

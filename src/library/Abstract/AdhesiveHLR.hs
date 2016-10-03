@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleInstances    #-}
 module Abstract.AdhesiveHLR
   ( Morphism(..)
-  , Constraint (..)
+  , AtomicConstraint (..)
   , buildNamedAtomicConstraint
   , satisfiesAtomicConstraint
   , satisfiesAllAtomicConstraints
@@ -159,26 +159,26 @@ data DPOConfig = DPOConfig
   , nacSatisfaction  :: NacSatisfaction
   }
 
-data Constraint m = Constraint {
+data AtomicConstraint m = AtomicConstraint {
         name     :: String,
         morphism :: m,
         positive :: Bool
       } deriving (Show)
 
-instance Valid m => Valid (Constraint m) where
+instance Valid m => Valid (AtomicConstraint m) where
   validate = validate . morphism
 
-buildNamedAtomicConstraint :: String -> m -> Bool -> Constraint m
-buildNamedAtomicConstraint = Constraint
+buildNamedAtomicConstraint :: String -> m -> Bool -> AtomicConstraint m
+buildNamedAtomicConstraint = AtomicConstraint
 
-premise :: (Morphism m) => Constraint m -> Obj m
+premise :: (Morphism m) => AtomicConstraint m -> Obj m
 premise = domain . morphism
 
-conclusion :: (Morphism m) => Constraint m -> Obj m
+conclusion :: (Morphism m) => AtomicConstraint m -> Obj m
 conclusion = codomain . morphism
 
--- | Given a TypedGraph @G@ and a Constraint @a : P -> C@, check whether @G@ satisfies the Constraint @a@
-satisfiesAtomicConstraint :: (FindMorphism m) => Obj m -> Constraint m -> Bool
+-- | Given a TypedGraph @G@ and a AtomicConstraint @a : P -> C@, check whether @G@ satisfies the AtomicConstraint @a@
+satisfiesAtomicConstraint :: (FindMorphism m) => Obj m -> AtomicConstraint m -> Bool
 satisfiesAtomicConstraint graph constraint = Prelude.null ps || allPremisesAreSatisfied
   where
     ps = findMonomorphisms (premise constraint) graph
@@ -189,5 +189,5 @@ satisfiesAtomicConstraint graph constraint = Prelude.null ps || allPremisesAreSa
     allPremisesAreSatisfied = if positive constraint then positiveSatisfaction else negativeSatisfaction
 
 -- | Given a TypedGraph @G@ and a list of Constraints @a : P -> C@, check whether @G@ satisfies the all the Constraints
-satisfiesAllAtomicConstraints :: (FindMorphism m) => Obj m -> [Constraint m] -> Bool
+satisfiesAllAtomicConstraints :: (FindMorphism m) => Obj m -> [AtomicConstraint m] -> Bool
 satisfiesAllAtomicConstraints graph = all (satisfiesAtomicConstraint graph)

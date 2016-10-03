@@ -14,7 +14,7 @@ import           Analysis.CriticalSequence (findTriggeringCriticalSequences,
 data CRDependencies = AllOverlapings | OnlyDependency
 
 -- | Generates the Concurrent Rules for a given list of GraphRules following the order of the elements in the list.
-allConcurrentRules :: (DPO m, EpiPairs m, Eq (Obj m), Valid m) => CRDependencies -> DPOConfig -> [Constraint m] -> [Production m] -> [Production m]
+allConcurrentRules :: (DPO m, EpiPairs m, Eq (Obj m), Valid m) => CRDependencies -> DPOConfig -> [AtomicConstraint m] -> [Production m] -> [Production m]
 allConcurrentRules _ _ _ [] = []
 allConcurrentRules _ _ _ [x] = [x]
 allConcurrentRules dep conf constraints (x:xs) = concatMap (crs x) (allCRs xs)
@@ -25,7 +25,7 @@ allConcurrentRules dep conf constraints (x:xs) = concatMap (crs x) (allCRs xs)
 -- | Generates the Concurrent Rule with the least disjoint EpiPair for a given list of GraphRules
 -- (following the order of the elements in the list).
 maxConcurrentRule :: (DPO m, EpiPairs m, Eq (Obj m), Valid m) => CRDependencies -> DPOConfig ->
-  [Constraint m] -> [Production m] -> Maybe (Production m)
+  [AtomicConstraint m] -> [Production m] -> Maybe (Production m)
 maxConcurrentRule _ _ _ [] = Nothing
 maxConcurrentRule _ _ _ [r] = Just r
 maxConcurrentRule dep conf constraints (r:rs) = concatRule r (maxConcurrentRule dep conf constraints rs)
@@ -35,17 +35,17 @@ maxConcurrentRule dep conf constraints (r:rs) = concatRule r (maxConcurrentRule 
       Just x -> maxConcurrentRuleForLastPair dep conf constraints rule x
 
 --auxConcurrentRule :: (DPO m, EpiPairs m, Eq (Obj m)) => CRDependencies -> DPOConfig ->
---  [Constraint m] -> Production m -> Maybe (Production m) -> Maybe (Production m)
+--  [AtomicConstraint m] -> Production m -> Maybe (Production m) -> Maybe (Production m)
 --auxConcurrentRule dep conf constraints rule subMaxRule = case subMaxRule of
 --  Nothing -> Nothing
 --  Just x -> maxConcurrentRuleForLastPair dep conf constraints rule x
 
-concurrentRules :: (DPO m, EpiPairs m) => CRDependencies -> DPOConfig -> [Constraint m] -> Production m -> Production m -> [Production m]
+concurrentRules :: (DPO m, EpiPairs m) => CRDependencies -> DPOConfig -> [AtomicConstraint m] -> Production m -> Production m -> [Production m]
 concurrentRules dep conf constraints c n =
   let epiPairs = epiPairsForConcurrentRule dep conf constraints c n
   in map (concurrentRuleForPair conf constraints c n) epiPairs
 
-maxConcurrentRuleForLastPair :: (DPO m, EpiPairs m) => CRDependencies -> DPOConfig -> [Constraint m] ->
+maxConcurrentRuleForLastPair :: (DPO m, EpiPairs m) => CRDependencies -> DPOConfig -> [AtomicConstraint m] ->
   Production m -> Production m -> Maybe (Production m)
 maxConcurrentRuleForLastPair dep conf constraints c n =
   let epiPairs = epiPairsForConcurrentRule dep conf constraints c n
@@ -56,7 +56,7 @@ maxConcurrentRuleForLastPair dep conf constraints c n =
   in maxRule
 
 epiPairsForConcurrentRule :: (DPO m, EpiPairs m)
-  => CRDependencies -> DPOConfig -> [Constraint m] -> Production m -> Production m -> [(m, m)]
+  => CRDependencies -> DPOConfig -> [AtomicConstraint m] -> Production m -> Production m -> [(m, m)]
 -- it only considers triggered dependencies because is the most intuitive and natural behaviour expected until now.
 epiPairsForConcurrentRule OnlyDependency conf constraints c n =
   let dependencies = map getCriticalSequenceComatches (findTriggeringCriticalSequences conf c n)
@@ -70,7 +70,7 @@ epiPairsForConcurrentRule AllOverlapings conf constraints c n =
         satisfiesGluingConditions conf (invertProductionWithoutNacs c) lp && satisfiesRewritingConditions conf n rp
   in filter isValidPair allPairs
 
-concurrentRuleForPair :: (DPO m, EpiPairs m) => DPOConfig -> [Constraint m] -> Production m -> Production m -> (m, m) -> Production m
+concurrentRuleForPair :: (DPO m, EpiPairs m) => DPOConfig -> [AtomicConstraint m] -> Production m -> Production m -> (m, m) -> Production m
 concurrentRuleForPair conf constraints c n pair = buildProduction l r (dmc ++ lp)
   where
     pocC = calculatePushoutComplement (fst pair) (getRHS c)

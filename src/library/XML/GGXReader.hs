@@ -80,7 +80,7 @@ readGrammar fileName dpoConfig = do
 
   return $ minimalSafetyNacsWithLog dpoConfig gg
 
-testeCons :: [TypedGraph a b] -> [Constraint (TypedGraphMorphism a b)] -> [[Bool]]
+testeCons :: [TypedGraph a b] -> [AtomicConstraint (TypedGraphMorphism a b)] -> [[Bool]]
 testeCons [] _      = []
 testeCons (g:gs) cs = satisfiesCons g cs : testeCons gs cs
   where
@@ -202,7 +202,7 @@ instantiateNac lhs tg (nacGraph, maps) = nacTgm
     nacMorphism = instantiateTypedGraph nacGraph tg
     (_,nacTgm) = instantiateSpan lhs nacMorphism maps
 
-instantiateAtomicConstraint :: TypeGraph a b -> ParsedAtomicConstraint -> Constraint (TypedGraphMorphism a b)
+instantiateAtomicConstraint :: TypeGraph a b -> ParsedAtomicConstraint -> AtomicConstraint (TypedGraphMorphism a b)
 instantiateAtomicConstraint tg (name, premise, conclusion, maps) = buildNamedAtomicConstraint name (buildTypedGraphMorphism p c m) isPositive
   where
     p = instantiateTypedGraph premise tg
