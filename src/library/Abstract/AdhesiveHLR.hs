@@ -6,6 +6,9 @@ module Abstract.AdhesiveHLR
   , buildNamedAtomicConstraint
   , satisfiesAtomicConstraint
   , satisfiesAllAtomicConstraints
+  , Constraint (..)
+  , satisfiesConstraint
+  , satisfiesAllConstraints
   , EpiPairs(..)
   , AdhesiveHLR(..)
 
@@ -177,7 +180,7 @@ premise = domain . morphism
 conclusion :: (Morphism m) => AtomicConstraint m -> Obj m
 conclusion = codomain . morphism
 
--- | Given a TypedGraph @G@ and a AtomicConstraint @a : P -> C@, check whether @G@ satisfies the AtomicConstraint @a@
+-- | Given an object @G@ and a AtomicConstraint @a : P -> C@, check whether @G@ satisfies the AtomicConstraint @a@
 satisfiesAtomicConstraint :: (FindMorphism m) => Obj m -> AtomicConstraint m -> Bool
 satisfiesAtomicConstraint graph constraint = Prelude.null ps || allPremisesAreSatisfied
   where
@@ -188,6 +191,34 @@ satisfiesAtomicConstraint graph constraint = Prelude.null ps || allPremisesAreSa
     negativeSatisfaction = all (\p -> not $ any (\q -> compose a q == p) qs) ps
     allPremisesAreSatisfied = if positive constraint then positiveSatisfaction else negativeSatisfaction
 
--- | Given a TypedGraph @G@ and a list of Constraints @a : P -> C@, check whether @G@ satisfies the all the Constraints
+-- | Given an object @G@ and a list of AtomicConstraints @a : P -> C@, check whether @G@ satisfies the all them
 satisfiesAllAtomicConstraints :: (FindMorphism m) => Obj m -> [AtomicConstraint m] -> Bool
 satisfiesAllAtomicConstraints graph = all (satisfiesAtomicConstraint graph)
+
+data Constraint m =
+    Atomic { atomic :: AtomicConstraint m }
+  | And { lc :: Constraint m,
+          rc :: Constraint m}
+  | Or{ lc :: Constraint m,
+        rc :: Constraint m}
+  | Not { nc :: Constraint m }
+
+instance Valid m => Valid (Constraint m) where
+    validate cons = case cons of
+      Atomic a -> validate a
+      Not b -> validate $ nc b
+      And a b -> mconcat [validate (lc a), validate (rc b)]
+      Or a b -> mconcat [validate (lc a), validate (rc b)]
+
+-- | Given an object @G@ and a Constraint @c@ (a Boolean formula over atomic constraints), check whether @G@ satisfies @c@
+satisfiesConstraint :: (FindMorphism m) => Obj m -> Constraint m -> Bool
+satisfiesConstraint graph constraint =
+  case constraint of
+    Atomic atomic -> satisfiesAtomicConstraint graph atomic
+    Not nc -> not $ satisfiesConstraint graph nc
+    And lc rc -> satisfiesConstraint graph lc && satisfiesConstraint graph rc
+    Or lc rc -> satisfiesConstraint graph lc || satisfiesConstraint graph rc
+
+-- | Given an object @G@ and a list of Constraints (Boolean formulas over atomic constraints), check whether @G@ satisfies the all them
+satisfiesAllConstraints :: (FindMorphism m) => Obj m -> [Constraint m] -> Bool
+satisfiesAllConstraints graph = all (satisfiesConstraint graph)
