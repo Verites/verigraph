@@ -18,6 +18,7 @@
         <TaggedValue Tag="NACs" TagValue="true"/>
         <TaggedValue Tag="PACs" TagValue="true"/>
         <TaggedValue Tag="GACs" TagValue="true"/>
+        <TaggedValue Tag="ruleSequence" TagValue="true"/>
         <TaggedValue Tag="breakAllLayer" TagValue="true"/>
         <TaggedValue Tag="showGraphAfterStep" TagValue="true"/>
         <TaggedValue Tag="TypeGraphLevel" TagValue="ENABLED"/>
@@ -70,51 +71,51 @@
         <Graph ID="I15" kind="HOST" name="Graph">
             <Node ID="I16" type="I2">
                 <NodeLayout X="486" Y="108"/>
-                <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                <additionalLayout age="0" force="10" frozen="true" zone="50"/>
             </Node>
             <Node ID="I17" type="I2">
                 <NodeLayout X="348" Y="111"/>
-                <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                <additionalLayout age="0" force="10" frozen="true" zone="50"/>
             </Node>
             <Node ID="I18" type="I2">
                 <NodeLayout X="349" Y="195"/>
-                <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                <additionalLayout age="0" force="10" frozen="true" zone="50"/>
             </Node>
             <Node ID="I19" type="I2">
                 <NodeLayout X="616" Y="105"/>
-                <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                <additionalLayout age="0" force="10" frozen="true" zone="50"/>
             </Node>
             <Node ID="I20" type="I2">
                 <NodeLayout X="488" Y="197"/>
-                <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                <additionalLayout age="0" force="10" frozen="true" zone="50"/>
             </Node>
             <Node ID="I21" type="I2">
                 <NodeLayout X="617" Y="194"/>
-                <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                <additionalLayout age="0" force="10" frozen="true" zone="50"/>
             </Node>
             <Node ID="I22" type="I2">
                 <NodeLayout X="611" Y="287"/>
-                <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                <additionalLayout age="0" force="10" frozen="true" zone="50"/>
             </Node>
             <Node ID="I23" type="I2">
                 <NodeLayout X="484" Y="287"/>
-                <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                <additionalLayout age="0" force="10" frozen="true" zone="50"/>
             </Node>
             <Node ID="I24" type="I2">
                 <NodeLayout X="360" Y="291"/>
-                <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                <additionalLayout age="0" force="10" frozen="true" zone="50"/>
             </Node>
             <Node ID="I25" type="I4">
                 <NodeLayout X="702" Y="158"/>
-                <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                <additionalLayout age="0" force="10" frozen="true" zone="50"/>
             </Node>
             <Node ID="I26" type="I3">
                 <NodeLayout X="270" Y="269"/>
-                <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                <additionalLayout age="0" force="10" frozen="true" zone="50"/>
             </Node>
             <Node ID="I27" type="I3">
                 <NodeLayout X="419" Y="354"/>
-                <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                <additionalLayout age="0" force="10" frozen="true" zone="50"/>
             </Node>
             <Edge ID="I28" source="I16" target="I17" type="I7">
                 <EdgeLayout bendX="428" bendY="125" textOffsetX="0" textOffsetY="-22"/>
@@ -645,35 +646,58 @@
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
         <Rule ID="I159" formula="true" name="2rule_left_NoViolence">
-            <Graph ID="I161" kind="LHS" name="Left">
+            <Graph ID="I161" kind="LHS" name="LeftOf_2rule_left_NoViolence">
                 <Node ID="I162" name="1" type="I4">
                     <NodeLayout X="92" Y="52"/>
-                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
             </Graph>
-            <Graph ID="I163" kind="RHS" name="Right"/>
-            <Morphism name="2rule_left_NoViolence"/>
+            <Graph ID="I163" kind="RHS" name="RightOf_2rule_left_NoViolence"/>
+            <Morphism comment="Formula: true" name="2rule_left_NoViolence"/>
             <TaggedValue Tag="layer" TagValue="0"/>
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
         <Rule ID="I164" formula="true" name="2rule_right_NoViolence">
-            <Graph ID="I166" kind="LHS" name="Left">
+            <Graph ID="I166" kind="LHS" name="LeftOf_2rule_right_NoViolence">
                 <Node ID="I167" name="1" type="I4">
                     <NodeLayout X="103" Y="61"/>
-                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
             </Graph>
-            <Graph ID="I168" kind="RHS" name="Right">
+            <Graph ID="I168" kind="RHS" name="RightOf_2rule_right_NoViolence">
                 <Node ID="I169" name="1" type="I4">
                     <NodeLayout X="105" Y="63"/>
-                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
             </Graph>
-            <Morphism name="2rule_right_NoViolence">
+            <Morphism comment="Formula: true" name="2rule_right_NoViolence">
                 <Mapping image="I169" orig="I167"/>
             </Morphism>
             <TaggedValue Tag="layer" TagValue="0"/>
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
+        <RuleSequences>
+            <Sequence name="ValidSequence">
+                <Graph id="I15"/>
+                <Subsequence iterations="1">
+                    <Item iterations="1" rule="movePacman"/>
+                    <Item iterations="1" rule="movePacman"/>
+                    <Item iterations="1" rule="moveGhost"/>
+                    <Item iterations="1" rule="moveGhost"/>
+                    <Item iterations="1" rule="kill"/>
+                </Subsequence>
+            </Sequence>
+            <Sequence name="InvalidSequence">
+                <Graph id="I15"/>
+                <Subsequence iterations="1">
+                    <Item iterations="1" rule="movePacman"/>
+                    <Item iterations="1" rule="movePacman"/>
+                    <Item iterations="1" rule="moveGhost"/>
+                    <Item iterations="1" rule="moveGhost"/>
+                    <Item iterations="1" rule="kill"/>
+                    <Item iterations="1" rule="kill"/>
+                </Subsequence>
+            </Sequence>
+        </RuleSequences>
     </GraphTransformationSystem>
 </Document>
