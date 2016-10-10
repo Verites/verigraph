@@ -4,4 +4,4 @@ packages:
 - '.'
 extra-deps:
 - combinat-0.2.8.1
-resolver: nightly-2016-08-29
+resolver: lts-7.3
