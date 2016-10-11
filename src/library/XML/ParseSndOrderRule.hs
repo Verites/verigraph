@@ -55,7 +55,7 @@ module XML.ParseSndOrderRule (
 
 import           Abstract.Morphism
 import           Data.Char           (toLower)
-import           Data.List           (find, groupBy, sortOn, (\\))
+import           Data.List           (sortBy, find, groupBy, sortOn, (\\))
 import           Data.Maybe          (fromMaybe, mapMaybe)
 import           Data.String.Utils   (join, split)
 import           Graph.Graph
@@ -141,12 +141,13 @@ groupRules rules =
 getObjectNacNameMorphism :: GraphMorphism a b -> [Mapping]
 getObjectNacNameMorphism m = nodesMap m ++ edgesMap m
   where
-    adjustNonMono = parseNonMonoObjNames . group
+    adjustNonMono = parseNonMonoObjNames . group . sort
     nodesMap = adjustNonMono . getMap GM.applyNodeUnsafe . nodes . domain
     edgesMap = adjustNonMono . getMap GM.applyEdgeUnsafe . edges . domain
 
     getMap f = map (\e -> (show (f m e), Nothing, show e))
     group = groupBy (\(x,_,_) (y,_,_) -> x == y)
+    sort = sortBy (\(x,_,_) (y,_,_) -> compare x y)
 
 -- | Glues the non mono maps
 parseNonMonoObjNames :: [[Mapping]] -> [Mapping]

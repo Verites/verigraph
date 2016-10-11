@@ -5,9 +5,12 @@ module SndOrder.Rule (
   , addMinimalSafetyNacs
   , applySndOrderRule
   , applySecondOrder
+  , newNacsPairL
   ) where
 
-import           Data.Maybe           (fromMaybe)
+import           Data.Maybe           (mapMaybe,fromMaybe)
+
+import           Abstract.Valid
 
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
@@ -116,7 +119,10 @@ data Side = LeftSide | RightSide
 -- | Generates the minimal safety NACs of a 2-rule.
 -- probL and probR done, pairL and pairR to do.
 minimalSafetyNacs :: SndOrderRule a b -> [RuleMorphism a b]
-minimalSafetyNacs sndRule = newNacsProb LeftSide sndRule ++ newNacsProb RightSide sndRule
+minimalSafetyNacs sndRule =
+  newNacsProb LeftSide sndRule ++
+  newNacsProb RightSide sndRule ++
+  newNacsPairL sndRule
 
 newNacsProb :: Side -> SndOrderRule a b -> [SO.RuleMorphism a b]
 newNacsProb side sndRule = nacNodes ++ nacEdges
@@ -229,6 +235,43 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
         updateLeft = createNodeOnDomain srcInK typeSrc src side
         updateLeft2 = createNodeOnDomain tgtInK typeTgt tgt updateLeft
         updateLeftEdge = createEdgeOnDomain x' srcInK tgtInK tp x updateLeft2
+
+newNacsPairL :: SndOrderRule a b -> [SO.RuleMorphism a b]
+newNacsPairL sndRule = mapMaybe createNac ret
+  where
+    apply = applyNodeUnsafe
+    
+    ruleL = codomain (getLHS sndRule)
+    ruleK = domain (getLHS sndRule)
+    ruleR = codomain (getRHS sndRule)
+    
+    fl = SO.mappingLeft (getLHS sndRule)
+    gl = SO.mappingLeft (getRHS sndRule)
+    
+    lb = getLHS ruleK
+    lc = getLHS ruleR
+    
+    pairL = [(apply fl x, apply fl y) |
+                     x <- nodes $ domain $ codomain lb
+                   , y <- nodes $ domain $ codomain lb
+                   , x /= y
+                   , isOrphanNode lb x
+                   , not (isOrphanNode lc (apply gl x))
+                   , not (isOrphanNode lc (apply gl y))]
+    
+    epis = calculateAllPartitions (codomain (getLHS ruleL))
+    
+    ret = [e | e <- epis, any (\(a,b) -> (apply e) a == (apply e) b) pairL]
+    
+    createNac e = if isValid ruleNac && isValid n then Just n else Nothing
+      where
+        n = SO.ruleMorphism ruleL ruleNac e mapK mapR
+        ruleNac = buildProduction (compose (getLHS ruleL) e) (getRHS ruleL) []
+        mapK = idMap (domain (getLHS ruleL)) (domain (getLHS ruleL))
+        mapR = idMap (codomain (getRHS ruleL)) (codomain (getRHS ruleL))
+
+calculateAllPartitions :: EpiPairs m => Obj m -> [m]
+calculateAllPartitions graph = createAllSubobjects False graph
 
 isOrphanNode :: TypedGraphMorphism a b -> NodeId -> Bool
 isOrphanNode m n = n `elem` orphanTypedNodes m
