@@ -164,6 +164,7 @@ newNacsProb side sndRule = nacNodes ++ nacEdges
 createNacProb :: Side -> GraphRule a b -> Either NodeId EdgeId -> SO.RuleMorphism a b
 createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
   where
+    
     l = getLHS ruleL
     r = getRHS ruleL
 
@@ -171,19 +172,19 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
     graphK = domain l
     graphR = codomain r
 
-    src = G.sourceOfUnsafe (domain graphL)
-    tgt = G.targetOfUnsafe (domain graphL)
-
-    tpNode = getNodeType graphL
-    tpEdge = getEdgeType graphL
-
-    (graphSide, side, otherSide) =
+    (graphSide, otherSideGraph, side, otherSide) =
       case sideChoose of
-        LeftSide  -> (graphR, l, r)
-        RightSide -> (graphL, r, l)
+        LeftSide  -> (graphR, graphL, l, r)
+        RightSide -> (graphL, graphR, r, l)
 
-    typeSrc x = getNodeType graphL (src x)
-    typeTgt x = getNodeType graphL (tgt x)
+    src = G.sourceOfUnsafe (domain graphSide)
+    tgt = G.targetOfUnsafe (domain graphSide)
+
+    tpNode = getNodeType otherSideGraph
+    tpEdge = getEdgeType otherSideGraph
+
+    typeSrc x = getNodeType graphSide (src x)
+    typeTgt x = getNodeType graphSide (tgt x)
 
     n' = head (newNodes (domain graphK))
     n'' = head (newNodes (domain graphSide))
@@ -208,13 +209,16 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
                         (src e) (typeSrc e) (srcInK e) (srcInR e)
                         (tgt e) (typeTgt e) (tgtInK e) (tgtInR e))
         side otherSide
-
+    
     nacRule = buildProduction updateLeft updateRight []
     mapL = idMap graphL (codomain updateLeft)
     mapK = idMap graphK (domain updateLeft)
     mapR = idMap graphR (codomain updateRight)
 
-    createNodes x x' x'' tp side otherSide = (updateSide1, updateSide2Map)
+    createNodes x x' x'' tp side otherSide = 
+      case sideChoose of
+        LeftSide -> (updateSide1, updateSide2Map)
+        RightSide -> (updateSide2Map, updateSide1)
       where
         updateSide1 = createNodeOnDomain x' tp x side
         updateSide2Cod = createNodeOnCodomain x'' tp otherSide
@@ -223,7 +227,10 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
     createEdges x x' x'' tp
         src typeSrc srcInK srcInR
         tgt typeTgt tgtInK tgtInR
-        side otherSide = (updateLeftEdge, updateRightMap)
+        side otherSide =
+      case sideChoose of
+        LeftSide -> (updateLeftEdge, updateRightMap)
+        RightSide -> (updateRightMap, updateLeftEdge)
       where
         srcRight = createNodeOnCodomain srcInR typeSrc otherSide
         tgtRight = createNodeOnCodomain tgtInR typeTgt srcRight
