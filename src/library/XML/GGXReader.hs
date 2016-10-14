@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts     #-}
 module XML.GGXReader
  ( readGrammar,
    readGGName,
@@ -13,8 +14,8 @@ module XML.GGXReader
    printMinimalSafetyNacsLog
    ) where
 
+import           Abstract.AdhesiveHLR
 import           Abstract.DPO
-import           Abstract.Morphism
 import           Abstract.Valid
 import qualified Data.List               as L
 import           Data.Maybe              (fromMaybe, mapMaybe)
@@ -37,15 +38,19 @@ type TypeGraph a b = G.Graph a b
 
 -- | Reads the grammar in the XML, adds the needed minimal safety nacs
 --   to second order, and returns the grammar and a log
-readGrammar :: String -> DPOConfig -> IO (GG.GraphGrammar a b, [(String, Int)])
-readGrammar fileName dpoConfig = do
+readGrammar :: String -> Bool -> DPOConfig -> IO (GG.GraphGrammar a b, [(String, Int)])
+readGrammar fileName useConstraints dpoConfig = do
   parsedTypeGraphs <- readTypeGraph fileName
   let parsedTypeGraph = case parsedTypeGraphs of
                          []    -> error "error, type graph not found"
                          ptg:_ -> ptg
   _ <- parsedTypeGraph `seq` return ()
 
+  let a tg g = instantiateTypedGraph g tg
   let typeGraph = instantiateTypeGraph parsedTypeGraph
+  graphs <- readGraphs' fileName
+  let initialGraphs = map (a typeGraph) $ concat graphs
+
 
   parsedRules <- readRules fileName
 
@@ -56,9 +61,18 @@ readGrammar fileName dpoConfig = do
   ensureValid $ validateNamed (\name -> "Rule '"++name++"'") (zip rulesNames rules)
   _ <- (L.null rules && error "No first order rules were found, at least one is needed.") `seq` return ()
 
+  parsedConstraints <- readConstraints fileName
+
+  let cons = if useConstraints then
+               map (instantiateAtomicConstraint typeGraph) parsedConstraints
+             else []
+
+  --print "Validity"
+  --print $ testeCons initialGraphs cons
+
   let initGraph = GM.empty typeGraph typeGraph
       sndOrderRules = instantiateSndOrderRules typeGraph sndOrdRules
-      gg = GG.graphGrammar initGraph (zip rulesNames rules) sndOrderRules
+      gg = GG.graphGrammar initGraph cons (zip rulesNames rules) sndOrderRules
 
   _ <- (case L.elemIndices False (map (isValid . snd) sndOrderRules) of
           []  -> []
@@ -67,6 +81,12 @@ readGrammar fileName dpoConfig = do
           ) `seq` return ()
 
   return $ minimalSafetyNacsWithLog dpoConfig gg
+
+testeCons :: [TypedGraph a b] -> [AtomicConstraint (TypedGraphMorphism a b)] -> [[Bool]]
+testeCons [] _      = []
+testeCons (g:gs) cs = satisfiesCons g cs : testeCons gs cs
+  where
+    satisfiesCons g cs = map (satisfiesAtomicConstraint g) cs
 
 readGGName :: String -> IO String
 readGGName fileName = do
@@ -120,6 +140,12 @@ readNacNames fileName = concat <$> runX (parseXML fileName >>> parseNacNames)
 
 readTypeNames :: String -> IO [(String,String)]
 readTypeNames fileName = concat <$> runX (parseXML fileName >>> parseNames)
+
+readConstraints :: String -> IO[ParsedAtomicConstraint]
+readConstraints fileName = runX (parseXML fileName >>> parseAtomicConstraints)
+
+readGraphs' :: String -> IO[[ParsedTypedGraph]]
+readGraphs' fileName = runX (parseXML fileName >>> parseGraphs)
 
 readGraphs :: String -> IO [(String, TypedGraph a b)]
 readGraphs fileName =
@@ -178,7 +204,19 @@ instantiateNac lhs tg (nacGraph, maps) = nacTgm
     nacMorphism = instantiateTypedGraph nacGraph tg
     (_,nacTgm) = instantiateSpan lhs nacMorphism maps
 
-instantiateTypedGraph :: ParsedTypedGraph -> G.Graph a b -> GraphMorphism a b
+instantiateAtomicConstraint :: TypeGraph a b -> ParsedAtomicConstraint -> AtomicConstraint (TypedGraphMorphism a b)
+instantiateAtomicConstraint tg (name, premise, conclusion, maps) = buildNamedAtomicConstraint name (buildTypedGraphMorphism p c m) isPositive
+  where
+    p = instantiateTypedGraph premise tg
+    c = instantiateTypedGraph conclusion tg
+    m = buildGraphMorphism (domain p) (domain c) (map mapToId mNodes) (map mapToId mEdges)
+    isPositive = not $ startswith "-" name
+    mapToId (a,_,b) = (toN b, toN a)
+    pNodes = G.nodes (domain p)
+    (mNodes,mEdges) = L.partition (\(_,_,x) -> G.NodeId (toN x) `elem` pNodes) maps
+
+
+instantiateTypedGraph :: ParsedTypedGraph -> TypeGraph a b -> GraphMorphism a b
 instantiateTypedGraph (_, nodes, edges) tg = buildGraphMorphism g tg nodeTyping edgeTyping
   where
     g = G.build nodesG edgesG

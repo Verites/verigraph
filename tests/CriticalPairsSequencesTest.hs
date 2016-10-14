@@ -114,7 +114,7 @@ main :: IO Counts
 main = do
   let fileName = "tests/grammars/teseRodrigo.ggx"
       dpoConf = DPOConfig MonoMatches PartiallyMonomorphicNAC
-  (gg,_) <- XML.readGrammar fileName dpoConf
+  (gg,_) <- XML.readGrammar fileName False dpoConf
 
   let rules = map snd (GG.rules gg)
 

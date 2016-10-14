@@ -15,7 +15,8 @@ import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Morphism
 import           Abstract.Valid
-import           Graph.GraphMorphism hiding (applyNode, applyEdge, applyNodeUnsafe, applyEdgeUnsafe)
+import           Graph.GraphMorphism  hiding (applyEdge, applyEdgeUnsafe,
+                                       applyNode, applyNodeUnsafe)
 import           TypedGraph.GraphRule
 import           TypedGraph.Morphism
 

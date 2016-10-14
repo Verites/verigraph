@@ -8,7 +8,7 @@ module Abstract.Valid
   , ensureValid
   ) where
 
-import qualified Data.List as List
+import qualified Data.List   as List
 import           System.Exit
 
 
@@ -22,7 +22,7 @@ class Valid a where
     isValid :: a -> Bool
     isValid x =
       case validate x of
-        IsValid -> True
+        IsValid     -> True
         IsInvalid _ -> False
 
     -- | Checks if the given value is well-formed, providing an explanation of any errors encountered.
@@ -47,15 +47,15 @@ instance Monoid ValidationResult where
 
   mempty = IsValid
 
-  mappend IsValid IsValid = IsValid
-  mappend IsValid (IsInvalid msgs) = IsInvalid msgs
-  mappend (IsInvalid msgs) IsValid = IsInvalid msgs
+  mappend IsValid IsValid                     = IsValid
+  mappend IsValid (IsInvalid msgs)            = IsInvalid msgs
+  mappend (IsInvalid msgs) IsValid            = IsInvalid msgs
   mappend (IsInvalid msgs1) (IsInvalid msgs2) = IsInvalid (msgs1 ++ msgs2)
 
 
 -- | Return 'IsValid' if the given boolean is true, otherwise return 'IsInvalid' with the given error message.
 ensure :: Bool -> String -> ValidationResult
-ensure True _ = IsValid
+ensure True _        = IsValid
 ensure False message = IsInvalid [message]
 
 
@@ -73,7 +73,7 @@ withContext context (IsInvalid messages) =
 
 -- | Obtains the error messages produced by validation, or 'Nothing' if no error was found
 errorMessages :: ValidationResult -> Maybe String
-errorMessages IsValid = Nothing
+errorMessages IsValid          = Nothing
 errorMessages (IsInvalid msgs) = Just (List.intercalate "\n" msgs)
 
 
@@ -89,5 +89,5 @@ validateNamed nameToContext items =
 ensureValid :: ValidationResult -> IO ()
 ensureValid result =
   case errorMessages result of
-    Nothing -> return ()
+    Nothing       -> return ()
     Just messages -> putStrLn messages >> exitFailure

@@ -8,9 +8,11 @@ import           GlobalOptions
 
 import           Abstract.AdhesiveHLR
 import           Analysis.ConcurrentRules
+import           Control.Monad
 import           Options.Applicative
 import qualified TypedGraph.GraphGrammar  as GG
 import           TypedGraph.GraphRule
+import           TypedGraph.Morphism
 import qualified XML.GGXReader            as XML
 import qualified XML.GGXWriter            as GW
 
@@ -54,7 +56,7 @@ execute :: GlobalOptions -> Options -> IO ()
 execute globalOpts opts = do
     let dpoConf = dpoConfig globalOpts
 
-    (gg,_) <- XML.readGrammar (inputFile globalOpts) dpoConf
+    (gg,_) <- XML.readGrammar (inputFile globalOpts) (useConstraints globalOpts) dpoConf
     ggName <- XML.readGGName (inputFile globalOpts)
     names <- XML.readNames (inputFile globalOpts)
     sequences <- XML.readSequences gg (inputFile globalOpts)
@@ -62,13 +64,23 @@ execute globalOpts opts = do
                                 MaxConcurrentRule  -> makeMaxConcurrentRule
                                 AllConcurrentRules -> makeAllConcurrentRules
         dependencies = concRulesbyDep opts
-        newRules = concatMap (makeConcurrentRules dependencies $ dpoConfig globalOpts) sequences
-        gg' = GG.graphGrammar (GG.initialGraph gg) (GG.rules gg ++ newRules) []
+        newRules = map (makeConcurrentRules dependencies (dpoConfig globalOpts) (GG.constraints gg)) sequences
+
+    forM_ (zip sequences newRules) $ \((name, _), rules) ->
+      when (null rules)
+        (putStrLn $ "No concurrent rules were found for rule sequence '" ++ name ++ "'")
+
+    let gg' = GG.graphGrammar (GG.initialGraph gg) [] (GG.rules gg ++ concat newRules) []
     GW.writeGrammarFile gg' ggName names (outputFile opts)
 
-makeAllConcurrentRules :: CRDependencies -> DPOConfig -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
-makeAllConcurrentRules dep conf (baseName, sequence) = zipWith makeName (allConcurrentRules dep conf sequence) [0::Int ..]
+
+makeAllConcurrentRules :: CRDependencies -> DPOConfig -> [AtomicConstraint (TypedGraphMorphism a b)] -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
+makeAllConcurrentRules dep conf constraints (baseName, sequence) = zipWith makeName (allConcurrentRules dep conf constraints sequence) [0::Int ..]
   where makeName rule idx = (baseName++"_"++show idx, rule)
 
-makeMaxConcurrentRule :: CRDependencies -> DPOConfig -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
-makeMaxConcurrentRule dep conf (baseName, sequence) = [(baseName, maxConcurrentRule dep conf sequence)]
+makeMaxConcurrentRule :: CRDependencies -> DPOConfig -> [AtomicConstraint (TypedGraphMorphism a b)] -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
+makeMaxConcurrentRule dep conf constraints (baseName, sequence) = case maxRule of
+  Nothing -> []
+  Just x -> [(baseName, x)]
+  where
+    maxRule = maxConcurrentRule dep conf constraints sequence
