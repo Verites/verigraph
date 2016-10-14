@@ -1,5 +1,5 @@
 name:                verigraph
-version:             1.0-rc01
+version:             1.0
 synopsis:            Software specification and verification tool based on graph rewriting.
 -- description:
 license:             Apache-2.0
