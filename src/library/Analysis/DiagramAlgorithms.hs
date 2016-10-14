@@ -35,7 +35,8 @@ module Analysis.DiagramAlgorithms (
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Morphism
-import           Data.Maybe           (mapMaybe)
+import           Control.Applicative
+import           Control.Monad
 
 -- | Rule @p1@ is in a delete-use conflict with @p2@ if @p1@ deletes
 -- something that is used by @p2@.
@@ -92,51 +93,37 @@ deleteUseDangling conf p1 p2 (m1,m2) =
 --
 -- Checks produce-forbid for a NAC @n@ in @p2@
 produceForbidOneNac :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> (m, Int) -> [((m,m), (m,m), (m,Int))]
-produceForbidOneNac conf p1 p2 (n,idx) =
-  map (\(q21,h1,e1,m1,m2) -> ((m1,m2), (h1,e1), (q21,idx))) produceForbids
-    where
-      p1' = invertProduction conf p1
-      r1 = getRHS p1
-      validP1 = calculatesAllValidP1s conf p1' r1 n
-      validG = calculateRewritingsFromP1ToG conf p1 p1' validP1
-      checkH21 = calculateH21InRewriting conf n validG
-      produceForbids = calcultateValidProduceForbids conf p2 checkH21
+produceForbidOneNac conf p1 p2 (n2,idx) = do
+  let p1' = invertProduction conf p1
 
--- | Consider for a NAC n (L2 -> N2) of r any jointly surjective
--- pair of morphisms (m1',q21) with q21 (part)inj
--- Check gluing cond for (m1',r1)
-calculatesAllValidP1s :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> m -> m -> [(m,m)]
-calculatesAllValidP1s conf p1' r1 n = validP1
-  where
-    allP1 = createJointlyEpimorphicPairsFromNAC conf (codomain r1) n
-    validP1 = filter (\(m1', _) -> satisfiesRewritingConditions conf p1' m1') allP1
+  -- Pick a jointly epi pair /R1 -m1'-> P1 <-q21- N2/
+  (m1', q21) <- createJointlyEpimorphicPairsFromNAC conf (codomain $ getRHS p1) n2
 
--- | Construct PO complement D1
--- Construct PO K and abort if m1 not sats NACs l
-calculateRewritingsFromP1ToG :: (DPO m) => DPOConfig -> Production m -> Production m -> [(m,m)] -> [(m,m,m,m,m,m)]
-calculateRewritingsFromP1ToG conf p1 p1' = mapMaybe (\(m1', q21) ->
-  let (k1, m1, e1, d1) = calculateDPO m1' p1' in
-    if satisfiesNACs conf p1 m1 then Just (m1', q21, k1, e1, m1, d1)
-    else Nothing)
+  -- Reconstruct the match /m1/ that would lead to this pair
+  guard (satisfiesRewritingConditions conf p1' m1')
+  let (k1, m1, e1, d1) = calculateDPO m1' p1'
+  guard (satisfiesNACs conf p1 m1)
 
--- | Check existence of h21: L2 -> D1, st: e1 . h21 = q21 . n2
-calculateH21InRewriting :: DPO m => DPOConfig -> m -> [(m,m,m,m,m,m)] -> [(m,m,m,m,m,m,m)]
-calculateH21InRewriting conf n = mapMaybe
-  (\(m1', q21, k, e1, m1, d1) ->
-    let restriction = matchRestrictionToMorphismType (matchRestriction conf)
-        h21Candidates = findMorphisms restriction (domain n) (codomain k)
-        composeNQ21 = compose n q21
-        validH21 = filter (\h21Cand -> compose h21Cand e1 == composeNQ21) h21Candidates
-    in case validH21 of --if exists it is unique
-      []      -> Nothing
-      (h21:_) -> Just (m1', q21, k, e1, m1, d1, h21))
+  -- Look for morphisms /h21 : L2 -> D1/
+  let h21Candidates = findMorphisms' conf (domain n2) (codomain k1)
+      composeNQ21 = compose n2 q21
 
--- | Define m2 = d1 . h21: L2 -> K
--- Check gluing condition for m2 and p2
-calcultateValidProduceForbids :: DPO m => DPOConfig -> Production m -> [(m,m,m,m,m,m,m)] -> [(m,m,m,m,m)]
-calcultateValidProduceForbids conf p2 = mapMaybe (\(m1', q21, _, e1, m1, d1, h21) ->
-  let m2  = compose h21 d1
-      m2' = compose h21 e1
-  in if satisfiesRewritingConditions conf p2 m2
-        then Just (q21, m1', m2', m1, m2)
-        else Nothing)
+  case filter (\h21 -> compose h21 e1 == composeNQ21) h21Candidates of
+    [] ->
+      -- No proper h21, so no produce-forbid conflict
+      empty
+
+    [h21] -> do
+      let m2 = compose h21 d1
+          m2' = compose h21 e1
+      guard (satisfiesRewritingConditions conf p2 m2)
+
+      -- There is h21 and the match m2 is valid, so there is a conflict
+      return ((m1, m2), (m1', m2'), (q21, idx))
+
+    _ -> error "produceForbidOneNac: h21 should be unique, but isn't"
+
+
+findMorphisms' :: FindMorphism m => DPOConfig -> Obj m -> Obj m -> [m]
+findMorphisms' conf =
+  findMorphisms (matchRestrictionToMorphismType $ matchRestriction conf)
