@@ -4,6 +4,7 @@ module GlobalOptions
   , dpoConfig
   , verbose
   , inputFile
+  , useConstraints
   ) where
 
 import           Abstract.AdhesiveHLR (DPOConfig (..), MatchRestriction (..),
@@ -15,6 +16,7 @@ data GlobalOptions = GOpts
   , injectiveNacSatisfaction :: NacSatisfaction
   , verbose                  :: Bool
   , inputFile                :: String
+  , useConstraints           :: Bool
   }
 
 
@@ -37,3 +39,7 @@ globalOpts = GOpts
     ( metavar "INPUT_FILE"
     <> action "file"
     <> help "GGX file defining the graph grammar")
+  <*> flag False True
+    ( long "use-constraints"
+    <> help ("Activate use of Atomic Constraints [EXPERIMENTAL: Concurrent Rules Only]"))
+

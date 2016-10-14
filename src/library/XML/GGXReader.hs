@@ -38,8 +38,8 @@ type TypeGraph a b = G.Graph a b
 
 -- | Reads the grammar in the XML, adds the needed minimal safety nacs
 --   to second order, and returns the grammar and a log
-readGrammar :: String -> DPOConfig -> IO (GG.GraphGrammar a b, [(String, Int)])
-readGrammar fileName dpoConfig = do
+readGrammar :: String -> Bool -> DPOConfig -> IO (GG.GraphGrammar a b, [(String, Int)])
+readGrammar fileName useConstraints dpoConfig = do
   parsedTypeGraphs <- readTypeGraph fileName
   let parsedTypeGraph = case parsedTypeGraphs of
                          []    -> error "error, type graph not found"
@@ -63,7 +63,9 @@ readGrammar fileName dpoConfig = do
 
   parsedConstraints <- readConstraints fileName
 
-  let cons = map (instantiateAtomicConstraint typeGraph) parsedConstraints
+  let cons = if useConstraints then
+               map (instantiateAtomicConstraint typeGraph) parsedConstraints
+             else []
 
   --print "Validity"
   --print $ testeCons initialGraphs cons

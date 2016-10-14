@@ -66,7 +66,7 @@ execute (globalOpts, options) =
   do
     let dpoConf = dpoConfig globalOpts
 
-    (grammar,_) <- XML.readGrammar (inputFile globalOpts) dpoConf
+    (grammar,_) <- XML.readGrammar (inputFile globalOpts) (useConstraints globalOpts) dpoConf
     ensureValid $ validateNamed (\name -> "Rule '"++name++"'") (rules grammar)
 
     graphs <- XML.readGraphs (inputFile globalOpts)

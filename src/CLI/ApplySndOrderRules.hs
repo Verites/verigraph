@@ -30,7 +30,7 @@ execute :: GlobalOptions -> Options -> IO ()
 execute globalOpts opts = do
     let dpoConf = dpoConfig globalOpts
 
-    (gg,printNewNacs) <- XML.readGrammar (inputFile globalOpts) dpoConf
+    (gg,printNewNacs) <- XML.readGrammar (inputFile globalOpts) (useConstraints globalOpts) dpoConf
     ggName <- XML.readGGName (inputFile globalOpts)
     names <- XML.readNames (inputFile globalOpts)
 
