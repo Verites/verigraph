@@ -211,14 +211,13 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
          (Edge e) -> createEdges e e' e'' (tpEdge e)
                         (src e) (typeSrc e) (srcInK e) (srcInR e)
                         (tgt e) (typeTgt e) (tgtInK e) (tgtInR e))
-        side otherSide
     
     nacRule = buildProduction updateLeft updateRight []
     mapL = idMap graphL (codomain updateLeft)
     mapK = idMap graphK (domain updateLeft)
     mapR = idMap graphR (codomain updateRight)
 
-    createNodes x x' x'' tp side otherSide = 
+    createNodes x x' x'' tp = 
       case sideChoose of
         LeftSide -> (updateSide1, updateSide2Map)
         RightSide -> (updateSide2Map, updateSide1)
@@ -229,8 +228,7 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
 
     createEdges x x' x'' tp
         src typeSrc srcInK srcInR
-        tgt typeTgt tgtInK tgtInR
-        side otherSide =
+        tgt typeTgt tgtInK tgtInR =
       case sideChoose of
         LeftSide -> (updateLeftEdge, updateRightMap)
         RightSide -> (updateRightMap, updateLeftEdge)
