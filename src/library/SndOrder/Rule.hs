@@ -118,7 +118,7 @@ addMinimalSafetyNacs nacInj sndRule =
 data Side = LeftSide | RightSide
 
 -- | Either NodeId EdgeId
-data NodeOrEdge = Node NodeId | Edge EdgeId
+data NodeOrEdge = Node NodeId | Edge EdgeId deriving (Show)
 
 -- | Generates the minimal safety NACs of a 2-rule
 minimalSafetyNacs :: SndOrderRule a b -> [RuleMorphism a b]
@@ -180,14 +180,14 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
         LeftSide  -> (graphR, graphL, l, r)
         RightSide -> (graphL, graphR, r, l)
 
-    src = G.sourceOfUnsafe (domain graphSide)
-    tgt = G.targetOfUnsafe (domain graphSide)
+    src = G.sourceOfUnsafe (domain otherSideGraph)
+    tgt = G.targetOfUnsafe (domain otherSideGraph)
 
     tpNode = getNodeType otherSideGraph
     tpEdge = getEdgeType otherSideGraph
 
-    typeSrc x = getNodeType graphSide (src x)
-    typeTgt x = getNodeType graphSide (tgt x)
+    typeSrc x = getNodeType otherSideGraph (src x)
+    typeTgt x = getNodeType otherSideGraph (tgt x)
 
     n' = head (newNodes (domain graphK))
     n'' = head (newNodes (domain graphSide))
@@ -245,9 +245,11 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
         updateLeftEdge = createEdgeOnDomain x' srcInK tgtInK tp x updateLeft2
 
 newNacsPair :: Side -> SndOrderRule a b -> [SO.RuleMorphism a b]
-newNacsPair sideChoose sndRule = mapMaybe createNac ret
+newNacsPair sideChoose sndRule =
+  mapMaybe createNac retNodes ++ mapMaybe createNac retEdges
   where
-    apply = applyNodeUnsafe
+    applyNode = applyNodeUnsafe
+    applyEdge = applyEdgeUnsafe
     
     ruleL = codomain (getLHS sndRule)
     ruleK = domain (getLHS sndRule)
@@ -264,17 +266,24 @@ newNacsPair sideChoose sndRule = mapMaybe createNac ret
     lb = getSide ruleK
     lc = getSide ruleR
     
-    pairs = [(apply fl x, apply fl y) |
-                     x <- nodes $ domain $ codomain lb
-                   , y <- nodes $ domain $ codomain lb
-                   , x /= y
-                   , isOrphanNode lb x
-                   , not (isOrphanNode lc (apply gl x))
-                   , not (isOrphanNode lc (apply gl y))]
+    pairs apply isOrphan list =
+      [(apply fl x, apply fl y) |
+          x <- list $ domain $ codomain lb
+        , y <- list $ domain $ codomain lb
+        , x /= y
+        , isOrphan lb x
+        , not (isOrphan lc (apply gl x))
+        , not (isOrphan lc (apply gl y))]
+    
+    pairsNodes = pairs applyNode isOrphanNode nodes
+    pairsEdges = pairs applyEdge isOrphanEdge edges
     
     epis = calculateAllPartitions (codomain (getSide ruleL))
     
-    ret = [e | e <- epis, any (\(a,b) -> (apply e) a == (apply e) b) pairs]
+    filtered apply pairs = [e | e <- epis, any (\(a,b) -> (apply e) a == (apply e) b) pairs]
+    
+    retNodes = filtered applyNode pairsNodes
+    retEdges = filtered applyEdge pairsEdges
     
     createNac e = if isValid n then Just n else Nothing
       where
