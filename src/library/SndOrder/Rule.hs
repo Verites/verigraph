@@ -5,7 +5,6 @@ module SndOrder.Rule (
   , addMinimalSafetyNacs
   , applySndOrderRule
   , applySecondOrder
-  , newNacsPairL
   ) where
 
 import           Data.Maybe           (mapMaybe,fromMaybe)
@@ -114,15 +113,20 @@ addMinimalSafetyNacs nacInj sndRule =
     (getNACs sndRule ++
      filter (satisfiesNACs nacInj sndRule) (minimalSafetyNacs sndRule))
 
+-- | Configuration for the minimalSafetyNACs algorithms, it defines from
+-- which side of the getLHS (second order production) is being analyzed
 data Side = LeftSide | RightSide
 
--- | Generates the minimal safety NACs of a 2-rule.
--- probL and probR done, pairL and pairR to do.
+-- | Either NodeId EdgeId
+data NodeOrEdge = Node NodeId | Edge EdgeId
+
+-- | Generates the minimal safety NACs of a 2-rule
 minimalSafetyNacs :: SndOrderRule a b -> [RuleMorphism a b]
 minimalSafetyNacs sndRule =
   newNacsProb LeftSide sndRule ++
   newNacsProb RightSide sndRule ++
-  newNacsPairL sndRule
+  newNacsPair LeftSide sndRule ++
+  newNacsPair RightSide sndRule
 
 newNacsProb :: Side -> SndOrderRule a b -> [SO.RuleMorphism a b]
 newNacsProb side sndRule = nacNodes ++ nacEdges
@@ -158,13 +162,12 @@ newNacsProb side sndRule = nacNodes ++ nacEdges
                , isOrphanEdge sb n
                , not (isOrphanEdge sc (applyEdge g n))]
 
-    nacNodes = map (createNacProb side ruleL . Left) nodeProb
-    nacEdges = map (createNacProb side ruleL . Right) edgeProb
+    nacNodes = map (createNacProb side ruleL . Node) nodeProb
+    nacEdges = map (createNacProb side ruleL . Edge) edgeProb
 
-createNacProb :: Side -> GraphRule a b -> Either NodeId EdgeId -> SO.RuleMorphism a b
+createNacProb :: Side -> GraphRule a b -> NodeOrEdge -> SO.RuleMorphism a b
 createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
   where
-    
     l = getLHS ruleL
     r = getRHS ruleL
 
@@ -204,8 +207,8 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
 
     (updateLeft, updateRight) =
       (case x of
-         (Left n) -> createNodes n n' n'' (tpNode n)
-         (Right e) -> createEdges e e' e'' (tpEdge e)
+         (Node n) -> createNodes n n' n'' (tpNode n)
+         (Edge e) -> createEdges e e' e'' (tpEdge e)
                         (src e) (typeSrc e) (srcInK e) (srcInR e)
                         (tgt e) (typeTgt e) (tgtInK e) (tgtInR e))
         side otherSide
@@ -243,8 +246,8 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
         updateLeft2 = createNodeOnDomain tgtInK typeTgt tgt updateLeft
         updateLeftEdge = createEdgeOnDomain x' srcInK tgtInK tp x updateLeft2
 
-newNacsPairL :: SndOrderRule a b -> [SO.RuleMorphism a b]
-newNacsPairL sndRule = mapMaybe createNac ret
+newNacsPair :: Side -> SndOrderRule a b -> [SO.RuleMorphism a b]
+newNacsPair sideChoose sndRule = mapMaybe createNac ret
   where
     apply = applyNodeUnsafe
     
@@ -252,13 +255,18 @@ newNacsPairL sndRule = mapMaybe createNac ret
     ruleK = domain (getLHS sndRule)
     ruleR = codomain (getRHS sndRule)
     
-    fl = SO.mappingLeft (getLHS sndRule)
-    gl = SO.mappingLeft (getRHS sndRule)
+    (mapping, getSide) =
+      case sideChoose of
+        LeftSide -> (SO.mappingLeft, getLHS)
+        RightSide -> (SO.mappingRight, getRHS)
     
-    lb = getLHS ruleK
-    lc = getLHS ruleR
+    fl = mapping (getLHS sndRule)
+    gl = mapping (getRHS sndRule)
     
-    pairL = [(apply fl x, apply fl y) |
+    lb = getSide ruleK
+    lc = getSide ruleR
+    
+    pairs = [(apply fl x, apply fl y) |
                      x <- nodes $ domain $ codomain lb
                    , y <- nodes $ domain $ codomain lb
                    , x /= y
@@ -266,14 +274,23 @@ newNacsPairL sndRule = mapMaybe createNac ret
                    , not (isOrphanNode lc (apply gl x))
                    , not (isOrphanNode lc (apply gl y))]
     
-    epis = calculateAllPartitions (codomain (getLHS ruleL))
+    epis = calculateAllPartitions (codomain (getSide ruleL))
     
-    ret = [e | e <- epis, any (\(a,b) -> (apply e) a == (apply e) b) pairL]
+    ret = [e | e <- epis, any (\(a,b) -> (apply e) a == (apply e) b) pairs]
     
-    createNac e = if isValid ruleNac && isValid n then Just n else Nothing
+    createNac e = if isValid n then Just n else Nothing
       where
-        n = SO.ruleMorphism ruleL ruleNac e mapK mapR
-        ruleNac = buildProduction (compose (getLHS ruleL) e) (getRHS ruleL) []
+        n = case sideChoose of
+              LeftSide -> nLeft
+              RightSide -> nRight
+        
+        nLeft = SO.ruleMorphism ruleL ruleNacLeft e mapK mapR
+        nRight = SO.ruleMorphism ruleL ruleNacRight mapL mapK e
+        
+        ruleNacLeft = buildProduction (compose (getLHS ruleL) e) (getRHS ruleL) []
+        ruleNacRight = buildProduction (getLHS ruleL) (compose (getRHS ruleL) e) []
+        
+        mapL = idMap (codomain (getLHS ruleL)) (codomain (getLHS ruleL))
         mapK = idMap (domain (getLHS ruleL)) (domain (getLHS ruleL))
         mapR = idMap (codomain (getRHS ruleL)) (codomain (getRHS ruleL))
 
