@@ -50,6 +50,8 @@ module XML.ParseSndOrderRule (
   , getLeftObjNameMapping
   , getRightObjNameMapping
   , getObjectNacNameMorphism
+  , getObjectNacNameMorphismNodes
+  , getObjectNacNameMorphismEdges
   , getObjectNameMorphism
   ) where
 
@@ -138,8 +140,8 @@ groupRules rules =
 
 -- TODO: replace applyNodeUnsafe for getNodeType?
 -- | Given a morphism from some graph in the rule left to nac extracts the mapping
-getObjectNacNameMorphism :: GraphMorphism a b -> [Mapping]
-getObjectNacNameMorphism m = nodesMap m ++ edgesMap m
+getObjectNacNameMorph :: GraphMorphism a b -> ([Mapping], [Mapping])
+getObjectNacNameMorph m = (nodesMap m, edgesMap m)
   where
     adjustNonMono = parseNonMonoObjNames . group . sort
     nodesMap = adjustNonMono . getMap GM.applyNodeUnsafe . nodes . domain
@@ -148,6 +150,20 @@ getObjectNacNameMorphism m = nodesMap m ++ edgesMap m
     getMap f = map (\e -> (show (f m e), Nothing, show e))
     group = groupBy (\(x,_,_) (y,_,_) -> x == y)
     sort = sortBy (\(x,_,_) (y,_,_) -> compare x y)
+
+-- | Given a morphism from some graph in the rule left to nac extracts the mapping
+getObjectNacNameMorphism :: GraphMorphism a b -> [Mapping]
+getObjectNacNameMorphism m = nods ++ edgs
+  where
+    (nods,edgs) = getObjectNacNameMorph m
+
+-- | Given a morphism from some graph in the rule left to nac extracts the nodes mapping
+getObjectNacNameMorphismNodes :: GraphMorphism a b -> [Mapping]
+getObjectNacNameMorphismNodes m = fst (getObjectNacNameMorph m)
+
+-- | Given a morphism from some graph in the rule left to nac extracts the edges mapping
+getObjectNacNameMorphismEdges :: GraphMorphism a b -> [Mapping]
+getObjectNacNameMorphismEdges m = snd (getObjectNacNameMorph m)
 
 -- | Glues the non mono maps
 parseNonMonoObjNames :: [[Mapping]] -> [Mapping]

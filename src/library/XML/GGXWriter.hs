@@ -435,24 +435,28 @@ writeSndOrderRule :: ArrowXml a => (String, SO.SndOrderRule b c) -> [a XmlTree X
 writeSndOrderRule (name, sndOrderRule) =
  ([writeSndOrderRuleSide
     ("2rule_left_" ++ name)
-    objNameMapLeftLeft
-    objNameMapLeftRight
+    objNameMapLeftLeft objNameMapLeftLeft
+    objNameMapLeftRight objNameMapLeftRight
     (GR.getLHS sndOrderRule)] ++
   [writeSndOrderRuleSide
     ("2rule_right_" ++ name)
-    objNameMapRightLeft
-    objNameMapRightRight
+    objNameMapRightLeft objNameMapRightLeft
+    objNameMapRightRight objNameMapRightRight
     (GR.getRHS sndOrderRule)] ++
   (map (\(n,idx) ->
           writeSndOrderRuleSide
             ("2rule_nac" ++ show idx ++ "_" ++ name)
-            (objNameMapNacLeft n)
-            (objNameMapNacRight n)
+            (objNameMapNacLeftN n)
+            (objNameMapNacLeftE n)
+            (objNameMapNacRightN n)
+            (objNameMapNacRightE n)
             n)
        (zip (getNACs sndOrderRule) ([0..] :: [Int]))))
     where
-      objNameMapNacLeft n = getObjectNacNameMorphism (mapping (mappingLeft n))
-      objNameMapNacRight n = getObjectNacNameMorphism (mapping (mappingRight n))
+      objNameMapNacLeftN n = getObjectNacNameMorphismNodes (mapping (mappingLeft n))
+      objNameMapNacLeftE n = getObjectNacNameMorphismEdges (mapping (mappingLeft n))
+      objNameMapNacRightN n = getObjectNacNameMorphismNodes (mapping (mappingRight n))
+      objNameMapNacRightE n = getObjectNacNameMorphismEdges (mapping (mappingRight n))
       objNameMapRightLeft = getObjectNameMorphism (mappingLeft (GR.getLHS sndOrderRule)) (mappingLeft (GR.getRHS sndOrderRule))
       objNameMapRightRight = getObjectNameMorphism (mappingRight (GR.getLHS sndOrderRule)) (mappingRight (GR.getRHS sndOrderRule))
       graphLRuleL = codomain (mappingLeft (GR.getLHS sndOrderRule))
@@ -461,22 +465,22 @@ writeSndOrderRule (name, sndOrderRule) =
       objNameMapLeftLeft = twice getObjectNameMorphism (idMap graphLRuleL graphLRuleL)
       objNameMapLeftRight = twice getObjectNameMorphism (idMap graphRRuleL graphRRuleL)
 
-writeSndOrderRuleSide :: ArrowXml a => String -> [Mapping] -> [Mapping] -> RuleMorphism b c -> a XmlTree XmlTree
-writeSndOrderRuleSide name objLeft objRight ruleMorphism = writeRule objLeft objRight [] (name, codomain ruleMorphism)
+writeSndOrderRuleSide :: ArrowXml a => String -> [Mapping] -> [Mapping] -> [Mapping] -> [Mapping] -> RuleMorphism b c -> a XmlTree XmlTree
+writeSndOrderRuleSide name objLeftN objLeftE objRightN objRightE ruleMorphism = writeRule objLeftN objLeftE objRightN objRightE [] (name, codomain ruleMorphism)
 
 writeRules :: ArrowXml a => GraphGrammar b c -> [(String,String)] -> [a XmlTree XmlTree]
-writeRules grammar nacNames = map (writeRule [] [] nacNames) (rules grammar)
+writeRules grammar nacNames = map (writeRule [] [] [] [] nacNames) (rules grammar)
 
-writeRule :: ArrowXml a => [Mapping] -> [Mapping] -> [(String,String)] -> (String, GR.GraphRule b c) -> a XmlTree XmlTree
-writeRule objNameLeft objNameRight nacNames (ruleName, rule) =
+writeRule :: ArrowXml a => [Mapping] -> [Mapping] -> [Mapping] -> [Mapping] -> [(String,String)] -> (String, GR.GraphRule b c) -> a XmlTree XmlTree
+writeRule objNameLeftN objNameLeftE objNameRightN objNameRightE nacNames (ruleName, rule) =
   mkelem "Rule"
     [sattr "ID" ruleName, sattr "formula" "true", sattr "name" ruleName]
     $ [writeLHS ruleName lhs, writeRHS ruleName rhs] ++
       [writeMorphism ("RightOf_"++ruleName, "LeftOf_"++ruleName) ruleName "" morphism] ++
       [writeConditions nacNames ruleName rule]
   where
-    lhs = XML.GGXParseOut.getLHS objNameLeft rule
-    rhs = XML.GGXParseOut.getRHS objNameRight rule
+    lhs = XML.GGXParseOut.getLHS objNameLeftN objNameLeftE rule
+    rhs = XML.GGXParseOut.getRHS objNameRightN objNameRightE rule
     morphism = getMappings rule
 
 writeLHS :: ArrowXml a => String -> ParsedTypedGraph -> a XmlTree XmlTree
