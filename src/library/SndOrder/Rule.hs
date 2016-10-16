@@ -9,10 +9,9 @@ module SndOrder.Rule (
 
 import           Data.Maybe           (mapMaybe,fromMaybe)
 
-import           Abstract.Valid
-
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
+import           Abstract.Valid
 import           Graph.Graph          as G
 import           SndOrder.Morphism    as SO
 import           TypedGraph.Graph
@@ -61,32 +60,30 @@ type SndOrderRule a b = Production (RuleMorphism a b)
 applySecondOrder ::
      ((String, SndOrderRule a b) -> (String, GraphRule a b) -> [t])
   -> [(String, GraphRule a b)] -> [(String, SndOrderRule a b)] -> [t]
-applySecondOrder f fstRules = concatMap (\r -> applySecondOrderListRules f r fstRules)
-
-applySecondOrderListRules ::
-    ((String, SndOrderRule a b) -> (String, GraphRule a b) -> [t])
- -> (String, SndOrderRule a b) -> [(String, GraphRule a b)] -> [t]
-applySecondOrderListRules f sndRule = concatMap (f sndRule)
+applySecondOrder f fstRules = concatMap (\r -> concatMap (f r) fstRules)
 
 instance DPO (RuleMorphism a b) where
   invertProduction conf r = addMinimalSafetyNacs conf newRule
     where
-      newRule = buildProduction (getRHS r) (getLHS r) (concatMap (shiftNacOverProduction conf r) (getNACs r))
+      newRule = buildProduction (getRHS r) (getLHS r)
+                 (concatMap (shiftNacOverProduction conf r) (getNACs r))
 
   -- | Needs the satisfiesNACs extra verification because not every satisfiesGluingConditions nac can be shifted
   shiftNacOverProduction conf rule n =
     [calculateComatch n rule |
       satisfiesGluingConditions conf rule n &&
       satisfiesNACs conf ruleWithOnlyMinimalSafetyNacs n]
-
     where
-      ruleWithOnlyMinimalSafetyNacs = buildProduction (getLHS rule) (getRHS rule) (minimalSafetyNacs rule)
+      ruleWithOnlyMinimalSafetyNacs =
+        buildProduction (getLHS rule) (getRHS rule) (minimalSafetyNacs rule)
 
   isPartiallyMonomorphic m l =
     isPartiallyMonomorphic (mappingLeft m)      (mappingLeft l)      &&
     isPartiallyMonomorphic (mappingInterface m) (mappingInterface l) &&
     isPartiallyMonomorphic (mappingRight m)     (mappingRight l)
 
+-- | Applies a named second order rule to a named first order rule with all possible matches,
+-- and generates named first order rules as result.
 applySndOrderRule :: DPOConfig -> (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String, GraphRule a b)]
 applySndOrderRule conf (sndName,sndRule) (fstName,fstRule) =
   let
@@ -104,10 +101,10 @@ applySndOrderRule conf (sndName,sndRule) (fstName,fstRule) =
 -- *** Minimal Safety Nacs
 
 -- | Adds the minimal safety nacs needed to this production always produce a second order rule.
--- If the nacs to be added not satisfies the others nacs, then it do not need to be added.
+-- If the nacs that going to be added not satisfies the others nacs, then it do not need to be added.
 addMinimalSafetyNacs :: DPOConfig -> SndOrderRule a b -> SndOrderRule a b
 addMinimalSafetyNacs nacInj sndRule =
-  buildProduction
+  buildProduction 
     (getLHS sndRule)
     (getRHS sndRule)
     (getNACs sndRule ++
@@ -128,6 +125,9 @@ minimalSafetyNacs sndRule =
   newNacsPair LeftSide sndRule ++
   newNacsPair RightSide sndRule
 
+-- | Generate NACs that forbid deleting elements in L or R but not in K,
+-- It discovers how situations must have a NAC and function createNacProb creates them.
+-- Insert NACs to avoid condition (a) in Thm 70 (rodrigo machado phd thesis, 2012)
 newNacsProb :: Side -> SndOrderRule a b -> [SO.RuleMorphism a b]
 newNacsProb side sndRule = nacNodes ++ nacEdges
   where
@@ -149,7 +149,7 @@ newNacsProb side sndRule = nacNodes ++ nacEdges
     sa = getSide ruleL
     sb = getSide ruleK
     sc = getSide ruleR
-
+    
     nodeProb = [applyNode f n |
                  n <- nodesFromCodomain sb
                , isOrphanNode sa (applyNode f n)
@@ -165,6 +165,7 @@ newNacsProb side sndRule = nacNodes ++ nacEdges
     nacNodes = map (createNacProb side ruleL . Node) nodeProb
     nacEdges = map (createNacProb side ruleL . Edge) edgeProb
 
+-- | Auxiliar function that creates concrectly the NACs for newNacsProb
 createNacProb :: Side -> GraphRule a b -> NodeOrEdge -> SO.RuleMorphism a b
 createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
   where
@@ -244,6 +245,8 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
         updateLeft2 = createNodeOnDomain tgtInK typeTgt tgt updateLeft
         updateLeftEdge = createEdgeOnDomain x' srcInK tgtInK tp x updateLeft2
 
+-- | Generate NACs that forbid non monomorphic rule generation.
+-- Insert NACs to avoid condition (b) in Thm 70 (rodrigo machado phd thesis, 2012)
 newNacsPair :: Side -> SndOrderRule a b -> [SO.RuleMorphism a b]
 newNacsPair sideChoose sndRule =
   mapMaybe createNac retNodes ++ mapMaybe createNac retEdges
