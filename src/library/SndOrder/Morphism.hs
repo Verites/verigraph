@@ -20,7 +20,7 @@ import           Graph.GraphMorphism  hiding (applyEdge, applyEdgeUnsafe,
 import           TypedGraph.GraphRule
 import           TypedGraph.Morphism
 
--- | A morphism between two rules.
+-- | A morphism between two first order rules.
 --
 -- The following diagram illustrates such a morphism, omiting the NACs.
 --
@@ -111,8 +111,7 @@ instance Morphism (RuleMorphism a b) where
 
 
 instance FindMorphism (RuleMorphism a b) where
-  -- | A match between two rules, only considers monomorphic matches morphisms:
-  -- (desconsidering the NACs)
+  -- | A match between two first order rules (desconsidering the NACs)
   findMorphisms prop l g = map (buildPair l g) rightMatch
     where
       matchesK = findMorphisms prop (domain (getLHS l)) (domain (getLHS g))
@@ -174,7 +173,7 @@ instance EpiPairs (RuleMorphism a b) where
                    in (ruleMorphism m1 rule l1 k1 r1,
                        ruleMorphism m2 rule l2 k2 r2)) rights
 
-  createAllSubobjects _ _ = error "Not implemented"
+  createAllSubobjects _ _ = error "CreateAllSubobjects for RuleMorphism: Not implemented"
 
   --FIXME
   createJointlyEpimorphicPairsFromNAC _ r nac = allPairs
