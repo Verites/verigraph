@@ -17,6 +17,7 @@ import           Options.Applicative
 
 import qualified XML.GGXReader           as XML
 import qualified XML.GGXWriter           as GW
+import           Dot
 
 data Options = Options
   { outputFile :: String }
@@ -63,8 +64,16 @@ execute globalOpts opts = do
     let fstRulesPlusEmpty = addEmptyFstOrderRule (typeGraph fstOrderGG) (GG.rules fstOrderGG)
         newRules = SO.applySecondOrder (SO.applySndOrderRule dpoConf) fstRulesPlusEmpty (GG.rules sndOrderGG)
         newGG = fstOrderGG {GG.rules = GG.rules fstOrderGG ++ newRules}
-
+        namingContext = makeNamingContext names
+        ruleL = codomain $ getLHS $ snd ((GG.sndOrderRules gg)!!2)
+        ruleK = domain $ getLHS $ snd ((GG.sndOrderRules gg)!!2)
+        ruleR = codomain $ getRHS $ snd ((GG.sndOrderRules gg)!!2)
+    
     putStrLn ""
+    --print $ printSubGraphRule namingContext "L" ruleL
+    --print $ printSubGraphRule namingContext "K" ruleK
+    --print $ printSubGraphRule namingContext "R" ruleR
+    print $ printSndOrderRule namingContext "rule2" $ snd ((GG.sndOrderRules gg)!!0)
 
     GW.writeGrammarFile (newGG,sndOrderGG) ggName names (outputFile opts)
     
@@ -73,3 +82,19 @@ execute globalOpts opts = do
 
 typeGraph :: GG.Grammar (TypedGraphMorphism a b) -> Graph a b
 typeGraph = codomain . (GG.start)
+
+makeNamingContext :: [(String, String)] -> Dot.NamingContext
+makeNamingContext assocList =
+  let
+    normalizeId id =
+      "I" ++ show id
+
+    nameForId id =
+      case lookup id assocList of
+        Nothing ->
+          error $ "Name for '" ++ id ++ "' not found."
+
+        Just name ->
+          takeWhile (/= '%') name
+  in
+    Dot.Ctx (nameForId . normalizeId) (nameForId . normalizeId)
