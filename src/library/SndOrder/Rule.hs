@@ -75,7 +75,7 @@ instance DPO (RuleMorphism a b) where
       satisfiesNACs conf ruleWithOnlyMinimalSafetyNacs n]
     where
       ruleWithOnlyMinimalSafetyNacs =
-        buildProduction (getLHS rule) (getRHS rule) (minimalSafetyNacs rule)
+        buildProduction (getLHS rule) (getRHS rule) (minimalSafetyNacs conf rule)
 
   isPartiallyMonomorphic m l =
     isPartiallyMonomorphic (mappingLeft m)      (mappingLeft l)      &&
@@ -103,12 +103,12 @@ applySndOrderRule conf (sndName,sndRule) (fstName,fstRule) =
 -- | Adds the minimal safety nacs needed to this production always produce a second order rule.
 -- If the nacs that going to be added not satisfies the others nacs, then it do not need to be added.
 addMinimalSafetyNacs :: DPOConfig -> SndOrderRule a b -> SndOrderRule a b
-addMinimalSafetyNacs nacInj sndRule =
+addMinimalSafetyNacs conf sndRule =
   buildProduction 
     (getLHS sndRule)
     (getRHS sndRule)
     (getNACs sndRule ++
-     filter (satisfiesNACs nacInj sndRule) (minimalSafetyNacs sndRule))
+     filter (satisfiesNACs conf sndRule) (minimalSafetyNacs conf sndRule))
 
 -- | Configuration for the minimalSafetyNACs algorithms, it defines from
 -- which side of the getLHS (second order production) is being analyzed
@@ -118,12 +118,15 @@ data Side = LeftSide | RightSide
 data NodeOrEdge = Node NodeId | Edge EdgeId deriving (Show)
 
 -- | Generates the minimal safety NACs of a 2-rule
-minimalSafetyNacs :: SndOrderRule a b -> [RuleMorphism a b]
-minimalSafetyNacs sndRule =
+minimalSafetyNacs :: DPOConfig -> SndOrderRule a b -> [RuleMorphism a b]
+minimalSafetyNacs conf sndRule =
   newNacsProb LeftSide sndRule ++
   newNacsProb RightSide sndRule ++
-  newNacsPair LeftSide sndRule ++
-  newNacsPair RightSide sndRule
+  (if (matchRestriction conf) == AnyMatches
+    then
+      (newNacsPair LeftSide sndRule ++
+       newNacsPair RightSide sndRule)
+    else [])
 
 -- | Generate NACs that forbid deleting elements in L or R but not in K,
 -- It discovers how situations must have a NAC and function createNacProb creates them.

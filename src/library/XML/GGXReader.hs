@@ -112,12 +112,9 @@ minimalSafetyNacsWithLog conf oldGG = (newGG, printNewNacs)
     newGG = oldGG {GG.sndOrderRules = map fst newNacs}
     printNewNacs = map snd newNacs
 
-printMinimalSafetyNacsLog :: DPOConfig -> [(String, Int)] -> [String]
-printMinimalSafetyNacsLog dpoConf printNewNacs =
+printMinimalSafetyNacsLog :: [(String, Int)] -> [String]
+printMinimalSafetyNacsLog printNewNacs =
     ["Adding minimal safety nacs to second order rules:"]
-    ++ [if matchRestriction dpoConf == MonoMatches
-          then ""
-          else "Warning, some safety nacs for non injective matches are not implemented"]
     ++ map (\(r,n) -> "Rule " ++ r ++ ", added " ++ show n ++ " nacs") printNewNacs
     ++ ["All minimal safety nacs added!"]
 

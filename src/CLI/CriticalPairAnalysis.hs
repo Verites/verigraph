@@ -86,7 +86,7 @@ execute globalOpts opts = do
     putStrLn $ "only injective matches morphisms: " ++ show (matchRestriction dpoConf)
     putStrLn ""
 
-    when secondOrder $ mapM_ putStrLn (XML.printMinimalSafetyNacsLog dpoConf printNewNacs)
+    when secondOrder $ mapM_ putStrLn (XML.printMinimalSafetyNacsLog printNewNacs)
 
     putStrLn ""
 

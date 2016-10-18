@@ -54,7 +54,7 @@ execute globalOpts opts = do
     putStrLn $ "only injective matches morphisms: " ++ show (matchRestriction dpoConf)
     putStrLn ""
 
-    mapM_ putStrLn (XML.printMinimalSafetyNacsLog dpoConf printNewNacs)
+    mapM_ putStrLn (XML.printMinimalSafetyNacsLog printNewNacs)
     
     -- It is adding an empty first order rule as possible match target,
     -- it allows the creation from "zero" of a new second order rules.
