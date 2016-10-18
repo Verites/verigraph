@@ -37,3 +37,7 @@ It is also possible to use `stack` instead of `cabal`:
   $ echo "export PATH=${PATH}:~/.local/bin" >> ~/.bashrc
   $ source ~/.bashrc
 ```
+
+## Tutorial
+
+In depth "how to" tutorials are available for each stable version at [Releases](https://github.com/Verites/verigraph/releases).
