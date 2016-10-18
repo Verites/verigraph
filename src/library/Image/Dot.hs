@@ -154,8 +154,8 @@ printGraphRule context ruleName rule =
     [(printSubTypedGraph context interfaceName (domain (getLHS rule)))] ++
     [printSubTypedGraph context rightName (codomain (getRHS rule))])
     (concat
-    ([(map (mapNode interfaceName leftName) $ nodesWithType (mapping (getLHS rule)))] ++
-     [(map (mapNode interfaceName rightName) $ nodesWithType (mapping (getRHS rule)))]))
+    ([(map (mapNode False interfaceName leftName) $ nodesWithType (mapping (getLHS rule)))] ++
+     [(map (mapNode True interfaceName rightName) $ nodesWithType (mapping (getRHS rule)))]))
     []
     
   where
@@ -163,8 +163,10 @@ printGraphRule context ruleName rule =
     interfaceName = ruleName++"K"
     rightName = ruleName++"R"
     
-    mapNode idSrc idTgt (src, tgt) = (text idSrc) <> nodeId src <+> text "->" <+> (text idTgt) <> nodeId tgt <+> brackets
+    mapNode False idSrc idTgt (src, tgt) = (text idSrc) <> nodeId src <+> text "->" <+> (text idTgt) <> nodeId tgt <+> brackets
           (text "style=" <> (text "dotted") <> semi)
+    mapNode True idSrc idTgt (src, tgt) = (text idTgt) <> nodeId tgt <+> text "->" <+> (text idSrc) <> nodeId src <+> brackets
+          (text "dir=back,style=" <> (text "dotted") <> semi)
 
 printSubGraphRule :: NamingContext -> String -> GraphRule a b -> Doc
 printSubGraphRule context ruleName rule =
@@ -175,8 +177,8 @@ printSubGraphRule context ruleName rule =
     [(printSubTypedGraph context interfaceName (domain (getLHS rule)))] ++
     [printSubTypedGraph context rightName (codomain (getRHS rule))])
     (concat
-    ([(map (mapNode interfaceName leftName) $ nodesWithType (mapping (getLHS rule)))] ++
-     [(map (mapNode interfaceName rightName) $ nodesWithType (mapping (getRHS rule)))]))
+    ([(map (mapNode False interfaceName leftName) $ nodesWithType (mapping (getLHS rule)))] ++
+     [(map (mapNode True interfaceName rightName) $ nodesWithType (mapping (getRHS rule)))]))
     []
     
   where
@@ -184,8 +186,10 @@ printSubGraphRule context ruleName rule =
     interfaceName = ruleName++"K"
     rightName = ruleName++"R"
     
-    mapNode idSrc idTgt (src, tgt) = (text idSrc) <> nodeId src <+> text "->" <+> (text idTgt) <> nodeId tgt <+> brackets
+    mapNode False idSrc idTgt (src, tgt) = (text idSrc) <> nodeId src <+> text "->" <+> (text idTgt) <> nodeId tgt <+> brackets
           (text "style=" <> (text "dotted") <> semi)
+    mapNode True idSrc idTgt (src, tgt) = (text idTgt) <> nodeId tgt <+> text "->" <+> (text idSrc) <> nodeId src <+> brackets
+          (text "dir=back,style=" <> (text "dotted") <> semi)
 
 -- | Create a dotfile representation of the given snd order rule
 printSndOrderRule :: NamingContext -> String -> SndOrderRule a b -> Doc
@@ -197,12 +201,12 @@ printSndOrderRule context ruleName rule =
     [(printSubGraphRule context interfaceName (domain (getLHS rule)))] ++
     [printSubGraphRule context rightName (codomain (getRHS rule))])
     (
-    (map (mapNode (ruleName++"K"++"L") (ruleName++"L"++"L")) $ nodesWithType (mapping (mappingLeft (getLHS rule)))) ++
-    (map (mapNode (ruleName++"K"++"K") (ruleName++"L"++"K")) $ nodesWithType (mapping (mappingInterface (getLHS rule)))) ++
-    (map (mapNode (ruleName++"K"++"R") (ruleName++"L"++"R")) $ nodesWithType (mapping (mappingRight (getLHS rule)))) ++
-    (map (mapNode (ruleName++"K"++"L") (ruleName++"R"++"L")) $ nodesWithType (mapping (mappingLeft (getRHS rule)))) ++
-    (map (mapNode (ruleName++"K"++"K") (ruleName++"R"++"K")) $ nodesWithType (mapping (mappingInterface (getRHS rule)))) ++
-    (map (mapNode (ruleName++"K"++"R") (ruleName++"R"++"R")) $ nodesWithType (mapping (mappingRight (getRHS rule))))
+    (map (mapNode False (ruleName++"K"++"L") (ruleName++"L"++"L")) $ nodesWithType (mapping (mappingLeft (getLHS rule)))) ++
+    (map (mapNode False (ruleName++"K"++"K") (ruleName++"L"++"K")) $ nodesWithType (mapping (mappingInterface (getLHS rule)))) ++
+    (map (mapNode False (ruleName++"K"++"R") (ruleName++"L"++"R")) $ nodesWithType (mapping (mappingRight (getLHS rule)))) ++
+    (map (mapNode True (ruleName++"K"++"L") (ruleName++"R"++"L")) $ nodesWithType (mapping (mappingLeft (getRHS rule)))) ++
+    (map (mapNode True (ruleName++"K"++"K") (ruleName++"R"++"K")) $ nodesWithType (mapping (mappingInterface (getRHS rule)))) ++
+    (map (mapNode True (ruleName++"K"++"R") (ruleName++"R"++"R")) $ nodesWithType (mapping (mappingRight (getRHS rule))))
     )
     []
     
@@ -211,8 +215,10 @@ printSndOrderRule context ruleName rule =
     interfaceName = ruleName++"K"
     rightName = ruleName++"R"
     
-    mapNode idSrc idTgt (src, tgt) = (text idSrc) <> nodeId src <+> text "->" <+> (text idTgt) <> nodeId tgt <+> brackets
+    mapNode True idSrc idTgt (src, tgt) = (text idSrc) <> nodeId src <+> text "->" <+> (text idTgt) <> nodeId tgt <+> brackets
           (text "style=" <> (text "dashed") <> semi)
+    mapNode False idSrc idTgt (src, tgt) = (text idTgt) <> nodeId tgt <+> text "->" <+> (text idSrc) <> nodeId src <+> brackets
+          (text "dir=back,style=" <> (text "dashed") <> semi)
 
 nodeSubId :: String -> NodeId -> Doc
 nodeSubId graphName (NodeId n) =

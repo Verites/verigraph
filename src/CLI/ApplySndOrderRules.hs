@@ -5,7 +5,7 @@ module ApplySndOrderRules
   ) where
 
 import           Abstract.AdhesiveHLR
-
+import           Control.Monad           (when)
 import           Graph.Graph             (Graph)
 import qualified GraphGrammar.Core       as GG
 import qualified SndOrder.Rule           as SO
@@ -45,7 +45,8 @@ addEmptyFstOrderRule typegraph fstRules =
 execute :: GlobalOptions -> Options -> IO ()
 execute globalOpts opts = do
     let dpoConf = morphismsConf globalOpts
-
+        printDot = False
+    
     (fstOrderGG, sndOrderGG, printNewNacs) <- XML.readGrammar (inputFile globalOpts) (useConstraints globalOpts) dpoConf
     ggName <- XML.readGGName (inputFile globalOpts)
     names <- XML.readNames (inputFile globalOpts)
@@ -65,15 +66,11 @@ execute globalOpts opts = do
         newRules = SO.applySecondOrder (SO.applySndOrderRule dpoConf) fstRulesPlusEmpty (GG.rules sndOrderGG)
         newGG = fstOrderGG {GG.rules = GG.rules fstOrderGG ++ newRules}
         namingContext = makeNamingContext names
-        ruleL = codomain $ getLHS $ snd ((GG.sndOrderRules gg)!!2)
-        ruleK = domain $ getLHS $ snd ((GG.sndOrderRules gg)!!2)
-        ruleR = codomain $ getRHS $ snd ((GG.sndOrderRules gg)!!2)
     
     putStrLn ""
-    --print $ printSubGraphRule namingContext "L" ruleL
-    --print $ printSubGraphRule namingContext "K" ruleK
-    --print $ printSubGraphRule namingContext "R" ruleR
-    print $ printSndOrderRule namingContext "rule2" $ snd ((GG.sndOrderRules gg)!!0)
+    
+    let dots = map (uncurry (printSndOrderRule namingContext)) (GG.sndOrderRules gg)
+    when printDot $ mapM_ print dots
 
     GW.writeGrammarFile (newGG,sndOrderGG) ggName names (outputFile opts)
     
@@ -83,6 +80,7 @@ execute globalOpts opts = do
 typeGraph :: GG.Grammar (TypedGraphMorphism a b) -> Graph a b
 typeGraph = codomain . (GG.start)
 
+-- Replicated function of ModelChecker
 makeNamingContext :: [(String, String)] -> Dot.NamingContext
 makeNamingContext assocList =
   let
