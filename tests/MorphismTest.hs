@@ -6,12 +6,17 @@ import qualified TypedGraph.Morphism as TGM
 import           Data.List
 import qualified Data.Map as M
 import           Test.HUnit
+import           Utils
 
-
+-- Type shorthands
 type TGM a b = TGM.TypedGraphMorphism a b
 type GM a b = GM.GraphMorphism a b
 type CanonicalMorphism = ([(NodeId, NodeId)], [(EdgeId, EdgeId)])
 
+main :: IO()
+main = do
+  runTests ("Preliminary tests with number of morphisms" ~: testsLen)
+  runTests ("Effective tests with results of morphisms" ~: tests)
 
 --Generic test with number of results
 genericLenTest :: GM a b -> GM a b -> (Int,Int,Int,Int)
@@ -248,6 +253,7 @@ testLen7  = genericLenTest g13 g4
 testLen7' :: (Int,Int, Int, Int)
 testLen7' = genericLenTest g4 g13
 
+
 --Verifying morphism results
 tests :: Test
 tests = test [ "Test 1 "  ~: test1  ~=? ( []
@@ -370,19 +376,3 @@ testsLen = test [ "TestLen 1 "  ~: testLen1  ~=? (0,1,0,1)
 
                 , "TestLen 7 "  ~: testLen7  ~=? (2,0,0,2)
                 , "TestLen 7' " ~: testLen7' ~=? (0,1,0,1) ]
-
-main :: IO()
-main = do
-  print "Preliminar tests with number of morphisms"
-  Counts _ _ errors fails   <- runTestTT testsLen
-
-  print "Efective tests with results of morphisms"
-  Counts _ _ errors' fails' <- if errors == 0 && fails == 0
-                               then runTestTT tests
-                               else error "Preliminary tests failed"
-  if errors' == 0 && fails' == 0
-    then print "All Tests Passed"
-    else error "Effective tests failed"
-
-
-  return ()
