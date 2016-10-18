@@ -3,14 +3,16 @@ import           Test.HUnit
 import qualified XML.GGXReader             as XML
 
 -- | Checks if the minimalSafetyNACs was correctly generated.
-tests log = test ([all (== 9) list ~=? True])
+tests log n = [all (== n) list ~=? True]
   where
     list = map snd log
 
 main :: IO Counts
 main = do
   let fileName = "tests/grammars/nacs2rule.ggx"
-      dpoConf = DPOConfig MonoMatches MonomorphicNAC
-  (gg,log) <- XML.readGrammar fileName False dpoConf
+      dpoConf1 = DPOConfig MonoMatches MonomorphicNAC
+      dpoConf2 = DPOConfig AnyMatches MonomorphicNAC
+  (_,log1) <- XML.readGrammar fileName False dpoConf1
+  (_,log2) <- XML.readGrammar fileName False dpoConf2
   
-  runTestTT (tests log)
+  runTestTT $ test $ (tests log1 2) ++ (tests log2 9)
