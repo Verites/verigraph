@@ -54,6 +54,15 @@ testTeseRodrigoConflicts dpoConf rules =
         "( 0 0 0 0 0 0 0 0 )\n"++
         "( 0 0 0 0 0 0 0 0 )\n"++
         "( 0 0 0 0 0 0 0 0 )\n"
+    , testCase "Delete-Use and Produce-Dangling" findAllDeleteUseAndProduceDangling $
+        "( 2 0 0 0 0 0 0 0 )\n"++
+        "( 0 3 0 0 0 0 0 0 )\n"++
+        "( 0 2 6 0 1 0 0 0 )\n"++
+        "( 0 0 0 1 0 0 0 0 )\n"++
+        "( 0 0 1 0 4 0 0 0 )\n"++
+        "( 0 0 0 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 0 0 0 )\n"
     , testCase "Produce-Forbid" findAllProduceForbid $
         "( 0 0 0 0 0 0 0 0 )\n"++
         "( 2 0 0 0 0 0 0 0 )\n"++
@@ -125,6 +134,15 @@ testTeseRodrigoDeps dpoConf rules =
         "( 0 0 0 0 0 0 0 1 )\n"++
         "( 0 0 0 0 0 0 0 0 )\n"++
         "( 0 0 0 0 0 0 0 0 )\n"
+    , testCase "Produce-Use and Remove-Dangling" findAllProduceUseAndRemoveDangling $
+        "( 0 1 0 0 1 0 0 0 )\n"++
+        "( 0 0 3 0 0 0 0 0 )\n"++
+        "( 0 0 0 1 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 0 0 0 )\n"++
+        "( 0 0 1 0 2 0 0 0 )\n"
     ]
   where
   testCase name findDependencies expected =

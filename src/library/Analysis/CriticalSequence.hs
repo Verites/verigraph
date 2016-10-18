@@ -1,6 +1,13 @@
 module Analysis.CriticalSequence
  ( CriticalSequenceType (..),
    CriticalSequence,
+   getCriticalSequenceMatches,
+   getCriticalSequenceComatches,
+   getNacMatchOfCriticalSequence,
+   getNacIndexOfCriticalSequence,
+   getCriticalSequenceType,
+
+   -- * Finding Critical Sequences
    findTriggeringCriticalSequences,
    namedCriticalSequences,
    findAllProduceUse,
@@ -9,11 +16,7 @@ module Analysis.CriticalSequence
    findAllDeliverDelete,
    findAllForbidProduce,
    findAllDeliverDangling,
-   getCriticalSequenceMatches,
-   getCriticalSequenceComatches,
-   getNacMatchOfCriticalSequence,
-   getNacIndexOfCriticalSequence,
-   getCriticalSequenceType
+   findAllProduceUseAndRemoveDangling,
    ) where
 
 import           Abstract.AdhesiveHLR       as RW
@@ -108,14 +111,14 @@ namedCriticalSequences conf rules =
 -- enables the application of @p2@
 findTriggeringCriticalSequences :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
 findTriggeringCriticalSequences conf p1 p2 =
-  findAllProduceUseAndDangling conf p1 p2 ++
+  findAllProduceUseAndRemoveDangling conf p1 p2 ++
   findAllDeleteForbid conf p1 p2
 
 -- TODO : verify if this doc is right
 -- | Given two productions @p1@ and @p2@, finds all the Critical Sequences of @p1@ and @p2@ in this order
 findCriticalSequences :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
 findCriticalSequences conf p1 p2 =
-  findAllProduceUseAndDangling conf p1 p2 ++
+  findAllProduceUseAndRemoveDangling conf p1 p2 ++
   findAllDeleteForbid conf p1 p2 ++
   findAllDeliverDelete conf p1 p2 ++
   findAllDeliverDangling conf p1 p2 ++
@@ -161,8 +164,8 @@ findAllRemoveDangling conf p1 p2 =
 
 -- | Tests ProduceUse and RemoveDangling for the same pairs,
 -- more efficient than deal separately.
-findAllProduceUseAndDangling :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
-findAllProduceUseAndDangling conf p1 p2 =
+findAllProduceUseAndRemoveDangling :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
+findAllProduceUseAndRemoveDangling conf p1 p2 =
   map categorizeDependency dependencies
   where
     p1' = invertProduction conf p1

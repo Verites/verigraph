@@ -1,17 +1,19 @@
 module Analysis.CriticalPairs
  ( CriticalPairType (..),
    CriticalPair,
-   findCriticalPairs,
-   namedCriticalPairs,
-   findAllDeleteUse,
-   findAllProduceForbid,
-   findAllProduceDangling,
    getCriticalPairMatches,
    getCriticalPairComatches,
    getNacIndexOfCriticalPair,
    getNacMatchOfCriticalPair,
    getCriticalPairType,
-   isDeleteUse
+
+   -- * Finding Critical Pairs
+   findCriticalPairs,
+   namedCriticalPairs,
+   findAllDeleteUse,
+   findAllProduceForbid,
+   findAllProduceDangling,
+   findAllDeleteUseAndProduceDangling
    ) where
 
 import           Abstract.AdhesiveHLR       as RW
