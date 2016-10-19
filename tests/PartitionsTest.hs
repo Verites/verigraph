@@ -6,6 +6,10 @@ import           Graph.GraphMorphism
 import           TypedGraph.Morphism hiding (createEdgeOnDomain, createNodeOnDomain)
 import           Math.Combinat.Numbers (bellNumber)
 import           Test.HUnit
+import           Utils
+
+main :: IO ()
+main = runTests tests
 
 tests =
   test (
@@ -46,7 +50,3 @@ initGraph2 = Graph.GraphMorphism.empty (insertNode (NodeId 0) Graph.Graph.empty)
 graph2 = foldr
            (\e -> createEdgeOnDomain (EdgeId e) (NodeId 0) (NodeId 0) (EdgeId 0))
            (updateNodes (NodeId 0) (NodeId 0) initGraph2)
-
-main :: IO Counts
-main = do
-  runTestTT tests
