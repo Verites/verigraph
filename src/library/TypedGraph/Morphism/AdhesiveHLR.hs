@@ -168,7 +168,106 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
                            delNodes
     in (k, idMap (codomain k) (codomain m))
 
-
+  -- @
+  --        g'
+  --     X──────▶A
+  --     │       │
+  --  f' │       │ f
+  --     ▼       ▼
+  --     B──────▶C
+  --        g
+  --
+  -- @
+  calculatePullback f g = (f'',g'')
+    where      
+      nodeType = GM.applyNodeUnsafe typedGraphB
+      edgeTypeInB = GM.applyEdgeUnsafe typedGraphB
+      edgeTypeInA = GM.applyEdgeUnsafe typedGraphA
+      typeGraph = codomain typedGraphC
+      typedGraphA = domain f
+      typedGraphB = domain g
+      typedGraphC = codomain f
+      graphB = domain typedGraphB
+      graphA = domain typedGraphA
+      
+      nodesInA = nodesFromDomain f
+      nodesInB = nodesFromDomain g
+      edgesInA = edgesFromDomain f
+      edgesInB = edgesFromDomain g
+      
+      initX = GM.empty empty typeGraph
+      initF' = buildTypedGraphMorphism initX typedGraphB (GM.empty empty (domain typedGraphB))
+      initG' = buildTypedGraphMorphism initX typedGraphA (GM.empty empty (domain typedGraphA))
+      
+      nodesWithoutId = getPairs applyNodeUnsafe nodesInA nodesInB nodes
+      nodesWithId = zip nodesWithoutId ([0..]::[Int])
+      (g',f') = foldr updateNodes (initG',initF') nodesWithId
+      
+      egdesWithoutId = getPairs applyEdgeUnsafe edgesInA edgesInB edges
+      edgesWithId = zip egdesWithoutId ([0..]::[Int])
+      (g'',f'') = foldr updateEdges (g',f') edgesWithId
+      
+      getPairs apply elemA elemB list = concatMap (\(x,y) -> product x y) comb
+        where
+          comb = map (\n -> (filter (\n' -> apply g n' == n) elemB, filter (\n' -> apply f n' == n) elemA)) (list (domain typedGraphC))
+      
+      updateNodes ((a,b),newId) (g',f') = (updateG',updateF')
+        where
+          newNode = NodeId newId
+          updateF' = createNodeOnDomain newNode (nodeType a) a f'
+          updateG' = createNodeOnDomain newNode (nodeType a) b g'
+      
+      updateEdges ((a,b),newId) (g',f') = (updateG',updateF')
+        where
+          newEdge = EdgeId newId
+          
+          sourceOfUnsafe g e = fromMaybe (error "sourceOf error") $ sourceOf g e
+          targetOfUnsafe g e = fromMaybe (error "targetOf error") $ targetOf g e
+          
+          src = head $ filter (\n -> applyNodeUnsafe f' n == (sourceOfUnsafe graphB a) && applyNodeUnsafe g' n == (sourceOfUnsafe graphA b)) (nodesFromDomain f')
+          tgt = head $ filter (\n -> applyNodeUnsafe f' n == (targetOfUnsafe graphB a) && applyNodeUnsafe g' n == (targetOfUnsafe graphA b)) (nodesFromDomain f')
+          
+          updateF' = createEdgeOnDomain newEdge src tgt (edgeTypeInA a) a f'
+          updateG' = createEdgeOnDomain newEdge src tgt (edgeTypeInB a) b g'
+      
+      product x y =
+        do
+          a <- x
+          b <- y
+          return (a,b)
+  -- @
+  --        d
+  --    B──────▶C
+  --    │       │
+  --  b │       │ c
+  --    ▼       ▼
+  --    A──────▶A'
+  --        f
+  -- @
+  
+  --calculateInitialPushout f = (b,d,c)
+  --  where
+  --    b = instatiateMorphismB nodesOfB
+  --    (d,c) = calculatePushoutComplement f b  
+    
+  --    typeGraph = codomain typedGraphA
+  --    typedGraphA = domain f
+  --    graphA = domain typedGraphA
+  --    graphA' = domain (codomain f)
+  --    nodesOfA = nodesFromDomain f
+  --    nodesOfB = filter checkExistsOrphanIncidentEdge nodesOfA
+  
+  --    checkExistsOrphanIncidentEdge n = any (isOrphanEdge f) incEdges
+  --      where
+  --        incEdges = incidentEdges graphA' (applyNodeUnsafe f n)
+      
+  --    instatiateMorphismB = foldr (\n -> createNodeOnDomain n (typeN n) n) initMorphismB
+  --      where
+  --        typeN = GM.applyNodeUnsafe typedGraphA
+  --        initTypedGraphB = GM.empty empty typeGraph
+  --        initMapB = GM.empty empty graphA
+  --        initMorphismB = buildTypedGraphMorphism initTypedGraphB typedGraphA initMapB
+  
   monomorphicPullback f g = (delNodesFromF', delNodesFromG')
     where
       f' = invert f
