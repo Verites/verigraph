@@ -7,11 +7,13 @@ module ApplySndOrderRules
   ) where
 
 import           Abstract.AdhesiveHLR
-import           Graph.Graph          (Graph)
+import qualified Data.Set as S
+import           Graph.Graph
 import           GlobalOptions
 import           Options.Applicative
 import qualified SndOrder.Rule           as SO
 import qualified TypedGraph.GraphGrammar as GG
+import           TypedGraph.Morphism.Cocomplete
 import qualified TypedGraph.GraphRule    as GR
 import qualified XML.GGXReader           as XML
 import qualified XML.GGXWriter           as GW
@@ -34,7 +36,7 @@ addEmptyFstOrderRule typegraph fstRules =
     fstRules
   else
     fstRulesPlusEmpty
-  
+
   where
     fstRulesPlusEmpty = ("emptyRule", emptyFstOrderRule) : fstRules
     emptyFstOrderRule = GR.emptyGraphRule typegraph
@@ -54,8 +56,8 @@ execute globalOpts opts = do
     putStrLn $ "only injective matches morphisms: " ++ show (matchRestriction dpoConf)
     putStrLn ""
 
-    mapM_ putStrLn (XML.printMinimalSafetyNacsLog printNewNacs)
-    
+    --mapM_ putStrLn (XML.printMinimalSafetyNacsLog printNewNacs)
+
     -- It is adding an empty first order rule as possible match target,
     -- it allows the creation from "zero" of a new second order rules.
     let fstRulesPlusEmpty = addEmptyFstOrderRule (GG.typeGraph gg) (GG.rules gg)
@@ -64,7 +66,22 @@ execute globalOpts opts = do
     
     putStrLn ""
 
-    GW.writeGrammarFile gg2 ggName names (outputFile opts)
+    let n1 = (NodeId 1, NodeId 10)
+        n2 = (NodeId 2, NodeId 10)
+        n3 = (NodeId 3, NodeId 10)
+        n4 = (NodeId 4, NodeId 10)
+        n5 = (NodeId 5, NodeId 10)
+        p1 = S.fromList [(n2,n3),(n3,n4),(n1,n5)]
+        p2 = S.fromList [S.fromList[n1],S.fromList[n2],S.fromList[n3],S.fromList[n4],S.fromList[n5]]
+        p3 = S.fromList [[n1,n2],[n3]]
+        restSet set = S.difference set (S.singleton $ S.elemAt 0 set)
+
+    print p1
+    print p2
+    print $ constructNodes p1 p2
+    --print $ mergeEquivalences (n2,n3) p2
+
+    --GW.writeGrammarFile gg2 ggName names (outputFile opts)
 
     putStrLn "Done!"
     putStrLn ""

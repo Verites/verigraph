@@ -26,6 +26,7 @@ library
                        split >= 0.2,
                        wl-pprint >=1.2 && <1.3
   exposed-modules:     Abstract.AdhesiveHLR
+                      Abstract.Cocomplete
                        Abstract.DPO
                        Abstract.DPO.StateSpace
                        Abstract.Morphism
@@ -46,6 +47,7 @@ library
                        SndOrder.Morphism
                        SndOrder.Rule
                        TypedGraph.GraphGrammar
+                       TypedGraph.Morphism.Cocomplete
                        TypedGraph.GraphRule
                        TypedGraph.Graph
                        TypedGraph.Morphism
@@ -64,6 +66,7 @@ library
                        TypedGraph.Partitions.GraphPartitionToVerigraph
                        TypedGraph.Partitions.GraphPartition
                        TypedGraph.Partitions.VerigraphToGraphPartition
+
                        TypedGraph.Subgraph
                        Util.List
                        XML.GGXParseIn
