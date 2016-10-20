@@ -34,6 +34,7 @@ library
                        Analysis.ConcurrentRules
                        Analysis.CriticalPairs
                        Analysis.CriticalSequence
+                       Analysis.ParallelIndependent
                        Analysis.Interlevel.EvolutionarySpans
                        Analysis.Interlevel.InterLevelCP
                        Dot
@@ -89,6 +90,7 @@ executable verigraph
   other-modules:       ApplySndOrderRules
                        ConcurrentRules
                        CriticalPairAnalysis
+                       PBComparison
                        GlobalOptions
 
 executable verigraph-mcheck
