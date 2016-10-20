@@ -13,7 +13,37 @@ import           Data.Maybe
 
 
 instance AdhesiveHLR (TypedGraphMorphism a b) where
-
+  -- @
+  --        d
+  --    B──────▶C
+  --    │       │
+  --  b │       │ c
+  --    ▼       ▼
+  --    A──────▶A'
+  --        f
+  -- @
+  calculateInitialPushout f = (b,d,c)
+    where
+      b = instatiateMorphismB nodesOfB
+      (d,c) = calculatePushoutComplement f b
+      
+      typeGraph = codomain typedGraphA
+      typedGraphA = domain f
+      graphA = domain typedGraphA
+      graphA' = domain (codomain f)
+      nodesOfA = nodesFromDomain f
+      nodesOfB = filter checkExistsOrphanIncidentEdge nodesOfA
+  
+      checkExistsOrphanIncidentEdge n = any (isOrphanEdge f) incEdges
+        where
+          incEdges = incidentEdges graphA' (applyNodeUnsafe f n)
+      
+      instatiateMorphismB = foldr (\n -> createNodeOnDomain n (typeN n) n) initMorphismB
+        where
+          typeN = GM.applyNodeUnsafe typedGraphA
+          initTypedGraphB = GM.empty empty typeGraph
+          initMapB = GM.empty empty graphA
+          initMorphismB = buildTypedGraphMorphism initTypedGraphB typedGraphA initMapB
   {-
           g
       A──────▶C
@@ -167,3 +197,6 @@ checkDeletion l m apply list e = elementInL && not elementInK
     elementInL = any (\x -> apply m x == Just e) (list m)
     kToG = compose l m
     elementInK = any (\x -> apply kToG x == Just e) (list kToG)
+
+isOrphanEdge :: TypedGraphMorphism a b -> EdgeId -> Bool
+isOrphanEdge m n = n `elem` orphanTypedEdges m

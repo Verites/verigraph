@@ -6,6 +6,7 @@ module ApplySndOrderRules
   , execute
   ) where
 
+import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Graph.Graph          (Graph)
 import           GlobalOptions
@@ -61,6 +62,18 @@ execute globalOpts opts = do
     let fstRulesPlusEmpty = addEmptyFstOrderRule (GG.typeGraph gg) (GG.rules gg)
         newRules = SO.applySecondOrder (SO.applySndOrderRule dpoConf) fstRulesPlusEmpty (GG.sndOrderRules gg)
         gg2 = gg {GG.rules = GG.rules gg ++ newRules}
+        rules = map snd (GG.rules gg)
+        f = getLHS (head rules)
+        (b,d,c) = calculateInitialPushout f
+    
+    print "F"
+    print f
+    print "B"
+    print b
+    print "C"
+    print c
+    print "D"
+    print d
 
     putStrLn ""
 

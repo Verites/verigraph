@@ -27,6 +27,23 @@ import           Abstract.Valid
 -- Mainly provides categorical operations that AdhesiveHLR categories
 -- are guaranteed to have.
 class (Morphism m) => AdhesiveHLR m where
+  -- | Calculate the initial pushout of the given morphism.
+  --
+  -- Given the monomorphic morphism /f : A -> A'/, returns
+  -- the morphisms /b : B -> A/, /d : B -> C/ and /c: C -> A'/ such that
+  -- the following square is the initial pushout of f.
+  --
+  -- @
+  --        d
+  --    B──────▶C
+  --    │       │
+  --  b │       │ c
+  --    ▼       ▼
+  --    A──────▶A'
+  --        f
+  -- @
+  calculateInitialPushout :: m -> (m, m, m)
+  
   -- | Calculate the pushout between the two given morphisms.
   --
   -- Given the morphisms /f : A -> B/ and /g : A -> C/, respectively, returns
