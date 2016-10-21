@@ -1,5 +1,3 @@
-{-# LANGUAGE TypeFamilies          #-}
-
 module Analysis.ParallelIndependent where
 
 import           Abstract.AdhesiveHLR       as RW
@@ -11,42 +9,34 @@ import           TypedGraph.Graph
 import           TypedGraph.GraphRule
 import           TypedGraph.Morphism
 
---isParallelIndependentDU :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> Int
---isParallelIndependentDU conf p1 p2 = if independent then 1 else 0
+data Algorithm = DeleteUse | Pullback
+data IndependenceType = Parallel | Sequentially deriving (Eq, Show)
 
-isParallelIndependentDU :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> Bool
-isParallelIndependentDU conf p1 p2 = independent
+--isIndependent :: (EpiPairs m, DPO m) => Algorithm -> DPOConfig -> Production m -> Production m -> Bool
+isIndependent :: IndependenceType -> Algorithm -> DPOConfig -> GraphRule a b -> GraphRule a b -> Bool
+isIndependent ind algorithm conf p1' p2 = not (conflict algorithm)
   where
+    p1 = case ind of 
+           Parallel -> p1'
+           Sequentially -> invertProductionWithoutNacs p1'
+    
     pairs = createJointlyEpimorphicPairsFromCodomains (matchRestriction conf) (getLHS p1) (getLHS p2)
     satisfyingPairs = filter (\(m1,m2) -> satisfyRewritingConditions conf (p1,m1) (p2,m2)) pairs
-    independent = any (\(m1,m2) -> (isDeleteUse conf p1 (m1,m2)) || (isDeleteUse conf p2 (m2,m1))) satisfyingPairs
+    
+    conflict DeleteUse = any (\(m1,m2) -> (isDeleteUse conf p1 (m1,m2)) || (isDeleteUse conf p2 (m2,m1))) satisfyingPairs
+    conflict Pullback = any (\(m1,m2) -> (pbTest p1 p2 m1 m2)) satisfyingPairs
 
---isParallelIndependentPB :: DPOConfig -> Production (TypedGraphMorphism a b) -> Production (TypedGraphMorphism a b) -> Int
---isParallelIndependentPB conf p1 p2 = if independent then 1 else 0
-
-isParallelIndependentPB :: DPOConfig -> Production (TypedGraphMorphism a b) -> Production (TypedGraphMorphism a b) -> Bool
-isParallelIndependentPB conf p1 p2 = independent
+-- pullback conflict test, when this function comes generic, move it to DiagramAlgorithms
+pbTest :: GraphRule a b -> GraphRule a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
+pbTest p1 p2 m1 m2 = Prelude.null (findIso pb1 pb2)
   where
-    pairs = createJointlyEpimorphicPairsFromCodomains (matchRestriction conf) (getLHS p1) (getLHS p2)
-    satisfyingPairs = filter (\(m1,m2) -> satisfyRewritingConditions conf (p1,m1) (p2,m2)) pairs
-    independent = any (\(m1,m2) -> (pbTest conf p1 p2 m1 m2)) satisfyingPairs
-
-pbTest :: DPOConfig -> GraphRule a b -> GraphRule a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
-pbTest conf p1 p2 m1 m2 = Prelude.null (findIso pb1 pb2)
-  where
-    (pb1M,_) = pbTGM m1 m2
-    pb1 = getDomain pb1M
+    (pb1M,_) = calculatePullback m1 m2
+    pb1 = domain pb1M
     
     a1 = compose (getLHS p1) m1
     a2 = compose (getLHS p2) m2
-    (pb2M,_) = pbTGM a1 a2
-    pb2 = getDomain pb2M
-
-getDomain :: TypedGraphMorphism a b -> TypedGraph a b
-getDomain = domain
-
-pbTGM :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> (TypedGraphMorphism a b, TypedGraphMorphism a b)
-pbTGM = monomorphicPullback
+    (pb2M,_) = calculatePullback a1 a2
+    pb2 = domain pb2M
 
 findIso :: TypedGraph a b -> TypedGraph a b -> [TypedGraphMorphism a b]
 findIso = findIsomorphisms

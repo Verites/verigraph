@@ -90,7 +90,7 @@ executable verigraph
   other-modules:       ApplySndOrderRules
                        ConcurrentRules
                        CriticalPairAnalysis
-                       PBComparison
+                       ParallelIndependence
                        GlobalOptions
 
 executable verigraph-mcheck
