@@ -61,9 +61,6 @@ execute globalOpts opts = do
     let fstRulesPlusEmpty = addEmptyFstOrderRule (GG.typeGraph gg) (GG.rules gg)
         newRules = SO.applySecondOrder (SO.applySndOrderRule dpoConf) fstRulesPlusEmpty (GG.sndOrderRules gg)
         gg2 = gg {GG.rules = GG.rules gg ++ newRules}
-        r = head $ map snd (GG.rules gg)
-    
-    print $ calculatePullback (getLHS r) (getLHS r)
     
     putStrLn ""
 

@@ -265,7 +265,6 @@ instance AdhesiveHLR (RuleMorphism a b) where
 
   -- TODO
   calculatePullback _ _ = error "calculatePullback not implemented in second order"
-  monomorphicPullback _ _ = error "monomorphicPullback not implemented in second order"
 
   hasPushoutComplement (restrictionG, g) (restrictionF, f) =
     hasPushoutComplement (restrictionG, mappingLeft g) (restrictionF, mappingLeft f)
