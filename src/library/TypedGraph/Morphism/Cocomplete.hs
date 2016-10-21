@@ -47,11 +47,35 @@ createCoequalizerObject b nodeEquivalences edgeEquivalences = h
     h = buildTypedGraphMorphism b x (GM.empty (domain b) (domain x))
     x = GM.empty G.empty (typeGraph b)
 
-add :: TypedGraphMorphism a b -> EquivalenceClass TypedNode -> TypedGraphMorphism a b
-add h nodes = createNodeOnCodomain n2 tp h
+addNode :: TypedGraphMorphism a b -> EquivalenceClass TypedNode -> TypedGraphMorphism a b
+addNode h nodes = buildNodeMaps (createNodeOnCodomain n2 tp h) n2 nodes
   where
     (n2, tp) = getElem nodes
 
+buildNodeMaps :: TypedGraphMorphism a b -> NodeId -> EquivalenceClass TypedNode -> TypedGraphMorphism a b
+buildNodeMaps h nodeInX nodes
+  | Data.Set.null nodes = h
+  | otherwise = buildNodeMaps h' nodeInX nodes'
+    where
+      (nodeInA, tp) = getElem nodes
+      h' = updateNodeRelation nodeInA nodeInX tp h
+      nodes' = setTail nodes
+
+addEdge :: TypedGraphMorphism a b -> EquivalenceClass TypedEdge -> TypedGraphMorphism a b
+addEdge h edges = buildEdgeMaps (createEdgeOnCodomain e2 s2 t2 tp h) e2 edges
+  where
+    (e2, s, t, tp) = getElem edges
+    s2 = applyNodeUnsafe h s
+    t2 = applyNodeUnsafe h t
+
+buildEdgeMaps :: TypedGraphMorphism a b -> EdgeId -> EquivalenceClass TypedEdge -> TypedGraphMorphism a b
+buildEdgeMaps h edgeInX edges
+  | Data.Set.null edges = h
+  | otherwise = buildEdgeMaps h' edgeInX edges'
+    where
+      (edgeInA, _, _, _) = getElem edges
+      h' = updateEdgeRelation edgeInA edgeInX h
+      edges' = setTail edges
 
 maximumDisjointClass :: (Ord a) => [a] -> Set (EquivalenceClass a)
 maximumDisjointClass l = fromList $ Prelude.map (fromList . (:[])) l
