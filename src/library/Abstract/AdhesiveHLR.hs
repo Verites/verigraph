@@ -29,7 +29,7 @@ import           Abstract.Valid
 class (Morphism m) => AdhesiveHLR m where
   -- | Calculate the initial pushout of the given morphism.
   --
-  -- Given the monomorphic morphism /f : A -> A'/, returns
+  -- Given the morphism /f : A -> A'/, returns
   -- the morphisms /b : B -> A/, /d : B -> C/ and /c: C -> A'/ such that
   -- the following square is the initial pushout of f.
   --
