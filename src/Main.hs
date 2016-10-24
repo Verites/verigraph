@@ -72,6 +72,38 @@ tmg2 = buildTypedGraphMorphism ta2 tb2 mg2
 
 teste2 = calculateCoequalizer tmf2 tmg2
 
+grafotipo3 = build [1] [(1,1,1)]
+
+a3 = build [10,20,30] []
+b3 = build [50,60,70,80] [(200,60,50),(300,70,60),(400,80,70)]
+
+ta3 = GM.buildGraphMorphism a3 grafotipo3 [(10,1),(20,1),(30,1)] []
+tb3 = GM.buildGraphMorphism b3 grafotipo3 [(50,1),(60,1),(70,1),(80,1)] [(200,1),(300,1),(400,1)]
+
+mf3 = GM.buildGraphMorphism a3 b3 [(10,50),(20,60),(30,70)] []
+mg3 = GM.buildGraphMorphism a3 b3 [(10,80),(20,50),(30,60)] []
+
+tmf3 = buildTypedGraphMorphism ta3 tb3 mf3
+tmg3 = buildTypedGraphMorphism ta3 tb3 mg3
+
+teste3 = calculateCoequalizer tmf3 tmg3
+
+grafotipo4 = build [1] [(1,1,1)]
+
+a4 = build [10,20] [(100,20,10),(200,20,10),(300,20,10),(400,20,10)]
+b4 = build [50,60] [(500,60,50),(600,60,50)]
+
+ta4 = GM.buildGraphMorphism a4 grafotipo4 [(10,1),(20,1)] [(100,1),(200,1),(300,1),(400,1)]
+tb4 = GM.buildGraphMorphism b4 grafotipo4 [(50,1),(60,1)] [(500,1),(600,1)]
+
+mf4 = GM.buildGraphMorphism a4 b4 [(10,50),(20,60)] [(100,500),(200,500),(300,600),(400,500)]
+mg4 = GM.buildGraphMorphism a4 b4 [(10,50),(20,60)] [(100,500),(200,500),(300,600),(400,500)]
+
+tmf4 = buildTypedGraphMorphism ta4 tb4 mf4
+tmg4 = buildTypedGraphMorphism ta4 tb4 mg4
+
+teste4 = calculateCoequalizer tmf4 tmg4
+
 {--
 {-sendMSG-}
 lr1 = build [11,13,14] [(11,13,11)]
