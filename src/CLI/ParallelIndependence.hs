@@ -48,7 +48,8 @@ execute globalOpts opts = do
           case (siFlag opts) of
             False -> Parallel
             True -> Sequentially
-        rules = concatMap (replicate 1) $ map snd (GG.rules gg)
+        --rules = concatMap (replicate 1) $ map snd (GG.rules gg)
+        rules = map snd (GG.rules gg)
         analysisDU = pairwiseCompareUpperReflected (isIndependent algorithm DeleteUse dpoConf) rules
         analysisPB = pairwiseCompareUpperReflected (isIndependent algorithm Pullback dpoConf) rules
     
