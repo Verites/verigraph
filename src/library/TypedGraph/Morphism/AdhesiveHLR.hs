@@ -177,8 +177,15 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
   --        g
   --
   -- @
+  --
+  -- Pullback for typed graphs.
+  -- It starts getting all pairs for nodes and edges, this pairs will be
+  -- the elements of X.
+  -- It creates an empty X, and morphisms f' and g', and adds each pair
+  -- identifing them with ids.
   calculatePullback f g = (f'',g'')
-    where      
+    where
+      -- This first part just defines the names for the structures
       nodeTypeInB = GM.applyNodeUnsafe typedGraphB
       nodeTypeInA = GM.applyNodeUnsafe typedGraphA
       edgeTypeInB = GM.applyEdgeUnsafe typedGraphB
@@ -195,18 +202,14 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
       edgesInA = edgesFromDomain f
       edgesInB = edgesFromDomain g
       
-      initX = GM.empty empty typeGraph
-      initF' = buildTypedGraphMorphism initX typedGraphB (GM.empty empty (domain typedGraphB))
-      initG' = buildTypedGraphMorphism initX typedGraphA (GM.empty empty (domain typedGraphA))
-      
+      -- Discover the nodes and edges of the X
       nodesWithoutId = getPairs applyNodeUnsafe nodesInA nodesInB nodes
       nodesWithId = zip nodesWithoutId ([0..]::[Int])
-      (g',f') = foldr updateNodes (initG',initF') nodesWithId
       
       egdesWithoutId = getPairs applyEdgeUnsafe edgesInA edgesInB edges
       edgesWithId = zip egdesWithoutId ([0..]::[Int])
-      (g'',f'') = foldr updateEdges (g',f') edgesWithId
       
+      -- Run the product for all elements that are mapped on the same element in C
       getPairs apply elemA elemB list = concatMap (\(x,y) -> product x y) comb
         where
           comb =
@@ -215,44 +218,57 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
                 (filter (\n' -> apply f n' == n) elemA,
                  filter (\n' -> apply g n' == n) elemB))
               (list (domain typedGraphC))
+          
+          product x y =
+            do
+              a <- x
+              b <- y
+              return (a,b)
       
+      -- Init X, f' and g' as empty
+      initX = GM.empty empty typeGraph
+      initF' = buildTypedGraphMorphism initX typedGraphB (GM.empty empty (domain typedGraphB))
+      initG' = buildTypedGraphMorphism initX typedGraphA (GM.empty empty (domain typedGraphA))
+      
+      -- Add all elements on X and their morphisms
+      (g',f') = foldr updateNodes (initG',initF') nodesWithId
+      (g'',f'') = foldr updateEdges (g',f') edgesWithId
+      
+      -- Add a node is just do it on the domain of f' and g'
       updateNodes ((a,b),newId) (g',f') = (updateG',updateF')
         where
           newNode = NodeId newId
           updateG' = createNodeOnDomain newNode (nodeTypeInA a) a g'
           updateF' = createNodeOnDomain newNode (nodeTypeInB b) b f'
       
+      -- Add an edge on the domain of f' and g'
       updateEdges ((a,b),newId) (g',f') = (updateG',updateF')
         where
           newEdge = EdgeId newId
           
+          -- To add an edge, their source and target nodes must be found (they already exists).
+          -- It searches the node in X that is mapped by f' and g' to the same source (resp. target) node of the related edges on A and B.
           sourceOfUnsafe g e = fromMaybe (error "sourceOf error") $ sourceOf g e
-          targetOfUnsafe g e = fromMaybe (error "targetOf error") $ targetOf g e
-          
           src1 =
             filter
               (\n ->
                 applyNodeUnsafe f' n == (sourceOfUnsafe graphB b) &&
                 applyNodeUnsafe g' n == (sourceOfUnsafe graphA a))
               (nodesFromDomain f')
-          src = if Prelude.null src1 then error "src error" else head src1
+          src = if Prelude.null src1 then error "src not found" else head src1
           
+          targetOfUnsafe g e = fromMaybe (error "targetOf error") $ targetOf g e
           tgt1 =
             filter
               (\n ->
                 applyNodeUnsafe f' n == (targetOfUnsafe graphB b) &&
                 applyNodeUnsafe g' n == (targetOfUnsafe graphA a))
               (nodesFromDomain f')
-          tgt = if Prelude.null tgt1 then error "tgt error" else head tgt1
+          tgt = if Prelude.null tgt1 then error "tgt not found" else head tgt1
           
           updateG' = createEdgeOnDomain newEdge src tgt (edgeTypeInA a) a g'
           updateF' = createEdgeOnDomain newEdge src tgt (edgeTypeInB b) b f'
       
-      product x y =
-        do
-          a <- x
-          b <- y
-          return (a,b)
 
   hasPushoutComplement (Monomorphism, g) (_, f) =
     satisfiesDanglingCondition f g
