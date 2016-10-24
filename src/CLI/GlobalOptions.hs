@@ -42,3 +42,4 @@ globalOpts = GOpts
   <*> flag False True
     ( long "use-constraints"
     <> help ("Activate use of Atomic Constraints [EXPERIMENTAL: Concurrent Rules Only]"))
+
