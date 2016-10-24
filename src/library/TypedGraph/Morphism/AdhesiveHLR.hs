@@ -32,7 +32,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
   -- The existence of them ensures that gluing conditions are satisfied.
   -- Two kinds of elements must be created: the nodes that potencially
   -- arises a dangling condition; and the elements that potencially
-  -- an arises identification condition.
+  -- arises an identification condition.
   calculateInitialPushout f = (b,d,c)
     where
       -- 1. It defines b initially with an empty morphism to A, and then
@@ -44,34 +44,34 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
           addDanglingNodes m = addNodes m danglingNodes
           addCollapsedNodes m = addNodes m collapsedNodes
           addCollapsedEdges m = addEdges m collapsedEdges
-          
+
       (d,c) = calculatePushoutComplement f b
-      
+
       -- 2. It just defines the names for the structures
       typeGraph = codomain typedGraphA
       typedGraphA = domain f
-      typeNinA = GM.applyNodeUnsafe typedGraphA
-      typeEinA = GM.applyEdgeUnsafe typedGraphA
+      nodeTypesInA = GM.applyNodeUnsafe typedGraphA
+      edgeTypesInA = GM.applyEdgeUnsafe typedGraphA
       graphA = domain typedGraphA
       graphA' = domain (codomain f)
       edgesOfA = edgesFromDomain f
       nodesOfA = nodesFromDomain f
-      
+
       emptyMorphismToA = buildTypedGraphMorphism emptyTypedGraph typedGraphA emptyMapToA
         where
           emptyTypedGraph = GM.empty empty typeGraph
           emptyMapToA = GM.empty empty graphA
-      
-      
+
+
       -- 3. Auxiliary functions
-      
+
       -- It captures all nodes in A that when mapped to A' has an incident edge.
       danglingNodes = filter checkExistsOrphanIncidentEdge nodesOfA
         where
           checkExistsOrphanIncidentEdge n = any (isOrphanEdge f) incEdges
             where
               incEdges = incidentEdges graphA' (applyNodeUnsafe f n)
-      
+
       -- It captures all nodes in A that are equally mapped by f
       collapsedNodes =
         filter
@@ -82,32 +82,29 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
                 (applyNodeUnsafe f n == applyNodeUnsafe f n')
               ) nodesOfA
           ) nodesOfA
-      
+
       -- It captures all edges in A that are equally mapped by f
       collapsedEdges =
         concatMap
           (\e ->
-            if (any (\e' -> e/=e' && (applyEdgeUnsafe f e == applyEdgeUnsafe f e')) edgesOfA)
-              then
-                [(e, sourceOfUnsafe graphA e, targetOfUnsafe graphA e)]
-              else
-                []
+            [(e, sourceOfUnsafe graphA e, targetOfUnsafe graphA e) |
+              any  (\ e' -> e /= e' && (applyEdgeUnsafe f e == applyEdgeUnsafe f e')) edgesOfA]
           ) edgesOfA
-      
+
       -- It adds a list of nodes in a morphism
-      addNodes = foldr (\n -> createNodeOnDomain n (typeNinA n) n)
-      
+      addNodes = foldr (\n -> createNodeOnDomain n (nodeTypesInA n) n)
+
       -- It adds a list of edges (with source and target nodes) in a morphism
       addEdges =
         foldr
           (\(e,src,tgt) b ->
-            (createEdgeOnDomain e src tgt (typeEinA e) e
-              (createNodeOnDomain tgt (typeNinA tgt) tgt
-                (createNodeOnDomain src (typeNinA src) src b)
+            (createEdgeOnDomain e src tgt (edgeTypesInA e) e
+              (createNodeOnDomain tgt (nodeTypesInA tgt) tgt
+                (createNodeOnDomain src (nodeTypesInA src) src b)
               )
             )
           )
-          
+
   {-
           g
       A──────▶C
