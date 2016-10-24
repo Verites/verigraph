@@ -1,6 +1,7 @@
+{-# OPTIONS_GHC -Wno-orphans #-}
 module TypedGraph.Morphism.Cocomplete (
 
-  createEquivalenceNodes, construct, findEquivalenceClass, mergeEquivalences
+  calculateCoequalizer,createNodeEquivalences
 
 )
 
@@ -19,36 +20,45 @@ instance Cocomplete (TypedGraphMorphism a b) where
   calculateCoequalizer = calculateCoEq'
 
 calculateCoEq' :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
-calculateCoEq' f g = g
+calculateCoEq' f g = initCoequalizerMorphism b nodeEquivalences edgeEquivalences
   where
-    objectX = getCodomain g
-    nodesOfX = nodesWithType objectX
-    edgesOfX = edgesWithType objectX
+    b = getCodomain f
+    nodeEquivalences = createNodeEquivalences f g
+    edgeEquivalences = createEdgeEquivalences f g
 
-createEquivalenceNodes :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Set (EquivalenceClass TypedNode)
-createEquivalenceNodes f g = initialNodesOnX
+createNodeEquivalences :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Set (EquivalenceClass TypedNode)
+createNodeEquivalences f g = nodesOnX
   where
-    equivalentNodes (n,nt) = ((applyNodeUnsafe f n,nt), (applyNodeUnsafe g n,nt)) -- ((nodeAndTypeFromA),(nodeandTypeFromB))
-    equivalentEdges (e,s,t,et) = ((applyEdgeUnsafe f e,s,t,et), (applyEdgeUnsafe g e,s,t,et))
-    nodesFromA = fromList $ nodesWithType (getDomain f)            -- (nodeId,typeNodeId) from A
-    edgesFromA = fromList $ edgesWithType (getDomain f)
+    equivalentNodes (n,nt) = ((applyNodeUnsafe f n,nt), (applyNodeUnsafe g n,nt))
+    nodesFromA = fromList $ nodesWithType (getDomain f)
     nodesToGluingOnB = Data.Set.map equivalentNodes nodesFromA
-    edgesToGluingOnB = Data.Set.map equivalentEdges edgesFromA
-    initialNodesOnX = maximumDisjointClass (nodesWithType (getCodomain f)) -- (nodeId, typeNodeId) from B
-    initialEdgesOnX = maximumDisjointClass (edgesWithType (getCodomain f))
+    initialNodesOnX = maximumDisjointClass (nodesWithType (getCodomain f))
     nodesOnX = construct nodesToGluingOnB initialNodesOnX
-    edgesOnX = construct edgesToGluingOnB initialEdgesOnX
-    tG = typeGraph (getDomain g)
-    newX = buildTypedGraphMorphism (getDomain g)
 
-createCoequalizerObject :: TypedGraph a b -> Set (EquivalenceClass TypedNode) -> Set (EquivalenceClass TypedEdge) -> TypedGraphMorphism a b
-createCoequalizerObject b nodeEquivalences edgeEquivalences = h
+createEdgeEquivalences :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Set (EquivalenceClass TypedEdge)
+createEdgeEquivalences f g = edgesOnX
   where
-    h = buildTypedGraphMorphism b x (GM.empty (domain b) (domain x))
-    x = GM.empty G.empty (typeGraph b)
+    equivalentEdges (e,s,t,et) =
+      ((applyEdgeUnsafe f e, mapByF s, mapByF t,et), (applyEdgeUnsafe g e,mapByG s,mapByG t,et))
+    mapByF = applyNodeUnsafe f
+    mapByG = applyNodeUnsafe g
+    edgesFromA = fromList $ edgesWithType (getDomain f)
+    edgesToGluingOnB = Data.Set.map equivalentEdges edgesFromA
+    initialEdgesOnX = maximumDisjointClass (edgesWithType (getCodomain f))
+    edgesOnX = construct edgesToGluingOnB initialEdgesOnX
 
-addNode :: TypedGraphMorphism a b -> EquivalenceClass TypedNode -> TypedGraphMorphism a b
-addNode h nodes = buildNodeMaps (createNodeOnCodomain n2 tp h) n2 nodes
+initCoequalizerMorphism :: TypedGraph a b -> Set (EquivalenceClass TypedNode) -> Set (EquivalenceClass TypedEdge) -> TypedGraphMorphism a b
+initCoequalizerMorphism b nodeEquivalences edgeEquivalences = addEdges
+  where
+    x = GM.empty G.empty (typeGraph b)
+    h = buildTypedGraphMorphism b x (GM.empty (domain b) (domain x))
+    addNodes = Data.Set.foldr addNode h nodeEquivalences
+    addEdges = Data.Set.foldr addEdge addNodes edgeEquivalences
+
+addNode :: EquivalenceClass TypedNode -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+addNode nodes h
+  | Data.Set.null nodes = h
+  | otherwise = buildNodeMaps (createNodeOnCodomain n2 tp h) n2 nodes
   where
     (n2, tp) = getElem nodes
 
@@ -61,8 +71,10 @@ buildNodeMaps h nodeInX nodes
       h' = updateNodeRelation nodeInA nodeInX tp h
       nodes' = setTail nodes
 
-addEdge :: TypedGraphMorphism a b -> EquivalenceClass TypedEdge -> TypedGraphMorphism a b
-addEdge h edges = buildEdgeMaps (createEdgeOnCodomain e2 s2 t2 tp h) e2 edges
+addEdge :: EquivalenceClass TypedEdge -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+addEdge edges h
+  | Data.Set.null edges = h
+  | otherwise = buildEdgeMaps (createEdgeOnCodomain e2 s2 t2 tp h) e2 edges
   where
     (e2, s, t, tp) = getElem edges
     s2 = applyNodeUnsafe h s
@@ -84,13 +96,16 @@ type EquivalenceClass a = Set a
 type TypedNode = (NodeId,NodeId)
 type TypedEdge = (EdgeId, NodeId, NodeId, EdgeId)
 
-construct :: (Ord a) => Set(a,a) -> Set (EquivalenceClass a) -> Set (EquivalenceClass a)
+construct :: (Ord a, Show a) => Set(a,a) -> Set (EquivalenceClass a) -> Set (EquivalenceClass a)
 construct toBeGlued toBeX
   | Data.Set.null toBeGlued = toBeX
   | otherwise = construct (setTail toBeGlued) (merge (getElem toBeGlued) toBeX)
   where
-    merge (e1,e2) s =  s `diff` e1 `diff` e2 `union` mergeEquivalences (e1,e2) s
-    diff s e = difference s (singleton $ findEquivalenceClass e s)
+    merge (e1,e2) s =  mergeEquivalences (e1,e2) s `union` (s `diff` (e1,e2))
+    diff s (e1,e2) = if e1 == e2 then
+        s `difference` singleton (findEquivalenceClass e1 s)
+      else
+        s `difference` singleton (findEquivalenceClass e1 s) `difference` singleton (findEquivalenceClass e2 s)
 
 getElem :: Set a -> a
 getElem = elemAt 0
@@ -101,9 +116,13 @@ getUnitSubset set = singleton (getElem set)
 setTail :: (Ord a) => Set a -> Set a
 setTail set = set `difference` getUnitSubset set
 
-mergeEquivalences :: (Ord a) => (a, a) -> Set(EquivalenceClass a) -> Set(EquivalenceClass a)
-mergeEquivalences (e1,e2) set = singleton(findEquivalenceClass e1 set `union` findEquivalenceClass e2 set)
+mergeEquivalences :: (Ord a, Show a) => (a, a) -> Set(EquivalenceClass a) -> Set(EquivalenceClass a)
+mergeEquivalences (e1,e2) set = singleton (findEquivalenceClass e1 set `union` findEquivalenceClass e2 set)
 
 -- works only with non-empty sets
-findEquivalenceClass :: (Eq a) => a -> Set(EquivalenceClass a) -> EquivalenceClass a
-findEquivalenceClass element set = getElem $ Data.Set.filter (element `elem`) set
+findEquivalenceClass :: (Eq a, Show a) => a -> Set(EquivalenceClass a) -> EquivalenceClass a
+findEquivalenceClass element set
+  | Data.Set.null teste = error $ show element ++ show set
+  | otherwise = getElem teste
+  where
+    teste = Data.Set.filter (element `elem`) set

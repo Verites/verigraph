@@ -78,7 +78,7 @@ execute globalOpts opts = do
 
     print p1
     print p2
-    print $ construct p1 p2
+    --print $ construct p1 p2
     --print $ mergeEquivalences (n2,n3) p2
 
     --GW.writeGrammarFile gg2 ggName names (outputFile opts)

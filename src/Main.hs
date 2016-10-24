@@ -2,7 +2,7 @@
 
 --import Analysis.ConcurrentRules
 import qualified XML.GGXReader        as XML
---import           Abstract.Valid
+import           Abstract.Valid
 --import qualified Analysis.CriticalSequence as CS
 --import qualified Analysis.CriticalPairs as CP
 --import           Partitions.GraphPartitionToVerigraph
@@ -19,6 +19,7 @@ import           TypedGraph.GraphRule
 --import System.Environment
 --import System.Exit
 import           Abstract.Morphism
+import           TypedGraph.Morphism.Cocomplete
 
 
 
@@ -30,214 +31,8 @@ import           Data.Maybe
 
 --import qualified XML.GGXReader as XML
 
-fn :: String
-fn = "test/elevator2.ggx"
-
-a :: String -> IO (GM.GraphMorphism a b, GM.GraphMorphism a b)
-a fn = do
-      prls <- XML.readRules fn
-      ptg <- XML.readTypeGraph fn
-      let rs = map (XML.instantiateRule (head ptg)) prls
-          r1 = rs!!0
-          r2 = rs!!1
-          pairs = createPairsCodomain True (left r1) (left r2)
-          --dgs = Partitions.GraphPartition.edges mix2
-          inj = filter (\(m1,m2) -> monomorphism m1 && monomorphism m2) pairs
-          gluing = filter (\(m1,m2) -> satisfiesGluingConditions True r1 m1 && satisfiesGluingConditions True r2 m2) inj
-          delUse = filter (deleteUse r1 r2) gluing
-      return (r1,r2)
-      --print (fst cp)
-      --print k
-      --print d1
-      return (codomain (head (nacs r1)), codomain (fst (delUse!!1)))
-
--- | Rule @l@ causes a delete-use conflict with @r@ if rule @l@ deletes something that is used by @r@
--- DeleteUse using a most aproximated algorithm of the categorial diagram
--- Verify the non existence of h21: L2 -> D1 such that d1 . h21 = m2
-
-deleteUse :: GraphRule a b -> GraphRule a b
-           -> (TGM.TypedGraphMorphism a b,TGM.TypedGraphMorphism a b)
-           -> Bool
-deleteUse l _ (m1,m2) = Prelude.null matchD
-    where
-        (_,d1) = RW.calculatePushoutComplement m1 (left l) --get only the morphism D2 to G
-        l2TOd1 = matches GenericMorphism (domain m2) (domain d1)
-        matchD = filter (\x -> m2 == compose x d1) l2TOd1
-
-
--- TODO: following functions should be part of the Graph interface
-extractSource, extractTarget :: G.Graph a b -> EdgeId -> NodeId
-extractSource gm e = fromJust $ G.sourceOf gm e
-extractTarget gm e = fromJust $ G.targetOf gm e
-
--- TODO: following function should be part of TypedGraph interface
-extractNodeType :: GM.GraphMorphism a b -> NodeId -> NodeId
-extractNodeType gm n = fromMaybe (error "NODE NOT TYPED") $ GM.applyNode gm n
-
--- TODO: following function should be part of TypedGraph interface
-extractEdgeType :: GM.GraphMorphism a b -> EdgeId -> EdgeId
-extractEdgeType gm e = fromMaybe (error "EDGE NOT TYPED") $ GM.applyEdge gm e
-
-
-
-
-
-
-
----------------------------------------------------------------------------------
-
--- | Finds matches __/m/__
---
---   Injective, surjective, isomorphic or all possible matches
-matches' :: MorphismType -> GM.GraphMorphism a b-> GM.GraphMorphism a b
-        -> [TGM.TypedGraphMorphism a b]
-matches' prop graph1 graph2 =
-  buildMappings prop nodesSrc edgesSrc nodesTgt edgesTgt tgm
-  where
-    nodesSrc = nodes $ domain graph1
-    nodesTgt = nodes $ domain graph2
-    edgesSrc = edges $ domain graph1
-    edgesTgt = edges $ domain graph2
-
-    d   = graph1
-    c   = graph2
-    m   = GM.empty (domain graph1) (domain graph2)
-    tgm = buildTypedGraphMorphism d c m
-
-
-
-
----------------------------------------------------------------------------------
-
-buildMappings :: MorphismType -> [G.NodeId] -> [G.EdgeId] -> [G.NodeId] -> [G.EdgeId]
-              -> TGM.TypedGraphMorphism a b -> [TGM.TypedGraphMorphism a b]
-
---IF NO HAS FREE NODES OR FREE EDGES TO MAP, RETURN THE FOUND MORPHISMO
-buildMappings prop [] [] nodesT edgesT tgm =
-      case prop of
-        GenericMorphism -> all
-        Monomorphism    -> all
-        Epimorphism     -> epimorphism
-        Isomorphism     -> isomorphism
-      where
-        all = return tgm
-
-        isomorphism | L.null nodesT && L.null edgesT = return tgm
-                    | otherwise = []
-
-        epimorphism | L.null (orphanTypedNodes tgm) &&
-                      L.null (orphanTypedEdges tgm) = return tgm
-                    | otherwise = []
-
----------------------------------------------------------------------------------
-
---IF HAS FREE NODES, MAP GenericMorphism FREE NODES TO GenericMorphism DESTINATION NODES
-buildMappings prop (h:t) [] nodesT edgesT tgm
-  | L.null nodesT = []
-  | otherwise  = do
-      y <- nodesT
-
-      --MAP FREE NODES TO GenericMorphism TYPE COMPATIBLE DESTINATION NODES
-      let tgmN = updateNodesMapping h y nodesT tgm
-
-      case tgmN of
-        Just tgm' ->
-          --CHOSE BETWEEN INJECTIVE OR NOT
-          case prop of
-            GenericMorphism -> all
-            Monomorphism    -> monomorphism
-            Epimorphism     -> all
-            Isomorphism     -> monomorphism
-          where
-            monomorphism = buildMappings prop t [] nodesT' edgesT tgm'
-            all          = buildMappings prop t [] nodesT  edgesT tgm'
-            --REMOVE THE TARGET NODES MAPPED (INJECTIVE MODULE)
-            nodesT'   = L.delete y nodesT
-        Nothing  -> []
-
----------------------------------------------------------------------------------
-
---IF HAS FREE NODES, AND FREE EDGES, VERIFY THE CURRENT STATUS
-buildMappings prop nodes (h:t) nodesT edgesT tgm
-  | L.null edgesT = []
-  | otherwise  =
-    do  --VERIFY THE POSSIBILITY OF A MAPPING BETWEEN h AND THE DESTINATION EDGES
-      y <- edgesT
-      --MAPPING SRC AND TGT NODES
-      let tgmN
-            | isNothing tgm1 = Nothing
-            | otherwise = tgm2
-            where tgm1 = updateNodesMapping (extractSource d h) (extractSource c y) nodesT tgm
-                  tgm2 = updateNodesMapping (extractTarget d h) (extractTarget c y) nodesT' $ fromJust tgm1
-                  d = domain $ domain tgm
-                  c = domain $ codomain tgm
-                  nodesT' = case prop of
-                    Monomorphism    -> L.delete (extractSource c y) nodesT
-                    Isomorphism     -> L.delete (extractSource c y) nodesT
-                    Epimorphism     -> nodesT
-                    GenericMorphism -> nodesT
-
-          --MAPPING SRC EDGE AND TGT EDGE
-          tgmE
-            | isNothing tgmN = Nothing
-            | otherwise = updateEdgesMapping h y edgesT $ fromJust tgmN
-
-      --FOR THE COMPATIBLES MAPPINGS, GO TO THE NEXT STEP
-      case tgmE of
-        Just tgm' -> do
-          let nodes'       = L.delete (extractSource d h) $ L.delete (extractTarget d h) nodes
-              d            = domain $ domain tgm
-              c            = domain $ codomain tgm
-              --REMOVE THE TARGET EDGES AND NODES MAPPED (INJECTIVE MODULE)
-              edgesT'      = L.delete y edgesT
-              nodesT'      = L.delete (extractSource c y) $ L.delete (extractTarget c y) nodesT
-              monomorphism = buildMappings prop nodes' t nodesT' edgesT' tgm'
-              all          = buildMappings prop nodes' t nodesT  edgesT  tgm'
-              --CHOSE BETWEEN INJECTIVE OR NOT
-          case prop of
-            GenericMorphism -> all
-            Monomorphism    -> monomorphism
-            Epimorphism     -> all
-            Isomorphism     -> monomorphism
-        Nothing  -> []
-
----------------------------------------------------------------------------------
-
--- VALIDATION OF A NODE MAPPING
--- VERIFY IF THE TYPES OF n1 AND n2 ARE COMPATIBLE AND UPDATE MAPPING
-updateNodesMapping :: G.NodeId -> G.NodeId -> [G.NodeId] -> TGM.TypedGraphMorphism a b
-                   -> Maybe (TGM.TypedGraphMorphism a b)
-updateNodesMapping n1 n2 nodesT tgm =
-  do
-    let d = domain tgm
-        c = codomain tgm
-        m = mapping tgm
-
-    if extractNodeType d n1 == extractNodeType c n2 &&
-       (((isNothing $ applyNodeTGM tgm n1) && L.elem n2 nodesT) ||
-        applyNodeTGM tgm n1 == Just n2)
-      then Just $ buildTypedGraphMorphism d c $ GM.updateNodes n1 n2 m
-      else Nothing
-
----------------------------------------------------------------------------------
-
--- VALIDATION OF A EDGE MAPPING
--- VERIFY IF THE TYPES OF e1 AND e2 ARE COMPATIBLE AND UPDATE MAPPING
-updateEdgesMapping :: G.EdgeId -> G.EdgeId -> [G.EdgeId] -> TGM.TypedGraphMorphism a b
-                   -> Maybe (TGM.TypedGraphMorphism a b)
-updateEdgesMapping e1 e2 edgesT tgm =
-  do
-    let d = domain tgm
-        c = codomain tgm
-        m = mapping tgm
-
-    if extractEdgeType d e1 == extractEdgeType c e2 &&
-       (((isNothing $ applyEdgeTGM tgm e1) && L.elem e2 edgesT ) ||
-        applyEdgeTGM tgm e1 == Just e2)
-      then Just $ buildTypedGraphMorphism d c (GM.updateEdges e1 e2 m)
-      else Nothing
-
-{-
+main = do
+  return ()
 
 iN = insertNode
 iE = insertEdge
@@ -247,6 +42,37 @@ uE = GM.updateEdges
 {-grafo tipo-}
 grafotipo = build [4,3,2,1] [(5,3,4),(4,2,4),(3,2,3),(2,2,1),(1,3,1)]
 
+a = build [10,20,30,40] []
+b = build [50,60,70,80] []
+
+ta = GM.buildGraphMorphism a grafotipo [(10,1),(20,1),(30,1),(40,1)] []
+tb = GM.buildGraphMorphism b grafotipo [(50,1),(60,1),(70,1),(80,1)] []
+
+mf = GM.buildGraphMorphism a b [(10,50),(20,60),(30,70),(40,80)] []
+mg = GM.buildGraphMorphism a b [(10,50),(20,60),(30,70),(40,80)] []
+
+tmf = buildTypedGraphMorphism ta tb mf
+tmg = buildTypedGraphMorphism ta tb mg
+
+teste = calculateCoequalizer tmf tmg
+
+grafotipo2 = build [1] [(1,1,1)]
+
+a2 = build [10,20] [(100,20,10)]
+b2 = build [50,60,70] [(200,60,50),(300,60,50)]
+
+ta2 = GM.buildGraphMorphism a2 grafotipo2 [(10,1),(20,1)] [(100,1)]
+tb2 = GM.buildGraphMorphism b2 grafotipo2 [(50,1),(60,1),(70,1)] [(200,1),(300,1)]
+
+mf2 = GM.buildGraphMorphism a2 b2 [(10,50),(20,60)] [(100,200)]
+mg2 = GM.buildGraphMorphism a2 b2 [(10,50),(20,60)] [(100,300)]
+
+tmf2 = buildTypedGraphMorphism ta2 tb2 mf2
+tmg2 = buildTypedGraphMorphism ta2 tb2 mg2
+
+teste2 = calculateCoequalizer tmf2 tmg2
+
+{--
 {-sendMSG-}
 lr1 = build [11,13,14] [(11,13,11)]
 kr1 = build [21,23,24] []
@@ -270,7 +96,7 @@ nacType = GM.buildGraphMorphism nacGraph grafotipo [(501,1),(502,2),(503,3),(504
 nacMap = GM.buildGraphMorphism lr1 nacGraph [(11,501),(13,503),(14,504)] [(11,501)]
 nacSendMsg = buildTypedGraphMorphism tlr1 nacType nacMap
 
-sendMsg = graphRule l1 r1 [nacSendMsg]
+--sendMsg = graphRule l1 r1 [nacSendMsg]
 
 {-getDATA-}
 lr2 = build [42,43,44] [(44,42,44),(45,43,44)]
@@ -289,7 +115,7 @@ l2 = buildTypedGraphMorphism tkr2 tlr2 kr2_lr2
 kr2_rr2 = GM.buildGraphMorphism kr2 rr2 [(54,64),(53,63),(52,62)] [(55,65)]
 r2 = buildTypedGraphMorphism tkr2 trr2 kr2_rr2
 
-getDATA = graphRule l2 r2 []
+--getDATA = graphRule l2 r2 []
 
 {-receiveMSG-}
 lr3 = build [71,72,73,74] [(75,73,74),(73,72,73)]
@@ -308,7 +134,7 @@ l3 = buildTypedGraphMorphism tkr3 tlr3 kr3_lr3
 kr3_rr3 = GM.buildGraphMorphism kr3 rr3 [(84,94),(83,93),(82,92),(81,91)] [(83,93)]
 r3 = buildTypedGraphMorphism tkr3 trr3 kr3_rr3
 
-receiveMSG = graphRule l3 r3 []
+--receiveMSG = graphRule l3 r3 []
 
 {-deleteMSG-}
 lr4 = build [101,102,103] [(101,103,101),(103,102,103)]
@@ -411,7 +237,6 @@ r8 = buildTypedGraphMorphism tkr8 trr8 kr8_rr8
 
 testeCreate = graphRule l8 r8 []
 
--}
 
 
 {-Fim das Regras-}
@@ -663,3 +488,4 @@ f n =
       writeFile ((show n)++".dot") (write ggs n)
       runCommand ("dot -Tjpg "++(show n)++".dot > "++(show n)++".jpg")
       (f (n-1))-}
+--}
