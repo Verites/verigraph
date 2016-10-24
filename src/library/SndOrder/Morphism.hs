@@ -223,6 +223,9 @@ satisfiesNACRewriting l = satisfiesGluingConditions dpoConf prod
     dpoConf = DPOConfig AnyMatches MonomorphicNAC
 
 instance AdhesiveHLR (RuleMorphism a b) where
+  
+  calculateInitialPushout _ = error "calculateInitialPushout for second order not implemented yet"
+  
   calculatePushoutComplement (RuleMorphism _ ruleG matchL matchK matchR) (RuleMorphism ruleK _ leftL leftK leftR) = (k,l')
      where
        (matchL', leftL') = calculatePushoutComplement matchL leftL

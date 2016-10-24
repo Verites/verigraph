@@ -6,7 +6,7 @@ module ApplySndOrderRules
   , execute
   ) where
 
-import           Abstract.DPO
+import           Abstract.AdhesiveHLR
 import           Graph.Graph          (Graph)
 import           GlobalOptions
 import           Options.Applicative

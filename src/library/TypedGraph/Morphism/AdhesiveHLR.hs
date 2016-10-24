@@ -13,6 +13,97 @@ import           Data.Maybe
 
 
 instance AdhesiveHLR (TypedGraphMorphism a b) where
+  -- @
+  --        d
+  --    B──────▶C
+  --    │       │
+  --  b │  (1)  │ c
+  --    ▼       ▼
+  --    A──────▶A'
+  --        f
+  -- @
+  --
+  -- This function receives f, creates the morphism b,
+  -- and executes the pushout complement on (1).
+  --
+  -- The initial pushout operation for typed graphs constructs a graph
+  -- with the minimal elements needed in B such that there exists the
+  -- pushout (1).
+  -- The existence of them ensures that gluing conditions are satisfied.
+  -- Two kinds of elements must be created: the nodes that potencially
+  -- arises a dangling condition; and the elements that potencially
+  -- arises an identification condition.
+  calculateInitialPushout f = (b,d,c)
+    where
+      -- 1. It defines b initially with an empty morphism to A, and then
+      -- dangling nodes, collapsed nodes and collapsed edges are added.
+      -- d and c are the pushout complement of f and b.
+      b = addCollapsedEdges $ addCollapsedNodes $ addDanglingNodes init
+        where
+          init = emptyMorphismToA
+          addDanglingNodes m = addNodes m danglingNodes
+          addCollapsedNodes m = addNodes m collapsedNodes
+          addCollapsedEdges m = addEdges m collapsedEdges
+
+      (d,c) = calculatePushoutComplement f b
+
+      -- 2. It just defines the names for the structures
+      typeGraph = codomain typedGraphA
+      typedGraphA = domain f
+      nodeTypesInA = GM.applyNodeUnsafe typedGraphA
+      edgeTypesInA = GM.applyEdgeUnsafe typedGraphA
+      graphA = domain typedGraphA
+      graphA' = domain (codomain f)
+      edgesOfA = edgesFromDomain f
+      nodesOfA = nodesFromDomain f
+
+      emptyMorphismToA = buildTypedGraphMorphism emptyTypedGraph typedGraphA emptyMapToA
+        where
+          emptyTypedGraph = GM.empty empty typeGraph
+          emptyMapToA = GM.empty empty graphA
+
+
+      -- 3. Auxiliary functions
+
+      -- It captures all nodes in A that when mapped to A' has an incident edge.
+      danglingNodes = filter checkExistsOrphanIncidentEdge nodesOfA
+        where
+          checkExistsOrphanIncidentEdge n = any (isOrphanEdge f) incEdges
+            where
+              incEdges = incidentEdges graphA' (applyNodeUnsafe f n)
+
+      -- It captures all nodes in A that are equally mapped by f
+      collapsedNodes =
+        filter
+          (\n ->
+            any
+              (\n' ->
+                n/=n' &&
+                (applyNodeUnsafe f n == applyNodeUnsafe f n')
+              ) nodesOfA
+          ) nodesOfA
+
+      -- It captures all edges in A that are equally mapped by f
+      collapsedEdges =
+        concatMap
+          (\e ->
+            [(e, sourceOfUnsafe graphA e, targetOfUnsafe graphA e) |
+              any  (\ e' -> e /= e' && (applyEdgeUnsafe f e == applyEdgeUnsafe f e')) edgesOfA]
+          ) edgesOfA
+
+      -- It adds a list of nodes in a morphism
+      addNodes = foldr (\n -> createNodeOnDomain n (nodeTypesInA n) n)
+
+      -- It adds a list of edges (with source and target nodes) in a morphism
+      addEdges =
+        foldr
+          (\(e,src,tgt) b ->
+            (createEdgeOnDomain e src tgt (edgeTypesInA e) e
+              (createNodeOnDomain tgt (nodeTypesInA tgt) tgt
+                (createNodeOnDomain src (nodeTypesInA src) src b)
+              )
+            )
+          )
 
   {-
           g
@@ -167,3 +258,6 @@ checkDeletion l m apply list e = elementInL && not elementInK
     elementInL = any (\x -> apply m x == Just e) (list m)
     kToG = compose l m
     elementInK = any (\x -> apply kToG x == Just e) (list kToG)
+
+isOrphanEdge :: TypedGraphMorphism a b -> EdgeId -> Bool
+isOrphanEdge m n = n `elem` orphanTypedEdges m
