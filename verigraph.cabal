@@ -31,6 +31,7 @@ library
                        Abstract.Morphism
                        Abstract.Relation
                        Abstract.Valid
+                       Analysis.EssentialCriticalPairs
                        Analysis.ConcurrentRules
                        Analysis.CriticalPairs
                        Analysis.CriticalSequence

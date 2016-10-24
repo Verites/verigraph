@@ -10,6 +10,7 @@ module XML.GGXWriter
 
 import           Abstract.DPO
 import           Abstract.Morphism         (codomain)
+import qualified Analysis.EssentialCriticalPairs    as ECP
 import qualified Analysis.CriticalPairs    as CP
 import qualified Analysis.CriticalSequence as CS
 import           Data.List.Utils           (startswith)
@@ -47,7 +48,8 @@ writeSndOderConfDepFile :: DPOConfig -> GraphGrammar a b -> String -> [(String,S
 writeSndOderConfDepFile conf gg name names fileName =
   do
     let newGG = ((appendSndOrderDependencies conf) . (appendSndOrderConflicts conf)) gg
-    runX $ writeConfDep conf newGG name names fileName
+        essential = False
+    runX $ writeConfDep essential conf newGG name names fileName
     putStrLn $ "Saved in " ++ fileName
     return ()
 
@@ -56,7 +58,8 @@ writeSndOderConflictsFile :: DPOConfig -> GraphGrammar a b -> String -> [(String
 writeSndOderConflictsFile conf gg name names fileName =
   do
     let newGG = appendSndOrderConflicts conf gg
-    runX $ writeConf conf newGG name names fileName
+        essential = False
+    runX $ writeConf essential conf newGG name names fileName
     putStrLn $ "Saved in " ++ fileName
     return ()
 
@@ -70,16 +73,16 @@ writeSndOderDependenciesFile conf gg name names fileName =
     return ()
 
 -- | Writes grammar, conflicts and dependencies (.cpx)
-writeConfDepFile :: DPOConfig -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
-writeConfDepFile conf gg name names fileName = do
-  runX $ writeConfDep conf gg name names fileName
+writeConfDepFile :: Bool -> DPOConfig -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
+writeConfDepFile essential conf gg name names fileName = do
+  runX $ writeConfDep essential conf gg name names fileName
   putStrLn $ "Saved in " ++ fileName
   return ()
 
 -- | Writes the grammar and the conflicts (.cpx)
-writeConflictsFile :: DPOConfig -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
-writeConflictsFile conf gg name names fileName = do
-  runX $ writeConf conf gg name names fileName
+writeConflictsFile :: Bool -> DPOConfig -> GraphGrammar a b -> String -> [(String,String)] -> String -> IO ()
+writeConflictsFile essential conf gg name names fileName = do
+  runX $ writeConf essential conf gg name names fileName
   putStrLn $ "Saved in " ++ fileName
   return ()
 
@@ -97,16 +100,22 @@ writeGrammarFile gg name names fileName = do
   putStrLn $ "Saved in " ++ fileName
   return ()
 
-writeConfDep :: DPOConfig -> GraphGrammar a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
-writeConfDep conf gg name names fileName = root [] [writeCpx gg cps css name names] >>> writeDocument [withIndent yes] fileName
+writeConfDep :: Bool -> DPOConfig -> GraphGrammar a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
+writeConfDep essential conf gg name names fileName = root [] [writeCpx gg cps css name names] >>> writeDocument [withIndent yes] fileName
   where
-    cps = CP.namedCriticalPairs conf (rules gg)
+    cps =
+      if essential
+        then ECP.namedEssentialCriticalPairs conf (rules gg)
+        else CP.namedCriticalPairs conf (rules gg)
     css = CS.namedCriticalSequences conf (rules gg)
 
-writeConf :: DPOConfig -> GraphGrammar a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
-writeConf conf gg name names fileName = root [] [writeCpx gg cps [] name names] >>> writeDocument [withIndent yes] fileName
+writeConf :: Bool -> DPOConfig -> GraphGrammar a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
+writeConf essential conf gg name names fileName = root [] [writeCpx gg cps [] name names] >>> writeDocument [withIndent yes] fileName
   where
-    cps = CP.namedCriticalPairs conf (rules gg)
+    cps =
+      if essential
+        then ECP.namedEssentialCriticalPairs conf (rules gg)
+        else CP.namedCriticalPairs conf (rules gg)
 
 writeDep :: DPOConfig -> GraphGrammar a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
 writeDep conf gg name names fileName = root [] [writeCpx gg [] cps name names] >>> writeDocument [withIndent yes] fileName

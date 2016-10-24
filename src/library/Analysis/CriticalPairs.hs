@@ -1,6 +1,6 @@
 module Analysis.CriticalPairs
  ( CriticalPairType (..),
-   CriticalPair,
+   CriticalPair (..),
    getCriticalPairMatches,
    getCriticalPairComatches,
    getNacIndexOfCriticalPair,

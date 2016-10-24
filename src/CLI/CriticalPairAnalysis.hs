@@ -6,6 +6,7 @@ module CriticalPairAnalysis
 
 import           Abstract.AdhesiveHLR                  (EpiPairs)
 import           Abstract.DPO
+import           Analysis.EssentialCriticalPairs
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
 import           Analysis.Interlevel.EvolutionarySpans
@@ -21,9 +22,10 @@ import qualified XML.GGXReader                         as XML
 import qualified XML.GGXWriter                         as GW
 
 data Options = Options
-  { outputFile   :: Maybe String
-  , sndOrder     :: Bool
-  , analysisType :: AnalysisType
+  { outputFile    :: Maybe String
+  , sndOrder      :: Bool
+  , essentialFlag :: Bool
+  , analysisType  :: AnalysisType
   }
 
 data AnalysisType = Both | Conflicts | Dependencies | None deriving (Eq)
@@ -38,12 +40,18 @@ options = Options
     <> help ("CPX file that will be written, receiving the critical pairs " ++
              "for the grammar (if absent, a summary will be printed to stdout)")))
   <*> cpOrder
+  <*> essentialCP
   <*> cpAnalysisType
 
 cpOrder :: Parser Bool
 cpOrder = flag False True
     ( long "snd-order"
     <> help "Set the analysis to the second order rules")
+
+essentialCP :: Parser Bool
+essentialCP = flag False True
+    ( long "essential"
+    <> help "Compute the Essential Critical Pairs analysis (Warning: not fully supported yet)")
 
 cpAnalysisType :: Parser AnalysisType
 cpAnalysisType =
@@ -73,8 +81,9 @@ execute globalOpts opts = do
     putStrLn ""
 
     let action = analysisType opts
+        essentialCP = essentialFlag opts
         secondOrder = sndOrder opts
-        writer = defWriterFun secondOrder dpoConf action
+        writer = defWriterFun essentialCP secondOrder dpoConf action
         rules = map snd (GG.rules gg)
         rules2 = map snd (GG.sndOrderRules gg)
 
@@ -88,10 +97,11 @@ execute globalOpts opts = do
 
     when secondOrder $ mapM_ putStrLn (XML.printMinimalSafetyNacsLog printNewNacs)
 
+    when essentialCP $ putStrLn "Warning: essential critical pairs not fully supported"
     putStrLn ""
-
-    let fstOrderAnalysis = printAnalysis action dpoConf rules
-        sndOrderAnalysis = printAnalysis action dpoConf rules2
+    
+    let fstOrderAnalysis = printAnalysis essentialCP action dpoConf rules
+        sndOrderAnalysis = printAnalysis essentialCP action dpoConf rules2
     case outputFile opts of
       Just file ->
         do
@@ -138,9 +148,12 @@ printEvoConflicts evo = map printOneEvo evo
     printConf str evos = str ++ " : " ++ show (countElem str (map (show . cpe) evos)) ++ "\n"
 
 printAnalysis :: (EpiPairs m, DPO m) =>
-  AnalysisType -> DPOConfig -> [Production m] -> IO ()
-printAnalysis action dpoConf rules =
-  let confMatrix = analysisMatrix dpoConf rules
+  Bool -> AnalysisType -> DPOConfig -> [Production m] -> IO ()
+printAnalysis essential action dpoConf rules =
+  let essentialConfMatrix = analysisMatrix dpoConf rules
+        findAllEssentialDeleteUse findAllEssentialProduceDangling findAllEssentialProduceForbid
+        "Essential Delete-Use" "Essential Produce-Dangling" "Essential Produce-Forbid" "Essential Conflicts"
+      confMatrix = analysisMatrix dpoConf rules
         findAllDeleteUse findAllProduceDangling findAllProduceForbid
         "Delete-Use" "Produce-Dangling" "Produce-Forbid" "Conflicts"
       depMatrix = triDepMatrix ++ irrDepMatrix
@@ -152,7 +165,11 @@ printAnalysis action dpoConf rules =
         "Deliver-Delete" "Deliver-Dangling" "Forbid-Produce" "Irreversibles Dependencies"
   in mapM_
        putStrLn $
-       (if calculateConflicts action then confMatrix else [])
+       (case (essential, calculateConflicts action) of
+         (True, True) -> essentialConfMatrix
+         (False, True) -> confMatrix
+         _ -> []
+       )
        ++ (if calculateDependencies action then depMatrix else [])
 
 -- Receives functions and theirs names,
@@ -171,7 +188,6 @@ analysisMatrix dpoConf rules f1 f2 f3 n1 n2 n3 n4 =
         liftMatrix3
           (\x y z -> x ++ y ++ z)
           f1Matrix f2Matrix f3Matrix
-
   in  [ n1 ++ ":"
       , show (length <$> f1Matrix)
       , ""
@@ -185,14 +201,14 @@ analysisMatrix dpoConf rules f1 f2 f3 n1 n2 n3 n4 =
       , show (length <$> finalMatrix)
       , ""]
 
-defWriterFun :: Bool -> DPOConfig -> AnalysisType
+defWriterFun :: Bool -> Bool -> DPOConfig -> AnalysisType
              -> GG.GraphGrammar a b -> String
              -> [(String,String)] -> String -> IO ()
-defWriterFun secondOrder conf t =
+defWriterFun essential secondOrder conf t =
   case (secondOrder,t) of
-    (False, Conflicts)    -> GW.writeConflictsFile conf
+    (False, Conflicts)    -> GW.writeConflictsFile essential conf
     (False, Dependencies) -> GW.writeDependenciesFile conf
-    (False, Both)         -> GW.writeConfDepFile conf
+    (False, Both)         -> GW.writeConfDepFile essential conf
     (True, Conflicts)     -> GW.writeSndOderConflictsFile conf
     (True, Dependencies)  -> GW.writeSndOderDependenciesFile conf
     (True, Both)          -> GW.writeSndOderConfDepFile conf
