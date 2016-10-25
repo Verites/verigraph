@@ -114,7 +114,7 @@ danglingExtension gl l = tlUpdated
     ld = orphanTypedNodes l
     tl = codomain l
     t = codomain tl
-    tlx n' = any (\n -> getNodeType tl n == n') ld
+    tlx n' = any (\n -> extractNodeType tl n == n') ld
     dangT = filter (\e -> tlx (sourceOfUnsafe t e) || tlx (targetOfUnsafe t e)) (edges t)
 
     edgesToAdd = concatMap (\n -> map (\e -> (n,e)) dangT) ld
@@ -128,7 +128,7 @@ danglingExtension gl l = tlUpdated
         (False,True) -> createTgt tgm e n
         (False,False) -> error "danglingExtension: it's not supposed to be here"
       where
-        typeNode = getNodeType (codomain tgm) n
+        typeNode = extractNodeType (codomain tgm) n
         isSrc = typeNode == sourceOfUnsafe t e
         isTgt = typeNode == targetOfUnsafe t e
 

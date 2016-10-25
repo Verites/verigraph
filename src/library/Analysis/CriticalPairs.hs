@@ -125,8 +125,7 @@ findAllDeleteUse :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Producti
 findAllDeleteUse conf p1 p2 =
   map (\m -> CriticalPair m Nothing Nothing DeleteUse) deleteUsePairs
   where
-    pairs = createJointlyEpimorphicPairsFromCodomains (matchRestriction conf) (getLHS p1) (getLHS p2)
-    satisfyingPairs = filter (\(m1,m2) -> satisfyRewritingConditions conf (p1,m1) (p2,m2)) pairs
+    satisfyingPairs = findPotentialCriticalPairs conf p1 p2
     deleteUsePairs = filter (isDeleteUse conf p1) satisfyingPairs
 
 -- *** Produce-Dangling
@@ -137,8 +136,7 @@ findAllProduceDangling :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Pr
 findAllProduceDangling conf p1 p2 =
   map (\m -> CriticalPair m Nothing Nothing ProduceDangling) produceDanglingPairs
   where
-    pairs = createJointlyEpimorphicPairsFromCodomains (matchRestriction conf) (getLHS p1) (getLHS p2)
-    satisfyingPairs = filter (\(m1,m2) -> satisfyRewritingConditions conf (p1,m1) (p2,m2)) pairs
+    satisfyingPairs = findPotentialCriticalPairs conf p1 p2
     produceDanglingPairs = filter (isProduceDangling conf p1 p2) satisfyingPairs
 
 -- DeleteUse and Produce-Dangling
@@ -149,8 +147,7 @@ findAllDeleteUseAndProduceDangling :: (EpiPairs m, DPO m) => DPOConfig -> Produc
 findAllDeleteUseAndProduceDangling conf p1 p2 =
   map categorizeConflict conflicts
   where
-    pairs = createJointlyEpimorphicPairsFromCodomains (matchRestriction conf) (getLHS p1) (getLHS p2)
-    gluing = filter (\(m1,m2) -> satisfyRewritingConditions conf (p1,m1) (p2,m2)) pairs
+    gluing = findPotentialCriticalPairs conf p1 p2
     conflicts = mapMaybe (deleteUseDangling conf p1 p2) gluing
     categorizeConflict x = case x of
       (Left m)  -> CriticalPair m Nothing Nothing DeleteUse

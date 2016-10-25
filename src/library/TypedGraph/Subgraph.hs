@@ -14,14 +14,14 @@ subgraphs g = subEdges
     graph = domain g
     emptyGraph = Graph.GraphMorphism.empty Graph.Graph.empty (codomain g)
 
-    listNodesToAdd = [(n, getNodeType g n) | n <- nodes graph]
+    listNodesToAdd = [(n, extractNodeType g n) | n <- nodes graph]
 
     subNodes = decisionTreeNodes listNodesToAdd emptyGraph
 
     listEdgesToAdd = [(e,
                        sourceOfUnsafe graph e,
                        targetOfUnsafe graph e,
-                       getEdgeType g e)
+                       extractEdgeType g e)
                        | e <- edges graph]
 
     subEdges = concatMap (decisionTreeEdges listEdgesToAdd) subNodes
@@ -34,14 +34,14 @@ inducedSubgraphs m = map (idMap (domain m)) subEdges
     g = codomain m
     graph = domain g
 
-    listNodesToAdd = [(n, getNodeType g n) | n <- orphanTypedNodes m]
+    listNodesToAdd = [(n, extractNodeType g n) | n <- orphanTypedNodes m]
 
     subNodes = decisionTreeNodes listNodesToAdd (domain m)
 
     listEdgesToAdd = [(e,
                        sourceOfUnsafe graph e,
                        targetOfUnsafe graph e,
-                       getEdgeType g e)
+                       extractEdgeType g e)
                        | e <- orphanTypedEdges m]
 
     subEdges = concatMap (decisionTreeEdges listEdgesToAdd) subNodes

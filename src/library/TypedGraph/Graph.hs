@@ -1,8 +1,6 @@
 module TypedGraph.Graph
   ( TypedGraph
   , untypedGraph
-  , getEdgeType
-  , getNodeType
   , extractNodeType
   , extractEdgeType
   , typeGraph
@@ -34,21 +32,11 @@ typeGraph = codomain
 null :: TypedGraph a b -> Bool
 null = G.null . untypedGraph
 
-{-# DEPRECATED getNodeType "Use extractNodeType instead" #-}
--- | Given a TypedGraph and a Node in this graph, returns the type of the Node
-getNodeType :: TypedGraph a b -> NodeId -> NodeId
-getNodeType = applyNodeUnsafe
-
-{-# DEPRECATED getEdgeType "Use extractEdgeType instead" #-}
---- | Given a TypedGraph and a Edge in this graph, returns the type of the Edge
-getEdgeType :: TypedGraph a b -> EdgeId -> EdgeId
-getEdgeType = applyEdgeUnsafe
-
 extractNodeType :: TypedGraph a b -> NodeId -> NodeId
-extractNodeType gm n = fromMaybe (error "NODE NOT TYPED") $ applyNode gm n
+extractNodeType gm n = fromMaybe (error "Node not typed") $ applyNode gm n
 
 extractEdgeType :: TypedGraph a b -> EdgeId -> EdgeId
-extractEdgeType gm e = fromMaybe (error "EDGE NOT TYPED") $ applyEdge gm e
+extractEdgeType gm e = fromMaybe (error "edge not typed") $ applyEdge gm e
 
 -- | Infinite list of new node instances of a typed graph
 newTypedNodes :: TypedGraph a b -> [NodeId]
@@ -61,10 +49,10 @@ newTypedEdges tg = newEdges $ untypedGraph tg
 -- | Obtain a list of tuples @(nodeId, typeId)@ for nodes in the graph.
 nodesWithType :: TypedGraph a b -> [(NodeId, NodeId)]
 nodesWithType tg = map withType $ nodes (untypedGraph tg)
-  where withType node = (node, getNodeType tg node)
+  where withType node = (node, extractNodeType tg node)
 
 -- | Obtain a list of tuples @(edgeId, srcId, tgtId, typeId)@ for edges in the graph.
 edgesWithType :: TypedGraph a b -> [(EdgeId, NodeId, NodeId, EdgeId)]
 edgesWithType tg = map withType $ edges graph
   where graph = untypedGraph tg
-        withType edge = (edge, sourceOfUnsafe graph edge, targetOfUnsafe graph edge, getEdgeType tg edge)
+        withType edge = (edge, sourceOfUnsafe graph edge, targetOfUnsafe graph edge, extractEdgeType tg edge)

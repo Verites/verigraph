@@ -121,11 +121,11 @@ serializeGraph objNameNodes objNameEdges morphism = ("", nodes, edges)
 serializeNode :: [(String,String)] -> TypedGraph a b -> G.NodeId -> ParsedTypedNode
 serializeNode objName graph n = ("N" ++ show n,
                          lookup (show n) objName,
-                         "N" ++ show (getNodeType graph n))
+                         "N" ++ show (extractNodeType graph n))
 
 serializeEdge :: [(String,String)] -> TypedGraph a b -> G.EdgeId -> ParsedTypedEdge
 serializeEdge objName graph e = ("E" ++ show e,
                          lookup (show e) objName,
-                         "E" ++ show (getEdgeType graph e),
+                         "E" ++ show (extractEdgeType graph e),
                          "N" ++ show (G.sourceOfUnsafe (M.domain graph) e),
                          "N" ++ show (G.targetOfUnsafe (M.domain graph) e))

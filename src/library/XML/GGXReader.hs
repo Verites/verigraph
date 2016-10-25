@@ -46,11 +46,11 @@ readGrammar fileName useConstraints dpoConfig = do
                          ptg:_ -> ptg
   _ <- parsedTypeGraph `seq` return ()
 
-  let a tg g = instantiateTypedGraph g tg
+  --let a tg g = instantiateTypedGraph g tg
   let typeGraph = instantiateTypeGraph parsedTypeGraph
-  graphs <- readGraphs' fileName
-  let initialGraphs = map (a typeGraph) $ concat graphs
-
+  --graphs <- readGraphs' fileName
+  
+  --let initialGraphs = map (a typeGraph) $ concat graphs
 
   parsedRules <- readRules fileName
 
@@ -82,11 +82,11 @@ readGrammar fileName useConstraints dpoConfig = do
 
   return $ minimalSafetyNacsWithLog dpoConfig gg
 
-testeCons :: [TypedGraph a b] -> [AtomicConstraint (TypedGraphMorphism a b)] -> [[Bool]]
-testeCons [] _      = []
-testeCons (g:gs) cs = satisfiesCons g cs : testeCons gs cs
-  where
-    satisfiesCons g cs = map (satisfiesAtomicConstraint g) cs
+--testeCons :: [TypedGraph a b] -> [AtomicConstraint (TypedGraphMorphism a b)] -> [[Bool]]
+--testeCons [] _      = []
+--testeCons (g:gs) cs = satisfiesCons g cs : testeCons gs cs
+--  where
+--    satisfiesCons g cs = map (satisfiesAtomicConstraint g) cs
 
 readGGName :: String -> IO String
 readGGName fileName = do
@@ -141,8 +141,8 @@ readTypeNames fileName = concat <$> runX (parseXML fileName >>> parseNames)
 readConstraints :: String -> IO[ParsedAtomicConstraint]
 readConstraints fileName = runX (parseXML fileName >>> parseAtomicConstraints)
 
-readGraphs' :: String -> IO[[ParsedTypedGraph]]
-readGraphs' fileName = runX (parseXML fileName >>> parseGraphs)
+--readGraphs' :: String -> IO[[ParsedTypedGraph]]
+--readGraphs' fileName = runX (parseXML fileName >>> parseGraphs)
 
 readGraphs :: String -> IO [(String, TypedGraph a b)]
 readGraphs fileName =
@@ -257,7 +257,7 @@ instantiateSpan left right mapping = (leftM, rightM)
         edgeTgt = G.EdgeId tgt
 
         nodeDom = G.insertNode nodeSrc (domain k)
-        nodeType = getNodeType left nodeSrc
+        nodeType = extractNodeType left nodeSrc
         newNodeK = updateNodes nodeSrc nodeType (updateDomain nodeDom k)
         updateNodesL = updateNodes nodeSrc nodeSrc (updateDomain nodeDom l)
         updateNodesR = updateNodes nodeSrc nodeTgt (updateDomain nodeDom r)
@@ -265,7 +265,7 @@ instantiateSpan left right mapping = (leftM, rightM)
         src_ e = fromMaybe (error (show e)) (G.sourceOf (domain left) e)
         tgt_ e = fromMaybe (error (show e)) (G.targetOf (domain left) e)
         edgeDom = G.insertEdge edgeSrc (src_ edgeSrc) (tgt_ edgeSrc) (domain k)
-        edgeType = getEdgeType left edgeSrc
+        edgeType = extractEdgeType left edgeSrc
         newEdgeK = updateEdges edgeSrc edgeType (updateDomain edgeDom k)
         updateEdgesL = updateEdges edgeSrc edgeSrc (updateDomain edgeDom l)
         updateEdgesR = updateEdges edgeSrc edgeTgt (updateDomain edgeDom r)

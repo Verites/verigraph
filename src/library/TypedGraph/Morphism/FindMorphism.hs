@@ -147,6 +147,7 @@ completeWithRemainingNodes prop tgm (h:t, _) (nodesT, edgesT) = do
         all          = completeMappings prop tgm' (t, []) (nodesT , edgesT)
 
 completeFromSourceEdges ::  MorphismType -> TypedGraphMorphism a b -> ExpandedGraph -> ExpandedGraph -> [TypedGraphMorphism a b]
+completeFromSourceEdges _ _ (_, []) (_, _) = error "completeFromSourceEdges: unexpected empty node list"
 completeFromSourceEdges prop tgm (nodes, h:t) (nodesT, edgesT)
   | L.null edgesT = []
   | otherwise  = do
