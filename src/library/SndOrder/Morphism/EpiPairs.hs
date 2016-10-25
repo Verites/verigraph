@@ -1,15 +1,12 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module SndOrder.Morphism.EpiPairs where
 
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Morphism
-import           Abstract.Valid
 import           Graph.GraphMorphism  hiding (applyEdge, applyEdgeUnsafe,
                                        applyNode, applyNodeUnsafe)
-import           TypedGraph.GraphRule
 import           TypedGraph.Morphism
 
 import           SndOrder.Morphism.Core

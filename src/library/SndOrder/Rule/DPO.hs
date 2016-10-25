@@ -127,11 +127,11 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
     src = G.sourceOfUnsafe (domain otherSideGraph)
     tgt = G.targetOfUnsafe (domain otherSideGraph)
 
-    tpNode = getNodeType otherSideGraph
-    tpEdge = getEdgeType otherSideGraph
+    tpNode = extractNodeType otherSideGraph
+    tpEdge = extractEdgeType otherSideGraph
 
-    typeSrc x = getNodeType otherSideGraph (src x)
-    typeTgt x = getNodeType otherSideGraph (tgt x)
+    typeSrc x = extractNodeType otherSideGraph (src x)
+    typeTgt x = extractNodeType otherSideGraph (tgt x)
 
     n' = head (newNodes (domain graphK))
     n'' = head (newNodes (domain graphSide))

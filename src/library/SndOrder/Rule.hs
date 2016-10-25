@@ -39,10 +39,6 @@ applySndOrderRule conf (sndName,sndRule) (fstName,fstRule) =
   (if (matchRestriction conf) == AnyMatches
       (newNacsPair LeftSide sndRule ++
        newNacsPair RightSide sndRule)
-    tpNode = extractNodeType otherSideGraph
-    tpEdge = extractEdgeType otherSideGraph
-    typeSrc x = extractNodeType otherSideGraph (src x)
-    typeTgt x = extractNodeType otherSideGraph (tgt x)
     srcInK x = fromMaybe (newNodesK !! 0) (applyNode invertSide (src x))
     srcInR x = fromMaybe (newNodesSide !! 0) (applyNode otherSide (srcInK x))
       case x of

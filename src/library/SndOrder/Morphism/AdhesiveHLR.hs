@@ -14,7 +14,7 @@ instance AdhesiveHLR (RuleMorphism a b) where
   -- TODO
   calculateInitialPushout _ = error "calculateInitialPushout for second order not implemented yet"
   
-  calculatePushoutComplement (RuleMorphism _ ruleG matchL matchK matchR) (RuleMorphism ruleK _ leftL leftK leftR) = (k,l')
+  calculatePushoutComplement (RuleMorphism _ ruleG matchL matchK matchR) (RuleMorphism ruleK ruleL leftL leftK leftR) = (k,l')
      where
        (matchL', leftL') = calculatePushoutComplement matchL leftL
        (matchK', leftK') = calculatePushoutComplement matchK leftK
@@ -25,15 +25,21 @@ instance AdhesiveHLR (RuleMorphism a b) where
        r = commutingMorphismSameCodomain
              (compose leftK' (getRHS ruleG)) leftR'
              matchK' (compose (getRHS ruleK) matchR')
-
-       validNACs = filter (satisfiesNACRewriting leftL') (getNACs ruleG)
+       
+       notDeletedNACs = filter (\n -> all (\n' -> Prelude.null (findMorph n n')) (getNACs ruleL)) (getNACs ruleG)
+         where
+           findMorph :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
+           findMorph a b = findMorphisms Monomorphism (domain a) (domain b)
+       
+       validNACs = filter (satisfiesNACRewriting leftL') notDeletedNACs
+       
        newRuleNACs = map (\nac -> fst (calculatePushoutComplement nac leftL')) validNACs
 
        newRule = buildProduction l r newRuleNACs
        k = RuleMorphism ruleK newRule matchL' matchK' matchR'
        l' = RuleMorphism newRule ruleG leftL' leftK' leftR'
 
-  calculatePushout (RuleMorphism _ ruleD matchL matchK matchR) (RuleMorphism _ ruleR rightL rightK rightR) =  (m',r')
+  calculatePushout (RuleMorphism _ ruleD matchL matchK matchR) (RuleMorphism _ ruleR rightL rightK rightR) = (m',r')
      where
        (matchL', rightL') = calculatePushout matchL rightL
        (matchK', rightK') = calculatePushout matchK rightK
@@ -45,9 +51,21 @@ instance AdhesiveHLR (RuleMorphism a b) where
              rightK' (compose (getRHS ruleD) rightR')
              matchK' (compose (getRHS ruleR) matchR')
 
-       newRuleNACs = map (\nac -> fst (calculatePushout nac rightL')) (getNACs ruleD)
-
-       newRule = buildProduction l r newRuleNACs
+       transposedNACs = map (\nac -> fst (calculatePushout nac rightL')) (getNACs ruleD)
+       
+       -- conf is used only to indicate AnyMatches, that is the most generic case for nacDownwardShift
+       conf = DPOConfig AnyMatches MonomorphicNAC
+       createdNACs = concatMap (nacDownwardShift conf matchL') (getNACs ruleR) 
+       
+       -- The new NACs are the transposed and the created that do not are included on the transposed
+       newNACs =
+         transposedNACs ++
+         (filter (\n -> all (\n' -> Prelude.null (findIso n n')) transposedNACs) createdNACs)
+         where
+           findIso :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
+           findIso a b = findMorphisms Isomorphism (domain a) (domain b)
+       
+       newRule = buildProduction l r newNACs
        m' = RuleMorphism ruleR newRule matchL' matchK' matchR'
        r' = RuleMorphism ruleD newRule rightL' rightK' rightR'
 

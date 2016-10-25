@@ -1,15 +1,7 @@
 module SndOrder.Rule.Core where
 
-import           Data.Maybe           (mapMaybe,fromMaybe)
-
-import           Abstract.AdhesiveHLR
 import           Abstract.DPO
-import           Abstract.Valid
-import           Graph.Graph          as G
 import           SndOrder.Morphism    as SO
-import           TypedGraph.Graph
-import           TypedGraph.GraphRule
-import           TypedGraph.Morphism
 
 -- | A second order rule:
 --

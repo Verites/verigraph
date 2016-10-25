@@ -67,11 +67,11 @@ import           XML.ParsedTypes
 
 -- | Gets the object name map between the left of two rules
 getLeftObjNameMapping :: SndOrderRuleSide -> SndOrderRuleSide -> [Mapping]
-getLeftObjNameMapping (_,_,(_,left,_,_)) (_,_,(_,right,_,_)) = getObjNameMapping left right
+getLeftObjNameMapping (_,_,((_,left,_,_),_)) (_,_,((_,right,_,_),_)) = getObjNameMapping left right
 
 -- | Gets the object name map between the right of two rules
 getRightObjNameMapping :: SndOrderRuleSide -> SndOrderRuleSide -> [Mapping]
-getRightObjNameMapping (_,_,(_,_,left,_)) (_,_,(_,_,right,_)) = getObjNameMapping left right
+getRightObjNameMapping (_,_,((_,_,left,_),_)) (_,_,((_,_,right,_),_)) = getObjNameMapping left right
 
 -- | Gets the object name map between two ParsedTypedGraph
 getObjNameMapping :: ParsedTypedGraph -> ParsedTypedGraph -> [Mapping]
@@ -111,7 +111,7 @@ parseSndOrderRules = groupRules . map getSndOrderRuleSide
 
 -- | Parse SndOrderRule names in the form: 2rule_left_ruleName or 2rule_nacName_ruleName
 getSndOrderRuleSide :: RuleWithNacs -> SndOrderRuleSide
-getSndOrderRuleSide (rule@(name,_,_,_),_) = (side, ruleName, rule)
+getSndOrderRuleSide rule@((name,_,_,_),_) = (side, ruleName, rule)
   where
     splitted = split "_" name
     side = if length splitted < 3

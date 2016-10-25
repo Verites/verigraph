@@ -25,10 +25,10 @@ instantiateSndOrderRules typeGraph sndOrdRules = zip sndOrderNames d
 instantiateSndOrderRule :: G.Graph a b -> (SndOrderRuleSide, SndOrderRuleSide,[SndOrderRuleSide]) -> (String,(RuleMorphism a b, RuleMorphism a b),[RuleMorphism a b])
 instantiateSndOrderRule typegraph (l@(_,nameL,leftL),r@(_,_,rightR), n) = (nameL, instantiateMorphs, nacs)
   where
-    ruleLeft = instantiateRule typegraph (leftL,[])
-    ruleRight = instantiateRule typegraph (rightR,[])
+    ruleLeft = instantiateRule typegraph leftL
+    ruleRight = instantiateRule typegraph rightR
     instantiateMorphs = instantiateRuleMorphisms (l,ruleLeft) (r,ruleRight)
-    nacsRules = map ((instantiateRule typegraph) . (\(_,_,x) -> (x,[]))) n
+    nacsRules = map (instantiateRule typegraph) (map (\(_,_,x) -> (x,[])) n)
     nacs = map (instantiateSndOrderNac (l,ruleLeft)) (zip n nacsRules)
 
 instantiateSndOrderNac :: (SndOrderRuleSide, GraphRule a b) -> (SndOrderRuleSide, GraphRule a b) -> RuleMorphism a b
@@ -82,5 +82,5 @@ instantiateRuleMorphisms (parsedLeft, l) (parsedRight, r) =
       (rightKtoRightL, rightKtoRightR) =
         instantiateSpan graphRRuleL graphRRuleR mappingBetweenRight
 
-      maps (_,_,(_,_,_,x)) = x
+      maps (_,_,((_,_,_,x),_)) = x
       (leftK, rightK) = instantiateSpan graphLRuleK graphRRuleK (maps parsedLeft)
