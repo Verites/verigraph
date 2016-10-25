@@ -18,4 +18,5 @@ class (Morphism m) => Cocomplete m where
   -- @/h : B -> X/@
   calculateNCoequalizer :: [m] -> m
 
-  --calculateCoproduct :: m -> m -> (m,m)
+  -- | Given two objects @A@ and @B@ it returns the coproduct @(A+B, f: A -> A+B, g: B -> A+B)@
+  calculateCoproduct :: Obj m -> Obj m -> (m,m)

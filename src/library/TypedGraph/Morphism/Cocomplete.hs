@@ -150,7 +150,6 @@ diffNEquivalences eq set = actualDiff allSubSets
     newFind = singleton . (`findEquivalenceClass` set)
 
 mergeNEquivalences :: (Ord a, Show a) => Set a -> Set(EquivalenceClass a) -> Set(EquivalenceClass a)
---mergeNEquivalences (e1,e2) set = singleton (findEquivalenceClass e1 set `union` findEquivalenceClass e2 set)
 mergeNEquivalences eq set = singleton $ actualMerge allSubSets
   where
     actualMerge = DS.foldl union DS.empty
