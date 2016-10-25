@@ -27,6 +27,7 @@ prod2 = l2 r2 {n2}
 
 module Analysis.DiagramAlgorithms (
     isDeleteUse
+  , isEssentialDeleteUse
   , isProduceDangling
   , deleteUseDangling
   , produceForbidOneNac
@@ -124,6 +125,28 @@ produceForbidOneNac conf p1 p2 (n2,idx) = do
     _ -> error "produceForbidOneNac: h21 should be unique, but isn't"
 
 
+-- | A pair of monomorphic matches is an essential delete use when the
+-- pullback of the compose of the c (from the initial pushout) with m1
+-- and m2 is a pushout and does not exist morphism from S1 to B that commutes.
+isEssentialDeleteUse :: DPO m => DPOConfig -> Production m -> (m, m) -> Bool
+isEssentialDeleteUse conf p1 (m1,m2) = null commuting && isPO
+  where
+    (_,c,g) = calculateInitialPushout (getLHS p1)
+    (q12,o1) = calculatePullback (compose g m1) m2
+    alls1 = findMorphismsFromDomains conf o1 c
+    commuting = filter (\s1 -> compose s1 c == o1) alls1
+    
+    (a,_) = calculatePushout (compose o1 g) q12
+    isPO = not $ null $ findIsomorphismsFromCodomains a m1
+
 findMorphisms' :: FindMorphism m => DPOConfig -> Obj m -> Obj m -> [m]
 findMorphisms' conf =
   findMorphisms (matchRestrictionToMorphismType $ matchRestriction conf)
+
+findMorphismsFromDomains :: FindMorphism m => DPOConfig -> m -> m -> [m]
+findMorphismsFromDomains conf  a b =
+  findMorphisms (matchRestrictionToMorphismType $ matchRestriction conf) (domain a) (domain b)
+
+findIsomorphismsFromCodomains :: FindMorphism m => m -> m -> [m]
+findIsomorphismsFromCodomains a b =
+  findMorphisms Isomorphism (codomain a) (codomain b)

@@ -8,8 +8,7 @@ import qualified Graph.GraphMorphism      as GM
 import           TypedGraph.Graph
 import           TypedGraph.Morphism.Core
 
-import           Data.List                                       as L
-import           Data.Maybe
+import           Data.Maybe               (fromJust,fromMaybe,mapMaybe)
 
 
 instance AdhesiveHLR (TypedGraphMorphism a b) where
@@ -160,30 +159,116 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
      4. delete all nodes
   -}
   calculatePushoutComplement m l =
-    let ml       = compose l m                                                         -- compose l and m obtaining ml
+    let ml       = compose l m                                              -- compose l and m obtaining ml
         delEdges = mapMaybe (GM.applyEdge $ mapping m) (orphanTypedEdges l) -- obtain list of edges to be deleted in G
         delNodes = mapMaybe (GM.applyNode $ mapping m) (orphanTypedNodes l) -- obtain list of nodes to be deleted in G
-        k        = foldr removeNodeFromCodomain                                          -- delete all edges, then all nodes from ml
+        k        = foldr removeNodeFromCodomain                             -- delete all edges, then all nodes from ml
                        (foldr removeEdgeFromCodomain ml delEdges)
                            delNodes
     in (k, idMap (codomain k) (codomain m))
 
-
-  monomorphicPullback f g = (delNodesFromF', delNodesFromG')
+  -- @
+  --        g'
+  --     X──────▶A
+  --     │       │
+  --  f' │       │ f
+  --     ▼       ▼
+  --     B──────▶C
+  --        g
+  --
+  -- @
+  --
+  -- Pullback for typed graphs.
+  -- It starts getting all pairs for nodes and edges, this pairs will be
+  -- the elements of X.
+  -- It creates an empty X, and morphisms f' and g', and adds each pair
+  -- identifing them with ids.
+  calculatePullback f g = (f'',g'')
     where
-      f' = invert f
-      g' = invert g
-      nodes = nodesFromDomain f'
-      edges = edgesFromDomain f'
-      knodes = filter (\n -> isJust (applyNode f' n) && isJust (applyNode g' n)) nodes
-      kedges = filter (\e -> isJust (applyEdge f' e) && isJust (applyEdge g' e)) edges
-      delNodes = nodes \\ knodes
-      delEdges = edges \\ kedges
-      delEdgesFromF' = foldr removeEdgeFromDomain f' delEdges
-      delNodesFromF' = foldr removeNodeFromDomain delEdgesFromF' delNodes
-      delEdgesFromG' = foldr removeEdgeFromDomain g' delEdges
-      delNodesFromG' = foldr removeNodeFromDomain delEdgesFromG' delNodes
-
+      -- This first part just defines the names for the structures
+      nodeTypeInB = GM.applyNodeUnsafe typedGraphB
+      nodeTypeInA = GM.applyNodeUnsafe typedGraphA
+      edgeTypeInB = GM.applyEdgeUnsafe typedGraphB
+      edgeTypeInA = GM.applyEdgeUnsafe typedGraphA
+      typeGraph = codomain typedGraphC
+      typedGraphA = domain f
+      typedGraphB = domain g
+      typedGraphC = codomain f
+      graphB = domain typedGraphB
+      graphA = domain typedGraphA
+      
+      nodesInA = nodesFromDomain f
+      nodesInB = nodesFromDomain g
+      edgesInA = edgesFromDomain f
+      edgesInB = edgesFromDomain g
+      
+      -- Discover the nodes and edges of the X
+      nodesWithoutId = getPairs applyNodeUnsafe nodesInA nodesInB nodes
+      nodesWithId = zip nodesWithoutId ([0..]::[Int])
+      
+      egdesWithoutId = getPairs applyEdgeUnsafe edgesInA edgesInB edges
+      edgesWithId = zip egdesWithoutId ([0..]::[Int])
+      
+      -- Run the product for all elements that are mapped on the same element in C
+      getPairs apply elemA elemB list = concatMap (\(x,y) -> product x y) comb
+        where
+          comb =
+            map
+              (\n ->
+                (filter (\n' -> apply f n' == n) elemA,
+                 filter (\n' -> apply g n' == n) elemB))
+              (list (domain typedGraphC))
+          
+          product x y =
+            do
+              a <- x
+              b <- y
+              return (a,b)
+      
+      -- Init X, f' and g' as empty
+      initX = GM.empty empty typeGraph
+      initF' = buildTypedGraphMorphism initX typedGraphB (GM.empty empty (domain typedGraphB))
+      initG' = buildTypedGraphMorphism initX typedGraphA (GM.empty empty (domain typedGraphA))
+      
+      -- Add all elements on X and their morphisms
+      (g',f') = foldr updateNodes (initG',initF') nodesWithId
+      (g'',f'') = foldr updateEdges (g',f') edgesWithId
+      
+      -- Add a node is just do it on the domain of f' and g'
+      updateNodes ((a,b),newId) (g',f') = (updateG',updateF')
+        where
+          newNode = NodeId newId
+          updateG' = createNodeOnDomain newNode (nodeTypeInA a) a g'
+          updateF' = createNodeOnDomain newNode (nodeTypeInB b) b f'
+      
+      -- Add an edge on the domain of f' and g'
+      updateEdges ((a,b),newId) (g',f') = (updateG',updateF')
+        where
+          newEdge = EdgeId newId
+          
+          -- To add an edge, their source and target nodes must be found (they already exists).
+          -- It searches the node in X that is mapped by f' and g' to the same source (resp. target) node of the related edges on A and B.
+          sourceOfUnsafe g e = fromMaybe (error "sourceOf error") $ sourceOf g e
+          src1 =
+            filter
+              (\n ->
+                applyNodeUnsafe f' n == (sourceOfUnsafe graphB b) &&
+                applyNodeUnsafe g' n == (sourceOfUnsafe graphA a))
+              (nodesFromDomain f')
+          src = if Prelude.null src1 then error "src not found" else head src1
+          
+          targetOfUnsafe g e = fromMaybe (error "targetOf error") $ targetOf g e
+          tgt1 =
+            filter
+              (\n ->
+                applyNodeUnsafe f' n == (targetOfUnsafe graphB b) &&
+                applyNodeUnsafe g' n == (targetOfUnsafe graphA a))
+              (nodesFromDomain f')
+          tgt = if Prelude.null tgt1 then error "tgt not found" else head tgt1
+          
+          updateG' = createEdgeOnDomain newEdge src tgt (edgeTypeInA a) a g'
+          updateF' = createEdgeOnDomain newEdge src tgt (edgeTypeInB b) b f'
+      
 
   hasPushoutComplement (Monomorphism, g) (_, f) =
     satisfiesDanglingCondition f g

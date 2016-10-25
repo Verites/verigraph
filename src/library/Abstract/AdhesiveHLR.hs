@@ -103,10 +103,10 @@ class (Morphism m) => AdhesiveHLR m where
   -- @
   calculatePushoutComplement :: m -> m -> (m, m)
 
-  -- | Calculate the pullback between the two given morphisms
+  -- | Calculate the pullback between the two given morphisms.
   --
-  -- Given two monomorphic morphisms /f : A -> C/ and /g : B -> C/, respectively, returns
-  -- the pair of monomorphic morphisms /f' : X -> B/ and /g': X -> A/ such that the
+  -- Given two morphisms /f : A -> C/ and /g : B -> C/, respectively, returns
+  -- the pair of morphisms /f' : X -> B/ and /g': X -> A/ such that the
   -- following square is a pullback.
   --
   -- @
@@ -119,7 +119,7 @@ class (Morphism m) => AdhesiveHLR m where
   --        g
   --
   -- @
-  monomorphicPullback :: m -> m -> (m, m)
+  calculatePullback :: m -> m -> (m, m)
 
 class Morphism m => EpiPairs m where
   -- | Create all jointly epimorphic pairs of morphisms from the given objects.
