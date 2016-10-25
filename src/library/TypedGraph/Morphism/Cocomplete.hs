@@ -7,11 +7,11 @@ module TypedGraph.Morphism.Cocomplete (
 
 where
 
-import Abstract.Cocomplete
-import Abstract.Morphism
-import Data.Set as DS
-import           Graph.Graph         as G
-import qualified Graph.GraphMorphism as GM
+import           Abstract.Cocomplete
+import           Abstract.Morphism
+import           Data.Set                 as DS
+import           Graph.Graph              as G
+import qualified Graph.GraphMorphism      as GM
 import           TypedGraph.Graph
 import           TypedGraph.Morphism.Core
 
@@ -28,11 +28,11 @@ calculateCoEq' f g = initCoequalizerMorphism b nodeEquivalences edgeEquivalences
     edgeEquivalences = createEdgeEquivalences f g
 
 calculateNCoEq' :: [TypedGraphMorphism a b] -> TypedGraphMorphism a b
-calculateNCoEq' fs = initCoequalizerMorphism b nodeEquivalences (singleton DS.empty)
+calculateNCoEq' fs = initCoequalizerMorphism b nodeEquivalences edgeEquivalences
   where
     b = getCodomain $ head fs
     nodeEquivalences = createNodeNEquivalences fs
-    --edgeEquivalences = createEdgeEquivalences f g
+    edgeEquivalences = createEdgeNEquivalences fs
 
 createNodeNEquivalences :: [TypedGraphMorphism a b] -> Set (EquivalenceClass TypedNode)
 createNodeNEquivalences fs = nodesOnX
@@ -44,31 +44,15 @@ createNodeNEquivalences fs = nodesOnX
     initialNodesOnX = maximumDisjointClass (nodesWithType (getCodomain representant))
     nodesOnX = constructN nodesToGluingOnB initialNodesOnX
 
-constructN :: Set(Set TypedNode) -> Set (EquivalenceClass TypedNode) -> Set (EquivalenceClass TypedNode)
-constructN toBeGlued toBeX
-  | DS.null toBeGlued = toBeX
-  | otherwise = constructN (setTail toBeGlued) (merge (getElem toBeGlued) toBeX)
+createEdgeNEquivalences :: [TypedGraphMorphism a b] -> Set (EquivalenceClass TypedEdge)
+createEdgeNEquivalences fs = edgesOnX
   where
-    merge eq s =  mergeNEquivalences eq s `union`  diffNEquivalences eq s--(s `diff` eq)
-    --diff s eq = s --if e1 == e2 then
-        --s `difference` singleton (findEquivalenceClass e1 s)
-      --else
-      --  s `difference` singleton (findEquivalenceClass e1 s) `difference` singleton (findEquivalenceClass e2 s)
-
-diffNEquivalences :: Set TypedNode -> Set(EquivalenceClass TypedNode) -> Set(EquivalenceClass TypedNode)
-diffNEquivalences eq set = actualDiff allSubSets
-  where
-    actualDiff = DS.foldl difference set
-    allSubSets = DS.map newFind eq
-    newFind = singleton . (`findEquivalenceClass` set)
-
-
-mergeNEquivalences :: Set TypedNode -> Set(EquivalenceClass TypedNode) -> Set(EquivalenceClass TypedNode)
---mergeNEquivalences (e1,e2) set = singleton (findEquivalenceClass e1 set `union` findEquivalenceClass e2 set)
-mergeNEquivalences eq set = singleton $ actualMerge allSubSets
-  where
-    actualMerge = DS.foldl union DS.empty
-    allSubSets = DS.map (`findEquivalenceClass` set) eq
+    representant = head fs
+    equivalentEdges (e,s,t,et) = fromList $ Prelude.map (\f -> (applyEdgeUnsafe f e, applyNodeUnsafe f s, applyNodeUnsafe f t,et)) fs
+    edgesFromA = fromList $ edgesWithType (getDomain representant)
+    edgesToGluingOnB = DS.map equivalentEdges edgesFromA
+    initialEdgesOnX = maximumDisjointClass (edgesWithType (getCodomain representant))
+    edgesOnX = constructN edgesToGluingOnB initialEdgesOnX
 
 createNodeEquivalences :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Set (EquivalenceClass TypedNode)
 createNodeEquivalences f g = nodesOnX
@@ -150,6 +134,27 @@ construct toBeGlued toBeX
         s `difference` singleton (findEquivalenceClass e1 s)
       else
         s `difference` singleton (findEquivalenceClass e1 s) `difference` singleton (findEquivalenceClass e2 s)
+
+constructN :: (Ord a, Show a) => Set(Set a) -> Set (EquivalenceClass a) -> Set (EquivalenceClass a)
+constructN toBeGlued toBeX
+  | DS.null toBeGlued = toBeX
+  | otherwise = constructN (setTail toBeGlued) (merge (getElem toBeGlued) toBeX)
+  where
+    merge eq s =  mergeNEquivalences eq s `union`  diffNEquivalences eq s
+
+diffNEquivalences :: (Ord a, Show a) => Set a -> Set(EquivalenceClass a) -> Set(EquivalenceClass a)
+diffNEquivalences eq set = actualDiff allSubSets
+  where
+    actualDiff = DS.foldl difference set
+    allSubSets = DS.map newFind eq
+    newFind = singleton . (`findEquivalenceClass` set)
+
+mergeNEquivalences :: (Ord a, Show a) => Set a -> Set(EquivalenceClass a) -> Set(EquivalenceClass a)
+--mergeNEquivalences (e1,e2) set = singleton (findEquivalenceClass e1 set `union` findEquivalenceClass e2 set)
+mergeNEquivalences eq set = singleton $ actualMerge allSubSets
+  where
+    actualMerge = DS.foldl union DS.empty
+    allSubSets = DS.map (`findEquivalenceClass` set) eq
 
 getElem :: Set a -> a
 getElem = elemAt 0

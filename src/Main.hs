@@ -97,18 +97,58 @@ ta4 = GM.buildGraphMorphism a4 grafotipo4 [(10,1),(20,1)] [(100,1),(200,1),(300,
 tb4 = GM.buildGraphMorphism b4 grafotipo4 [(50,1),(60,1)] [(500,1),(600,1)]
 
 mf4 = GM.buildGraphMorphism a4 b4 [(10,50),(20,60)] [(100,500),(200,500),(300,600),(400,500)]
-mg4 = GM.buildGraphMorphism a4 b4 [(10,50),(20,60)] [(100,500),(200,500),(300,600),(400,500)]
+mg4 = GM.buildGraphMorphism a4 b4 [(10,50),(20,60)] [(100,600),(200,500),(300,600),(400,500)]
 
 tmf4 = buildTypedGraphMorphism ta4 tb4 mf4
 tmg4 = buildTypedGraphMorphism ta4 tb4 mg4
 
 teste4 = calculateCoequalizer tmf4 tmg4
 
+grafotipo5 = build [4,3,2,1] [(5,3,4),(4,2,4),(3,2,3),(2,2,1),(1,3,1)]
+
+a5 = build [10,20,30,40] []
+b5 = build [50,60,70,80] []
+
+ta5 = GM.buildGraphMorphism a5 grafotipo5 [(10,1),(20,1),(30,1),(40,1)] []
+tb5 = GM.buildGraphMorphism b5 grafotipo5 [(50,1),(60,1),(70,1),(80,1)] []
+
+mf5 = GM.buildGraphMorphism a5 b5 [(10,60),(20,50),(30,70),(40,80)] []
+mg5 = GM.buildGraphMorphism a5 b5 [(10,50),(20,60),(30,70),(40,80)] []
+mh5 = GM.buildGraphMorphism a5 b5 [(10,50),(20,80),(30,60),(40,70)] []
+
+tmf5 = buildTypedGraphMorphism ta5 tb5 mf5
+tmg5 = buildTypedGraphMorphism ta5 tb5 mg5
+tmh5 = buildTypedGraphMorphism ta5 tb5 mh5
+
+teste5 = calculateNCoequalizer [tmf5,tmg5,tmh5]
+teste6 = calculateNCoequalizer [tmf,tmg]
+teste7 = calculateNCoequalizer [tmf2,tmg2]
+
+grafotipo6 = build [1] [(1,1,1)]
+
+a6 = build [10,20] [(100,20,10)]
+b6 = build [50,60,70,80] [(500,60,50),(600,70,60),(700,80,70)]
+
+ta6 = GM.buildGraphMorphism a6 grafotipo6 [(10,1),(20,1)] [(100,1)]
+tb6 = GM.buildGraphMorphism b6 grafotipo6 [(50,1),(60,1),(70,1),(80,1)] [(500,1),(600,1),(700,1)]
+
+mf6 = GM.buildGraphMorphism a6 b6 [(10,50),(20,60)] [(100,500)]
+mg6 = GM.buildGraphMorphism a6 b6 [(10,60),(20,70)] [(100,600)]
+mh6 = GM.buildGraphMorphism a6 b6 [(10,50),(20,60)] [(100,500)]
+
+tmf6 = buildTypedGraphMorphism ta6 tb6 mf6
+tmg6 = buildTypedGraphMorphism ta6 tb6 mg6
+tmh6 = buildTypedGraphMorphism ta6 tb6 mh6
+
+teste60 = calculateNCoequalizer[tmf6]
+
 {--
 {-sendMSG-}
 lr1 = build [11,13,14] [(11,13,11)]
 kr1 = build [21,23,24] []
 rr1 = build [31,33,34] [(35,33,34)]
+
+
 
 --tipagem
 tlr1 = GM.buildGraphMorphism lr1 grafotipo [(14,4),(13,3),(11,1)] [(11,1)]
