@@ -68,6 +68,12 @@ library
                        TypedGraph.Partitions.GraphPartition
                        TypedGraph.Partitions.VerigraphToGraphPartition
                        TypedGraph.Subgraph
+                       SndOrder.Morphism.AdhesiveHLR
+                       SndOrder.Morphism.Core
+                       SndOrder.Morphism.EpiPairs
+                       SndOrder.Morphism.FindMorphism
+                       SndOrder.Rule.Core
+                       SndOrder.Rule.DPO
                        Util.List
                        XML.GGXParseIn
                        XML.GGXParseOut
