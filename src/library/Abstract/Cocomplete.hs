@@ -20,3 +20,6 @@ class (Morphism m) => Cocomplete m where
 
   -- | Given two objects @A@ and @B@ it returns the coproduct @(A+B, f: A -> A+B, g: B -> A+B)@
   calculateCoproduct :: Obj m -> Obj m -> (m,m)
+
+  -- | Given a list of objects @Bi@ it returns the coproduct @fi : Bi -> SUM(Bi)@
+  calculateNCoproduct :: [Obj m] -> [m]

@@ -1,7 +1,10 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 module TypedGraph.Morphism.Cocomplete (
 
-  calculateCoequalizer,calculateNCoequalizer,relablingFunctions,relable
+  calculateCoequalizer,
+  calculateNCoequalizer,
+  calculateCoproduct,
+  calculateNCoproduct
 
 )
 
@@ -19,7 +22,8 @@ instance Cocomplete (TypedGraphMorphism a b) where
 
   calculateCoequalizer = calculateCoEq'
   calculateNCoequalizer = calculateNCoEq'
-  --calculateCoproduct = calculateCoProd'
+  calculateCoproduct = calculateCoProd'
+  calculateNCoproduct = calculateNCoProd'
 
 calculateCoEq' :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 calculateCoEq' f g = initCoequalizerMorphism b nodeEquivalences edgeEquivalences
@@ -35,29 +39,56 @@ calculateNCoEq' fs = initCoequalizerMorphism b nodeEquivalences edgeEquivalences
     nodeEquivalences = createNodeNEquivalences fs
     edgeEquivalences = createEdgeNEquivalences fs
 
-calculateCoProd' :: TypedGraph a b -> TypedGraph a b -> (TypedGraphMorphism a b, TypedGraphMorphism a b)
-calculateCoProd' a b = (ha,hb)
+calculateNCoProd' :: [TypedGraph a b] -> [TypedGraphMorphism a b]
+calculateNCoProd' gs = zipWith addCoproductMorphisms maps allMorphisms
   where
-    --buildSum
-    sumObject = GM.empty G.empty (typeGraph b)
-    ha = buildTypedGraphMorphism a sumObject (GM.empty (domain a) (domain sumObject))
-    hb = buildTypedGraphMorphism b sumObject (GM.empty (domain b) (domain sumObject))
+    tg = typeGraph (head gs)
+    emptyObject = GM.empty G.empty tg
+    coproductObject = Prelude.foldr calculateCoproductObject emptyObject maps
+    buildMorphism graph = buildTypedGraphMorphism graph coproductObject (GM.empty (domain graph) (domain coproductObject))
+    allMorphisms = Prelude.map buildMorphism gs
+    labels = relablingFunctions gs (1,1) []
+    maps = zip gs labels
+
+calculateCoProd' :: TypedGraph a b -> TypedGraph a b -> (TypedGraphMorphism a b, TypedGraphMorphism a b)
+calculateCoProd' a b = (ha',hb')
+  where
+    coproductObject = Prelude.foldr calculateCoproductObject emptyObject maps
+    emptyObject = GM.empty G.empty (typeGraph a)
+    ha = buildTypedGraphMorphism a coproductObject (GM.empty (domain a) (domain coproductObject))
+    hb = buildTypedGraphMorphism b coproductObject (GM.empty (domain b) (domain coproductObject))
+    ha' = addCoproductMorphisms (head maps) ha
+    hb' = addCoproductMorphisms (head $ tail maps) hb
     labels = relablingFunctions [a,b] (1,1) []
-    la = head labels
-    lb = head $ tail labels
     maps = zip [a,b] labels
 
-type RelableFunction = (NodeId -> NodeId, EdgeId -> EdgeId)
-
-relable :: (TypedGraph a b, RelableFunction) -> TypedGraph a b -> TypedGraph a b
-relable (original,relabel) target = newTarget
+addCoproductMorphisms :: (TypedGraph a b, RelableFunction) -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+addCoproductMorphisms (original, relabel) morph = addEdges
   where
-    newTarget = Prelude.foldr createNewNode target newNodes
+    addNodes = Prelude.foldr updateN morph graphNodes
+    addEdges = Prelude.foldr updateE addNodes graphEdges
+    nodeName = fst relabel
+    edgeName = snd relabel
+    graphNodes = nodesWithType original
+    graphEdges = edgesWithType original
+    updateN (n1,t) = updateNodeRelation n1 (nodeName n1) t
+    updateE (e1,_,_,_) = updateEdgeRelation e1 (edgeName e1)
+
+calculateCoproductObject :: (TypedGraph a b, RelableFunction) -> TypedGraph a b -> TypedGraph a b
+calculateCoproductObject (original,relabel) target = addEdges
+  where
+    addNodes = Prelude.foldr createNewNode target newNodes
+    addEdges = Prelude.foldr createNewEdge addNodes newEdges
     originalNodes = nodesWithType original
     newNodes = Prelude.map newNode originalNodes
     newNode (n,nt) = (fst relabel n, nt)
-    --newEdge (e,et) = (snd relabel e, et)
-    createNewNode (x,y) = GM.createNodeOnDomain x y
+    createNewNode (n,nt) = GM.createNodeOnDomain n nt
+    originalEdges = edgesWithType original
+    newEdges = Prelude.map newEdge originalEdges
+    newEdge (e,s,t,et) = (snd relabel e, fst relabel s, fst relabel t, et)
+    createNewEdge (e,s,t,et) = GM.createEdgeOnDomain e s t et
+
+type RelableFunction = (NodeId -> NodeId, EdgeId -> EdgeId)
 
 relablingFunctions :: [TypedGraph a b] -> (NodeId, EdgeId) -> [RelableFunction] -> [RelableFunction]
 relablingFunctions [] _ functions = functions
