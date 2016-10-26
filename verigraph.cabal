@@ -38,7 +38,7 @@ library
                        Analysis.ParallelIndependent
                        Analysis.Interlevel.EvolutionarySpans
                        Analysis.Interlevel.InterLevelCP
-                       Dot
+                       Image.Dot
                        Graph.Graph
                        Graph.GraphMorphism
                        Logic.Model

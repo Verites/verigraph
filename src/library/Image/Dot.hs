@@ -1,4 +1,4 @@
-module Dot where
+module Image.Dot where
 
 import           Abstract.DPO.StateSpace
 import           Graph.Graph

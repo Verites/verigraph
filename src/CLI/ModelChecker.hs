@@ -7,7 +7,7 @@ import           Abstract.DPO
 import           Abstract.DPO.StateSpace as StateSpace
 import           Abstract.Morphism
 import           Abstract.Valid
-import qualified Dot
+import qualified Image.Dot               as Dot
 import qualified Logic.Ctl               as Logic
 import qualified Logic.Model             as Logic
 import           TypedGraph.Graph
