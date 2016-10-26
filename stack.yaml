@@ -3,5 +3,5 @@ extra-package-dbs: []
 packages:
 - '.'
 extra-deps:
-- combinat-0.2.8.1
+- combinat-0.2.8.2
 resolver: lts-7.3
