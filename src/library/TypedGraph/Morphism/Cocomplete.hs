@@ -13,45 +13,49 @@ where
 import           Abstract.Cocomplete
 import           Abstract.Morphism
 import           Data.Set                 as DS
+import           Equivalence.EquivalenceClasses
 import           Graph.Graph              as G
 import qualified Graph.GraphMorphism      as GM
 import           TypedGraph.Graph
 import           TypedGraph.Morphism.Core
 
+type TypedNode = (NodeId,NodeId)
+type TypedEdge = (EdgeId, NodeId, NodeId, EdgeId)
+type RelabelFunction = (NodeId -> NodeId, EdgeId -> EdgeId)
+
 instance Cocomplete (TypedGraphMorphism a b) where
+  calculateCoequalizer = calculateCoequalizer'
+  calculateNCoequalizer = calculateNCoequalizer'
+  calculateCoproduct = calculateCoproduct'
+  calculateNCoproduct = calculateNCoproduct'
 
-  calculateCoequalizer = calculateCoEq'
-  calculateNCoequalizer = calculateNCoEq'
-  calculateCoproduct = calculateCoProd'
-  calculateNCoproduct = calculateNCoProd'
-
-calculateCoEq' :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
-calculateCoEq' f g = initCoequalizerMorphism b nodeEquivalences edgeEquivalences
+calculateCoequalizer' :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+calculateCoequalizer' f g = initCoequalizerMorphism b nodeEquivalences edgeEquivalences
   where
     b = getCodomain f
     nodeEquivalences = createNodeEquivalences f g
     edgeEquivalences = createEdgeEquivalences f g
 
-calculateNCoEq' :: [TypedGraphMorphism a b] -> TypedGraphMorphism a b
-calculateNCoEq' fs = initCoequalizerMorphism b nodeEquivalences edgeEquivalences
+calculateNCoequalizer' :: [TypedGraphMorphism a b] -> TypedGraphMorphism a b
+calculateNCoequalizer' fs = initCoequalizerMorphism b nodeEquivalences edgeEquivalences
   where
     b = getCodomain $ head fs
     nodeEquivalences = createNodeNEquivalences fs
     edgeEquivalences = createEdgeNEquivalences fs
 
-calculateNCoProd' :: [TypedGraph a b] -> [TypedGraphMorphism a b]
-calculateNCoProd' gs = zipWith addCoproductMorphisms maps allMorphisms
+-- | Given a typed graph @B@ and the sets @Ne@ and @Ee@ of node and edge equivalences
+-- it returns the the skeleton of the coequalizer morphism @h : B -> X@, consisting of
+-- the typed graphs @B@ and @X@ but without the morphisms between them
+initCoequalizerMorphism :: TypedGraph a b -> Set (EquivalenceClass TypedNode) -> Set (EquivalenceClass TypedEdge) -> TypedGraphMorphism a b
+initCoequalizerMorphism b nodeEquivalences edgeEquivalences = addEdges
   where
-    tg = typeGraph (head gs)
-    emptyObject = GM.empty G.empty tg
-    coproductObject = Prelude.foldr calculateCoproductObject emptyObject maps
-    buildMorphism graph = buildTypedGraphMorphism graph coproductObject (GM.empty (domain graph) (domain coproductObject))
-    allMorphisms = Prelude.map buildMorphism gs
-    labels = relablingFunctions gs (1,1) []
-    maps = zip gs labels
+    x = GM.empty G.empty (typeGraph b)
+    h = buildTypedGraphMorphism b x (GM.empty (domain b) (domain x))
+    addNodes = DS.foldr addNode h nodeEquivalences
+    addEdges = DS.foldr addEdge addNodes edgeEquivalences
 
-calculateCoProd' :: TypedGraph a b -> TypedGraph a b -> (TypedGraphMorphism a b, TypedGraphMorphism a b)
-calculateCoProd' a b = (ha',hb')
+calculateCoproduct' :: TypedGraph a b -> TypedGraph a b -> (TypedGraphMorphism a b, TypedGraphMorphism a b)
+calculateCoproduct' a b = (ha',hb')
   where
     coproductObject = Prelude.foldr calculateCoproductObject emptyObject maps
     emptyObject = GM.empty G.empty (typeGraph a)
@@ -62,7 +66,18 @@ calculateCoProd' a b = (ha',hb')
     labels = relablingFunctions [a,b] (1,1) []
     maps = zip [a,b] labels
 
-addCoproductMorphisms :: (TypedGraph a b, RelableFunction) -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+calculateNCoproduct' :: [TypedGraph a b] -> [TypedGraphMorphism a b]
+calculateNCoproduct' gs = zipWith addCoproductMorphisms maps allMorphisms
+  where
+    tg = typeGraph (head gs)
+    emptyObject = GM.empty G.empty tg
+    coproductObject = Prelude.foldr calculateCoproductObject emptyObject maps
+    buildMorphism graph = buildTypedGraphMorphism graph coproductObject (GM.empty (domain graph) (domain coproductObject))
+    allMorphisms = Prelude.map buildMorphism gs
+    labels = relablingFunctions gs (1,1) []
+    maps = zip gs labels
+
+addCoproductMorphisms :: (TypedGraph a b, RelabelFunction) -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 addCoproductMorphisms (original, relabel) morph = addEdges
   where
     addNodes = Prelude.foldr updateN morph graphNodes
@@ -74,7 +89,7 @@ addCoproductMorphisms (original, relabel) morph = addEdges
     updateN (n1,t) = updateNodeRelation n1 (nodeName n1) t
     updateE (e1,_,_,_) = updateEdgeRelation e1 (edgeName e1)
 
-calculateCoproductObject :: (TypedGraph a b, RelableFunction) -> TypedGraph a b -> TypedGraph a b
+calculateCoproductObject :: (TypedGraph a b, RelabelFunction) -> TypedGraph a b -> TypedGraph a b
 calculateCoproductObject (original,relabel) target = addEdges
   where
     addNodes = Prelude.foldr createNewNode target newNodes
@@ -88,9 +103,7 @@ calculateCoproductObject (original,relabel) target = addEdges
     newEdge (e,s,t,et) = (snd relabel e, fst relabel s, fst relabel t, et)
     createNewEdge (e,s,t,et) = GM.createEdgeOnDomain e s t et
 
-type RelableFunction = (NodeId -> NodeId, EdgeId -> EdgeId)
-
-relablingFunctions :: [TypedGraph a b] -> (NodeId, EdgeId) -> [RelableFunction] -> [RelableFunction]
+relablingFunctions :: [TypedGraph a b] -> (NodeId, EdgeId) -> [RelabelFunction] -> [RelabelFunction]
 relablingFunctions [] _ functions = functions
 relablingFunctions (g:gs) (nodeSeed, edgeSeed) functions =
   relablingFunctions gs (maxNode g + nodeSeed, maxEdge g + edgeSeed) (functions ++ [((+) nodeSeed, (+) edgeSeed)])
@@ -106,7 +119,7 @@ createNodeNEquivalences fs = nodesOnX
     nodesFromA = fromList $ nodesWithType (getDomain representant)
     nodesToGluingOnB = DS.map equivalentNodes nodesFromA
     initialNodesOnX = maximumDisjointClass (nodesWithType (getCodomain representant))
-    nodesOnX = constructN nodesToGluingOnB initialNodesOnX
+    nodesOnX = enaryConstruct nodesToGluingOnB initialNodesOnX
 
 createEdgeNEquivalences :: [TypedGraphMorphism a b] -> Set (EquivalenceClass TypedEdge)
 createEdgeNEquivalences fs = edgesOnX
@@ -116,7 +129,7 @@ createEdgeNEquivalences fs = edgesOnX
     edgesFromA = fromList $ edgesWithType (getDomain representant)
     edgesToGluingOnB = DS.map equivalentEdges edgesFromA
     initialEdgesOnX = maximumDisjointClass (edgesWithType (getCodomain representant))
-    edgesOnX = constructN edgesToGluingOnB initialEdgesOnX
+    edgesOnX = enaryConstruct edgesToGluingOnB initialEdgesOnX
 
 createNodeEquivalences :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Set (EquivalenceClass TypedNode)
 createNodeEquivalences f g = nodesOnX
@@ -125,7 +138,7 @@ createNodeEquivalences f g = nodesOnX
     nodesFromA = fromList $ nodesWithType (getDomain f)
     nodesToGluingOnB = DS.map equivalentNodes nodesFromA
     initialNodesOnX = maximumDisjointClass (nodesWithType (getCodomain f))
-    nodesOnX = construct nodesToGluingOnB initialNodesOnX
+    nodesOnX = binaryConstruct nodesToGluingOnB initialNodesOnX
 
 createEdgeEquivalences :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Set (EquivalenceClass TypedEdge)
 createEdgeEquivalences f g = edgesOnX
@@ -137,15 +150,7 @@ createEdgeEquivalences f g = edgesOnX
     edgesFromA = fromList $ edgesWithType (getDomain f)
     edgesToGluingOnB = DS.map equivalentEdges edgesFromA
     initialEdgesOnX = maximumDisjointClass (edgesWithType (getCodomain f))
-    edgesOnX = construct edgesToGluingOnB initialEdgesOnX
-
-initCoequalizerMorphism :: TypedGraph a b -> Set (EquivalenceClass TypedNode) -> Set (EquivalenceClass TypedEdge) -> TypedGraphMorphism a b
-initCoequalizerMorphism b nodeEquivalences edgeEquivalences = addEdges
-  where
-    x = GM.empty G.empty (typeGraph b)
-    h = buildTypedGraphMorphism b x (GM.empty (domain b) (domain x))
-    addNodes = DS.foldr addNode h nodeEquivalences
-    addEdges = DS.foldr addEdge addNodes edgeEquivalences
+    edgesOnX = binaryConstruct edgesToGluingOnB initialEdgesOnX
 
 addNode :: EquivalenceClass TypedNode -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 addNode nodes h
@@ -161,7 +166,7 @@ buildNodeMaps h nodeInX nodes
     where
       (nodeInA, tp) = getElem nodes
       h' = updateNodeRelation nodeInA nodeInX tp h
-      nodes' = setTail nodes
+      nodes' = getTail nodes
 
 addEdge :: EquivalenceClass TypedEdge -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 addEdge edges h
@@ -179,62 +184,4 @@ buildEdgeMaps h edgeInX edges
     where
       (edgeInA, _, _, _) = getElem edges
       h' = updateEdgeRelation edgeInA edgeInX h
-      edges' = setTail edges
-
-maximumDisjointClass :: (Ord a) => [a] -> Set (EquivalenceClass a)
-maximumDisjointClass l = fromList $ Prelude.map (fromList . (:[])) l
-
-type EquivalenceClass a = Set a
-type TypedNode = (NodeId,NodeId)
-type TypedEdge = (EdgeId, NodeId, NodeId, EdgeId)
-
-construct :: (Ord a, Show a) => Set(a,a) -> Set (EquivalenceClass a) -> Set (EquivalenceClass a)
-construct toBeGlued toBeX
-  | DS.null toBeGlued = toBeX
-  | otherwise = construct (setTail toBeGlued) (merge (getElem toBeGlued) toBeX)
-  where
-    merge (e1,e2) s =  mergeEquivalences (e1,e2) s `union` (s `diff` (e1,e2))
-    diff s (e1,e2) = if e1 == e2 then
-        s `difference` singleton (findEquivalenceClass e1 s)
-      else
-        s `difference` singleton (findEquivalenceClass e1 s) `difference` singleton (findEquivalenceClass e2 s)
-
-constructN :: (Ord a, Show a) => Set(Set a) -> Set (EquivalenceClass a) -> Set (EquivalenceClass a)
-constructN toBeGlued toBeX
-  | DS.null toBeGlued = toBeX
-  | otherwise = constructN (setTail toBeGlued) (merge (getElem toBeGlued) toBeX)
-  where
-    merge eq s =  mergeNEquivalences eq s `union`  diffNEquivalences eq s
-
-diffNEquivalences :: (Ord a, Show a) => Set a -> Set(EquivalenceClass a) -> Set(EquivalenceClass a)
-diffNEquivalences eq set = actualDiff allSubSets
-  where
-    actualDiff = DS.foldl difference set
-    allSubSets = DS.map newFind eq
-    newFind = singleton . (`findEquivalenceClass` set)
-
-mergeNEquivalences :: (Ord a, Show a) => Set a -> Set(EquivalenceClass a) -> Set(EquivalenceClass a)
-mergeNEquivalences eq set = singleton $ actualMerge allSubSets
-  where
-    actualMerge = DS.foldl union DS.empty
-    allSubSets = DS.map (`findEquivalenceClass` set) eq
-
-getElem :: Set a -> a
-getElem = elemAt 0
-
-getUnitSubset :: Set a -> Set a
-getUnitSubset set = singleton (getElem set)
-
-setTail :: (Ord a) => Set a -> Set a
-setTail set = set `difference` getUnitSubset set
-
-mergeEquivalences :: (Ord a, Show a) => (a, a) -> Set(EquivalenceClass a) -> Set(EquivalenceClass a)
-mergeEquivalences (e1,e2) set = singleton (findEquivalenceClass e1 set `union` findEquivalenceClass e2 set)
-
--- works only with non-empty sets
-findEquivalenceClass :: (Eq a, Show a) => a -> Set(EquivalenceClass a) -> EquivalenceClass a
-findEquivalenceClass element set
-  | DS.null teste = error $ show element ++ show set
-  | otherwise = getElem teste
-  where
-    teste = DS.filter (element `elem`) set
+      edges' = getTail edges

@@ -33,5 +33,6 @@ module TypedGraph.Morphism (
 
 import           TypedGraph.Morphism.Core
 import           TypedGraph.Morphism.AdhesiveHLR                 (checkDeletion)
+import           TypedGraph.Morphism.Cocomplete                  ()
 import           TypedGraph.Morphism.EpiPairs                    ()
 import           TypedGraph.Morphism.FindMorphism                ()

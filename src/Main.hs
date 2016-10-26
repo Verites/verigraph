@@ -95,7 +95,7 @@ grafotipo4 = build [1] [(1,1,1)]
 a4 = build [10,20] [(100,20,10),(200,20,10),(300,20,10),(400,20,10)]
 b4 = build [50,60] [(500,60,50),(600,60,50)]
 
-newLabels = relablingFunctions [ta4,tb4] (0,0) []
+--newLabels = relablingFunctions [ta4,tb4] (0,0) []
 
 ta4 = GM.buildGraphMorphism a4 grafotipo4 [(10,1),(20,1)] [(100,1),(200,1),(300,1),(400,1)]
 tb4 = GM.buildGraphMorphism b4 grafotipo4 [(50,1),(60,1)] [(500,1),(600,1)]
@@ -145,6 +145,10 @@ tmg6 = buildTypedGraphMorphism ta6 tb6 mg6
 tmh6 = buildTypedGraphMorphism ta6 tb6 mh6
 
 teste60 = calculateNCoequalizer[tmf6]
+teste70 = nproduct[ta2,tb2]
+
+nproduct :: [GM.GraphMorphism a b] -> [TypedGraphMorphism a b]
+nproduct = calculateNCoproduct
 
 {--
 {-sendMSG-}

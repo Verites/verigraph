@@ -47,7 +47,6 @@ library
                        SndOrder.Morphism
                        SndOrder.Rule
                        TypedGraph.GraphGrammar
-                       TypedGraph.Morphism.Cocomplete
                        TypedGraph.GraphRule
                        TypedGraph.Graph
                        TypedGraph.Morphism
@@ -56,17 +55,18 @@ library
   other-modules:
                        Analysis.DiagramAlgorithms
                        Analysis.EpimorphicPairs
+                       Equivalence.EquivalenceClasses
                        Logic.Ctl.Base
                        Logic.Ctl.Parser
                        Logic.Ctl.Semantics
                        TypedGraph.Morphism.AdhesiveHLR
+                       TypedGraph.Morphism.Cocomplete
                        TypedGraph.Morphism.Core
                        TypedGraph.Morphism.EpiPairs
                        TypedGraph.Morphism.FindMorphism
                        TypedGraph.Partitions.GraphPartitionToVerigraph
                        TypedGraph.Partitions.GraphPartition
                        TypedGraph.Partitions.VerigraphToGraphPartition
-
                        TypedGraph.Subgraph
                        Util.List
                        XML.GGXParseIn
