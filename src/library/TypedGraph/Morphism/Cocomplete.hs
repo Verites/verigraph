@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 module TypedGraph.Morphism.Cocomplete (
 
-  calculateCoequalizer,calculateNCoequalizer
+  calculateCoequalizer,calculateNCoequalizer,relablingFunctions,relable
 
 )
 
@@ -19,6 +19,7 @@ instance Cocomplete (TypedGraphMorphism a b) where
 
   calculateCoequalizer = calculateCoEq'
   calculateNCoequalizer = calculateNCoEq'
+  --calculateCoproduct = calculateCoProd'
 
 calculateCoEq' :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 calculateCoEq' f g = initCoequalizerMorphism b nodeEquivalences edgeEquivalences
@@ -33,6 +34,38 @@ calculateNCoEq' fs = initCoequalizerMorphism b nodeEquivalences edgeEquivalences
     b = getCodomain $ head fs
     nodeEquivalences = createNodeNEquivalences fs
     edgeEquivalences = createEdgeNEquivalences fs
+
+calculateCoProd' :: TypedGraph a b -> TypedGraph a b -> (TypedGraphMorphism a b, TypedGraphMorphism a b)
+calculateCoProd' a b = (ha,hb)
+  where
+    --buildSum
+    sumObject = GM.empty G.empty (typeGraph b)
+    ha = buildTypedGraphMorphism a sumObject (GM.empty (domain a) (domain sumObject))
+    hb = buildTypedGraphMorphism b sumObject (GM.empty (domain b) (domain sumObject))
+    labels = relablingFunctions [a,b] (1,1) []
+    la = head labels
+    lb = head $ tail labels
+    maps = zip [a,b] labels
+
+type RelableFunction = (NodeId -> NodeId, EdgeId -> EdgeId)
+
+relable :: (TypedGraph a b, RelableFunction) -> TypedGraph a b -> TypedGraph a b
+relable (original,relabel) target = newTarget
+  where
+    newTarget = Prelude.foldr createNewNode target newNodes
+    originalNodes = nodesWithType original
+    newNodes = Prelude.map newNode originalNodes
+    newNode (n,nt) = (fst relabel n, nt)
+    --newEdge (e,et) = (snd relabel e, et)
+    createNewNode (x,y) = GM.createNodeOnDomain x y
+
+relablingFunctions :: [TypedGraph a b] -> (NodeId, EdgeId) -> [RelableFunction] -> [RelableFunction]
+relablingFunctions [] _ functions = functions
+relablingFunctions (g:gs) (nodeSeed, edgeSeed) functions =
+  relablingFunctions gs (maxNode g + nodeSeed, maxEdge g + edgeSeed) (functions ++ [((+) nodeSeed, (+) edgeSeed)])
+  where
+    maxNode graph = maximum $ nodes (untypedGraph graph)
+    maxEdge graph = maximum $ edges (untypedGraph graph)
 
 createNodeNEquivalences :: [TypedGraphMorphism a b] -> Set (EquivalenceClass TypedNode)
 createNodeNEquivalences fs = nodesOnX
