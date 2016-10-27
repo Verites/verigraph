@@ -25,7 +25,7 @@ class (Morphism m) => Cocomplete m where
   calculateNCoproduct :: [Obj m] -> [m]
 
   calculatePushout :: m -> m -> (m, m)
-  calculatePushout g f = (f', g')
+  calculatePushout f g = (f', g')
     where
       b = codomain f
       c = codomain g

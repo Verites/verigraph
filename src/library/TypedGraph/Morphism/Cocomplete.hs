@@ -14,6 +14,7 @@ where
 import           Abstract.Cocomplete
 import           Abstract.Morphism
 import           Data.Set                 as DS
+import           Data.Maybe (fromJust)
 import           Equivalence.EquivalenceClasses
 import           Graph.Graph              as G
 import qualified Graph.GraphMorphism      as GM
@@ -118,7 +119,7 @@ createNodeNEquivalences :: [TypedGraphMorphism a b] -> Set (EquivalenceClass Typ
 createNodeNEquivalences fs = nodesOnX
   where
     representant = head fs
-    equivalentNodes (n,nt) = fromList $ Prelude.map (\f -> (applyNodeUnsafe f n,nt)) fs
+    equivalentNodes (n,nt) = fromList $ Prelude.map (\f -> (fromJust $ applyNode f n,nt)) fs
     nodesFromA = fromList $ nodesWithType (getDomain representant)
     nodesToGluingOnB = DS.map equivalentNodes nodesFromA
     initialNodesOnX = maximumDisjointClass (nodesWithType (getCodomain representant))
@@ -128,7 +129,7 @@ createEdgeNEquivalences :: [TypedGraphMorphism a b] -> Set (EquivalenceClass Typ
 createEdgeNEquivalences fs = edgesOnX
   where
     representant = head fs
-    equivalentEdges (e,s,t,et) = fromList $ Prelude.map (\f -> (applyEdgeUnsafe f e, applyNodeUnsafe f s, applyNodeUnsafe f t,et)) fs
+    equivalentEdges (e,s,t,et) = fromList $ Prelude.map (\f -> (applyEdgeUnsafe f e, fromJust $ applyNode f s, fromJust $ applyNode f t,et)) fs
     edgesFromA = fromList $ edgesWithType (getDomain representant)
     edgesToGluingOnB = DS.map equivalentEdges edgesFromA
     initialEdgesOnX = maximumDisjointClass (edgesWithType (getCodomain representant))
@@ -137,7 +138,7 @@ createEdgeNEquivalences fs = edgesOnX
 createNodeEquivalences :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Set (EquivalenceClass TypedNode)
 createNodeEquivalences f g = nodesOnX
   where
-    equivalentNodes (n,nt) = ((applyNodeUnsafe f n,nt), (applyNodeUnsafe g n,nt))
+    equivalentNodes (n,nt) = ((fromJust $ applyNode f n,nt), (fromJust $ applyNode g n,nt))
     nodesFromA = fromList $ nodesWithType (getDomain f)
     nodesToGluingOnB = DS.map equivalentNodes nodesFromA
     initialNodesOnX = maximumDisjointClass (nodesWithType (getCodomain f))
@@ -148,8 +149,8 @@ createEdgeEquivalences f g = edgesOnX
   where
     equivalentEdges (e,s,t,et) =
       ((applyEdgeUnsafe f e, mapByF s, mapByF t,et), (applyEdgeUnsafe g e,mapByG s,mapByG t,et))
-    mapByF = applyNodeUnsafe f
-    mapByG = applyNodeUnsafe g
+    mapByF = fromJust . applyNode f
+    mapByG = fromJust . applyNode g
     edgesFromA = fromList $ edgesWithType (getDomain f)
     edgesToGluingOnB = DS.map equivalentEdges edgesFromA
     initialEdgesOnX = maximumDisjointClass (edgesWithType (getCodomain f))
@@ -177,8 +178,8 @@ addEdge edges h
   | otherwise = buildEdgeMaps (createEdgeOnCodomain e2 s2 t2 tp h) e2 edges
   where
     (e2, s, t, tp) = getElem edges
-    s2 = applyNodeUnsafe h s
-    t2 = applyNodeUnsafe h t
+    s2 = fromJust $ applyNode h s
+    t2 = fromJust $ applyNode h t
 
 buildEdgeMaps :: TypedGraphMorphism a b -> EdgeId -> EquivalenceClass TypedEdge -> TypedGraphMorphism a b
 buildEdgeMaps h edgeInX edges
