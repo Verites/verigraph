@@ -16,7 +16,7 @@ import           Analysis.CriticalSequence (findTriggeringCriticalSequences,
 data CRDependencies = AllOverlapings | OnlyDependency
 
 -- | Generates the Concurrent Rules for a given list of GraphRules following the order of the elements in the list.
-allConcurrentRules :: (DPO m, EpiPairs m, Eq (Obj m), Valid m, C.Cocomplete m, Show m) => CRDependencies -> DPOConfig -> [AtomicConstraint m] -> [Production m] -> [Production m]
+allConcurrentRules :: (DPO m, EpiPairs m, Eq (Obj m), Valid m, C.Cocomplete m) => CRDependencies -> DPOConfig -> [AtomicConstraint m] -> [Production m] -> [Production m]
 allConcurrentRules _ _ _ [] = []
 allConcurrentRules _ _ _ [x] = [x]
 allConcurrentRules dep conf constraints (x:xs) = concatMap (crs x) (allCRs xs)
@@ -26,7 +26,7 @@ allConcurrentRules dep conf constraints (x:xs) = concatMap (crs x) (allCRs xs)
 
 -- | Generates the Concurrent Rule with the least disjoint EpiPair for a given list of GraphRules
 -- (following the order of the elements in the list).
-maxConcurrentRule :: (DPO m, EpiPairs m, Eq (Obj m), Valid m, C.Cocomplete m, Show m) => CRDependencies -> DPOConfig ->
+maxConcurrentRule :: (DPO m, EpiPairs m, Eq (Obj m), Valid m, C.Cocomplete m) => CRDependencies -> DPOConfig ->
   [AtomicConstraint m] -> [Production m] -> Maybe (Production m)
 maxConcurrentRule _ _ _ [] = Nothing
 maxConcurrentRule _ _ _ [r] = Just r
@@ -36,12 +36,12 @@ maxConcurrentRule dep conf constraints (r:rs) = concatRule r (maxConcurrentRule 
       Nothing -> Nothing
       Just x -> maxConcurrentRuleForLastPair dep conf constraints rule x
 
-concurrentRules :: (DPO m, EpiPairs m, C.Cocomplete m, Valid m, Show m) => CRDependencies -> DPOConfig -> [AtomicConstraint m] -> Production m -> Production m -> [Production m]
+concurrentRules :: (DPO m, EpiPairs m, C.Cocomplete m) => CRDependencies -> DPOConfig -> [AtomicConstraint m] -> Production m -> Production m -> [Production m]
 concurrentRules dep conf constraints c n =
   let epiPairs = epiPairsForConcurrentRule dep conf constraints c n
   in mapMaybe (concurrentRuleForPair conf constraints c n) epiPairs
 
-maxConcurrentRuleForLastPair :: (DPO m, EpiPairs m, C.Cocomplete m, Valid m, Show m) => CRDependencies -> DPOConfig -> [AtomicConstraint m] ->
+maxConcurrentRuleForLastPair :: (DPO m, EpiPairs m, C.Cocomplete m) => CRDependencies -> DPOConfig -> [AtomicConstraint m] ->
   Production m -> Production m -> Maybe (Production m)
 maxConcurrentRuleForLastPair dep conf constraints c n =
   let epiPairs = epiPairsForConcurrentRule dep conf constraints c n
@@ -66,18 +66,14 @@ epiPairsForConcurrentRule AllOverlapings conf constraints c n =
         satisfiesGluingConditions conf (invertProductionWithoutNacs c) lp && satisfiesRewritingConditions conf n rp
   in filter isValidPair allPairs
 
-concurrentRuleForPair :: (DPO m, EpiPairs m, C.Cocomplete m, Valid m, Show m) => DPOConfig -> [AtomicConstraint m] -> Production m -> Production m -> (m, m) -> Maybe (Production m)
+concurrentRuleForPair :: (DPO m, EpiPairs m, C.Cocomplete m) => DPOConfig -> [AtomicConstraint m] -> Production m -> Production m -> (m, m) -> Maybe (Production m)
 concurrentRuleForPair conf constraints c n pair = if invalidSides then Nothing else Just (buildProduction l r (dmc ++ lp))
   where
     pocC = calculatePushoutComplement (fst pair) (getRHS c)
     pocN = calculatePushoutComplement (snd pair) (getLHS n)
     poC = C.calculatePushout (fst pocC) (getLHS c)
     poN = C.calculatePushout (fst pocN) (getRHS n)
-    pb | not . isValid $ fst poC = error $ show (fst poC)
-       | not . isValid $ snd poC = error $ show (snd poC)
-       | not . isValid $ fst poN = error $ show (fst poN)
-       | not . isValid $ snd poN = error $ show (snd poN)
-       | otherwise = calculatePullback (snd pocC) (snd pocN)
+    pb = calculatePullback (snd pocC) (snd pocN)
     l = compose (fst pb) (snd poC)
     r = compose (snd pb) (snd poN)
     dmc = filter validNac $ concatMap (nacDownwardShift conf (fst poC)) (getNACs c)

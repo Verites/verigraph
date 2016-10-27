@@ -6,12 +6,16 @@ import           Abstract.AdhesiveHLR
 import           Graph.Graph              as G
 import qualified Graph.GraphMorphism      as GM
 import           TypedGraph.Graph
+import qualified TypedGraph.Morphism.Cocomplete as C
 import           TypedGraph.Morphism.Core
 
 import           Data.Maybe               (fromJust,fromMaybe,mapMaybe)
 
 
 instance AdhesiveHLR (TypedGraphMorphism a b) where
+
+  calculatePushout = C.calculatePushout
+
   -- @
   --        d
   --    B──────▶C
@@ -104,51 +108,6 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
             )
           )
 
-  {-
-          g
-      A──────▶C
-      │       │
-     f│   =   │g'
-      ▼       ▼
-      B──────▶D
-          g'
-
-     PO algorithm:
-     1. invert r
-     2. compose k and r^-1
-     3. create node table  (C -> D)
-     5. create edge table  (C -> D)
-     4. associate nodes
-     6. associate edges
-  -}
-  calculatePushout f g =
-    let
-        gf = compose (invert g) f                                 -- invert g and compose with f, obtain gf : C -> B
-        cOnlyNodes = orphanTypedNodes g                           -- nodes in C that are not mapped from g
-        cOnlyEdges = orphanTypedEdges g                           -- edges in C that are not mapped from g
-        nodesInF'  = zip cOnlyNodes (newTypedNodes $ codomain gf) -- table mapping NodeIds in C to NodeIds in D
-        edgesInF'  = zip cOnlyEdges (newTypedEdges $ codomain gf) -- table mapping EdgeIds in C to EdgeIds in D
-
-        -- generate new node instances in D, associating them to the "created" nodes in C
-        gf' = generateNewNodeInstances gf nodesInF'
-
-        -- query the instance graphs C
-        typemor = domain         gf'                     -- typemor is the typed graph (C -> T)
-        d       = domain         typemor                 -- d  is the instance graph C
-        mp      = mapping        gf'                     -- mp is the mapping of gf'  : (C -> B'), where B' = B + new nodes
-        s1 e = fromJust $ G.sourceOf d e                 -- obtain source of e in C
-        t1 e = fromJust $ G.targetOf d e                 -- obtain target of e in C
-        s2 e = fromJust $ GM.applyNode mp (s1 e)         -- obtain source of m'(e) in D
-        t2 e = fromJust $ GM.applyNode mp (t1 e)         -- obtain target of m'(e) in D
-        tp e = fromJust $ GM.applyEdge typemor e         -- obtain type of e in C
-
-        -- generate new edge table with new information
-        edgeTable' = map (\(e,e2) -> (e, s1 e, t1 e, e2, s2 e, t2 e, tp e)) edgesInF'
-
-        -- create new morphism adding all edges
-        kr''      = generateNewEdgeInstances gf' edgeTable'
-    in (kr'', idMap (codomain f) (codomain kr''))
-
 
   {-
      PO complement algorithm:
@@ -196,19 +155,19 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
       typedGraphC = codomain f
       graphB = domain typedGraphB
       graphA = domain typedGraphA
-      
+
       nodesInA = nodesFromDomain f
       nodesInB = nodesFromDomain g
       edgesInA = edgesFromDomain f
       edgesInB = edgesFromDomain g
-      
+
       -- Discover the nodes and edges of the X
       nodesWithoutId = getPairs applyNodeUnsafe nodesInA nodesInB nodes
       nodesWithId = zip nodesWithoutId ([0..]::[Int])
-      
+
       egdesWithoutId = getPairs applyEdgeUnsafe edgesInA edgesInB edges
       edgesWithId = zip egdesWithoutId ([0..]::[Int])
-      
+
       -- Run the product for all elements that are mapped on the same element in C
       getPairs apply elemA elemB list = concatMap (\(x,y) -> product x y) comb
         where
@@ -218,34 +177,34 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
                 (filter (\n' -> apply f n' == n) elemA,
                  filter (\n' -> apply g n' == n) elemB))
               (list (domain typedGraphC))
-          
+
           product x y =
             do
               a <- x
               b <- y
               return (a,b)
-      
+
       -- Init X, f' and g' as empty
       initX = GM.empty empty typeGraph
       initF' = buildTypedGraphMorphism initX typedGraphB (GM.empty empty (domain typedGraphB))
       initG' = buildTypedGraphMorphism initX typedGraphA (GM.empty empty (domain typedGraphA))
-      
+
       -- Add all elements on X and their morphisms
       (g',f') = foldr updateNodes (initG',initF') nodesWithId
       (g'',f'') = foldr updateEdges (g',f') edgesWithId
-      
+
       -- Add a node is just do it on the domain of f' and g'
       updateNodes ((a,b),newId) (g',f') = (updateG',updateF')
         where
           newNode = NodeId newId
           updateG' = createNodeOnDomain newNode (nodeTypeInA a) a g'
           updateF' = createNodeOnDomain newNode (nodeTypeInB b) b f'
-      
+
       -- Add an edge on the domain of f' and g'
       updateEdges ((a,b),newId) (g',f') = (updateG',updateF')
         where
           newEdge = EdgeId newId
-          
+
           -- To add an edge, their source and target nodes must be found (they already exists).
           -- It searches the node in X that is mapped by f' and g' to the same source (resp. target) node of the related edges on A and B.
           sourceOfUnsafe g e = fromMaybe (error "sourceOf error") $ sourceOf g e
@@ -256,7 +215,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
                 applyNodeUnsafe g' n == (sourceOfUnsafe graphA a))
               (nodesFromDomain f')
           src = if Prelude.null src1 then error "src not found" else head src1
-          
+
           targetOfUnsafe g e = fromMaybe (error "targetOf error") $ targetOf g e
           tgt1 =
             filter
@@ -265,10 +224,10 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
                 applyNodeUnsafe g' n == (targetOfUnsafe graphA a))
               (nodesFromDomain f')
           tgt = if Prelude.null tgt1 then error "tgt not found" else head tgt1
-          
+
           updateG' = createEdgeOnDomain newEdge src tgt (edgeTypeInA a) a g'
           updateF' = createEdgeOnDomain newEdge src tgt (edgeTypeInB b) b f'
-      
+
 
   hasPushoutComplement (Monomorphism, g) (_, f) =
     satisfiesDanglingCondition f g

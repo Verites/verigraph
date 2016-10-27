@@ -13,6 +13,7 @@ where
 
 import           Abstract.Cocomplete
 import           Abstract.Morphism as M
+import qualified Data.List.NonEmpty as NE
 import           Data.Set                 as DS
 import           Data.Maybe (fromJust)
 import           Equivalence.EquivalenceClasses
@@ -30,10 +31,10 @@ instance Cocomplete (TypedGraphMorphism a b) where
   calculateNCoequalizer = calculateNCoequalizer'
   calculateCoproduct = calculateCoproduct'
   calculateNCoproduct = calculateNCoproduct'
-  finalObject = finalObject'
+  initialObject = initialObject'
 
-finalObject' :: TypedGraphMorphism a b -> TypedGraph a b
-finalObject' tgm = M.id $ typeGraph (domain tgm)
+initialObject' :: TypedGraphMorphism a b -> TypedGraph a b
+initialObject' tgm = GM.empty G.empty (typeGraph (domain tgm))
 
 calculateCoequalizer' :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 calculateCoequalizer' f g = initCoequalizerMorphism b nodeEquivalences edgeEquivalences
@@ -42,9 +43,10 @@ calculateCoequalizer' f g = initCoequalizerMorphism b nodeEquivalences edgeEquiv
     nodeEquivalences = createNodeEquivalences f g
     edgeEquivalences = createEdgeEquivalences f g
 
-calculateNCoequalizer' :: [TypedGraphMorphism a b] -> TypedGraphMorphism a b
-calculateNCoequalizer' fs = initCoequalizerMorphism b nodeEquivalences edgeEquivalences
+calculateNCoequalizer' :: NE.NonEmpty (TypedGraphMorphism a b) -> TypedGraphMorphism a b
+calculateNCoequalizer' fs' = initCoequalizerMorphism b nodeEquivalences edgeEquivalences
   where
+    fs = NE.toList fs'
     b = getCodomain $ head fs
     nodeEquivalences = createNodeNEquivalences fs
     edgeEquivalences = createEdgeNEquivalences fs
@@ -72,9 +74,10 @@ calculateCoproduct' a b = (ha',hb')
     labels = relablingFunctions [a,b] (1,1) []
     maps = zip [a,b] labels
 
-calculateNCoproduct' :: [TypedGraph a b] -> [TypedGraphMorphism a b]
-calculateNCoproduct' gs = zipWith addCoproductMorphisms maps allMorphisms
+calculateNCoproduct' :: NE.NonEmpty (TypedGraph a b) -> [TypedGraphMorphism a b]
+calculateNCoproduct' gs' = zipWith addCoproductMorphisms maps allMorphisms
   where
+    gs = NE.toList gs'
     tg = typeGraph (head gs)
     emptyObject = GM.empty G.empty tg
     coproductObject = Prelude.foldr calculateCoproductObject emptyObject maps
