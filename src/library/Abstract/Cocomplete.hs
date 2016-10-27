@@ -24,6 +24,8 @@ class (Morphism m) => Cocomplete m where
   -- | Given a list of objects @Bi@ it returns the coproduct @fi : Bi -> SUM(Bi)@
   calculateNCoproduct :: [Obj m] -> [m]
 
+  finalObject :: m -> Obj m
+
   calculatePushout :: m -> m -> (m, m)
   calculatePushout f g = (f', g')
     where

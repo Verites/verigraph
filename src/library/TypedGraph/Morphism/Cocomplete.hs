@@ -12,7 +12,7 @@ module TypedGraph.Morphism.Cocomplete (
 where
 
 import           Abstract.Cocomplete
-import           Abstract.Morphism
+import           Abstract.Morphism as M
 import           Data.Set                 as DS
 import           Data.Maybe (fromJust)
 import           Equivalence.EquivalenceClasses
@@ -30,6 +30,10 @@ instance Cocomplete (TypedGraphMorphism a b) where
   calculateNCoequalizer = calculateNCoequalizer'
   calculateCoproduct = calculateCoproduct'
   calculateNCoproduct = calculateNCoproduct'
+  finalObject = finalObject'
+
+finalObject' :: TypedGraphMorphism a b -> TypedGraph a b
+finalObject' tgm = M.id $ typeGraph (domain tgm)
 
 calculateCoequalizer' :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 calculateCoequalizer' f g = initCoequalizerMorphism b nodeEquivalences edgeEquivalences
@@ -129,7 +133,7 @@ createEdgeNEquivalences :: [TypedGraphMorphism a b] -> Set (EquivalenceClass Typ
 createEdgeNEquivalences fs = edgesOnX
   where
     representant = head fs
-    equivalentEdges (e,s,t,et) = fromList $ Prelude.map (\f -> (applyEdgeUnsafe f e, fromJust $ applyNode f s, fromJust $ applyNode f t,et)) fs
+    equivalentEdges (e,s,t,et) = fromList $ Prelude.map (\f -> (fromJust $ applyEdge f e, fromJust $ applyNode f s, fromJust $ applyNode f t,et)) fs
     edgesFromA = fromList $ edgesWithType (getDomain representant)
     edgesToGluingOnB = DS.map equivalentEdges edgesFromA
     initialEdgesOnX = maximumDisjointClass (edgesWithType (getCodomain representant))
@@ -148,7 +152,7 @@ createEdgeEquivalences :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Se
 createEdgeEquivalences f g = edgesOnX
   where
     equivalentEdges (e,s,t,et) =
-      ((applyEdgeUnsafe f e, mapByF s, mapByF t,et), (applyEdgeUnsafe g e,mapByG s,mapByG t,et))
+      ((fromJust $ applyEdge f e, mapByF s, mapByF t,et), (fromJust $ applyEdge g e,mapByG s,mapByG t,et))
     mapByF = fromJust . applyNode f
     mapByG = fromJust . applyNode g
     edgesFromA = fromList $ edgesWithType (getDomain f)
