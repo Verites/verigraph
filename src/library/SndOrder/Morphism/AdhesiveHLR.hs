@@ -12,9 +12,34 @@ import           TypedGraph.Morphism
 import           SndOrder.Morphism.Core
 
 instance AdhesiveHLR (RuleMorphism a b) where
-  
-  -- TODO
-  calculateInitialPushout _ = error "calculateInitialPushout for second order not implemented yet"
+
+  -- @
+  --        d
+  --    B──────▶C
+  --    │       │
+  --  b │  (1)  │ c
+  --    ▼       ▼
+  --    A──────▶A'
+  --        f
+  -- @
+  calculateInitialPushout f@(RuleMorphism fA _ fL fK fR) = (b,d,c)
+    where
+      (bL, _, _) = calculateInitialPushout fL
+      (bK, _, _) = calculateInitialPushout fK
+      (bR, _, _) = calculateInitialPushout fR
+      
+      l = commutingMorphism
+            (compose bK (getLHS fA)) bL
+            (compose bK (getLHS fA)) bL
+      
+      r = commutingMorphism
+            (compose bK (getRHS fA)) bR
+            (compose bK (getRHS fA)) bR
+      
+      ruleB = buildProduction l r []
+      b = RuleMorphism ruleB fA bL bK bR
+      
+      (d,c) = calculatePushoutComplement f b
   
   calculatePushoutComplement (RuleMorphism _ ruleG matchL matchK matchR) (RuleMorphism ruleK ruleL leftL leftK leftR) = (k,l')
      where
@@ -80,7 +105,7 @@ instance AdhesiveHLR (RuleMorphism a b) where
   --     B──────▶C
   --        g
   -- @
-  calculatePullback (RuleMorphism fA _ fL fK fR) (RuleMorphism gB _ gL gK gR) = (f',g')
+  calculatePullback (RuleMorphism fA _ fL fK fR) (RuleMorphism gB _ gL gK gR) = (g',f')
     where
       (f'L, g'L) = calculatePullback fL gL
       (f'K, g'K) = calculatePullback fK gK
