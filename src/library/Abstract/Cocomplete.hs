@@ -9,6 +9,13 @@ where
 import           Abstract.Morphism
 import           Data.List.NonEmpty
 
+-- | Type class for morphisms whose category is Cocomplete.
+--
+-- Mainly provides categorical operations that Cocomplete categories
+-- are guaranteed to have.
+--
+-- Note that for performance reasons, verigraph assumes that the parameters
+-- are valid for all functions in this module.
 class (Morphism m) => Cocomplete m where
 
   -- | Given two morphisms @/f : A -> B/@ and @/g : A -> B/@ retuns the coequalizer morphism
