@@ -3,6 +3,7 @@
 --import Analysis.ConcurrentRules
 import qualified XML.GGXReader        as XML
 import           Abstract.Valid
+import qualified Data.List.NonEmpty as NE
 --import qualified Analysis.CriticalSequence as CS
 --import qualified Analysis.CriticalPairs as CP
 --import           Partitions.GraphPartitionToVerigraph
@@ -130,9 +131,9 @@ tmf5 = buildTypedGraphMorphism ta5 tb5 mf5
 tmg5 = buildTypedGraphMorphism ta5 tb5 mg5
 tmh5 = buildTypedGraphMorphism ta5 tb5 mh5
 
-teste5 = calculateNCoequalizer [tmf5,tmg5,tmh5]
-teste6 = calculateNCoequalizer [tmf,tmg]
-teste7 = calculateNCoequalizer [tmf2,tmg2]
+teste5 = calculateNCoequalizer $ NE.fromList [tmf5,tmg5,tmh5]
+teste6 = calculateNCoequalizer $ NE.fromList [tmf,tmg]
+teste7 = calculateNCoequalizer $ NE.fromList [tmf2,tmg2]
 
 grafotipo6 = build [1] [(1,1,1)]
 
@@ -150,11 +151,7 @@ tmf6 = buildTypedGraphMorphism ta6 tb6 mf6
 tmg6 = buildTypedGraphMorphism ta6 tb6 mg6
 tmh6 = buildTypedGraphMorphism ta6 tb6 mh6
 
-teste60 = calculateNCoequalizer[tmf6]
-teste70 = nproduct[ta2,tb2]
-
-nproduct :: [GM.GraphMorphism a b] -> [TypedGraphMorphism a b]
-nproduct = calculateNCoproduct
+teste60 = calculateNCoequalizer $ NE.fromList [tmf6]
 
 {--
 {-sendMSG-}
