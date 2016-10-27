@@ -4,7 +4,8 @@ module TypedGraph.Morphism.Cocomplete (
   calculateCoequalizer,
   calculateNCoequalizer,
   calculateCoproduct,
-  calculateNCoproduct
+  calculateNCoproduct,
+  calculatePushout
 
 )
 
@@ -108,8 +109,10 @@ relablingFunctions [] _ functions = functions
 relablingFunctions (g:gs) (nodeSeed, edgeSeed) functions =
   relablingFunctions gs (maxNode g + nodeSeed, maxEdge g + edgeSeed) (functions ++ [((+) nodeSeed, (+) edgeSeed)])
   where
-    maxNode graph = maximum $ nodes (untypedGraph graph)
-    maxEdge graph = maximum $ edges (untypedGraph graph)
+    ns g = nodes (untypedGraph g)
+    es g = edges (untypedGraph g)
+    maxNode g = if Prelude.null (ns g) then 1 else maximum (ns g)
+    maxEdge g = if Prelude.null (es g) then 1 else maximum (es g)
 
 createNodeNEquivalences :: [TypedGraphMorphism a b] -> Set (EquivalenceClass TypedNode)
 createNodeNEquivalences fs = nodesOnX

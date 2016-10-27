@@ -19,7 +19,7 @@ import           TypedGraph.GraphRule
 --import System.Environment
 --import System.Exit
 import           Abstract.Morphism
-import           TypedGraph.Morphism.Cocomplete
+import           TypedGraph.Morphism.Cocomplete as C
 
 
 
@@ -78,15 +78,21 @@ grafotipo3 = build [1] [(1,1,1)]
 
 a3 = build [10,20,30] []
 b3 = build [50,60,70,80] [(200,60,50),(300,70,60),(400,80,70)]
+c3 = build [50,60,70,80] [(200,60,50),(300,70,60),(400,80,70)]
 
 ta3 = GM.buildGraphMorphism a3 grafotipo3 [(10,1),(20,1),(30,1)] []
 tb3 = GM.buildGraphMorphism b3 grafotipo3 [(50,1),(60,1),(70,1),(80,1)] [(200,1),(300,1),(400,1)]
+tc3 = GM.buildGraphMorphism c3 grafotipo3 [(50,1),(60,1),(70,1),(80,1)] [(200,1),(300,1),(400,1)]
 
 mf3 = GM.buildGraphMorphism a3 b3 [(10,50),(20,60),(30,70)] []
 mg3 = GM.buildGraphMorphism a3 b3 [(10,80),(20,50),(30,60)] []
+mh3 = GM.buildGraphMorphism a3 c3 [(10,60),(20,70),(30,80)] []
 
 tmf3 = buildTypedGraphMorphism ta3 tb3 mf3
 tmg3 = buildTypedGraphMorphism ta3 tb3 mg3
+tmh3 = buildTypedGraphMorphism ta3 tc3 mh3
+
+teste3' = C.calculatePushout tmf3 tmh3
 
 teste3 = calculateCoequalizer tmf3 tmg3
 

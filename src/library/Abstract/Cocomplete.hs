@@ -23,3 +23,15 @@ class (Morphism m) => Cocomplete m where
 
   -- | Given a list of objects @Bi@ it returns the coproduct @fi : Bi -> SUM(Bi)@
   calculateNCoproduct :: [Obj m] -> [m]
+
+  calculatePushout :: m -> m -> (m, m)
+  calculatePushout g f = (f', g')
+    where
+      b = codomain f
+      c = codomain g
+      (b',c') = calculateCoproduct b c
+      gc' = compose g c'
+      fb' = compose f b'
+      h = calculateNCoequalizer[fb',gc']
+      g' = compose b' h
+      f' = compose c' h
