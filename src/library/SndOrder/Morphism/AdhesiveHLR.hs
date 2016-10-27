@@ -1,5 +1,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
+{-# LANGUAGE TypeFamilies #-}
+
 module SndOrder.Morphism.AdhesiveHLR where
 
 import           Abstract.AdhesiveHLR
@@ -68,9 +70,33 @@ instance AdhesiveHLR (RuleMorphism a b) where
        newRule = buildProduction l r newNACs
        m' = RuleMorphism ruleR newRule matchL' matchK' matchR'
        r' = RuleMorphism ruleD newRule rightL' rightK' rightR'
-
-  -- TODO
-  calculatePullback _ _ = error "calculatePullback not implemented in second order"
+  
+  -- @
+  --        g'
+  --     X──────▶A
+  --     │       │
+  --  f' │       │ f
+  --     ▼       ▼
+  --     B──────▶C
+  --        g
+  -- @
+  calculatePullback (RuleMorphism fA _ fL fK fR) (RuleMorphism gB _ gL gK gR) = (f',g')
+    where
+      (f'L, g'L) = calculatePullback fL gL
+      (f'K, g'K) = calculatePullback fK gK
+      (f'R, g'R) = calculatePullback fR gR
+      
+      l = commutingMorphism
+            (compose f'K (getLHS gB)) f'L
+            (compose g'K (getLHS fA)) g'L
+      
+      r = commutingMorphism
+            (compose f'K (getRHS gB)) f'R
+            (compose g'K (getRHS fA)) g'R
+      
+      x = buildProduction l r []
+      f' = RuleMorphism x gB g'L g'K g'R
+      g' = RuleMorphism x fA f'L f'K f'R
 
   hasPushoutComplement (restrictionG, g) (restrictionF, f) =
     hasPushoutComplement (restrictionG, mappingLeft g) (restrictionF, mappingLeft f)
@@ -91,6 +117,31 @@ danglingSpan matchRuleSide matchMorp matchK l k = deletedNodesInK && deletedEdge
     edgesInK = [a | a <- edgesFromDomain matchRuleSide, applyEdgeUnsafe matchRuleSide a `elem` deletedEdges]
     deletedEdgesInK = all (checkDeletion k matchK applyEdge edgesFromDomain) edgesInK
 
+-- | Given the morphisms /a1 : X -> B1/, /b1 : Y -> B1/,
+-- /a2 : X -> B2/ and /b2 : Y -> B2/, respectively,
+-- creates the monomorphic morphism /x : X -> Y/,
+-- where the following diagram commutes:
+--
+-- @
+--         X
+--         |
+--   a1    |x   a2
+--         ▼
+--  B1◀────Y────▶B2
+--      b1   b2
+-- @
+--
+-- TODO: explain the errors in this function. what are preconditions for them not to occur?!?
+commutingMorphism :: TypedGraphMorphism a b -> TypedGraphMorphism a b
+                  -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+commutingMorphism a1 b1 a2 b2 = buildTypedGraphMorphism (domain a1) (domain b1) select
+  where
+    mats = findMonomorphisms (domain a1) (domain b1)
+    filt = filter (\m -> compose m b1 == a1 && compose m b2 == a2) mats
+    select = case filt of
+                [] -> error "(domain) Error when commuting monomorphic morphisms (must be generating an invalid rule)"
+                [x] -> mapping x
+                (_:_:_) -> error "(domain) Error when commuting monomorphic morphisms (non unique commuting morphism)"
 
 -- | Given the morphisms /k1 : X -> Y/, /s1 : X -> Z/,
 -- /k2 : W -> Y/ and /s2 : W -> Z/, respectively,
