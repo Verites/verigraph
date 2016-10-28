@@ -35,14 +35,3 @@ applySndOrderRule conf (sndName,sndRule) (fstName,fstRule) =
       map (\number -> fstName ++ "_" ++ sndName ++ "_" ++ show number) ([0..] :: [Int])
   in
     zip newNames newRules
-
-  (if (matchRestriction conf) == AnyMatches
-      (newNacsPair LeftSide sndRule ++
-       newNacsPair RightSide sndRule)
-    srcInK x = fromMaybe (newNodesK !! 0) (applyNode invertSide (src x))
-    srcInR x = fromMaybe (newNodesSide !! 0) (applyNode otherSide (srcInK x))
-      case x of
-        (Node n) -> createNodes n n' n'' (tpNode n)
-        (Edge e) -> createEdges e e' e'' (tpEdge e)
-                       (src e) (typeSrc e) (srcInK e) (srcInR e)
-                       (tgt e) (typeTgt e) (tgtInK e) (tgtInR e)
