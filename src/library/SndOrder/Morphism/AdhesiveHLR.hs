@@ -7,6 +7,8 @@ module SndOrder.Morphism.AdhesiveHLR where
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Morphism
+import           Graph.Graph              as G
+import qualified Graph.GraphMorphism      as GM
 import           TypedGraph.Morphism
 
 import           SndOrder.Morphism.Core
@@ -22,11 +24,40 @@ instance AdhesiveHLR (RuleMorphism a b) where
   --    A──────▶A'
   --        f
   -- @
-  calculateInitialPushout f@(RuleMorphism fA _ fL fK fR) = (b,d,c)
+  --
+  -- This function for second-order must run the first-order initial
+  -- pushouts and after add elements to the boundary (B) rule if
+  -- it was generated with dangling span condition
+  calculateInitialPushout f@(RuleMorphism fA fA' fL fK fR) = (b,d,c)
     where
-      (bL, _, _) = calculateInitialPushout fL
+      nodeTypesInAL = GM.applyNodeUnsafe (domain fL)
+      edgeTypesInAL = GM.applyEdgeUnsafe (domain fL)
+      graphAL = domain (domain fL)
+      nodeTypesInAR = GM.applyNodeUnsafe (domain fR)
+      edgeTypesInAR = GM.applyEdgeUnsafe (domain fR)
+      graphAR = domain (domain fR)
+      
+      (initBL, _, _) = calculateInitialPushout fL
       (bK, _, _) = calculateInitialPushout fK
-      (bR, _, _) = calculateInitialPushout fR
+      (initBR, _, _) = calculateInitialPushout fR
+      
+      nodesBL = [n | n <- nodesFromDomain fL, isOrphanNode (getLHS fA) n, not (isOrphanNode (getLHS fA') (applyNodeUnsafe fL n))]
+      edgesBL = [e | e <- edgesFromDomain fL, isOrphanEdge (getLHS fA) e, not (isOrphanEdge (getLHS fA') (applyEdgeUnsafe fL e))]
+      
+      nodesBR = [n | n <- nodesFromDomain fR, isOrphanNode (getRHS fA) n, not (isOrphanNode (getRHS fA') (applyNodeUnsafe fR n))]
+      edgesBR = [e | e <- edgesFromDomain fR, isOrphanEdge (getRHS fA) e, not (isOrphanEdge (getRHS fA') (applyEdgeUnsafe fR e))]
+      
+      prebL = foldr (\n -> createNodeOnDomain n (nodeTypesInAL n) n) initBL nodesBL
+      bL = foldr (\e -> createEdgeOnDomain e (src e) (tgt e) (edgeTypesInAL e) e) prebL edgesBL
+        where
+          src = sourceOfUnsafe graphAL
+          tgt = targetOfUnsafe graphAL
+      
+      prebR = foldr (\n -> createNodeOnDomain n (nodeTypesInAR n) n) initBR nodesBR
+      bR = foldr (\e -> createEdgeOnDomain e (src e) (tgt e) (edgeTypesInAR e) e) prebR edgesBR
+        where
+          src = sourceOfUnsafe graphAR
+          tgt = targetOfUnsafe graphAR
       
       l = commutingMorphism
             (compose bK (getLHS fA)) bL
@@ -105,7 +136,7 @@ instance AdhesiveHLR (RuleMorphism a b) where
   --     B──────▶C
   --        g
   -- @
-  calculatePullback (RuleMorphism fA _ fL fK fR) (RuleMorphism gB _ gL gK gR) = (g',f')
+  calculatePullback (RuleMorphism fA _ fL fK fR) (RuleMorphism gB _ gL gK gR) = (f',g')
     where
       (f'L, g'L) = calculatePullback fL gL
       (f'K, g'K) = calculatePullback fK gK
@@ -120,9 +151,9 @@ instance AdhesiveHLR (RuleMorphism a b) where
             (compose g'K (getRHS fA)) g'R
       
       x = buildProduction l r []
-      f' = RuleMorphism x gB g'L g'K g'R
-      g' = RuleMorphism x fA f'L f'K f'R
-
+      f' = RuleMorphism x gB f'L f'K f'R
+      g' = RuleMorphism x fA g'L g'K g'R
+  
   hasPushoutComplement (restrictionG, g) (restrictionF, f) =
     hasPushoutComplement (restrictionG, mappingLeft g) (restrictionF, mappingLeft f)
     && hasPushoutComplement (restrictionG, mappingRight g) (restrictionF, mappingRight f)
@@ -164,9 +195,9 @@ commutingMorphism a1 b1 a2 b2 = buildTypedGraphMorphism (domain a1) (domain b1) 
     mats = findMonomorphisms (domain a1) (domain b1)
     filt = filter (\m -> compose m b1 == a1 && compose m b2 == a2) mats
     select = case filt of
-                [] -> error "(domain) Error when commuting monomorphic morphisms (must be generating an invalid rule)"
+                [] -> error "(commutingMorphism) Error when commuting monomorphic morphisms (must be generating an invalid rule)"
                 [x] -> mapping x
-                (_:_:_) -> error "(domain) Error when commuting monomorphic morphisms (non unique commuting morphism)"
+                (_:_:_) -> error "(commutingMorphism) Error when commuting monomorphic morphisms (non unique commuting morphism)"
 
 -- | Given the morphisms /k1 : X -> Y/, /s1 : X -> Z/,
 -- /k2 : W -> Y/ and /s2 : W -> Z/, respectively,
@@ -191,9 +222,9 @@ commutingMorphismSameDomain k1 s1 k2 s2 = buildTypedGraphMorphism (codomain k1) 
     mats = findMonomorphisms (codomain k1) (codomain s1)
     filt = filter (\m -> compose k1 m == s1 && compose k2 m == s2) mats
     select = case filt of
-                [] -> error "(domain) Error when commuting monomorphic morphisms (must be generating an invalid rule)"
+                [] -> error "(commutingMorphismSameDomain) Error when commuting monomorphic morphisms (must be generating an invalid rule)"
                 [x] -> mapping x
-                (_:_:_) -> error "(domain) Error when commuting monomorphic morphisms (non unique commuting morphism)"
+                (_:_:_) -> error "(commutingMorphismSameDomain) Error when commuting monomorphic morphisms (non unique commuting morphism)"
 
 -- | Given the morphisms /k1 : Y -> X/, /s1 : Z -> X/,
 -- /k2 : W -> Y/ and /s2 : W -> Z/, respectively,
@@ -218,6 +249,12 @@ commutingMorphismSameCodomain k1 s1 k2 s2 = buildTypedGraphMorphism (domain k1) 
     mats = findMonomorphisms (domain k1) (domain s1)
     filt = filter (\m -> compose m s1 == k1 && compose k2 m == s2) mats
     select = case filt of
-                [] -> error "(domain) Error when commuting monomorphic morphisms (must be generating an invalid rule)"
+                [] -> error "(commutingMorphismSameCodomain) Error when commuting monomorphic morphisms (must be generating an invalid rule)"
                 [x] -> mapping x
-                (_:_:_) -> error "(domain) Error when commuting monomorphic morphisms (non unique commuting morphism)"
+                (_:_:_) -> error "(commutingMorphismSameCodomain) Error when commuting monomorphic morphisms (non unique commuting morphism)"
+
+isOrphanNode :: TypedGraphMorphism a b -> NodeId -> Bool
+isOrphanNode m n = n `elem` orphanTypedNodes m
+
+isOrphanEdge :: TypedGraphMorphism a b -> EdgeId -> Bool
+isOrphanEdge m e = e `elem` orphanTypedEdges m
