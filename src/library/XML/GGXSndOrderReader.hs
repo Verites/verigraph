@@ -28,7 +28,7 @@ instantiateSndOrderRule typegraph (l@(_,nameL,leftL),r@(_,_,rightR), n) = (nameL
     ruleLeft = instantiateRule typegraph (leftL,[])
     ruleRight = instantiateRule typegraph (rightR,[])
     instantiateMorphs = instantiateRuleMorphisms (l,ruleLeft) (r,ruleRight)
-    nacsRules = map (instantiateRule typegraph) (map (\(_,_,x) -> (x,[])) n)
+    nacsRules = map ((instantiateRule typegraph) . (\(_,_,x) -> (x,[]))) n
     nacs = map (instantiateSndOrderNac (l,ruleLeft)) (zip n nacsRules)
 
 instantiateSndOrderNac :: (SndOrderRuleSide, GraphRule a b) -> (SndOrderRuleSide, GraphRule a b) -> RuleMorphism a b

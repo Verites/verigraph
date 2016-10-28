@@ -32,7 +32,7 @@ import           Data.Maybe
 
 --import qualified XML.GGXReader as XML
 
-main = do
+main =
   return ()
 
 iN = insertNode

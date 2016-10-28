@@ -122,10 +122,10 @@ minimalSafetyNacs :: DPOConfig -> SndOrderRule a b -> [RuleMorphism a b]
 minimalSafetyNacs conf sndRule =
   newNacsProb LeftSide sndRule ++
   newNacsProb RightSide sndRule ++
-  (if (matchRestriction conf) == AnyMatches
+  (if matchRestriction conf == AnyMatches
     then
-      (newNacsPair LeftSide sndRule ++
-       newNacsPair RightSide sndRule)
+      newNacsPair LeftSide sndRule ++
+       newNacsPair RightSide sndRule
     else [])
 
 -- | Generate NACs that forbid deleting elements in L or R but not in K,
@@ -204,17 +204,17 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
 
     invertSide = invert side
 
-    srcInK x = fromMaybe (newNodesK !! 0) (applyNode invertSide (src x))
+    srcInK x = fromMaybe (head newNodesK) (applyNode invertSide (src x))
     tgtInK x = fromMaybe (newNodesK !! 1) (applyNode invertSide (tgt x))
-    srcInR x = fromMaybe (newNodesSide !! 0) (applyNode otherSide (srcInK x))
+    srcInR x = fromMaybe (head newNodesSide) (applyNode otherSide (srcInK x))
     tgtInR x = fromMaybe (newNodesSide !! 1) (applyNode otherSide (tgtInK x))
 
     (updateLeft, updateRight) =
-      (case x of
-         (Node n) -> createNodes n n' n'' (tpNode n)
-         (Edge e) -> createEdges e e' e'' (tpEdge e)
-                        (src e) (typeSrc e) (srcInK e) (srcInR e)
-                        (tgt e) (typeTgt e) (tgtInK e) (tgtInR e))
+      case x of
+        (Node n) -> createNodes n n' n'' (tpNode n)
+        (Edge e) -> createEdges e e' e'' (tpEdge e)
+                       (src e) (typeSrc e) (srcInK e) (srcInR e)
+                       (tgt e) (typeTgt e) (tgtInK e) (tgtInR e)
 
     nacRule = buildProduction updateLeft updateRight []
     mapL = idMap graphL (codomain updateLeft)
@@ -286,7 +286,7 @@ newNacsPair sideChoose sndRule =
 
     epis = calculateAllPartitions (codomain (getSide ruleL))
 
-    filtered apply pairs = [e | e <- epis, any (\(a,b) -> (apply e) a == (apply e) b) pairs]
+    filtered apply pairs = [e | e <- epis, any (\(a,b) -> apply e a == apply e b) pairs]
 
     retNodes = filtered applyNode pairsNodes
     retEdges = filtered applyEdge pairsEdges

@@ -105,7 +105,7 @@ parseExpressionOrExit text =
       print err
       exitFailure
 
-    Right expr -> do
+    Right expr ->
       return expr
 
 

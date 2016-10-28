@@ -5,7 +5,7 @@ module ParallelIndependence
   ) where
 
 import           Analysis.ParallelIndependent
-import           Control.Monad                (when)
+import           Control.Monad                (when,unless)
 import           Data.Matrix                  hiding ((<|>))
 import           GlobalOptions
 import           Options.Applicative
@@ -45,24 +45,22 @@ execute globalOpts opts = do
     let du = duFlag opts
         comp = False -- flag to compare if deleteuse and pullbacks are generating the same results
         algorithm =
-          case (siFlag opts) of
-            False -> Parallel
-            True  -> Sequentially
+          if (siFlag opts) then Sequentially else Parallel
         --rules = concatMap (replicate 1) $ map snd (GG.rules gg)
         rules = map snd (GG.rules gg)
         analysisDU = pairwiseCompareUpperReflected (isIndependent algorithm DeleteUse dpoConf) rules
         analysisPB = pairwiseCompareUpperReflected (isIndependent algorithm Pullback dpoConf) rules
 
-    putStrLn $ "Delete-use flag: " ++ (show du)
-    putStrLn $ "Comparison flag: " ++ (show comp)
-    putStrLn $ "Length of the set of rules: " ++ (show (length rules))
+    putStrLn $ "Delete-use flag: " ++ show du
+    putStrLn $ "Comparison flag: " ++ show comp
+    putStrLn $ "Length of the set of rules: " ++ show (length rules)
     putStrLn ""
 
     when comp $ putStrLn $ "Check if pullback and delete-use algorithms result in the same matrix: " ++ show (analysisPB == analysisDU)
 
-    when (not comp) $ putStrLn ("Matrix of all pairs of rules (True means this pair is "++ show algorithm ++ " Independent):")
-    when (not comp && du) $ print $ analysisDU
-    when (not comp && not du) $ print $ analysisPB
+    unless comp $ putStrLn ("Matrix of all pairs of rules (True means this pair is "++ show algorithm ++ " Independent):")
+    when (not comp && du) $ print analysisDU
+    when (not comp && not du) $ print analysisPB
 
 -- | Applies a function on the upper triangular matrix and reflects the result in the lower part
 pairwiseCompareUpperReflected :: (a -> a -> Bool) -> [a] -> Matrix Bool
@@ -70,6 +68,4 @@ pairwiseCompareUpperReflected compare items = elementwise op m (transpose m)
   where
     op = \a b -> or [a,b]
     m = matrix (length items) (length items) $ \(i,j) ->
-          if i > j
-            then False
-            else compare (items !! (i-1)) (items !! (j-1))
+          not (i > j) && compare (items !! (i-1)) (items !! (j-1))

@@ -117,14 +117,14 @@ execute globalOpts opts = do
         then mapM_ putStrLn $
           "Inter-level Critical Pairs Analysis:" :
           "(First Order Rule) (Sencond Order Rule) (Conflict Index)" :
-          (map printILCP interlevelCPs)
+          map printILCP interlevelCPs
         else putStrLn "Inter-level CP not defined for only injective matches"
 
     putStrLn ""
 
     when secondOrder $
       mapM_ putStrLn $
-        "Evolutionary Spans Interlevel CP:" : (printEvoConflicts evoConflicts)
+        "Evolutionary Spans Interlevel CP:" : printEvoConflicts evoConflicts
 
     putStrLn ""
     putStrLn "Critical Pair Analysis done!"
@@ -138,7 +138,7 @@ printILCP (fstName, sndName, idx, _) =
 printEvoConflicts :: [(String, [EvoSpan a b])] -> [String]
 printEvoConflicts evo = map printOneEvo evo
   where
-    printOneEvo e = fst e ++ "\n" ++ (printEvos (snd e))
+    printOneEvo e = fst e ++ "\n" ++ printEvos (snd e)
     -- FIX: test with CPE type, not with String
     printEvos evos =
       printConf "FolFol" evos ++

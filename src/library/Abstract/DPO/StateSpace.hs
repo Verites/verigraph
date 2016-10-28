@@ -180,7 +180,7 @@ putState object =
     maybeIndex <- findIsomorphicState object
 
     case maybeIndex of
-      Just (index, _) -> do
+      Just (index, _) ->
         return (index, False)
 
       Nothing -> do

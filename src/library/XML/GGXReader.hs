@@ -171,7 +171,7 @@ expandSequence grammar (name,s) = (name, mapMaybe lookupRule . concat $ map expa
 instantiateTypeGraph :: ParsedTypeGraph -> TypeGraph a b
 instantiateTypeGraph (nodes, edges) = graphWithEdges
   where
-    getNodeType = G.NodeId . toN . (lookupNodes nodes)
+    getNodeType = G.NodeId . toN . lookupNodes nodes
     trd (_,_,x) = x
 
     nodesId = map (G.NodeId . toN . trd) nodes
@@ -243,32 +243,27 @@ instantiateSpan left right mapping = (leftM, rightM)
     initL = empty G.empty (domain left)
     initR = empty G.empty (domain right)
 
-    updateMorphisms (k,l,r) (tgt,src) =
-      if nodeSrc `elem` nodesLeft && nodeTgt `elem` nodesRight
-        then (newNodeK, updateNodesL, updateNodesR)
-        else
-          if edgeSrc `elem` edgesLeft && edgeTgt `elem` edgesRight
-            then (newEdgeK, updateEdgesL, updateEdgesR)
-            else (k, l, r)
-      where
-        nodeSrc = G.NodeId src
-        nodeTgt = G.NodeId tgt
-        edgeSrc = G.EdgeId src
-        edgeTgt = G.EdgeId tgt
-
-        nodeDom = G.insertNode nodeSrc (domain k)
-        nodeType = extractNodeType left nodeSrc
-        newNodeK = updateNodes nodeSrc nodeType (updateDomain nodeDom k)
-        updateNodesL = updateNodes nodeSrc nodeSrc (updateDomain nodeDom l)
-        updateNodesR = updateNodes nodeSrc nodeTgt (updateDomain nodeDom r)
-
-        src_ e = fromMaybe (error (show e)) (G.sourceOf (domain left) e)
-        tgt_ e = fromMaybe (error (show e)) (G.targetOf (domain left) e)
-        edgeDom = G.insertEdge edgeSrc (src_ edgeSrc) (tgt_ edgeSrc) (domain k)
-        edgeType = extractEdgeType left edgeSrc
-        newEdgeK = updateEdges edgeSrc edgeType (updateDomain edgeDom k)
-        updateEdgesL = updateEdges edgeSrc edgeSrc (updateDomain edgeDom l)
-        updateEdgesR = updateEdges edgeSrc edgeTgt (updateDomain edgeDom r)
+    updateMorphisms (k,l,r) (tgt,src)
+      | nodeSrc `elem` nodesLeft && nodeTgt `elem` nodesRight = (newNodeK, updateNodesL, updateNodesR)
+      | edgeSrc `elem` edgesLeft && edgeTgt `elem` edgesRight = (newEdgeK, updateEdgesL, updateEdgesR)
+      | otherwise = (k, l, r)
+      where nodeSrc = G.NodeId src
+            nodeTgt = G.NodeId tgt
+            edgeSrc = G.EdgeId src
+            edgeTgt = G.EdgeId tgt
+            nodeDom = G.insertNode nodeSrc (domain k)
+            nodeType = extractNodeType left nodeSrc
+            newNodeK = updateNodes nodeSrc nodeType (updateDomain nodeDom k)
+            updateNodesL = updateNodes nodeSrc nodeSrc (updateDomain nodeDom l)
+            updateNodesR = updateNodes nodeSrc nodeTgt (updateDomain nodeDom r)
+            src_ e = fromMaybe (error (show e)) (G.sourceOf (domain left) e)
+            tgt_ e = fromMaybe (error (show e)) (G.targetOf (domain left) e)
+            edgeDom
+              = G.insertEdge edgeSrc (src_ edgeSrc) (tgt_ edgeSrc) (domain k)
+            edgeType = extractEdgeType left edgeSrc
+            newEdgeK = updateEdges edgeSrc edgeType (updateDomain edgeDom k)
+            updateEdgesL = updateEdges edgeSrc edgeSrc (updateDomain edgeDom l)
+            updateEdgesR = updateEdges edgeSrc edgeTgt (updateDomain edgeDom r)
 
     (k, leftMap, rightMap) =
       foldl

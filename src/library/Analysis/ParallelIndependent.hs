@@ -20,8 +20,8 @@ isIndependent ind algorithm conf p1' p2 = not $ conflict algorithm
     pairs = createJointlyEpimorphicPairsFromCodomains (matchRestriction conf) (getLHS p1) (getLHS p2)
     satisfyingPairs = filter (\(m1,m2) -> satisfyRewritingConditions conf (p1,m1) (p2,m2)) pairs
 
-    conflict DeleteUse = any (\(m1,m2) -> (isDeleteUse conf p1 (m1,m2)) || (isDeleteUse conf p2 (m2,m1))) satisfyingPairs
-    conflict Pullback = any (\(m1,m2) -> (pbTest p1 p2 m1 m2)) satisfyingPairs
+    conflict DeleteUse = any (\(m1,m2) -> isDeleteUse conf p1 (m1,m2) || isDeleteUse conf p2 (m2,m1)) satisfyingPairs
+    conflict Pullback = any (uncurry (pbTest p1 p2)) satisfyingPairs
 
 pbTest :: (AdhesiveHLR m, FindMorphism m) => Production m -> Production m -> m -> m -> Bool
 pbTest p1 p2 m1 m2 = Prelude.null (findIsoFromDomains pb1 pb2)

@@ -169,7 +169,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
       edgesWithId = zip egdesWithoutId ([0..]::[Int])
 
       -- Run the product for all elements that are mapped on the same element in C
-      getPairs apply elemA elemB list = concatMap (\(x,y) -> product x y) comb
+      getPairs apply elemA elemB list = concatMap (uncurry product) comb
         where
           comb =
             map
@@ -211,8 +211,8 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
           src1 =
             filter
               (\n ->
-                applyNodeUnsafe f' n == (sourceOfUnsafe graphB b) &&
-                applyNodeUnsafe g' n == (sourceOfUnsafe graphA a))
+                applyNodeUnsafe f' n == sourceOfUnsafe graphB b &&
+                applyNodeUnsafe g' n == sourceOfUnsafe graphA a)
               (nodesFromDomain f')
           src = if Prelude.null src1 then error "src not found" else head src1
 
@@ -220,8 +220,8 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
           tgt1 =
             filter
               (\n ->
-                applyNodeUnsafe f' n == (targetOfUnsafe graphB b) &&
-                applyNodeUnsafe g' n == (targetOfUnsafe graphA a))
+                applyNodeUnsafe f' n == targetOfUnsafe graphB b &&
+                applyNodeUnsafe g' n == targetOfUnsafe graphA a)
               (nodesFromDomain f')
           tgt = if Prelude.null tgt1 then error "tgt not found" else head tgt1
 
