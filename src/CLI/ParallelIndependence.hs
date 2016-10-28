@@ -15,12 +15,14 @@ import qualified XML.GGXReader                as XML
 data Options = Options
   { duFlag :: Bool
   , siFlag :: Bool
+  , soFlag       :: Bool
   }
 
 options :: Parser Options
 options = Options
   <$> duf
   <*> sif
+  <*> sof
 
 duf :: Parser Bool
 duf = flag False True
@@ -31,6 +33,11 @@ sif :: Parser Bool
 sif = flag False True
     ( long "seq-ind"
     <> help "use sequentially independent instead parallel")
+
+sof :: Parser Bool
+sof = flag False True
+    ( long "snd-order"
+    <> help "use second-order rules instead first-order")
 
 execute :: GlobalOptions -> Options -> IO ()
 execute globalOpts opts = do
@@ -43,17 +50,26 @@ execute globalOpts opts = do
     putStrLn ""
 
     let du = duFlag opts
+        sndOrder = soFlag opts
         comp = False -- flag to compare if deleteuse and pullbacks are generating the same results
         algorithm =
           if (siFlag opts) then Sequentially else Parallel
         --rules = concatMap (replicate 1) $ map snd (GG.rules gg)
-        rules = map snd (GG.rules gg)
-        analysisDU = pairwiseCompareUpperReflected (isIndependent algorithm DeleteUse dpoConf) rules
-        analysisPB = pairwiseCompareUpperReflected (isIndependent algorithm Pullback dpoConf) rules
+        rules1 = map snd (GG.rules gg)
+        rules2 = map snd (GG.sndOrderRules gg)
+        analysisDU1 = pairwiseCompareUpperReflected (isIndependent algorithm DeleteUse dpoConf) rules1
+        analysisPB1 = pairwiseCompareUpperReflected (isIndependent algorithm Pullback dpoConf) rules1
+        analysisDU2 = pairwiseCompareUpperReflected (isIndependent algorithm DeleteUse dpoConf) rules2
+        analysisPB2 = pairwiseCompareUpperReflected (isIndependent algorithm Pullback dpoConf) rules2
 
-    putStrLn $ "Delete-use flag: " ++ show du
-    putStrLn $ "Comparison flag: " ++ show comp
-    putStrLn $ "Length of the set of rules: " ++ show (length rules)
+        (analysisDU,analysisPB) =
+          case sndOrder of
+            False -> (analysisDU1,analysisPB1)
+            True -> (analysisDU2,analysisPB2)
+    
+    putStrLn $ "Second-order flag: " ++ (show sndOrder)
+    putStrLn $ "Length of the set of first-order rules: " ++ (show (length rules1))
+    putStrLn $ "Length of the set of second-order rules: " ++ (show (length rules2))
     putStrLn ""
 
     when comp $ putStrLn $ "Check if pullback and delete-use algorithms result in the same matrix: " ++ show (analysisPB == analysisDU)

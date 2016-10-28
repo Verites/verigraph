@@ -17,7 +17,7 @@ type Rule = (String, ParsedTypedGraph, ParsedTypedGraph, [Mapping])
 type RuleWithNacs = (Rule,[Nac])
 
 -- (side, name, rule)
-type SndOrderRuleSide = (String, String, Rule)
+type SndOrderRuleSide = (String, String, RuleWithNacs)
 
 -- Maybe indicates different prefixes,
 -- if is Nothing uses default prefix,

@@ -63,7 +63,10 @@ execute globalOpts opts = do
         gg2 = gg {GG.rules = GG.rules gg ++ newRules}
 
     putStrLn ""
-
+    
+    --let r1 = snd $ head (GG.sndOrderRules gg)
+    --print $ codomain (GR.getRHS r1)
+    
     GW.writeGrammarFile gg2 ggName names (outputFile opts)
 
     putStrLn "Done!"
