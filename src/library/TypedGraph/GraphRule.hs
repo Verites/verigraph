@@ -14,10 +14,10 @@ module TypedGraph.GraphRule (
     , deletedEdges
     , createdNodes
     , createdEdges
-    
+
     , emptyGraphRule
     , nullGraphRule
-    
+
     , checkDeletion
 ) where
 
@@ -26,7 +26,7 @@ import           Abstract.DPO        as DPO
 import           Abstract.Morphism   as M
 import           Graph.Graph         as G
 import qualified Graph.GraphMorphism as GM
-import           TypedGraph.Graph as GM
+import           TypedGraph.Graph    as GM
 import           TypedGraph.Morphism as TGM
 
 type GraphRule a b = Production (TypedGraphMorphism a b)

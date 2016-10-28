@@ -81,6 +81,6 @@ makeAllConcurrentRules dep conf constraints (baseName, sequence) = zipWith makeN
 makeMaxConcurrentRule :: CRDependencies -> DPOConfig -> [AtomicConstraint (TypedGraphMorphism a b)] -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
 makeMaxConcurrentRule dep conf constraints (baseName, sequence) = case maxRule of
   Nothing -> []
-  Just x -> [(baseName, x)]
+  Just x  -> [(baseName, x)]
   where
     maxRule = maxConcurrentRule dep conf constraints sequence

@@ -1,18 +1,18 @@
 --{-# LANGUAGE TypeFamilies #-}
 
 --import Analysis.ConcurrentRules
-import qualified XML.GGXReader        as XML
 import           Abstract.Valid
-import qualified Data.List.NonEmpty as NE
+import qualified Data.List.NonEmpty             as NE
+import qualified XML.GGXReader                  as XML
 --import qualified Analysis.CriticalSequence as CS
 --import qualified Analysis.CriticalPairs as CP
 --import           Partitions.GraphPartitionToVerigraph
 --import           Partitions.GraphPartition
 --import           Partitions.VerigraphToGraphPartition
-import           Graph.Graph          as G
+import           Graph.Graph                    as G
 --import qualified TypedGraph.GraphRule as GR
-import qualified Graph.GraphMorphism  as GM
-import           TypedGraph.Morphism  as TGM
+import qualified Graph.GraphMorphism            as GM
+import           TypedGraph.Morphism            as TGM
 --import qualified TypedGraph.GraphGrammar as GG
 --import qualified XML.GGXWriter as GW
 import           TypedGraph.GraphRule
@@ -24,10 +24,10 @@ import           TypedGraph.Morphism.Cocomplete as C
 
 
 
-import           Abstract.AdhesiveHLR as RW
-import           Abstract.DPO         as RW
+import           Abstract.AdhesiveHLR           as RW
+import           Abstract.DPO                   as RW
 --import Data.Matrix
-import qualified Data.List            as L
+import qualified Data.List                      as L
 import           Data.Maybe
 
 --import qualified XML.GGXReader as XML

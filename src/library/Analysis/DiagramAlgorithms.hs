@@ -135,7 +135,7 @@ isEssentialDeleteUse conf p1 (m1,m2) = null commuting && isPO
     (q12,o1) = calculatePullback (compose g m1) m2
     alls1 = findMorphismsFromDomains conf o1 c
     commuting = filter (\s1 -> compose s1 c == o1) alls1
-    
+
     (a,_) = calculatePushout (compose o1 g) q12
     isPO = not $ null $ findIsomorphismsFromCodomains a m1
 

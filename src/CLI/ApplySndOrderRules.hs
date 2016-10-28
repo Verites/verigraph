@@ -7,8 +7,8 @@ module ApplySndOrderRules
   ) where
 
 import           Abstract.AdhesiveHLR
-import           Graph.Graph          (Graph)
 import           GlobalOptions
+import           Graph.Graph             (Graph)
 import           Options.Applicative
 import qualified SndOrder.Rule           as SO
 import qualified TypedGraph.GraphGrammar as GG
@@ -34,7 +34,7 @@ addEmptyFstOrderRule typegraph fstRules =
     fstRules
   else
     fstRulesPlusEmpty
-  
+
   where
     fstRulesPlusEmpty = ("emptyRule", emptyFstOrderRule) : fstRules
     emptyFstOrderRule = GR.emptyGraphRule typegraph
@@ -55,13 +55,13 @@ execute globalOpts opts = do
     putStrLn ""
 
     mapM_ putStrLn (XML.printMinimalSafetyNacsLog printNewNacs)
-    
+
     -- It is adding an empty first order rule as possible match target,
     -- it allows the creation from "zero" of a new second order rules.
     let fstRulesPlusEmpty = addEmptyFstOrderRule (GG.typeGraph gg) (GG.rules gg)
         newRules = SO.applySecondOrder (SO.applySndOrderRule dpoConf) fstRulesPlusEmpty (GG.sndOrderRules gg)
         gg2 = gg {GG.rules = GG.rules gg ++ newRules}
-    
+
     putStrLn ""
 
     GW.writeGrammarFile gg2 ggName names (outputFile opts)

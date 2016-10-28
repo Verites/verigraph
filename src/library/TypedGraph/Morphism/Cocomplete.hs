@@ -12,13 +12,13 @@ module TypedGraph.Morphism.Cocomplete (
 where
 
 import           Abstract.Cocomplete
-import           Abstract.Morphism as M
-import qualified Data.List.NonEmpty as NE
-import           Data.Set                 as DS
-import           Data.Maybe (fromJust)
+import           Abstract.Morphism              as M
+import qualified Data.List.NonEmpty             as NE
+import           Data.Maybe                     (fromJust)
+import           Data.Set                       as DS
 import           Equivalence.EquivalenceClasses
-import           Graph.Graph              as G
-import qualified Graph.GraphMorphism      as GM
+import           Graph.Graph                    as G
+import qualified Graph.GraphMorphism            as GM
 import           TypedGraph.Graph
 import           TypedGraph.Morphism.Core
 

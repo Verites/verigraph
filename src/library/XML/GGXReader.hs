@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE FlexibleContexts #-}
 module XML.GGXReader
  ( readGrammar,
    readGGName,
@@ -49,7 +49,7 @@ readGrammar fileName useConstraints dpoConfig = do
   --let a tg g = instantiateTypedGraph g tg
   let typeGraph = instantiateTypeGraph parsedTypeGraph
   --graphs <- readGraphs' fileName
-  
+
   --let initialGraphs = map (a typeGraph) $ concat graphs
 
   parsedRules <- readRules fileName

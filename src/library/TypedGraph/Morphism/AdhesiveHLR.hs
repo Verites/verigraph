@@ -1,15 +1,15 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 module TypedGraph.Morphism.AdhesiveHLR where
 
-import           Abstract.Morphism
 import           Abstract.AdhesiveHLR
-import           Graph.Graph              as G
-import qualified Graph.GraphMorphism      as GM
+import           Abstract.Morphism
+import           Graph.Graph                    as G
+import qualified Graph.GraphMorphism            as GM
 import           TypedGraph.Graph
 import qualified TypedGraph.Morphism.Cocomplete as C
 import           TypedGraph.Morphism.Core
 
-import           Data.Maybe               (fromJust,fromMaybe,mapMaybe)
+import           Data.Maybe                     (fromJust, fromMaybe, mapMaybe)
 
 
 instance AdhesiveHLR (TypedGraphMorphism a b) where

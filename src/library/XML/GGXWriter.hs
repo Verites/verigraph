@@ -9,18 +9,18 @@ module XML.GGXWriter
  ) where
 
 import           Abstract.DPO
-import           Abstract.Morphism         (codomain)
-import qualified Analysis.EssentialCriticalPairs    as ECP
-import qualified Analysis.CriticalPairs    as CP
-import qualified Analysis.CriticalSequence as CS
-import           Data.List.Utils           (startswith)
+import           Abstract.Morphism               (codomain)
+import qualified Analysis.CriticalPairs          as CP
+import qualified Analysis.CriticalSequence       as CS
+import qualified Analysis.EssentialCriticalPairs as ECP
+import           Data.List.Utils                 (startswith)
 import           Data.Maybe
-import qualified Graph.Graph               as G
+import qualified Graph.Graph                     as G
 import           SndOrder.Morphism
-import qualified SndOrder.Rule             as SO
+import qualified SndOrder.Rule                   as SO
 import           Text.XML.HXT.Core
 import           TypedGraph.GraphGrammar
-import qualified TypedGraph.GraphRule      as GR
+import qualified TypedGraph.GraphRule            as GR
 import           TypedGraph.Morphism
 import           XML.GGXParseOut
 import           XML.ParsedTypes

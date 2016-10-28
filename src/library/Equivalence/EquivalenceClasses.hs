@@ -10,7 +10,7 @@ module  Equivalence.EquivalenceClasses (
 
 ) where
 
-import Data.Set as DS
+import           Data.Set as DS
 
 maximumDisjointClass :: (Ord a) => [a] -> Set (EquivalenceClass a)
 maximumDisjointClass l = fromList $ Prelude.map (fromList . (:[])) l

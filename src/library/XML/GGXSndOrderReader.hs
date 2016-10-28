@@ -9,7 +9,7 @@ import           SndOrder.Rule         ()
 import           TypedGraph.Graph
 import           TypedGraph.GraphRule  as GR
 import           TypedGraph.Morphism
-import  {-# SOURCE #-}         XML.GGXReader -- TODO remove the dependency that causes this
+import {-# SOURCE #-} XML.GGXReader -- TODO remove the dependency that causes this
 import           XML.ParsedTypes
 import qualified XML.ParseSndOrderRule as SO
 import           XML.Utilities

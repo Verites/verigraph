@@ -57,7 +57,7 @@ module XML.ParseSndOrderRule (
 
 import           Abstract.Morphism
 import           Data.Char           (toLower)
-import           Data.List           (sortBy, find, groupBy, sortOn, (\\))
+import           Data.List           (find, groupBy, sortBy, sortOn, (\\))
 import           Data.Maybe          (fromMaybe, mapMaybe)
 import           Data.String.Utils   (join, split)
 import           Graph.Graph

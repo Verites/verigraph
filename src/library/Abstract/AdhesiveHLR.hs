@@ -1,5 +1,5 @@
-{-# LANGUAGE FlexibleContexts     #-}
-{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Abstract.AdhesiveHLR
   ( Morphism(..)
   , AtomicConstraint (..)
@@ -43,7 +43,7 @@ class (Morphism m) => AdhesiveHLR m where
   --        f
   -- @
   calculateInitialPushout :: m -> (m, m, m)
-  
+
   -- | Calculate the pushout between the two given morphisms.
   --
   -- Given the morphisms /f : A -> B/ and /g : A -> C/, respectively, returns
@@ -223,9 +223,9 @@ data Constraint m =
 instance Valid m => Valid (Constraint m) where
     validate cons = case cons of
       Atomic a -> validate a
-      Not b -> validate (nc b)
-      And a b -> mconcat [validate (lc a), validate (rc b)]
-      Or a b -> mconcat [validate (lc a), validate (rc b)]
+      Not b    -> validate (nc b)
+      And a b  -> mconcat [validate (lc a), validate (rc b)]
+      Or a b   -> mconcat [validate (lc a), validate (rc b)]
 
 -- | Given an object @G@ and a Constraint @c@ (a Boolean formula over atomic constraints), check whether @G@ satisfies @c@
 satisfiesConstraint :: (FindMorphism m) => Obj m -> Constraint m -> Bool

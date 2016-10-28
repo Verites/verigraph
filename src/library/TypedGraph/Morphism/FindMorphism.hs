@@ -2,13 +2,13 @@
 module TypedGraph.Morphism.FindMorphism where
 
 import           Abstract.AdhesiveHLR
-import           Abstract.Morphism                               as M
-import           Graph.Graph                                     as G
-import qualified Graph.GraphMorphism                             as GM
+import           Abstract.Morphism        as M
+import           Graph.Graph              as G
+import qualified Graph.GraphMorphism      as GM
 import           TypedGraph.Graph
 import           TypedGraph.Morphism.Core
 
-import           Data.List                                       as L
+import           Data.List                as L
 import           Data.Maybe
 
 

@@ -42,7 +42,7 @@ findAllEssentialDeleteUse conf p1 p2 =
 -- Check if it is correct
 findAllEssentialProduceDangling :: (DPO m, EpiPairs m) =>
   DPOConfig -> Production m -> Production m -> [CriticalPair m]
-findAllEssentialProduceDangling conf p1 p2 = 
+findAllEssentialProduceDangling conf p1 p2 =
   filter
     (\(CriticalPair (m1,m2) Nothing Nothing ProduceDangling) -> isEssentialDeleteUse conf p2 (m2,m1))
     (findAllProduceDangling conf p1 p2)

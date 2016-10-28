@@ -9,11 +9,11 @@ module TypedGraph.GraphGrammar (
 ) where
 
 import           Abstract.AdhesiveHLR
-import qualified Abstract.Morphism     as M
-import           Graph.Graph           (Graph)
+import qualified Abstract.Morphism    as M
+import           Graph.Graph          (Graph)
 import           Graph.GraphMorphism
-import           SndOrder.Rule         (SndOrderRule)
-import           TypedGraph.GraphRule  (GraphRule)
+import           SndOrder.Rule        (SndOrderRule)
+import           TypedGraph.GraphRule (GraphRule)
 import           TypedGraph.Morphism
 
 -- TODO: use a list of initial Graphs instead of a single graph

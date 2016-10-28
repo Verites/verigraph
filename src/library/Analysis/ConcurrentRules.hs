@@ -6,12 +6,12 @@ module Analysis.ConcurrentRules
 ) where
 
 import           Abstract.AdhesiveHLR
-import           Data.Maybe (mapMaybe)
+import qualified Abstract.Cocomplete       as C
 import           Abstract.DPO
 import           Abstract.Valid
-import qualified Abstract.Cocomplete as C
 import           Analysis.CriticalSequence (findTriggeringCriticalSequences,
                                             getCriticalSequenceComatches)
+import           Data.Maybe                (mapMaybe)
 
 data CRDependencies = AllOverlapings | OnlyDependency
 
@@ -34,7 +34,7 @@ maxConcurrentRule dep conf constraints (r:rs) = concatRule r (maxConcurrentRule 
   where
     concatRule rule subMaxRule = case subMaxRule of
       Nothing -> Nothing
-      Just x -> maxConcurrentRuleForLastPair dep conf constraints rule x
+      Just x  -> maxConcurrentRuleForLastPair dep conf constraints rule x
 
 concurrentRules :: (DPO m, EpiPairs m, C.Cocomplete m) => CRDependencies -> DPOConfig -> [AtomicConstraint m] -> Production m -> Production m -> [Production m]
 concurrentRules dep conf constraints c n =

@@ -6,9 +6,9 @@ module CriticalPairAnalysis
 
 import           Abstract.AdhesiveHLR                  (EpiPairs)
 import           Abstract.DPO
-import           Analysis.EssentialCriticalPairs
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
+import           Analysis.EssentialCriticalPairs
 import           Analysis.Interlevel.EvolutionarySpans
 import           Analysis.Interlevel.InterLevelCP
 import           Control.Monad                         (when)
@@ -99,7 +99,7 @@ execute globalOpts opts = do
 
     when essentialCP $ putStrLn "Warning: essential critical pairs not fully supported"
     putStrLn ""
-    
+
     let fstOrderAnalysis = printAnalysis essentialCP action dpoConf rules
         sndOrderAnalysis = printAnalysis essentialCP action dpoConf rules2
     case outputFile opts of
@@ -166,9 +166,9 @@ printAnalysis essential action dpoConf rules =
   in mapM_
        putStrLn $
        (case (essential, calculateConflicts action) of
-         (True, True) -> essentialConfMatrix
+         (True, True)  -> essentialConfMatrix
          (False, True) -> confMatrix
-         _ -> []
+         _             -> []
        )
        ++ (if calculateDependencies action then depMatrix else [])
 
