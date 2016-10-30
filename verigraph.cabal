@@ -133,6 +133,16 @@ executable verigraph-mcheck
                        wl-pprint
   other-modules:       GlobalOptions
 
+executable verigraph-rest
+  hs-source-dirs:      src/REST
+  main-is:             Main.hs
+  default-language:    Haskell2010
+  build-depends:       base
+                     , verigraph
+                     , Spock >= 0.11
+                     , mtl
+                     , text
+
 
 test-suite HSpecTests
   default-language:    Haskell2010
