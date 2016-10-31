@@ -69,6 +69,7 @@ library
                        TypedGraph.Partitions.VerigraphToGraphPartition
                        TypedGraph.Subgraph
                        SndOrder.Morphism.AdhesiveHLR
+                       SndOrder.Morphism.Cocomplete
                        SndOrder.Morphism.Core
                        SndOrder.Morphism.EpiPairs
                        SndOrder.Morphism.FindMorphism

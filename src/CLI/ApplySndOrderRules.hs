@@ -7,9 +7,15 @@ module ApplySndOrderRules
   ) where
 
 import           Abstract.AdhesiveHLR
+import           Abstract.DPO
+
+import           Abstract.Cocomplete
+import           TypedGraph.Morphism
+
 import           GlobalOptions
 import           Graph.Graph             (Graph)
 import           Options.Applicative
+import qualified SndOrder.Morphism       as SO
 import qualified SndOrder.Rule           as SO
 import qualified TypedGraph.GraphGrammar as GG
 import qualified TypedGraph.GraphRule    as GR
@@ -64,10 +70,21 @@ execute globalOpts opts = do
 
     putStrLn ""
     
-    --let r1 = snd $ head (GG.sndOrderRules gg)
+    let r2 = snd $ head (GG.sndOrderRules gg)
+    print $ coproduct (domain (getLHS r2))
+    
+    --let r1 = snd $ head (GG.rules gg)
+    
+    --print $ domain (GR.getRHS r1)
     --print $ codomain (GR.getRHS r1)
+    
+    --print $ coproduct (GR.getRHS r1)
     
     GW.writeGrammarFile gg2 ggName names (outputFile opts)
 
     putStrLn "Done!"
     putStrLn ""
+
+
+coproduct :: GR.GraphRule a b -> (SO.RuleMorphism a b, SO.RuleMorphism a b)
+coproduct a = calculateCoproduct a a

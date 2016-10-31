@@ -9,6 +9,7 @@ module SndOrder.Morphism (
   ) where
 
 import           SndOrder.Morphism.AdhesiveHLR
+import           SndOrder.Morphism.Cocomplete   ()
 import           SndOrder.Morphism.Core
 import           SndOrder.Morphism.EpiPairs     ()
 import           SndOrder.Morphism.FindMorphism ()
