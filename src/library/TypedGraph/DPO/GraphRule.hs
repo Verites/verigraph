@@ -60,7 +60,7 @@ type ListOfNodesAndEdges = ([(Int,Int)],[(Int,Int,Int,Int)])
 
 -- | It builds a GraphRule with lists of deleted, created, preserved and forbidden elements
 buildGraphRule :: Graph a b -> ListOfNodesAndEdges -> ListOfNodesAndEdges -> ListOfNodesAndEdges -> [ListOfNodesAndEdges] -> Production (TypedGraphMorphism a b)
-buildGraphRule typegraph deleted created preserved@(preservedNodes, preservedEdges) nacs = resultingRule
+buildGraphRule typegraph deleted created (preservedNodes, preservedEdges) nacs = resultingRule
   where
     -- Creates a typedgraph with the preserved elements and mounts an initial rule with preserves them
     preservedGraph = build (map fst preservedNodes) (map (\(e,s,t,_) -> (e,s,t)) preservedEdges)

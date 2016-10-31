@@ -3,8 +3,8 @@ module Image.Dot where
 import           Abstract.DPO.StateSpace
 import           Abstract.Morphism
 import           Graph.Graph
+import           TypedGraph.DPO.GraphRule
 import           TypedGraph.Graph
-import           TypedGraph.GraphRule
 import           TypedGraph.Morphism
 import           SndOrder.Morphism
 import           SndOrder.Rule
@@ -19,6 +19,21 @@ data NamingContext = Ctx
   , getEdgeTypeName :: EdgeId -> String
   }
 
+makeNamingContext :: [(String, String)] -> NamingContext
+makeNamingContext assocList =
+  let
+    normalizeId id =
+      "I" ++ show id
+
+    nameForId id =
+      case lookup id assocList of
+        Nothing ->
+          error $ "Name for '" ++ id ++ "' not found."
+
+        Just name ->
+          takeWhile (/= '%') name
+  in
+    Ctx (nameForId . normalizeId) (nameForId . normalizeId)
 
 printDigraph :: String -> [String] -> [Doc] -> [Doc] -> [Doc] -> Doc
 printDigraph name props subgraphs nodes edges =

@@ -85,7 +85,7 @@ execute (globalOpts, options) =
         modelCheck (StateSpace.toKripkeStructure stateSpace) expr initialStates
 
     names <- XML.readNames (inputFile globalOpts)
-    let namingContext = makeNamingContext names
+    let namingContext = Dot.makeNamingContext names
 
     case drawTo options of
       Nothing ->
@@ -155,25 +155,6 @@ drawStateSpace dir namingContext stateSpace =
         hPutDoc file (Dot.printTypedGraph namingContext name graph)
   where
     fileFor name = dir ++ "/" ++ name ++ ".dot"
-
-
-makeNamingContext :: [(String, String)] -> Dot.NamingContext
-makeNamingContext assocList =
-  let
-    normalizeId id =
-      "I" ++ show id
-
-    nameForId id =
-      case lookup id assocList of
-        Nothing ->
-          error $ "Name for '" ++ id ++ "' not found."
-
-        Just name ->
-          takeWhile (/= '%') name
-  in
-    Dot.Ctx (nameForId . normalizeId) (nameForId . normalizeId)
-
-
 
 type NamedProduction = (String, GraphRule () ())
 

@@ -17,7 +17,7 @@ import           Options.Applicative
 
 import qualified XML.GGXReader           as XML
 import qualified XML.GGXWriter           as GW
-import           Dot
+import           Image.Dot
 
 data Options = Options
   { outputFile :: String }
@@ -45,7 +45,7 @@ addEmptyFstOrderRule typegraph fstRules =
 execute :: GlobalOptions -> Options -> IO ()
 execute globalOpts opts = do
     let dpoConf = morphismsConf globalOpts
-        printDot = False
+        printDot = False --flag to test the print to .dot functions
     
     (fstOrderGG, sndOrderGG, printNewNacs) <- XML.readGrammar (inputFile globalOpts) (useConstraints globalOpts) dpoConf
     ggName <- XML.readGGName (inputFile globalOpts)
@@ -69,7 +69,7 @@ execute globalOpts opts = do
     
     putStrLn ""
     
-    let dots = map (uncurry (printSndOrderRule namingContext)) (GG.sndOrderRules gg)
+    let dots = map (uncurry (printSndOrderRule namingContext)) (GG.rules sndOrderGG)
     when printDot $ mapM_ print dots
 
     GW.writeGrammarFile (newGG,sndOrderGG) ggName names (outputFile opts)
@@ -79,20 +79,3 @@ execute globalOpts opts = do
 
 typeGraph :: GG.Grammar (TypedGraphMorphism a b) -> Graph a b
 typeGraph = codomain . (GG.start)
-
--- Replicated function of ModelChecker
-makeNamingContext :: [(String, String)] -> Dot.NamingContext
-makeNamingContext assocList =
-  let
-    normalizeId id =
-      "I" ++ show id
-
-    nameForId id =
-      case lookup id assocList of
-        Nothing ->
-          error $ "Name for '" ++ id ++ "' not found."
-
-        Just name ->
-          takeWhile (/= '%') name
-  in
-    Dot.Ctx (nameForId . normalizeId) (nameForId . normalizeId)
