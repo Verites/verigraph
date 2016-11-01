@@ -31,11 +31,11 @@ class (Cocomplete m) => AdhesiveHLR m where
   -- | Calculate the initial pushout of the given morphism.
   --
   -- Given the morphism /f : A -> A'/, returns
-  -- the morphisms /b : B -> A/, /d : B -> C/ and /c: C -> A'/ such that
+  -- the morphisms /b : B -> A/, /f' : B -> C/ and /c: C -> A'/ such that
   -- the following square is the initial pushout of f.
   --
   -- @
-  --        d
+  --        f'
   --    B──────▶C
   --    │       │
   --  b │       │ c
