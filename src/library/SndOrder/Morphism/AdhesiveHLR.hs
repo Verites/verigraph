@@ -56,6 +56,10 @@ instance AdhesiveHLR (RuleMorphism a b) where
                 findIso :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
                 findIso a b = findMorphisms Isomorphism (domain a) (domain b)
 
+  -- This function for second-order must run the first-order initial
+  -- pushouts and after add elements to the boundary (B) rule if
+  -- it was generated with dangling span condition
+  --
   -- @
   --        d
   --    B──────▶C
@@ -65,10 +69,6 @@ instance AdhesiveHLR (RuleMorphism a b) where
   --    A──────▶A'
   --        f
   -- @
-  --
-  -- This function for second-order must run the first-order initial
-  -- pushouts and after add elements to the boundary (B) rule if
-  -- it was generated with dangling span condition
   calculateInitialPushout f@(RuleMorphism fA fA' fL fK fR) = (b,d,c)
     where
       nodeTypesInAL = GM.applyNodeUnsafe (domain fL)
@@ -100,13 +100,9 @@ instance AdhesiveHLR (RuleMorphism a b) where
           src = sourceOfUnsafe graphAR
           tgt = targetOfUnsafe graphAR
       
-      l = commutingMorphism
-            (compose bK (getLHS fA)) bL
-            (compose bK (getLHS fA)) bL
-      
-      r = commutingMorphism
-            (compose bK (getRHS fA)) bR
-            (compose bK (getRHS fA)) bR
+      l = searchMorphism (compose bK (getLHS fA)) bL
+      r = searchMorphism (compose bK (getRHS fA)) bR
+      searchMorphism a b = commutingMorphism a b a b
       
       ruleB = buildProduction l r []
       b = RuleMorphism ruleB fA bL bK bR
