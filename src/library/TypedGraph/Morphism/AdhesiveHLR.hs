@@ -5,16 +5,13 @@ import           Abstract.AdhesiveHLR
 import           Abstract.Morphism
 import           Graph.Graph                    as G
 import qualified Graph.GraphMorphism            as GM
-import           TypedGraph.Graph
-import qualified TypedGraph.Morphism.Cocomplete as C
+import           TypedGraph.Morphism.Cocomplete ()
 import           TypedGraph.Morphism.Core
 
 import           Data.Maybe                     (fromJust, fromMaybe, mapMaybe)
 
 
 instance AdhesiveHLR (TypedGraphMorphism a b) where
-
-  calculatePushout = C.calculatePushout
 
   -- @
   --        d

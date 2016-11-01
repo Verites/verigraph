@@ -70,6 +70,7 @@ library
                        TypedGraph.Subgraph
                        SndOrder.Morphism.AdhesiveHLR
                        SndOrder.Morphism.Cocomplete
+                       SndOrder.Morphism.CommutingSquares
                        SndOrder.Morphism.Core
                        SndOrder.Morphism.EpiPairs
                        SndOrder.Morphism.FindMorphism

@@ -42,6 +42,6 @@ class (Morphism m) => Cocomplete m where
       (b',c') = calculateCoproduct b c
       gc' = compose g c'
       fb' = compose f b'
-      h = calculateNCoequalizer $ fromList [fb',gc']
+      h = calculateCoequalizer fb' gc'
       g' = compose b' h
       f' = compose c' h

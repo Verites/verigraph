@@ -1,7 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-{-# LANGUAGE TypeFamilies #-}
-
 module SndOrder.Morphism.AdhesiveHLR where
 
 import           Abstract.AdhesiveHLR
@@ -11,6 +9,8 @@ import           Graph.Graph              as G
 import qualified Graph.GraphMorphism      as GM
 import           TypedGraph.Morphism
 
+import           SndOrder.Morphism.Cocomplete ()
+import           SndOrder.Morphism.CommutingSquares
 import           SndOrder.Morphism.Core
 
 instance AdhesiveHLR (RuleMorphism a b) where
@@ -96,36 +96,6 @@ instance AdhesiveHLR (RuleMorphism a b) where
        newRule = buildProduction l r newRuleNACs
        k = RuleMorphism ruleK newRule matchL' matchK' matchR'
        l' = RuleMorphism newRule ruleG leftL' leftK' leftR'
-
-  calculatePushout (RuleMorphism _ ruleD matchL matchK matchR) (RuleMorphism _ ruleR rightL rightK rightR) = (m',r')
-     where
-       (matchL', rightL') = calculatePushout matchL rightL
-       (matchK', rightK') = calculatePushout matchK rightK
-       (matchR', rightR') = calculatePushout matchR rightR
-       l = commutingMorphismSameDomain
-             rightK' (compose (getLHS ruleD) rightL')
-             matchK' (compose (getLHS ruleR) matchL')
-       r = commutingMorphismSameDomain
-             rightK' (compose (getRHS ruleD) rightR')
-             matchK' (compose (getRHS ruleR) matchR')
-
-       transposedNACs = map (\nac -> fst (calculatePushout nac rightL')) (getNACs ruleD)
-       
-       -- conf is used only to indicate AnyMatches, that is the most generic case for nacDownwardShift
-       conf = DPOConfig AnyMatches MonomorphicNAC
-       createdNACs = concatMap (nacDownwardShift conf matchL') (getNACs ruleR) 
-       
-       -- The new NACs are the transposed and the created that do not are included on the transposed
-       newNACs =
-         transposedNACs ++
-         (filter (\n -> all (\n' -> Prelude.null (findIso n n')) transposedNACs) createdNACs)
-         where
-           findIso :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
-           findIso a b = findMorphisms Isomorphism (domain a) (domain b)
-       
-       newRule = buildProduction l r newNACs
-       m' = RuleMorphism ruleR newRule matchL' matchK' matchR'
-       r' = RuleMorphism ruleD newRule rightL' rightK' rightR'
   
   -- @
   --        g'
@@ -172,86 +142,6 @@ danglingSpan matchRuleSide matchMorp matchK l k = deletedNodesInK && deletedEdge
     deletedEdges = filter (checkDeletion l matchMorp applyEdge edgesFromDomain) (edgesFromCodomain matchMorp)
     edgesInK = [a | a <- edgesFromDomain matchRuleSide, applyEdgeUnsafe matchRuleSide a `elem` deletedEdges]
     deletedEdgesInK = all (checkDeletion k matchK applyEdge edgesFromDomain) edgesInK
-
--- | Given the morphisms /a1 : X -> B1/, /b1 : Y -> B1/,
--- /a2 : X -> B2/ and /b2 : Y -> B2/, respectively,
--- creates the monomorphic morphism /x : X -> Y/,
--- where the following diagram commutes:
---
--- @
---         X
---         |
---   a1    |x   a2
---         ▼
---  B1◀────Y────▶B2
---      b1   b2
--- @
---
--- TODO: explain the errors in this function. what are preconditions for them not to occur?!?
-commutingMorphism :: TypedGraphMorphism a b -> TypedGraphMorphism a b
-                  -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
-commutingMorphism a1 b1 a2 b2 = buildTypedGraphMorphism (domain a1) (domain b1) select
-  where
-    mats = findMonomorphisms (domain a1) (domain b1)
-    filt = filter (\m -> compose m b1 == a1 && compose m b2 == a2) mats
-    select = case filt of
-                [] -> error "(commutingMorphism) Error when commuting monomorphic morphisms (must be generating an invalid rule)"
-                [x] -> mapping x
-                (_:_:_) -> error "(commutingMorphism) Error when commuting monomorphic morphisms (non unique commuting morphism)"
-
--- | Given the morphisms /k1 : X -> Y/, /s1 : X -> Z/,
--- /k2 : W -> Y/ and /s2 : W -> Z/, respectively,
--- creates the monomorphic morphism /x : Y -> Z/,
--- where the following diagram commutes:
---
--- @
---        k1
---     X ───▶Y
---      \\   / ▲
---     s1\\ /x  \\k2
---        ▼     \\
---        Z◀──── W
---           s2
--- @
---
--- TODO: explain the errors in this function. what are preconditions for them not to occur?!?
-commutingMorphismSameDomain :: TypedGraphMorphism a b -> TypedGraphMorphism a b
-                            -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
-commutingMorphismSameDomain k1 s1 k2 s2 = buildTypedGraphMorphism (codomain k1) (codomain s1) select
-  where
-    mats = findMonomorphisms (codomain k1) (codomain s1)
-    filt = filter (\m -> compose k1 m == s1 && compose k2 m == s2) mats
-    select = case filt of
-                [] -> error "(commutingMorphismSameDomain) Error when commuting monomorphic morphisms (must be generating an invalid rule)"
-                [x] -> mapping x
-                (_:_:_) -> error "(commutingMorphismSameDomain) Error when commuting monomorphic morphisms (non unique commuting morphism)"
-
--- | Given the morphisms /k1 : Y -> X/, /s1 : Z -> X/,
--- /k2 : W -> Y/ and /s2 : W -> Z/, respectively,
--- creates the monomorphic morphism /a : X -> Y/,
--- where the following diagram commutes:
---
--- @
---        k1
---     X ◀─── Y
---     ▲     / ▲
---    s1\\   /x  \\k2
---       \\ ▼     \\
---        Z◀──── W
---           s2
--- @
---
--- TODO: explain the errors in this function. what are preconditions for them not to occur?!?
-commutingMorphismSameCodomain :: TypedGraphMorphism a b -> TypedGraphMorphism a b
-                              -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
-commutingMorphismSameCodomain k1 s1 k2 s2 = buildTypedGraphMorphism (domain k1) (domain s1) select
-  where
-    mats = findMonomorphisms (domain k1) (domain s1)
-    filt = filter (\m -> compose m s1 == k1 && compose k2 m == s2) mats
-    select = case filt of
-                [] -> error "(commutingMorphismSameCodomain) Error when commuting monomorphic morphisms (must be generating an invalid rule)"
-                [x] -> mapping x
-                (_:_:_) -> error "(commutingMorphismSameCodomain) Error when commuting monomorphic morphisms (non unique commuting morphism)"
 
 isOrphanNode :: TypedGraphMorphism a b -> NodeId -> Bool
 isOrphanNode m n = n `elem` orphanTypedNodes m

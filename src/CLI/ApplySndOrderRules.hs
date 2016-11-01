@@ -1,5 +1,3 @@
-{-# LANGUAGE TypeFamilies #-}
-
 module ApplySndOrderRules
   ( Options
   , options
@@ -7,15 +5,10 @@ module ApplySndOrderRules
   ) where
 
 import           Abstract.AdhesiveHLR
-import           Abstract.DPO
-
-import           Abstract.Cocomplete
-import           TypedGraph.Morphism
 
 import           GlobalOptions
 import           Graph.Graph             (Graph)
 import           Options.Applicative
-import qualified SndOrder.Morphism       as SO
 import qualified SndOrder.Rule           as SO
 import qualified TypedGraph.GraphGrammar as GG
 import qualified TypedGraph.GraphRule    as GR
@@ -70,8 +63,9 @@ execute globalOpts opts = do
 
     putStrLn ""
     
-    let r2 = snd $ head (GG.sndOrderRules gg)
-    print $ coproduct (domain (getLHS r2))
+    --let r2 = snd $ head (GG.sndOrderRules gg)
+    --print $ calculateCoproduct (domain (getLHS r2)) (domain (getLHS r2))
+    --print $ calculateCoequalizer (getLHS r2) (getLHS r2)
     
     --let r1 = snd $ head (GG.rules gg)
     
@@ -84,7 +78,3 @@ execute globalOpts opts = do
 
     putStrLn "Done!"
     putStrLn ""
-
-
-coproduct :: GR.GraphRule a b -> (SO.RuleMorphism a b, SO.RuleMorphism a b)
-coproduct a = calculateCoproduct a a

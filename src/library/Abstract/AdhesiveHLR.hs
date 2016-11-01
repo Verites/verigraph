@@ -18,6 +18,7 @@ module Abstract.AdhesiveHLR
   , DPOConfig(..)
   ) where
 
+import           Abstract.Cocomplete
 import           Abstract.Morphism
 import           Abstract.Valid
 
@@ -26,7 +27,7 @@ import           Abstract.Valid
 --
 -- Mainly provides categorical operations that AdhesiveHLR categories
 -- are guaranteed to have.
-class (Morphism m) => AdhesiveHLR m where
+class (Cocomplete m) => AdhesiveHLR m where
   -- | Calculate the initial pushout of the given morphism.
   --
   -- Given the morphism /f : A -> A'/, returns
@@ -60,7 +61,7 @@ class (Morphism m) => AdhesiveHLR m where
   --       g'
   -- @
   calculatePushout :: m -> m -> (m, m)
-
+  calculatePushout = Abstract.Cocomplete.calculatePushout
 
   -- | Checks if the given sequential morphisms have a pushout complement, assuming they satsify
   -- the given restriction.
