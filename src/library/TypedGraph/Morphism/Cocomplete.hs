@@ -71,7 +71,7 @@ calculateCoproduct' a b = (ha',hb')
     hb = buildTypedGraphMorphism b coproductObject (GM.empty (domain b) (domain coproductObject))
     ha' = addCoproductMorphisms (head maps) ha
     hb' = addCoproductMorphisms (head $ tail maps) hb
-    labels = relablingFunctions [a,b] (1,1) []
+    labels = relablingFunctions [a,b] (0,0) []
     maps = zip [a,b] labels
 
 calculateNCoproduct' :: NE.NonEmpty (TypedGraph a b) -> [TypedGraphMorphism a b]
@@ -83,7 +83,7 @@ calculateNCoproduct' gs' = zipWith addCoproductMorphisms maps allMorphisms
     coproductObject = Prelude.foldr calculateCoproductObject emptyObject maps
     buildMorphism graph = buildTypedGraphMorphism graph coproductObject (GM.empty (domain graph) (domain coproductObject))
     allMorphisms = Prelude.map buildMorphism gs
-    labels = relablingFunctions gs (1,1) []
+    labels = relablingFunctions gs (0,0) []
     maps = zip gs labels
 
 addCoproductMorphisms :: (TypedGraph a b, RelabelFunction) -> TypedGraphMorphism a b -> TypedGraphMorphism a b
@@ -115,12 +115,12 @@ calculateCoproductObject (original,relabel) target = addEdges
 relablingFunctions :: [TypedGraph a b] -> (NodeId, EdgeId) -> [RelabelFunction] -> [RelabelFunction]
 relablingFunctions [] _ functions = functions
 relablingFunctions (g:gs) (nodeSeed, edgeSeed) functions =
-  relablingFunctions gs (maxNode g + nodeSeed, maxEdge g + edgeSeed) (functions ++ [((+) nodeSeed, (+) edgeSeed)])
+  relablingFunctions gs (nextNode g + nodeSeed, nextEdge g + edgeSeed) (functions ++ [((+) nodeSeed, (+) edgeSeed)])
   where
     ns g = nodes (untypedGraph g)
     es g = edges (untypedGraph g)
-    maxNode g = if Prelude.null (ns g) then 1 else maximum (ns g)
-    maxEdge g = if Prelude.null (es g) then 1 else maximum (es g)
+    nextNode g = if Prelude.null (ns g) then 1 else maximum (ns g) + 1
+    nextEdge g = if Prelude.null (es g) then 1 else maximum (es g) + 1
 
 createNodeNEquivalences :: [TypedGraphMorphism a b] -> Set (EquivalenceClass TypedNode)
 createNodeNEquivalences fs = nodesOnX
