@@ -3,6 +3,7 @@
 module SndOrder.Morphism.AdhesiveHLR where
 
 import           Abstract.AdhesiveHLR
+import           Abstract.Cocomplete
 import           Abstract.DPO
 import           Abstract.Morphism
 import           Graph.Graph              as G
@@ -14,6 +15,46 @@ import           SndOrder.Morphism.CommutingSquares
 import           SndOrder.Morphism.Core
 
 instance AdhesiveHLR (RuleMorphism a b) where
+
+  -- Pushout for second-order with creation of NACs.
+  -- It runs the pushout without NACs (from cocomplete),
+  -- generates all NACs (considering arbitrary matches) for the rule H,
+  -- and updates the morphisms f and g to get the new NACs.
+  --
+  -- @
+  --       g
+  --    K──────▶R
+  --    │       │
+  --  f │       │ f'
+  --    ▼       ▼
+  --    D──────▶H
+  --       g'
+  -- @
+  calculatePushout f@(RuleMorphism _ ruleD _ _ _) g@(RuleMorphism _ ruleR _ _ _) = (f',g')
+    where
+      (RuleMorphism _ ruleH f'L f'K f'R,RuleMorphism _ _ g'L g'K g'R) =
+        Abstract.Cocomplete.calculatePushout f g
+      
+      ruleHwithNACs = buildProduction (getLHS ruleH) (getRHS ruleH) nacsToAdd
+      
+      f' = RuleMorphism ruleR ruleHwithNACs f'L f'K f'R
+      g' = RuleMorphism ruleD ruleHwithNACs g'L g'K g'R
+      
+      nacsToAdd = newNACs
+        where
+          transposedNACs = map (\nac -> fst (Abstract.Cocomplete.calculatePushout nac g'L)) (getNACs ruleD)
+          
+          -- conf is used only to indicate AnyMatches, that is the most generic case for nacDownwardShift
+          conf = DPOConfig AnyMatches MonomorphicNAC
+          createdNACs = concatMap (nacDownwardShift conf f'L) (getNACs ruleR)
+          
+          -- The new NACs are the transposed and the created that do not are included on the transposed
+          newNACs =
+            transposedNACs ++
+            (filter (\n -> all (\n' -> Prelude.null (findIso n n')) transposedNACs) createdNACs)
+              where
+                findIso :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
+                findIso a b = findMorphisms Isomorphism (domain a) (domain b)
 
   -- @
   --        d
