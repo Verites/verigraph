@@ -1,5 +1,3 @@
-{-# LANGUAGE TypeFamilies #-}
-
 module ApplySndOrderRules
   ( Options
   , options
@@ -7,6 +5,7 @@ module ApplySndOrderRules
   ) where
 
 import           Abstract.AdhesiveHLR
+
 import           GlobalOptions
 import           Graph.Graph             (Graph)
 import           Options.Applicative
@@ -64,8 +63,16 @@ execute globalOpts opts = do
 
     putStrLn ""
     
-    --let r1 = snd $ head (GG.sndOrderRules gg)
+    --let r2 = snd $ head (GG.sndOrderRules gg)
+    --print $ calculateCoproduct (domain (getLHS r2)) (domain (getLHS r2))
+    --print $ calculateCoequalizer (getLHS r2) (getLHS r2)
+    
+    --let r1 = snd $ head (GG.rules gg)
+    
+    --print $ domain (GR.getRHS r1)
     --print $ codomain (GR.getRHS r1)
+    
+    --print $ coproduct (GR.getRHS r1)
     
     GW.writeGrammarFile gg2 ggName names (outputFile opts)
 
