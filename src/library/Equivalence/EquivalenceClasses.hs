@@ -63,7 +63,7 @@ mergeEquivalences (e1,e2) set = singleton (findEquivalenceClass e1 set `union` f
 -- works only with non-empty sets
 findEquivalenceClass :: (Eq a, Show a) => a -> Set(EquivalenceClass a) -> EquivalenceClass a
 findEquivalenceClass element set
-  | DS.null domain = error $ show element ++ show set
+  | DS.null domain = error $ "could not find equivalence class for " ++ show element ++ " in " ++ show set
   | otherwise = getElem domain
   where
     domain = DS.filter (element `elem`) set
