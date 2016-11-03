@@ -30,6 +30,8 @@ library
                        Abstract.Cardinality
                        Abstract.Cocomplete
                        Abstract.DPO
+                       Abstract.DPO.Derivation
+                       Abstract.DPO.Process
                        Abstract.DPO.StateSpace
                        Abstract.Morphism
                        Abstract.Relation
