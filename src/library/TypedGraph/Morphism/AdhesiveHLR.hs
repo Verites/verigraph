@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wno-orphans #-}
 module TypedGraph.Morphism.AdhesiveHLR where
 
 import           Abstract.AdhesiveHLR

@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -Wno-orphans #-}
 module TypedGraph.Morphism.FindMorphism where
 
 import           Abstract.AdhesiveHLR
