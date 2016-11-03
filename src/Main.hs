@@ -30,6 +30,9 @@ import           Abstract.DPO                   as RW
 import qualified Data.List                      as L
 import           Abstract.Cardinality
 import           Data.Maybe
+import Abstract.DPO.Derivation
+import Abstract.DPO.Process
+import TypedGraph.GraphProcess
 
 --import qualified XML.GGXReader as XML
 
@@ -154,13 +157,11 @@ tmh6 = buildTypedGraphMorphism ta6 tb6 mh6
 
 teste60 = calculateNCoequalizer $ NE.fromList [tmf6]
 
-{--
+
 {-sendMSG-}
 lr1 = build [11,13,14] [(11,13,11)]
 kr1 = build [21,23,24] []
 rr1 = build [31,33,34] [(35,33,34)]
-
-
 
 --tipagem
 tlr1 = GM.buildGraphMorphism lr1 grafotipo [(14,4),(13,3),(11,1)] [(11,1)]
@@ -174,6 +175,25 @@ l1 = buildTypedGraphMorphism tkr1 tlr1 kr1_lr1
 kr1_rr1 = GM.buildGraphMorphism kr1 rr1 [(24,34),(23,33),(21,31)] []
 r1 = buildTypedGraphMorphism tkr1 trr1 kr1_rr1
 
+graph' = build [1,2,3,4] [(1,2,1)]
+graph'' = GM.buildGraphMorphism graph' grafotipo [(3,4),(2,3),(1,1),(4,2)] [(1,1)]
+
+meu :: GM.GraphMorphism a b -> GM.GraphMorphism a b -> [TypedGraphMorphism a b]
+meu = findMonomorphisms
+
+myconfig = DPOConfig MonoMatches MonomorphicNAC
+
+meumatch = head $ meu tlr1 graph''
+
+myrule = buildProduction l1 r1 []
+
+der = generateDerivation myconfig meumatch myrule
+getDer = fromJust der
+myprocess = singleProcess getDer
+myps = productions myprocess
+myc = coreObject myprocess
+
+{--
 --nac
 nacGraph = build [501,502,503,504] [(501,503,501),(503,502,503)]
 nacType = GM.buildGraphMorphism nacGraph grafotipo [(501,1),(502,2),(503,3),(504,4)] [(501,1),(503,3)]

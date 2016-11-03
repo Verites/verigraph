@@ -51,6 +51,7 @@ library
                        SndOrder.Morphism
                        SndOrder.Rule
                        TypedGraph.GraphGrammar
+                       TypedGraph.GraphProcess
                        TypedGraph.GraphRule
                        TypedGraph.Graph
                        TypedGraph.Morphism
