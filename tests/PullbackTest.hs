@@ -1,9 +1,9 @@
 import           Analysis.ParallelIndependent
 import           Abstract.DPO
-import           Data.Matrix                           hiding ((<|>))
+import           Data.Matrix                     hiding ((<|>))
+import qualified GraphGrammar.Core               as GG
 import           Test.HUnit
-import qualified TypedGraph.GraphGrammar               as GG
-import qualified XML.GGXReader             as XML
+import qualified XML.GGXReader                   as XML
 import           Utils
 
 -- This test is based on that the pullback scheme for detecting parallel

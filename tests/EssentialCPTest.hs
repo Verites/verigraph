@@ -2,8 +2,8 @@ import           Abstract.AdhesiveHLR      (EpiPairs)
 import           Abstract.DPO
 import           Analysis.EssentialCriticalPairs
 import           Data.Matrix               hiding ((<|>))
+import qualified GraphGrammar.Core         as GG
 import           Test.HUnit
-import qualified TypedGraph.GraphGrammar   as GG
 import qualified XML.GGXReader             as XML
 import           Utils
 

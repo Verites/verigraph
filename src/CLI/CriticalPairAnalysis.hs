@@ -17,9 +17,9 @@ import           Control.Monad                         (when)
 import           Data.List.Utils
 import           Data.Matrix                           hiding ((<|>))
 import           GlobalOptions
+import qualified GraphGrammar.Core                     as GG
 import           Options.Applicative
 import           SndOrder.Rule
-import qualified TypedGraph.GraphGrammar               as GG
 import qualified XML.GGXReader                         as XML
 import qualified XML.GGXWriter                         as GW
 

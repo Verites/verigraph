@@ -8,8 +8,8 @@ import           Analysis.ParallelIndependent
 import           Control.Monad                (when,unless)
 import           Data.Matrix                  hiding ((<|>))
 import           GlobalOptions
+import qualified GraphGrammar.Core            as GG
 import           Options.Applicative
-import qualified TypedGraph.GraphGrammar      as GG
 import qualified XML.GGXReader                as XML
 
 data Options = Options

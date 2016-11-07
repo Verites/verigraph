@@ -23,10 +23,10 @@ import           Data.Maybe              (fromMaybe, mapMaybe)
 import           Data.String.Utils       (startswith)
 import qualified Graph.Graph             as G
 import           Graph.GraphMorphism     as GM
+import qualified GraphGrammar.Core       as GG
 import           SndOrder.Rule
 import           Text.XML.HXT.Core       hiding (left, right)
 import           TypedGraph.Graph
-import qualified TypedGraph.GraphGrammar as GG
 import           TypedGraph.DPO.GraphRule    as GR
 import           TypedGraph.Morphism
 import qualified XML.Formulas            as F

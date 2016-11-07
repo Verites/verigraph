@@ -8,10 +8,10 @@ import           Abstract.AdhesiveHLR
 
 import           GlobalOptions
 import           Graph.Graph             (Graph)
+import qualified GraphGrammar.Core       as GG
 import           Options.Applicative
 import qualified SndOrder.Rule           as SO
 import qualified TypedGraph.DPO.GraphRule    as GR
-import qualified TypedGraph.GraphGrammar as GG
 import qualified XML.GGXReader           as XML
 import qualified XML.GGXWriter           as GW
 

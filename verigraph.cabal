@@ -46,13 +46,13 @@ library
                        Image.Dot
                        Graph.Graph
                        Graph.GraphMorphism
+                       GraphGrammar.Core
                        Logic.Model
                        Logic.Ctl
                        SndOrder.Morphism
                        SndOrder.Rule
                        TypedGraph.DPO.GraphProcess
                        TypedGraph.DPO.GraphRule
-                       TypedGraph.GraphGrammar
                        TypedGraph.Graph
                        TypedGraph.Morphism
                        XML.GGXReader

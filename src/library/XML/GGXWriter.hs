@@ -16,11 +16,11 @@ import qualified Analysis.EssentialCriticalPairs as ECP
 import           Data.List.Utils                 (startswith)
 import           Data.Maybe
 import qualified Graph.Graph                     as G
+import           GraphGrammar.Core
 import           SndOrder.Morphism
 import qualified SndOrder.Rule                   as SO
 import           Text.XML.HXT.Core
 import qualified TypedGraph.DPO.GraphRule            as GR
-import           TypedGraph.GraphGrammar
 import           TypedGraph.Morphism
 import           XML.GGXParseOut
 import           XML.ParsedTypes

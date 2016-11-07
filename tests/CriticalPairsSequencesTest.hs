@@ -3,8 +3,8 @@ import           Abstract.DPO
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
 import           Data.Matrix               hiding ((<|>))
+import qualified GraphGrammar.Core         as GG
 import           Test.HUnit
-import qualified TypedGraph.GraphGrammar   as GG
 import qualified XML.GGXReader             as XML
 import           Utils
 
