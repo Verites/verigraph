@@ -46,7 +46,7 @@ execute globalOpts opts = do
 
     (gg,_) <- XML.readGrammar (inputFile globalOpts) useConstrains dpoConf
 
-    putStrLn "Warning: NACs are not considered in this analysis."
+    putStrLn "Warning: Produce-Forbid conflicts are not considered in this analysis."
     putStrLn ""
 
     let du = duFlag opts
