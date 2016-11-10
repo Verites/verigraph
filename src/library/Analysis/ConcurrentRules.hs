@@ -6,6 +6,7 @@ module Analysis.ConcurrentRules
 ) where
 
 import           Abstract.AdhesiveHLR
+import           Abstract.Cardinality
 import qualified Abstract.Cocomplete       as C
 import           Abstract.DPO
 import           Abstract.Valid
@@ -26,29 +27,31 @@ allConcurrentRules dep conf constraints (x:xs) = concatMap (crs x) (allCRs xs)
 
 -- | Generates the Concurrent Rule with the least disjoint EpiPair for a given list of GraphRules
 -- (following the order of the elements in the list).
-maxConcurrentRule :: (DPO m, EpiPairs m, Eq (Obj m), Valid m) => CRDependencies -> DPOConfig ->
-  [AtomicConstraint m] -> [Production m] -> Maybe (Production m)
-maxConcurrentRule _ _ _ [] = Nothing
-maxConcurrentRule _ _ _ [r] = Just r
-maxConcurrentRule dep conf constraints (r:rs) = concatRule r (maxConcurrentRule dep conf constraints rs)
+maxConcurrentRule :: (DPO m, EpiPairs m, Eq (Obj m), Valid m, Cardinality (Obj m)) => CRDependencies -> DPOConfig ->
+  [AtomicConstraint m] -> [Production m] -> [Production m]
+maxConcurrentRule _ _ _ [] = []
+maxConcurrentRule _ _ _ [r] = [r]
+maxConcurrentRule dep conf constraints (r:rs) = concat $ concatRule r (maxConcurrentRule dep conf constraints rs)
   where
     concatRule rule subMaxRule = case subMaxRule of
-      Nothing -> Nothing
-      Just x  -> maxConcurrentRuleForLastPair dep conf constraints rule x
+      [] -> []
+      xs -> map (maxConcurrentRuleForLastPair dep conf constraints rule) xs
 
 concurrentRules :: (DPO m, EpiPairs m) => CRDependencies -> DPOConfig -> [AtomicConstraint m] -> Production m -> Production m -> [Production m]
 concurrentRules dep conf constraints c n =
   let epiPairs = epiPairsForConcurrentRule dep conf constraints c n
   in mapMaybe (concurrentRuleForPair conf constraints c n) epiPairs
 
-maxConcurrentRuleForLastPair :: (DPO m, EpiPairs m) => CRDependencies -> DPOConfig -> [AtomicConstraint m] ->
-  Production m -> Production m -> Maybe (Production m)
+maxConcurrentRuleForLastPair :: (DPO m, EpiPairs m, Cardinality (Obj m)) => CRDependencies -> DPOConfig -> [AtomicConstraint m] ->
+  Production m -> Production m -> [Production m]
 maxConcurrentRuleForLastPair dep conf constraints c n =
   let epiPairs = epiPairsForConcurrentRule dep conf constraints c n
       maxPair = last (epiPairsForConcurrentRule dep conf constraints c n)
+      leastSize = cardinality $ codomain (fst maxPair)
+      filtered = filter (\(e,_) -> cardinality (codomain e) == leastSize) epiPairs
       maxRule = if null epiPairs
-        then  Nothing
-        else concurrentRuleForPair conf constraints c n maxPair
+        then []
+        else mapMaybe (concurrentRuleForPair conf constraints c n) filtered
   in maxRule
 
 epiPairsForConcurrentRule :: (DPO m, EpiPairs m)

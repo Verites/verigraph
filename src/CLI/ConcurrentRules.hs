@@ -61,7 +61,7 @@ execute globalOpts opts = do
     names <- XML.readNames (inputFile globalOpts)
     sequences <- XML.readSequences gg (inputFile globalOpts)
     let makeConcurrentRules = case generationType opts of
-                                MaxConcurrentRule  -> makeMaxConcurrentRule
+                                MaxConcurrentRule  -> makeMaxConcurrentRules
                                 AllConcurrentRules -> makeAllConcurrentRules
         dependencies = concRulesbyDep opts
         newRules = map (makeConcurrentRules dependencies (dpoConfig globalOpts) (GG.constraints gg)) sequences
@@ -78,9 +78,13 @@ makeAllConcurrentRules :: CRDependencies -> DPOConfig -> [AtomicConstraint (Type
 makeAllConcurrentRules dep conf constraints (baseName, sequence) = zipWith makeName (allConcurrentRules dep conf constraints sequence) [0::Int ..]
   where makeName rule idx = (baseName++"_"++show idx, rule)
 
-makeMaxConcurrentRule :: CRDependencies -> DPOConfig -> [AtomicConstraint (TypedGraphMorphism a b)] -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
-makeMaxConcurrentRule dep conf constraints (baseName, sequence) = case maxRule of
-  Nothing -> []
-  Just x  -> [(baseName, x)]
-  where
-    maxRule = maxConcurrentRule dep conf constraints sequence
+makeMaxConcurrentRules :: CRDependencies -> DPOConfig -> [AtomicConstraint (TypedGraphMorphism a b)] -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
+makeMaxConcurrentRules dep conf constraints (baseName, sequence) = zipWith makeName (maxConcurrentRule dep conf constraints sequence) [0::Int ..]
+  where makeName rule idx = (baseName++"_"++show idx, rule)
+
+--makeMaxConcurrentRule :: CRDependencies -> DPOConfig -> [AtomicConstraint (TypedGraphMorphism a b)] -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
+--makeMaxConcurrentRule dep conf constraints (baseName, sequence) = case maxRule of
+--  Nothing -> []
+--  Just x  -> [(baseName, x)]
+--  where
+--    maxRule = maxConcurrentRule dep conf constraints sequence

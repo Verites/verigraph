@@ -28,6 +28,7 @@ import           Abstract.AdhesiveHLR           as RW
 import           Abstract.DPO                   as RW
 --import Data.Matrix
 import qualified Data.List                      as L
+import           Abstract.Cardinality
 import           Data.Maybe
 
 --import qualified XML.GGXReader as XML

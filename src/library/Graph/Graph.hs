@@ -56,6 +56,7 @@ module Graph.Graph (
     , newEdges
 ) where
 
+import           Abstract.Cardinality
 import           Abstract.Valid
 import           Data.List
 import           Data.List.Utils
@@ -104,6 +105,9 @@ instance Show (Graph a b) where
               concatMap (\(n, _) -> "\t" ++ show n ++ "\n") nm ++
               "Edges:\n" ++
               concatMap (\(eid, _) -> "\t" ++ show eid ++ "\n") em
+
+instance Cardinality (Graph a b) where
+  cardinality = cardinality'
 
 
 newtype NodeId = NodeId Int deriving (Eq, Ord, Read)
@@ -312,6 +316,10 @@ extractTarget gm e = fromJust $ targetOf gm e
 null :: Graph a b -> Bool
 null (Graph [] []) = True
 null _ = False
+
+-- | Given a graph, it returns the number of vertices plus the number of edges
+cardinality' :: Graph a b -> Int
+cardinality' g = (length (nodes g)) + (length (edges g))
 
 -- | Test if @n@ is a node from graph @g@.
 isNodeOf :: Graph a b -> NodeId -> Bool
