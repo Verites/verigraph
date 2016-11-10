@@ -79,12 +79,5 @@ makeAllConcurrentRules dep conf constraints (baseName, sequence) = zipWith makeN
   where makeName rule idx = (baseName++"_"++show idx, rule)
 
 makeMaxConcurrentRules :: CRDependencies -> DPOConfig -> [AtomicConstraint (TypedGraphMorphism a b)] -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
-makeMaxConcurrentRules dep conf constraints (baseName, sequence) = zipWith makeName (maxConcurrentRule dep conf constraints sequence) [0::Int ..]
+makeMaxConcurrentRules dep conf constraints (baseName, sequence) = zipWith makeName (maxConcurrentRules dep conf constraints sequence) [0::Int ..]
   where makeName rule idx = (baseName++"_"++show idx, rule)
-
---makeMaxConcurrentRule :: CRDependencies -> DPOConfig -> [AtomicConstraint (TypedGraphMorphism a b)] -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
---makeMaxConcurrentRule dep conf constraints (baseName, sequence) = case maxRule of
---  Nothing -> []
---  Just x  -> [(baseName, x)]
---  where
---    maxRule = maxConcurrentRule dep conf constraints sequence
