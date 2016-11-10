@@ -11,6 +11,7 @@ module TypedGraph.Graph
   , edgesWithType
   ) where
 
+import           Abstract.Cardinality
 import           Abstract.Morphism
 import           Data.Maybe          (fromMaybe)
 import           Graph.Graph         as G
@@ -19,6 +20,9 @@ import           Graph.GraphMorphism
 
 -- | A typed graph is a morphism whose codomain is the type graph.
 type TypedGraph a b = GraphMorphism a b
+
+instance Cardinality (GraphMorphism a b) where
+  cardinality = cardinality . domain
 
 -- | Obtain the untyped version of the typed graph
 untypedGraph :: TypedGraph a b -> Graph a b
