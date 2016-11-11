@@ -10,6 +10,7 @@ module XML.GGXParseIn
  , parseRule
  , parseRuleSequence
  , parseAtomicConstraints
+ , parseGraphConstraints
  ) where
 
 import           Data.Tree.NTree.TypeDefs
@@ -133,6 +134,13 @@ parseAtomicConstraints = atTag "Graphconstraint_Atomic" >>>
     conclusion <- parseGraph <<< atTag "Conclusion" -< atomic
     morphisms <- parseMorphism <<< atTag "Conclusion" -< atomic
     returnA -< (name, premise, conclusion, morphisms)
+
+parseGraphConstraints :: ArrowXml cat => cat (NTree XNode) (String, String)
+parseGraphConstraints = atTag "Formula" >>>
+  proc constraint -> do
+    name <- getAttrValue "name" -< constraint
+    formula <- getAttrValue "f" -< constraint
+    returnA -< (name,formula)
 
 -- | Parse all enabled rules of first order
 parseRule :: ArrowXml cat => cat (NTree XNode) RuleWithNacs

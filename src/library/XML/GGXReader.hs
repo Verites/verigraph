@@ -61,10 +61,10 @@ readGrammar fileName useConstraints dpoConfig = do
   ensureValid $ validateNamed (\name -> "Rule '"++name++"'") (zip rulesNames rules)
   _ <- (L.null rules && error "No first order rules were found, at least one is needed.") `seq` return ()
 
-  parsedConstraints <- readConstraints fileName
+  parsedAtomicConstraints <- readAtomicConstraints fileName
 
   let cons = if useConstraints then
-               map (instantiateAtomicConstraint typeGraph) parsedConstraints
+               map (instantiateAtomicConstraint typeGraph) parsedAtomicConstraints
              else []
 
   --print "Validity"
@@ -138,8 +138,11 @@ readNacNames fileName = concat <$> runX (parseXML fileName >>> parseNacNames)
 readTypeNames :: String -> IO [(String,String)]
 readTypeNames fileName = concat <$> runX (parseXML fileName >>> parseNames)
 
-readConstraints :: String -> IO[ParsedAtomicConstraint]
-readConstraints fileName = runX (parseXML fileName >>> parseAtomicConstraints)
+readAtomicConstraints :: String -> IO[ParsedAtomicConstraint]
+readAtomicConstraints fileName = runX (parseXML fileName >>> parseAtomicConstraints)
+
+readGraphConstraints :: String -> IO[(String,String)]
+readGraphConstraints fileName = runX (parseXML fileName >>> parseGraphConstraints)
 
 --readGraphs' :: String -> IO[[ParsedTypedGraph]]
 --readGraphs' fileName = runX (parseXML fileName >>> parseGraphs)
@@ -211,6 +214,12 @@ instantiateAtomicConstraint tg (name, premise, conclusion, maps) = buildNamedAto
     mapToId (a,_,b) = (toN b, toN a)
     pNodes = G.nodes (domain p)
     (mNodes,mEdges) = L.partition (\(_,_,x) -> G.NodeId (toN x) `elem` pNodes) maps
+
+instantiateConstraints :: [(String, String)] -> [AtomicConstraint (TypedGraphMorphism a b)] -> [Constraint (TypedGraphMorphism a b)]
+instantiateConstraints formulas atomicConstraints = []
+  where
+    mappings = zip [1..] atomicConstraints
+
 
 
 instantiateTypedGraph :: ParsedTypedGraph -> TypeGraph a b -> GraphMorphism a b
