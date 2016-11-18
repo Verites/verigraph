@@ -32,8 +32,8 @@ languageDef = T.LanguageDef
   -- Everything above this comment is unused and it is here just because of the library warnings
   , T.identStart      = alphaNum
   , T.identLetter     = alphaNum
-  , T.reservedNames   = ["!", "&amp;", "|"]
-  , T.reservedOpNames = ["!", "&amp;", "|"]
+  , T.reservedNames   = ["!", "&amp;", "|", "&"]
+  , T.reservedOpNames = ["!", "&amp;", "|", "&"]
   }
 
 lexer :: T.TokenParser ()
@@ -52,7 +52,8 @@ operators :: OperatorTable String () Identity Formula
 operators = [
   [Prefix (reservedOp "!"     >> return (Not    ))          ],
   [Infix  (reservedOp "|"     >> return (Or     )) AssocLeft
-  ,Infix  (reservedOp "&amp;" >> return (And    )) AssocLeft]]
+  ,Infix  (reservedOp "&amp;" >> return (And    )) AssocLeft
+  ,Infix  (reservedOp "&"     >> return (And    )) AssocLeft]]
 
 terms :: Parser Formula
 terms = parens formula
@@ -64,5 +65,5 @@ formula = buildExpressionParser operators terms
 parseFormula :: String -> Formula
 parseFormula str =
   case parse formula "" str of
-    Left  e -> error $ show e
+    Left  e -> error $ show e ++ " when parsing the following expression: " ++ str
     Right r -> r
