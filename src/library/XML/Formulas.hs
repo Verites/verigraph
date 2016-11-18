@@ -11,7 +11,6 @@ import           Data.Functor.Identity
 
 import           Text.Parsec
 import           Text.Parsec.Expr
-import           Text.Parsec.Language
 import           Text.Parsec.String (Parser)
 import qualified Text.Parsec.Token as T
 
@@ -26,23 +25,35 @@ languageDef = T.LanguageDef
   { T.commentLine     = "#"
   , T.commentStart    = "/*"
   , T.commentEnd      = "*/"
+  , T.nestedComments  = False
+  , T.opStart         = oneOf ""
+  , T.opLetter        = oneOf ""
+  , T.caseSensitive   = False
+  -- Everything above this comment is unused and it is here just because of the library warnings
   , T.identStart      = alphaNum
   , T.identLetter     = alphaNum
   , T.reservedNames   = ["!", "&amp;", "|"]
   , T.reservedOpNames = ["!", "&amp;", "|"]
-  , T.opLetter        = oneOf ""
   }
 
-lexer      = T.makeTokenParser languageDef
-identifier = T.identifier lexer
-reservedOp = T.reservedOp lexer
-parens     = T.parens     lexer
-integer    = T.integer    lexer
+lexer :: T.TokenParser ()
+lexer = T.makeTokenParser languageDef
 
+reservedOp :: String -> Parser ()
+reservedOp = T.reservedOp lexer
+
+parens :: Parser a -> Parser a
+parens = T.parens lexer
+
+integer :: Parser Integer
+integer = T.integer lexer
+
+operators :: OperatorTable String () Identity Formula
 operators = [
   [Prefix (reservedOp "!" >> return (Not             ))          ]
  ,[Infix  (reservedOp "|"     >> return (Or     )) AssocLeft, Infix  (reservedOp "&amp;" >> return (And    )) AssocLeft]]
 
+terms :: Parser Formula
 terms = parens formula
       <|> liftM IntConst integer
 
