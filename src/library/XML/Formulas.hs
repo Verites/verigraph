@@ -50,8 +50,9 @@ integer = T.integer lexer
 
 operators :: OperatorTable String () Identity Formula
 operators = [
-  [Prefix (reservedOp "!" >> return (Not             ))          ]
- ,[Infix  (reservedOp "|"     >> return (Or     )) AssocLeft, Infix  (reservedOp "&amp;" >> return (And    )) AssocLeft]]
+  [Prefix (reservedOp "!"     >> return (Not    ))          ],
+  [Infix  (reservedOp "|"     >> return (Or     )) AssocLeft
+  ,Infix  (reservedOp "&amp;" >> return (And    )) AssocLeft]]
 
 terms :: Parser Formula
 terms = parens formula

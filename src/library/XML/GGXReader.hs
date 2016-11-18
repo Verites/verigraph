@@ -218,21 +218,21 @@ instantiateAtomicConstraint tg (name, premise, conclusion, maps) = buildNamedAto
     (mNodes,mEdges) = L.partition (\(_,_,x) -> G.NodeId (toN x) `elem` pNodes) maps
 
 instantiateConstraints :: [(String, F.Formula)] -> [AtomicConstraint (TypedGraphMorphism a b)] -> [Constraint (TypedGraphMorphism a b)]
-instantiateConstraints formulas atomicConstraints = map (teste mappings) f
+instantiateConstraints formulas atomicConstraints = map (translateFormula mappings) f
   where
     f = map (snd) formulas
     mappings = M.fromAscList $ zip [1..] atomicConstraints
 
-teste :: M.Map Int (AtomicConstraint (TypedGraphMorphism a b)) -> F.Formula -> Constraint (TypedGraphMorphism a b)
-teste m formula =
+translateFormula :: M.Map Int (AtomicConstraint (TypedGraphMorphism a b)) -> F.Formula -> Constraint (TypedGraphMorphism a b)
+translateFormula m formula =
   let
     get = (m M.!) . fromIntegral
   in
     case formula of
-      F.IntConst n             ->  Atomic (get n)
-      F.Not formula'           -> Not (teste m formula')
-      F.Or formula' formula''  -> Or (teste m formula') (teste m formula'')
-      F.And formula' formula'' -> And (teste m formula') (teste m formula'')
+      F.IntConst n             -> Atomic (get n)
+      F.Not formula'           -> Not (translateFormula m formula')
+      F.Or formula' formula''  -> Or (translateFormula m formula') (translateFormula m formula'')
+      F.And formula' formula'' -> And (translateFormula m formula') (translateFormula m formula'')
 
 
 
