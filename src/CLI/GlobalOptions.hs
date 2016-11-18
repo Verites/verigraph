@@ -41,5 +41,5 @@ globalOpts = GOpts
     <> help "GGX file defining the graph grammar")
   <*> flag False True
     ( long "use-constraints"
-    <> help "Activate use of Atomic Constraints [EXPERIMENTAL: Concurrent Rules Only]")
+    <> help "Activate use of Constraints [EXPERIMENTAL: Concurrent Rules Only]")
 
