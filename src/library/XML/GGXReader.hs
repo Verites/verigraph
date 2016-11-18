@@ -64,9 +64,10 @@ readGrammar fileName useConstraints dpoConfig = do
   _ <- (L.null rules && error "No first order rules were found, at least one is needed.") `seq` return ()
 
   parsedAtomicConstraints <- readAtomicConstraints fileName
+  parsedGraphConstraints  <- readGraphConstraints fileName
 
   let cons = if useConstraints then
-               map (instantiateAtomicConstraint typeGraph) parsedAtomicConstraints
+               instantiateConstraints parsedGraphConstraints (map (instantiateAtomicConstraint typeGraph) parsedAtomicConstraints)
              else []
 
   --print "Validity"
@@ -233,8 +234,6 @@ translateFormula m formula =
       F.Not formula'           -> Not (translateFormula m formula')
       F.Or formula' formula''  -> Or (translateFormula m formula') (translateFormula m formula'')
       F.And formula' formula'' -> And (translateFormula m formula') (translateFormula m formula'')
-
-
 
 instantiateTypedGraph :: ParsedTypedGraph -> TypeGraph a b -> GraphMorphism a b
 instantiateTypedGraph (_, nodes, edges) tg = buildGraphMorphism g tg nodeTyping edgeTyping
