@@ -17,7 +17,7 @@ import           Data.Maybe                (mapMaybe)
 data CRDependencies = AllOverlapings | OnlyDependency
 
 -- | Generates the Concurrent Rules for a given list of Productions following the order of the elements in the list.
-allConcurrentRules :: (DPO m, EpiPairs m, Eq (Obj m), Valid m) => CRDependencies -> DPOConfig -> [AtomicConstraint m] -> [Production m] -> [Production m]
+allConcurrentRules :: (DPO m, EpiPairs m, Eq (Obj m), Valid m) => CRDependencies -> DPOConfig -> [Constraint m] -> [Production m] -> [Production m]
 allConcurrentRules _ _ _ [] = []
 allConcurrentRules _ _ _ [x] = [x]
 allConcurrentRules dep conf constraints (x:xs) = concatMap (crs x) (allCRs xs)
@@ -28,7 +28,7 @@ allConcurrentRules dep conf constraints (x:xs) = concatMap (crs x) (allCRs xs)
 -- | Generates the Concurrent Rules with the least disjoint EpiPairs (EpiPairs with the least cardinality) for a given list of Productions
 -- (following the order of the elements in the list).
 maxConcurrentRules :: (DPO m, EpiPairs m, Eq (Obj m), Valid m, Cardinality (Obj m)) => CRDependencies -> DPOConfig ->
-  [AtomicConstraint m] -> [Production m] -> [Production m]
+  [Constraint m] -> [Production m] -> [Production m]
 maxConcurrentRules _ _ _ [] = []
 maxConcurrentRules _ _ _ [r] = [r]
 maxConcurrentRules dep conf constraints (r:rs) = concat $ concatRule r (maxConcurrentRules dep conf constraints rs)
@@ -37,12 +37,12 @@ maxConcurrentRules dep conf constraints (r:rs) = concat $ concatRule r (maxConcu
       [] -> []
       xs -> map (maxConcurrentRuleForLastPairs dep conf constraints rule) xs
 
-concurrentRules :: (DPO m, EpiPairs m) => CRDependencies -> DPOConfig -> [AtomicConstraint m] -> Production m -> Production m -> [Production m]
+concurrentRules :: (DPO m, EpiPairs m) => CRDependencies -> DPOConfig -> [Constraint m] -> Production m -> Production m -> [Production m]
 concurrentRules dep conf constraints c n =
   let epiPairs = epiPairsForConcurrentRule dep conf constraints c n
   in mapMaybe (concurrentRuleForPair conf constraints c n) epiPairs
 
-maxConcurrentRuleForLastPairs :: (DPO m, EpiPairs m, Cardinality (Obj m)) => CRDependencies -> DPOConfig -> [AtomicConstraint m] ->
+maxConcurrentRuleForLastPairs :: (DPO m, EpiPairs m, Cardinality (Obj m)) => CRDependencies -> DPOConfig -> [Constraint m] ->
   Production m -> Production m -> [Production m]
 maxConcurrentRuleForLastPairs dep conf constraints c n =
   let epiPairs = epiPairsForConcurrentRule dep conf constraints c n
@@ -55,21 +55,21 @@ maxConcurrentRuleForLastPairs dep conf constraints c n =
   in maxRule
 
 epiPairsForConcurrentRule :: (DPO m, EpiPairs m)
-  => CRDependencies -> DPOConfig -> [AtomicConstraint m] -> Production m -> Production m -> [(m, m)]
+  => CRDependencies -> DPOConfig -> [Constraint m] -> Production m -> Production m -> [(m, m)]
 -- it only considers triggered dependencies because is the most intuitive and natural behaviour expected until now.
 epiPairsForConcurrentRule OnlyDependency conf constraints c n =
   let dependencies = map getCriticalSequenceComatches (findTriggeringCriticalSequences conf c n)
-      validDependency (lp, _) = satisfiesAllAtomicConstraints (codomain lp) constraints
+      validDependency (lp, _) = satisfiesAllConstraints (codomain lp) constraints
   in filter validDependency dependencies
 
 epiPairsForConcurrentRule AllOverlapings conf constraints c n =
   let matchInj = matchRestriction conf == MonoMatches
       allPairs = createJointlyEpimorphicPairs matchInj (codomain (getRHS c)) (codomain (getLHS n))
-      isValidPair (lp, rp) = satisfiesAllAtomicConstraints (codomain lp) constraints &&
+      isValidPair (lp, rp) = satisfiesAllConstraints (codomain lp) constraints &&
         satisfiesGluingConditions conf (invertProductionWithoutNacs c) lp && satisfiesRewritingConditions conf n rp
   in filter isValidPair allPairs
 
-concurrentRuleForPair :: (DPO m, EpiPairs m) => DPOConfig -> [AtomicConstraint m] -> Production m -> Production m -> (m, m) -> Maybe (Production m)
+concurrentRuleForPair :: (DPO m, EpiPairs m) => DPOConfig -> [Constraint m] -> Production m -> Production m -> (m, m) -> Maybe (Production m)
 concurrentRuleForPair conf constraints c n pair = if invalidSides then Nothing else Just (buildProduction l r (dmc ++ lp))
   where
     pocC = calculatePushoutComplement (fst pair) (getRHS c)
@@ -84,6 +84,6 @@ concurrentRuleForPair conf constraints c n pair = if invalidSides then Nothing e
     den = filter validNac $ concatMap (nacDownwardShift conf (snd pair)) (getNACs n)
     lp = filter validNac $ concatMap (shiftNacOverProduction conf inverseP) den
     -- Filters that are not in the default algorithm, useful when dealing with injective morphisms only
-    validNac nac = matchRestriction conf /= MonoMatches || satisfiesAllAtomicConstraints (codomain nac) constraints
+    validNac nac = matchRestriction conf /= MonoMatches || satisfiesAllConstraints (codomain nac) constraints
     invalidSides = matchRestriction conf == MonoMatches &&
-      (not (satisfiesAllAtomicConstraints (codomain l) constraints) || not (satisfiesAllAtomicConstraints (codomain r) constraints))
+      (not (satisfiesAllConstraints (codomain l) constraints) || not (satisfiesAllConstraints (codomain r) constraints))

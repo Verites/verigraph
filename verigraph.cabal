@@ -27,6 +27,7 @@ library
                        wl-pprint >=1.2 && <1.3,
                        semigroups >= 0.18
   exposed-modules:     Abstract.AdhesiveHLR
+                       Abstract.Cardinality
                        Abstract.Cocomplete
                        Abstract.DPO
                        Abstract.DPO.StateSpace
@@ -78,6 +79,7 @@ library
                        SndOrder.Rule.Core
                        SndOrder.Rule.DPO
                        Util.List
+                       XML.Formulas
                        XML.GGXParseIn
                        XML.GGXParseOut
                        XML.GGXSndOrderReader

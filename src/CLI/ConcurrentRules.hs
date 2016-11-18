@@ -74,10 +74,10 @@ execute globalOpts opts = do
     GW.writeGrammarFile gg' ggName names (outputFile opts)
 
 
-makeAllConcurrentRules :: CRDependencies -> DPOConfig -> [AtomicConstraint (TypedGraphMorphism a b)] -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
+makeAllConcurrentRules :: CRDependencies -> DPOConfig -> [Constraint (TypedGraphMorphism a b)] -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
 makeAllConcurrentRules dep conf constraints (baseName, sequence) = zipWith makeName (allConcurrentRules dep conf constraints sequence) [0::Int ..]
   where makeName rule idx = (baseName++"_"++show idx, rule)
 
-makeMaxConcurrentRules :: CRDependencies -> DPOConfig -> [AtomicConstraint (TypedGraphMorphism a b)] -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
+makeMaxConcurrentRules :: CRDependencies -> DPOConfig -> [Constraint (TypedGraphMorphism a b)] -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
 makeMaxConcurrentRules dep conf constraints (baseName, sequence) = zipWith makeName (maxConcurrentRules dep conf constraints sequence) [0::Int ..]
   where makeName rule idx = (baseName++"_"++show idx, rule)

@@ -220,6 +220,7 @@ data Constraint m =
   | Or{ lc :: Constraint m,
         rc :: Constraint m}
   | Not { nc :: Constraint m }
+  deriving (Show)
 
 instance Valid m => Valid (Constraint m) where
     validate cons = case cons of

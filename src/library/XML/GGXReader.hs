@@ -18,6 +18,7 @@ import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Valid
 import qualified Data.List               as L
+import qualified Data.Map                as M
 import           Data.Maybe              (fromMaybe, mapMaybe)
 import           Data.String.Utils       (startswith)
 import qualified Graph.Graph             as G
@@ -28,6 +29,7 @@ import           TypedGraph.Graph
 import qualified TypedGraph.GraphGrammar as GG
 import           TypedGraph.GraphRule    as GR
 import           TypedGraph.Morphism
+import qualified XML.Formulas            as F
 import           XML.GGXParseIn
 import           XML.GGXSndOrderReader
 import           XML.ParsedTypes
@@ -61,10 +63,11 @@ readGrammar fileName useConstraints dpoConfig = do
   ensureValid $ validateNamed (\name -> "Rule '"++name++"'") (zip rulesNames rules)
   _ <- (L.null rules && error "No first order rules were found, at least one is needed.") `seq` return ()
 
-  parsedConstraints <- readConstraints fileName
+  parsedAtomicConstraints <- readAtomicConstraints fileName
+  parsedGraphConstraints  <- readGraphConstraints fileName
 
   let cons = if useConstraints then
-               map (instantiateAtomicConstraint typeGraph) parsedConstraints
+               instantiateConstraints parsedGraphConstraints (map (instantiateAtomicConstraint typeGraph) parsedAtomicConstraints)
              else []
 
   --print "Validity"
@@ -138,8 +141,11 @@ readNacNames fileName = concat <$> runX (parseXML fileName >>> parseNacNames)
 readTypeNames :: String -> IO [(String,String)]
 readTypeNames fileName = concat <$> runX (parseXML fileName >>> parseNames)
 
-readConstraints :: String -> IO[ParsedAtomicConstraint]
-readConstraints fileName = runX (parseXML fileName >>> parseAtomicConstraints)
+readAtomicConstraints :: String -> IO[ParsedAtomicConstraint]
+readAtomicConstraints fileName = runX (parseXML fileName >>> parseAtomicConstraints)
+
+readGraphConstraints :: String -> IO[(String,F.Formula)]
+readGraphConstraints fileName = runX (parseXML fileName >>> parseGraphConstraints)
 
 --readGraphs' :: String -> IO[[ParsedTypedGraph]]
 --readGraphs' fileName = runX (parseXML fileName >>> parseGraphs)
@@ -212,6 +218,22 @@ instantiateAtomicConstraint tg (name, premise, conclusion, maps) = buildNamedAto
     pNodes = G.nodes (domain p)
     (mNodes,mEdges) = L.partition (\(_,_,x) -> G.NodeId (toN x) `elem` pNodes) maps
 
+instantiateConstraints :: [(String, F.Formula)] -> [AtomicConstraint (TypedGraphMorphism a b)] -> [Constraint (TypedGraphMorphism a b)]
+instantiateConstraints formulas atomicConstraints = map (translateFormula mappings) f
+  where
+    f = map (snd) formulas
+    mappings = M.fromAscList $ zip [1..] atomicConstraints
+
+translateFormula :: M.Map Int (AtomicConstraint (TypedGraphMorphism a b)) -> F.Formula -> Constraint (TypedGraphMorphism a b)
+translateFormula m formula =
+  let
+    get = (m M.!) . fromIntegral
+  in
+    case formula of
+      F.IntConst n             -> Atomic (get n)
+      F.Not formula'           -> Not (translateFormula m formula')
+      F.Or formula' formula''  -> Or (translateFormula m formula') (translateFormula m formula'')
+      F.And formula' formula'' -> And (translateFormula m formula') (translateFormula m formula'')
 
 instantiateTypedGraph :: ParsedTypedGraph -> TypeGraph a b -> GraphMorphism a b
 instantiateTypedGraph (_, nodes, edges) tg = buildGraphMorphism g tg nodeTyping edgeTyping
