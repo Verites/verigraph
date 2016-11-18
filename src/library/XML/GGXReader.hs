@@ -18,6 +18,7 @@ import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Valid
 import qualified Data.List               as L
+import qualified Data.Map                as M
 import           Data.Maybe              (fromMaybe, mapMaybe)
 import           Data.String.Utils       (startswith)
 import qualified Graph.Graph             as G
@@ -28,6 +29,7 @@ import           TypedGraph.Graph
 import qualified TypedGraph.GraphGrammar as GG
 import           TypedGraph.GraphRule    as GR
 import           TypedGraph.Morphism
+import qualified XML.Formulas            as F
 import           XML.GGXParseIn
 import           XML.GGXSndOrderReader
 import           XML.ParsedTypes
@@ -141,7 +143,7 @@ readTypeNames fileName = concat <$> runX (parseXML fileName >>> parseNames)
 readAtomicConstraints :: String -> IO[ParsedAtomicConstraint]
 readAtomicConstraints fileName = runX (parseXML fileName >>> parseAtomicConstraints)
 
-readGraphConstraints :: String -> IO[(String,String)]
+readGraphConstraints :: String -> IO[(String,F.Formula)]
 readGraphConstraints fileName = runX (parseXML fileName >>> parseGraphConstraints)
 
 --readGraphs' :: String -> IO[[ParsedTypedGraph]]
@@ -215,10 +217,22 @@ instantiateAtomicConstraint tg (name, premise, conclusion, maps) = buildNamedAto
     pNodes = G.nodes (domain p)
     (mNodes,mEdges) = L.partition (\(_,_,x) -> G.NodeId (toN x) `elem` pNodes) maps
 
-instantiateConstraints :: [(String, String)] -> [AtomicConstraint (TypedGraphMorphism a b)] -> [Constraint (TypedGraphMorphism a b)]
-instantiateConstraints formulas atomicConstraints = []
+instantiateConstraints :: [(String, F.Formula)] -> [AtomicConstraint (TypedGraphMorphism a b)] -> [Constraint (TypedGraphMorphism a b)]
+instantiateConstraints formulas atomicConstraints = map (teste mappings) f
   where
-    mappings = zip [1..] atomicConstraints
+    f = map (snd) formulas
+    mappings = M.fromAscList $ zip [1..] atomicConstraints
+
+teste :: M.Map Int (AtomicConstraint (TypedGraphMorphism a b)) -> F.Formula -> Constraint (TypedGraphMorphism a b)
+teste m formula =
+  let
+    get = (m M.!) . fromIntegral
+  in
+    case formula of
+      F.IntConst n             ->  Atomic (get n)
+      F.Not formula'           -> Not (teste m formula')
+      F.Or formula' formula''  -> Or (teste m formula') (teste m formula'')
+      F.And formula' formula'' -> And (teste m formula') (teste m formula'')
 
 
 

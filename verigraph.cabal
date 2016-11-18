@@ -79,6 +79,7 @@ library
                        SndOrder.Rule.Core
                        SndOrder.Rule.DPO
                        Util.List
+                       XML.Formulas
                        XML.GGXParseIn
                        XML.GGXParseOut
                        XML.GGXSndOrderReader
