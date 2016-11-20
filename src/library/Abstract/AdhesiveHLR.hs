@@ -200,10 +200,10 @@ conclusion = codomain . morphism
 
 -- | Given an object @G@ and a AtomicConstraint @a : P -> C@, check whether @G@ satisfies the AtomicConstraint @a@
 satisfiesAtomicConstraint :: (FindMorphism m) => Obj m -> AtomicConstraint m -> Bool
-satisfiesAtomicConstraint graph constraint = Prelude.null ps || allPremisesAreSatisfied
+satisfiesAtomicConstraint object constraint = Prelude.null ps || allPremisesAreSatisfied
   where
-    ps = findMonomorphisms (premise constraint) graph
-    qs = findMonomorphisms (conclusion constraint) graph
+    ps = findMonomorphisms (premise constraint) object
+    qs = findMonomorphisms (conclusion constraint) object
     a = morphism constraint
     positiveSatisfaction = all (\p ->       any (\q -> compose a q == p) qs) ps
     negativeSatisfaction = all (\p -> not $ any (\q -> compose a q == p) qs) ps
@@ -211,7 +211,7 @@ satisfiesAtomicConstraint graph constraint = Prelude.null ps || allPremisesAreSa
 
 -- | Given an object @G@ and a list of AtomicConstraints @a : P -> C@, check whether @G@ satisfies the all them
 satisfiesAllAtomicConstraints :: (FindMorphism m) => Obj m -> [AtomicConstraint m] -> Bool
-satisfiesAllAtomicConstraints graph = all (satisfiesAtomicConstraint graph)
+satisfiesAllAtomicConstraints object = all (satisfiesAtomicConstraint object)
 
 data Constraint m =
     Atomic { atomic :: AtomicConstraint m }
@@ -231,13 +231,13 @@ instance Valid m => Valid (Constraint m) where
 
 -- | Given an object @G@ and a Constraint @c@ (a Boolean formula over atomic constraints), check whether @G@ satisfies @c@
 satisfiesConstraint :: (FindMorphism m) => Obj m -> Constraint m -> Bool
-satisfiesConstraint graph constraint =
+satisfiesConstraint object constraint =
   case constraint of
-    Atomic atomic -> satisfiesAtomicConstraint graph atomic
-    Not nc -> not $ satisfiesConstraint graph nc
-    And lc rc -> satisfiesConstraint graph lc && satisfiesConstraint graph rc
-    Or lc rc -> satisfiesConstraint graph lc || satisfiesConstraint graph rc
+    Atomic atomic -> satisfiesAtomicConstraint object atomic
+    Not nc -> not $ satisfiesConstraint object nc
+    And lc rc -> satisfiesConstraint object lc && satisfiesConstraint object rc
+    Or lc rc -> satisfiesConstraint object lc || satisfiesConstraint object rc
 
 -- | Given an object @G@ and a list of Constraints (Boolean formulas over atomic constraints), check whether @G@ satisfies the all them
 satisfiesAllConstraints :: (FindMorphism m) => Obj m -> [Constraint m] -> Bool
-satisfiesAllConstraints graph = all (satisfiesConstraint graph)
+satisfiesAllConstraints object = all (satisfiesConstraint object)
