@@ -49,12 +49,19 @@ data VRule = VRule {
   rname :: String,
   lhs :: VGraph,
   rhs :: VGraph,
-  morphism :: VMorphism
+  morphism :: VMorphism,
+  nacs :: [VNac]
 } deriving (Show, Read)
 
 data VNac = VNac {
   nacGraph :: VGraph,
   nacMorphism :: VMorphism
+} deriving (Show, Read)
+
+data VGrammar = VGrammar {
+  typeGraph     :: VGraph,
+  initialGraphs :: [VGraph],
+  grammarRules  :: [VRule]
 } deriving (Show, Read)
 
 parseTypeGraph :: ArrowXml cat => cat (NTree XNode) VGraph
@@ -79,7 +86,7 @@ parseEdge = atTag "Edge" >>>
     edgeType <- getAttrValue "type" -< node
     edgeSource <- getAttrValue "source" -< node
     edgeTarget <- getAttrValue "target" -< node
-    let setEdgeName = clearId edgeSource ++ ">-" ++ edgeName ++ "->" ++ clearId edgeTarget
+    let setEdgeName = clearId edgeSource ++ ">-" ++ edgeName ++ "(" ++  clearId edgeId ++")" ++ "->" ++ clearId edgeTarget
     returnA -< VEdge (clearId edgeId) setEdgeName (clearId edgeType) (clearId edgeSource) (clearId edgeTarget)
 
 parseGraph :: ArrowXml cat => cat (NTree XNode) VGraph
@@ -115,7 +122,8 @@ parseRule = atTag "Rule" >>>
     graphs <- listA parseGraph -< rule
     let (lhs,rhs) = splitGraphs ([],[]) graphs
     morphism <- parseMorphism -< rule
-    returnA -< VRule ruleName (head lhs) (head rhs) morphism
+    nacs <- listA parseNac -< rule
+    returnA -< VRule ruleName (head lhs) (head rhs) morphism nacs
 
 parseNac :: ArrowXml cat => cat (NTree XNode) VNac
 parseNac = atTag "NAC" >>>
@@ -130,3 +138,12 @@ splitGraphs (l,r) (v:vs) = case graphKind v of
                     "LHS" -> splitGraphs (v:l,r) vs
                     "RHS" -> splitGraphs (l,v:r) vs
                     _     -> splitGraphs (l,r) vs
+
+parseGrammar :: ArrowXml cat => cat (NTree XNode) VGrammar
+parseGrammar = atTag "GraphTransformationSystem" >>>
+  proc grammar -> do
+    typeGraph <- parseTypeGraph -< grammar
+    initialGraphs <- listA parseGraph -< grammar
+    rules <- listA parseRule -< grammar
+    returnA -< VGrammar typeGraph initialGraphs rules
+
