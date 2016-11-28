@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -fno-warn-orphans #-}
-
 module SndOrder.Morphism.FindMorphism where
 
 import           Abstract.DPO
