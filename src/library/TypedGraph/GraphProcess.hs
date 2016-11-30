@@ -45,8 +45,8 @@ calculateProcess :: [Derivation (TypedGraphMorphism a b)] -> TypedGraphMorphism 
 calculateProcess [] = error "Can not calculate process for empty list of derivations"
 calculateProcess ds =
   let fs = sourcesCoproduct ds
-      ls = getLHSs ds
-      rs = getRHSs ds
+      ls = getLefts ds
+      rs = getRights ds
       (g1s, g2s, g3s) = groupMorphisms $ allCoproducts ds
       h = induceMorphism fs
       h1 = h $ zipWith compose ls g1s
@@ -56,13 +56,13 @@ calculateProcess ds =
    in x
 
 getSources :: [Derivation (TypedGraphMorphism a b)] -> NE.NonEmpty (GraphMorphism a b)
-getSources ds = NE.fromList (getKObjects ds)
+getSources ds = NE.fromList (getDObjects ds)
 
 sourcesCoproduct :: [Derivation (TypedGraphMorphism a b)] -> [TypedGraphMorphism a b]
 sourcesCoproduct = calculateNCoproduct . getSources
 
 getAll :: [Derivation (TypedGraphMorphism a b)] -> NE.NonEmpty (GraphMorphism a b)
-getAll ds = NE.fromList $ concatMap getAllObjects ds
+getAll ds = NE.fromList $ concatMap getAllBottomObjects ds
 
 allCoproducts :: [Derivation (TypedGraphMorphism a b)] -> [TypedGraphMorphism a b]
 allCoproducts = calculateNCoproduct . getAll

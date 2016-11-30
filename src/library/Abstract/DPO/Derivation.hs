@@ -5,6 +5,10 @@ module Abstract.DPO.Derivation
 , getAllObjects
 , getLHSs
 , getRHSs
+, getDObjects
+, getAllBottomObjects
+, getLefts
+, getRights
 )
 
 where
@@ -37,8 +41,13 @@ generateDerivation conf match rule =
 getKObjects :: (DPO m) =>  [Derivation m] -> [Obj m]
 getKObjects = fmap (domain . getLHS . production)
 
+
+
 getLHSs :: [Derivation m] -> [m]
 getLHSs = fmap (getLHS . production)
+
+--teste :: (DPO m) => [Derivation m] -> [m]
+--teste = map (\d -> compose ((getLHS . production) d) (match d))
 
 getRHSs :: [Derivation m] -> [m]
 getRHSs = fmap (getRHS . production)
@@ -48,4 +57,20 @@ getAllObjects ds =
   let l = codomain . getLHS . production
       k =   domain . getLHS . production
       r = codomain . getRHS . production
+   in [l ds, k ds, r ds]
+
+getDObjects :: (DPO m) =>  [Derivation m] -> [Obj m]
+getDObjects = fmap (domain . dToG)
+
+getLefts :: [Derivation m] -> [m]
+getLefts = fmap dToG
+
+getRights :: [Derivation m] -> [m]
+getRights = fmap dToH
+
+getAllBottomObjects :: (DPO m) => Derivation m -> [Obj m]
+getAllBottomObjects ds =
+  let l = codomain . dToG
+      k =   domain . dToG
+      r = codomain . dToH
    in [l ds, k ds, r ds]
