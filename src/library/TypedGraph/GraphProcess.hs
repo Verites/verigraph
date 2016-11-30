@@ -1,6 +1,11 @@
-module TypedGraph.GraphProcess (
-singleProcess
-                               )
+module TypedGraph.GraphProcess
+( singleProcess
+, calculateProcess
+, sourcesCoproduct
+, allCoproducts
+, induceMorphism
+, groupMorphisms
+)
 
 where
 
@@ -11,8 +16,8 @@ import Abstract.DPO.Derivation
 import Abstract.Morphism
 import qualified Data.List.NonEmpty as NE
 import Graph.GraphMorphism
-import TypedGraph.Graph
-import TypedGraph.GraphRule
+import TypedGraph.Graph ()
+import TypedGraph.GraphRule ()
 import TypedGraph.Morphism as TGM
 
 singleProcess :: Derivation (TypedGraphMorphism a b) -> Process (TypedGraphMorphism a b)
@@ -36,26 +41,44 @@ singleProcess derivation =
       newProduction = buildProduction newL newR []
    in Process [newProduction] core
 
---calculateProcess :: [Derivation (TypedGraphMorphism a b)] -> Process (TypedGraphMorphism a b)
---calculateProcess [] = error "Can not calculate process for empty list of derivations"
---calculateProcess ds =
---  let
---   in Process [] core
+calculateProcess :: [Derivation (TypedGraphMorphism a b)] -> TypedGraphMorphism a b
+calculateProcess [] = error "Can not calculate process for empty list of derivations"
+calculateProcess ds =
+  let fs = sourcesCoproduct ds
+      ls = getLHSs ds
+      rs = getRHSs ds
+      (g1s, g2s, g3s) = groupMorphisms $ allCoproducts ds
+      h = induceMorphism fs
+      h1 = h $ zipWith compose ls g1s
+      h2 = h g2s
+      h3 = h $ zipWith compose rs g3s
+      x = calculateNCoequalizer $ NE.fromList [h1,h2,h3]
+   in x
 
 getSources :: [Derivation (TypedGraphMorphism a b)] -> NE.NonEmpty (GraphMorphism a b)
-getSources ds = NE.fromList (fmap getK ds)
+getSources ds = NE.fromList (getKObjects ds)
 
 sourcesCoproduct :: [Derivation (TypedGraphMorphism a b)] -> [TypedGraphMorphism a b]
 sourcesCoproduct = calculateNCoproduct . getSources
 
 getAll :: [Derivation (TypedGraphMorphism a b)] -> NE.NonEmpty (GraphMorphism a b)
-getAll ds = NE.fromList $ concatMap getObjects ds
+getAll ds = NE.fromList $ concatMap getAllObjects ds
 
 allCoproducts :: [Derivation (TypedGraphMorphism a b)] -> [TypedGraphMorphism a b]
 allCoproducts = calculateNCoproduct . getAll
 
+groupMorphisms :: [TypedGraphMorphism a b] -> ([TypedGraphMorphism a b],[TypedGraphMorphism a b],[TypedGraphMorphism a b])
+groupMorphisms [] = ([],[],[])
+groupMorphisms fs = (f1,f2,f3)
+  where
+    groups = teste fs
+    f1 = concatMap (\(a,_,_) -> [a]) groups
+    f2 = concatMap (\(_,b,_) -> [b]) groups
+    f3 = concatMap (\(_,_,c) -> [c]) groups
+
 teste [] = []
-teste fs = (head fs, head $ tail fs, head $ tail $ tail fs) : teste (tail $ tail $ tail fs)
+teste fs = (head fs, head $ tail fs, head $ tail $ tail fs) : teste (rest fs)
+  where rest = tail . tail . tail
 
 -- given two TypedGraphMorphism f : A -> B and g : A -> C it induces a Morphism f : B -> C
 initialMorphism :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b

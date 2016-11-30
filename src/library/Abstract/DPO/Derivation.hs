@@ -1,8 +1,10 @@
 module Abstract.DPO.Derivation
 ( Derivation(..)
 , generateDerivation
-, getK
-, getObjects
+, getKObjects
+, getAllObjects
+, getLHSs
+, getRHSs
 )
 
 where
@@ -32,12 +34,18 @@ generateDerivation conf match rule =
      Just (generateDerivationUnsafe match rule)
   else Nothing
 
-getK :: (DPO m) =>  Derivation m -> Obj m
-getK = domain . getLHS . production
+getKObjects :: (DPO m) =>  [Derivation m] -> [Obj m]
+getKObjects = fmap (domain . getLHS . production)
 
-getObjects :: (DPO m) => Derivation m -> [Obj m]
-getObjects ds =
+getLHSs :: [Derivation m] -> [m]
+getLHSs = fmap (getLHS . production)
+
+getRHSs :: [Derivation m] -> [m]
+getRHSs = fmap (getRHS . production)
+
+getAllObjects :: (DPO m) => Derivation m -> [Obj m]
+getAllObjects ds =
   let l = codomain . getLHS . production
       k =   domain . getLHS . production
       r = codomain . getRHS . production
-   in [l ds ,k ds,r ds]
+   in [l ds, k ds, r ds]

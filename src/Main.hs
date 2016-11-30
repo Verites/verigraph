@@ -193,6 +193,15 @@ myprocess = singleProcess getDer
 myps = productions myprocess
 myc = coreObject myprocess
 
+-- graph process testes
+
+fs = sourcesCoproduct [getDer]
+gs = allCoproducts [getDer]
+(g1,g2,g3) = groupMorphisms gs
+
+
+myc2 = calculateProcess [getDer]
+
 {--
 --nac
 nacGraph = build [501,502,503,504] [(501,503,501),(503,502,503)]
