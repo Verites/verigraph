@@ -41,8 +41,8 @@ singleProcess derivation =
       newProduction = buildProduction newL newR []
    in Process [newProduction] core
 
-retype :: Derivation (TypedGraphMorphism a b) -> (TypedGraphMorphism a b,TypedGraphMorphism a b,TypedGraphMorphism a b) ->  Production (TypedGraphMorphism a b)
-retype derivation (g1,_,g3) = newProduction
+retype :: (Derivation (TypedGraphMorphism a b), (TypedGraphMorphism a b,TypedGraphMorphism a b,TypedGraphMorphism a b)) ->  Production (TypedGraphMorphism a b)
+retype (derivation, (g1,_,g3)) = newProduction
   where
     p = production derivation
     oldL = getLHS p
@@ -58,21 +58,24 @@ retype derivation (g1,_,g3) = newProduction
     newR = buildTypedGraphMorphism newKType newRType mappingR
     newProduction = buildProduction newL newR []
 
-calculateProcess :: [Derivation (TypedGraphMorphism a b)] -> GraphMorphism a b
+calculateProcess :: [Derivation (TypedGraphMorphism a b)] -> Process(TypedGraphMorphism a b)
 calculateProcess [] = error "Can not calculate process for empty list of derivations"
 calculateProcess ds =
   let fs = sourcesCoproduct ds
       ls = getLefts ds
       rs = getRights ds
       gs = allCoproducts ds
-      (g1s, g2s, g3s) = groupMorphisms gs
+      gs' = reduce gs
+      (g1s, g2s, g3s) = groupMorphisms gs'
       h = induceMorphism fs
       h1 = h $ zipWith compose ls g1s
       h2 = h g2s
       h3 = h $ zipWith compose rs g3s
       coEq = calculateNCoequalizer $ NE.fromList [h1,h2,h3]
       core = codomain coEq
-   in core
+      hs = reduce $ map (`compose` coEq) gs
+      as = zip ds hs
+   in Process (map retype as) core
 
 getSources :: [Derivation (TypedGraphMorphism a b)] -> NE.NonEmpty (GraphMorphism a b)
 getSources ds = NE.fromList (getDObjects ds)
@@ -86,18 +89,21 @@ getAll ds = NE.fromList $ concatMap getAllBottomObjects ds
 allCoproducts :: [Derivation (TypedGraphMorphism a b)] -> [TypedGraphMorphism a b]
 allCoproducts = calculateNCoproduct . getAll
 
-groupMorphisms :: [TypedGraphMorphism a b] -> ([TypedGraphMorphism a b],[TypedGraphMorphism a b],[TypedGraphMorphism a b])
+groupMorphisms :: [(TypedGraphMorphism a b,TypedGraphMorphism a b,TypedGraphMorphism a b)] -> ([TypedGraphMorphism a b],[TypedGraphMorphism a b],[TypedGraphMorphism a b])
 groupMorphisms [] = ([],[],[])
 groupMorphisms fs = (f1,f2,f3)
   where
-    groups = reduce fs
-    f1 = concatMap (\(a,_,_) -> [a]) groups
-    f2 = concatMap (\(_,b,_) -> [b]) groups
-    f3 = concatMap (\(_,_,c) -> [c]) groups
-    reduce [] = []
-    reduce fs = (head fs, head $ tail fs, head $ tail $ tail fs) : reduce (rest fs)
-    rest = tail . tail . tail
+    f1 = concatMap (\(a,_,_) -> [a]) fs
+    f2 = concatMap (\(_,b,_) -> [b]) fs
+    f3 = concatMap (\(_,_,c) -> [c]) fs
 
+reduce :: [TypedGraphMorphism a b] -> [(TypedGraphMorphism a b,TypedGraphMorphism a b,TypedGraphMorphism a b)]
+reduce [] = []
+reduce fs = (head fs, fs !! 1, fs !! 2) : reduce (rest fs)
+  where
+    rest = drop 3
+
+-- TODO: verify the functions below, they have to go in another module
 -- given two TypedGraphMorphism f : A -> B and g : A -> C it induces a Morphism f : B -> C
 initialMorphism :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 initialMorphism f g =

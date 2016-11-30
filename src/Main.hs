@@ -197,7 +197,7 @@ myc = coreObject myprocess
 
 fs = sourcesCoproduct [getDer]
 gs = allCoproducts [getDer]
-(g1,g2,g3) = groupMorphisms gs
+--(g1,g2,g3) = groupMorphisms gs
 
 
 myc2 = calculateProcess [getDer]
