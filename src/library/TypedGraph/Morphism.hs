@@ -27,6 +27,7 @@ module TypedGraph.Morphism (
     , createNodeOnCodomain
     , updateEdgeRelation
     , updateNodeRelation
+    , untypedUpdateNodeRelation
     , orphanTypedNodes
     , orphanTypedEdges
 ) where

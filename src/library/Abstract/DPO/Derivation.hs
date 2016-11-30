@@ -1,11 +1,14 @@
 module Abstract.DPO.Derivation
 ( Derivation(..)
 , generateDerivation
+, getK
+, getObjects
 )
 
 where
 
 import Abstract.DPO
+import Abstract.Morphism
 
 data Derivation m = Derivation
   { production :: Production m
@@ -28,3 +31,13 @@ generateDerivation conf match rule =
   if satisfiesRewritingConditions conf rule match then
      Just (generateDerivationUnsafe match rule)
   else Nothing
+
+getK :: (DPO m) =>  Derivation m -> Obj m
+getK = domain . getLHS . production
+
+getObjects :: (DPO m) => Derivation m -> [Obj m]
+getObjects ds =
+  let l = codomain . getLHS . production
+      k =   domain . getLHS . production
+      r = codomain . getRHS . production
+   in [l ds ,k ds,r ds]
