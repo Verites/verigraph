@@ -3,7 +3,6 @@ module TypedGraph.GraphProcess
 , calculateProcess
 , sourcesCoproduct
 , allCoproducts
-, induceMorphism
 , groupMorphisms
 )
 
@@ -67,7 +66,7 @@ calculateProcess ds =
       gs = allCoproducts ds
       gs' = reduce gs
       (g1s, g2s, g3s) = groupMorphisms gs'
-      h = induceMorphism fs
+      h = induceSpanMorphism fs
       h1 = h $ zipWith compose ls g1s
       h2 = h g2s
       h3 = h $ zipWith compose rs g3s
@@ -102,36 +101,3 @@ reduce [] = []
 reduce fs = (head fs, fs !! 1, fs !! 2) : reduce (rest fs)
   where
     rest = drop 3
-
--- TODO: verify the functions below, they have to go in another module
--- given two TypedGraphMorphism f : A -> B and g : A -> C it induces a Morphism f : B -> C
-initialMorphism :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
-initialMorphism f g =
-  let typedB = codomain f
-      typedC = codomain g
-      b = domain typedB
-      c = domain typedC
-  in buildTypedGraphMorphism typedB typedC (empty b c)
-
-updateRelation :: TypedGraphMorphism a b ->  (TypedGraphMorphism a b, TypedGraphMorphism a b) -> TypedGraphMorphism a b
-updateRelation new (f,g) =
-  let nodes = nodesFromDomain f
-      edges = edgesFromDomain f
-      nodeOnB = TGM.applyNodeUnsafe f
-      nodeOnC = TGM.applyNodeUnsafe g
-      edgeOnB = TGM.applyEdgeUnsafe f
-      edgeOnC = TGM.applyEdgeUnsafe g
-      newNodeRelation = map (\n -> (nodeOnB n, nodeOnC n)) nodes
-      newEdgeRelation = map (\e -> (edgeOnB e, edgeOnC e)) edges
-      updateN (s,t) = untypedUpdateNodeRelation s t
-      updateE (s,t) = TGM.updateEdgeRelation s t
-      n' = foldr updateN new newNodeRelation
-   in foldr updateE n' newEdgeRelation
-
-induceMorphism :: [TypedGraphMorphism a b] ->  [TypedGraphMorphism a b] -> TypedGraphMorphism a b
-induceMorphism fs gs
-  | Prelude.null fs = error "can not induce morphism from empty list of morphisms"
-  | length fs /= length gs = error "morphisms list should have the same length"
-  | otherwise =
-    let h = initialMorphism (head fs) (head gs)
-     in foldl updateRelation h (zip fs gs)

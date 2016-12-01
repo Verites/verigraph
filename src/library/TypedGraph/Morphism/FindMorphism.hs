@@ -1,4 +1,7 @@
-module TypedGraph.Morphism.FindMorphism where
+module TypedGraph.Morphism.FindMorphism
+( induceSpanMorphism
+)
+where
 
 import           Abstract.AdhesiveHLR
 import           Abstract.Morphism        as M
@@ -10,6 +13,43 @@ import           TypedGraph.Morphism.Core
 import           Data.List                as L
 import           Data.Maybe
 
+-- | Given two lists of TypedGraphMorphism @fi : Ai -> B@ and @gi : Ai -> C@ it induces a Morphism
+-- @h : B -> C@ shuch that @h . fi = gi@ for all @i@. The lists must have the same length and must
+-- not be empty.
+induceSpanMorphism :: [TypedGraphMorphism a b] ->  [TypedGraphMorphism a b] -> TypedGraphMorphism a b
+induceSpanMorphism fs gs
+  | Prelude.null fs = error "can not induce morphism from empty list of morphisms"
+  | length fs /= length gs = error "morphisms list should have the same length"
+  | otherwise =
+    let h = initialSpanMorphism (head fs) (head gs)
+     in foldl buildSpanRelation h (zip fs gs)
+
+-- | given two TypedGraphMorphism @f : A -> B@ and @g : A -> C@ it builds a TypedGraphMorphism @h : B -> C@
+-- with an empty mapping between the objects (auxiliary function)
+initialSpanMorphism :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+initialSpanMorphism f g =
+  let typedB = codomain f
+      typedC = codomain g
+      b = domain typedB
+      c = domain typedC
+  in buildTypedGraphMorphism typedB typedC (GM.empty b c)
+
+-- | given a TypedGraphMorphism @h : B -> C@ and a tuple of TypedGraphMorphism (f : A -> B, g : A -> C)
+-- it updates @h@ with a mapping from @B to C@ where @h . f = g@ (auxiliary function)
+buildSpanRelation :: TypedGraphMorphism a b ->  (TypedGraphMorphism a b, TypedGraphMorphism a b) -> TypedGraphMorphism a b
+buildSpanRelation new (f,g) =
+  let nodes = nodesFromDomain f
+      edges = edgesFromDomain f
+      nodeOnB = applyNodeUnsafe f
+      nodeOnC = applyNodeUnsafe g
+      edgeOnB = applyEdgeUnsafe f
+      edgeOnC = applyEdgeUnsafe g
+      newNodeRelation = map (\n -> (nodeOnB n, nodeOnC n)) nodes
+      newEdgeRelation = map (\e -> (edgeOnB e, edgeOnC e)) edges
+      updateN (s,t) = untypedUpdateNodeRelation s t
+      updateE (s,t) = updateEdgeRelation s t
+      n' = foldr updateN new newNodeRelation
+   in foldr updateE n' newEdgeRelation
 
 instance FindMorphism (TypedGraphMorphism a b) where
   findMorphisms = findMatches
