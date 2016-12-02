@@ -89,7 +89,7 @@ getAll ds = NE.fromList $ getAllBottomObjects ds
 allCoproducts :: [Derivation (TypedGraphMorphism a b)] -> [TypedGraphMorphism a b]
 allCoproducts = calculateNCoproduct . getAll
 
-groupMorphisms :: [(TypedGraphMorphism a b,TypedGraphMorphism a b,TypedGraphMorphism a b)] -> ([TypedGraphMorphism a b],[TypedGraphMorphism a b],[TypedGraphMorphism a b])
+groupMorphisms :: [(m,m,m)] -> ([m],[m],[m])
 groupMorphisms [] = ([],[],[])
 groupMorphisms fs = (f1,f2,f3)
   where
@@ -97,7 +97,7 @@ groupMorphisms fs = (f1,f2,f3)
     f2 = concatMap (\(_,b,_) -> [b]) fs
     f3 = concatMap (\(_,_,c) -> [c]) fs
 
-reduce :: [TypedGraphMorphism a b] -> [(TypedGraphMorphism a b,TypedGraphMorphism a b,TypedGraphMorphism a b)]
+reduce :: [m] -> [(m,m,m)]
 reduce fs
   | length fs < 3 = []
   | otherwise = (head fs, fs !! 1, fs !! 2) : reduce (rest fs)
