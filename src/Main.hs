@@ -198,7 +198,7 @@ graph'' = GM.buildGraphMorphism graph' grafotipo [(3,4),(2,3),(1,1),(4,2)] [(1,1
 meu :: GM.GraphMorphism a b -> GM.GraphMorphism a b -> [TypedGraphMorphism a b]
 meu = findMonomorphisms
 
-myconfig = DPOConfig MonoMatches MonomorphicNAC
+myconfig = MorphismsConfig MonoMatches MonomorphicNAC
 
 meumatch = head $ meu tlr1 graph''
 meumatch' = head $ meu tlr2 g1
