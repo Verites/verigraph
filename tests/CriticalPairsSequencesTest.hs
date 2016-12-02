@@ -12,8 +12,9 @@ main :: IO ()
 main = do
   let fileName = "tests/grammars/teseRodrigo.ggx"
       dpoConf = MorphismsConfig MonoMatches PartiallyMonomorphicNAC
-  (gg,_) <- XML.readGrammar fileName False dpoConf
+  (gg,_,_) <- XML.readGrammar fileName False dpoConf
 
+  --let rules = map snd (GG.rules gg)
   let rules = map snd (GG.rules gg)
 
   runTests

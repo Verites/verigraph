@@ -46,7 +46,7 @@ deletedEdges r = TGM.orphanTypedEdges (getLHS r)
 createdEdges :: GraphRule a b -> [G.EdgeId]
 createdEdges r = TGM.orphanTypedEdges (getRHS r)
 
--- | Returns a empty GraphRule
+-- | Returns an empty GraphRule
 emptyGraphRule :: Graph a b -> Production (TypedGraphMorphism a b)
 emptyGraphRule typegraph = emptyRule
   where
@@ -55,7 +55,7 @@ emptyGraphRule typegraph = emptyRule
     emptyTGM = idMap emptyGM emptyGM
     emptyRule = buildProduction emptyTGM emptyTGM []
 
--- | Checks if is a null rule
+-- | Checks if it is a null rule
 nullGraphRule :: GraphRule a b -> Bool
 nullGraphRule rule = null l && null k && null r
   where

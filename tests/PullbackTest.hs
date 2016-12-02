@@ -35,7 +35,7 @@ main =
 test1 dpoConf fileName alg =
   TestCase $
     do
-      (gg,_) <- XML.readGrammar fileName False dpoConf
+      (gg,_,_) <- XML.readGrammar fileName False dpoConf
 
       let rules = map snd (GG.rules gg)
           analysisDU = pairwiseCompare (isIndependent alg DeleteUse dpoConf) rules

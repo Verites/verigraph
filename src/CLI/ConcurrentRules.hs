@@ -56,7 +56,7 @@ execute :: GlobalOptions -> Options -> IO ()
 execute globalOpts opts = do
     let dpoConf = morphismsConf globalOpts
 
-    (gg,_) <- XML.readGrammar (inputFile globalOpts) (useConstraints globalOpts) dpoConf
+    (gg,gg2,_) <- XML.readGrammar (inputFile globalOpts) (useConstraints globalOpts) dpoConf
     ggName <- XML.readGGName (inputFile globalOpts)
     names <- XML.readNames (inputFile globalOpts)
     sequences <- XML.readSequences gg (inputFile globalOpts)
@@ -70,8 +70,8 @@ execute globalOpts opts = do
       when (null rules)
         (putStrLn $ "No concurrent rules were found for rule sequence '" ++ name ++ "'")
 
-    let gg' = GG.graphGrammar (GG.initialGraph gg) [] (GG.rules gg ++ concat newRules) []
-    GW.writeGrammarFile gg' ggName names (outputFile opts)
+    let gg' = GG.grammar (GG.start gg) [] (GG.rules gg ++ concat newRules)
+    GW.writeGrammarFile (gg',gg2) ggName names (outputFile opts)
 
 
 makeAllConcurrentRules :: CRDependencies -> MorphismsConfig -> [Constraint (TypedGraphMorphism a b)] -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]

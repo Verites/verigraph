@@ -29,6 +29,7 @@ library
   exposed-modules:     Abstract.AdhesiveHLR
                        Abstract.Cardinality
                        Abstract.Cocomplete
+                       Abstract.Constraint
                        Abstract.DPO
                        Abstract.DPO.Derivation
                        Abstract.DPO.Process
