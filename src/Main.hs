@@ -175,8 +175,25 @@ l1 = buildTypedGraphMorphism tkr1 tlr1 kr1_lr1
 kr1_rr1 = GM.buildGraphMorphism kr1 rr1 [(24,34),(23,33),(21,31)] []
 r1 = buildTypedGraphMorphism tkr1 trr1 kr1_rr1
 
-graph' = build [1,2,3,4] [(1,2,1)]
-graph'' = GM.buildGraphMorphism graph' grafotipo [(3,4),(2,3),(1,1),(4,2)] [(1,1)]
+{-getDATA-}
+lr2 = build [42,43,44] [(44,42,44),(45,43,44)]
+kr2 = build [52,53,54] [(55,53,54)]
+rr2 = build [62,63,64] [(65,63,64),(63,62,63)]
+
+--tipagem
+tlr2 = GM.buildGraphMorphism lr2 grafotipo [(44,4),(43,3),(42,2)] [(44,4),(45,5)]
+tkr2 = GM.buildGraphMorphism kr2 grafotipo [(54,4),(53,3),(52,2)] [(55,5)]
+trr2 = GM.buildGraphMorphism rr2 grafotipo [(64,4),(63,3),(62,2)] [(65,5),(63,3)]
+
+--span
+kr2_lr2 = GM.buildGraphMorphism kr2 lr2 [(52,42),(53,43),(54,44)] [(55,45)]
+l2 = buildTypedGraphMorphism tkr2 tlr2 kr2_lr2
+
+kr2_rr2 = GM.buildGraphMorphism kr2 rr2 [(54,64),(53,63),(52,62)] [(55,65)]
+r2 = buildTypedGraphMorphism tkr2 trr2 kr2_rr2
+
+graph' = build [1,2,3,4] [(1,2,1),(4,4,3)]
+graph'' = GM.buildGraphMorphism graph' grafotipo [(3,4),(2,3),(1,1),(4,2)] [(1,1),(4,4)]
 
 meu :: GM.GraphMorphism a b -> GM.GraphMorphism a b -> [TypedGraphMorphism a b]
 meu = findMonomorphisms
@@ -184,23 +201,31 @@ meu = findMonomorphisms
 myconfig = DPOConfig MonoMatches MonomorphicNAC
 
 meumatch = head $ meu tlr1 graph''
+meumatch' = head $ meu tlr2 g1
 
 myrule = buildProduction l1 r1 []
+myrule' = buildProduction l2 r2 []
 
 der = generateDerivation myconfig meumatch myrule
 getDer = fromJust der
+
+der' = generateDerivation myconfig meumatch' myrule'
+getDer' = fromJust der'
+
+g1 = codomain $ comatch getDer
+
 myprocess = singleProcess getDer
 myps = productions myprocess
 myc = coreObject myprocess
 
 -- graph process testes
 
-fs = sourcesCoproduct [getDer]
-gs = allCoproducts [getDer]
---(g1,g2,g3) = groupMorphisms gs
+fs = sourcesCoproduct derivations
+gs = allCoproducts derivations
 
+derivations = [getDer,getDer']
 
-myc2 = calculateProcess [getDer]
+myc2 = calculateProcess derivations
 
 {--
 --nac

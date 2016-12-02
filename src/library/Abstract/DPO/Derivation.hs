@@ -3,8 +3,8 @@ module Abstract.DPO.Derivation
 , generateDerivation
 , getDObjects
 , getAllBottomObjects
-, getLefts
-, getRights
+, getLeftBottomObjects
+, getRightBottomObjects
 )
 
 where
@@ -36,15 +36,20 @@ generateDerivation conf match rule =
 getDObjects :: (DPO m) =>  [Derivation m] -> [Obj m]
 getDObjects = fmap (domain . dToG)
 
-getLefts :: [Derivation m] -> [m]
-getLefts = fmap dToG
+getLeftBottomObjects :: [Derivation m] -> [m]
+getLeftBottomObjects = fmap dToG
 
-getRights :: [Derivation m] -> [m]
-getRights = fmap dToH
+getRightBottomObjects :: [Derivation m] -> [m]
+getRightBottomObjects = fmap dToH
 
-getAllBottomObjects :: (DPO m) => Derivation m -> [Obj m]
-getAllBottomObjects ds =
+getBottomObjects :: (DPO m) => Derivation m -> (Obj m,Obj m,Obj m)
+getBottomObjects d =
   let l = codomain . dToG
       k =   domain . dToG
       r = codomain . dToH
-   in [l ds, k ds, r ds]
+   in (l d, k d, r d)
+
+getAllBottomObjects :: (DPO m) => [Derivation m] -> [Obj m]
+getAllBottomObjects [] = error "can not return objects of an empty derivation"
+getAllBottomObjects [d] = (\(a,b,c) -> [a,b,c]) $ getBottomObjects d
+getAllBottomObjects (d:ds) = (\(a,b,_) -> [a,b]) (getBottomObjects d) ++ getAllBottomObjects ds

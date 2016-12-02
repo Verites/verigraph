@@ -4,6 +4,7 @@ module TypedGraph.GraphProcess
 , sourcesCoproduct
 , allCoproducts
 , groupMorphisms
+, reduce
 )
 
 where
@@ -61,8 +62,8 @@ calculateProcess :: [Derivation (TypedGraphMorphism a b)] -> Process(TypedGraphM
 calculateProcess [] = error "Can not calculate process for empty list of derivations"
 calculateProcess ds =
   let fs = sourcesCoproduct ds
-      ls = getLefts ds
-      rs = getRights ds
+      ls = getLeftBottomObjects ds
+      rs = getRightBottomObjects ds
       gs = allCoproducts ds
       gs' = reduce gs
       (g1s, g2s, g3s) = groupMorphisms gs'
@@ -83,7 +84,7 @@ sourcesCoproduct :: [Derivation (TypedGraphMorphism a b)] -> [TypedGraphMorphism
 sourcesCoproduct = calculateNCoproduct . getSources
 
 getAll :: [Derivation (TypedGraphMorphism a b)] -> NE.NonEmpty (GraphMorphism a b)
-getAll ds = NE.fromList $ concatMap getAllBottomObjects ds
+getAll ds = NE.fromList $ getAllBottomObjects ds
 
 allCoproducts :: [Derivation (TypedGraphMorphism a b)] -> [TypedGraphMorphism a b]
 allCoproducts = calculateNCoproduct . getAll
@@ -97,7 +98,8 @@ groupMorphisms fs = (f1,f2,f3)
     f3 = concatMap (\(_,_,c) -> [c]) fs
 
 reduce :: [TypedGraphMorphism a b] -> [(TypedGraphMorphism a b,TypedGraphMorphism a b,TypedGraphMorphism a b)]
-reduce [] = []
-reduce fs = (head fs, fs !! 1, fs !! 2) : reduce (rest fs)
-  where
-    rest = drop 3
+reduce fs
+  | length fs < 3 = []
+  | otherwise = (head fs, fs !! 1, fs !! 2) : reduce (rest fs)
+    where
+      rest = drop 2
