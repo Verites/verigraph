@@ -14,7 +14,7 @@ import Abstract.DPO
 import Abstract.DPO.Process
 import Abstract.DPO.Derivation
 import Abstract.Morphism
-import qualified Data.List.NonEmpty as NE
+import Data.List.NonEmpty (NonEmpty,fromList)
 import Graph.GraphMorphism
 import TypedGraph.DPO.GraphRule ()
 import TypedGraph.Graph ()
@@ -71,20 +71,20 @@ calculateProcess ds =
       h1 = h $ zipWith compose ls g1s
       h2 = h g2s
       h3 = h $ zipWith compose rs g3s
-      coEq = calculateNCoequalizer $ NE.fromList [h1,h2,h3]
+      coEq = calculateNCoequalizer $ fromList [h1,h2,h3]
       core = codomain coEq
       hs = reduce $ map (`compose` coEq) gs
       as = zip ds hs
    in Process (map retype as) core
 
-getSources :: [Derivation (TypedGraphMorphism a b)] -> NE.NonEmpty (GraphMorphism a b)
-getSources ds = NE.fromList (getDObjects ds)
+getSources :: [Derivation (TypedGraphMorphism a b)] -> NonEmpty (GraphMorphism a b)
+getSources ds = fromList (getDObjects ds)
 
 sourcesCoproduct :: [Derivation (TypedGraphMorphism a b)] -> [TypedGraphMorphism a b]
 sourcesCoproduct = calculateNCoproduct . getSources
 
-getAll :: [Derivation (TypedGraphMorphism a b)] -> NE.NonEmpty (GraphMorphism a b)
-getAll ds = NE.fromList $ getAllBottomObjects ds
+getAll :: [Derivation (TypedGraphMorphism a b)] -> NonEmpty (GraphMorphism a b)
+getAll ds = fromList $ getAllBottomObjects ds
 
 allCoproducts :: [Derivation (TypedGraphMorphism a b)] -> [TypedGraphMorphism a b]
 allCoproducts = calculateNCoproduct . getAll

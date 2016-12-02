@@ -15,7 +15,7 @@ import qualified Graph.GraphMorphism            as GM
 import           TypedGraph.Morphism            as TGM
 --import qualified TypedGraph.GraphGrammar as GG
 --import qualified XML.GGXWriter as GW
-import           TypedGraph.GraphRule
+import           TypedGraph.DPO.GraphRule
 --import System.Process
 --import System.Environment
 --import System.Exit
@@ -32,7 +32,7 @@ import           Abstract.Cardinality
 import           Data.Maybe
 import Abstract.DPO.Derivation
 import Abstract.DPO.Process
-import TypedGraph.GraphProcess
+import TypedGraph.DPO.GraphProcess
 
 --import qualified XML.GGXReader as XML
 
