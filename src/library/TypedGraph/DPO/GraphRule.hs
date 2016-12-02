@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module TypedGraph.GraphRule (
+module TypedGraph.DPO.GraphRule (
     -- * Types
       GraphRule
     , getLHS

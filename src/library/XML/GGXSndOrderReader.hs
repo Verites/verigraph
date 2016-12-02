@@ -6,8 +6,8 @@ import qualified Graph.Graph           as G
 import           Graph.GraphMorphism   as GM
 import           SndOrder.Morphism
 import           SndOrder.Rule         ()
+import           TypedGraph.DPO.GraphRule  as GR
 import           TypedGraph.Graph
-import           TypedGraph.GraphRule  as GR
 import           TypedGraph.Morphism
 import {-# SOURCE #-} XML.GGXReader -- TODO remove the dependency that causes this
 import           XML.ParsedTypes

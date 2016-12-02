@@ -10,8 +10,8 @@ import           GlobalOptions
 import           Graph.Graph             (Graph)
 import           Options.Applicative
 import qualified SndOrder.Rule           as SO
+import qualified TypedGraph.DPO.GraphRule    as GR
 import qualified TypedGraph.GraphGrammar as GG
-import qualified TypedGraph.GraphRule    as GR
 import qualified XML.GGXReader           as XML
 import qualified XML.GGXWriter           as GW
 
@@ -62,18 +62,18 @@ execute globalOpts opts = do
         gg2 = gg {GG.rules = GG.rules gg ++ newRules}
 
     putStrLn ""
-    
+
     --let r2 = snd $ head (GG.sndOrderRules gg)
     --print $ calculateCoproduct (domain (getLHS r2)) (domain (getLHS r2))
     --print $ calculateCoequalizer (getLHS r2) (getLHS r2)
-    
+
     --let r1 = snd $ head (GG.rules gg)
-    
+
     --print $ domain (GR.getRHS r1)
     --print $ codomain (GR.getRHS r1)
-    
+
     --print $ coproduct (GR.getRHS r1)
-    
+
     GW.writeGrammarFile gg2 ggName names (outputFile opts)
 
     putStrLn "Done!"

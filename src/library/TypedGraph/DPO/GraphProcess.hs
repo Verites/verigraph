@@ -1,4 +1,4 @@
-module TypedGraph.GraphProcess
+module TypedGraph.DPO.GraphProcess
 ( singleProcess
 , calculateProcess
 , sourcesCoproduct
@@ -16,8 +16,8 @@ import Abstract.DPO.Derivation
 import Abstract.Morphism
 import qualified Data.List.NonEmpty as NE
 import Graph.GraphMorphism
+import TypedGraph.DPO.GraphRule ()
 import TypedGraph.Graph ()
-import TypedGraph.GraphRule ()
 import TypedGraph.Morphism as TGM
 
 singleProcess :: Derivation (TypedGraphMorphism a b) -> Process (TypedGraphMorphism a b)

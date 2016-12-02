@@ -50,9 +50,9 @@ library
                        Logic.Ctl
                        SndOrder.Morphism
                        SndOrder.Rule
+                       TypedGraph.DPO.GraphProcess
+                       TypedGraph.DPO.GraphRule
                        TypedGraph.GraphGrammar
-                       TypedGraph.GraphProcess
-                       TypedGraph.GraphRule
                        TypedGraph.Graph
                        TypedGraph.Morphism
                        XML.GGXReader
