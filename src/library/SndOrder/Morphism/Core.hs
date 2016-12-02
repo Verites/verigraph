@@ -5,7 +5,7 @@ module SndOrder.Morphism.Core where
 import           Abstract.DPO
 import           Abstract.Morphism
 import           Abstract.Valid
-import           TypedGraph.GraphRule ()
+import           TypedGraph.DPO.GraphRule ()
 import           TypedGraph.Morphism
 
 -- | A morphism between two first order rules.

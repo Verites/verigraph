@@ -10,8 +10,8 @@ import           Abstract.AdhesiveHLR
 import           Analysis.ConcurrentRules
 import           Control.Monad
 import           Options.Applicative
+import           TypedGraph.DPO.GraphRule
 import qualified TypedGraph.GraphGrammar  as GG
-import           TypedGraph.GraphRule
 import           TypedGraph.Morphism
 import qualified XML.GGXReader            as XML
 import qualified XML.GGXWriter            as GW

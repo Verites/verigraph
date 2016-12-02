@@ -1,7 +1,7 @@
 module XML.GGXReader where
 
 import qualified Graph.Graph             as G
-import           TypedGraph.GraphRule
+import           TypedGraph.DPO.GraphRule
 import           TypedGraph.Morphism
 import           TypedGraph.Graph
 import           XML.ParsedTypes

@@ -27,7 +27,7 @@ import           SndOrder.Rule
 import           Text.XML.HXT.Core       hiding (left, right)
 import           TypedGraph.Graph
 import qualified TypedGraph.GraphGrammar as GG
-import           TypedGraph.GraphRule    as GR
+import           TypedGraph.DPO.GraphRule    as GR
 import           TypedGraph.Morphism
 import qualified XML.Formulas            as F
 import           XML.GGXParseIn

@@ -137,6 +137,14 @@ updateNodeRelation n1 n2 tp tgm =
                      , mapping = GM.updateNodeRelation n1 n2 (mapping tgm)
                      }
 
+-- | updates a typed graph morphism, mapping node n1 to node n2. It assumes both nodes already exist and are of the same type.
+untypedUpdateNodeRelation :: NodeId -> NodeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+untypedUpdateNodeRelation n1 n2 tgm =
+  TypedGraphMorphism { getDomain = domain tgm
+                     , getCodomain = codomain tgm
+                     , mapping = GM.updateNodeRelation n1 n2 (mapping tgm)
+                     }
+
 -- | updates a typed graph morphism, mapping edge e1 to edge e2. It assumes both edges already exist.
 updateEdgeRelation :: EdgeId -> EdgeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 updateEdgeRelation e1 e2 tgm =

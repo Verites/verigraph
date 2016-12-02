@@ -9,8 +9,8 @@ import           Abstract.DPO
 import           Abstract.Valid
 import           Graph.Graph          as G
 import           SndOrder.Morphism    as SO
+import           TypedGraph.DPO.GraphRule
 import           TypedGraph.Graph
-import           TypedGraph.GraphRule
 import           TypedGraph.Morphism
 
 import           SndOrder.Rule.Core
@@ -28,7 +28,7 @@ instance DPO (RuleMorphism a b) where
       satisfiesGluingConditions conf rule n &&
       satisfiesNACs conf ruleWithOnlyMinimalSafetyNacs n]
     where
-      ruleWithOnlyMinimalSafetyNacs = 
+      ruleWithOnlyMinimalSafetyNacs =
         buildProduction (getLHS rule) (getRHS rule) (minimalSafetyNacs conf rule)
 
   isPartiallyMonomorphic m l =
@@ -51,7 +51,7 @@ data NodeOrEdge = Node NodeId | Edge EdgeId deriving (Show)
 -- If the nacs that going to be added not satisfies the others nacs, then it do not need to be added.
 addMinimalSafetyNacs :: MorphismsConfig -> SndOrderRule a b -> SndOrderRule a b
 addMinimalSafetyNacs conf sndRule =
-  buildProduction 
+  buildProduction
     (getLHS sndRule)
     (getRHS sndRule)
     (getNACs sndRule ++
@@ -92,7 +92,7 @@ newNacsProb side sndRule = nacNodes ++ nacEdges
     sa = getSide ruleL
     sb = getSide ruleK
     sc = getSide ruleR
-    
+
     nodeProb = [applyNode f n |
                  n <- nodesFromCodomain sb
                , isOrphanNode sa (applyNode f n)
@@ -155,13 +155,13 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
          (Edge e) -> createEdges e e' e'' (tpEdge e)
                         (src e) (typeSrc e) (srcInK e) (srcInR e)
                         (tgt e) (typeTgt e) (tgtInK e) (tgtInR e))
-    
+
     nacRule = buildProduction updateLeft updateRight []
     mapL = idMap graphL (codomain updateLeft)
     mapK = idMap graphK (domain updateLeft)
     mapR = idMap graphR (codomain updateRight)
 
-    createNodes x x' x'' tp = 
+    createNodes x x' x'' tp =
       case sideChoose of
         LeftSide -> (updateSide1, updateSide2Map)
         RightSide -> (updateSide2Map, updateSide1)
@@ -197,22 +197,22 @@ newNacsPair sideChoose sndRule =
   where
     applyNode = applyNodeUnsafe
     applyEdge = applyEdgeUnsafe
-    
+
     ruleL = codomain (getLHS sndRule)
     ruleK = domain (getLHS sndRule)
     ruleR = codomain (getRHS sndRule)
-    
+
     (mapping, getSide) =
       case sideChoose of
         LeftSide -> (SO.mappingLeft, getLHS)
         RightSide -> (SO.mappingRight, getRHS)
-    
+
     fl = mapping (getLHS sndRule)
     gl = mapping (getRHS sndRule)
-    
+
     lb = getSide ruleK
     lc = getSide ruleR
-    
+
     pairs apply isOrphan list =
       [(apply fl x, apply fl y) |
           x <- list $ domain $ codomain lb
@@ -221,29 +221,29 @@ newNacsPair sideChoose sndRule =
         , isOrphan lb x
         , not (isOrphan lc (apply gl x))
         , not (isOrphan lc (apply gl y))]
-    
+
     pairsNodes = pairs applyNode isOrphanNode nodes
     pairsEdges = pairs applyEdge isOrphanEdge edges
-    
+
     epis = calculateAllPartitions (codomain (getSide ruleL))
-    
+
     filtered apply pairs = [e | e <- epis, any (\(a,b) -> (apply e) a == (apply e) b) pairs]
-    
+
     retNodes = filtered applyNode pairsNodes
     retEdges = filtered applyEdge pairsEdges
-    
+
     createNac e = if isValid n then Just n else Nothing
       where
         n = case sideChoose of
               LeftSide -> nLeft
               RightSide -> nRight
-        
+
         nLeft = SO.ruleMorphism ruleL ruleNacLeft e mapK mapR
         nRight = SO.ruleMorphism ruleL ruleNacRight mapL mapK e
-        
+
         ruleNacLeft = buildProduction (compose (getLHS ruleL) e) (getRHS ruleL) []
         ruleNacRight = buildProduction (getLHS ruleL) (compose (getRHS ruleL) e) []
-        
+
         mapL = idMap (codomain (getLHS ruleL)) (codomain (getLHS ruleL))
         mapK = idMap (domain (getLHS ruleL)) (domain (getLHS ruleL))
         mapR = idMap (codomain (getRHS ruleL)) (codomain (getRHS ruleL))

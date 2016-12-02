@@ -27,12 +27,14 @@ module TypedGraph.Morphism (
     , createNodeOnCodomain
     , updateEdgeRelation
     , updateNodeRelation
+    , untypedUpdateNodeRelation
     , orphanTypedNodes
     , orphanTypedEdges
+    , induceSpanMorphism
 ) where
 
 import           TypedGraph.Morphism.AdhesiveHLR  (checkDeletion)
 import           TypedGraph.Morphism.Cocomplete   ()
 import           TypedGraph.Morphism.Core
 import           TypedGraph.Morphism.EpiPairs     ()
-import           TypedGraph.Morphism.FindMorphism ()
+import           TypedGraph.Morphism.FindMorphism (induceSpanMorphism)

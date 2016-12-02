@@ -30,6 +30,8 @@ library
                        Abstract.Cardinality
                        Abstract.Cocomplete
                        Abstract.DPO
+                       Abstract.DPO.Derivation
+                       Abstract.DPO.Process
                        Abstract.DPO.StateSpace
                        Abstract.Morphism
                        Abstract.Relation
@@ -48,13 +50,15 @@ library
                        Logic.Ctl
                        SndOrder.Morphism
                        SndOrder.Rule
+                       TypedGraph.DPO.GraphProcess
+                       TypedGraph.DPO.GraphRule
                        TypedGraph.GraphGrammar
-                       TypedGraph.GraphRule
                        TypedGraph.Graph
                        TypedGraph.Morphism
                        XML.GGXReader
                        XML.GGXWriter
   other-modules:
+                       Abstract.DPO.Core
                        Analysis.DiagramAlgorithms
                        Analysis.EpimorphicPairs
                        Equivalence.EquivalenceClasses

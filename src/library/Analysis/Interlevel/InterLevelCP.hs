@@ -16,7 +16,7 @@ import           Graph.GraphMorphism  hiding (createEdgeOnCodomain,
 import           SndOrder.Morphism
 import           SndOrder.Rule
 import           TypedGraph.Graph
-import           TypedGraph.GraphRule
+import           TypedGraph.DPO.GraphRule
 import           TypedGraph.Morphism
 import           TypedGraph.Subgraph
 

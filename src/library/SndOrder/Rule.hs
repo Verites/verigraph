@@ -11,7 +11,7 @@ import           Abstract.DPO
 import           SndOrder.Rule.Core
 import           SndOrder.Rule.DPO
 
-import           TypedGraph.GraphRule
+import           TypedGraph.DPO.GraphRule
 
 -- | Receives a function that works with a second order and a first order rule.
 -- Apply this function on all possible combinations of rules.
