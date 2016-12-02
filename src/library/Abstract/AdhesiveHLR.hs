@@ -15,7 +15,7 @@ module Abstract.AdhesiveHLR
   , MatchRestriction(..)
   , matchRestrictionToMorphismType
   , NacSatisfaction(..)
-  , DPOConfig(..)
+  , MorphismsConfig(..)
   ) where
 
 import           Abstract.Cocomplete
@@ -137,7 +137,7 @@ class Morphism m => EpiPairs m where
   -- The second flag indicates that the other morphism is monomorphic
   --
   -- FIXME: nacs don't belong in this module
-  createJointlyEpimorphicPairsFromNAC :: DPOConfig -> Obj m -> m -> [(m, m)]
+  createJointlyEpimorphicPairsFromNAC :: MorphismsConfig -> Obj m -> m -> [(m, m)]
 
   -- Given the morphisms /f : X -> A/ and /g : X -> B/ with the same domain,
   -- obtain all jointly epimorphic pairs /(f', g')/ such that the following
@@ -175,7 +175,7 @@ matchRestrictionToMorphismType AnyMatches  = GenericMorphism
 data NacSatisfaction = MonomorphicNAC | PartiallyMonomorphicNAC deriving (Eq, Show)
 
 
-data DPOConfig = DPOConfig
+data MorphismsConfig = MorphismsConfig
   { matchRestriction :: MatchRestriction
   , nacSatisfaction  :: NacSatisfaction
   }

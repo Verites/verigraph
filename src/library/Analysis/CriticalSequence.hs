@@ -101,7 +101,7 @@ getNacIndexOfCriticalSequence cs =
     Nothing      -> Nothing
 
 -- | Returns the Critical Sequences with rule names
-namedCriticalSequences :: (EpiPairs m, DPO m) => DPOConfig -> [NamedRule m] -> [NamedCriticalPairs m]
+namedCriticalSequences :: (EpiPairs m, DPO m) => MorphismsConfig -> [NamedRule m] -> [NamedCriticalPairs m]
 namedCriticalSequences conf rules =
   map (uncurry getCSs) [(a,b) | a <- rules, b <- rules]
   where
@@ -109,14 +109,14 @@ namedCriticalSequences conf rules =
 
 -- | Given two productions @p1@ and @p2@, finds the Critical sequences in which the application of @p1@
 -- enables the application of @p2@
-findTriggeringCriticalSequences :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
+findTriggeringCriticalSequences :: (EpiPairs m, DPO m) => MorphismsConfig -> Production m -> Production m -> [CriticalSequence m]
 findTriggeringCriticalSequences conf p1 p2 =
   findAllProduceUseAndRemoveDangling conf p1 p2 ++
   findAllDeleteForbid conf p1 p2
 
 -- TODO : verify if this doc is right
 -- | Given two productions @p1@ and @p2@, finds all the Critical Sequences of @p1@ and @p2@ in this order
-findCriticalSequences :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
+findCriticalSequences :: (EpiPairs m, DPO m) => MorphismsConfig -> Production m -> Production m -> [CriticalSequence m]
 findCriticalSequences conf p1 p2 =
   findAllProduceUseAndRemoveDangling conf p1 p2 ++
   findAllDeleteForbid conf p1 p2 ++
@@ -136,7 +136,7 @@ findCriticalSequences conf p1 p2 =
 -- Rule @p1@ causes a produce-use dependency with @p2@
 -- if rule @p1@ creates something that is used by @p2@.
 -- Verify the non existence of h21: L2 -> D1 such that d1 . h21 = m2'.
-findAllProduceUse :: (DPO m, EpiPairs m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
+findAllProduceUse :: (DPO m, EpiPairs m) => MorphismsConfig -> Production m -> Production m -> [CriticalSequence m]
 findAllProduceUse conf p1 p2 =
   map (\m -> CriticalSequence Nothing m Nothing ProduceUse) prodUse
   where
@@ -151,7 +151,7 @@ findAllProduceUse conf p1 p2 =
 --
 -- Rule @p1@ causes a remove-dangling dependency with @p2@
 -- if rule @p1@ deletes something that enables @p2@.
-findAllRemoveDangling :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
+findAllRemoveDangling :: (EpiPairs m, DPO m) => MorphismsConfig -> Production m -> Production m -> [CriticalSequence m]
 findAllRemoveDangling conf p1 p2 =
   map (\m -> CriticalSequence Nothing m Nothing RemoveDangling) remDang
   where
@@ -164,7 +164,7 @@ findAllRemoveDangling conf p1 p2 =
 
 -- | Tests ProduceUse and RemoveDangling for the same pairs,
 -- more efficient than deal separately.
-findAllProduceUseAndRemoveDangling :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
+findAllProduceUseAndRemoveDangling :: (EpiPairs m, DPO m) => MorphismsConfig -> Production m -> Production m -> [CriticalSequence m]
 findAllProduceUseAndRemoveDangling conf p1 p2 =
   map categorizeDependency dependencies
   where
@@ -181,14 +181,14 @@ findAllProduceUseAndRemoveDangling conf p1 p2 =
 -- | All DeleteForbid caused by the derivation of @p1@ before @r@.
 -- Rule @p1@ causes a delete-forbid dependency with @p2@ if
 -- some NAC in @p2@ turns satisfied after the aplication of @p1@
-findAllDeleteForbid :: (DPO m, EpiPairs m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
+findAllDeleteForbid :: (DPO m, EpiPairs m) => MorphismsConfig -> Production m -> Production m -> [CriticalSequence m]
 findAllDeleteForbid conf p1 p2 =
   concatMap (findDeleteForbidForNAC conf p1' p2) (zip (getNACs p2) [0..])
   where
     p1' = invertProduction conf p1
 
 -- | Check DeleteForbid for a NAC @n@ in @p2@
-findDeleteForbidForNAC :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> (m, Int) -> [CriticalSequence m]
+findDeleteForbidForNAC :: (EpiPairs m, DPO m) => MorphismsConfig -> Production m -> Production m -> (m, Int) -> [CriticalSequence m]
 findDeleteForbidForNAC conf p1' p2 nac =
   map
     (\(m',m,nac) -> CriticalSequence (Just m) m' (Just nac) DeleteForbid)
@@ -207,7 +207,7 @@ findDeleteForbidForNAC conf p1' p2 nac =
 -- Rule @p1@ causes a deliver-delete dependency with @p2@ if
 -- rule @p2@ deletes something that is used by @p2@,
 -- Verify the non existence of h12: L1 -> D2 such that d2 . h12 = m1'.
-findAllDeliverDelete :: (DPO m, EpiPairs m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
+findAllDeliverDelete :: (DPO m, EpiPairs m) => MorphismsConfig -> Production m -> Production m -> [CriticalSequence m]
 findAllDeliverDelete conf p1 p2 =
   map (\m -> CriticalSequence Nothing m Nothing DeliverDelete) delDel
   where
@@ -222,7 +222,7 @@ findAllDeliverDelete conf p1 p2 =
 --
 -- Rule @p1@ causes a deliver-delete dependency with @p2@ if
 -- rule @p2@ creates something that disables the inverse of @p1@.
-findAllDeliverDangling :: (DPO m, EpiPairs m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
+findAllDeliverDangling :: (DPO m, EpiPairs m) => MorphismsConfig -> Production m -> Production m -> [CriticalSequence m]
 findAllDeliverDangling conf p1 p2 =
   map (\m -> CriticalSequence Nothing m Nothing DeliverDangling) delDang
   where
@@ -239,14 +239,14 @@ findAllDeliverDangling conf p1 p2 =
 --
 -- Rule @p1@ causes a forbid-produce dependency with @p2@ if some
 -- NAC in right of @p1@ turns satisfied after the aplication of @p2@.
-findAllForbidProduce :: (DPO m, EpiPairs m) => DPOConfig -> Production m -> Production m -> [CriticalSequence m]
+findAllForbidProduce :: (DPO m, EpiPairs m) => MorphismsConfig -> Production m -> Production m -> [CriticalSequence m]
 findAllForbidProduce conf p1 p2 =
   concatMap (findForbidProduceForNAC conf p1' p2) (zip (getNACs p1') [0..])
     where
       p1' = invertProduction conf p1
 
 -- | Check ForbidProduce for a NAC @n@ in right of @p1@
-findForbidProduceForNAC :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> (m, Int) -> [CriticalSequence m]
+findForbidProduceForNAC :: (EpiPairs m, DPO m) => MorphismsConfig -> Production m -> Production m -> (m, Int) -> [CriticalSequence m]
 findForbidProduceForNAC conf p1' p2 nac =
   map
     (\(m,m',nac) -> CriticalSequence (Just m) m' (Just nac) ForbidProduce)

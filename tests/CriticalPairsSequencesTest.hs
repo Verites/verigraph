@@ -11,16 +11,16 @@ import           Utils
 main :: IO ()
 main = do
   let fileName = "tests/grammars/teseRodrigo.ggx"
-      dpoConf = DPOConfig MonoMatches PartiallyMonomorphicNAC
+      dpoConf = MorphismsConfig MonoMatches PartiallyMonomorphicNAC
   (gg,_) <- XML.readGrammar fileName False dpoConf
 
   let rules = map snd (GG.rules gg)
 
   runTests
-    [ testTeseRodrigo (DPOConfig MonoMatches PartiallyMonomorphicNAC) rules
-    , testTeseRodrigo (DPOConfig MonoMatches MonomorphicNAC) rules
-    , testTeseRodrigo (DPOConfig AnyMatches PartiallyMonomorphicNAC) rules
-    , testTeseRodrigo (DPOConfig AnyMatches MonomorphicNAC) rules
+    [ testTeseRodrigo (MorphismsConfig MonoMatches PartiallyMonomorphicNAC) rules
+    , testTeseRodrigo (MorphismsConfig MonoMatches MonomorphicNAC) rules
+    , testTeseRodrigo (MorphismsConfig AnyMatches PartiallyMonomorphicNAC) rules
+    , testTeseRodrigo (MorphismsConfig AnyMatches MonomorphicNAC) rules
     ]
 
 testTeseRodrigo dpoConf rules =

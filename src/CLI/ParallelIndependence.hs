@@ -41,7 +41,7 @@ sof = flag False True
 
 execute :: GlobalOptions -> Options -> IO ()
 execute globalOpts opts = do
-    let dpoConf = dpoConfig globalOpts
+    let dpoConf = morphismsConf globalOpts
         useConstrains = False
 
     (gg,_) <- XML.readGrammar (inputFile globalOpts) useConstrains dpoConf

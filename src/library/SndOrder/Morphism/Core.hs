@@ -102,4 +102,4 @@ satisfiesNACRewriting l = satisfiesGluingConditions dpoConf prod
   where
     -- Production just to test satisfiesGluingConditions, note that right side is not used.
     prod = buildProduction l l []
-    dpoConf = DPOConfig AnyMatches MonomorphicNAC
+    dpoConf = MorphismsConfig AnyMatches MonomorphicNAC

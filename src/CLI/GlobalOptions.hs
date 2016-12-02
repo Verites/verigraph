@@ -1,13 +1,13 @@
 module GlobalOptions
   ( GlobalOptions
   , globalOpts
-  , dpoConfig
+  , morphismsConf
   , verbose
   , inputFile
   , useConstraints
   ) where
 
-import           Abstract.AdhesiveHLR (DPOConfig (..), MatchRestriction (..),
+import           Abstract.AdhesiveHLR (MorphismsConfig (..), MatchRestriction (..),
                                        NacSatisfaction (..))
 import           Options.Applicative
 
@@ -20,8 +20,8 @@ data GlobalOptions = GOpts
   }
 
 
-dpoConfig :: GlobalOptions -> DPOConfig
-dpoConfig opts = DPOConfig (arbitraryMatches opts) (injectiveNacSatisfaction opts)
+morphismsConf :: GlobalOptions -> MorphismsConfig
+morphismsConf opts = MorphismsConfig (arbitraryMatches opts) (injectiveNacSatisfaction opts)
 
 
 globalOpts :: Parser GlobalOptions

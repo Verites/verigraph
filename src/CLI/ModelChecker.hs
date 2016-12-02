@@ -64,7 +64,7 @@ allOptions =
 execute :: (GlobalOptions, Options) -> IO ()
 execute (globalOpts, options) =
   do
-    let dpoConf = dpoConfig globalOpts
+    let dpoConf = morphismsConf globalOpts
 
     (grammar,_) <- XML.readGrammar (inputFile globalOpts) (useConstraints globalOpts) dpoConf
     ensureValid $ validateNamed (\name -> "Rule '"++name++"'") (rules grammar)
@@ -74,7 +74,7 @@ execute (globalOpts, options) =
 
     let
       (initialStates, stateSpace) =
-        exploreStateSpace (dpoConfig globalOpts) (maxDepth options) grammar graphs
+        exploreStateSpace (morphismsConf globalOpts) (maxDepth options) grammar graphs
 
     case formula options of
       Nothing ->
@@ -182,7 +182,7 @@ type NamedPredicate = (String, GraphRule () ())
 type Space = StateSpace (TypedGraphMorphism () ())
 
 
-exploreStateSpace :: DPOConfig -> Int -> GraphGrammar () () -> [(String, TypedGraph () ())] -> ([Int], Space)
+exploreStateSpace :: MorphismsConfig -> Int -> GraphGrammar () () -> [(String, TypedGraph () ())] -> ([Int], Space)
 exploreStateSpace conf maxDepth grammar graphs =
   let
     (productions, predicates) =

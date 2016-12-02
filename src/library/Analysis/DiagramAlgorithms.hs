@@ -42,7 +42,7 @@ import           Control.Monad
 -- something that is used by @p2@.
 --
 -- Verifies the non existence of h21: L2 -> D1 such that d1 . h21 = m2
-isDeleteUse :: DPO m => DPOConfig -> Production m -> (m, m) -> Bool
+isDeleteUse :: DPO m => MorphismsConfig -> Production m -> (m, m) -> Bool
 isDeleteUse conf p1 (m1,m2) = null h21
     where
         (_,d1) = calculatePushoutComplement m1 (getLHS p1) --gets only the morphism D1 to G
@@ -52,7 +52,7 @@ isDeleteUse conf p1 (m1,m2) = null h21
 -- produces something that disables @p2@.
 --
 -- Gets the match of @p1@ from L2 to P1, checks if satisfiesNACs and not satisfiesGluingConditions
-isProduceDangling :: DPO m => DPOConfig -> Production m -> Production m -> (m, m) -> Bool
+isProduceDangling :: DPO m => MorphismsConfig -> Production m -> Production m -> (m, m) -> Bool
 isProduceDangling conf p1 p2 (m1,m2) =
   not (null h21) && not (satisfiesGluingConditions conf p2 h21_e1) && satisfiesNACs conf p2 h21_e1
   where
@@ -63,7 +63,7 @@ isProduceDangling conf p1 p2 (m1,m2) =
 
 -- | Given the morphisms @m2: L2 -> G@ and @d1 : D1 -> G@, finds all possible @h21 : L2 -> D1@
 -- where m2 = h21 . d1
-findAllPossibleH21 :: DPO m => DPOConfig -> m -> m -> [m]
+findAllPossibleH21 :: DPO m => MorphismsConfig -> m -> m -> [m]
 findAllPossibleH21 conf m2 d1 =
   if length h21 > 1
     then error "produceDangling: non unique h21 morphism"
@@ -75,7 +75,7 @@ findAllPossibleH21 conf m2 d1 =
 
 -- | Verifies delete-use, if false verifies produce-dangling.
 -- Returns Left in the case of delete-use and Right for produce-dangling.
-deleteUseDangling :: DPO m => DPOConfig -> Production m -> Production m -> (m, m)-> Maybe (Either (m,m) (m,m))
+deleteUseDangling :: DPO m => MorphismsConfig -> Production m -> Production m -> (m, m)-> Maybe (Either (m,m) (m,m))
 deleteUseDangling conf p1 p2 (m1,m2) =
   case (null h21, dangling) of
     (True,_)     -> Just (Left (m1,m2))  -- delete use case
@@ -92,7 +92,7 @@ deleteUseDangling conf p1 p2 (m1,m2) =
 -- produces something that enables some nac of @p2@.
 --
 -- Checks produce-forbid for a NAC @n@ in @p2@
-produceForbidOneNac :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> (m, Int) -> [((m,m), (m,m), (m,Int))]
+produceForbidOneNac :: (EpiPairs m, DPO m) => MorphismsConfig -> Production m -> Production m -> (m, Int) -> [((m,m), (m,m), (m,Int))]
 produceForbidOneNac conf p1 p2 (n2,idx) = do
   let p1' = invertProduction conf p1
 
@@ -123,7 +123,7 @@ produceForbidOneNac conf p1 p2 (n2,idx) = do
 
     _ -> error "produceForbidOneNac: h21 should be unique, but isn't"
 
-findMorphisms' :: FindMorphism m => DPOConfig -> Obj m -> Obj m -> [m]
+findMorphisms' :: FindMorphism m => MorphismsConfig -> Obj m -> Obj m -> [m]
 findMorphisms' conf =
   findMorphisms (matchRestrictionToMorphismType $ matchRestriction conf)
 

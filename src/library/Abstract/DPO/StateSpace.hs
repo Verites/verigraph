@@ -70,7 +70,7 @@ data StateSpace m = SS
   { states      :: IntMap (State m) -- ^ Obtain the set of (explored) indexed states in a state space.
   , transitions :: Set (Int, Int) -- ^ Obtain the set of (explored) transitions in a state space.
   , uid         :: Int -- ^ Provides an unused state index.
-  , dpoConfig   :: DPOConfig -- ^ Obtain the configuration of DPO semantics for the state space.
+  , morphismsConf   :: MorphismsConfig -- ^ Obtain the configuration of DPO semantics for the state space.
   , productions :: [Production m] -- ^ Obtain the productions of the HLR system of the state space.
   , predicates  :: [(String, Production m)] -- ^ Obtain the predicates of the state space.
   }
@@ -82,7 +82,7 @@ type State m = (Obj m, [String])
 
 -- | An empty state space for the HLR system defined by the given productions, with the given
 -- configuration of the DPO semantics.
-empty :: DPOConfig -> [Production m] -> [(String, Production m)] -> StateSpace m
+empty :: MorphismsConfig -> [Production m] -> [(String, Production m)] -> StateSpace m
 empty = SS IntMap.empty Set.empty 0
 
 
@@ -155,9 +155,9 @@ execStateSpaceBuilder =
 
 
 -- | Gets the configuration of DPO semantics for this builder.
-getDpoConfig :: StateSpaceBuilder m DPOConfig
+getDpoConfig :: StateSpaceBuilder m MorphismsConfig
 getDpoConfig =
-  Monad.gets dpoConfig
+  Monad.gets morphismsConf
 
 
 -- | Gets the productions of the HLR system being explored in this builder.

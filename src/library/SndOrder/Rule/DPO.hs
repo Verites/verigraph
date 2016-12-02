@@ -49,7 +49,7 @@ data NodeOrEdge = Node NodeId | Edge EdgeId deriving (Show)
 
 -- | Adds the minimal safety nacs needed to this production always produce a second order rule.
 -- If the nacs that going to be added not satisfies the others nacs, then it do not need to be added.
-addMinimalSafetyNacs :: DPOConfig -> SndOrderRule a b -> SndOrderRule a b
+addMinimalSafetyNacs :: MorphismsConfig -> SndOrderRule a b -> SndOrderRule a b
 addMinimalSafetyNacs conf sndRule =
   buildProduction 
     (getLHS sndRule)
@@ -58,7 +58,7 @@ addMinimalSafetyNacs conf sndRule =
      filter (satisfiesNACs conf sndRule) (minimalSafetyNacs conf sndRule))
 
 -- | Generates the minimal safety NACs of a 2-rule
-minimalSafetyNacs :: DPOConfig -> SndOrderRule a b -> [RuleMorphism a b]
+minimalSafetyNacs :: MorphismsConfig -> SndOrderRule a b -> [RuleMorphism a b]
 minimalSafetyNacs conf sndRule =
   newNacsProb LeftSide sndRule ++
   newNacsProb RightSide sndRule ++

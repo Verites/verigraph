@@ -11,8 +11,8 @@ tests log n = [all (== n) list ~=? True]
 main :: IO ()
 main = do
   let fileName = "tests/grammars/nacs2rule.ggx"
-      dpoConf1 = DPOConfig MonoMatches MonomorphicNAC
-      dpoConf2 = DPOConfig AnyMatches MonomorphicNAC
+      dpoConf1 = MorphismsConfig MonoMatches MonomorphicNAC
+      dpoConf2 = MorphismsConfig AnyMatches MonomorphicNAC
   (_,log1) <- XML.readGrammar fileName False dpoConf1
   (_,log2) <- XML.readGrammar fileName False dpoConf2
 

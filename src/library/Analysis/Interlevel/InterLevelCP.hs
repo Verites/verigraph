@@ -27,7 +27,7 @@ data InterLevelCP a b = InterLevelCP {
   } deriving (Eq,Show)
 
 -- | Matches the second order rule with the first order, and calls theirs critical pairs
-interLevelCP :: DPOConfig -> (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String,String,Int,InterLevelCP a b)]
+interLevelCP :: MorphismsConfig -> (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String,String,Int,InterLevelCP a b)]
 interLevelCP conf (sndName, sndRule) (fstName, fstRule) =
   map (\((x,y,z),w) -> (x,y,z,w)) unformattedConflicts
 
@@ -45,7 +45,7 @@ interLevelCP conf (sndName, sndRule) (fstName, fstRule) =
 -- | Calculates the second order rewriting,
 -- defines the dangling extension for L and L'',
 -- gets all relevant graphs from L
-interLevelConflictOneMatch :: DPOConfig -> SndOrderRule a b -> RuleMorphism a b -> [TypedGraphMorphism a b]
+interLevelConflictOneMatch :: MorphismsConfig -> SndOrderRule a b -> RuleMorphism a b -> [TypedGraphMorphism a b]
 interLevelConflictOneMatch conf sndRule match = m0s
   where
     sndOrderL = getLHS sndRule
@@ -80,14 +80,14 @@ removeDuplicated = nubBy (\x y -> not $ Prelude.null $ find x y)
     find = findMorphisms Isomorphism
 
 -- | For a relevant graph, gets all matches and check conflict
-allILCP :: DPO m => DPOConfig -> Production m -> Production m -> m -> m -> Obj m -> [m]
+allILCP :: DPO m => MorphismsConfig -> Production m -> Production m -> m -> m -> Obj m -> [m]
 allILCP conf p p'' fl gl ax = filter conflicts validMatches
   where
     validMatches = findApplicableMatches conf p ax
     conflicts = ilCP conf fl gl p''
 
 -- | For a m0, checks if exists a conflicting m''0
-ilCP :: DPO m => DPOConfig -> m -> m -> Production m -> m -> Bool
+ilCP :: DPO m => MorphismsConfig -> m -> m -> Production m -> m -> Bool
 ilCP conf fl gl p'' m0 = Prelude.null validM0''-- or all (==False) (map (\m'' -> satsGluing inj bigL'' m'') validM0'') --thesis def
   where
     matchesM0'' = findApplicableMatches conf p'' (codomain m0)
@@ -99,7 +99,7 @@ ilCP conf fl gl p'' m0 = Prelude.null validM0''-- or all (==False) (map (\m'' ->
     --validM0'' = filter (\m0'' -> not ((validMatch m0'') && (commutes m0''))) matchesM0''
     validM0'' = filter (\m0'' -> commutes m0'' && validMatch m0'') matchesM0''
 
-relevantMatches :: DPOConfig -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
+relevantMatches :: MorphismsConfig -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
 --relevantMatches inj dangFl dangGl = concatMap (\ax -> partitions inj (codomain ax)) axs
 relevantMatches conf dangFl dangGl = concatMap (createAllSubobjects matchInjective) axs
   where

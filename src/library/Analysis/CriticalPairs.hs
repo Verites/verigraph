@@ -96,7 +96,7 @@ getNacIndexOfCriticalPair criticalPair =
     Nothing      -> Nothing
 
 -- | Returns the Critical Pairs with rule names
-namedCriticalPairs :: (EpiPairs m, DPO m) => DPOConfig -> [NamedRule m] -> [NamedCriticalPairs m]
+namedCriticalPairs :: (EpiPairs m, DPO m) => MorphismsConfig -> [NamedRule m] -> [NamedCriticalPairs m]
 namedCriticalPairs conf namedRules =
   map (uncurry getCPs) [(a,b) | a <- namedRules, b <- namedRules]
     where
@@ -104,14 +104,14 @@ namedCriticalPairs conf namedRules =
         (n1, n2, findCriticalPairs conf r1 r2)
 
 -- TODO: Use this as an auxiliary function to optimize the search for critical pairs
-findPotentialCriticalPairs :: (DPO m, EpiPairs m) => DPOConfig -> Production m -> Production m -> [(m, m)]
+findPotentialCriticalPairs :: (DPO m, EpiPairs m) => MorphismsConfig -> Production m -> Production m -> [(m, m)]
 findPotentialCriticalPairs conf p1 p2 = satisfyingPairs
   where
     pairs = createJointlyEpimorphicPairsFromCodomains (matchRestriction conf) (getLHS p1) (getLHS p2)
     satisfyingPairs = filter (\(m1,m2) -> satisfyRewritingConditions conf (p1,m1) (p2,m2)) pairs
 
 -- | Finds all Critical Pairs between two given Productions
-findCriticalPairs :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> [CriticalPair m]
+findCriticalPairs :: (EpiPairs m, DPO m) => MorphismsConfig -> Production m -> Production m -> [CriticalPair m]
 findCriticalPairs conf p1 p2 =
   findAllDeleteUseAndProduceDangling conf p1 p2 ++ findAllProduceForbid conf p1 p2
 
@@ -121,7 +121,7 @@ findCriticalPairs conf p1 p2 =
 
 -- | All DeleteUse caused by the derivation of @p1@ before @p2@.
 -- It occurs when @p1@ deletes something used by @p2@.
-findAllDeleteUse :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> [CriticalPair m]
+findAllDeleteUse :: (EpiPairs m, DPO m) => MorphismsConfig -> Production m -> Production m -> [CriticalPair m]
 findAllDeleteUse conf p1 p2 =
   map (\m -> CriticalPair m Nothing Nothing DeleteUse) deleteUsePairs
   where
@@ -132,7 +132,7 @@ findAllDeleteUse conf p1 p2 =
 
 -- | All ProduceDangling caused by the derivation of @p1@ before @p2@.
 -- It occurs when @p1@ creates something that unable @p2@.
-findAllProduceDangling :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> [CriticalPair m]
+findAllProduceDangling :: (EpiPairs m, DPO m) => MorphismsConfig -> Production m -> Production m -> [CriticalPair m]
 findAllProduceDangling conf p1 p2 =
   map (\m -> CriticalPair m Nothing Nothing ProduceDangling) produceDanglingPairs
   where
@@ -143,7 +143,7 @@ findAllProduceDangling conf p1 p2 =
 
 -- | Tests DeleteUse and ProduceDangling for the same pairs,
 -- more efficient than deal separately.
-findAllDeleteUseAndProduceDangling :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> [CriticalPair m]
+findAllDeleteUseAndProduceDangling :: (EpiPairs m, DPO m) => MorphismsConfig -> Production m -> Production m -> [CriticalPair m]
 findAllDeleteUseAndProduceDangling conf p1 p2 =
   map categorizeConflict conflicts
   where
@@ -159,12 +159,12 @@ findAllDeleteUseAndProduceDangling conf p1 p2 =
 --
 -- Rule @p1@ causes a produce-forbid conflict with @p2@ if some
 -- NAC in @p2@ fails to be satisfied after the aplication of @p1@.
-findAllProduceForbid :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> [CriticalPair m]
+findAllProduceForbid :: (EpiPairs m, DPO m) => MorphismsConfig -> Production m -> Production m -> [CriticalPair m]
 findAllProduceForbid conf p1 p2 =
   concatMap (findProduceForbidForNAC conf p1 p2) (zip (getNACs p2) [0..])
 
 -- | Check ProduceForbid for a NAC @n@ in @p2@.
-findProduceForbidForNAC :: (EpiPairs m, DPO m) => DPOConfig -> Production m -> Production m -> (m, Int) -> [CriticalPair m]
+findProduceForbidForNAC :: (EpiPairs m, DPO m) => MorphismsConfig -> Production m -> Production m -> (m, Int) -> [CriticalPair m]
 findProduceForbidForNAC conf p1 p2 nac =
   map
     (\(m,m',nac) -> CriticalPair m (Just m') (Just nac) ProduceForbid)

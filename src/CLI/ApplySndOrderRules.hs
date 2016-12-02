@@ -40,7 +40,7 @@ addEmptyFstOrderRule typegraph fstRules =
 
 execute :: GlobalOptions -> Options -> IO ()
 execute globalOpts opts = do
-    let dpoConf = dpoConfig globalOpts
+    let dpoConf = morphismsConf globalOpts
 
     (gg,printNewNacs) <- XML.readGrammar (inputFile globalOpts) (useConstraints globalOpts) dpoConf
     ggName <- XML.readGGName (inputFile globalOpts)

@@ -73,7 +73,7 @@ calculateDependencies flag = flag `elem` [Both,Dependencies]
 
 execute :: GlobalOptions -> Options -> IO ()
 execute globalOpts opts = do
-    let dpoConf = dpoConfig globalOpts
+    let dpoConf = morphismsConf globalOpts
 
     (gg,printNewNacs) <- XML.readGrammar (inputFile globalOpts) (useConstraints globalOpts) dpoConf
     ggName <- XML.readGGName (inputFile globalOpts)
@@ -150,7 +150,7 @@ printEvoConflicts evo = map printOneEvo evo
     printConf str evos = str ++ " : " ++ show (countElem str (map (show . cpe) evos)) ++ "\n"
 
 printAnalysis :: (EpiPairs m, DPO m) =>
-  Bool -> AnalysisType -> DPOConfig -> [Production m] -> IO ()
+  Bool -> AnalysisType -> MorphismsConfig -> [Production m] -> IO ()
 printAnalysis essential action dpoConf rules =
   let essentialConfMatrix = analysisMatrix dpoConf rules
         findAllEssentialDeleteUse findAllEssentialProduceDangling findAllEssentialProduceForbid
@@ -176,10 +176,10 @@ printAnalysis essential action dpoConf rules =
 
 -- Receives functions and theirs names,
 -- and returns they applicated to the rules
-analysisMatrix :: DPOConfig -> [Production m]
-  -> (DPOConfig -> Production m -> Production m -> [cps])
-  -> (DPOConfig -> Production m -> Production m -> [cps])
-  -> (DPOConfig -> Production m -> Production m -> [cps])
+analysisMatrix :: MorphismsConfig -> [Production m]
+  -> (MorphismsConfig -> Production m -> Production m -> [cps])
+  -> (MorphismsConfig -> Production m -> Production m -> [cps])
+  -> (MorphismsConfig -> Production m -> Production m -> [cps])
   -> String -> String -> String -> String
   -> [String]
 analysisMatrix dpoConf rules f1 f2 f3 n1 n2 n3 n4 =
@@ -203,7 +203,7 @@ analysisMatrix dpoConf rules f1 f2 f3 n1 n2 n3 n4 =
       , show (length <$> finalMatrix)
       , ""]
 
-defWriterFun :: Bool -> Bool -> DPOConfig -> AnalysisType
+defWriterFun :: Bool -> Bool -> MorphismsConfig -> AnalysisType
              -> GG.GraphGrammar a b -> String
              -> [(String,String)] -> String -> IO ()
 defWriterFun essential secondOrder conf t =

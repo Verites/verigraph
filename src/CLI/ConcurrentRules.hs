@@ -54,7 +54,7 @@ crDependencies =
 
 execute :: GlobalOptions -> Options -> IO ()
 execute globalOpts opts = do
-    let dpoConf = dpoConfig globalOpts
+    let dpoConf = morphismsConf globalOpts
 
     (gg,_) <- XML.readGrammar (inputFile globalOpts) (useConstraints globalOpts) dpoConf
     ggName <- XML.readGGName (inputFile globalOpts)
@@ -64,7 +64,7 @@ execute globalOpts opts = do
                                 MaxConcurrentRule  -> makeMaxConcurrentRules
                                 AllConcurrentRules -> makeAllConcurrentRules
         dependencies = concRulesbyDep opts
-        newRules = map (makeConcurrentRules dependencies (dpoConfig globalOpts) (GG.constraints gg)) sequences
+        newRules = map (makeConcurrentRules dependencies (morphismsConf globalOpts) (GG.constraints gg)) sequences
 
     forM_ (zip sequences newRules) $ \((name, _), rules) ->
       when (null rules)
@@ -74,10 +74,10 @@ execute globalOpts opts = do
     GW.writeGrammarFile gg' ggName names (outputFile opts)
 
 
-makeAllConcurrentRules :: CRDependencies -> DPOConfig -> [Constraint (TypedGraphMorphism a b)] -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
+makeAllConcurrentRules :: CRDependencies -> MorphismsConfig -> [Constraint (TypedGraphMorphism a b)] -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
 makeAllConcurrentRules dep conf constraints (baseName, sequence) = zipWith makeName (allConcurrentRules dep conf constraints sequence) [0::Int ..]
   where makeName rule idx = (baseName++"_"++show idx, rule)
 
-makeMaxConcurrentRules :: CRDependencies -> DPOConfig -> [Constraint (TypedGraphMorphism a b)] -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
+makeMaxConcurrentRules :: CRDependencies -> MorphismsConfig -> [Constraint (TypedGraphMorphism a b)] -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
 makeMaxConcurrentRules dep conf constraints (baseName, sequence) = zipWith makeName (maxConcurrentRules dep conf constraints sequence) [0::Int ..]
   where makeName rule idx = (baseName++"_"++show idx, rule)

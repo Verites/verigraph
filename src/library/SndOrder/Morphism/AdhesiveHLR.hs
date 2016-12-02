@@ -45,7 +45,7 @@ instance AdhesiveHLR (RuleMorphism a b) where
           transposedNACs = map (\nac -> fst (Abstract.Cocomplete.calculatePushout nac g'L)) (getNACs ruleD)
           
           -- conf is used only to indicate AnyMatches, that is the most generic case for nacDownwardShift
-          conf = DPOConfig AnyMatches MonomorphicNAC
+          conf = MorphismsConfig AnyMatches MonomorphicNAC
           createdNACs = concatMap (nacDownwardShift conf f'L) (getNACs ruleR)
           
           -- The new NACs are the transposed and the created that do not are included on the transposed

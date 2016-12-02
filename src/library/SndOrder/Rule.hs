@@ -22,7 +22,7 @@ applySecondOrder f fstRules = concatMap (\r -> concatMap (f r) fstRules)
 
 -- | Applies a named second order rule to a named first order rule with all possible matches,
 -- and generates named first order rules as result.
-applySndOrderRule :: DPOConfig -> (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String, GraphRule a b)]
+applySndOrderRule :: MorphismsConfig -> (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String, GraphRule a b)]
 applySndOrderRule conf (sndName,sndRule) (fstName,fstRule) =
   let
     matches =

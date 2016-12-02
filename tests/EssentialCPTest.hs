@@ -11,7 +11,7 @@ main :: IO ()
 main = do
   let fileName1 = "tests/grammars/elevator.ggx"
       fileName2 = "tests/grammars/secondOrderMatchTest.ggx"
-      dpoConf = DPOConfig MonoMatches PartiallyMonomorphicNAC
+      dpoConf = MorphismsConfig MonoMatches PartiallyMonomorphicNAC
   (gg1,_) <- XML.readGrammar fileName1 False dpoConf
   (gg2,_) <- XML.readGrammar fileName2 False dpoConf
 
@@ -19,8 +19,8 @@ main = do
       rules2 = map snd (GG.sndOrderRules gg2)
 
   runTests
-    [ testElevator (DPOConfig MonoMatches PartiallyMonomorphicNAC) rules1
-    , testSndOrder (DPOConfig MonoMatches PartiallyMonomorphicNAC) rules2
+    [ testElevator (MorphismsConfig MonoMatches PartiallyMonomorphicNAC) rules1
+    , testSndOrder (MorphismsConfig MonoMatches PartiallyMonomorphicNAC) rules2
     ]
 
 testElevator dpoConf rules =

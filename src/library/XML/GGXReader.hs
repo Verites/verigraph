@@ -40,8 +40,8 @@ type TypeGraph a b = G.Graph a b
 
 -- | Reads the grammar in the XML, adds the needed minimal safety nacs
 --   to second order, and returns the grammar and a log
-readGrammar :: String -> Bool -> DPOConfig -> IO (GG.GraphGrammar a b, [(String, Int)])
-readGrammar fileName useConstraints dpoConfig = do
+readGrammar :: String -> Bool -> MorphismsConfig -> IO (GG.GraphGrammar a b, [(String, Int)])
+readGrammar fileName useConstraints morphismsConf = do
   parsedTypeGraphs <- readTypeGraph fileName
   let parsedTypeGraph = case parsedTypeGraphs of
                          []    -> error "error, type graph not found"
@@ -83,7 +83,7 @@ readGrammar fileName useConstraints dpoConfig = do
           l   -> error $ "Second Order Rules " ++ show l ++ " are not valid (starting from 0)."
           ) `seq` return ()
 
-  return $ minimalSafetyNacsWithLog dpoConfig gg
+  return $ minimalSafetyNacsWithLog morphismsConf gg
 
 --testeCons :: [TypedGraph a b] -> [AtomicConstraint (TypedGraphMorphism a b)] -> [[Bool]]
 --testeCons [] _      = []
@@ -102,7 +102,7 @@ readGGName fileName = do
 -- Minimal Safety Nacs Logs
 
 -- FIX: find a better place for this two functions
-minimalSafetyNacsWithLog :: DPOConfig -> GG.GraphGrammar a b -> (GG.GraphGrammar a b, [(String, Int)])
+minimalSafetyNacsWithLog :: MorphismsConfig -> GG.GraphGrammar a b -> (GG.GraphGrammar a b, [(String, Int)])
 minimalSafetyNacsWithLog conf oldGG = (newGG, printNewNacs)
   where
     newNacs =

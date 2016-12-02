@@ -10,7 +10,7 @@ data Algorithm = DeleteUse | Pullback
 data IndependenceType = Parallel | Sequentially deriving (Eq, Show)
 
 isIndependent :: (EpiPairs m, DPO m) =>
-  IndependenceType -> Algorithm -> DPOConfig -> Production m -> Production m -> Bool
+  IndependenceType -> Algorithm -> MorphismsConfig -> Production m -> Production m -> Bool
 isIndependent ind algorithm conf p1' p2 = not $ conflict algorithm
   where
     p1 = case ind of
