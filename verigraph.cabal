@@ -58,6 +58,7 @@ library
                        XML.GGXReader
                        XML.GGXWriter
   other-modules:
+                       Abstract.DPO.Core
                        Analysis.DiagramAlgorithms
                        Analysis.EpimorphicPairs
                        Equivalence.EquivalenceClasses

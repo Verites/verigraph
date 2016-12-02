@@ -1,6 +1,5 @@
-module Abstract.DPO.Process (
-  Process(..)
-                            )
+module Abstract.DPO.Process
+( Process(..) )
 
 where
 

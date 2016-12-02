@@ -9,8 +9,8 @@ module Abstract.DPO.Derivation
 
 where
 
-import Abstract.DPO
-import Abstract.Morphism
+import Abstract.AdhesiveHLR
+import Abstract.DPO.Core
 
 data Derivation m = Derivation
   { production :: Production m
