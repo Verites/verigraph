@@ -7,12 +7,16 @@
 module Abstract.DPO
   (
     Production
-  , Derivation(..)
   , buildProduction
-
   , getLHS
   , getRHS
   , getNACs
+
+  , Derivation(..)
+  , generateDerivation
+
+  , Process(..)
+  , GenerateProcess(..)
 
   , MorphismsConfig(..)
   , MatchRestriction(..)
@@ -51,6 +55,7 @@ module Abstract.DPO
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO.Core
 import           Abstract.DPO.Derivation
+import           Abstract.DPO.Process
 
 -- TODO: deprecate? why do we need this __here__?
 -- | Check gluing conditions and the NACs satisfaction for a pair of matches

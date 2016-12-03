@@ -1,5 +1,5 @@
 module TypedGraph.Morphism.FindMorphism
-( induceSpanMorphism
+(
 )
 where
 
@@ -16,8 +16,8 @@ import           Data.Maybe
 -- | Given two lists of TypedGraphMorphism @fi : Ai -> B@ and @gi : Ai -> C@ it induces a Morphism
 -- @h : B -> C@ shuch that @h . fi = gi@ for all @i@. The lists must have the same length and must
 -- not be empty.
-induceSpanMorphism :: [TypedGraphMorphism a b] ->  [TypedGraphMorphism a b] -> TypedGraphMorphism a b
-induceSpanMorphism fs gs
+induceSpan :: [TypedGraphMorphism a b] ->  [TypedGraphMorphism a b] -> TypedGraphMorphism a b
+induceSpan fs gs
   | Prelude.null fs = error "can not induce morphism from empty list of morphisms"
   | length fs /= length gs = error "morphisms list should have the same length"
   | otherwise =
@@ -52,6 +52,7 @@ buildSpanRelation new (f,g) =
    in foldr updateE n' newEdgeRelation
 
 instance FindMorphism (TypedGraphMorphism a b) where
+  induceSpanMorphism = induceSpan
   findMorphisms = findMatches
   partialInjectiveMatches = partialInjectiveMatches'
 

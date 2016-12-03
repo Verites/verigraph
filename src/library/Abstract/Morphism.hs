@@ -44,6 +44,11 @@ class Morphism m => FindMorphism m where
   findAllMorphisms :: Obj m -> Obj m -> [m]
   findAllMorphisms = findMorphisms GenericMorphism
 
+  -- | Given two lists of TypedGraphMorphism @fi : Ai -> B@ and @gi : Ai -> C@ it induces a Morphism
+  -- @h : B -> C@ shuch that @h . fi = gi@ for all @i@. The lists must have the same length and must
+  -- not be empty.
+  induceSpanMorphism :: [m] -> [m] -> m
+
   -- TODO: properly explain partial injectivity
   -- TODO: replace by data constructor @PartMono :: m -> MorphismType@?
   -- | Given a NAC /n : L -> N / and a match /m : L -> G/, finds the morphisms

@@ -30,9 +30,9 @@ import           Abstract.DPO                   as RW
 import qualified Data.List                      as L
 import           Abstract.Cardinality
 import           Data.Maybe
-import Abstract.DPO.Derivation
-import Abstract.DPO.Process
-import TypedGraph.DPO.GraphProcess
+--import Abstract.DPO.Derivation
+--import Abstract.DPO.Process
+import TypedGraph.DPO.GraphProcess()
 
 --import qualified XML.GGXReader as XML
 
@@ -214,14 +214,14 @@ getDer' = fromJust der'
 
 g1 = codomain $ comatch getDer
 
-myprocess = singleProcess getDer
-myps = productions myprocess
-myc = coreObject myprocess
+--myprocess = singleProcess getDer
+--myps = productions myprocess
+--myc = coreObject myprocess
 
 -- graph process testes
 
-fs = sourcesCoproduct derivations
-gs = allCoproducts derivations
+--fs = sourcesCoproduct derivations
+--gs = allCoproducts derivations
 
 derivations = [getDer,getDer']
 
