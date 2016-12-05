@@ -101,5 +101,6 @@ satisfiesNACRewriting :: DPO m => m -> m -> Bool
 satisfiesNACRewriting l = satisfiesGluingConditions dpoConf prod
   where
     -- Production just to test satisfiesGluingConditions, note that right side is not used.
-    prod = buildProduction l l []
+    err = error "satisfiesNACRewriting: this rule right side must not be used"
+    prod = buildProduction l err []
     dpoConf = MorphismsConfig AnyMatches MonomorphicNAC
