@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -fno-warn-missing-fields #-}
+
 module XML.Formulas
 ( Formula(..)
 ,  parseFormula
@@ -22,15 +24,7 @@ data Formula = IntConst Integer
 
 languageDef :: T.LanguageDef()
 languageDef = T.LanguageDef
-  { T.commentLine     = "#"
-  , T.commentStart    = "/*"
-  , T.commentEnd      = "*/"
-  , T.nestedComments  = False
-  , T.opStart         = oneOf ""
-  , T.opLetter        = oneOf ""
-  , T.caseSensitive   = False
-  -- Everything above this comment is unused and it is here just because of the library warnings
-  , T.identStart      = alphaNum
+  { T.identStart      = alphaNum
   , T.identLetter     = alphaNum
   , T.reservedNames   = ["!", "&amp;", "|", "&"]
   , T.reservedOpNames = ["!", "&amp;", "|", "&"]
