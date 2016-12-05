@@ -174,11 +174,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
                  filter (\n' -> apply g n' == n) elemB))
               (list (domain typedGraphC))
 
-          product x y =
-            do
-              a <- x
-              b <- y
-              return (a,b)
+          product x y = [(a,b) | a <- x, b <- y]
 
       -- Init X, f' and g' as empty
       initX = GM.empty empty typeGraph
