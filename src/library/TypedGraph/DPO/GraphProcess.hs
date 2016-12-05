@@ -9,10 +9,10 @@ import TypedGraph.Graph ()
 import TypedGraph.Morphism as TGM
 
 instance GenerateProcess (TypedGraphMorphism a b) where
-  retype = retype'
+  typing = retypeProduction
 
-retype' :: (Derivation (TypedGraphMorphism a b), (TypedGraphMorphism a b,TypedGraphMorphism a b,TypedGraphMorphism a b)) ->  Production (TypedGraphMorphism a b)
-retype' (derivation, (g1,_,g3)) = newProduction
+retypeProduction :: (Derivation (TypedGraphMorphism a b), (TypedGraphMorphism a b,TypedGraphMorphism a b,TypedGraphMorphism a b)) ->  Production (TypedGraphMorphism a b)
+retypeProduction (derivation, (g1,_,g3)) = newProduction
   where
     p = production derivation
     oldL = getLHS p
