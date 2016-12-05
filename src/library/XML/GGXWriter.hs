@@ -9,6 +9,7 @@ module XML.GGXWriter
    writeGrammarFile
  ) where
 
+import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Morphism               (codomain)
 import qualified Analysis.CriticalPairs          as CP
@@ -21,7 +22,7 @@ import           GraphGrammar.Core
 import           SndOrder.Morphism
 import qualified SndOrder.Rule                   as SO
 import           Text.XML.HXT.Core
-import qualified TypedGraph.DPO.GraphRule            as GR
+import qualified TypedGraph.DPO.GraphRule        as GR
 import           TypedGraph.Morphism
 import           XML.GGXParseOut
 import           XML.ParsedTypes
@@ -31,7 +32,7 @@ import           XML.Utilities
 type Grammars a b = (Grammar (TypedGraphMorphism a b), Grammar (RuleMorphism a b))
 
 --appendSndOrderConflicts :: DPOConfig -> GraphGrammar a b -> GraphGrammar a b
-appendSndOrderConflicts :: DPOConfig -> Grammars a b -> Grammars a b
+appendSndOrderConflicts :: MorphismsConfig -> Grammars a b -> Grammars a b
 appendSndOrderConflicts conf (gg1,gg2) = (newGG1, gg2)
   where
     conflicts = CP.namedCriticalPairs conf (rules gg2)
@@ -39,7 +40,7 @@ appendSndOrderConflicts conf (gg1,gg2) = (newGG1, gg2)
     conflictRules = map (\(idx,(n1,n2,tp,rule)) -> ("conflict_"++(show tp)++"_"++n1++"_"++n2++"_"++(show idx), rule)) (zip ([0..]::[Int]) matches)
     newGG1 = grammar (start gg1) [] ((rules gg1) ++ conflictRules)
 
-appendSndOrderDependencies :: DPOConfig -> Grammars a b -> Grammars a b
+appendSndOrderDependencies :: MorphismsConfig -> Grammars a b -> Grammars a b
 appendSndOrderDependencies conf (gg1,gg2) = (newGG1, gg2)
   where
     conflicts = CS.namedCriticalSequences conf (rules gg2)
@@ -48,7 +49,7 @@ appendSndOrderDependencies conf (gg1,gg2) = (newGG1, gg2)
     newGG1 = grammar (start gg1) [] ((rules gg1) ++ conflictRules)
 
 -- | Writes grammar, second order conflicts and dependencies (.ggx)
-writeSndOderConfDepFile :: DPOConfig -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
+writeSndOderConfDepFile :: MorphismsConfig -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
 writeSndOderConfDepFile conf ggs name names fileName =
   do
     let newGG = ((appendSndOrderDependencies conf) . (appendSndOrderConflicts conf)) ggs
@@ -58,7 +59,7 @@ writeSndOderConfDepFile conf ggs name names fileName =
     return ()
 
 -- | Writes the grammar and the second order conflicts (.ggx)
-writeSndOderConflictsFile :: DPOConfig -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
+writeSndOderConflictsFile :: MorphismsConfig -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
 writeSndOderConflictsFile conf ggs name names fileName =
   do
     let newGG = appendSndOrderConflicts conf ggs
@@ -68,7 +69,7 @@ writeSndOderConflictsFile conf ggs name names fileName =
     return ()
 
 -- | Writes the grammar and the second order dependencies (.ggx)
-writeSndOderDependenciesFile :: DPOConfig -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
+writeSndOderDependenciesFile :: MorphismsConfig -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
 writeSndOderDependenciesFile conf ggs name names fileName =
   do
     let newGG = appendSndOrderDependencies conf ggs
@@ -77,21 +78,21 @@ writeSndOderDependenciesFile conf ggs name names fileName =
     return ()
 
 -- | Writes grammar, conflicts and dependencies (.cpx)
-writeConfDepFile :: Bool -> DPOConfig -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
+writeConfDepFile :: Bool -> MorphismsConfig -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
 writeConfDepFile essential conf ggs name names fileName = do
   runX $ writeConfDep essential conf ggs name names fileName
   putStrLn $ "Saved in " ++ fileName
   return ()
 
 -- | Writes the grammar and the conflicts (.cpx)
-writeConflictsFile :: Bool -> DPOConfig -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
+writeConflictsFile :: Bool -> MorphismsConfig -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
 writeConflictsFile essential conf ggs name names fileName = do
   runX $ writeConf essential conf ggs name names fileName
   putStrLn $ "Saved in " ++ fileName
   return ()
 
 -- | Writes the grammar and the dependencies (.cpx)
-writeDependenciesFile :: DPOConfig -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
+writeDependenciesFile :: MorphismsConfig -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
 writeDependenciesFile conf ggs name names fileName = do
   runX $ writeDep conf ggs name names fileName
   putStrLn $ "Saved in " ++ fileName
@@ -104,7 +105,7 @@ writeGrammarFile ggs name names fileName = do
   putStrLn $ "Saved in " ++ fileName
   return ()
 
-writeConfDep :: Bool -> DPOConfig -> Grammars a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
+writeConfDep :: Bool -> MorphismsConfig -> Grammars a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
 writeConfDep essential conf ggs@(gg1,_) name names fileName = root [] [writeCpx ggs cps css name names] >>> writeDocument [withIndent yes] fileName
   where
     cps =
@@ -113,7 +114,7 @@ writeConfDep essential conf ggs@(gg1,_) name names fileName = root [] [writeCpx 
         else CP.namedCriticalPairs conf (rules gg1)
     css = CS.namedCriticalSequences conf (rules gg1)
 
-writeConf :: Bool -> DPOConfig -> Grammars a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
+writeConf :: Bool -> MorphismsConfig -> Grammars a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
 writeConf essential conf ggs@(gg1,_) name names fileName = root [] [writeCpx ggs cps [] name names] >>> writeDocument [withIndent yes] fileName
   where
     cps =
@@ -121,7 +122,7 @@ writeConf essential conf ggs@(gg1,_) name names fileName = root [] [writeCpx ggs
         then ECP.namedEssentialCriticalPairs conf (rules gg1)
         else CP.namedCriticalPairs conf (rules gg1)
 
-writeDep :: DPOConfig -> Grammars a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
+writeDep :: MorphismsConfig -> Grammars a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
 writeDep conf ggs@(gg1,_) name names fileName = root [] [writeCpx ggs [] cps name names] >>> writeDocument [withIndent yes] fileName
   where
     cps = CS.namedCriticalSequences conf (rules gg1)

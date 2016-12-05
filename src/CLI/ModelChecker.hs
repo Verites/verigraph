@@ -182,7 +182,7 @@ type NamedPredicate = (String, GraphRule () ())
 type Space = StateSpace (TypedGraphMorphism () ())
 
 
-exploreStateSpace :: DPOConfig -> Int -> Grammar (TypedGraphMorphism () ()) -> [(String, TypedGraph () ())] -> ([Int], Space)
+exploreStateSpace :: MorphismsConfig -> Int -> Grammar (TypedGraphMorphism () ()) -> [(String, TypedGraph () ())] -> ([Int], Space)
 exploreStateSpace conf maxDepth grammar graphs =
   let
     (productions, predicates) =
