@@ -19,8 +19,8 @@ module Abstract.AdhesiveHLR
   ) where
 
 import           Abstract.Cocomplete
+import           Abstract.Constraint
 import           Abstract.Morphism
-import           Abstract.Valid
 
 -- | Type class for morphisms whose category Adhesive and suitable for
 -- High-Level Replacement Systems.
@@ -125,16 +125,18 @@ class (Cocomplete m) => AdhesiveHLR m where
 class Morphism m => EpiPairs m where
   -- | Create all jointly epimorphic pairs of morphisms from the given objects.
   --
-  -- If the first argument is true, only pairs of monomorphisms are created. Otherwise,
-  -- pairs of arbitrary morphisms are created.
+  -- If the first argument is true, only pairs of monomorphisms are created.
+  -- Otherwise, pairs of arbitrary morphisms are created.
   createJointlyEpimorphicPairs :: Bool -> Obj m -> Obj m -> [(m, m)]
 
-  -- TODO: document
+  -- | Create all subobjects from the given object.
+  --
+  -- If the first argument is true, only identity morphism is created.
+  -- Otherwise, arbitrary (epimorphic) morphisms are created.
   createAllSubobjects :: Bool -> Obj m -> [m]
 
-  -- | Create a special case of jointly epimorphic pairs, where the second morphism is a Nac
-  -- The first flag indicates Nac satisfability with a monomorphic morphism
-  -- The second flag indicates that the other morphism is monomorphic
+  -- | Create a special case of jointly epimorphic pairs, where the second morphism is a Nac.
+  -- The pairs generated are dependent of the NAC config.
   --
   -- FIXME: nacs don't belong in this module
   createJointlyEpimorphicPairsFromNAC :: MorphismsConfig -> Obj m -> m -> [(m, m)]
@@ -152,7 +154,8 @@ class Morphism m => EpiPairs m where
   --        g'
   -- @
   --
-  -- Bool indicates injective
+  -- If the first argument is true, only pairs of monomorphisms are created.
+  -- Otherwise, pairs of arbitrary morphisms are created.
   calculateCommutativeSquares :: Bool -> m -> m -> [(m, m)]
   calculateCommutativeSquares inj m1 m2 = filt
     where
@@ -174,70 +177,7 @@ matchRestrictionToMorphismType AnyMatches  = GenericMorphism
 -- | Flag indicating the semantics of NAC satisfaction.
 data NacSatisfaction = MonomorphicNAC | PartiallyMonomorphicNAC deriving (Eq, Show)
 
-
 data MorphismsConfig = MorphismsConfig
   { matchRestriction :: MatchRestriction
   , nacSatisfaction  :: NacSatisfaction
   }
-
-data AtomicConstraint m = AtomicConstraint {
-        name     :: String,
-        morphism :: m,
-        positive :: Bool
-      } deriving (Show)
-
-instance Valid m => Valid (AtomicConstraint m) where
-  validate = validate . morphism
-
-buildNamedAtomicConstraint :: String -> m -> Bool -> AtomicConstraint m
-buildNamedAtomicConstraint = AtomicConstraint
-
-premise :: (Morphism m) => AtomicConstraint m -> Obj m
-premise = domain . morphism
-
-conclusion :: (Morphism m) => AtomicConstraint m -> Obj m
-conclusion = codomain . morphism
-
--- | Given an object @G@ and a AtomicConstraint @a : P -> C@, check whether @G@ satisfies the AtomicConstraint @a@
-satisfiesAtomicConstraint :: (FindMorphism m) => Obj m -> AtomicConstraint m -> Bool
-satisfiesAtomicConstraint object constraint = Prelude.null ps || allPremisesAreSatisfied
-  where
-    ps = findMonomorphisms (premise constraint) object
-    qs = findMonomorphisms (conclusion constraint) object
-    a = morphism constraint
-    positiveSatisfaction = all (\p ->       any (\q -> compose a q == p) qs) ps
-    negativeSatisfaction = all (\p -> not $ any (\q -> compose a q == p) qs) ps
-    allPremisesAreSatisfied = if positive constraint then positiveSatisfaction else negativeSatisfaction
-
--- | Given an object @G@ and a list of AtomicConstraints @a : P -> C@, check whether @G@ satisfies the all them
-satisfiesAllAtomicConstraints :: (FindMorphism m) => Obj m -> [AtomicConstraint m] -> Bool
-satisfiesAllAtomicConstraints object = all (satisfiesAtomicConstraint object)
-
-data Constraint m =
-    Atomic { atomic :: AtomicConstraint m }
-  | And { lc :: Constraint m,
-          rc :: Constraint m}
-  | Or{ lc :: Constraint m,
-        rc :: Constraint m}
-  | Not { nc :: Constraint m }
-  deriving (Show)
-
-instance Valid m => Valid (Constraint m) where
-    validate cons = case cons of
-      Atomic a -> validate a
-      Not b    -> validate (nc b)
-      And a b  -> mconcat [validate (lc a), validate (rc b)]
-      Or a b   -> mconcat [validate (lc a), validate (rc b)]
-
--- | Given an object @G@ and a Constraint @c@ (a Boolean formula over atomic constraints), check whether @G@ satisfies @c@
-satisfiesConstraint :: (FindMorphism m) => Obj m -> Constraint m -> Bool
-satisfiesConstraint object constraint =
-  case constraint of
-    Atomic atomic -> satisfiesAtomicConstraint object atomic
-    Not nc -> not $ satisfiesConstraint object nc
-    And lc rc -> satisfiesConstraint object lc && satisfiesConstraint object rc
-    Or lc rc -> satisfiesConstraint object lc || satisfiesConstraint object rc
-
--- | Given an object @G@ and a list of Constraints (Boolean formulas over atomic constraints), check whether @G@ satisfies the all them
-satisfiesAllConstraints :: (FindMorphism m) => Obj m -> [Constraint m] -> Bool
-satisfiesAllConstraints object = all (satisfiesConstraint object)

@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -fno-warn-orphans #-}
-
 module SndOrder.Morphism.AdhesiveHLR where
 
 import           Abstract.AdhesiveHLR

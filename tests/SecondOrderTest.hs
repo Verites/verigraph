@@ -13,7 +13,7 @@ main = do
   let fileName = "tests/grammars/nacs2rule.ggx"
       dpoConf1 = MorphismsConfig MonoMatches MonomorphicNAC
       dpoConf2 = MorphismsConfig AnyMatches MonomorphicNAC
-  (_,log1) <- XML.readGrammar fileName False dpoConf1
-  (_,log2) <- XML.readGrammar fileName False dpoConf2
+  (_,_,log1) <- XML.readGrammar fileName False dpoConf1
+  (_,_,log2) <- XML.readGrammar fileName False dpoConf2
 
   runTests $ tests log1 2 ++ tests log2 9

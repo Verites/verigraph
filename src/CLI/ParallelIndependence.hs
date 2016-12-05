@@ -8,8 +8,8 @@ import           Analysis.ParallelIndependent
 import           Control.Monad                (when,unless)
 import           Data.Matrix                  hiding ((<|>))
 import           GlobalOptions
+import qualified GraphGrammar.Core            as GG
 import           Options.Applicative
-import qualified TypedGraph.GraphGrammar      as GG
 import qualified XML.GGXReader                as XML
 
 data Options = Options
@@ -44,7 +44,7 @@ execute globalOpts opts = do
     let dpoConf = morphismsConf globalOpts
         useConstrains = False
 
-    (gg,_) <- XML.readGrammar (inputFile globalOpts) useConstrains dpoConf
+    (fstOrdGG, sndOrdGG, _) <- XML.readGrammar (inputFile globalOpts) useConstrains dpoConf
 
     putStrLn "Warning: Produce-Forbid conflicts are not considered in this analysis."
     putStrLn ""
@@ -55,8 +55,8 @@ execute globalOpts opts = do
         algorithm =
           if (siFlag opts) then Sequentially else Parallel
         --rules = concatMap (replicate 1) $ map snd (GG.rules gg)
-        rules1 = map snd (GG.rules gg)
-        rules2 = map snd (GG.sndOrderRules gg)
+        rules1 = map snd (GG.rules fstOrdGG)
+        rules2 = map snd (GG.rules sndOrdGG)
         analysisDU1 = pairwiseCompareUpperReflected (isIndependent algorithm DeleteUse dpoConf) rules1
         analysisPB1 = pairwiseCompareUpperReflected (isIndependent algorithm Pullback dpoConf) rules1
         analysisDU2 = pairwiseCompareUpperReflected (isIndependent algorithm DeleteUse dpoConf) rules2

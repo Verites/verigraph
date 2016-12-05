@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -fno-warn-orphans #-}
-
 module SndOrder.Rule.DPO where
 
 import           Data.Maybe           (mapMaybe,fromMaybe)

@@ -17,9 +17,9 @@ import           Control.Monad                         (when)
 import           Data.List.Utils
 import           Data.Matrix                           hiding ((<|>))
 import           GlobalOptions
+import qualified GraphGrammar.Core                     as GG
 import           Options.Applicative
 import           SndOrder.Rule
-import qualified TypedGraph.GraphGrammar               as GG
 import qualified XML.GGXReader                         as XML
 import qualified XML.GGXWriter                         as GW
 
@@ -75,7 +75,7 @@ execute :: GlobalOptions -> Options -> IO ()
 execute globalOpts opts = do
     let dpoConf = morphismsConf globalOpts
 
-    (gg,printNewNacs) <- XML.readGrammar (inputFile globalOpts) (useConstraints globalOpts) dpoConf
+    (fstOrderGG, sndOrderGG, printNewNacs) <- XML.readGrammar (inputFile globalOpts) (useConstraints globalOpts) dpoConf
     ggName <- XML.readGGName (inputFile globalOpts)
     names <- XML.readNames (inputFile globalOpts)
 
@@ -86,11 +86,14 @@ execute globalOpts opts = do
         essentialCP = essentialFlag opts
         secondOrder = sndOrder opts
         writer = defWriterFun essentialCP secondOrder dpoConf action
-        rules = map snd (GG.rules gg)
-        rules2 = map snd (GG.sndOrderRules gg)
+        
+        namedFstOrdRules = GG.rules fstOrderGG
+        namedSndOrdRules = GG.rules sndOrderGG
+        fstOrdRules = map snd namedFstOrdRules
+        sndOrdRules = map snd namedSndOrdRules
 
-        interlevelCPs = applySecondOrder (interLevelCP dpoConf) (GG.rules gg) (GG.sndOrderRules gg)
-        evoConflicts = allEvolSpans dpoConf (GG.sndOrderRules gg)
+        interlevelCPs = applySecondOrder (interLevelCP dpoConf) namedFstOrdRules namedSndOrdRules
+        evoConflicts = allEvolSpans dpoConf namedSndOrdRules
 
 
     putStrLn $ "injective satisfability of nacs: " ++ show (nacSatisfaction dpoConf)
@@ -102,13 +105,13 @@ execute globalOpts opts = do
     when essentialCP $ putStrLn "Warning: essential critical pairs not fully supported"
     putStrLn ""
 
-    let fstOrderAnalysis = printAnalysis essentialCP action dpoConf rules
-        sndOrderAnalysis = printAnalysis essentialCP action dpoConf rules2
+    let fstOrderAnalysis = printAnalysis essentialCP action dpoConf fstOrdRules
+        sndOrderAnalysis = printAnalysis essentialCP action dpoConf sndOrdRules
     case outputFile opts of
       Just file ->
         do
           putStrLn "Warning: exporting conflicts/dependencies to .cpx not fully supported."
-          writer gg ggName names file
+          writer (fstOrderGG, sndOrderGG) ggName names file
       Nothing ->
         if secondOrder
           then sndOrderAnalysis
@@ -204,7 +207,7 @@ analysisMatrix dpoConf rules f1 f2 f3 n1 n2 n3 n4 =
       , ""]
 
 defWriterFun :: Bool -> Bool -> MorphismsConfig -> AnalysisType
-             -> GG.GraphGrammar a b -> String
+             -> GW.Grammars a b -> String
              -> [(String,String)] -> String -> IO ()
 defWriterFun essential secondOrder conf t =
   case (secondOrder,t) of

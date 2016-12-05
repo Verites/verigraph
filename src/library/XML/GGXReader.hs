@@ -23,10 +23,11 @@ import           Data.Maybe              (fromMaybe, mapMaybe)
 import           Data.String.Utils       (startswith)
 import qualified Graph.Graph             as G
 import           Graph.GraphMorphism     as GM
+import qualified GraphGrammar.Core       as GG
+import           SndOrder.Morphism
 import           SndOrder.Rule
 import           Text.XML.HXT.Core       hiding (left, right)
 import           TypedGraph.Graph
-import qualified TypedGraph.GraphGrammar as GG
 import           TypedGraph.DPO.GraphRule    as GR
 import           TypedGraph.Morphism
 import qualified XML.Formulas            as F
@@ -40,7 +41,8 @@ type TypeGraph a b = G.Graph a b
 
 -- | Reads the grammar in the XML, adds the needed minimal safety nacs
 --   to second order, and returns the grammar and a log
-readGrammar :: String -> Bool -> MorphismsConfig -> IO (GG.GraphGrammar a b, [(String, Int)])
+readGrammar :: String -> Bool -> MorphismsConfig
+            -> IO (GG.Grammar (TypedGraphMorphism a b), GG.Grammar (RuleMorphism a b), [(String, Int)])
 readGrammar fileName useConstraints morphismsConf = do
   parsedTypeGraphs <- readTypeGraph fileName
   let parsedTypeGraph = case parsedTypeGraphs of
@@ -48,11 +50,7 @@ readGrammar fileName useConstraints morphismsConf = do
                          ptg:_ -> ptg
   _ <- parsedTypeGraph `seq` return ()
 
-  --let a tg g = instantiateTypedGraph g tg
   let typeGraph = instantiateTypeGraph parsedTypeGraph
-  --graphs <- readGraphs' fileName
-
-  --let initialGraphs = map (a typeGraph) $ concat graphs
 
   parsedRules <- readRules fileName
 
@@ -70,12 +68,16 @@ readGrammar fileName useConstraints morphismsConf = do
                instantiateConstraints parsedGraphConstraints (map (instantiateAtomicConstraint typeGraph) parsedAtomicConstraints)
              else []
 
-  --print "Validity"
-  --print $ testeCons initialGraphs cons
-
   let initGraph = GM.empty typeGraph typeGraph
+      fstOrderGrammar = GG.grammar initGraph cons (zip rulesNames rules)
+      
       sndOrderRules = instantiateSndOrderRules typeGraph sndOrdRules
-      gg = GG.graphGrammar initGraph cons (zip rulesNames rules) sndOrderRules
+      emptyRule = emptyGraphRule typeGraph
+      sndOrderGrammar = GG.grammar emptyRule [] sndOrderRules
+      
+      (sndOrderGrammarWithMinimalSafetyNacs, logNewNacs) =
+        minimalSafetyNacsWithLog morphismsConf sndOrderGrammar
+      
 
   _ <- (case L.elemIndices False (map (isValid . snd) sndOrderRules) of
           []  -> []
@@ -83,13 +85,7 @@ readGrammar fileName useConstraints morphismsConf = do
           l   -> error $ "Second Order Rules " ++ show l ++ " are not valid (starting from 0)."
           ) `seq` return ()
 
-  return $ minimalSafetyNacsWithLog morphismsConf gg
-
---testeCons :: [TypedGraph a b] -> [AtomicConstraint (TypedGraphMorphism a b)] -> [[Bool]]
---testeCons [] _      = []
---testeCons (g:gs) cs = satisfiesCons g cs : testeCons gs cs
---  where
---    satisfiesCons g cs = map (satisfiesAtomicConstraint g) cs
+  return (fstOrderGrammar, sndOrderGrammarWithMinimalSafetyNacs, logNewNacs)
 
 readGGName :: String -> IO String
 readGGName fileName = do
@@ -102,7 +98,8 @@ readGGName fileName = do
 -- Minimal Safety Nacs Logs
 
 -- FIX: find a better place for this two functions
-minimalSafetyNacsWithLog :: MorphismsConfig -> GG.GraphGrammar a b -> (GG.GraphGrammar a b, [(String, Int)])
+minimalSafetyNacsWithLog :: MorphismsConfig -> (GG.Grammar (RuleMorphism a b))
+                         -> (GG.Grammar (RuleMorphism a b), [(String, Int)])
 minimalSafetyNacsWithLog conf oldGG = (newGG, printNewNacs)
   where
     newNacs =
@@ -111,8 +108,8 @@ minimalSafetyNacsWithLog conf oldGG = (newGG, printNewNacs)
             tamNewNacs = length (getNACs newRule)
             tamNacs = length (getNACs r)
          in ((n, newRule), (n, tamNewNacs - tamNacs))
-        ) (GG.sndOrderRules oldGG)
-    newGG = oldGG {GG.sndOrderRules = map fst newNacs}
+        ) (GG.rules oldGG)
+    newGG = oldGG {GG.rules = map fst newNacs}
     printNewNacs = map snd newNacs
 
 printMinimalSafetyNacsLog :: [(String, Int)] -> [String]
@@ -164,10 +161,10 @@ readGraphs fileName =
 readRules :: String -> IO[RuleWithNacs]
 readRules fileName = runX (parseXML fileName >>> parseRule)
 
-readSequences :: GG.GraphGrammar a b -> String -> IO [(String, [GR.GraphRule a b])]
+readSequences :: GG.Grammar (TypedGraphMorphism a b) -> String -> IO [(String, [GR.GraphRule a b])]
 readSequences grammar fileName = map (expandSequence grammar) <$> runX (parseXML fileName >>> parseRuleSequence)
 
-expandSequence :: GG.GraphGrammar a b -> Sequence -> (String, [GR.GraphRule a b])
+expandSequence :: GG.Grammar (TypedGraphMorphism a b) -> Sequence -> (String, [GR.GraphRule a b])
 expandSequence grammar (name,s) = (name, mapMaybe lookupRule . concat $ map expandSub s)
   where
     expandSub (i, s) = concat $ replicate i $ concatMap expandItens s

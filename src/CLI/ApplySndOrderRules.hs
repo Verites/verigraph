@@ -6,12 +6,15 @@ module ApplySndOrderRules
 
 import           Abstract.AdhesiveHLR
 
-import           GlobalOptions
 import           Graph.Graph             (Graph)
-import           Options.Applicative
+import qualified GraphGrammar.Core       as GG
 import qualified SndOrder.Rule           as SO
 import qualified TypedGraph.DPO.GraphRule    as GR
-import qualified TypedGraph.GraphGrammar as GG
+import           TypedGraph.Morphism
+
+import           GlobalOptions
+import           Options.Applicative
+
 import qualified XML.GGXReader           as XML
 import qualified XML.GGXWriter           as GW
 
@@ -42,7 +45,7 @@ execute :: GlobalOptions -> Options -> IO ()
 execute globalOpts opts = do
     let dpoConf = morphismsConf globalOpts
 
-    (gg,printNewNacs) <- XML.readGrammar (inputFile globalOpts) (useConstraints globalOpts) dpoConf
+    (fstOrderGG, sndOrderGG, printNewNacs) <- XML.readGrammar (inputFile globalOpts) (useConstraints globalOpts) dpoConf
     ggName <- XML.readGGName (inputFile globalOpts)
     names <- XML.readNames (inputFile globalOpts)
 
@@ -57,24 +60,16 @@ execute globalOpts opts = do
 
     -- It is adding an empty first order rule as possible match target,
     -- it allows the creation from "zero" of a new second order rules.
-    let fstRulesPlusEmpty = addEmptyFstOrderRule (GG.typeGraph gg) (GG.rules gg)
-        newRules = SO.applySecondOrder (SO.applySndOrderRule dpoConf) fstRulesPlusEmpty (GG.sndOrderRules gg)
-        gg2 = gg {GG.rules = GG.rules gg ++ newRules}
+    let fstRulesPlusEmpty = addEmptyFstOrderRule (typeGraph fstOrderGG) (GG.rules fstOrderGG)
+        newRules = SO.applySecondOrder (SO.applySndOrderRule dpoConf) fstRulesPlusEmpty (GG.rules sndOrderGG)
+        newGG = fstOrderGG {GG.rules = GG.rules fstOrderGG ++ newRules}
 
     putStrLn ""
 
-    --let r2 = snd $ head (GG.sndOrderRules gg)
-    --print $ calculateCoproduct (domain (getLHS r2)) (domain (getLHS r2))
-    --print $ calculateCoequalizer (getLHS r2) (getLHS r2)
-
-    --let r1 = snd $ head (GG.rules gg)
-
-    --print $ domain (GR.getRHS r1)
-    --print $ codomain (GR.getRHS r1)
-
-    --print $ coproduct (GR.getRHS r1)
-
-    GW.writeGrammarFile gg2 ggName names (outputFile opts)
-
+    GW.writeGrammarFile (newGG,sndOrderGG) ggName names (outputFile opts)
+    
     putStrLn "Done!"
     putStrLn ""
+
+typeGraph :: GG.Grammar (TypedGraphMorphism a b) -> Graph a b
+typeGraph = codomain . (GG.start)
