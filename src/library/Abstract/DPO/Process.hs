@@ -27,27 +27,24 @@ class (DPO m) => GenerateProcess m where
   calculateProcess :: [Derivation m] -> Process m
   calculateProcess [] = error "Can not calculate process for empty list of derivations"
   calculateProcess ds =
-    let gs = allCoproducts ds
-        coEq = calcultateBottomColimit ds
-        core = codomain coEq
+    let fs = sourcesCoproduct ds
+        gs = allObjectsCoproduct ds
+        (h1,h2,h3) = generateMorphismFamilies ds fs gs
+        coEq = calculateNCoequalizer $ fromList [h1,h2,h3]
         hs = reduce $ map (`compose` coEq) gs
-        as = zip ds hs
-     in Process (map typing as) core
+     in Process (map typing (zip ds hs)) (codomain coEq)
 
--- | Given a list of sequential Derivation, it returns the colimit for the bottom of the diagram
-calcultateBottomColimit :: (DPO m) => [Derivation m] -> m
-calcultateBottomColimit ds = calculateNCoequalizer $ fromList [h1,h2,h3]
-  where
-    fs = sourcesCoproduct ds
-    gs = allCoproducts ds
-    ls = getLeftBottomMorphisms ds
-    rs = getRightBottomMorphisms ds
-    gs' = reduce gs
-    (g1s, g2s, g3s) = groupMorphisms gs'
-    h = induceSpanMorphism fs
-    h1 = h $ zipWith compose ls g1s
-    h2 = h g2s
-    h3 = h $ zipWith compose rs g3s
+generateMorphismFamilies :: (DPO m) => [Derivation m] -> [m] -> [m] -> (m,m,m)
+generateMorphismFamilies ds fs gs=
+  let ls = getLeftBottomMorphisms ds
+      rs = getRightBottomMorphisms ds
+      gs' = reduce gs
+      (g1s, g2s, g3s) = groupMorphisms gs'
+      h = induceSpanMorphism fs
+      h1 = h $ zipWith compose ls g1s
+      h2 = h g2s
+      h3 = h $ zipWith compose rs g3s
+  in (h1,h2,h3)
 
 -- | Given a list of Derivation, it returns all the objects in the bottom part of the
 -- diagrams that are source of at least one Morphism
@@ -62,8 +59,8 @@ sourcesCoproduct = calculateNCoproduct . getSources
 getAll :: (DPO m) => [Derivation m] -> NonEmpty (Obj m)
 getAll ds = fromList $ getAllBottomObjects ds
 
-allCoproducts :: (DPO m) => [Derivation m] -> [m]
-allCoproducts = calculateNCoproduct . getAll
+allObjectsCoproduct :: (DPO m) => [Derivation m] -> [m]
+allObjectsCoproduct = calculateNCoproduct . getAll
 
 -- used to group the morphisms into families
 groupMorphisms :: [(m,m,m)] -> ([m],[m],[m])
