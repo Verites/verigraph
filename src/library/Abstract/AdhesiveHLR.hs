@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
+
 module Abstract.AdhesiveHLR
   ( Morphism(..)
   , AtomicConstraint (..)
@@ -118,7 +119,6 @@ class (Cocomplete m) => AdhesiveHLR m where
   --     ▼       ▼
   --     B──────▶C
   --        g
-  --
   -- @
   calculatePullback :: m -> m -> (m, m)
 

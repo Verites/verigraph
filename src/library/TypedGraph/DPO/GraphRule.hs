@@ -16,6 +16,7 @@ module TypedGraph.DPO.GraphRule (
 
     , emptyGraphRule
     , nullGraphRule
+    , buildGraphRule
 
     , checkDeletion
 ) where
@@ -54,6 +55,38 @@ emptyGraphRule typegraph = emptyRule
     emptyGM = GM.empty emptyGraph typegraph
     emptyTGM = idMap emptyGM emptyGM
     emptyRule = buildProduction emptyTGM emptyTGM []
+
+type ListOfNodesAndEdges = ([(Int,Int)],[(Int,Int,Int,Int)])
+
+-- | It builds a GraphRule with lists of deleted, created, preserved and forbidden elements
+buildGraphRule :: Graph a b -> ListOfNodesAndEdges -> ListOfNodesAndEdges -> ListOfNodesAndEdges -> [ListOfNodesAndEdges] -> Production (TypedGraphMorphism a b)
+buildGraphRule typegraph deleted created preserved@(preservedNodes, preservedEdges) nacs = resultingRule
+  where
+    -- Creates a typedgraph with the preserved elements and mounts an initial rule with preserves them
+    preservedGraph = build (map fst preservedNodes) (map (\(e,s,t,_) -> (e,s,t)) preservedEdges)
+    preservedTypeGraph = GM.buildGraphMorphism preservedGraph typegraph preservedNodes (map (\(e,_,_,t) -> (e,t)) preservedEdges)
+    leftAndRightPreserved = M.id preservedTypeGraph
+    
+    -- Creates indicated elements on codomain of the initial rule
+    addCreated = addElementsOnCodomain leftAndRightPreserved created
+    addDeleted = addElementsOnCodomain leftAndRightPreserved deleted
+    
+    ---- Nacs part
+    
+    -- Each NAC starts from a "initial" id of L ...
+    idLeft = M.id (codomain addDeleted)
+    -- and adds all forbidden elements on codomain of this initial
+    resultingNacs = map (addElementsOnCodomain idLeft) nacs
+    
+    -- The rule instantiation
+    resultingRule = buildProduction addDeleted addCreated resultingNacs
+    
+    -- Function that adds nodes and edges on the codomain of an init typed graph morphism
+    addElementsOnCodomain init (nodes,edges) = addEdges
+      where
+        addNodes = foldr (\(n,t) -> TGM.createNodeOnCodomain (NodeId n) (NodeId t)) init nodes
+        addEdges = foldr (\(e,s,t,tp) -> TGM.createEdgeOnCodomain (EdgeId e) (NodeId s) (NodeId t) (EdgeId tp)) addNodes edges
+
 
 -- | Checks if it is a null rule
 nullGraphRule :: GraphRule a b -> Bool

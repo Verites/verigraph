@@ -32,7 +32,7 @@ options = Options
 
 addEmptyFstOrderRule :: Graph a b -> [(String,GR.GraphRule a b)] -> [(String,GR.GraphRule a b)]
 addEmptyFstOrderRule typegraph fstRules =
-  if elem True (map (GR.nullGraphRule . snd) fstRules) then
+  if any (==True) (map (GR.nullGraphRule . snd) fstRules) then
     fstRules
   else
     fstRulesPlusEmpty
