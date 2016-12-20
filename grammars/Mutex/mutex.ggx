@@ -14,8 +14,8 @@
         <TaggedValue Tag="showGraphAfterStep" TagValue="true"/>
         <TaggedValue Tag="TypeGraphLevel" TagValue="ENABLED"/>
         <Types>
-            <NodeType ID="I2" abstract="false" name="Resource%:RECT:java.awt.Color[r=0,g=0,b=0]:[NODE]:"/>
-            <NodeType ID="I3" abstract="false" name="Process%:RECT:java.awt.Color[r=0,g=0,b=0]:[NODE]:"/>
+            <NodeType ID="I2" abstract="false" name="resource%:RECT:java.awt.Color[r=0,g=0,b=0]:[NODE]:"/>
+            <NodeType ID="I3" abstract="false" name="process%:RECT:java.awt.Color[r=0,g=0,b=0]:[NODE]:"/>
             <EdgeType ID="I4" abstract="false" name="next%:SOLID_LINE:java.awt.Color[r=0,g=0,b=0]:[EDGE]:"/>
             <EdgeType ID="I5" abstract="false" name="token%:SOLID_LINE:java.awt.Color[r=0,g=0,b=0]:[EDGE]:"/>
             <EdgeType ID="I6" abstract="false" name="request%:SOLID_LINE:java.awt.Color[r=0,g=0,b=0]:[EDGE]:"/>
@@ -28,7 +28,7 @@
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Node ID="I12" type="I2">
-                    <NodeLayout X="472" Y="99"/>
+                    <NodeLayout X="531" Y="103"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Edge ID="I13" source="I11" target="I11" type="I4">
@@ -40,7 +40,7 @@
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
                 <Edge ID="I14" source="I12" target="I11" type="I5">
-                    <EdgeLayout bendX="311" bendY="143"
+                    <EdgeLayout bendX="340" bendY="123"
                         sourceMultiplicityOffsetX="-6"
                         sourceMultiplicityOffsetY="15"
                         targetMultiplicityOffsetX="-6"
@@ -48,7 +48,7 @@
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
                 <Edge ID="I15" source="I11" target="I12" type="I6">
-                    <EdgeLayout bendX="302" bendY="65"
+                    <EdgeLayout bendX="325" bendY="65"
                         sourceMultiplicityOffsetX="-6"
                         sourceMultiplicityOffsetY="15"
                         targetMultiplicityOffsetX="-6"
@@ -56,7 +56,7 @@
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
                 <Edge ID="I16" source="I12" target="I11" type="I7">
-                    <EdgeLayout bendX="310" bendY="297"
+                    <EdgeLayout bendX="340" bendY="218"
                         sourceMultiplicityOffsetX="-6"
                         sourceMultiplicityOffsetY="15"
                         targetMultiplicityOffsetX="-6"
@@ -64,15 +64,15 @@
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
                 <Edge ID="I17" source="I12" target="I11" type="I8">
-                    <EdgeLayout bendX="309" bendY="171"
+                    <EdgeLayout bendX="343" bendY="155"
                         sourceMultiplicityOffsetX="-6"
                         sourceMultiplicityOffsetY="15"
                         targetMultiplicityOffsetX="-6"
-                        targetMultiplicityOffsetY="7" textOffsetX="-16" textOffsetY="-3"/>
+                        targetMultiplicityOffsetY="7" textOffsetX="-16" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
                 <Edge ID="I18" source="I12" target="I11" type="I9">
-                    <EdgeLayout bendX="306" bendY="246"
+                    <EdgeLayout bendX="341" bendY="188"
                         sourceMultiplicityOffsetX="-6"
                         sourceMultiplicityOffsetY="15"
                         targetMultiplicityOffsetX="-6"
@@ -83,7 +83,7 @@
         </Types>
         <Graph ID="I19" kind="HOST" name="STS_init"/>
         <Rule ID="I20" formula="true" name="SYS-newRule">
-            <Graph ID="I22" kind="LHS" name="LeftOf_newRule">
+            <Graph ID="I22" kind="LHS" name="LeftOf_SYS-newRule">
                 <Node ID="I23" type="I3">
                     <NodeLayout X="56" Y="60"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
@@ -97,7 +97,7 @@
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
             </Graph>
-            <Graph ID="I26" kind="RHS" name="RightOf_newRule">
+            <Graph ID="I26" kind="RHS" name="RightOf_SYS-newRule">
                 <Node ID="I27" type="I3">
                     <NodeLayout X="97" Y="67"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
@@ -127,7 +127,7 @@
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
         <Rule ID="I32" formula="true" name="SYS-killRule">
-            <Graph ID="I34" kind="LHS" name="LeftOf_killRule">
+            <Graph ID="I34" kind="LHS" name="LeftOf_SYS-killRule">
                 <Node ID="I35" type="I3">
                     <NodeLayout X="66" Y="125"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
@@ -149,7 +149,7 @@
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
             </Graph>
-            <Graph ID="I40" kind="RHS" name="RightOf_killRule">
+            <Graph ID="I40" kind="RHS" name="RightOf_SYS-killRule">
                 <Node ID="I41" type="I3">
                     <NodeLayout X="75" Y="50"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
@@ -171,13 +171,13 @@
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
         <Rule ID="I44" formula="true" name="SYS-mountRule">
-            <Graph ID="I46" kind="LHS" name="LeftOf_mountRule">
+            <Graph ID="I46" kind="LHS" name="LeftOf_SYS-mountRule">
                 <Node ID="I47" type="I3">
                     <NodeLayout X="94" Y="50"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
             </Graph>
-            <Graph ID="I48" kind="RHS" name="RightOf_mountRule">
+            <Graph ID="I48" kind="RHS" name="RightOf_SYS-mountRule">
                 <Node ID="I49" type="I3">
                     <NodeLayout X="96" Y="45"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
@@ -198,7 +198,7 @@
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
         <Rule ID="I52" formula="true" name="SYS-unmountRule">
-            <Graph ID="I54" kind="LHS" name="LeftOf_unmountRule">
+            <Graph ID="I54" kind="LHS" name="LeftOf_SYS-unmountRule">
                 <Node ID="I55" type="I2">
                     <NodeLayout X="86" Y="145"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
@@ -212,7 +212,7 @@
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
             </Graph>
-            <Graph ID="I58" kind="RHS" name="RightOf_unmountRule">
+            <Graph ID="I58" kind="RHS" name="RightOf_SYS-unmountRule">
                 <Node ID="I59" type="I3">
                     <NodeLayout X="156" Y="28"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
@@ -225,7 +225,7 @@
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
         <Rule ID="I60" formula="true" name="TR-passRule">
-            <Graph ID="I62" kind="LHS" name="LeftOf_passRule">
+            <Graph ID="I62" kind="LHS" name="LeftOf_TR-passRule">
                 <Node ID="I63" type="I3">
                     <NodeLayout X="58" Y="68"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
@@ -247,7 +247,7 @@
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
             </Graph>
-            <Graph ID="I68" kind="RHS" name="RightOf_passRule">
+            <Graph ID="I68" kind="RHS" name="RightOf_TR-passRule">
                 <Node ID="I69" type="I3">
                     <NodeLayout X="99" Y="62"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
@@ -313,8 +313,8 @@
                         <Mapping image="I76" orig="I63"/>
                         <Mapping image="I75" orig="I65"/>
                         <Mapping image="I77" orig="I64"/>
-                        <Mapping image="I79" orig="I67"/>
                         <Mapping image="I80" orig="I66"/>
+                        <Mapping image="I79" orig="I67"/>
                     </Morphism>
                 </NAC>
             </ApplCondition>
@@ -322,7 +322,7 @@
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
         <Rule ID="I81" formula="true" name="TR-requestRule">
-            <Graph ID="I83" kind="LHS" name="LeftOf_requestRule">
+            <Graph ID="I83" kind="LHS" name="LeftOf_TR-requestRule">
                 <Node ID="I84" type="I3">
                     <NodeLayout X="68" Y="23"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
@@ -332,7 +332,7 @@
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
             </Graph>
-            <Graph ID="I86" kind="RHS" name="RightOf_requestRule">
+            <Graph ID="I86" kind="RHS" name="RightOf_TR-requestRule">
                 <Node ID="I87" type="I3">
                     <NodeLayout X="134" Y="25"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
@@ -430,7 +430,7 @@
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
         <Rule ID="I103" formula="true" name="TR-takeRule">
-            <Graph ID="I105" kind="LHS" name="LeftOf_takeRule">
+            <Graph ID="I105" kind="LHS" name="LeftOf_TR-takeRule">
                 <Node ID="I106" type="I3">
                     <NodeLayout X="91" Y="24"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
@@ -448,7 +448,7 @@
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
             </Graph>
-            <Graph ID="I110" kind="RHS" name="RightOf_takeRule">
+            <Graph ID="I110" kind="RHS" name="RightOf_TR-takeRule">
                 <Node ID="I111" type="I3">
                     <NodeLayout X="130" Y="33"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
@@ -470,7 +470,7 @@
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
         <Rule ID="I114" formula="true" name="TR-releaseRule">
-            <Graph ID="I116" kind="LHS" name="LeftOf_releaseRule">
+            <Graph ID="I116" kind="LHS" name="LeftOf_TR-releaseRule">
                 <Node ID="I117" type="I3">
                     <NodeLayout X="74" Y="23"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
@@ -484,7 +484,7 @@
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
             </Graph>
-            <Graph ID="I120" kind="RHS" name="RightOf_releaseRule">
+            <Graph ID="I120" kind="RHS" name="RightOf_TR-releaseRule">
                 <Node ID="I121" type="I3">
                     <NodeLayout X="73" Y="11"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
@@ -542,7 +542,7 @@
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
         <Rule ID="I130" formula="true" name="TR-giveRule">
-            <Graph ID="I132" kind="LHS" name="LeftOf_giveRule">
+            <Graph ID="I132" kind="LHS" name="LeftOf_TR-giveRule">
                 <Node ID="I133" type="I3">
                     <NodeLayout X="48" Y="45"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
@@ -564,7 +564,7 @@
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
             </Graph>
-            <Graph ID="I138" kind="RHS" name="RightOf_giveRule">
+            <Graph ID="I138" kind="RHS" name="RightOf_TR-giveRule">
                 <Node ID="I139" type="I3">
                     <NodeLayout X="73" Y="42"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
@@ -596,7 +596,7 @@
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
         <Rule ID="I144" formula="true" name="DDD-blockedRule">
-            <Graph ID="I146" kind="LHS" name="LeftOf_blockedRule">
+            <Graph ID="I146" kind="LHS" name="LeftOf_DDD-blockedRule">
                 <Node ID="I147" type="I3">
                     <NodeLayout X="52" Y="72"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
@@ -618,7 +618,7 @@
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
             </Graph>
-            <Graph ID="I152" kind="RHS" name="RightOf_blockedRule">
+            <Graph ID="I152" kind="RHS" name="RightOf_DDD-blockedRule">
                 <Node ID="I153" type="I3">
                     <NodeLayout X="56" Y="63"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
@@ -655,7 +655,7 @@
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
         <Rule ID="I159" formula="true" name="DDD-waitingRule">
-            <Graph ID="I161" kind="LHS" name="LeftOf_waitingRule">
+            <Graph ID="I161" kind="LHS" name="LeftOf_DDD-waitingRule">
                 <Node ID="I162" type="I3">
                     <NodeLayout X="59" Y="46"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
@@ -685,7 +685,7 @@
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
             </Graph>
-            <Graph ID="I169" kind="RHS" name="RightOf_waitingRule">
+            <Graph ID="I169" kind="RHS" name="RightOf_DDD-waitingRule">
                 <Node ID="I170" type="I3">
                     <NodeLayout X="56" Y="20"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
@@ -720,14 +720,14 @@
                 <Mapping image="I171" orig="I163"/>
                 <Mapping image="I172" orig="I164"/>
                 <Mapping image="I173" orig="I165"/>
-                <Mapping image="I175" orig="I167"/>
                 <Mapping image="I176" orig="I168"/>
+                <Mapping image="I175" orig="I167"/>
             </Morphism>
             <TaggedValue Tag="layer" TagValue="0"/>
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
         <Rule ID="I177" formula="true" name="DDD-ignoreRule">
-            <Graph ID="I179" kind="LHS" name="LeftOf_ignoreRule">
+            <Graph ID="I179" kind="LHS" name="LeftOf_DDD-ignoreRule">
                 <Node ID="I180" type="I3">
                     <NodeLayout X="80" Y="22"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
@@ -741,7 +741,7 @@
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
             </Graph>
-            <Graph ID="I183" kind="RHS" name="RightOf_ignoreRule">
+            <Graph ID="I183" kind="RHS" name="RightOf_DDD-ignoreRule">
                 <Node ID="I184" type="I3">
                     <NodeLayout X="152" Y="21"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
@@ -795,7 +795,7 @@
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
         <Rule ID="I192" formula="true" name="DDD-unlockRule">
-            <Graph ID="I194" kind="LHS" name="LeftOf_unlockRule">
+            <Graph ID="I194" kind="LHS" name="LeftOf_DDD-unlockRule">
                 <Node ID="I195" type="I3">
                     <NodeLayout X="81" Y="22"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
@@ -813,7 +813,7 @@
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
             </Graph>
-            <Graph ID="I199" kind="RHS" name="RightOf_unlockRule">
+            <Graph ID="I199" kind="RHS" name="RightOf_DDD-unlockRule">
                 <Node ID="I200" type="I3">
                     <NodeLayout X="140" Y="19"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
@@ -905,8 +905,8 @@
                 <Mapping image="I217" orig="I209"/>
                 <Mapping image="I215" orig="I207"/>
                 <Mapping image="I219" orig="I211"/>
-                <Mapping image="I220" orig="I212"/>
                 <Mapping image="I218" orig="I210"/>
+                <Mapping image="I220" orig="I212"/>
             </Morphism>
             <ApplCondition>
                 <NAC>
@@ -958,8 +958,8 @@
                         <Mapping image="I225" orig="I208"/>
                         <Mapping image="I226" orig="I207"/>
                         <Mapping image="I230" orig="I211"/>
-                        <Mapping image="I229" orig="I212"/>
                         <Mapping image="I228" orig="I210"/>
+                        <Mapping image="I229" orig="I212"/>
                     </Morphism>
                 </NAC>
             </ApplCondition>
@@ -1032,8 +1032,8 @@
                 <Mapping image="I243" orig="I235"/>
                 <Mapping image="I244" orig="I236"/>
                 <Mapping image="I245" orig="I237"/>
-                <Mapping image="I247" orig="I239"/>
                 <Mapping image="I246" orig="I238"/>
+                <Mapping image="I247" orig="I239"/>
             </Morphism>
             <TaggedValue Tag="layer" TagValue="0"/>
             <TaggedValue Tag="priority" TagValue="0"/>
