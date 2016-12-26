@@ -23,7 +23,7 @@ import           Data.Maybe              (fromMaybe, mapMaybe)
 import           Data.String.Utils       (startswith)
 import qualified Graph.Graph             as G
 import           Graph.GraphMorphism     as GM
-import qualified GraphGrammar.Core       as GG
+import qualified Grammar.Core       as GG
 import           SndOrder.Morphism
 import           SndOrder.Rule
 import           Text.XML.HXT.Core       hiding (left, right)

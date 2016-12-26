@@ -1,7 +1,7 @@
 import           Analysis.ParallelIndependent
 import           Abstract.DPO
 import           Data.Matrix                     hiding ((<|>))
-import qualified GraphGrammar.Core               as GG
+import qualified Grammar.Core               as GG
 import           Test.HUnit
 import qualified XML.GGXReader                   as XML
 import           Utils

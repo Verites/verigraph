@@ -45,7 +45,7 @@ library
                        Image.Dot
                        Graph.Graph
                        Graph.GraphMorphism
-                       GraphGrammar.Core
+                       Grammar.Core
                        Logic.Model
                        Logic.Ctl
                        SndOrder.Morphism

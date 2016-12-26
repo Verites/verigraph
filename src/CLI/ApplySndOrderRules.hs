@@ -7,7 +7,7 @@ module ApplySndOrderRules
 import           Abstract.AdhesiveHLR
 import           Control.Monad           (when)
 import           Graph.Graph             (Graph)
-import qualified GraphGrammar.Core       as GG
+import qualified Grammar.Core       as GG
 import qualified SndOrder.Rule           as SO
 import qualified TypedGraph.DPO.GraphRule    as GR
 import           TypedGraph.Morphism

@@ -8,7 +8,7 @@ import           Analysis.ParallelIndependent
 import           Control.Monad                (when,unless)
 import           Data.Matrix                  hiding ((<|>))
 import           GlobalOptions
-import qualified GraphGrammar.Core            as GG
+import qualified Grammar.Core            as GG
 import           Options.Applicative
 import qualified XML.GGXReader                as XML
 
