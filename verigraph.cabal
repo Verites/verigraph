@@ -31,8 +31,6 @@ library
                        Abstract.Cocomplete
                        Abstract.Constraint
                        Abstract.DPO
-                       Abstract.DPO.Derivation
-                       Abstract.DPO.Process
                        Abstract.DPO.StateSpace
                        Abstract.Morphism
                        Abstract.Relation
@@ -60,6 +58,8 @@ library
                        XML.GGXWriter
   other-modules:
                        Abstract.DPO.Core
+                       Abstract.DPO.Derivation
+                       Abstract.DPO.Process
                        Analysis.DiagramAlgorithms
                        Analysis.EpimorphicPairs
                        Equivalence.EquivalenceClasses

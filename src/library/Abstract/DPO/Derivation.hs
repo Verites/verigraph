@@ -3,8 +3,8 @@ module Abstract.DPO.Derivation
 , generateDerivation
 , getDObjects
 , getAllBottomObjects
-, getLeftBottomObjects
-, getRightBottomObjects
+, getLeftBottomMorphisms
+, getRightBottomMorphisms
 )
 
 where
@@ -36,11 +36,11 @@ generateDerivation conf match rule =
 getDObjects :: (DPO m) =>  [Derivation m] -> [Obj m]
 getDObjects = fmap (domain . dToG)
 
-getLeftBottomObjects :: [Derivation m] -> [m]
-getLeftBottomObjects = fmap dToG
+getLeftBottomMorphisms :: [Derivation m] -> [m]
+getLeftBottomMorphisms = fmap dToG
 
-getRightBottomObjects :: [Derivation m] -> [m]
-getRightBottomObjects = fmap dToH
+getRightBottomMorphisms :: [Derivation m] -> [m]
+getRightBottomMorphisms = fmap dToH
 
 getBottomObjects :: (DPO m) => Derivation m -> (Obj m,Obj m,Obj m)
 getBottomObjects d =
