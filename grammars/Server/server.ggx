@@ -352,24 +352,24 @@
             </Graphconstraint_Atomic>
             <Graphconstraint_Atomic ID="I83" name="MsgInTwoPlaces">
                 <Premise>
-                    <Graph ID="I84" kind="PREMISE" name="Premise of Atomic7"/>
+                    <Graph ID="I84" kind="PREMISE" name="Premise of MsgInTwoPlaces"/>
                 </Premise>
                 <Conclusion>
-                    <Graph ID="I85" kind="CONCLUSION" name="Graph">
+                    <Graph ID="I85" kind="CONCLUSION" name="Conclusion of MsgInTwoPlaces">
                         <Node ID="I86" type="I5">
                             <NodeLayout X="93" Y="101"/>
                             <additionalLayout age="0" force="10"
-                                frozen="false" zone="50"/>
+                                frozen="true" zone="50"/>
                         </Node>
                         <Node ID="I87" type="I4">
                             <NodeLayout X="211" Y="50"/>
                             <additionalLayout age="0" force="10"
-                                frozen="false" zone="50"/>
+                                frozen="true" zone="50"/>
                         </Node>
                         <Node ID="I88" type="I2">
                             <NodeLayout X="213" Y="134"/>
                             <additionalLayout age="0" force="10"
-                                frozen="false" zone="50"/>
+                                frozen="true" zone="50"/>
                         </Node>
                         <Edge ID="I89" source="I86" target="I87" type="I11">
                             <EdgeLayout bendX="0" bendY="0"
@@ -387,24 +387,24 @@
             </Graphconstraint_Atomic>
             <Graphconstraint_Atomic ID="I91" name="dataInUserAndMsg">
                 <Premise>
-                    <Graph ID="I92" kind="PREMISE" name="Premise of Atomic8"/>
+                    <Graph ID="I92" kind="PREMISE" name="Premise of dataInUserAndMsg"/>
                 </Premise>
                 <Conclusion>
-                    <Graph ID="I93" kind="CONCLUSION" name="Graph">
+                    <Graph ID="I93" kind="CONCLUSION" name="Conclusion of dataInUserAndMsg">
                         <Node ID="I94" type="I3">
                             <NodeLayout X="261" Y="114"/>
                             <additionalLayout age="0" force="10"
-                                frozen="false" zone="50"/>
+                                frozen="true" zone="50"/>
                         </Node>
                         <Node ID="I95" type="I2">
                             <NodeLayout X="161" Y="234"/>
                             <additionalLayout age="0" force="10"
-                                frozen="false" zone="50"/>
+                                frozen="true" zone="50"/>
                         </Node>
                         <Node ID="I96" type="I5">
                             <NodeLayout X="317" Y="236"/>
                             <additionalLayout age="0" force="10"
-                                frozen="false" zone="50"/>
+                                frozen="true" zone="50"/>
                         </Node>
                         <Edge ID="I97" source="I94" target="I95" type="I9">
                             <EdgeLayout bendX="0" bendY="0"
@@ -422,24 +422,24 @@
             </Graphconstraint_Atomic>
             <Graphconstraint_Atomic ID="I99" name="dataInMsgAndServer">
                 <Premise>
-                    <Graph ID="I100" kind="PREMISE" name="Premise of Atomic9"/>
+                    <Graph ID="I100" kind="PREMISE" name="Premise of dataInMsgAndServer"/>
                 </Premise>
                 <Conclusion>
-                    <Graph ID="I101" kind="CONCLUSION" name="Graph">
+                    <Graph ID="I101" kind="CONCLUSION" name="Conclusion of dataInMsgAndServer">
                         <Node ID="I102" type="I3">
                             <NodeLayout X="284" Y="54"/>
                             <additionalLayout age="0" force="10"
-                                frozen="false" zone="50"/>
+                                frozen="true" zone="50"/>
                         </Node>
                         <Node ID="I103" type="I5">
                             <NodeLayout X="203" Y="169"/>
                             <additionalLayout age="0" force="10"
-                                frozen="false" zone="50"/>
+                                frozen="true" zone="50"/>
                         </Node>
                         <Node ID="I104" type="I4">
                             <NodeLayout X="372" Y="163"/>
                             <additionalLayout age="0" force="10"
-                                frozen="false" zone="50"/>
+                                frozen="true" zone="50"/>
                         </Node>
                         <Edge ID="I105" source="I102" target="I103" type="I7">
                             <EdgeLayout bendX="0" bendY="0"
@@ -457,24 +457,24 @@
             </Graphconstraint_Atomic>
             <Graphconstraint_Atomic ID="I107" name="dataInUserAndServer">
                 <Premise>
-                    <Graph ID="I108" kind="PREMISE" name="Premise of Atomic10"/>
+                    <Graph ID="I108" kind="PREMISE" name="Premise of dataInUserAndServer"/>
                 </Premise>
                 <Conclusion>
-                    <Graph ID="I109" kind="CONCLUSION" name="Graph">
+                    <Graph ID="I109" kind="CONCLUSION" name="Conclusion of dataInUserAndServer">
                         <Node ID="I110" type="I3">
                             <NodeLayout X="181" Y="98"/>
                             <additionalLayout age="0" force="10"
-                                frozen="false" zone="50"/>
+                                frozen="true" zone="50"/>
                         </Node>
                         <Node ID="I111" type="I2">
                             <NodeLayout X="97" Y="188"/>
                             <additionalLayout age="0" force="10"
-                                frozen="false" zone="50"/>
+                                frozen="true" zone="50"/>
                         </Node>
                         <Node ID="I112" type="I4">
                             <NodeLayout X="254" Y="179"/>
                             <additionalLayout age="0" force="10"
-                                frozen="false" zone="50"/>
+                                frozen="true" zone="50"/>
                         </Node>
                         <Edge ID="I113" source="I110" target="I111" type="I9">
                             <EdgeLayout bendX="0" bendY="0"
@@ -516,15 +516,15 @@
         <Rule ID="I120" formula="true" name="sendMsg">
             <Graph ID="I122" kind="LHS" name="LeftOf_sendMsg">
                 <Node ID="I123" type="I2">
-                    <NodeLayout X="58" Y="233"/>
+                    <NodeLayout X="64" Y="200"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Node ID="I124" type="I5">
-                    <NodeLayout X="173" Y="135"/>
+                    <NodeLayout X="172" Y="96"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Node ID="I125" type="I4">
-                    <NodeLayout X="184" Y="233"/>
+                    <NodeLayout X="234" Y="216"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Edge ID="I126" source="I124" target="I123" type="I8">
@@ -770,6 +770,42 @@
                     <Item iterations="1" rule="receiveMsg"/>
                     <Item iterations="1" rule="deleteMsg"/>
                 </Subsequence>
+                <ObjectFlow enabled="true" index="1:3"
+                    input="receiveMsg" output="sendMsg">
+                    <Mapping image="I158" orig="I129"/>
+                    <Mapping image="I156" orig="I128"/>
+                    <Mapping image="I161" orig="I131"/>
+                    <Mapping image="I159" orig="I130"/>
+                </ObjectFlow>
+                <ObjectFlow enabled="true" index="1:2" input="getData" output="sendMsg">
+                    <Mapping image="I143" orig="I129"/>
+                    <Mapping image="I145" orig="I131"/>
+                    <Mapping image="I144" orig="I130"/>
+                </ObjectFlow>
+                <ObjectFlow enabled="true" index="3:4" input="deleteMsg" output="receiveMsg">
+                    <Mapping image="I173" orig="I164"/>
+                    <Mapping image="I172" orig="I163"/>
+                    <Mapping image="I174" orig="I165"/>
+                    <Mapping image="I176" orig="I168"/>
+                    <Mapping image="I175" orig="I167"/>
+                </ObjectFlow>
+                <ObjectFlow enabled="true" index="2:4" input="deleteMsg" output="getData">
+                    <Mapping image="I175" orig="I152"/>
+                    <Mapping image="I173" orig="I148"/>
+                    <Mapping image="I174" orig="I149"/>
+                </ObjectFlow>
+                <ObjectFlow enabled="true" index="2:3"
+                    input="receiveMsg" output="getData">
+                    <Mapping image="I161" orig="I151"/>
+                    <Mapping image="I160" orig="I152"/>
+                    <Mapping image="I157" orig="I148"/>
+                    <Mapping image="I159" orig="I150"/>
+                    <Mapping image="I158" orig="I149"/>
+                </ObjectFlow>
+                <ObjectFlow enabled="true" index="1:4" input="deleteMsg" output="sendMsg">
+                    <Mapping image="I174" orig="I129"/>
+                    <Mapping image="I172" orig="I128"/>
+                </ObjectFlow>
             </Sequence>
         </RuleSequences>
     </GraphTransformationSystem>
