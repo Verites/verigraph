@@ -18,7 +18,7 @@ module Grammar.Core (
 ) where
 
 import           Abstract.AdhesiveHLR
-import           Abstract.DPO
+import           Abstract.DPO.Core
 
 data Grammar m =
   Grammar {

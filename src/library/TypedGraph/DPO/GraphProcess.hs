@@ -10,6 +10,7 @@ import TypedGraph.Morphism as TGM
 
 instance GenerateProcess (TypedGraphMorphism a b) where
   typing = retypeProduction
+  productionTyping = retype
 
 retypeProduction :: (Derivation (TypedGraphMorphism a b), (TypedGraphMorphism a b,TypedGraphMorphism a b,TypedGraphMorphism a b)) ->  Production (TypedGraphMorphism a b)
 retypeProduction (derivation, (g1,_,g3)) = newProduction
@@ -26,4 +27,14 @@ retypeProduction (derivation, (g1,_,g3)) = newProduction
     newKType = compose mappingL newLType -- change it to use gluing and g2?
     newL = buildTypedGraphMorphism newKType newLType mappingL
     newR = buildTypedGraphMorphism newKType newRType mappingR
+    newProduction = buildProduction newL newR []
+
+retype :: (Production (TypedGraphMorphism a b), (TypedGraphMorphism a b,TypedGraphMorphism a b,TypedGraphMorphism a b)) ->  Production (TypedGraphMorphism a b)
+retype (p, (g1,g2,g3)) = newProduction
+  where
+    oldL = getLHS p
+    oldR = getRHS p
+    newKType = mapping g2
+    newL = buildTypedGraphMorphism newKType (mapping g1) (mapping oldL)
+    newR = buildTypedGraphMorphism newKType (mapping g3) (mapping oldR)
     newProduction = buildProduction newL newR []

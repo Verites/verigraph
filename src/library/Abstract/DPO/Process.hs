@@ -9,6 +9,7 @@ import Abstract.DPO.Core
 import Abstract.DPO.Derivation
 import Abstract.Morphism
 import Data.List.NonEmpty (NonEmpty, fromList)
+import Grammar.Core
 
 data Process m = Process
   { productions :: [Production m]
@@ -22,6 +23,11 @@ class (DPO m) => GenerateProcess m where
   -- typed over C
   typing :: (Derivation m, (m,m,m)) ->  Production m
 
+  -- | Given a Production @p@ and a tuple @(r,s,t)@ of Morphisms @r : G -> C@, @s : D -> C@ and
+  -- @t : H -> C@, it returns a new Production corresponding to the production in @p@ but
+  -- typed over C
+  productionTyping :: (Production m, (m,m,m)) ->  Production m
+
   -- | Given a list of Derivation corresponding to a sequential derivation, it the returns
   -- the corresponding Process of the Derivations
   calculateProcess :: [Derivation m] -> Process m
@@ -33,6 +39,48 @@ class (DPO m) => GenerateProcess m where
         coEq = calculateNCoequalizer $ fromList [h1,h2,h3]
         hs = reduce $ map (`compose` coEq) gs
      in Process (map typing (zip ds hs)) (codomain coEq)
+
+  generateGrammarProcess :: Grammar m -> Process m
+  generateGrammarProcess g =
+    let
+      rs = extractRules g
+      --ks = fromList $ getKs rs
+      fs = ksCoproduct rs
+      --objs = getAllObjects rs
+      gs = allCoproduct rs
+      h = induceSpanMorphism fs
+      (g1s, g2s, g3s) = groupMorphisms $ split gs
+      h1 = h $ zipWith compose (getLefts rs) g1s
+      h2 = h g2s
+      h3 = h $ zipWith compose (getRights rs) g3s
+      coEq = calculateNCoequalizer $ fromList [h1,h2,h3]
+      hs = split $ map (`compose` coEq) gs
+      in Process (map productionTyping (zip rs hs)) (codomain coEq)
+
+split :: [m] -> [(m,m,m)]
+split [] = []
+split (a:b:c:ds) = (a,b,c) : split ds
+
+extractRules :: Grammar m -> [Production m]
+extractRules g = map snd (rules g)
+
+getKs :: (DPO m) => [Production m] -> [Obj m]
+getKs = map (domain . left)
+
+ksCoproduct :: (DPO m) => [Production m] -> [m]
+ksCoproduct = calculateNCoproduct . fromList . getKs
+
+allCoproduct :: (DPO m) => [Production m] -> [m]
+allCoproduct = calculateNCoproduct . fromList . getAllObjects
+
+getAllObjects :: (DPO m) => [Production m] -> [Obj m]
+getAllObjects = foldr (\x -> (++) [(codomain . left) x, (domain . left) x, (codomain . right) x]) []
+
+getLefts :: (DPO m) => [Production m] -> [m]
+getLefts = map left
+
+getRights :: (DPO m) => [Production m] -> [m]
+getRights = map right
 
 generateMorphismFamilies :: (DPO m) => [Derivation m] -> [m] -> [m] -> (m,m,m)
 generateMorphismFamilies ds fs gs=
