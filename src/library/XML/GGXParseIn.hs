@@ -189,7 +189,8 @@ parseRuleSequence = atTag "Sequence" >>>
    proc s -> do
      name <- getAttrValue "name" -< s
      subs <- listA parseSubSequence -< s
-     returnA -< (name, subs)
+     flows <- listA parseObjectFlow -< s
+     returnA -< (name, subs, flows)
 
 parseSubSequence :: ArrowXml cat => cat (NTree XNode) SubSequence
 parseSubSequence = atTag "Subsequence" >>>
@@ -206,3 +207,12 @@ parseSequenceItem = atTag "Item" >>>
     ruleName <- getAttrValue "rule" -< item
     let i = read iterations::Int
     returnA -< (i, ruleName)
+
+parseObjectFlow :: ArrowXml cat => cat (NTree XNode) ObjectFlow
+parseObjectFlow = atTag "ObjectFlow" >>>
+  proc objectFlow -> do
+    index <- getAttrValue "index" -< objectFlow
+    input <- getAttrValue "input" -< objectFlow
+    output <- getAttrValue "output" -< objectFlow
+    maps <- listA parseMappings -< objectFlow
+    returnA -< (index, input, output, maps)

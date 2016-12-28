@@ -66,7 +66,7 @@ execute globalOpts opts = do
         dependencies = concRulesbyDep opts
         newRules = map (makeConcurrentRules dependencies (morphismsConf globalOpts) (GG.constraints gg)) sequences
 
-    forM_ (zip sequences newRules) $ \((name, _), rules) ->
+    forM_ (zip sequences newRules) $ \((name, _, _), rules) ->
       when (null rules)
         (putStrLn $ "No concurrent rules were found for rule sequence '" ++ name ++ "'")
 
@@ -74,10 +74,10 @@ execute globalOpts opts = do
     GW.writeGrammarFile (gg',gg2) ggName names (outputFile opts)
 
 
-makeAllConcurrentRules :: CRDependencies -> MorphismsConfig -> [Constraint (TypedGraphMorphism a b)] -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
-makeAllConcurrentRules dep conf constraints (baseName, sequence) = zipWith makeName (allConcurrentRules dep conf constraints sequence) [0::Int ..]
+makeAllConcurrentRules :: CRDependencies -> MorphismsConfig -> [Constraint (TypedGraphMorphism a b)] -> (String, [GraphRule a b], [c]) -> [(String, GraphRule a b)]
+makeAllConcurrentRules dep conf constraints (baseName, sequence, _) = zipWith makeName (allConcurrentRules dep conf constraints sequence) [0::Int ..]
   where makeName rule idx = (baseName++"_"++show idx, rule)
 
-makeMaxConcurrentRules :: CRDependencies -> MorphismsConfig -> [Constraint (TypedGraphMorphism a b)] -> (String, [GraphRule a b]) -> [(String, GraphRule a b)]
-makeMaxConcurrentRules dep conf constraints (baseName, sequence) = zipWith makeName (maxConcurrentRules dep conf constraints sequence) [0::Int ..]
+makeMaxConcurrentRules :: CRDependencies -> MorphismsConfig -> [Constraint (TypedGraphMorphism a b)] -> (String, [GraphRule a b], [c]) -> [(String, GraphRule a b)]
+makeMaxConcurrentRules dep conf constraints (baseName, sequence, _) = zipWith makeName (maxConcurrentRules dep conf constraints sequence) [0::Int ..]
   where makeName rule idx = (baseName++"_"++show idx, rule)
