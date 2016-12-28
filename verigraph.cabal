@@ -111,6 +111,7 @@ executable verigraph
                        ConcurrentRules
                        CriticalPairAnalysis
                        ParallelIndependence
+                       Processes
                        GlobalOptions
 
 executable verigraph-mcheck
