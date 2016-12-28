@@ -22,6 +22,8 @@ data MorphismType
   | Isomorphism
   deriving (Show, Enum)
 
+type Span m = (m, m)
+
 
 class Morphism m => FindMorphism m where
   -- | Given a type __/t/__ of @MorphismType@ and two objects __/A/__ and __/B/__, it finds all the matches

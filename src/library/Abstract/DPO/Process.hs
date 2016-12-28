@@ -9,6 +9,7 @@ import Abstract.DPO.Core
 import Abstract.DPO.Derivation
 import Abstract.Morphism
 import Data.List.NonEmpty (NonEmpty, fromList)
+import Data.Maybe (fromJust)
 import Grammar.Core
 
 data Process m = Process
@@ -44,9 +45,7 @@ class (DPO m) => GenerateProcess m where
   generateGrammarProcess g =
     let
       rs = extractRules g
-      --ks = fromList $ getKs rs
       fs = ksCoproduct rs
-      --objs = getAllObjects rs
       gs = allCoproduct rs
       h = induceSpanMorphism fs
       (g1s, g2s, g3s) = groupMorphisms $ split gs
@@ -57,12 +56,58 @@ class (DPO m) => GenerateProcess m where
       hs = split $ map (`compose` coEq) gs
       in Process (map productionTyping (zip rs hs)) (codomain coEq)
 
+  generateGrammarProcess2 :: Grammar m -> Grammar m
+  generateGrammarProcess2 g =
+    let
+      initial = start g
+      ruleNames = extractRuleNames g
+      rs = extractRules g
+      fs = ksCoproduct rs
+      gs = allCoproduct rs
+      h = induceSpanMorphism fs
+      (g1s, g2s, g3s) = groupMorphisms $ split gs
+      h1 = h $ zipWith compose (getLefts rs) g1s
+      h2 = h g2s
+      h3 = h $ zipWith compose (getRights rs) g3s
+      coEq = calculateNCoequalizer $ fromList [h1,h2,h3]
+      hs = split $ map (`compose` coEq) gs
+      partial = zip ruleNames hs
+      in grammar initial [] []-- (codomain coEq)
+
+teste :: (GenerateProcess m) => Grammar m -> [ObjectFlow m] -> Grammar m
+teste g os =
+  let
+    initial = start g
+    ruleNames = extractRuleNames g
+    newRules = productions $ generateGrammarProcess g
+    co = zip os (objectFlowCoproduct os)
+    in grammar initial [] $ zip ruleNames newRules
+
+abc :: (DPO m) => Grammar m -> [ObjectFlow m] -> ([m],[m])
+abc g os = ([],[])
+  where
+    rs      = rules g
+    left o  = codomain $ getLHS $ fromJust $ lookup (output o) rs
+    right o = codomain $ getRHS $ fromJust $ lookup (input o)  rs
+
+
+objectFlowCoproduct :: (DPO m) => [ObjectFlow m] -> [m]
+objectFlowCoproduct [] = []
+objectFlowCoproduct flows =
+  let
+    intersectionObjects = fromList $ map (domain . fst . spanMapping) flows
+  in calculateNCoproduct intersectionObjects
+
+
 split :: [m] -> [(m,m,m)]
 split [] = []
 split (a:b:c:ds) = (a,b,c) : split ds
 
 extractRules :: Grammar m -> [Production m]
 extractRules g = map snd (rules g)
+
+extractRuleNames :: Grammar m -> [String]
+extractRuleNames g = map fst (rules g)
 
 getKs :: (DPO m) => [Production m] -> [Obj m]
 getKs = map (domain . left)

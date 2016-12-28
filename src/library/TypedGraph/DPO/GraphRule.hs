@@ -3,7 +3,6 @@
 module TypedGraph.DPO.GraphRule (
     -- * Types
       GraphRule
-    , ObjectFlow(..)
     , getLHS
     , getRHS
     , getNACs
@@ -106,11 +105,3 @@ instance DPO (TypedGraphMorphism a b) where
   shiftNacOverProduction conf rule nac = [calculateComatch nac rule | satisfiesGluingConditions conf rule nac]
 
   isPartiallyMonomorphic = isPartialInjective
-
--- | Object that uses a Span of TypedGraphMorphisms to connect the right-hand-side of a rule with the left-hand-side of another one
-data ObjectFlow a b = ObjectFlow {
-  index :: String -- ^ A identifier for the Object Flow
-, input :: String -- ^ The name of the rule that will produce the input for the next
-, output :: String -- ^ The name of the rule that uses the result of the other
-, spanMapping :: Span a b -- ^ A span of TypedGraphMorphisms @Ri <- IO -> Lo@ where @Ri@ is the right-hand-side of the @input rule@ and @Lo@ is the left-hand-side of the @output rule@
-}

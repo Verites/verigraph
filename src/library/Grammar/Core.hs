@@ -12,6 +12,7 @@ The morphism type is kept generic.
 module Grammar.Core (
       grammar
     , Grammar
+    , ObjectFlow (..)
     , start
     , constraints
     , rules
@@ -19,6 +20,7 @@ module Grammar.Core (
 
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO.Core
+import           Abstract.Morphism
 
 data Grammar m =
   Grammar {
@@ -29,3 +31,12 @@ data Grammar m =
 
 grammar :: Obj m -> [Constraint m] -> [(String, Production m)] -> Grammar m
 grammar = Grammar
+
+-- | Object that uses a Span of Morphisms to connect the right-hand-side of a Production with the left-hand-side of another one
+data ObjectFlow m =
+  ObjectFlow {
+  index :: String -- ^ A identifier for the Object Flow
+, input :: String -- ^ The name of the production that will produce the input for the next
+, output :: String -- ^ The name of the production that uses the result of the other
+, spanMapping :: Span m -- ^ A span of Morphisms @Ri <- IO -> Lo@ where @Ri@ is the right-hand-side of the @input production@ and @Lo@ is the left-hand-side of the @output production@
+}
