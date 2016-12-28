@@ -163,17 +163,12 @@ readGraphs fileName =
 readRules :: String -> IO[RuleWithNacs]
 readRules fileName = runX (parseXML fileName >>> parseRule)
 
-readSequences :: GG.Grammar (TypedGraphMorphism a b) -> String -> IO [(String, [GR.GraphRule a b], [ObjFlow a b])]
+readSequences :: GG.Grammar (TypedGraphMorphism a b) -> String -> IO [(String, [GR.GraphRule a b], [ObjectFlow a b])]
 readSequences grammar fileName = map (expandSequence grammar) <$> runX (parseXML fileName >>> parseRuleSequence)
 
-data ObjFlow a b = ObjFlow {
-  index :: String
-, input :: String
-, output :: String
-, spanMapping :: Span a b
-}
 
-expandSequence :: GG.Grammar (TypedGraphMorphism a b) -> Sequence -> (String, [GR.GraphRule a b], [ObjFlow a b])
+
+expandSequence :: GG.Grammar (TypedGraphMorphism a b) -> Sequence -> (String, [GR.GraphRule a b], [ObjectFlow a b])
 expandSequence grammar (name,s,flows) = (name, mapMaybe lookupRule . concat $ map expandSub s, objs)
   where
     expandSub (i, s) = concat $ replicate i $ concatMap expandItens s
@@ -181,14 +176,12 @@ expandSequence grammar (name,s,flows) = (name, mapMaybe lookupRule . concat $ ma
     lookupRule name = L.lookup name (GG.rules grammar)
     objs = instantiateObjectsFlow (GG.rules grammar) flows
 
-type Span a b = (TypedGraphMorphism a b, TypedGraphMorphism a b)
-
-instantiateObjectsFlow :: [(String, Production (TypedGraphMorphism a b))] -> [ObjectFlow] -> [ObjFlow a b]
+instantiateObjectsFlow :: [(String, Production (TypedGraphMorphism a b))] -> [ParsedObjectFlow] -> [ObjectFlow a b]
 instantiateObjectsFlow _ [] = []
 instantiateObjectsFlow [] _ = []
 instantiateObjectsFlow rules (o:os) =
   let
-    createObject (idx,inp,out,maps) = ObjFlow idx inp out (createSpan inp out maps)
+    createObject (idx,inp,out,maps) = ObjectFlow idx inp out (createSpan inp out maps)
     createSpan inp out maps = instantiateSpan (leftGraph (searchLeft inp)) (rightGraph (searchRight out)) maps
     leftGraph = codomain . getLHS
     rightGraph = codomain . getRHS

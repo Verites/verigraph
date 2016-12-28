@@ -1,5 +1,6 @@
 module TypedGraph.Morphism (
       TypedGraphMorphism
+    , Span
     , idMap
     , isPartialInjective
     , invert

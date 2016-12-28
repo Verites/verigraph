@@ -189,3 +189,5 @@ idMap gm1 gm2 =
       initialGraph = GM.empty (domain gm1) (domain gm2)
       nodesUpdate = foldr (\n -> GM.updateNodes n n) initialGraph (nodes (domain gm1))
       edgesUpdate = foldr (\e -> GM.updateEdges e e) nodesUpdate (edges (domain gm2))
+
+type Span a b = (TypedGraphMorphism a b, TypedGraphMorphism a b)

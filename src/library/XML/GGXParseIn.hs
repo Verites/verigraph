@@ -208,7 +208,7 @@ parseSequenceItem = atTag "Item" >>>
     let i = read iterations::Int
     returnA -< (i, ruleName)
 
-parseObjectFlow :: ArrowXml cat => cat (NTree XNode) ObjectFlow
+parseObjectFlow :: ArrowXml cat => cat (NTree XNode) ParsedObjectFlow
 parseObjectFlow = atTag "ObjectFlow" >>>
   proc objectFlow -> do
     index <- getAttrValue "index" -< objectFlow

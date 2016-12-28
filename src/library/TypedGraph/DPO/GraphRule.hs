@@ -3,6 +3,7 @@
 module TypedGraph.DPO.GraphRule (
     -- * Types
       GraphRule
+    , ObjectFlow(..)
     , getLHS
     , getRHS
     , getNACs
@@ -66,21 +67,21 @@ buildGraphRule typegraph deleted created (preservedNodes, preservedEdges) nacs =
     preservedGraph = build (map fst preservedNodes) (map (\(e,s,t,_) -> (e,s,t)) preservedEdges)
     preservedTypeGraph = GM.buildGraphMorphism preservedGraph typegraph preservedNodes (map (\(e,_,_,t) -> (e,t)) preservedEdges)
     leftAndRightPreserved = M.id preservedTypeGraph
-    
+
     -- Creates indicated elements on codomain of the initial rule
     addCreated = addElementsOnCodomain leftAndRightPreserved created
     addDeleted = addElementsOnCodomain leftAndRightPreserved deleted
-    
+
     ---- Nacs part
-    
+
     -- Each NAC starts from a "initial" id of L ...
     idLeft = M.id (codomain addDeleted)
     -- and adds all forbidden elements on codomain of this initial
     resultingNacs = map (addElementsOnCodomain idLeft) nacs
-    
+
     -- The rule instantiation
     resultingRule = buildProduction addDeleted addCreated resultingNacs
-    
+
     -- Function that adds nodes and edges on the codomain of an init typed graph morphism
     addElementsOnCodomain init (nodes,edges) = addEdges
       where
@@ -105,3 +106,11 @@ instance DPO (TypedGraphMorphism a b) where
   shiftNacOverProduction conf rule nac = [calculateComatch nac rule | satisfiesGluingConditions conf rule nac]
 
   isPartiallyMonomorphic = isPartialInjective
+
+-- | Object that uses a Span of TypedGraphMorphisms to connect the right-hand-side of a rule with the left-hand-side of another one
+data ObjectFlow a b = ObjectFlow {
+  index :: String -- ^ A identifier for the Object Flow
+, input :: String -- ^ The name of the rule that will produce the input for the next
+, output :: String -- ^ The name of the rule that uses the result of the other
+, spanMapping :: Span a b -- ^ A span of TypedGraphMorphisms @Ri <- IO -> Lo@ where @Ri@ is the right-hand-side of the @input rule@ and @Lo@ is the left-hand-side of the @output rule@
+}
