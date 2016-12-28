@@ -24,7 +24,15 @@ data Formula = IntConst Integer
 
 languageDef :: T.LanguageDef()
 languageDef = T.LanguageDef
-  { T.identStart      = alphaNum
+  { T.commentLine     = "#"
+  , T.commentStart    = "/*"
+  , T.commentEnd      = "*/"
+  , T.nestedComments  = False
+  , T.opStart         = oneOf ""
+  , T.opLetter        = oneOf ""
+  , T.caseSensitive   = False
+  -- Everything above this comment is unused and it is here just because of the library warnings
+  , T.identStart      = alphaNum
   , T.identLetter     = alphaNum
   , T.reservedNames   = ["!", "&amp;", "|", "&"]
   , T.reservedOpNames = ["!", "&amp;", "|", "&"]
