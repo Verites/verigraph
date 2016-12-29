@@ -5,7 +5,8 @@ module Processes
   ) where
 
 import           GlobalOptions
-
+import           Abstract.DPO
+import           Abstract.Morphism
 import           Analysis.Processes
 import           Control.Monad
 import qualified Grammar.Core        as GG
@@ -42,6 +43,6 @@ execute globalOpts opts = do
       when (null rules)
         (putStrLn $ "No graph process candidates were found for rule sequence '" ++ name ++ "'")
 
-    let --newStart =
-        gg' = GG.grammar (GG.start gg) [] newRules
+    let newStart = codomain $ getLHS $ snd $ head newRules
+        gg' = GG.grammar newStart [] newRules
     GW.writeGrammarFile (gg',gg2) ggName names (outputFile opts)

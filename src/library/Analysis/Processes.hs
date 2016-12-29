@@ -40,8 +40,7 @@ generateGraphProcess (nome,g,os) =
     hs2 = split $ map (`compose` coreGraphMorphism) hm
 
     newRules = if null os then map productionTyping (zip rs hs1) else map productionTyping (zip rs hs2)
-    in  error $ show $ map spanMapping os-- (zip ruleNames newRules) --  error $ nome ++ " " ++ show (length os) --error $ show $ map isValid newRules
-    -- error $ show $ domain coEq -- error $ show (map isValid leftIOs)--
+    in (zip ruleNames newRules)
 
 objectFlowCoproduct :: (DPO m) => [ObjectFlow m] -> [m]
 objectFlowCoproduct [] = []

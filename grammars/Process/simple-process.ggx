@@ -15,18 +15,18 @@
         <TaggedValue Tag="ruleSequence" TagValue="true"/>
         <TaggedValue Tag="breakAllLayer" TagValue="true"/>
         <TaggedValue Tag="showGraphAfterStep" TagValue="true"/>
-        <TaggedValue Tag="TypeGraphLevel" TagValue="DISABLED"/>
+        <TaggedValue Tag="TypeGraphLevel" TagValue="ENABLED_MAX_MIN"/>
         <Types>
             <NodeType ID="I2" abstract="false" name="a%:RECT:java.awt.Color[r=0,g=0,b=0]:[NODE]:"/>
             <NodeType ID="I3" abstract="false" name="b%:RECT:java.awt.Color[r=0,g=0,b=0]:[NODE]:"/>
             <EdgeType ID="I4" abstract="false" name="a%:SOLID_LINE:java.awt.Color[r=0,g=0,b=0]:[EDGE]:"/>
             <Graph ID="I5" kind="TG" name="TypeGraph">
                 <Node ID="I6" type="I2">
-                    <NodeLayout X="329" Y="199"/>
+                    <NodeLayout X="291" Y="160"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Node ID="I7" type="I3">
-                    <NodeLayout X="490" Y="190"/>
+                    <NodeLayout X="518" Y="157"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Edge ID="I8" source="I6" target="I7" type="I4">
