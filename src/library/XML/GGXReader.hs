@@ -8,6 +8,7 @@ module XML.GGXReader
    readRules,
    readGraphs,
    readSequences,
+   readSequencesWithObjectFlow,
    instantiateRule,
    instantiateSpan,
    minimalSafetyNacsWithLog,
@@ -163,14 +164,24 @@ readGraphs fileName =
 readRules :: String -> IO[RuleWithNacs]
 readRules fileName = runX (parseXML fileName >>> parseRule)
 
-readSequences :: GG.Grammar (TypedGraphMorphism a b) -> String -> IO [(String, [GR.GraphRule a b], [GG.ObjectFlow (TypedGraphMorphism a b)])]
+readSequences :: GG.Grammar (TypedGraphMorphism a b) -> String -> IO [(String, [GR.GraphRule a b])]
 readSequences grammar fileName = map (expandSequence grammar) <$> runX (parseXML fileName >>> parseRuleSequence)
 
-expandSequence :: GG.Grammar (TypedGraphMorphism a b) -> Sequence -> (String, [GR.GraphRule a b], [GG.ObjectFlow (TypedGraphMorphism a b)])
-expandSequence grammar (name,s,flows) = (name, mapMaybe lookupRule . concat $ map expandSub s, objs)
+expandSequence :: GG.Grammar (TypedGraphMorphism a b) -> Sequence -> (String, [GR.GraphRule a b])
+expandSequence grammar (name,s,_) = (name, mapMaybe lookupRule . concat $ map expandSub s)
   where
     expandSub (i, s) = concat $ replicate i $ concatMap expandItens s
     expandItens (i, r) = replicate i r
+    lookupRule name = L.lookup name (GG.rules grammar)
+
+readSequencesWithObjectFlow :: GG.Grammar (TypedGraphMorphism a b) -> String -> IO [(String, [(String, GR.GraphRule a b)], [GG.ObjectFlow (TypedGraphMorphism a b)])]
+readSequencesWithObjectFlow grammar fileName = map (prepareFlows grammar) <$> runX (parseXML fileName >>> parseRuleSequence)
+
+prepareFlows :: GG.Grammar (TypedGraphMorphism a b) -> Sequence -> (String, [(String, GR.GraphRule a b)], [GG.ObjectFlow (TypedGraphMorphism a b)])
+prepareFlows grammar (name,s,flows) = (name, map fun getAll, objs)
+  where
+    fun name = (name, fromJust $ lookupRule name)
+    getAll = map snd (snd $ head s) -- gets only the first subsequence
     lookupRule name = L.lookup name (GG.rules grammar)
     objs = instantiateObjectsFlow (GG.rules grammar) flows
 
@@ -179,13 +190,14 @@ instantiateObjectsFlow _ [] = []
 instantiateObjectsFlow [] _ = []
 instantiateObjectsFlow rules (o:os) =
   let
-    createObject (idx,inp,out,maps) = GG.ObjectFlow idx inp out (createSpan inp out maps)
-    createSpan inp out maps = instantiateSpan (leftGraph (searchLeft inp)) (rightGraph (searchRight out)) maps
+    createObject (idx,cons,prod,maps) = GG.ObjectFlow idx prod cons (createSpan prod cons maps)
+    createSpan prod cons maps = instantiateSpan (rightGraph (searchRight prod)) (leftGraph (searchLeft cons)) maps
     leftGraph = codomain . getLHS
     rightGraph = codomain . getRHS
     searchLeft ruleName = fromJust $ L.lookup ruleName rules
     searchRight ruleName = fromJust $ L.lookup ruleName rules
-  in createObject o : instantiateObjectsFlow rules os
+    (_,c,p,m) = o
+  in createObject o : instantiateObjectsFlow rules os -- error $ (show $ leftGraph (searchLeft c)) ++ (show $ rightGraph (searchRight p)) ++ (show m)--
 
 
 instantiateTypeGraph :: ParsedTypeGraph -> TypeGraph a b

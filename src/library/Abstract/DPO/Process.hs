@@ -56,12 +56,12 @@ class (DPO m) => GenerateProcess m where
       hs = split $ map (`compose` coEq) gs
       in Process (map productionTyping (zip rs hs)) (codomain coEq)
 
-  generateGrammarProcess2 :: Grammar m -> [ObjectFlow m] -> Grammar m
-  generateGrammarProcess2 g os =
+  generateGrammarProcess2 :: (String,[(String, Production m)],[ObjectFlow m]) -> [(String, Production m)]
+  generateGrammarProcess2 (_,g,os) =
     let
-      initial = start g -- original start graph
-      ruleNames = extractRuleNames g
-      rs = extractRules g --- rules
+      --0initial = start g -- original start graph
+      ruleNames = map fst g
+      rs = map snd g --- rules
       fs = ksCoproduct rs
       gs = allCoproduct rs
       h = induceSpanMorphism fs
@@ -87,7 +87,7 @@ class (DPO m) => GenerateProcess m where
       hs2 = split $ map (`compose` coreGraphMorphism) hm
 
       newRules = if null os then map productionTyping (zip rs hs1) else map productionTyping (zip rs hs2)
-      in grammar initial [] (zip ruleNames newRules)-- (codomain coEq)
+      in (zip ruleNames newRules)-- (codomain coEq)
 
 {-teste :: (GenerateProcess m) => Grammar m -> [ObjectFlow m] -> Grammar m
 teste g os =

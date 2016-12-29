@@ -40,6 +40,7 @@ library
                        Analysis.CriticalPairs
                        Analysis.CriticalSequence
                        Analysis.ParallelIndependent
+                       Analysis.Processes
                        Analysis.Interlevel.EvolutionarySpans
                        Analysis.Interlevel.InterLevelCP
                        Image.Dot

@@ -6,13 +6,11 @@ module Processes
 
 import           GlobalOptions
 
-import           Abstract.AdhesiveHLR
-import           Analysis.ConcurrentRules
+import           Analysis.Processes
 import           Control.Monad
 import qualified Grammar.Core        as GG
 import           Options.Applicative
-import           TypedGraph.DPO.GraphRule
-import           TypedGraph.Morphism
+import           TypedGraph.DPO.GraphProcess ()
 import qualified XML.GGXReader            as XML
 import qualified XML.GGXWriter            as GW
 
@@ -37,21 +35,13 @@ execute globalOpts opts = do
     (gg,gg2,_) <- XML.readGrammar (inputFile globalOpts) (useConstraints globalOpts) dpoConf
     ggName <- XML.readGGName (inputFile globalOpts)
     names <- XML.readNames (inputFile globalOpts)
-    sequences <- XML.readSequences gg (inputFile globalOpts)
-    {-let makeConcurrentRules = case generationType opts of
-                                MaxConcurrentRule  -> makeMaxConcurrentRules
-                                AllConcurrentRules -> makeAllConcurrentRules
-        dependencies = concRulesbyDep opts
-        newRules = map (makeConcurrentRules dependencies (morphismsConf globalOpts) (GG.constraints gg)) sequences
+    sequences <- XML.readSequencesWithObjectFlow gg (inputFile globalOpts)
 
+    let newRules = concatMap generateGraphProcess sequences
     forM_ (zip sequences newRules) $ \((name, _, _), rules) ->
       when (null rules)
-        (putStrLn $ "No concurrent rules were found for rule sequence '" ++ name ++ "'")
--}
-    let gg' = GG.grammar (GG.start gg) [] (GG.rules gg)
+        (putStrLn $ "No graph process candidates were found for rule sequence '" ++ name ++ "'")
+
+    let --newStart =
+        gg' = GG.grammar (GG.start gg) [] newRules
     GW.writeGrammarFile (gg',gg2) ggName names (outputFile opts)
-
-
-makeAllConcurrentRules :: CRDependencies -> MorphismsConfig -> [Constraint (TypedGraphMorphism a b)] -> (String, [GraphRule a b], [c]) -> [(String, GraphRule a b)]
-makeAllConcurrentRules dep conf constraints (baseName, sequence, _) = zipWith makeName (allConcurrentRules dep conf constraints sequence) [0::Int ..]
-  where makeName rule idx = (baseName++"_"++show idx, rule)
