@@ -36,7 +36,7 @@ grammar = Grammar
 data ObjectFlow m =
   ObjectFlow {
   index :: String -- ^ A identifier for the Object Flow
-, input :: String -- ^ The name of the production that will produce the input for the next
-, output :: String -- ^ The name of the production that uses the result of the other
-, spanMapping :: Span m -- ^ A span of Morphisms @Ri <- IO -> Lo@ where @Ri@ is the right-hand-side of the @input production@ and @Lo@ is the left-hand-side of the @output production@
+, producer :: String -- ^ The name of the production that will produce the input for the next
+, consumer :: String -- ^ The name of the production that uses the result of the other
+, spanMapping :: Span m -- ^ A span of Morphisms @Ri <- IO -> Lo@ where @Ri@ is the right-hand-side of the @producer production@ and @Lo@ is the left-hand-side of the @consumer production@
 }

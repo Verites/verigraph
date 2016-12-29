@@ -56,12 +56,12 @@ class (DPO m) => GenerateProcess m where
       hs = split $ map (`compose` coEq) gs
       in Process (map productionTyping (zip rs hs)) (codomain coEq)
 
-  generateGrammarProcess2 :: Grammar m -> Grammar m
-  generateGrammarProcess2 g =
+  generateGrammarProcess2 :: Grammar m -> [ObjectFlow m] -> Grammar m
+  generateGrammarProcess2 g os =
     let
-      initial = start g
+      initial = start g -- original start graph
       ruleNames = extractRuleNames g
-      rs = extractRules g
+      rs = extractRules g --- rules
       fs = ksCoproduct rs
       gs = allCoproduct rs
       h = induceSpanMorphism fs
@@ -70,11 +70,26 @@ class (DPO m) => GenerateProcess m where
       h2 = h g2s
       h3 = h $ zipWith compose (getRights rs) g3s
       coEq = calculateNCoequalizer $ fromList [h1,h2,h3]
-      hs = split $ map (`compose` coEq) gs
-      partial = zip ruleNames hs
-      in grammar initial [] []-- (codomain coEq)
+      hm = map (`compose` coEq) gs
+      hs1 = split hm -- colimit of the rules themselves
 
-teste :: (GenerateProcess m) => Grammar m -> [ObjectFlow m] -> Grammar m
+
+      -- colimit (based on coequalizers) with object flows
+      partial = zip ruleNames hs1
+      myfst (a,_,_) = a
+      mythd (_,_,a) = a
+      leftIOs = map (\o -> compose (snd $ spanMapping o) (myfst $ fromJust (lookup (consumer o) partial))) os
+      rightIOs = map (\o -> compose (fst $ spanMapping o) (mythd $ fromJust (lookup (producer o) partial))) os
+      objCop = objectFlowCoproduct os
+      leftFamily = induceSpanMorphism objCop leftIOs
+      rightFamily = induceSpanMorphism objCop rightIOs
+      coreGraphMorphism = calculateCoequalizer leftFamily rightFamily
+      hs2 = split $ map (`compose` coreGraphMorphism) hm
+
+      newRules = if null os then map productionTyping (zip rs hs1) else map productionTyping (zip rs hs2)
+      in grammar initial [] (zip ruleNames newRules)-- (codomain coEq)
+
+{-teste :: (GenerateProcess m) => Grammar m -> [ObjectFlow m] -> Grammar m
 teste g os =
   let
     initial = start g
@@ -89,7 +104,7 @@ abc g os = ([],[])
     rs      = rules g
     left o  = codomain $ getLHS $ fromJust $ lookup (output o) rs
     right o = codomain $ getRHS $ fromJust $ lookup (input o)  rs
-
+-}
 
 objectFlowCoproduct :: (DPO m) => [ObjectFlow m] -> [m]
 objectFlowCoproduct [] = []
@@ -97,7 +112,6 @@ objectFlowCoproduct flows =
   let
     intersectionObjects = fromList $ map (domain . fst . spanMapping) flows
   in calculateNCoproduct intersectionObjects
-
 
 split :: [m] -> [(m,m,m)]
 split [] = []
