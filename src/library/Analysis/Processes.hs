@@ -5,13 +5,12 @@ module Analysis.Processes
 import Abstract.Cocomplete
 import Abstract.DPO
 import Abstract.Morphism
-import Abstract.Valid
 import Data.List.NonEmpty (fromList)
 import Data.Maybe (fromJust)
 import Grammar.Core
 
-generateGraphProcess :: (GenerateProcess m, Valid m, Eq (Obj m), Show m, Show (Obj m)) => (String,[(String, Production m)],[ObjectFlow m]) -> [(String, Production m)]
-generateGraphProcess (nome,g,os) =
+generateGraphProcess :: (GenerateProcess m) => (String,[(String, Production m)],[ObjectFlow m]) -> [(String, Production m)]
+generateGraphProcess (_,g,os) =
   let
     ruleNames = map fst g
     rs = map snd g --- rules
@@ -40,7 +39,7 @@ generateGraphProcess (nome,g,os) =
     hs2 = split $ map (`compose` coreGraphMorphism) hm
 
     newRules = if null os then map productionTyping (zip rs hs1) else map productionTyping (zip rs hs2)
-    in (zip ruleNames newRules)
+    in zip ruleNames newRules
 
 objectFlowCoproduct :: (DPO m) => [ObjectFlow m] -> [m]
 objectFlowCoproduct [] = []
@@ -49,10 +48,10 @@ objectFlowCoproduct flows =
     intersectionObjects = fromList $ map (domain . fst . spanMapping) flows
   in calculateNCoproduct intersectionObjects
 
-getLefts :: (DPO m) => [Production m] -> [m]
+getLefts :: [Production m] -> [m]
 getLefts = map getLHS
 
-getRights :: (DPO m) => [Production m] -> [m]
+getRights :: [Production m] -> [m]
 getRights = map getRHS
 
 split :: [m] -> [(m,m,m)]
