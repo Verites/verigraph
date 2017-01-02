@@ -28,10 +28,10 @@ generateGraphProcess (_,g,os) =
 
     -- colimit (based on coequalizers) with object flows
     partial = zip ruleNames hs1
-    myfst (a,_,_) = a
-    mythd (_,_,a) = a
-    leftIOs = map (\o -> compose (snd $ spanMapping o) (myfst $ fromJust (lookup (consumer o) partial))) os
-    rightIOs = map (\o -> compose (fst $ spanMapping o) (mythd $ fromJust (lookup (producer o) partial))) os
+    fst' (a,_,_) = a
+    thd' (_,_,a) = a
+    leftIOs = map (\o -> compose (snd $ spanMapping o) (fst' $ fromJust (lookup (consumer o) partial))) os
+    rightIOs = map (\o -> compose (fst $ spanMapping o) (thd' $ fromJust (lookup (producer o) partial))) os
     objCop = objectFlowCoproduct os
     leftFamily = induceSpanMorphism objCop leftIOs
     rightFamily = induceSpanMorphism objCop rightIOs
