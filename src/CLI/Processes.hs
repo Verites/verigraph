@@ -18,8 +18,6 @@ import qualified XML.GGXWriter            as GW
 data Options = Options
   { outputFile     :: String }
 
---data CREpiPairsType = AllEpiPairs | OnlyInjectiveEpiPairs deriving (Eq)
-
 options :: Parser Options
 options = Options
   <$> strOption
@@ -38,10 +36,14 @@ execute globalOpts opts = do
     names <- XML.readNames (inputFile globalOpts)
     sequences <- XML.readSequencesWithObjectFlow gg (inputFile globalOpts)
 
-    let newRules = concatMap generateGraphProcess sequences
+    let abc = concatMap calculateRulesColimit sequences
+        conflictsAndDependencies = findConflictsAndDependencies abc
+        newRules = concatMap generateGraphProcess sequences
     forM_ (zip sequences newRules) $ \((name, _, _), rules) ->
       when (null rules)
         (putStrLn $ "No graph process candidates were found for rule sequence '" ++ name ++ "'")
+
+    putStrLn $ show conflictsAndDependencies
 
     let newStart = codomain $ getLHS $ snd $ head newRules
         gg' = GG.grammar newStart [] newRules
