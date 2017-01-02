@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Document version="1.0">
+    <GraphTransformationSystem ID="I1" directed="true" name="GraGra" parallel="true">
+        <TaggedValue Tag="AttrHandler" TagValue="Java Expr">
+            <TaggedValue Tag="Package" TagValue="java.lang"/>
+            <TaggedValue Tag="Package" TagValue="java.util"/>
+        </TaggedValue>
+        <TaggedValue Tag="CSP" TagValue="true"/>
+        <TaggedValue Tag="injective" TagValue="true"/>
+        <TaggedValue Tag="dangling" TagValue="true"/>
+        <TaggedValue Tag="identification" TagValue="true"/>
+        <TaggedValue Tag="NACs" TagValue="true"/>
+        <TaggedValue Tag="PACs" TagValue="true"/>
+        <TaggedValue Tag="GACs" TagValue="true"/>
+        <TaggedValue Tag="ruleSequence" TagValue="true"/>
+        <TaggedValue Tag="breakAllLayer" TagValue="true"/>
+        <TaggedValue Tag="showGraphAfterStep" TagValue="true"/>
+        <TaggedValue Tag="TypeGraphLevel" TagValue="DISABLED"/>
+        <Types>
+            <NodeType ID="I2" abstract="false" name="a%:RECT:java.awt.Color[r=0,g=0,b=0]:[NODE]:"/>
+            <NodeType ID="I3" abstract="false" name="b%:RECT:java.awt.Color[r=0,g=0,b=0]:[NODE]:"/>
+            <EdgeType ID="I4" abstract="false" name="1%:SOLID_LINE:java.awt.Color[r=0,g=0,b=0]:[EDGE]:"/>
+            <Graph ID="I5" kind="TG" name="TypeGraph">
+                <Node ID="I6" type="I2">
+                    <NodeLayout X="199" Y="66"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+                <Node ID="I7" type="I3">
+                    <NodeLayout X="371" Y="68"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+                <Edge ID="I8" source="I6" target="I7" type="I4">
+                    <EdgeLayout bendX="0" bendY="0"
+                        sourceMultiplicityOffsetX="-6"
+                        sourceMultiplicityOffsetY="15"
+                        targetMultiplicityOffsetX="-6"
+                        targetMultiplicityOffsetY="7" textOffsetX="0" textOffsetY="-22"/>
+                    <additionalLayout aktlength="200" force="10" preflength="200"/>
+                </Edge>
+            </Graph>
+        </Types>
+        <Graph ID="I9" kind="HOST" name="Graph"/>
+        <Rule ID="I10" formula="true" name="p1">
+            <Graph ID="I12" kind="LHS" name="LeftOf_p1">
+                <Node ID="I13" type="I2">
+                    <NodeLayout X="143" Y="82"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+            </Graph>
+            <Graph ID="I14" kind="RHS" name="RightOf_p1">
+                <Node ID="I15" type="I2">
+                    <NodeLayout X="143" Y="82"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+                <Node ID="I16" type="I3">
+                    <NodeLayout X="257" Y="78"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+                <Edge ID="I17" source="I15" target="I16" type="I4">
+                    <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                    <additionalLayout aktlength="200" force="10" preflength="200"/>
+                </Edge>
+            </Graph>
+            <Morphism comment="Formula: true" name="p1">
+                <Mapping image="I15" orig="I13"/>
+            </Morphism>
+            <ApplCondition>
+                <NAC>
+                    <Graph ID="I18" kind="NAC" name="Nac">
+                        <Node ID="I19" type="I2">
+                            <NodeLayout X="86" Y="45"/>
+                            <additionalLayout age="0" force="10"
+                                frozen="true" zone="50"/>
+                        </Node>
+                        <Node ID="I20" type="I3">
+                            <NodeLayout X="146" Y="122"/>
+                            <additionalLayout age="0" force="10"
+                                frozen="true" zone="50"/>
+                        </Node>
+                        <Edge ID="I21" source="I19" target="I20" type="I4">
+                            <EdgeLayout bendX="0" bendY="0"
+                                textOffsetX="0" textOffsetY="-22"/>
+                            <additionalLayout aktlength="200" force="10" preflength="200"/>
+                        </Edge>
+                    </Graph>
+                    <Morphism name="Nac">
+                        <Mapping image="I19" orig="I13"/>
+                    </Morphism>
+                </NAC>
+            </ApplCondition>
+            <TaggedValue Tag="layer" TagValue="0"/>
+            <TaggedValue Tag="priority" TagValue="0"/>
+        </Rule>
+        <Rule ID="I22" formula="true" name="p2">
+            <Graph ID="I24" kind="LHS" name="LeftOf_p2">
+                <Node ID="I25" type="I2">
+                    <NodeLayout X="98" Y="82"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+                <Node ID="I26" type="I3">
+                    <NodeLayout X="203" Y="94"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+                <Edge ID="I27" source="I25" target="I26" type="I4">
+                    <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                    <additionalLayout aktlength="200" force="10" preflength="200"/>
+                </Edge>
+            </Graph>
+            <Graph ID="I28" kind="RHS" name="RightOf_p2">
+                <Node ID="I29" type="I2">
+                    <NodeLayout X="98" Y="82"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+            </Graph>
+            <Morphism comment="Formula: true" name="p2">
+                <Mapping image="I29" orig="I25"/>
+            </Morphism>
+            <TaggedValue Tag="layer" TagValue="0"/>
+            <TaggedValue Tag="priority" TagValue="0"/>
+        </Rule>
+        <RuleSequences>
+            <Sequence name="RuleSequence">
+                <Graph id="I9"/>
+                <Subsequence iterations="1">
+                    <Item iterations="1" rule="p1"/>
+                    <Item iterations="1" rule="p2"/>
+                </Subsequence>
+                <Subsequence iterations="1">
+                    <Item iterations="1" rule="p2"/>
+                    <Item iterations="1" rule="p1"/>
+                </Subsequence>
+                <ObjectFlow enabled="true" index="1:2" input="p2" output="p1">
+                    <Mapping image="I27" orig="I17"/>
+                    <Mapping image="I26" orig="I16"/>
+                    <Mapping image="I25" orig="I15"/>
+                </ObjectFlow>
+                <ObjectFlow enabled="true" index="3:4" input="p1" output="p2">
+                    <Mapping image="I13" orig="I29"/>
+                </ObjectFlow>
+            </Sequence>
+        </RuleSequences>
+    </GraphTransformationSystem>
+</Document>
