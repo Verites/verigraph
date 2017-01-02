@@ -17,6 +17,10 @@ data Process m = Process
 
 class (DPO m) => GenerateProcess m where
 
+  -- | Given a pair of morhisms with common codomain, it returns a new pair with morphism also with a
+  -- a new codomain that does not contain the elements that were orphans in both original morphisms
+  restrictMorphisms :: (m,m) -> (m,m)
+
   -- | Given a Derivation @d@ and a tuple @(p,q,r)@ of Morphisms @p : G -> C@, @q : D -> C@ and
   -- @r : H -> C@, it returns a new Production corresponding to the production in @d@ but
   -- typed over C
