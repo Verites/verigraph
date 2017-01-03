@@ -32,7 +32,7 @@
                 </Node>
                 <Node ID="I9" type="I4">
                     <NodeLayout X="301" Y="134"/>
-                    <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Edge ID="I10" source="I7" target="I8" type="I5">
                     <EdgeLayout bendX="0" bendY="0"
@@ -161,21 +161,21 @@
                     <Item iterations="1" rule="p2"/>
                     <Item iterations="1" rule="p1"/>
                 </Subsequence>
+                <ObjectFlow enabled="true" index="1:3" input="p3" output="p1"/>
                 <ObjectFlow enabled="true" index="1:2" input="p2" output="p1">
                     <Mapping image="I29" orig="I19"/>
-                    <Mapping image="I27" orig="I17"/>
                     <Mapping image="I28" orig="I18"/>
+                    <Mapping image="I27" orig="I17"/>
                 </ObjectFlow>
                 <ObjectFlow enabled="true" index="5:6" input="p1" output="p2">
                     <Mapping image="I15" orig="I31"/>
                 </ObjectFlow>
+                <ObjectFlow enabled="true" index="2:3" input="p3" output="p2"/>
                 <ObjectFlow enabled="true" index="4:6" input="p1" output="p3">
                     <Mapping image="I15" orig="I37"/>
                 </ObjectFlow>
                 <ObjectFlow enabled="true" index="4:5" input="p2" output="p3">
                     <Mapping image="I27" orig="I37"/>
-                    <Mapping image="I29" orig="I39"/>
-                    <Mapping image="I28" orig="I38"/>
                 </ObjectFlow>
             </Sequence>
         </RuleSequences>
