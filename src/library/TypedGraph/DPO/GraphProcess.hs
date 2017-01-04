@@ -13,7 +13,6 @@ instance GenerateProcess (TypedGraphMorphism a b) where
   typing = retypeProduction
   productionTyping = retype
   restrictMorphisms = restrictMorphisms'
-  restrictMorphism = restrictMorphism'
 
 retypeProduction :: (Derivation (TypedGraphMorphism a b), (TypedGraphMorphism a b,TypedGraphMorphism a b,TypedGraphMorphism a b)) ->  Production (TypedGraphMorphism a b)
 retypeProduction (derivation, (g1,_,g3)) = newProduction
@@ -48,6 +47,3 @@ restrictMorphisms' (a,b) = (removeOrphans a, removeOrphans b)
     orphanNodes = orphanTypedNodes a `intersect` orphanTypedNodes b
     orphanEdges = orphanTypedEdges a `intersect` orphanTypedEdges b
     removeOrphans m = foldr removeNodeFromCodomain (foldr removeEdgeFromCodomain m orphanEdges) orphanNodes
-
-restrictMorphism' :: TypedGraphMorphism a b -> TypedGraphMorphism a b
-restrictMorphism' m = foldr removeNodeFromCodomain (foldr removeEdgeFromCodomain m (orphanTypedEdges m)) (orphanTypedNodes m)

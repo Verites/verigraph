@@ -17,7 +17,7 @@ generateGraphProcess (_,g,os) =
   let
     colimit = calculateRulesColimit ("",g,os)
     ruleNames = map fst g
-    newRules = map productionTyping (map forgetRuleName colimit)
+    newRules = map (productionTyping . forgetRuleName) colimit
     forgetRuleName (_,b,c) = (b,c)
   in zip ruleNames newRules
 
@@ -97,8 +97,8 @@ findConflicts :: GenerateProcess m => [(NamedRuleWithMatches m,NamedRuleWithMatc
 findConflicts pairs = map buildDU deleteUse ++ map buildPF produceForbid
   where
     conflictCandidates = filter (\(a,b) -> validLeftRewritings (getRule a) (getRule b) (getMatch a, getMatch b)) pairs
-    (deleteUse,produceForbidCandidates) = partition (\(x,y) -> myDeleteUse (getRule x) (getMatch x, getMatch y)) conflictCandidates
-    produceForbid = filter (\(x,y) -> myProduceForbid (getRule y) (getComatch x, getMatch y)) produceForbidCandidates
+    (deleteUse,produceForbidCandidates) = partition (\(x,y) -> isDeleteUse' (getRule x) (getMatch x, getMatch y)) conflictCandidates
+    produceForbid = filter (\(x,y) -> isProduceForbid' (getRule y) (getComatch x, getMatch y)) produceForbidCandidates
     buildDU (a,b) = (getName a, getName b, "DeleteUse")
     buildPF (a,b) = (getName a, getName b, "ProduceForbid")
 
@@ -106,19 +106,10 @@ findDepependies :: GenerateProcess m => [(NamedRuleWithMatches m,NamedRuleWithMa
 findDepependies pairs = map buildPU produceUse ++ map buildDF deleteForbid
   where
     dependencyCandidates = filter (\(a,b) -> validRightLeftRewritings (getRule a) (getRule b) (getComatch a, getMatch b)) pairs
-    (produceUse,deleteForbidCandidates) = partition (\(x,y) -> myProduceUse (getRule x) (getComatch x, getMatch y)) dependencyCandidates
-    deleteForbid = filter (\(x,y) -> myDeleteForbid (getRule y) (getMatch x, getMatch y)) deleteForbidCandidates
+    (produceUse,deleteForbidCandidates) = partition (\(x,y) -> isProduceUse' (getRule x) (getComatch x, getMatch y)) dependencyCandidates
+    deleteForbid = filter (\(x,y) -> isDeleteForbid' (getRule y) (getMatch x, getMatch y)) deleteForbidCandidates
     buildPU (a,b) = (getName a, getName b, "ProduceUse")
     buildDF (a,b) = (getName a, getName b, "DeleteForbid")
-
-
-createCritical :: GenerateProcess m => (NamedRuleWithMatches m, NamedRuleWithMatches m) -> [(String, String, String)]
-createCritical (a,b) = deleteUse ++ produceForbid ++ produceUse ++ deleteForbid
-  where
-    deleteUse = [(getName a, getName b, "DeleteUse") | isDeleteUse' (getRule a) (getMatch a, getMatch b)]
-    produceForbid = [(getName a, getName b, "ProduceForbid") | isProduceForbid' (getRule a) (getRule b) (getMatch a, getComatch a, getMatch b)]
-    produceUse = [(getName a, getName b, "ProduceUse") | isProduceUse' (getRule a) (getComatch a, getMatch b)]
-    deleteForbid = [(getName a, getName b, "DeleteForbid") | isDeleteForbid' (getRule a) (getRule b) (getMatch a, getComatch a, getMatch b)]
 
 conf :: MorphismsConfig
 conf = MorphismsConfig MonoMatches MonomorphicNAC
@@ -150,56 +141,29 @@ validRightLeftRewritings p1 p2 (m1',m2) =
     (m1'',m2'') = restrictMorphisms (m1',m2)
   in satisfyRewritingConditions conf (p1', m1'') (p2,m2'')
 
-myDeleteUse :: GenerateProcess m => Production m -> (m, m) -> Bool
-myDeleteUse p1 (m1,m2) =
+isDeleteUse' :: GenerateProcess m => Production m -> (m, m) -> Bool
+isDeleteUse' p1 (m1,m2) =
   let
     (m1'',m2'') = restrictMorphisms (m1,m2)
   in isDeleteUse conf p1 (m1'',m2'')
 
-myProduceUse :: GenerateProcess m => Production m -> (m, m) -> Bool
-myProduceUse p1 (m1',m2) =
+isProduceUse' :: GenerateProcess m => Production m -> (m, m) -> Bool
+isProduceUse' p1 (m1',m2) =
   let
     (m1'',m2'') = restrictMorphisms (m1',m2)
   in isProduceUse conf p1 (m1'',m2'')
 
-myProduceForbid :: (GenerateProcess m) => Production m -> (m,m) -> Bool
-myProduceForbid p2 (m1',m2) =
+isProduceForbid' :: (GenerateProcess m) => Production m -> (m,m) -> Bool
+isProduceForbid' p2 (m1',m2) =
   let
     (_,m2'') = restrictMorphisms (m1',m2)
   in not (satisfiesNACs conf p2 m2'')
 
-myDeleteForbid :: (GenerateProcess m) => Production m -> (m,m) -> Bool
-myDeleteForbid p2 (m1,m2) =
+isDeleteForbid' :: (GenerateProcess m) => Production m -> (m,m) -> Bool
+isDeleteForbid' p2 (m1,m2) =
   let
     (_,m2'') = restrictMorphisms (m1,m2)
   in not (satisfiesNACs conf p2 m2'')
-
-isDeleteUse' :: GenerateProcess m => Production m -> (m, m) -> Bool
-isDeleteUse' p1 (m1,m2)= isDeleteUse conf p1 (restrictMorphisms (m1,m2))
-
-isProduceForbid' :: (GenerateProcess m) => Production m -> Production m -> (m,m,m) -> Bool
-isProduceForbid' p1 p2 (m1,m1',m2) = not (isDeleteUse' p1 (m1,m2)) && auxiliarProduceForbid conf p2 (m1',m2)
-
--- | Auxiliary function to test for produce forbid, remove error in final version
-auxiliarProduceForbid :: (GenerateProcess m) => MorphismsConfig -> Production m -> (m,m) -> Bool
-auxiliarProduceForbid conf p2 (m1',m2) =
-  let
-    (_,m2'') = restrictMorphisms (m1',m2)
-    result = satisfiesNACs conf p2 m2''
-    teste = if satisfiesGluingConditions conf p2 m2'' then not result else error "should satisfy gluing conditions"
-  in satisfiesNACs conf p2 m2''
-
-isProduceUse' :: GenerateProcess m => Production m -> (m, m) -> Bool
-isProduceUse' p1 (m1',m2) = isProduceUse conf p1 (restrictMorphisms (m1',m2))
-
-isDeleteForbid' :: (GenerateProcess m) => Production m -> Production m -> (m,m,m) -> Bool
-isDeleteForbid' p1 p2 (m1,m1',m2) = not (isProduceUse' p1 (m1',m2)) && auxiliarDeleteForbid conf p2 (m1,m2)
-
-auxiliarDeleteForbid :: (GenerateProcess m) => MorphismsConfig -> Production m -> (m,m) -> Bool
-auxiliarDeleteForbid conf p2 (m1,m2) =
-  let
-    (_,m2'') = restrictMorphisms (m1,m2)
-    in satisfiesNACs conf p2 m2''
 
 fst' :: (a,b,c) -> a
 fst' (a,_,_) = a
