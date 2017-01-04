@@ -3,8 +3,11 @@ module TypedGraph.DPO.GraphProcess
 where
 
 import Abstract.DPO
+import Abstract.DPO.Process
 import Abstract.Morphism
+import Abstract.Relation (Relation, empty)
 import Data.List
+import Graph.Graph (NodeId, EdgeId)
 import TypedGraph.DPO.GraphRule ()
 import TypedGraph.Graph ()
 import TypedGraph.Morphism as TGM
@@ -13,6 +16,20 @@ instance GenerateProcess (TypedGraphMorphism a b) where
   typing = retypeProduction
   productionTyping = retype
   restrictMorphisms = restrictMorphisms'
+
+type OccurrenceRelation = Relation RelationItem
+
+data RelationItem = Node NodeId
+                  | Edge EdgeId
+                  deriving (Eq, Ord)
+
+
+
+buildBasicRelation :: [NamedRuleWithMatches (TypedGraphMorphism a b)] -> OccurrenceRelation
+buildBasicRelation namedRules =
+  let
+
+  in empty [] []
 
 retypeProduction :: (Derivation (TypedGraphMorphism a b), (TypedGraphMorphism a b,TypedGraphMorphism a b,TypedGraphMorphism a b)) ->  Production (TypedGraphMorphism a b)
 retypeProduction (derivation, (g1,_,g3)) = newProduction

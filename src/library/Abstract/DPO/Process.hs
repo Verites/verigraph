@@ -1,14 +1,18 @@
 module Abstract.DPO.Process
 ( Process(..)
-, GenerateProcess(..))
+, GenerateProcess(..)
+, NamedRuleWithMatches
+, getRule, getName, getMatch, getComatch)
 
 where
 
 import Abstract.Cocomplete
+import Data.Maybe (fromJust)
 import Abstract.DPO.Core
 import Abstract.DPO.Derivation
 import Abstract.Morphism
 import Data.List.NonEmpty (NonEmpty, fromList)
+import Grammar.Core
 
 data Process m = Process
   { productions :: [Production m]
@@ -42,6 +46,75 @@ class (DPO m) => GenerateProcess m where
         hs = reduce $ map (`compose` coEq) gs
      in Process (map typing (zip ds hs)) (codomain coEq)
 
+  calculateRulesColimit :: (String,[(String, Production m)],[ObjectFlow m]) -> [NamedRuleWithMatches m]
+  calculateRulesColimit (_,g,os) =
+    let
+      ruleNames = map fst g
+      rs = map snd g --- rules
+      fs = ksCoproduct rs
+      gs = allCoproduct rs
+      h = induceSpanMorphism fs
+      (g1s, g2s, g3s) = groupMorphisms $ split gs
+      h1 = h $ zipWith compose (getLefts rs) g1s
+      h2 = h g2s
+      h3 = h $ zipWith compose (getRights rs) g3s
+      coEq = calculateNCoequalizer $ fromList [h1,h2,h3]
+      hm = map (`compose` coEq) gs
+      hs1 = split hm -- colimit of the rules themselves
+
+
+      -- colimit (based on coequalizers) with object flows
+      partial = zip ruleNames hs1
+      leftIOs = map (\o -> compose (snd $ spanMapping o) (fst' $ fromJust (lookup (consumer o) partial))) os
+      rightIOs = map (\o -> compose (fst $ spanMapping o) (thd' $ fromJust (lookup (producer o) partial))) os
+      objCop = objectFlowCoproduct os
+      leftFamily = induceSpanMorphism objCop leftIOs
+      rightFamily = induceSpanMorphism objCop rightIOs
+      coreGraphMorphism = calculateCoequalizer leftFamily rightFamily
+      hs2 = split $ map (`compose` coreGraphMorphism) hm
+    in if null os then zip3 ruleNames rs hs1 else zip3 ruleNames rs hs2
+
+objectFlowCoproduct :: (DPO m) => [ObjectFlow m] -> [m]
+objectFlowCoproduct [] = []
+objectFlowCoproduct flows =
+  let
+    intersectionObjects = fromList $ map (domain . fst . spanMapping) flows
+  in calculateNCoproduct intersectionObjects
+
+getLefts :: [Production m] -> [m]
+getLefts = map getLHS
+
+getRights :: [Production m] -> [m]
+getRights = map getRHS
+
+split :: [m] -> [(m,m,m)]
+split [] = []
+split (a:b:c:ds) = (a,b,c) : split ds
+split _ = error "list of morphisms should have length divisible by 3"
+
+type NamedRuleWithMatches m = (String, Production m, (m,m,m))
+
+getName :: NamedRuleWithMatches m -> String
+getName = fst'
+
+getRule :: NamedRuleWithMatches m -> Production m
+getRule = snd'
+
+getMatch :: NamedRuleWithMatches m -> m
+getMatch = fst' . thd'
+
+getComatch :: NamedRuleWithMatches m -> m
+getComatch = thd' . thd'
+
+fst' :: (a,b,c) -> a
+fst' (a,_,_) = a
+
+snd' :: (a,b,c) -> b
+snd' (_,b,_) = b
+
+thd' :: (a,b,c) -> c
+thd' (_,_,c) = c
+
 generateMorphismFamilies :: (DPO m) => [Derivation m] -> [m] -> [m] -> (m,m,m)
 generateMorphismFamilies ds fs gs=
   let ls = getLeftBottomMorphisms ds
@@ -53,6 +126,18 @@ generateMorphismFamilies ds fs gs=
       h2 = h g2s
       h3 = h $ zipWith compose rs g3s
   in (h1,h2,h3)
+
+ksCoproduct :: (DPO m) => [Production m] -> [m]
+ksCoproduct = calculateNCoproduct . fromList . getKs
+
+allCoproduct :: (DPO m) => [Production m] -> [m]
+allCoproduct = calculateNCoproduct . fromList . getAllObjects
+
+getKs :: (DPO m) => [Production m] -> [Obj m]
+getKs = map (domain . getLHS)
+
+getAllObjects :: (DPO m) => [Production m] -> [Obj m]
+getAllObjects = foldr (\x -> (++) [(codomain . getLHS) x, (domain . getLHS) x, (codomain . getRHS) x]) []
 
 -- | Given a list of Derivation, it returns all the objects in the bottom part of the
 -- diagrams that are source of at least one Morphism
