@@ -189,3 +189,19 @@ idMap gm1 gm2 =
       initialGraph = GM.empty (domain gm1) (domain gm2)
       nodesUpdate = foldr (\n -> GM.updateNodes n n) initialGraph (nodes (domain gm1))
       edgesUpdate = foldr (\e -> GM.updateEdges e e) nodesUpdate (edges (domain gm2))
+
+-- | Given a TypedGraphMorphism tgm, creates an isomorphic TypedGraphMorphism tgm' where the mapping between the domain and codomain can be seen as explicit inclusion (the same ids)
+reflectIdsFromTypeGraph :: TypedGraphMorphism a b -> TypedGraphMorphism a b
+reflectIdsFromTypeGraph tgm =
+  let
+    gmDomain = domain tgm
+    gmCodomain = codomain tgm
+
+    newNodes gm = map (GM.applyNodeUnsafe gm) (nodes (domain gm))
+    newEdges gm = map (\x -> (GM.applyEdgeUnsafe gm x, GM.applyNodeUnsafe gm (sourceOfUnsafe (domain gm) x), GM.applyNodeUnsafe gm (targetOfUnsafe (domain gm) x))) (edges $ domain gm)
+
+    newDomain = foldr (\(e,s,t) -> GM.createEdgeOnDomain e s t e) (foldr (\x -> GM.createNodeOnDomain x x) (GM.empty empty (codomain gmDomain)) (newNodes gmDomain)) (newEdges gmDomain)
+    newCodomain = foldr (\(e,s,t) -> GM.createEdgeOnDomain e s t e) (foldr (\x -> GM.createNodeOnDomain x x) (GM.empty empty (codomain gmCodomain)) (newNodes gmCodomain)) (newEdges gmCodomain)
+
+    newMaps = GM.buildGraphMorphism (domain newDomain) (domain newCodomain) (map (\(NodeId x) -> (x,x)) (nodes $ domain newDomain)) (map (\(EdgeId x) -> (x,x)) (edges $ domain newDomain))
+  in buildTypedGraphMorphism newDomain newCodomain newMaps

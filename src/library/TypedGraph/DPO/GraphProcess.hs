@@ -124,8 +124,8 @@ retype (p, (g1,g2,g3)) = newProduction
     oldL = getLHS p
     oldR = getRHS p
     newKType = mapping g2
-    newL = buildTypedGraphMorphism newKType (mapping g1) (mapping oldL)
-    newR = buildTypedGraphMorphism newKType (mapping g3) (mapping oldR)
+    newL = reflectIdsFromTypeGraph $ buildTypedGraphMorphism newKType (mapping g1) (mapping oldL)
+    newR = reflectIdsFromTypeGraph $ buildTypedGraphMorphism newKType (mapping g3) (mapping oldR)
     newProduction = buildProduction newL newR []
 
 restrictMorphisms' :: (TypedGraphMorphism a b, TypedGraphMorphism a b) -> (TypedGraphMorphism a b, TypedGraphMorphism a b)
