@@ -21,6 +21,7 @@ import           TypedGraph.DPO.GraphRule
 --import System.Exit
 import           Abstract.Morphism
 import           TypedGraph.Morphism.Cocomplete as C
+import TypedGraph.DPO.GraphProcess
 
 
 
