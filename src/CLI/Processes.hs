@@ -11,7 +11,7 @@ import           Analysis.Processes
 import           Control.Monad
 import qualified Grammar.Core        as GG
 import           Options.Applicative
-import           TypedGraph.DPO.GraphProcess ()
+import           TypedGraph.DPO.GraphProcess
 import qualified XML.GGXReader            as XML
 import qualified XML.GGXWriter            as GW
 
@@ -44,6 +44,8 @@ execute globalOpts opts = do
         (putStrLn $ "No graph process candidates were found for rule sequence '" ++ name ++ "'")
 
     putStrLn $ show conflictsAndDependencies
+
+    putStrLn $ "All Relations: " ++ show (occurenceRelation newRules)
 
     let newStart = codomain $ getLHS $ snd $ head newRules
         gg' = GG.grammar newStart [] newRules

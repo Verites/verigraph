@@ -13,6 +13,9 @@ module Grammar.Core (
       grammar
     , Grammar
     , ObjectFlow (..)
+    , NamedProduction
+    , getProductionName
+    , getProduction
     , start
     , constraints
     , rules
@@ -22,15 +25,23 @@ import           Abstract.AdhesiveHLR
 import           Abstract.DPO.Core
 import           Abstract.Morphism
 
+type NamedProduction m = (String, Production m)
+
 data Grammar m =
   Grammar {
       start       :: Obj m
     , constraints :: [Constraint m]
-    , rules       :: [(String, Production m)]
+    , rules       :: [NamedProduction m]
     }
 
-grammar :: Obj m -> [Constraint m] -> [(String, Production m)] -> Grammar m
+grammar :: Obj m -> [Constraint m] -> [NamedProduction m] -> Grammar m
 grammar = Grammar
+
+getProductionName :: NamedProduction m -> String
+getProductionName = fst
+
+getProduction :: NamedProduction m -> Production m
+getProduction = snd
 
 -- | Object that uses a Span of Morphisms to connect the right-hand-side of a Production with the left-hand-side of another one
 data ObjectFlow m =

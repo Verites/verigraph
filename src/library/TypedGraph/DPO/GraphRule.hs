@@ -13,6 +13,8 @@ module TypedGraph.DPO.GraphRule (
     , deletedEdges
     , createdNodes
     , createdEdges
+    , preservedNodes
+    , preservedEdges
 
     , emptyGraphRule
     , nullGraphRule
@@ -45,7 +47,13 @@ deletedEdges r = TGM.orphanTypedEdges (getLHS r)
 
 -- | Return the edges created by a rule
 createdEdges :: GraphRule a b -> [G.EdgeId]
-createdEdges r = TGM.orphanTypedEdges (getRHS r)
+createdEdges = TGM.orphanTypedEdges . getRHS
+
+preservedNodes :: GraphRule a b -> [G.NodeId]
+preservedNodes = nodesFromDomain . getLHS
+
+preservedEdges :: GraphRule a b -> [G.EdgeId]
+preservedEdges = edgesFromDomain . getLHS
 
 -- | Returns an empty GraphRule
 emptyGraphRule :: Graph a b -> Production (TypedGraphMorphism a b)
