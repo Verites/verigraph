@@ -74,6 +74,15 @@ class (DPO m) => GenerateProcess m where
       hs2 = split $ map (`compose` coreGraphMorphism) hm
     in if null os then zip3 ruleNames rs hs1 else zip3 ruleNames rs hs2
 
+  generateGraphProcess :: (String,[(String, Production m)],[ObjectFlow m]) -> [(String, Production m)]
+  generateGraphProcess (_,g,os) =
+    let
+      colimit = calculateRulesColimit ("",g,os)
+      ruleNames = map fst g
+      newRules = map (productionTyping . forgetRuleName) colimit
+      forgetRuleName (_,b,c) = (b,c)
+    in zip ruleNames newRules
+
 objectFlowCoproduct :: (DPO m) => [ObjectFlow m] -> [m]
 objectFlowCoproduct [] = []
 objectFlowCoproduct flows =

@@ -4,6 +4,8 @@ module Util.Closures
 ( transitiveClosure
 , reflexiveClosure
 , reflexiveAndTransitiveClosure
+, relationDomain
+, relationImage
 )
 
 where
@@ -36,3 +38,13 @@ reflexiveAndTransitiveClosure :: Ord a => Relation a -> Relation a
 reflexiveAndTransitiveClosure set
   | null set = set
   | otherwise = reflexiveClosure (transitiveClosure set)
+
+relationDomain :: Ord a => Relation a ->  Set a
+relationDomain set
+  | null set = empty
+  | otherwise = [a | (a,_) <- set]
+
+relationImage :: Ord a => Relation a ->  Set a
+relationImage set
+  | null set = empty
+  | otherwise = [b | (_,b) <- set]

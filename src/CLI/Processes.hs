@@ -39,13 +39,23 @@ execute globalOpts opts = do
     let abc = concatMap calculateRulesColimit sequences
         conflictsAndDependencies = findConflictsAndDependencies abc
         newRules = concatMap generateGraphProcess sequences
+        relation = occurenceRelation newRules
     forM_ (zip sequences newRules) $ \((name, _, _), rules) ->
       when (null rules)
         (putStrLn $ "No graph process candidates were found for rule sequence '" ++ name ++ "'")
 
+    putStrLn "Conflicts and Dependencies: "
     putStrLn (show conflictsAndDependencies)
 
-    putStrLn $ "Rules Relation: " ++ show (rulesOccurenceRelation newRules)
+    putStrLn ""
+
+    putStrLn "Rules Relation: "
+    putStrLn $ show (filterRulesOccurenceRelation relation)
+
+    putStrLn ""
+
+    putStrLn "Elements Relation: "
+    putStrLn $ show (filterElementsOccurenceRelation relation)
 
     let newStart = codomain $ getLHS $ snd $ head newRules
         gg' = GG.grammar newStart [] newRules

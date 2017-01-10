@@ -9,16 +9,6 @@ import Abstract.DPO
 import Abstract.DPO.Process
 import Analysis.DiagramAlgorithms
 import Data.List (partition)
-import Grammar.Core
-
-generateGraphProcess :: (GenerateProcess m) => (String,[(String, Production m)],[ObjectFlow m]) -> [(String, Production m)]
-generateGraphProcess (_,g,os) =
-  let
-    colimit = calculateRulesColimit ("",g,os)
-    ruleNames = map fst g
-    newRules = map (productionTyping . forgetRuleName) colimit
-    forgetRuleName (_,b,c) = (b,c)
-  in zip ruleNames newRules
 
 findConflictsAndDependencies :: GenerateProcess m => [NamedRuleWithMatches m] -> [(String, String, String)]
 findConflictsAndDependencies rulesWithMatches = findConflicts pairs ++ findDepependies pairs --concatMap createCritical pairs

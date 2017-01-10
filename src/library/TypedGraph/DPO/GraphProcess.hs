@@ -1,6 +1,6 @@
 module TypedGraph.DPO.GraphProcess
 
-(occurenceRelation, rulesOccurenceRelation)
+(occurenceRelation, filterRulesOccurenceRelation, filterElementsOccurenceRelation)
 
 where
 
@@ -37,12 +37,29 @@ occurenceRelation rules =
     s = setToMonad $ unions [b,b',b'']
   in monadToSet $ transitiveClosure s
 
-rulesOccurenceRelation :: [NamedProduction (TypedGraphMorphism a b)] -> S.Set(RelationItem, RelationItem)
-rulesOccurenceRelation rules = S.filter bothRules $ occurenceRelation rules
+filterRulesOccurenceRelation :: S.Set(RelationItem, RelationItem) -> S.Set(RelationItem, RelationItem)
+filterRulesOccurenceRelation = S.filter bothRules
   where
     bothRules (x,y) = case (x,y) of
                         (Rule _, Rule _) -> True
                         _                -> False
+
+filterElementsOccurenceRelation :: S.Set(RelationItem, RelationItem) -> S.Set(RelationItem, RelationItem)
+filterElementsOccurenceRelation = S.filter bothElements
+  where
+    bothElements (x,y) = case (x,y) of
+                        (Rule _, _) -> False
+                        (_, Rule _) -> False
+                        _           -> True
+
+createdElements :: S.Set(RelationItem, RelationItem) -> S.Set(RelationItem, RelationItem)
+createdElements elementsRelation =
+  let
+    m = setToMonad elementsRelation
+    c = relationImage m
+    created = monadToSet c
+
+   in elementsRelation
 
 setToMonad :: (Ord a) => Set a -> SM.Set a
 setToMonad = SM.fromList . toList
