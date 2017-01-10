@@ -191,6 +191,7 @@ idMap gm1 gm2 =
       edgesUpdate = foldr (\e -> GM.updateEdges e e) nodesUpdate (edges (domain gm2))
 
 -- | Given a TypedGraphMorphism tgm, creates an isomorphic TypedGraphMorphism tgm' where the mapping between the domain and codomain can be seen as explicit inclusion (the same ids)
+-- Attention: It works only when the typing morphism is injective, otherwise it will produce an invalid TypedGraphMorphism
 reflectIdsFromTypeGraph :: TypedGraphMorphism a b -> TypedGraphMorphism a b
 reflectIdsFromTypeGraph tgm =
   let
