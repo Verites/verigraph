@@ -43,9 +43,9 @@ execute globalOpts opts = do
       when (null rules)
         (putStrLn $ "No graph process candidates were found for rule sequence '" ++ name ++ "'")
 
-    putStrLn $ show conflictsAndDependencies
+    putStrLn (show conflictsAndDependencies)
 
-    putStrLn $ "All Relations: " ++ show (occurenceRelation newRules)
+    putStrLn $ "Rules Relation: " ++ show (rulesOccurenceRelation newRules)
 
     let newStart = codomain $ getLHS $ snd $ head newRules
         gg' = GG.grammar newStart [] newRules

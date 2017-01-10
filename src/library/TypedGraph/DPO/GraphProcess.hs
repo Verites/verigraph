@@ -1,16 +1,19 @@
 module TypedGraph.DPO.GraphProcess
 
-(occurenceRelation)
+(occurenceRelation, rulesOccurenceRelation)
 
 where
 
 import Abstract.DPO
 import Abstract.DPO.Process ()
 import Abstract.Morphism
---import Abstract.Relation (Relation)
-import Data.List
+import Data.List as L hiding (union)
+import Data.Set as S
+import qualified Data.Set.Monad as SM
+import Equivalence.EquivalenceClasses
 import Grammar.Core
 import Graph.Graph (NodeId, EdgeId)
+import Util.Closures as C
 import TypedGraph.DPO.GraphRule
 import TypedGraph.Graph ()
 import TypedGraph.Morphism as TGM
@@ -20,29 +23,35 @@ instance GenerateProcess (TypedGraphMorphism a b) where
   productionTyping = retype
   restrictMorphisms = restrictMorphisms'
 
---type OccurrenceRelation = Relation RelationItem
-
 data RelationItem = Node NodeId
                   | Edge EdgeId
                   | Rule String
                   deriving (Eq, Ord, Show)
 
-{-buildBasicRelation :: [NamedRuleWithMatches (TypedGraphMorphism a b)] -> OccurrenceRelation
-buildBasicRelation namedRules =
-  let
-    base = empty [] []
-  in base-}
-
-occurenceRelation :: [NamedProduction (TypedGraphMorphism a b)] -> [(RelationItem, RelationItem)]
+occurenceRelation :: [NamedProduction (TypedGraphMorphism a b)] -> S.Set(RelationItem, RelationItem)
 occurenceRelation rules =
   let
-    b = concatMap creationAndDeletionRelation rules
+    b = unions $ L.map creationAndDeletionRelation rules
     b' = creationAndPreservationRelation rules b
     b'' = preservationAndDeletionRelation rules b
-  in b ++ b' ++ b''
+    s = setToMonad $ unions [b,b',b'']
+  in monadToSet $ transitiveClosure s
+
+rulesOccurenceRelation :: [NamedProduction (TypedGraphMorphism a b)] -> S.Set(RelationItem, RelationItem)
+rulesOccurenceRelation rules = S.filter bothRules $ occurenceRelation rules
+  where
+    bothRules (x,y) = case (x,y) of
+                        (Rule _, Rule _) -> True
+                        _                -> False
+
+setToMonad :: (Ord a) => Set a -> SM.Set a
+setToMonad = SM.fromList . toList
+
+monadToSet :: (Ord a) => SM.Set a -> Set a
+monadToSet = fromList . SM.toList
 
 -- use with the retyped rules
-creationAndDeletionRelation :: NamedProduction (TypedGraphMorphism a b) -> [(RelationItem, RelationItem)]
+creationAndDeletionRelation :: NamedProduction (TypedGraphMorphism a b) -> S.Set(RelationItem, RelationItem)
 creationAndDeletionRelation (name,rule) =
   let
     ln = deletedNodes rule
@@ -53,22 +62,25 @@ creationAndDeletionRelation (name,rule) =
                  ++ [(Node a, Edge b) | a <- ln, b <- re] ++ [(Edge a, Node b) | a <- le, b <- rn]
     putRule rel = [(fst rel, Rule name), (Rule name, snd rel)]
     withRules = concatMap putRule nodesAndEdges
-  in nodesAndEdges ++ withRules
+  in S.fromList $ nodesAndEdges ++ withRules
 
-creationAndPreservationRelation :: [NamedProduction (TypedGraphMorphism a b)] -> [(RelationItem, RelationItem)] -> [(RelationItem, RelationItem)]
+creationAndPreservationRelation :: [NamedProduction (TypedGraphMorphism a b)] -> S.Set(RelationItem, RelationItem) -> S.Set(RelationItem, RelationItem)
 creationAndPreservationRelation rules cdRelation =
   let
     creationCase x = case fst x of
       Rule _ -> True
       _      -> False
-    created = filter creationCase cdRelation
-    result = concatMap (relatedByCreationAndPreservation created) rules
-  in result
+    created = S.filter creationCase cdRelation
+    result = L.map (relatedByCreationAndPreservation created) rules
+  in S.unions result
 
-relatedByCreationAndPreservation :: [(RelationItem, RelationItem)] -> NamedProduction (TypedGraphMorphism a b) -> [(RelationItem, RelationItem)]
-relatedByCreationAndPreservation []     _         = []
-relatedByCreationAndPreservation (r:rs) namedRule =
+relatedByCreationAndPreservation :: S.Set(RelationItem, RelationItem) -> NamedProduction (TypedGraphMorphism a b) -> S.Set(RelationItem, RelationItem)
+relatedByCreationAndPreservation relation namedRule
+  | S.null relation = S.empty
+  | otherwise =
   let
+    r = getElem relation
+    rs = getTail relation
     name = getProductionName namedRule
     nodes = preservedNodes (getProduction namedRule)
     edges = preservedEdges (getProduction namedRule)
@@ -76,22 +88,25 @@ relatedByCreationAndPreservation (r:rs) namedRule =
                                 Node x -> nodes `intersect` [x] /= []
                                 Edge x -> edges `intersect` [x] /= []
                                 _      -> False
-  in if related r nodes edges then [(fst r, Rule name)] else relatedByCreationAndPreservation rs namedRule
+  in if related r nodes edges then singleton (fst r, Rule name) else relatedByCreationAndPreservation rs namedRule
 
-preservationAndDeletionRelation :: [NamedProduction (TypedGraphMorphism a b)] -> [(RelationItem, RelationItem)] -> [(RelationItem, RelationItem)]
+preservationAndDeletionRelation :: [NamedProduction (TypedGraphMorphism a b)] -> S.Set(RelationItem, RelationItem) -> S.Set(RelationItem, RelationItem)
 preservationAndDeletionRelation rules cdRelation =
   let
     deletionCase x = case snd x of
       Rule _ -> True
       _      -> False
-    deleting = filter deletionCase cdRelation
-    result = concatMap (relatedByPreservationAndDeletion deleting) rules
-  in result
+    deleting = S.filter deletionCase cdRelation
+    result = L.map (relatedByPreservationAndDeletion deleting) rules
+  in S.unions result
 
-relatedByPreservationAndDeletion :: [(RelationItem, RelationItem)] -> NamedProduction (TypedGraphMorphism a b) -> [(RelationItem, RelationItem)]
-relatedByPreservationAndDeletion []     _         = []
-relatedByPreservationAndDeletion (r:rs) namedRule =
+relatedByPreservationAndDeletion :: S.Set(RelationItem, RelationItem) -> NamedProduction (TypedGraphMorphism a b) -> S.Set(RelationItem, RelationItem)
+relatedByPreservationAndDeletion relation namedRule
+  | S.null relation = S.empty
+  | otherwise =
   let
+    r = getElem relation
+    rs = getTail relation
     name = getProductionName namedRule
     nodes = preservedNodes (getProduction namedRule)
     edges = preservedEdges (getProduction namedRule)
@@ -99,7 +114,7 @@ relatedByPreservationAndDeletion (r:rs) namedRule =
                                 Node x -> nodes `intersect` [x] /= []
                                 Edge x -> edges `intersect` [x] /= []
                                 _      -> False
-  in if related r nodes edges then [(Rule name, snd r)] else relatedByPreservationAndDeletion rs namedRule
+  in if related r nodes edges then singleton (Rule name, snd r) else relatedByPreservationAndDeletion rs namedRule
 
 retypeProduction :: (Derivation (TypedGraphMorphism a b), (TypedGraphMorphism a b,TypedGraphMorphism a b,TypedGraphMorphism a b)) ->  Production (TypedGraphMorphism a b)
 retypeProduction (derivation, (g1,_,g3)) = newProduction
@@ -133,4 +148,4 @@ restrictMorphisms' (a,b) = (removeOrphans a, removeOrphans b)
   where
     orphanNodes = orphanTypedNodes a `intersect` orphanTypedNodes b
     orphanEdges = orphanTypedEdges a `intersect` orphanTypedEdges b
-    removeOrphans m = foldr removeNodeFromCodomain (foldr removeEdgeFromCodomain m orphanEdges) orphanNodes
+    removeOrphans m = L.foldr removeNodeFromCodomain (L.foldr removeEdgeFromCodomain m orphanEdges) orphanNodes
