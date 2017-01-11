@@ -4,6 +4,7 @@ module Processes
   , execute
   ) where
 
+import           Abstract.Valid
 import           GlobalOptions
 import           Abstract.DPO
 import           Abstract.Morphism
@@ -36,26 +37,35 @@ execute globalOpts opts = do
     names <- XML.readNames (inputFile globalOpts)
     sequences <- XML.readSequencesWithObjectFlow gg (inputFile globalOpts)
 
-    let abc = concatMap calculateRulesColimit sequences
+    let abc = calculateRulesColimit $ head sequences
         conflictsAndDependencies = findConflictsAndDependencies abc
-        newRules = concatMap generateGraphProcess sequences
+        newGG = myGraphProcess $ head sequences
+        newRules = generateGraphProcess $ head sequences
         relation = occurenceRelation newRules
+        rulesRelation = filterRulesOccurenceRelation relation
+        elementsRelation = filterElementsOccurenceRelation relation
     forM_ (zip sequences newRules) $ \((name, _, _), rules) ->
       when (null rules)
         (putStrLn $ "No graph process candidates were found for rule sequence '" ++ name ++ "'")
 
+    putStrLn "##################\n"
+    putStrLn $ "Initial Graph is valid? \n> " ++ show (isValid $ GG.start newGG)
+    putStrLn $ show (GG.start newGG)
+    putStrLn "\n##################\n"
+
+
     putStrLn "Conflicts and Dependencies: "
     putStrLn (show conflictsAndDependencies)
 
-    putStrLn ""
+    putStrLn "\n##################\n"
 
     putStrLn "Rules Relation: "
-    putStrLn $ show (filterRulesOccurenceRelation relation)
+    putStrLn $ show (rulesRelation)
 
-    putStrLn ""
+    putStrLn "\n##################\n"
 
     putStrLn "Elements Relation: "
-    putStrLn $ show (filterElementsOccurenceRelation relation)
+    putStrLn $ show (elementsRelation)
 
     let newStart = codomain $ getLHS $ snd $ head newRules
         gg' = GG.grammar newStart [] newRules

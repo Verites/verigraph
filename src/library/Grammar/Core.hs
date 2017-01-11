@@ -13,6 +13,7 @@ module Grammar.Core (
       grammar
     , Grammar
     , ObjectFlow (..)
+    , RuleSequence
     , NamedProduction
     , getProductionName
     , getProduction
@@ -51,3 +52,5 @@ data ObjectFlow m =
 , consumer :: String -- ^ The name of the production that uses the result of the other
 , spanMapping :: Span m -- ^ A span of Morphisms @Ri <- IO -> Lo@ where @Ri@ is the right-hand-side of the @producer production@ and @Lo@ is the left-hand-side of the @consumer production@
 }
+
+type RuleSequence m = (String,[(String, Production m)],[ObjectFlow m])
