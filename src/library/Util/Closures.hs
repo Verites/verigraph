@@ -6,12 +6,21 @@ module Util.Closures
 , reflexiveAndTransitiveClosure
 , relationDomain
 , relationImage
+, setToMonad
+, monadToSet
 )
 
 where
 
+import qualified Data.Set as S
 import Data.Set.Monad
 import Prelude hiding (null, length,foldr)
+
+setToMonad :: (Ord a) => S.Set a -> Set a
+setToMonad = fromList . S.toList
+
+monadToSet :: (Ord a) => Set a -> S.Set a
+monadToSet = S.fromList . toList
 
 type Relation a = Set (a,a)
 

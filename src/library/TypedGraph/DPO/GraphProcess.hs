@@ -4,6 +4,7 @@ module TypedGraph.DPO.GraphProcess
 , filterRulesOccurenceRelation
 , filterElementsOccurenceRelation
 , myGraphProcess
+, uniqueOrigin
 )
 
 where
@@ -13,7 +14,6 @@ import Abstract.DPO.Process ()
 import Abstract.Morphism as M
 import Data.List as L hiding (union)
 import Data.Set as S
-import qualified Data.Set.Monad as SM
 import Equivalence.EquivalenceClasses
 import Grammar.Core
 import Graph.Graph (NodeId, EdgeId, Graph)
@@ -35,6 +35,36 @@ data RelationItem = Node NodeId
 
 type Relation = S.Set(RelationItem, RelationItem)
 
+negativeEdges :: Relation -> Relation
+negativeEdges set
+  | S.null set = set
+  | otherwise = let
+    down a = case a of
+              (Edge x, Edge y) -> (Edge (-x), Edge (-y))
+              (Edge x, Node y) -> (Edge (-x), Node y)
+              (Node x, Edge y) -> (Node x, Edge (-y))
+              _ -> a
+    in S.map down set
+
+uniqueOrigin :: [NamedProduction (TypedGraphMorphism a b)] -> Bool
+uniqueOrigin rules = not (repeated createdList) && not (repeated deletedList)
+  where
+    creationAndDeletion = S.filter ruleElementItem $ unions $ L.map creationAndDeletionRelation rules
+    ruleElementItem a =  case a of
+      (Rule _, _) -> True
+      (_, Rule _) -> True
+      (_, _)      -> False
+    isCreated a = case a of
+      (Rule _, _) -> True
+      _ -> False
+    (created, deleted) = S.partition isCreated creationAndDeletion
+    createdList = S.toList $ S.map snd created
+    deletedList = S.toList $ S.map fst deleted
+
+repeated :: (Eq a) => [a] -> Bool
+repeated [] = False
+repeated (x:xs) = x `elem` xs || repeated xs
+
 occurenceRelation :: [NamedProduction (TypedGraphMorphism a b)] -> Relation
 occurenceRelation rules =
   let
@@ -52,7 +82,7 @@ filterRulesOccurenceRelation = S.filter bothRules
                         _                -> False
 
 filterElementsOccurenceRelation :: Relation -> Relation
-filterElementsOccurenceRelation = S.filter bothElements
+filterElementsOccurenceRelation = negativeEdges . S.filter bothElements
   where
     bothElements (x,y) = case (x,y) of
                         (Rule _, _) -> False
@@ -86,12 +116,6 @@ calculateInitialGraph coreGraph createdElements =
     nodes = S.map (\(Node x) -> x) n
     edges = S.map (\(Edge x) -> x) e
   in S.foldr GM.removeNodeFromDomain (S.foldr GM.removeEdgeFromDomain (M.id coreGraph) edges) nodes
-
-setToMonad :: (Ord a) => Set a -> SM.Set a
-setToMonad = SM.fromList . toList
-
-monadToSet :: (Ord a) => SM.Set a -> Set a
-monadToSet = fromList . SM.toList
 
 -- use with the retyped rules
 creationAndDeletionRelation :: NamedProduction (TypedGraphMorphism a b) -> Relation

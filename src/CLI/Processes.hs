@@ -44,28 +44,42 @@ execute globalOpts opts = do
         relation = occurenceRelation newRules
         rulesRelation = filterRulesOccurenceRelation relation
         elementsRelation = filterElementsOccurenceRelation relation
+        unique = (uniqueOrigin newRules)
     forM_ (zip sequences newRules) $ \((name, _, _), rules) ->
       when (null rules)
         (putStrLn $ "No graph process candidates were found for rule sequence '" ++ name ++ "'")
 
-    putStrLn "##################\n"
-    putStrLn $ "Initial Graph is valid? \n> " ++ show (isValid $ GG.start newGG)
-    putStrLn $ show (GG.start newGG)
-    putStrLn "\n##################\n"
+
 
 
     putStrLn "Conflicts and Dependencies: "
-    putStrLn (show conflictsAndDependencies)
+    putStrLn $ show conflictsAndDependencies
 
     putStrLn "\n##################\n"
 
     putStrLn "Rules Relation: "
-    putStrLn $ show (rulesRelation)
+    putStrLn $ show rulesRelation
 
     putStrLn "\n##################\n"
 
     putStrLn "Elements Relation: "
-    putStrLn $ show (elementsRelation)
+    putStrLn $ show elementsRelation
+
+    putStrLn "\n##################\n"
+    putStrLn "Tesing Validity\n"
+    putStrLn $ "Are the origins and terminations of elements unique?\n>>> " ++ show unique
+
+    putStrLn "\n------------------\n"
+    putStrLn $ "Initial Graph is valid? \n>>> " ++ show (isValid $ GG.start newGG)
+    putStrLn $ show (GG.start newGG)
+
+    putStrLn "\n------------------\n"
+    putStrLn "Is there a compatible concrete total order?\n>>> Undefined"
+
+    putStrLn "\n------------------\n"
+    putStrLn "Is there a compatible concrete total order respecting NACs?\n>>> Undefined"
+
+
 
     let newStart = codomain $ getLHS $ snd $ head newRules
         gg' = GG.grammar newStart [] newRules
