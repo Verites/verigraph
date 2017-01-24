@@ -10,7 +10,9 @@ module  Equivalence.EquivalenceClasses (
 
 ) where
 
+import           Data.Foldable (find)
 import           Data.Set as DS
+import Prelude hiding (filter, null, foldr, foldl)
 
 maximumDisjointClass :: (Ord a) => [a] -> Set (EquivalenceClass a)
 maximumDisjointClass l = fromList $ Prelude.map (fromList . (:[])) l
@@ -67,3 +69,26 @@ findEquivalenceClass element set
   | otherwise = getElem domain
   where
     domain = DS.filter (element `elem`) set
+
+type Relation a = Set (a,a)
+
+withS :: Ord a => Relation a -> a -> Relation a
+withS rel item = filter ((== item) . snd) rel
+
+withF :: Ord a => Relation a -> a -> Relation a
+withF rel item = filter ((== item) . snd) rel
+
+noIncoming :: Ord a => Relation a -> Set a -> Maybe a
+noIncoming rel = find (null . withS rel)
+
+isCyclic :: Ord a => Relation a -> Bool
+isCyclic = not . null . until (\x -> remove x == x) remove
+  where
+    remove es = maybe es (withF es) . noIncoming es $ DS.map fst es
+
+sort :: Ord a => Relation a -> [a]
+sort rs = if isCyclic rs then error "cannot sort cyclic list"
+           else f rs . fromList . uncurry (++) $ unzip xs where
+    f es vs = maybe [] (\v -> v : f (withF es v) (delete v vs)) $
+              noIncoming es vs
+    xs = toList rs
