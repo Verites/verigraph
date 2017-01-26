@@ -73,23 +73,35 @@ findEquivalenceClass element set
 
 type Relation a = Set (a,a)
 
-withS :: Ord a => Relation a -> a -> Relation a
-withS rel item = filter ((== item) . snd) rel
+elementInImage :: Ord a => Relation a -> a -> Relation a
+elementInImage rel item = filter ((== item) . snd) rel
 
-withF :: Ord a => Relation a -> a -> Relation a
-withF rel item = filter ((/= item) . fst) rel
+elementNotInDomain :: Ord a => Relation a -> a -> Relation a
+elementNotInDomain rel item = filter ((/= item) . fst) rel
 
 noIncoming :: Ord a => Relation a -> Set a -> Maybe a
-noIncoming rel = find (null . withS rel)
+noIncoming rel = find (null . elementInImage rel)
 
 isCyclic :: Ord a => Relation a -> Bool
-isCyclic = not . null . until (\x -> remove x == x) remove
+isCyclic = not . null . until (\rel -> removeOneItem rel == rel) removeOneItem
   where
-    remove es = maybe es (withF es) . noIncoming es $ DS.map fst es
+    removeOneItem rel = maybe rel (elementNotInDomain rel) . noIncoming rel $ relationDomain rel
+    relationDomain = DS.map fst
 
 tsort :: Ord a => Relation a -> Maybe [a]
-tsort rs = if isCyclic rs then Nothing
-           else Just $ f rs . fromList . uncurry (++) $ unzip xs where
-    f es vs = maybe [] (\v -> v : f (withF es v) (delete v vs)) $
-              noIncoming es vs
-    xs = toList rs
+tsort rel =
+  let
+    items = relationElements rel
+  in if isCyclic rel then Nothing
+     else Just $ buildOrdering rel items
+
+conditionalTSort :: Ord a => Relation a -> Maybe [a]
+conditionalTSort = tsort
+
+relationElements :: Ord a => Relation a -> Set a
+relationElements = foldr (\(x,y) -> insert x . insert y) empty
+
+buildOrdering :: Ord a => Relation a -> Set a -> [a]
+buildOrdering relation items = maybe [] addToOrderRemoveFromRelation $ noIncoming relation items
+  where
+    addToOrderRemoveFromRelation i = i : buildOrdering (elementNotInDomain relation i) (delete i items)

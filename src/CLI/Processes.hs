@@ -49,9 +49,6 @@ execute globalOpts opts = do
       when (null rules)
         (putStrLn $ "No graph process candidates were found for rule sequence '" ++ name ++ "'")
 
-
-
-
     putStrLn "Conflicts and Dependencies: "
     putStrLn $ show conflictsAndDependencies
 
@@ -74,8 +71,8 @@ execute globalOpts opts = do
     putStrLn $ show (GG.start newGG)
 
     putStrLn "\n------------------\n"
-    putStrLn $ "Is there a compatible concrete total order?\n>>> " ++ show (findOrder rulesRelation)
-    putStrLn $ "Is there a compatible concrete total order?\n>>> " ++ show (findOrder elementsRelation) 
+    putStrLn $ "Is there a compatible concrete total order for rules?\n>>> " ++ show (findOrder rulesRelation)
+    putStrLn $ "Is there a compatible concrete total order for elements?\n>>> " ++ show (findOrder elementsRelation)
 
     putStrLn "\n------------------\n"
     putStrLn "Is there a compatible concrete total order respecting NACs?\n>>> Undefined"
