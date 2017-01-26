@@ -73,6 +73,19 @@ findEquivalenceClass element set
 
 type Relation a = Set (a,a)
 
+-- DeleteFOrbid, ProduceForbid
+type CondRelation a = Set ((a,a),(a,a))
+
+updateCond :: Ord a => CondRelation a -> a -> (CondRelation a, Relation a)
+updateCond c i =
+  let
+    contains i ((a,b),(c,d)) = (i == a) || (i == b) || (i == c) || (i == d)
+    (has, hasNot) = partition (contains i) c
+    removeBoth i ((_,b),(c,_)) = if b /= c then error "invalid abstract relations" else i /= b -- && (i /= c)
+    getRelation i ((a,b),(c,d)) = if i == a then (a,b) else (c,d)
+    newConcrete = DS.map (getRelation i) $ filter (removeBoth i) has
+   in (hasNot, newConcrete)
+
 elementInImage :: Ord a => Relation a -> a -> Relation a
 elementInImage rel item = filter ((== item) . snd) rel
 
@@ -95,8 +108,11 @@ tsort rel =
   in if isCyclic rel then Nothing
      else Just $ buildOrdering rel items
 
-conditionalTSort :: Ord a => Relation a -> Maybe [a]
-conditionalTSort = tsort
+conditionalTSort :: Ord a => Relation a -> CondRelation a -> Maybe [a]
+conditionalTSort r cr =
+  let
+    items = relationElements r
+   in tsort r
 
 relationElements :: Ord a => Relation a -> Set a
 relationElements = foldr (\(x,y) -> insert x . insert y) empty
@@ -105,3 +121,9 @@ buildOrdering :: Ord a => Relation a -> Set a -> [a]
 buildOrdering relation items = maybe [] addToOrderRemoveFromRelation $ noIncoming relation items
   where
     addToOrderRemoveFromRelation i = i : buildOrdering (elementNotInDomain relation i) (delete i items)
+
+buildCondOrdering :: Ord a => Relation a -> CondRelation a -> Set a -> [a]
+buildCondOrdering relation condRelation items = maybe [] addToOrderRemoveFromRelation $ noIncoming relation items
+  where
+    addToOrderRemoveFromRelation i = i : buildOrdering (elementNotInDomain relation i) (delete i items)
+    allNonIncomings relation = filter 
