@@ -74,7 +74,8 @@ execute globalOpts opts = do
     putStrLn $ show (GG.start newGG)
 
     putStrLn "\n------------------\n"
-    putStrLn "Is there a compatible concrete total order?\n>>> Undefined"
+    putStrLn $ "Is there a compatible concrete total order?\n>>> " ++ show (findOrder rulesRelation)
+    putStrLn $ "Is there a compatible concrete total order?\n>>> " ++ show (findOrder elementsRelation) 
 
     putStrLn "\n------------------\n"
     putStrLn "Is there a compatible concrete total order respecting NACs?\n>>> Undefined"

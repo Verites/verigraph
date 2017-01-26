@@ -5,6 +5,7 @@ module TypedGraph.DPO.GraphProcess
 , filterElementsOccurenceRelation
 , myGraphProcess
 , uniqueOrigin
+, findOrder
 )
 
 where
@@ -35,17 +36,6 @@ data RelationItem = Node NodeId
 
 type Relation = S.Set(RelationItem, RelationItem)
 
-negativeEdges :: Relation -> Relation
-negativeEdges set
-  | S.null set = set
-  | otherwise = let
-    down a = case a of
-              (Edge x, Edge y) -> (Edge (-x), Edge (-y))
-              (Edge x, Node y) -> (Edge (-x), Node y)
-              (Node x, Edge y) -> (Node x, Edge (-y))
-              _ -> a
-    in S.map down set
-
 uniqueOrigin :: [NamedProduction (TypedGraphMorphism a b)] -> Bool
 uniqueOrigin rules = not (repeated createdList) && not (repeated deletedList)
   where
@@ -60,6 +50,9 @@ uniqueOrigin rules = not (repeated createdList) && not (repeated deletedList)
     (created, deleted) = S.partition isCreated creationAndDeletion
     createdList = S.toList $ S.map snd created
     deletedList = S.toList $ S.map fst deleted
+
+findOrder :: Relation -> Maybe [RelationItem]
+findOrder = tsort
 
 repeated :: (Eq a) => [a] -> Bool
 repeated [] = False
@@ -82,7 +75,7 @@ filterRulesOccurenceRelation = S.filter bothRules
                         _                -> False
 
 filterElementsOccurenceRelation :: Relation -> Relation
-filterElementsOccurenceRelation = negativeEdges . S.filter bothElements
+filterElementsOccurenceRelation = S.filter bothElements
   where
     bothElements (x,y) = case (x,y) of
                         (Rule _, _) -> False

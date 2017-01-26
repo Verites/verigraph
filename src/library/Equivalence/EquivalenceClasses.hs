@@ -5,7 +5,8 @@ module  Equivalence.EquivalenceClasses (
   enaryConstruct,
   getElem,
   getTail,
-  maximumDisjointClass
+  maximumDisjointClass,
+  tsort
 
 
 ) where
@@ -76,7 +77,7 @@ withS :: Ord a => Relation a -> a -> Relation a
 withS rel item = filter ((== item) . snd) rel
 
 withF :: Ord a => Relation a -> a -> Relation a
-withF rel item = filter ((== item) . snd) rel
+withF rel item = filter ((/= item) . fst) rel
 
 noIncoming :: Ord a => Relation a -> Set a -> Maybe a
 noIncoming rel = find (null . withS rel)
@@ -86,9 +87,9 @@ isCyclic = not . null . until (\x -> remove x == x) remove
   where
     remove es = maybe es (withF es) . noIncoming es $ DS.map fst es
 
-sort :: Ord a => Relation a -> [a]
-sort rs = if isCyclic rs then error "cannot sort cyclic list"
-           else f rs . fromList . uncurry (++) $ unzip xs where
+tsort :: Ord a => Relation a -> Maybe [a]
+tsort rs = if isCyclic rs then Nothing
+           else Just $ f rs . fromList . uncurry (++) $ unzip xs where
     f es vs = maybe [] (\v -> v : f (withF es v) (delete v vs)) $
               noIncoming es vs
     xs = toList rs
