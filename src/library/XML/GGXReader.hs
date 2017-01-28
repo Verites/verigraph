@@ -52,6 +52,7 @@ readGrammar fileName useConstraints morphismsConf = do
 
   let typeGraph = instantiateTypeGraph parsedTypeGraph
 
+  parsedGraphs <- readGraphs fileName
   parsedRules <- readRules fileName
 
   let (sndOrdRules, fstOrdRules) = L.partition (\((x,_,_,_),_) -> startswith "2rule_" x) parsedRules
@@ -68,7 +69,8 @@ readGrammar fileName useConstraints morphismsConf = do
                instantiateConstraints parsedGraphConstraints (map (instantiateAtomicConstraint typeGraph) parsedAtomicConstraints)
              else []
 
-  let initGraph = GM.empty typeGraph typeGraph
+  -- gets only the first graph as initial, because verigraph supports only one initial graph per grammar.
+  let initGraph = head (map snd parsedGraphs)
       fstOrderGrammar = GG.grammar initGraph cons (zip rulesNames rules)
 
       sndOrderRules = instantiateSndOrderRules typeGraph sndOrdRules

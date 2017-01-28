@@ -23,6 +23,7 @@ import           SndOrder.Morphism
 import qualified SndOrder.Rule                   as SO
 import           Text.XML.HXT.Core
 import qualified TypedGraph.DPO.GraphRule        as GR
+import           TypedGraph.Graph                (TypedGraph)
 import           TypedGraph.Morphism
 import           XML.GGXParseOut
 import           XML.ParsedTypes
@@ -31,7 +32,6 @@ import           XML.Utilities
 
 type Grammars a b = (Grammar (TypedGraphMorphism a b), Grammar (RuleMorphism a b))
 
---appendSndOrderConflicts :: DPOConfig -> GraphGrammar a b -> GraphGrammar a b
 appendSndOrderConflicts :: MorphismsConfig -> Grammars a b -> Grammars a b
 appendSndOrderConflicts conf (gg1,gg2) = (newGG1, gg2)
   where
@@ -214,11 +214,18 @@ writeRuleSets rules =
 writeGrammar :: ArrowXml a => Grammars b c -> [(String,String)] -> [a XmlTree XmlTree]
 writeGrammar (gg1,gg2) names = writeAggProperties ++
                              [writeTypes (XML.GGXWriter.typeGraph gg1) names] ++
-                             [writeHostGraph] ++
+                             [writeHostGraph (start gg1)] ++
                              (writeRules gg1 nacNames) ++
                              (writeSndOrderRules gg2)
   where
     nacNames = filter (\(x,_) -> startswith "NAC" x) names
+
+writeHostGraph :: ArrowXml a => TypedGraph b c -> a XmlTree XmlTree
+writeHostGraph initial = writeGraph "initial_graph" "HOST" "Init" nodes edges
+  where
+    -- Reuses the serialize for rules to serialize the initial graph
+    tgm = idMap initial initial
+    (_, nodes, edges) = serializeGraph [] [] tgm
 
 writeTypes :: ArrowXml a => G.Graph b c -> [(String,String)] -> a XmlTree XmlTree
 writeTypes graph names = mkelem "Types" []
@@ -386,9 +393,6 @@ writeForbProd nacNames (n1, n2, ((_, nodes, edges), map1, map2, nacName, _), idx
     msg = "( "++show idx++ " ) " ++ "forbid-produce-verigraph-dependency (NAC: "++nacCorrectName++")"
     graphId idx = n1 ++ n2 ++ show idx ++ "_forprodep"
     nacCorrectName = fromMaybe nacName (lookup nacName nacNames)
-
-writeHostGraph :: ArrowXml a => a XmlTree XmlTree
-writeHostGraph = writeGraph "Graph" "HOST" "Graph" [] []
 
 writeNodes :: ArrowXml a => String -> [ParsedTypedNode] -> [a XmlTree XmlTree]
 writeNodes graphId = map (writeNode graphId)
