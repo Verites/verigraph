@@ -14,7 +14,7 @@ import qualified Analysis.CriticalPairs    as CP
 import qualified Analysis.CriticalSequence as CS
 import           Data.Maybe                (fromMaybe, isJust)
 import qualified Graph.Graph               as G
-import qualified TypedGraph.DPO.GraphRule      as GR
+import qualified TypedGraph.DPO.GraphRule  as GR
 import           TypedGraph.Graph
 import           TypedGraph.Morphism
 import           XML.ParsedTypes
