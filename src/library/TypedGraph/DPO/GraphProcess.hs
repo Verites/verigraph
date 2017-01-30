@@ -97,15 +97,17 @@ myGraphProcess sequence = grammar startGraph [] newRules
     relation = occurenceRelation newRules
     created = createdElements . filterElementsOccurenceRelation $ relation
     coreGraph = codomain . codomain . getLHS . snd . head $ newRules
-    startGraph = calculateInitialGraph coreGraph created
+    startGraph = removeElements coreGraph created
 
-calculateInitialGraph :: Graph a b -> Set RelationItem -> TypedGraph a b
-calculateInitialGraph coreGraph createdElements =
+isNode :: RelationItem -> Bool
+isNode x = case x of
+           Node _ -> True
+           _      -> False
+
+removeElements :: Graph a b -> Set RelationItem -> TypedGraph a b
+removeElements coreGraph elementsToRemove =
   let
-    isNode x = case x of
-               Node _ -> True
-               _      -> False
-    (n,e) = S.partition isNode createdElements
+    (n,e) = S.partition isNode elementsToRemove
     nodes = S.map (\(Node x) -> x) n
     edges = S.map (\(Edge x) -> x) e
   in S.foldr GM.removeNodeFromDomain (S.foldr GM.removeEdgeFromDomain (M.id coreGraph) edges) nodes
