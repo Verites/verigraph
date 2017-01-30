@@ -7,7 +7,6 @@ module Processes
 import           Abstract.Valid
 import           GlobalOptions
 import           Abstract.DPO
-import           Abstract.Morphism
 import           Analysis.Processes
 import           Control.Monad
 import qualified Grammar.Core        as GG
@@ -37,9 +36,10 @@ execute globalOpts opts = do
     names <- XML.readNames (inputFile globalOpts)
     sequences <- XML.readSequencesWithObjectFlow gg (inputFile globalOpts)
 
-    let abc = calculateRulesColimit $ head sequences
-        conflictsAndDependencies = findConflictsAndDependencies abc
-        newGG = myGraphProcess $ head sequences
+    let colimit = calculateRulesColimit $ head sequences
+        conflictsAndDependencies = findConflictsAndDependencies colimit
+        inducedByNacs = filterPotential conflictsAndDependencies
+        newGG = generateOccurenceGrammar $ head sequences
         newRules = generateGraphProcess $ head sequences
         relation = occurenceRelation newRules
         rulesRelation = filterRulesOccurenceRelation relation
@@ -51,6 +51,9 @@ execute globalOpts opts = do
 
     putStrLn "Conflicts and Dependencies: "
     putStrLn $ show conflictsAndDependencies
+
+    putStrLn "\n------------------\n"
+    putStrLn $ "Conflicts and dependencies induced by NACs:\n " ++ show inducedByNacs
 
     putStrLn "\n##################\n"
 
@@ -77,8 +80,6 @@ execute globalOpts opts = do
     putStrLn "\n------------------\n"
     putStrLn "Is there a compatible concrete total order respecting NACs?\n>>> Undefined"
 
-
-
-    let newStart = codomain $ getLHS $ snd $ head newRules
+    let newStart = GG.start newGG -- codomain $ getLHS $ snd $ head newRules
         gg' = GG.grammar newStart [] newRules
     GW.writeGrammarFile (gg',gg2) ggName names (outputFile opts)

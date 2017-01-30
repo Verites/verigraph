@@ -3,9 +3,10 @@ module TypedGraph.DPO.GraphProcess
 ( occurenceRelation
 , filterRulesOccurenceRelation
 , filterElementsOccurenceRelation
-, myGraphProcess
+, generateOccurenceGrammar
 , uniqueOrigin
 , findOrder
+, filterPotential
 )
 
 where
@@ -15,6 +16,7 @@ import Abstract.DPO.Process ()
 import Abstract.Morphism as M
 import Data.List as L hiding (union)
 import Data.Set as S
+import Data.Maybe (fromJust)
 import Equivalence.EquivalenceClasses
 import Grammar.Core
 import Graph.Graph (NodeId, EdgeId, Graph)
@@ -90,8 +92,8 @@ createdElements elementsRelation =
     created = monadToSet c
    in created
 
-myGraphProcess :: RuleSequence (TypedGraphMorphism a b) -> Grammar (TypedGraphMorphism a b)
-myGraphProcess sequence = grammar startGraph [] newRules
+generateOccurenceGrammar :: RuleSequence (TypedGraphMorphism a b) -> Grammar (TypedGraphMorphism a b)
+generateOccurenceGrammar sequence = grammar startGraph [] newRules
   where
     newRules = generateGraphProcess sequence
     relation = occurenceRelation newRules
@@ -161,6 +163,20 @@ preservationAndDeletionRelation rules cdRelation =
     deleting = S.filter deletionCase cdRelation
     result = L.map (relatedByPreservationAndDeletion deleting) rules
   in S.unions result
+
+filterPotential :: [(String, String, String)] -> Set (String, String, String)
+filterPotential conflictsAndDependencies =
+  S.filter (\(_,_,kind) -> kind == "ProduceForbid" || kind == "DeleteForbid") $ fromList conflictsAndDependencies
+
+isConcrete :: Grammar (TypedGraphMorphism a b) -> Relation -> (String, String, String) -> Bool
+isConcrete grammar relation (a1, a2, t) =
+  let
+    p2 = fromJust $ findProduction a2 grammar
+    n2 = getNACs p2
+
+    -- remove from n2 the element in the l2
+    initial = start grammar
+   in False
 
 relatedByPreservationAndDeletion :: Relation -> NamedProduction (TypedGraphMorphism a b) -> Relation
 relatedByPreservationAndDeletion relation namedRule

@@ -20,6 +20,7 @@ module Grammar.Core (
     , start
     , constraints
     , rules
+    , findProduction
 ) where
 
 import           Abstract.AdhesiveHLR
@@ -43,6 +44,9 @@ getProductionName = fst
 
 getProduction :: NamedProduction m -> Production m
 getProduction = snd
+
+findProduction :: String -> Grammar m -> Maybe (Production m)
+findProduction name grammar = lookup name (rules grammar)
 
 -- | Object that uses a Span of Morphisms to connect the right-hand-side of a Production with the left-hand-side of another one
 data ObjectFlow m =
