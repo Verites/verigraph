@@ -1,6 +1,7 @@
 module TypedGraph.DPO.GraphProcess
 
-( occurenceRelation
+( OccurenceGrammar (..)
+, occurenceRelation
 , filterRulesOccurenceRelation
 , filterElementsOccurenceRelation
 , generateOccurenceGrammar
@@ -30,6 +31,12 @@ instance GenerateProcess (TypedGraphMorphism a b) where
   typing = retypeProduction
   productionTyping = retype
   restrictMorphisms = restrictMorphisms'
+
+data OccurenceGrammar a b = OccurenceGrammar {
+  singleTypedGrammar :: Grammar (TypedGraphMorphism a b)
+, doubleType :: TypedGraphMorphism a b
+, concreteRelation :: Relation
+}
 
 data RelationItem = Node NodeId
                   | Edge EdgeId
@@ -92,14 +99,16 @@ createdElements elementsRelation =
     created = monadToSet c
    in created
 
-generateOccurenceGrammar :: RuleSequence (TypedGraphMorphism a b) -> Grammar (TypedGraphMorphism a b)
-generateOccurenceGrammar sequence = grammar startGraph [] newRules
+generateOccurenceGrammar :: RuleSequence (TypedGraphMorphism a b) -> OccurenceGrammar a b
+generateOccurenceGrammar sequence = OccurenceGrammar singleGrammar doubleType relation
   where
     newRules = generateGraphProcess sequence
     relation = occurenceRelation newRules
     created = createdElements . filterElementsOccurenceRelation $ relation
-    coreGraph = codomain . codomain . getLHS . snd . head $ newRules
+    doubleType = getLHS . snd . head $ newRules
+    coreGraph = codomain . codomain $ doubleType
     startGraph = removeElements coreGraph created
+    singleGrammar = grammar startGraph [] newRules
 
 isNode :: RelationItem -> Bool
 isNode x = case x of

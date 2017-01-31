@@ -39,9 +39,11 @@ execute globalOpts opts = do
     let colimit = calculateRulesColimit $ head sequences
         conflictsAndDependencies = findConflictsAndDependencies colimit
         inducedByNacs = filterPotential conflictsAndDependencies
-        newGG = generateOccurenceGrammar $ head sequences
-        newRules = generateGraphProcess $ head sequences
-        relation = occurenceRelation newRules
+
+        ogg = generateOccurenceGrammar $ head sequences
+        sgg = singleTypedGrammar ogg
+        newRules = GG.rules . singleTypedGrammar $ ogg
+        relation = concreteRelation ogg
         rulesRelation = filterRulesOccurenceRelation relation
         elementsRelation = filterElementsOccurenceRelation relation
         unique = (uniqueOrigin newRules)
@@ -70,8 +72,8 @@ execute globalOpts opts = do
     putStrLn $ "Are the origins and terminations of elements unique?\n>>> " ++ show unique
 
     putStrLn "\n------------------\n"
-    putStrLn $ "Initial Graph is valid? \n>>> " ++ show (isValid $ GG.start newGG)
-    putStrLn $ show (GG.start newGG)
+    putStrLn $ "Initial Graph is valid? \n>>> " ++ show (isValid $ GG.start sgg)
+    putStrLn $ show (GG.start sgg)
 
     putStrLn "\n------------------\n"
     putStrLn $ "Is there a compatible concrete total order for rules?\n>>> " ++ show (findOrder rulesRelation)
@@ -80,6 +82,6 @@ execute globalOpts opts = do
     putStrLn "\n------------------\n"
     putStrLn "Is there a compatible concrete total order respecting NACs?\n>>> Undefined"
 
-    let newStart = GG.start newGG -- codomain $ getLHS $ snd $ head newRules
+    let newStart = GG.start sgg
         gg' = GG.grammar newStart [] newRules
     GW.writeGrammarFile (gg',gg2) ggName names (outputFile opts)
