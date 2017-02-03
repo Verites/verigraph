@@ -5,6 +5,7 @@ module Processes
   ) where
 
 import           Abstract.Valid
+import Data.Set (elemAt)
 import           GlobalOptions
 import           Abstract.DPO
 import           Analysis.Processes
@@ -81,6 +82,9 @@ execute globalOpts opts = do
 
     putStrLn "\n------------------\n"
     putStrLn "Is there a compatible concrete total order respecting NACs?\n>>> Undefined"
+
+    putStrLn "\n\n\n"
+    putStrLn $ show $ getUnderlyingDerivation (snd . head $ newRules)
 
     let newStart = GG.start sgg
         gg' = GG.grammar newStart [] newRules

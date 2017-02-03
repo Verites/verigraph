@@ -1,3 +1,4 @@
+{-# LANGUAGE GADTs, ScopedTypeVariables #-}
 module TypedGraph.DPO.GraphProcess
 
 ( OccurenceGrammar (..)
@@ -8,6 +9,8 @@ module TypedGraph.DPO.GraphProcess
 , uniqueOrigin
 , findOrder
 , filterPotential
+, getUnderlyingDerivations
+, isConcrete
 )
 
 where
@@ -31,9 +34,11 @@ instance GenerateProcess (TypedGraphMorphism a b) where
   typing = retypeProduction
   productionTyping = retype
   restrictMorphisms = restrictMorphisms'
+  restrictMorphism = restrictMorphism'
 
 data OccurenceGrammar a b = OccurenceGrammar {
   singleTypedGrammar :: Grammar (TypedGraphMorphism a b)
+, originalRulesWithMatches :: [NamedRuleWithMatches (TypedGraphMorphism a b)]
 , doubleType :: TypedGraphMorphism a b
 , concreteRelation :: Relation
 }
@@ -100,8 +105,9 @@ createdElements elementsRelation =
    in created
 
 generateOccurenceGrammar :: RuleSequence (TypedGraphMorphism a b) -> OccurenceGrammar a b
-generateOccurenceGrammar sequence = OccurenceGrammar singleGrammar doubleType relation
+generateOccurenceGrammar sequence = OccurenceGrammar singleGrammar originalRulesWithMatches doubleType relation
   where
+    originalRulesWithMatches = calculateRulesColimit sequence -- TODO: unify this two functions
     newRules = generateGraphProcess sequence
     relation = occurenceRelation newRules
     created = createdElements . filterElementsOccurenceRelation $ relation
@@ -177,24 +183,50 @@ filterPotential :: [Interaction] -> Set Interaction
 filterPotential conflictsAndDependencies =
   S.filter (\i -> interactionType i == ProduceForbid || interactionType i == DeleteForbid) $ fromList conflictsAndDependencies
 
+{-getUnderlyingDerivation :: Production (TypedGraphMorphism a b) -> Derivation (TypedGraphMorphism a b)
+getUnderlyingDerivation p = Derivation p match comatch gluing ds ds
+  where
+    lGraph = codomain (getLHS p)
+    kGraph = domain (getLHS p)
+    rGraph = codomain (getRHS p)
+    tOverT = id' . codomain $ lGraph
+    id' :: Graph a b -> GM.GraphMorphism a b
+    id' = M.id
+    match = idMap lGraph tOverT
+    comatch = idMap rGraph tOverT
+    gluing = idMap kGraph tOverT
+    ds = idMap tOverT tOverT-}
+
+type RuleWithMatches a b = (Production (TypedGraphMorphism a b), (TypedGraphMorphism a b, TypedGraphMorphism a b, TypedGraphMorphism a b))
+
+getUnderlyingDerivations :: RuleWithMatches a b -> RuleWithMatches a b -> (Derivation (TypedGraphMorphism a b), Derivation (TypedGraphMorphism a b))
+getUnderlyingDerivations (p1, (m1,k1,h1)) (p2, (m2,k2,r2)) =
+  let
+    (h1', m2') = restrictMorphisms (h1, m2)
+    m1' = restrictMorphism m1
+    k1' = restrictMorphism k1
+   in error "not implemented yet"
+
 isConcrete :: OccurenceGrammar a b -> Interaction -> Bool
 isConcrete ogg (Interaction a1 a2 t nacIdx) =
   let
     grammar = singleTypedGrammar ogg
+    originalRules = L.map (\(a,b,c) -> (a, (b,c))) (originalRulesWithMatches ogg)
     relation = concreteRelation ogg
-    p1 = fromJust $ findProduction a1 grammar
-    p2 = fromJust $ findProduction a2 grammar
-    triggerElement nac = if L.null (orphanTypedEdges nac) then Node (head $ orphanTypedNodes nac) else Edge (head $ orphanTypedEdges nac)
-    n2 = triggerElement (getNACs p2 !! fromJust nacIdx)
+    p1 = fromJust $ lookup a1 originalRules
+    p2 = fromJust $ lookup a2 originalRules
+    getTriggeredNAC = ((getNACs . fst) p2 !! fromJust nacIdx)
+    getTriggeringElement nac = if L.null (orphanTypedEdges nac) then Node (head $ orphanTypedNodes nac) else Edge (head $ orphanTypedEdges nac)
+    trigger = getTriggeringElement getTriggeredNAC -- to which element in C^T does this element maps to?
     result = case t of
-      ProduceForbid -> isInInitial n2
-      DeleteForbid  -> False
+      ProduceForbid -> False
+      DeleteForbid  -> isInInitial trigger
       _               -> error $ "the case " ++ show t ++ "shouldn't exist"
     isInInitial x = case x of
       Node n -> isJust $ GM.applyNode initial n
       Edge e -> isJust $ GM.applyEdge initial e
     initial = start grammar
-   in result
+   in isInInitial trigger
 
 relatedByPreservationAndDeletion :: Relation -> NamedProduction (TypedGraphMorphism a b) -> Relation
 relatedByPreservationAndDeletion relation namedRule
@@ -245,3 +277,10 @@ restrictMorphisms' (a,b) = (removeOrphans a, removeOrphans b)
     orphanNodes = orphanTypedNodes a `intersect` orphanTypedNodes b
     orphanEdges = orphanTypedEdges a `intersect` orphanTypedEdges b
     removeOrphans m = L.foldr removeNodeFromCodomain (L.foldr removeEdgeFromCodomain m orphanEdges) orphanNodes
+
+restrictMorphism' :: TypedGraphMorphism a b -> TypedGraphMorphism a b
+restrictMorphism' a = removeOrphans
+  where
+    orphanNodes = orphanTypedNodes a
+    orphanEdges = orphanTypedEdges a
+    removeOrphans = L.foldr removeNodeFromCodomain (L.foldr removeEdgeFromCodomain a orphanEdges) orphanNodes
