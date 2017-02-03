@@ -13,11 +13,11 @@ module TypedGraph.DPO.GraphProcess
 where
 
 import Abstract.DPO
-import Abstract.DPO.Process ()
+import Abstract.DPO.Process
 import Abstract.Morphism as M
 import Data.List as L hiding (union)
 import Data.Set as S
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust, isJust)
 import Equivalence.EquivalenceClasses
 import Grammar.Core
 import Graph.Graph (NodeId, EdgeId, Graph)
@@ -173,19 +173,28 @@ preservationAndDeletionRelation rules cdRelation =
     result = L.map (relatedByPreservationAndDeletion deleting) rules
   in S.unions result
 
-filterPotential :: [(String, String, String)] -> Set (String, String, String)
+filterPotential :: [Interaction] -> Set Interaction
 filterPotential conflictsAndDependencies =
-  S.filter (\(_,_,kind) -> kind == "ProduceForbid" || kind == "DeleteForbid") $ fromList conflictsAndDependencies
+  S.filter (\i -> interactionType i == ProduceForbid || interactionType i == DeleteForbid) $ fromList conflictsAndDependencies
 
-isConcrete :: Grammar (TypedGraphMorphism a b) -> Relation -> (String, String, String) -> Bool
-isConcrete grammar relation (a1, a2, t) =
+isConcrete :: OccurenceGrammar a b -> Interaction -> Bool
+isConcrete ogg (Interaction a1 a2 t nacIdx) =
   let
+    grammar = singleTypedGrammar ogg
+    relation = concreteRelation ogg
+    p1 = fromJust $ findProduction a1 grammar
     p2 = fromJust $ findProduction a2 grammar
-    n2 = getNACs p2
-
-    -- remove from n2 the element in the l2
+    triggerElement nac = if L.null (orphanTypedEdges nac) then Node (head $ orphanTypedNodes nac) else Edge (head $ orphanTypedEdges nac)
+    n2 = triggerElement (getNACs p2 !! fromJust nacIdx)
+    result = case t of
+      ProduceForbid -> isInInitial n2
+      DeleteForbid  -> False
+      _               -> error $ "the case " ++ show t ++ "shouldn't exist"
+    isInInitial x = case x of
+      Node n -> isJust $ GM.applyNode initial n
+      Edge e -> isJust $ GM.applyEdge initial e
     initial = start grammar
-   in False
+   in result
 
 relatedByPreservationAndDeletion :: Relation -> NamedProduction (TypedGraphMorphism a b) -> Relation
 relatedByPreservationAndDeletion relation namedRule

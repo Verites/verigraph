@@ -10,28 +10,33 @@ import Abstract.DPO.Process
 import Analysis.DiagramAlgorithms
 import Data.List (partition)
 
-findConflictsAndDependencies :: GenerateProcess m => [NamedRuleWithMatches m] -> [(String, String, String)]
-findConflictsAndDependencies rulesWithMatches = findConflicts pairs ++ findDepependies pairs --concatMap createCritical pairs
+findConflictsAndDependencies :: GenerateProcess m => [NamedRuleWithMatches m] -> [Interaction]
+findConflictsAndDependencies rulesWithMatches = findConflicts pairs ++ findDependencies pairs --concatMap createCritical pairs
   where
     pairs = [(a,b) | a <- rulesWithMatches, b <- rulesWithMatches]
 
-findConflicts :: GenerateProcess m => [(NamedRuleWithMatches m,NamedRuleWithMatches m)] -> [(String, String, String)]
+findConflicts :: GenerateProcess m => [(NamedRuleWithMatches m,NamedRuleWithMatches m)] -> [Interaction]
 findConflicts pairs = map buildDU deleteUse ++ map buildPF produceForbid
   where
     conflictCandidates = filter (\(a,b) -> validLeftRewritings (getRule a) (getRule b) (getMatch a, getMatch b)) pairs
     (deleteUse,produceForbidCandidates) = partition (\(x,y) -> isDeleteUse' (getRule x) (getMatch x, getMatch y)) conflictCandidates
     produceForbid = filter (\(x,y) -> isProduceForbid' (getRule y) (getComatch x, getMatch y)) produceForbidCandidates
-    buildDU (a,b) = (getName a, getName b, "DeleteUse")
-    buildPF (a,b) = (getName a, getName b, "ProduceForbid")
+    buildDU (a,b) = Interaction (getName a) (getName b) DeleteUse Nothing
+    buildPF (a,b) = Interaction (getName a) (getName b) ProduceForbid Nothing
 
-findDepependies :: GenerateProcess m => [(NamedRuleWithMatches m,NamedRuleWithMatches m)] -> [(String, String, String)]
-findDepependies pairs = map buildPU produceUse ++ map buildDF deleteForbid
+findDependencies :: GenerateProcess m => [(NamedRuleWithMatches m,NamedRuleWithMatches m)] -> [Interaction]
+findDependencies pairs = map buildPU produceUse ++ map buildDF deleteForbidOneNac
   where
     dependencyCandidates = filter (\(a,b) -> validRightLeftRewritings (getRule a) (getRule b) (getComatch a, getMatch b)) pairs
     (produceUse,deleteForbidCandidates) = partition (\(x,y) -> isProduceUse' (getRule x) (getComatch x, getMatch y)) dependencyCandidates
-    deleteForbid = filter (\(x,y) -> isDeleteForbid' (getRule y) (getMatch x, getMatch y)) deleteForbidCandidates
-    buildPU (a,b) = (getName a, getName b, "ProduceUse")
-    buildDF (a,b) = (getName a, getName b, "DeleteForbid")
+    buildNamedProduction (name,production,matches) n = (name, buildProduction (getLHS production) (getRHS production) [n], matches)
+    expandNACs :: NamedRuleWithMatches m -> [(NamedRuleWithMatches m, Int)]
+    expandNACs (name,production,matches) = zip (map (buildNamedProduction (name,production,matches)) (getNACs production)) [0..]
+    expandeProductions :: (NamedRuleWithMatches m, NamedRuleWithMatches m) -> [(NamedRuleWithMatches m, (NamedRuleWithMatches m, Int))]
+    expandeProductions (a,b) = map (\x -> (a,x)) (expandNACs b)
+    deleteForbidOneNac = filter (\(x,(y,_)) -> isDeleteForbid' (getRule y) (getMatch x, getMatch y)) (concatMap expandeProductions deleteForbidCandidates)
+    buildPU (a,b) = Interaction (getName a) (getName b) ProduceUse Nothing
+    buildDF (a,(b,c)) = Interaction (getName a) (getName b) DeleteForbid (Just c)
 
 conf :: MorphismsConfig
 conf = MorphismsConfig MonoMatches MonomorphicNAC

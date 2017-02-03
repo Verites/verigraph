@@ -2,6 +2,8 @@ module Abstract.DPO.Process
 ( Process(..)
 , GenerateProcess(..)
 , NamedRuleWithMatches
+, Interaction (..)
+, InteractionType (..)
 , getRule, getName, getMatch, getComatch)
 
 where
@@ -18,6 +20,15 @@ data Process m = Process
   { productions :: [Production m]
   , coreObject :: Obj m
   }
+
+data InteractionType = DeleteUse | ProduceForbid | ProduceUse | DeleteForbid deriving (Eq, Show, Ord)
+
+data Interaction = Interaction {
+  firstRule :: String,
+  secondRule :: String,
+  interactionType :: InteractionType,
+  nacInvolved :: Maybe Int
+} deriving (Eq, Show, Ord)
 
 class (DPO m) => GenerateProcess m where
 
