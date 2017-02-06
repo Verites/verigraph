@@ -3,6 +3,7 @@ module TypedGraph.Morphism.Core where
 
 import           Abstract.Morphism   as M
 import           Abstract.Valid
+import           Data.Maybe (isJust)
 import           Graph.Graph
 import           Graph.GraphMorphism (GraphMorphism)
 import qualified Graph.GraphMorphism as GM
@@ -232,4 +233,17 @@ reflectIdsFromDomains :: (TypedGraphMorphism a b, TypedGraphMorphism a b) -> (Ty
 reflectIdsFromDomains (f,g) =
   let
     typedG = codomain f -- (or g)
+    typeGraph = codomain typedG
+    f' = invert f
+    g' = invert g
+    typedG' = GM.empty empty typeGraph
+    h' = buildTypedGraphMorphism typedG typedG' (GM.empty (domain typedG) (domain typedG'))
+    nodesL = filter (isJust . applyNode f') (nodesFromDomain f')
+    nodesD = filter (isJust . applyNode g') (nodesFromDomain g')
+    edgesL = filter (isJust . applyEdge f') (edgesFromDomain f')
+    edgesD = filter (isJust . applyEdge g') (edgesFromDomain g')
+    -- addNodesFromL =
+    -- addNodesFromD =
+    -- addEdgesFromL =
+    -- addEdgesFromD =
    in (f,g)
