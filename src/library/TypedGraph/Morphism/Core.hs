@@ -206,3 +206,30 @@ reflectIdsFromTypeGraph tgm =
 
     newMaps = GM.buildGraphMorphism (domain newDomain) (domain newCodomain) (map (\(NodeId x) -> (x,x)) (nodes $ domain newDomain)) (map (\(EdgeId x) -> (x,x)) (edges $ domain newDomain))
   in buildTypedGraphMorphism newDomain newCodomain newMaps
+
+-- | Given a TypedGraphMorphism tgm, creates an isomorphic TypedGraphMorphism tgm' where the nodes and edges in the domain have the same ids
+-- as the ones in the codomain
+reflectIdsFromCodomain :: TypedGraphMorphism a b -> TypedGraphMorphism a b
+reflectIdsFromCodomain tgm =
+  let
+    typedA = domain tgm
+    typedB = codomain tgm
+    typeGraph = codomain typedA
+    typedB' = GM.empty empty typeGraph
+    nodes = nodesFromDomain tgm
+    edges = edgesFromDomain tgm
+    initial = buildTypedGraphMorphism typedB' typedB (GM.empty (domain typedB') (domain typedB))
+    addNodes = foldr (\n -> createNodeOnDomain (applyNodeUnsafe tgm n) (GM.applyNodeUnsafe typedA n) (applyNodeUnsafe tgm n)) initial nodes
+    addEdges = foldr (\e ->
+      createEdgeOnDomain (applyEdgeUnsafe tgm e)
+                         (applyNodeUnsafe tgm (sourceOfUnsafe (domain typedA) e))
+                         (applyNodeUnsafe tgm (targetOfUnsafe (domain typedA) e))
+                         (GM.applyEdgeUnsafe typedA e)
+                         (applyEdgeUnsafe tgm e)) addNodes edges
+   in addEdges
+
+reflectIdsFromDomains :: (TypedGraphMorphism a b, TypedGraphMorphism a b) -> (TypedGraphMorphism a b, TypedGraphMorphism a b)
+reflectIdsFromDomains (f,g) =
+  let
+    typedG = codomain f -- (or g)
+   in (f,g)

@@ -15,9 +15,11 @@ module TypedGraph.DPO.GraphProcess
 
 where
 
+import Abstract.AdhesiveHLR
 import Abstract.DPO
 import Abstract.DPO.Process
 import Abstract.Morphism as M
+import Analysis.DiagramAlgorithms
 import Data.List as L hiding (union)
 import Data.Set as S
 import Data.Maybe (fromJust, isJust)
@@ -200,12 +202,37 @@ getUnderlyingDerivation p = Derivation p match comatch gluing ds ds
 type RuleWithMatches a b = (Production (TypedGraphMorphism a b), (TypedGraphMorphism a b, TypedGraphMorphism a b, TypedGraphMorphism a b))
 
 getUnderlyingDerivations :: RuleWithMatches a b -> RuleWithMatches a b -> (Derivation (TypedGraphMorphism a b), Derivation (TypedGraphMorphism a b))
-getUnderlyingDerivations (p1, (m1,k1,h1)) (p2, (m2,k2,r2)) =
+getUnderlyingDerivations (p1, (m1,k1,r1)) (p2, (m2,k2,r2)) =
   let
-    (h1', m2') = restrictMorphisms (h1, m2)
+    (r1', m2') = restrictMorphisms (r1, m2)
+
     m1' = restrictMorphism m1
-    k1' = restrictMorphism k1
-   in error "not implemented yet"
+    dToG1 = findMono (codomain k1') (codomain m1')
+    (_,b) = calculatePushoutComplement r1' (getRHS p1)
+    dToH1 = reflectIdsFromCodomain b
+    k1' = findMono (domain k1) (domain dToH1)
+    d1 = Derivation p1 m1' r1' k1' dToG1 dToH1
+    k2' = restrictMorphism k2
+    r2' = restrictMorphism r2
+    dToG2 = findMono (codomain k2') (codomain m2')
+    dToH2 = findMono (codomain k2') (codomain r2')
+    d2 = Derivation p2 m2' r2' k2' dToG2 dToH2
+   in (d1,d2)
+
+getUnderlyingDerivation :: Production (TypedGraphMorphism a b) -> TypedGraphMorphism a b -> Derivation (TypedGraphMorphism a b)
+getUnderlyingDerivation p1 r1 =
+  let
+    (_,a) = calculatePushoutComplement r1 (getRHS p1)
+    dToH1 = reflectIdsFromCodomain a
+    gluing = findMono (domain . getRHS $ p1) (domain dToH1)
+    (x,y) = calculatePushout gluing (getLHS p1)
+  in error "z"
+
+findMono :: TypedGraph a b -> TypedGraph a b -> TypedGraphMorphism a b
+findMono a b =
+  let
+    monos = findMonomorphisms a b
+  in if L.null monos then error "morphisms not found" else head monos
 
 isConcrete :: OccurenceGrammar a b -> Interaction -> Bool
 isConcrete ogg (Interaction a1 a2 t nacIdx) =
@@ -215,18 +242,43 @@ isConcrete ogg (Interaction a1 a2 t nacIdx) =
     relation = concreteRelation ogg
     p1 = fromJust $ lookup a1 originalRules
     p2 = fromJust $ lookup a2 originalRules
-    getTriggeredNAC = ((getNACs . fst) p2 !! fromJust nacIdx)
-    getTriggeringElement nac = if L.null (orphanTypedEdges nac) then Node (head $ orphanTypedNodes nac) else Edge (head $ orphanTypedEdges nac)
-    trigger = getTriggeringElement getTriggeredNAC -- to which element in C^T does this element maps to?
+    triggeredNAC = getNACs (fst p2) !! fromJust nacIdx
+    (d1,d2) = getUnderlyingDerivations p1 p2
+    h21 = findH21 (match d2) (dToH d1)
+    d1h21 = compose (dToG d1) h21
+    q21 = findMono (codomain triggeredNAC) (codomain d1h21)
+    initial = start grammar
+    trigger = getTrigger triggeredNAC
+    concreteTrigger x = case x of
+      Node n -> Node (applyNodeUnsafe q21 n)
+      Edge e -> Edge (applyEdgeUnsafe q21 e)
     result = case t of
       ProduceForbid -> False
-      DeleteForbid  -> isInInitial trigger
+      DeleteForbid  -> error $ show (dToG d1)--error $ show $ concreteTrigger trigger -- isInInitial initial trigger
       _               -> error $ "the case " ++ show t ++ "shouldn't exist"
-    isInInitial x = case x of
-      Node n -> isJust $ GM.applyNode initial n
-      Edge e -> isJust $ GM.applyEdge initial e
-    initial = start grammar
-   in isInInitial trigger
+   in result
+
+getTrigger :: TypedGraphMorphism a b ->  RelationItem
+getTrigger nac =
+  let
+    orphanNodes = orphanTypedNodes nac
+    orphanEdges = orphanTypedEdges nac
+  in if L.null orphanEdges then Node $ head orphanNodes else Edge $ head orphanEdges
+
+isInInitial :: TypedGraph a b -> RelationItem -> Bool
+isInInitial initial x = case x of
+  Node n -> isJust $ GM.applyNode initial n
+  Edge e -> isJust $ GM.applyEdge initial e
+  _      -> error $ "case " ++ show x ++ "shouldn't occur"
+
+conf :: MorphismsConfig
+conf = MorphismsConfig MonoMatches MonomorphicNAC
+
+findH21 :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+findH21 m2 d1 =
+  let
+    h21 = findAllPossibleH21 conf m2 d1
+  in if Prelude.null h21 then error "aqui" else head h21
 
 relatedByPreservationAndDeletion :: Relation -> NamedProduction (TypedGraphMorphism a b) -> Relation
 relatedByPreservationAndDeletion relation namedRule

@@ -30,6 +30,7 @@ module TypedGraph.Morphism (
     , orphanTypedNodes
     , orphanTypedEdges
     , reflectIdsFromTypeGraph
+    , reflectIdsFromCodomain
 ) where
 
 import           TypedGraph.Morphism.AdhesiveHLR  (checkDeletion)

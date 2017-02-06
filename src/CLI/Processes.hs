@@ -5,7 +5,7 @@ module Processes
   ) where
 
 import           Abstract.Valid
-import Data.Set (elemAt)
+import Data.Set (elemAt, toList)
 import           GlobalOptions
 import           Abstract.DPO
 import           Analysis.Processes
@@ -55,8 +55,12 @@ execute globalOpts opts = do
     putStrLn "Conflicts and Dependencies: "
     putStrLn $ show conflictsAndDependencies
 
+
+
     putStrLn "\n------------------\n"
     putStrLn $ "Conflicts and dependencies induced by NACs:\n " ++ show inducedByNacs
+
+    putStrLn $ show $ map (isConcrete ogg) (toList inducedByNacs)
 
     putStrLn "\n##################\n"
 
@@ -83,8 +87,8 @@ execute globalOpts opts = do
     putStrLn "\n------------------\n"
     putStrLn "Is there a compatible concrete total order respecting NACs?\n>>> Undefined"
 
-    putStrLn "\n\n\n"
-    putStrLn $ show $ getUnderlyingDerivation (snd . head $ newRules)
+--    putStrLn "\n\n\n"
+--    putStrLn $ show $ getUnderlyingDerivation (snd . head $ newRules)
 
     let newStart = GG.start sgg
         gg' = GG.grammar newStart [] newRules

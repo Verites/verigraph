@@ -33,6 +33,7 @@ module Analysis.DiagramAlgorithms (
   , isDeleteForbid
   , deleteUseDangling
   , produceForbidOneNac
+  , findAllPossibleH21
   ) where
 
 import           Abstract.AdhesiveHLR
