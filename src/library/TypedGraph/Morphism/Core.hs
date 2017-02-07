@@ -93,7 +93,7 @@ orphanTypedEdges tgm = GM.orphanEdges (mapping tgm)
 invert :: TypedGraphMorphism a b -> TypedGraphMorphism a b
 invert tgm =
   TypedGraphMorphism { getDomain = codomain tgm
-                     , getCodomain = codomain tgm
+                     , getCodomain = domain tgm
                      , mapping = GM.invertGraphMorphism (mapping tgm)
                      }
 
