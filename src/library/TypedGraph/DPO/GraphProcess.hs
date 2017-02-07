@@ -9,8 +9,8 @@ module TypedGraph.DPO.GraphProcess
 , uniqueOrigin
 , findOrder
 , filterPotential
-, getUnderlyingDerivations
 , findConcreteTrigger
+, foo
 )
 
 where
@@ -44,6 +44,8 @@ data OccurenceGrammar a b = OccurenceGrammar {
 , doubleType :: TypedGraphMorphism a b
 , concreteRelation :: Relation
 }
+
+initialGraph = start . singleTypedGrammar
 
 data RelationItem = Node NodeId
                   | Edge EdgeId
@@ -82,6 +84,9 @@ occurenceRelation rules =
     b'' = preservationAndDeletionRelation rules b
     s = setToMonad $ unions [b,b',b'']
   in monadToSet $ transitiveClosure s
+
+buildTransitivity :: Relation -> Relation
+buildTransitivity = monadToSet . transitiveClosure . setToMonad
 
 filterRulesOccurenceRelation :: Relation -> Relation
 filterRulesOccurenceRelation = S.filter bothRules
@@ -185,39 +190,7 @@ filterPotential :: [Interaction] -> Set Interaction
 filterPotential conflictsAndDependencies =
   S.filter (\i -> interactionType i == ProduceForbid || interactionType i == DeleteForbid) $ fromList conflictsAndDependencies
 
-{-getUnderlyingDerivation :: Production (TypedGraphMorphism a b) -> Derivation (TypedGraphMorphism a b)
-getUnderlyingDerivation p = Derivation p match comatch gluing ds ds
-  where
-    lGraph = codomain (getLHS p)
-    kGraph = domain (getLHS p)
-    rGraph = codomain (getRHS p)
-    tOverT = id' . codomain $ lGraph
-    id' :: Graph a b -> GM.GraphMorphism a b
-    id' = M.id
-    match = idMap lGraph tOverT
-    comatch = idMap rGraph tOverT
-    gluing = idMap kGraph tOverT
-    ds = idMap tOverT tOverT-}
-
 type RuleWithMatches a b = (Production (TypedGraphMorphism a b), (TypedGraphMorphism a b, TypedGraphMorphism a b, TypedGraphMorphism a b))
-
-getUnderlyingDerivations :: RuleWithMatches a b -> RuleWithMatches a b -> (Derivation (TypedGraphMorphism a b), Derivation (TypedGraphMorphism a b))
-getUnderlyingDerivations (p1, (m1,k1,r1)) (p2, (m2,k2,r2)) =
-  let
-    (r1', m2') = restrictMorphisms (r1, m2)
-
-    m1' = restrictMorphism m1
-    dToG1 = findMono (codomain k1') (codomain m1')
-    (_,b) = calculatePushoutComplement r1' (getRHS p1)
-    dToH1 = reflectIdsFromCodomain b
-    k1' = findMono (domain k1) (domain dToH1)
-    d1 = Derivation p1 m1' r1' k1' dToG1 dToH1
-    k2' = restrictMorphism k2
-    r2' = restrictMorphism r2
-    dToG2 = findMono (codomain k2') (codomain m2')
-    dToH2 = findMono (codomain k2') (codomain r2')
-    d2 = Derivation p2 m2' r2' k2' dToG2 dToH2
-   in (d1,d2)
 
 getUnderlyingDerivation :: RuleWithMatches a b -> TypedGraphMorphism a b -> Derivation (TypedGraphMorphism a b)
 getUnderlyingDerivation (p1,(m1,_,_)) comatch =
@@ -244,28 +217,46 @@ findCoreMorphism dom core =
     initial = buildTypedGraphMorphism dom core (GM.empty (domain dom) (domain core))
   in L.foldr (uncurry updateEdgeRelation) (L.foldr (uncurry untypedUpdateNodeRelation) initial ns) es
 
-findConcreteTrigger :: OccurenceGrammar a b -> Interaction -> RelationItem
+foo :: OccurenceGrammar a b -> Set Interaction -> (OccurenceGrammar a b,Set (RelationItem, RelationItem))
+foo ogg is = (newOgg, potential)
+  where
+    (deleteForbid,produceForbid) = S.partition (\i -> interactionType i == DeleteForbid) is
+    createDeleteForbidItem = findConcreteTrigger ogg
+    isConcreteDeleteForbid (c, Rule r) = isInInitial (initialGraph ogg) c || happensBeforeAction (concreteRelation ogg) c r
+    isDiscardedDeleteForbid (c, Rule r) = happensAfterAction (concreteRelation ogg) c r
+    (concreteDF,potentialDF) = S.partition isConcreteDeleteForbid (S.map createDeleteForbidItem deleteForbid)
+    (discarded,potential) = S.partition isDiscardedDeleteForbid potentialDF
+
+    createProduceForbidItem = findConcreteTrigger ogg
+    --isConcreteProduceForbid (Rule r, c) 
+
+    newOgg = OccurenceGrammar
+              (singleTypedGrammar ogg)
+              (originalRulesWithMatches ogg)
+              (doubleType ogg)
+              (buildTransitivity (concreteRelation ogg `union` concreteDF)) -- do the reflexive and transitive Closure
+
+findConcreteTrigger :: OccurenceGrammar a b -> Interaction -> (RelationItem, RelationItem)
 findConcreteTrigger ogg (Interaction a1 a2 t nacIdx) =
   let
     originalRules = L.map (\(a,b,c) -> (a, (b,c))) (originalRulesWithMatches ogg)
-    p1 = fromJust $ lookup a1 originalRules
+    p1Candidate = fromJust $ lookup a1 originalRules
+    p1 = if t == DeleteForbid then p1Candidate else invert p1Candidate
     p2 = fromJust $ lookup a2 originalRules
     triggeredNAC = getNACs (fst p2) !! fromJust nacIdx
+
     (r1',m2) = getOverlapping p1 p2
     d1 = getUnderlyingDerivation p1 r1'
     h21 = findH21 m2 (dToH d1)
     d1h21 = compose h21 (dToG d1)
     q21 = findMono (codomain triggeredNAC) (codomain d1h21)
-    trigger = getTrigger triggeredNAC
-    concreteTrigger x = case x of
+
+    concreteTrigger = case getTrigger triggeredNAC of
       Node n -> Node (applyNodeUnsafe q21 n)
       Edge e -> Edge (applyEdgeUnsafe q21 e)
       _      -> error "this pattern shouldn't exist"
-    result = case t of
-      ProduceForbid -> error "not implemented yet"
-      DeleteForbid  -> concreteTrigger trigger -- isInInitial initial trigger
-      _               -> error $ "the case " ++ show t ++ "shouldn't exist"
-   in result
+    invert (p1,(m1,k1,r1)) = (invertProduction conf p1, (r1,k1,m1))
+   in if t == DeleteForbid then (concreteTrigger, Rule a2) else (Rule a2, concreteTrigger)
 
 getOverlapping :: RuleWithMatches a b -> RuleWithMatches a b -> (TypedGraphMorphism a b, TypedGraphMorphism a b)
 getOverlapping (_,(_,_,comatch)) (_,(match,_,_)) = restrictMorphisms (comatch, match)
@@ -282,6 +273,12 @@ isInInitial initial x = case x of
   Node n -> isJust $ GM.applyNode initial n
   Edge e -> isJust $ GM.applyEdge initial e
   _      -> error $ "case " ++ show x ++ "shouldn't occur"
+
+happensBeforeAction :: Relation -> RelationItem -> String -> Bool
+happensBeforeAction rel item name = member (item, Rule name) rel
+
+happensAfterAction :: Relation -> RelationItem -> String -> Bool
+happensAfterAction rel item name = member (Rule name,item) rel
 
 conf :: MorphismsConfig
 conf = MorphismsConfig MonoMatches MonomorphicNAC

@@ -43,8 +43,9 @@ execute globalOpts opts = do
 
         ogg = generateOccurenceGrammar $ head sequences
         sgg = singleTypedGrammar ogg
+        (ogg2,dfs) = foo ogg inducedByNacs
         newRules = GG.rules . singleTypedGrammar $ ogg
-        relation = concreteRelation ogg
+        relation = concreteRelation ogg2
         rulesRelation = filterRulesOccurenceRelation relation
         elementsRelation = filterElementsOccurenceRelation relation
         unique = (uniqueOrigin newRules)
@@ -55,10 +56,8 @@ execute globalOpts opts = do
     putStrLn "Conflicts and Dependencies: "
     putStrLn $ show conflictsAndDependencies
 
-
-
     putStrLn "\n------------------\n"
-    putStrLn $ "Conflicts and dependencies induced by NACs:\n " ++ show inducedByNacs
+    putStrLn $ "Conflicts and dependencies induced by NACs:\n " ++ show dfs
 
     putStrLn $ show $ map (findConcreteTrigger ogg) (toList inducedByNacs)
 
