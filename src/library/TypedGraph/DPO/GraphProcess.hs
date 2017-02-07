@@ -224,9 +224,10 @@ getUnderlyingDerivation p1 r1 =
   let
     (_,a) = calculatePushoutComplement r1 (getRHS p1)
     dToH1 = reflectIdsFromCodomain a
-    gluing = findMono (domain . getRHS $ p1) (domain dToH1)
-    (x,y) = calculatePushout gluing (getLHS p1)
-  in error "z"
+    gluing = compose (compose (getRHS p1) r1) (invert dToH1)--findMono (domain . getRHS $ p1) (domain dToH1)
+    (x,y) = reflectIdsFromDomains $ calculatePushout gluing (getLHS p1)
+
+  in error $ show gluing --r1 ++ "\n\n\n" ++ show a
 
 findMono :: TypedGraph a b -> TypedGraph a b -> TypedGraphMorphism a b
 findMono a b =
@@ -243,15 +244,17 @@ isConcrete ogg (Interaction a1 a2 t nacIdx) =
     p1 = fromJust $ lookup a1 originalRules
     p2 = fromJust $ lookup a2 originalRules
     triggeredNAC = getNACs (fst p2) !! fromJust nacIdx
-    (d1,d2) = getUnderlyingDerivations p1 p2
-    h21 = findH21 (match d2) (dToH d1)
-    d1h21 = compose (dToG d1) h21
-    q21 = findMono (codomain triggeredNAC) (codomain d1h21)
+    --(d1,d2) = getUnderlyingDerivations p1 p2
+    try (_,(_,_,a)) (_,(b,_,_)) = fst (restrictMorphisms (a,b))
+    d1 = getUnderlyingDerivation (fst p1) (try p1 p2)
+    --h21 = findH21 (match d2) (dToH d1)
+    --d1h21 = compose (dToG d1) h21
+    --q21 = findMono (codomain triggeredNAC) (codomain d1h21)
     initial = start grammar
     trigger = getTrigger triggeredNAC
-    concreteTrigger x = case x of
-      Node n -> Node (applyNodeUnsafe q21 n)
-      Edge e -> Edge (applyEdgeUnsafe q21 e)
+    --concreteTrigger x = case x of
+      --Node n -> Node (applyNodeUnsafe q21 n)
+      --Edge e -> Edge (applyEdgeUnsafe q21 e)
     result = case t of
       ProduceForbid -> False
       DeleteForbid  -> error $ show (dToG d1)--error $ show $ concreteTrigger trigger -- isInInitial initial trigger
@@ -329,6 +332,11 @@ restrictMorphisms' (a,b) = (removeOrphans a, removeOrphans b)
     orphanNodes = orphanTypedNodes a `intersect` orphanTypedNodes b
     orphanEdges = orphanTypedEdges a `intersect` orphanTypedEdges b
     removeOrphans m = L.foldr removeNodeFromCodomain (L.foldr removeEdgeFromCodomain m orphanEdges) orphanNodes
+
+--restrict :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+--restrict a b -> a
+--  where
+--    b' =
 
 restrictMorphism' :: TypedGraphMorphism a b -> TypedGraphMorphism a b
 restrictMorphism' a = removeOrphans
