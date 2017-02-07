@@ -5,7 +5,7 @@ module Processes
   ) where
 
 import           Abstract.Valid
-import Data.Set (elemAt, toList)
+import Data.Set (toList)
 import           GlobalOptions
 import           Abstract.DPO
 import           Analysis.Processes
@@ -60,7 +60,7 @@ execute globalOpts opts = do
     putStrLn "\n------------------\n"
     putStrLn $ "Conflicts and dependencies induced by NACs:\n " ++ show inducedByNacs
 
-    putStrLn $ show $ map (isConcrete ogg) (toList inducedByNacs)
+    putStrLn $ show $ map (findConcreteTrigger ogg) (toList inducedByNacs)
 
     putStrLn "\n##################\n"
 

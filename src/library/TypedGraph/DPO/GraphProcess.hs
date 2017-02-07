@@ -10,7 +10,7 @@ module TypedGraph.DPO.GraphProcess
 , findOrder
 , filterPotential
 , getUnderlyingDerivations
-, isConcrete
+, findConcreteTrigger
 )
 
 where
@@ -219,15 +219,16 @@ getUnderlyingDerivations (p1, (m1,k1,r1)) (p2, (m2,k2,r2)) =
     d2 = Derivation p2 m2' r2' k2' dToG2 dToH2
    in (d1,d2)
 
-getUnderlyingDerivation :: Production (TypedGraphMorphism a b) -> TypedGraphMorphism a b -> Derivation (TypedGraphMorphism a b)
-getUnderlyingDerivation p1 r1 =
+getUnderlyingDerivation :: RuleWithMatches a b -> TypedGraphMorphism a b -> Derivation (TypedGraphMorphism a b)
+getUnderlyingDerivation (p1,(m1,_,_)) comatch =
   let
-    (_,a) = calculatePushoutComplement r1 (getRHS p1)
-    dToH1 = reflectIdsFromCodomain a
-    gluing = compose (compose (getRHS p1) r1) (invert dToH1)--findMono (domain . getRHS $ p1) (domain dToH1)
-    (x,y) = reflectIdsFromDomains $ calculatePushout gluing (getLHS p1)
-
-  in error $ show gluing --r1 ++ "\n\n\n" ++ show a
+    (_,dToH1Candidate) = calculatePushoutComplement comatch (getRHS p1)
+    dToH1 = reflectIdsFromCodomain dToH1Candidate
+    gluing = compose (compose (getRHS p1) comatch) (invert dToH1)
+    core = codomain m1
+    dToG1Candidate = findCoreMorphism (codomain gluing) core
+    (match,dToG1) = restrictMorphisms (m1,dToG1Candidate)
+  in Derivation p1 match comatch gluing dToG1 dToH1
 
 findMono :: TypedGraph a b -> TypedGraph a b -> TypedGraphMorphism a b
 findMono a b =
@@ -235,31 +236,39 @@ findMono a b =
     monos = findMonomorphisms a b
   in if L.null monos then error "morphisms not found" else head monos
 
-isConcrete :: OccurenceGrammar a b -> Interaction -> Bool
-isConcrete ogg (Interaction a1 a2 t nacIdx) =
+findCoreMorphism :: TypedGraph a b -> TypedGraph a b -> TypedGraphMorphism a b
+findCoreMorphism dom core =
   let
-    grammar = singleTypedGrammar ogg
+    ns = L.map (\(n,_) -> (n,n)) (nodesWithType dom)
+    es = L.map (\(a,_,_,_) -> (a,a)) (edgesWithType dom)
+    initial = buildTypedGraphMorphism dom core (GM.empty (domain dom) (domain core))
+  in L.foldr (uncurry updateEdgeRelation) (L.foldr (uncurry untypedUpdateNodeRelation) initial ns) es
+
+findConcreteTrigger :: OccurenceGrammar a b -> Interaction -> RelationItem
+findConcreteTrigger ogg (Interaction a1 a2 t nacIdx) =
+  let
     originalRules = L.map (\(a,b,c) -> (a, (b,c))) (originalRulesWithMatches ogg)
-    relation = concreteRelation ogg
     p1 = fromJust $ lookup a1 originalRules
     p2 = fromJust $ lookup a2 originalRules
     triggeredNAC = getNACs (fst p2) !! fromJust nacIdx
-    --(d1,d2) = getUnderlyingDerivations p1 p2
-    try (_,(_,_,a)) (_,(b,_,_)) = fst (restrictMorphisms (a,b))
-    d1 = getUnderlyingDerivation (fst p1) (try p1 p2)
-    --h21 = findH21 (match d2) (dToH d1)
-    --d1h21 = compose (dToG d1) h21
-    --q21 = findMono (codomain triggeredNAC) (codomain d1h21)
-    initial = start grammar
+    (r1',m2) = getOverlapping p1 p2
+    d1 = getUnderlyingDerivation p1 r1'
+    h21 = findH21 m2 (dToH d1)
+    d1h21 = compose h21 (dToG d1)
+    q21 = findMono (codomain triggeredNAC) (codomain d1h21)
     trigger = getTrigger triggeredNAC
-    --concreteTrigger x = case x of
-      --Node n -> Node (applyNodeUnsafe q21 n)
-      --Edge e -> Edge (applyEdgeUnsafe q21 e)
+    concreteTrigger x = case x of
+      Node n -> Node (applyNodeUnsafe q21 n)
+      Edge e -> Edge (applyEdgeUnsafe q21 e)
+      _      -> error "this pattern shouldn't exist"
     result = case t of
-      ProduceForbid -> False
-      DeleteForbid  -> error $ show (dToG d1)--error $ show $ concreteTrigger trigger -- isInInitial initial trigger
+      ProduceForbid -> error "not implemented yet"
+      DeleteForbid  -> concreteTrigger trigger -- isInInitial initial trigger
       _               -> error $ "the case " ++ show t ++ "shouldn't exist"
    in result
+
+getOverlapping :: RuleWithMatches a b -> RuleWithMatches a b -> (TypedGraphMorphism a b, TypedGraphMorphism a b)
+getOverlapping (_,(_,_,comatch)) (_,(match,_,_)) = restrictMorphisms (comatch, match)
 
 getTrigger :: TypedGraphMorphism a b ->  RelationItem
 getTrigger nac =
