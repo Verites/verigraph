@@ -154,8 +154,8 @@ mg6 = GM.buildGraphMorphism a6 b6 [(10,60),(20,70)] [(100,600)]
 mh6 = GM.buildGraphMorphism a6 b6 [(10,50),(20,60)] [(100,500)]
 
 tmf6 = buildTypedGraphMorphism ta6 tb6 mf6
-tmg6 = buildTypedGraphMorphism ta6 tb6 mg6
-tmh6 = buildTypedGraphMorphism ta6 tb6 mh6
+--tmg6 = buildTypedGraphMorphism ta6 tb6 mg6
+--tmh6 = buildTypedGraphMorphism ta6 tb6 mh6
 
 teste60 = calculateNCoequalizer $ NE.fromList [tmf6]
 
