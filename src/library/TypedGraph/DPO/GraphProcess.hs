@@ -42,6 +42,7 @@ data OccurenceGrammar a b = OccurenceGrammar {
   singleTypedGrammar :: Grammar (TypedGraphMorphism a b)
 , originalRulesWithMatches :: [NamedRuleWithMatches (TypedGraphMorphism a b)]
 , doubleType :: TypedGraphMorphism a b
+, originRelation :: Relation
 , concreteRelation :: Relation
 }
 
@@ -76,14 +77,16 @@ repeated :: (Eq a) => [a] -> Bool
 repeated [] = False
 repeated (x:xs) = x `elem` xs || repeated xs
 
+strictRelation :: [NamedProduction (TypedGraphMorphism a b)] -> Relation
+strictRelation = unions . L.map creationAndDeletionRelation
+
 occurenceRelation :: [NamedProduction (TypedGraphMorphism a b)] -> Relation
 occurenceRelation rules =
   let
-    b = unions $ L.map creationAndDeletionRelation rules
+    b = strictRelation rules
     b' = creationAndPreservationRelation rules b
     b'' = preservationAndDeletionRelation rules b
-    s = setToMonad $ unions [b,b',b'']
-  in monadToSet $ transitiveClosure s
+  in buildTransitivity (unions [b,b',b''])
 
 buildTransitivity :: Relation -> Relation
 buildTransitivity = monadToSet . transitiveClosure . setToMonad
@@ -112,10 +115,11 @@ createdElements elementsRelation =
    in created
 
 generateOccurenceGrammar :: RuleSequence (TypedGraphMorphism a b) -> OccurenceGrammar a b
-generateOccurenceGrammar sequence = OccurenceGrammar singleGrammar originalRulesWithMatches doubleType relation
+generateOccurenceGrammar sequence = OccurenceGrammar singleGrammar originalRulesWithMatches doubleType cdRelation relation
   where
     originalRulesWithMatches = calculateRulesColimit sequence -- TODO: unify this two functions
     newRules = generateGraphProcess sequence
+    cdRelation = strictRelation newRules
     relation = occurenceRelation newRules
     created = createdElements . filterElementsOccurenceRelation $ relation
     doubleType = getLHS . snd . head $ newRules
@@ -228,12 +232,13 @@ foo ogg is = (newOgg, potential)
     (discarded,potential) = S.partition isDiscardedDeleteForbid potentialDF
 
     createProduceForbidItem = findConcreteTrigger ogg
-    --isConcreteProduceForbid (Rule r, c) 
+    --isConcreteProduceForbid (Rule r, c)
 
     newOgg = OccurenceGrammar
               (singleTypedGrammar ogg)
               (originalRulesWithMatches ogg)
               (doubleType ogg)
+              (originRelation ogg)
               (buildTransitivity (concreteRelation ogg `union` concreteDF)) -- do the reflexive and transitive Closure
 
 findConcreteTrigger :: OccurenceGrammar a b -> Interaction -> (RelationItem, RelationItem)
