@@ -58,6 +58,13 @@ execute globalOpts opts = do
 
     putStrLn "\n##################\n"
 
+    putStrLn "Strict Relation: "
+    putStrLn $ show (creationAndDeletionRelation $ newRules!!0)
+    putStrLn $ show (creationAndDeletionRelation $ newRules!!1)
+    putStrLn $ show (creationAndDeletionRelation $ newRules!!2)
+
+    putStrLn "\n##################\n"
+
     putStrLn "Creation and Deletion Relation: "
     putStrLn $ show (originRelation completeOgg)
 

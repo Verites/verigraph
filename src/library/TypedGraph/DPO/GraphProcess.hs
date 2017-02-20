@@ -11,6 +11,8 @@ module TypedGraph.DPO.GraphProcess
 , filterPotential
 , findConcreteTrigger
 , calculateNacRelations
+, strictRelation
+, creationAndDeletionRelation
 )
 
 where
@@ -156,9 +158,11 @@ creationAndDeletionRelation (name,rule) =
     re = createdEdges rule
     nodesAndEdges = [(Node a, Node b) | a <- ln, b <- rn] ++ [(Edge a, Edge b) | a <- le, b <- re]
                  ++ [(Node a, Edge b) | a <- ln, b <- re] ++ [(Edge a, Node b) | a <- le, b <- rn]
+    elementsAndRule = [(Node a, Rule name) | a <- ln] ++ [(Edge a, Rule name) | a <- le]
+                   ++ [(Rule name, Node a) | a <- rn] ++ [(Rule name, Edge a) | a <- re]
     putRule rel = [(fst rel, Rule name), (Rule name, snd rel)]
     withRules = concatMap putRule nodesAndEdges
-  in S.fromList $ nodesAndEdges ++ withRules
+  in S.fromList $ nodesAndEdges ++ elementsAndRule
 
 creationAndPreservationRelation :: [NamedProduction (TypedGraphMorphism a b)] -> Relation -> Relation
 creationAndPreservationRelation rules cdRelation =
@@ -256,15 +260,17 @@ calculateDeleteForbids ogg dfs = (S.map toRelation concreteDF, S.map toAbstractR
     isConcreteDeleteForbid (i, t) = isInInitial (initialGraph ogg) t || happensBeforeAction (concreteRelation ogg) t (secondRule i)
     isDiscardedDeleteForbid (i, t) = happensAfterAction (concreteRelation ogg) t (secondRule i)
     (concreteDF,potentialDF) = S.partition isConcreteDeleteForbid (S.map (findConcreteTrigger ogg) dfs)
-    (discarded,abstract) = S.partition isDiscardedDeleteForbid potentialDF
+    (_,abstract) = S.partition isDiscardedDeleteForbid potentialDF
     toRelation (i, _) = (Rule (firstRule i), Rule (secondRule i))
     toAbstractRelation (i, c) = (toRelation (i, c), (Rule (secondRule i), findRule cRelation c))
 
+isCreation :: (RelationItem, RelationItem) -> Bool
 isCreation (a,b) = case (a,b) of
                       (Rule _, Node _) -> True
                       (Rule _, Edge _) -> True
                       _                -> False
 
+isDeletion :: (RelationItem, RelationItem) -> Bool
 isDeletion (a,b) = case (a,b) of
                       (Node _, Rule _) -> True
                       (Edge _, Rule _) -> True
@@ -380,11 +386,6 @@ restrictMorphisms' (a,b) = (removeOrphans a, removeOrphans b)
     orphanNodes = orphanTypedNodes a `intersect` orphanTypedNodes b
     orphanEdges = orphanTypedEdges a `intersect` orphanTypedEdges b
     removeOrphans m = L.foldr removeNodeFromCodomain (L.foldr removeEdgeFromCodomain m orphanEdges) orphanNodes
-
---restrict :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
---restrict a b -> a
---  where
---    b' =
 
 restrictMorphism' :: TypedGraphMorphism a b -> TypedGraphMorphism a b
 restrictMorphism' a = removeOrphans
