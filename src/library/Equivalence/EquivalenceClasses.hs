@@ -101,18 +101,18 @@ isCyclic = not . null . until (\rel -> removeOneItem rel == rel) removeOneItem
     removeOneItem rel = maybe rel (elementNotInDomain rel) . noIncoming rel $ relationDomain rel
     relationDomain = DS.map fst
 
-tsort :: Ord a => Relation a -> Maybe [a]
-tsort rel =
+tsort :: Ord a => Relation a -> Set a -> Maybe [a]
+tsort rel disconnected =
   let
-    items = relationElements rel
+    items = relationElements rel `union` disconnected
   in if isCyclic rel then Nothing
      else Just $ buildOrdering rel items
 
-conditionalTSort :: Ord a => Relation a -> CondRelation a -> Maybe [a]
-conditionalTSort r cr =
+conditionalTSort :: Ord a => Relation a -> Set a -> CondRelation a -> Maybe [a]
+conditionalTSort r disconnected cr =
   let
     items = relationElements r
-   in tsort r
+   in tsort r disconnected
 
 relationElements :: Ord a => Relation a -> Set a
 relationElements = foldr (\(x,y) -> insert x . insert y) empty
@@ -126,4 +126,4 @@ buildCondOrdering :: Ord a => Relation a -> CondRelation a -> Set a -> [a]
 buildCondOrdering relation condRelation items = maybe [] addToOrderRemoveFromRelation $ noIncoming relation items
   where
     addToOrderRemoveFromRelation i = i : buildOrdering (elementNotInDomain relation i) (delete i items)
-    allNonIncomings relation = filter 
+    allNonIncomings relation = filter

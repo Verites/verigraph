@@ -13,6 +13,7 @@ module TypedGraph.DPO.GraphProcess
 , calculateNacRelations
 , strictRelation
 , creationAndDeletionRelation
+, getElements
 )
 
 where
@@ -71,7 +72,7 @@ uniqueOrigin rules = not (repeated createdList) && not (repeated deletedList)
     createdList = S.toList $ S.map snd created
     deletedList = S.toList $ S.map fst deleted
 
-findOrder :: Relation -> Maybe [RelationItem]
+findOrder :: Relation -> Set RelationItem -> Maybe [RelationItem]
 findOrder = tsort
 
 repeated :: (Eq a) => [a] -> Bool
@@ -163,6 +164,21 @@ creationAndDeletionRelation (name,rule) =
     putRule rel = [(fst rel, Rule name), (Rule name, snd rel)]
     withRules = concatMap putRule nodesAndEdges
   in S.fromList $ nodesAndEdges ++ elementsAndRule
+
+getRuleItems :: Production (TypedGraphMorphism a b) -> Set RelationItem
+getRuleItems rule =
+  let
+    ns = fromList (deletedNodes rule ++ preservedNodes rule ++ createdNodes rule)
+    es = fromList (deletedEdges rule ++ preservedEdges rule ++ createdEdges rule)
+   in S.map Node ns `union` S.map Edge es
+
+getElements :: OccurenceGrammar a b -> (Set RelationItem, Set RelationItem)
+getElements ogg =
+  let
+    (ns,rs) = unzip $ rules (singleTypedGrammar ogg)
+    ruleNames = S.map Rule (fromList ns)
+    elements = L.map getRuleItems rs
+  in (ruleNames, unions elements)
 
 creationAndPreservationRelation :: [NamedProduction (TypedGraphMorphism a b)] -> Relation -> Relation
 creationAndPreservationRelation rules cdRelation =

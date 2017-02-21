@@ -49,6 +49,7 @@ execute globalOpts opts = do
         rulesRelation = filterRulesOccurenceRelation relation
         elementsRelation = filterElementsOccurenceRelation relation
         unique = (uniqueOrigin newRules)
+        (rulesNames, elementsNames) = getElements completeOgg
     forM_ (zip sequences newRules) $ \((name, _, _), rules) ->
       when (null rules)
         (putStrLn $ "No graph process candidates were found for rule sequence '" ++ name ++ "'")
@@ -92,8 +93,8 @@ execute globalOpts opts = do
     putStrLn $ show (GG.start sgg)
 
     putStrLn "\n------------------\n"
-    putStrLn $ "Is there a compatible concrete total order for rules?\n>>> " ++ show (findOrder rulesRelation)
-    putStrLn $ "Is there a compatible concrete total order for elements?\n>>> " ++ show (findOrder elementsRelation)
+    putStrLn $ "Is there a compatible concrete total order for rules?\n>>> " ++ show (findOrder rulesRelation rulesNames)
+    putStrLn $ "Is there a compatible concrete total order for elements?\n>>> " ++ show (findOrder elementsRelation elementsNames)
 
     putStrLn "\n------------------\n"
     putStrLn "Is there a compatible concrete total order respecting NACs?\n>>> Undefined"
