@@ -115,10 +115,18 @@ filterElementsOccurenceRelation = S.filter bothElements
                         (_, Rule _) -> False
                         _           -> True
 
+filterCreationRelation :: Relation -> Relation
+filterCreationRelation = S.filter bothElements
+  where
+    bothElements (x,y) = case (x,y) of
+                        (Rule _, Node _) -> True
+                        (Rule _, Edge _) -> True
+                        _                -> False
+
 createdElements :: Relation -> Set RelationItem
 createdElements elementsRelation =
   let
-    m = setToMonad elementsRelation
+    m = setToMonad (filterCreationRelation elementsRelation)
     c = relationImage m
     created = monadToSet c
    in created
@@ -130,7 +138,7 @@ generateOccurenceGrammar sequence = OccurenceGrammar singleGrammar originalRules
     newRules = generateGraphProcess sequence
     cdRelation = S.filter isRuleAndElement $ strictRelation newRules
     relation = occurenceRelation newRules
-    created = createdElements . filterElementsOccurenceRelation $ relation
+    created = createdElements cdRelation
     doubleType = getLHS . snd . head $ newRules
     coreGraph = codomain . codomain $ doubleType
     startGraph = removeElements coreGraph created
@@ -161,8 +169,6 @@ creationAndDeletionRelation (name,rule) =
                  ++ [(Node a, Edge b) | a <- ln, b <- re] ++ [(Edge a, Node b) | a <- le, b <- rn]
     elementsAndRule = [(Node a, Rule name) | a <- ln] ++ [(Edge a, Rule name) | a <- le]
                    ++ [(Rule name, Node a) | a <- rn] ++ [(Rule name, Edge a) | a <- re]
-    putRule rel = [(fst rel, Rule name), (Rule name, snd rel)]
-    withRules = concatMap putRule nodesAndEdges
   in S.fromList $ nodesAndEdges ++ elementsAndRule
 
 getRuleItems :: Production (TypedGraphMorphism a b) -> Set RelationItem
