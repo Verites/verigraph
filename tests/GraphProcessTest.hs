@@ -2,9 +2,13 @@
 
 import           Abstract.AdhesiveHLR
 import           Abstract.Cocomplete
-import           Data.List.NonEmpty   (fromList)
+import           Abstract.DPO
+import           Abstract.Morphism
+import           Data.List.NonEmpty          (fromList)
+import           Data.Maybe                  (fromJust)
 import           Graph.Graph
 import           Graph.GraphMorphism
+import           TypedGraph.DPO.GraphProcess ()
 import           TypedGraph.Morphism
 
 
@@ -146,6 +150,76 @@ testCaseEight = calculateNCoequalizer $ fromList [typedMorphismFEight]
 
 
 
+
+-- | Tests with rules FROM: MACHADO, Rodrigo. 2012
+
+typeGraphRules = build [4,3,2,1] [(5,3,4),(4,2,4),(3,2,3),(2,2,1),(1,3,1)]
+
+
+
+-- | SendMsg Rule
+
+lSendMsg = build [11,13,14] [(11,13,11)]
+lTypedSendMsg = buildGraphMorphism lSendMsg typeGraphRules [(14,4),(13,3),(11,1)] [(11,1)]
+
+kSendMsg = build [21,23,24] []
+kTypedSendMsg = buildGraphMorphism kSendMsg typeGraphRules [(24,4),(23,3),(21,1)] []
+
+rSendMsg = build [31,33,34] [(35,33,34)]
+rTypedSendMsg = buildGraphMorphism rSendMsg typeGraphRules [(34,4),(33,3),(31,1)] [(35,5)]
+
+kToLMappingSendMsg = buildGraphMorphism kSendMsg lSendMsg [(24,14),(23,13),(21,11)] []
+kToRMappingSendMsg = buildGraphMorphism kSendMsg rSendMsg [(24,34),(23,33),(21,31)] []
+
+leftSendMsg = buildTypedGraphMorphism kTypedSendMsg lTypedSendMsg kToLMappingSendMsg
+rightSendMsg = buildTypedGraphMorphism kTypedSendMsg rTypedSendMsg kToRMappingSendMsg
+
+sendMsg = buildProduction leftSendMsg rightSendMsg []
+
+
+-- | GetData Rule
+
+{-getDATA-}
+lGetData = build [42,43,44] [(44,42,44),(45,43,44)]
+lTypedGetData = buildGraphMorphism lGetData typeGraphRules [(44,4),(43,3),(42,2)] [(44,4),(45,5)]
+
+kGetData = build [52,53,54] [(55,53,54)]
+kTypedGetData = buildGraphMorphism kGetData typeGraphRules [(54,4),(53,3),(52,2)] [(55,5)]
+
+rGetData = build [62,63,64] [(65,63,64),(63,62,63)]
+rTypedGetData = buildGraphMorphism rGetData typeGraphRules [(64,4),(63,3),(62,2)] [(65,5),(63,3)]
+
+kToLMappingGetData = buildGraphMorphism kGetData lGetData [(52,42),(53,43),(54,44)] [(55,45)]
+kToRMappingGetData = buildGraphMorphism kGetData rGetData [(54,64),(53,63),(52,62)] [(55,65)]
+
+leftGetData = buildTypedGraphMorphism kTypedGetData lTypedGetData kToLMappingGetData
+rightGetData = buildTypedGraphMorphism kTypedGetData rTypedGetData kToRMappingGetData
+
+getData = buildProduction leftGetData rightGetData []
+
+
+
+
+---------------------------------------------------------------
+
+morphismConfig = MorphismsConfig MonoMatches MonomorphicNAC
+
+instanceGraph = build [1,2,3,4] [(1,2,1),(4,4,3)]
+typedInstanceGraph = buildGraphMorphism instanceGraph typeGraphRules [(3,4),(2,3),(1,1),(4,2)] [(1,1),(4,4)]
+
+
+
+matchSendMsg = head (findMonomorphisms lTypedSendMsg typedInstanceGraph :: [TypedGraphMorphism a b ])
+derivationSendMsg =fromJust $  generateDerivation morphismConfig matchSendMsg sendMsg
+
+overlappingGraph = codomain $ comatch derivationSendMsg
+
+
+matchGetData = head (findMonomorphisms lTypedGetData overlappingGraph :: [TypedGraphMorphism a b])
+derivationGetData = fromJust $ generateDerivation morphismConfig matchGetData getData
+
+
+processFromDerivations = calculateProcess [derivationSendMsg, derivationGetData]
 
 main :: IO ()
 main = return ()
