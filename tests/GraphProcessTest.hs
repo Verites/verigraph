@@ -8,9 +8,65 @@ import           Data.List.NonEmpty          (fromList)
 import           Data.Maybe                  (fromJust)
 import           Graph.Graph
 import           Graph.GraphMorphism
+import           Test.HUnit
 import           TypedGraph.DPO.GraphProcess ()
 import           TypedGraph.Morphism
+import           Utils
 
+
+
+
+main :: IO()
+main = do
+  runTests ("Tests of Coequalizer" ~: coequalizerTests)
+  runTests ("Tests of N-Coequalizer" ~: nCoequalizerTests)
+--  runTests ("Test with rules" ~: productionsTests)
+
+
+coequalizerTests :: Test
+coequalizerTests = test [ "Test Case One" ~: testCaseOne  ~=?
+                           buildTypedGraphMorphism typedGraphBOne typedGraphBOne
+                           (buildGraphMorphism graphBOne graphBOne [(50,50),(60,60),(70,70),(80,80)] [])
+
+                        , "Test Case Two" ~: testCaseTwo  ~=?
+                          buildTypedGraphMorphism typedGraphBTwo typedGraphBTwo
+                          (buildGraphMorphism graphBTwo graphBTwo [(50,50),(60,60),(70,70)] [(200,200),(300,300)])
+
+                        -- verify extra tests for pushout
+                        , "Test Case Three" ~: testCaseThree  ~=?
+                          buildTypedGraphMorphism typedGraphBThree typedGraphXThree
+                          (buildGraphMorphism graphBThree graphXThree [(80,50),(70,50),( 60,50),(50,50)] [(200,200),(300,300),(400,400)])
+                        , "Test Case Four" ~: testCaseFour  ~=?
+                          buildTypedGraphMorphism typedGraphBFour typedGraphXFour
+                          (buildGraphMorphism graphBFour graphXFour [(50,50),(60,60)][(500,500),(600,500)])
+
+                        ]
+
+nCoequalizerTests :: Test
+nCoequalizerTests = test [ "Test Case Five "  ~: testCaseFive  ~=?
+                           buildTypedGraphMorphism typedGraphBFive typedGraphXFive
+                           (buildGraphMorphism graphBFive graphXFive [(80,50),(70,50),(60,50),(50,50)] [])
+
+                         --Same result as test one
+                         , "Test Case Six" ~: testCaseSix  ~=?
+                           buildTypedGraphMorphism typedGraphBOne typedGraphBOne
+                           (buildGraphMorphism graphBOne graphBOne [(50,50),(60,60),(70,70),(80,80)] [])
+
+                         --Same result as test two
+                         , "Test Case Seven" ~: testCaseSeven  ~=?
+                           buildTypedGraphMorphism typedGraphBTwo typedGraphBTwo
+                           (buildGraphMorphism graphBTwo graphBTwo [(50,50),(60,60),(70,70)] [(200,200),(300,300)])
+
+                         , "Test Case Eight" ~: testCaseEight  ~=?
+                         buildTypedGraphMorphism typedGraphBEight typedGraphBEight
+                         (buildGraphMorphism graphBEight graphBEight [(50,50),(60,60),(70,70),(80,80)] [(500,500),(600,600),(700,700)])
+
+                         ]
+{-
+productionsTests :: Test
+productionsTests = test [ -- "Process From Derivations" ~: processFromDerivations ~=?
+                        ]
+-}
 
 -- | COEQUALIZER TESTS
 
@@ -49,11 +105,16 @@ mappingMorphismHTwo = buildGraphMorphism graphATwo graphBTwo [(10,50),(20,60)] [
 
 typedMorphismHTwo = buildTypedGraphMorphism typedGraphATwo typedGraphBTwo mappingMorphismHTwo
 
-testeCaseTwo = calculateCoequalizer typedMorphismHTwo typedMorphismHTwo
+testCaseTwo = calculateCoequalizer typedMorphismHTwo typedMorphismHTwo
 
 
 
 -- | Case 3 ( EXTRA TEST FOR PUSHOUT )
+
+
+graphXThree = build [50] [(200,50,50),(300,50,50),(400,50,50)]
+typedGraphXThree = buildGraphMorphism graphXThree typeGraphThree [(50,1)] [(200,1),(300,1),(400,1)]
+
 
 typeGraphThree = build [1] [(1,1,1)]
 
@@ -82,9 +143,11 @@ typeGraphFour = build [1] [(1,1,1)]
 
 graphAFour = build [10,20] [(100,20,10),(200,20,10),(300,20,10),(400,20,10)]
 graphBFour = build [50,60] [(500,60,50),(600,60,50)]
+graphXFour = build [50,60] [(500,60,50)]
 
 typedGraphAFour = buildGraphMorphism graphAFour typeGraphFour [(10,1),(20,1)] [(100,1),(200,1),(300,1),(400,1)]
 typedGraphBFour = buildGraphMorphism graphBFour typeGraphFour [(50,1),(60,1)] [(500,1),(600,1)]
+typedGraphXFour = buildGraphMorphism graphXFour typeGraphFour [(50,1),(60,1)] [(500,1)]
 
 mappingMorphismGFour = buildGraphMorphism graphAFour graphBFour [(10,50),(20,60)] [(100,600),(200,500),(300,600),(400,500)]
 mappingMorphismHFour = buildGraphMorphism graphAFour graphBFour [(10,50),(20,60)] [(100,500),(200,500),(300,600),(400,500)]
@@ -93,6 +156,7 @@ typedMorphismGFour = buildTypedGraphMorphism typedGraphAFour typedGraphBFour map
 typedMorphismHFour = buildTypedGraphMorphism typedGraphAFour typedGraphBFour mappingMorphismHFour
 
 testCaseFour = calculateCoequalizer typedMorphismHFour typedMorphismGFour
+
 
 
 
@@ -105,9 +169,11 @@ typeGraphFive = build [4,3,2,1] [(5,3,4),(4,2,4),(3,2,3),(2,2,1),(1,3,1)]
 
 graphAFive = build [10,20,30,40] []
 graphBFive = build [50,60,70,80] []
+graphXFive = build [50] []
 
 typedGraphAFive = buildGraphMorphism graphAFive typeGraphFive [(10,1),(20,1),(30,1),(40,1)] []
 typedGraphBFive = buildGraphMorphism graphBFive typeGraphFive [(50,1),(60,1),(70,1),(80,1)] []
+typedGraphXFive = buildGraphMorphism graphXFive typeGraphFive [(50,1)] []
 
 mappingMorphismFFive = buildGraphMorphism graphAFive graphBFive [(10,60),(20,50),(30,70),(40,80)] []
 mappingMorphismGFive = buildGraphMorphism graphAFive graphBFive [(10,50),(20,60),(30,70),(40,80)] []
@@ -197,29 +263,19 @@ rightGetData = buildTypedGraphMorphism kTypedGetData rTypedGetData kToRMappingGe
 
 getData = buildProduction leftGetData rightGetData []
 
-
-
-
----------------------------------------------------------------
+-- | Test Instantiate
 
 morphismConfig = MorphismsConfig MonoMatches MonomorphicNAC
 
 instanceGraph = build [1,2,3,4] [(1,2,1),(4,4,3)]
 typedInstanceGraph = buildGraphMorphism instanceGraph typeGraphRules [(3,4),(2,3),(1,1),(4,2)] [(1,1),(4,4)]
 
-
-
 matchSendMsg = head (findMonomorphisms lTypedSendMsg typedInstanceGraph :: [TypedGraphMorphism a b ])
 derivationSendMsg =fromJust $  generateDerivation morphismConfig matchSendMsg sendMsg
 
 overlappingGraph = codomain $ comatch derivationSendMsg
 
-
 matchGetData = head (findMonomorphisms lTypedGetData overlappingGraph :: [TypedGraphMorphism a b])
 derivationGetData = fromJust $ generateDerivation morphismConfig matchGetData getData
 
-
 processFromDerivations = calculateProcess [derivationSendMsg, derivationGetData]
-
-main :: IO ()
-main = return ()
