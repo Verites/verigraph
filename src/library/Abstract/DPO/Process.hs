@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Abstract.DPO.Process
   ( Process(..)
   , GenerateProcess(..)
@@ -19,6 +21,14 @@ data Process m = Process
   { productions :: [Production m]
   , coreObject  :: Obj m
   }
+
+instance (Eq m, (Eq (Obj m))) => Eq (Process m) where
+ Process p c == Process p' c' = (p,c) == (p',c')
+ Process p c /= Process p' c' = (p,c) /= (p',c')
+
+instance (Show m, (Show (Obj m))) => Show (Process m) where
+  show (Process p c) = "Productions: /n" ++ show p ++
+                       "/nCoreObject: /n" ++ show c
 
 data InteractionType = DeleteUse | ProduceForbid | ProduceUse | DeleteForbid deriving (Eq, Show, Ord)
 

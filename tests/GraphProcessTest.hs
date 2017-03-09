@@ -20,7 +20,7 @@ main :: IO()
 main = do
   runTests ("Tests of Coequalizer" ~: coequalizerTests)
   runTests ("Tests of N-Coequalizer" ~: nCoequalizerTests)
---  runTests ("Test with rules" ~: productionsTests)
+  runTests ("Test with rules" ~: productionsTests)
 
 
 coequalizerTests :: Test
@@ -62,11 +62,10 @@ nCoequalizerTests = test [ "Test Case Five "  ~: testCaseFive  ~=?
                          (buildGraphMorphism graphBEight graphBEight [(50,50),(60,60),(70,70),(80,80)] [(500,500),(600,600),(700,700)])
 
                          ]
-{-
+
 productionsTests :: Test
-productionsTests = test [ -- "Process From Derivations" ~: processFromDerivations ~=?
+productionsTests = test [  "Process From Derivations" ~: processFromDerivations ~=?processFromDerivationsResult
                         ]
--}
 
 -- | COEQUALIZER TESTS
 
@@ -217,7 +216,7 @@ testCaseEight = calculateNCoequalizer $ fromList [typedMorphismFEight]
 
 
 
--- | Tests with rules FROM: MACHADO, Rodrigo. 2012
+-- | Process test with rules FROM: MACHADO, Rodrigo. 2012
 
 typeGraphRules = build [4,3,2,1] [(5,3,4),(4,2,4),(3,2,3),(2,2,1),(1,3,1)]
 
@@ -279,3 +278,67 @@ matchGetData = head (findMonomorphisms lTypedGetData overlappingGraph :: [TypedG
 derivationGetData = fromJust $ generateDerivation morphismConfig matchGetData getData
 
 processFromDerivations = calculateProcess [derivationSendMsg, derivationGetData]
+
+
+-- | Core Graph Result
+
+coreGraphDomain = build [1,2,3,4] [(1,2,1),(4,4,3),(50,2,3),(196,4,2)]
+typedCoreGraph = buildGraphMorphism coreGraphDomain typeGraphRules
+                 [(1,1),(2,3),(3,4),(4,2)] [(1,1),(4,4),(50,5),(196,3)]
+
+
+-- | SendMsg Rule Result
+
+lSendMsgResult = build [11,13,14] [(11,13,11)]
+lTypedSendMsgResult = buildGraphMorphism lSendMsgResult coreGraphDomain
+                      [(11,1),(13,2),(14,3)] [(11,1)]
+
+kSendMsgResult = build [21,23,24] []
+kTypedSendMsgResult = buildGraphMorphism kSendMsgResult coreGraphDomain
+                      [(21,1),(23,2),(24,3)] []
+
+rSendMsgResult = build [31,33,34] [(35,33,34)]
+rTypedSendMsgResult = buildGraphMorphism rSendMsgResult coreGraphDomain
+                      [(31,1),(33,2),(34,3)] [(35,50)]
+
+kToLMappingSendMsgResult = buildGraphMorphism kSendMsgResult lSendMsgResult
+                           [(21,11),(23,13),(24,14)] []
+
+kToRMappingSendMsgResult = buildGraphMorphism kSendMsgResult rSendMsgResult
+                           [(21,31),(23,33),(24,34)] []
+
+leftSendMsgResult = buildTypedGraphMorphism kTypedSendMsgResult lTypedSendMsgResult kToLMappingSendMsgResult
+rightSendMsgResult = buildTypedGraphMorphism kTypedSendMsgResult rTypedSendMsgResult kToRMappingSendMsgResult
+
+sendMsgResult = buildProduction leftSendMsgResult rightSendMsgResult []
+
+
+-- | GetData Rule Result
+
+lGetDataResult = build [42,43,44] [(44,42,44),(45,43,44)]
+lTypedGetDataResult = buildGraphMorphism lGetDataResult coreGraphDomain
+                      [(42,4),(43,2),(44,3)] [(44,4),(45,50)]
+
+kGetDataResult = build [52,53,54] [(55,53,54)]
+kTypedGetDataResult = buildGraphMorphism kGetDataResult coreGraphDomain
+                      [(52,4),(53,2),(54,3)] [(55,50)]
+
+rGetDataResult = build [62,63,64] [(65,63,64),(63,62,63)]
+rTypedGetDataResult = buildGraphMorphism rGetDataResult coreGraphDomain
+                      [(62,4),(63,2),(64,3)] [(65,50),(63,196)]
+
+kToLMappingGetDataResult = buildGraphMorphism kGetDataResult lGetDataResult
+                           [(52,42),(53,43),(54,44)] [(55,45)]
+
+kToRMappingGetDataResult = buildGraphMorphism kGetDataResult rGetDataResult
+                           [(52,62),(53,63),(54,64)] [(55,65)]
+
+leftGetDataResult = buildTypedGraphMorphism kTypedGetDataResult lTypedGetDataResult kToLMappingGetDataResult
+rightGetDataResult = buildTypedGraphMorphism kTypedGetDataResult rTypedGetDataResult kToRMappingGetDataResult
+
+getDataResult = buildProduction leftGetDataResult rightGetDataResult []
+
+
+-- | Test Result
+
+processFromDerivationsResult = Process [sendMsgResult, getDataResult] typedCoreGraph
