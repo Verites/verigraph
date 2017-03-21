@@ -13,6 +13,8 @@ module TypedGraph.DPO.GraphRule (
     , deletedEdges
     , createdNodes
     , createdEdges
+    , preservedNodes
+    , preservedEdges
 
     , emptyGraphRule
     , nullGraphRule
@@ -45,7 +47,13 @@ deletedEdges r = TGM.orphanTypedEdges (getLHS r)
 
 -- | Return the edges created by a rule
 createdEdges :: GraphRule a b -> [G.EdgeId]
-createdEdges r = TGM.orphanTypedEdges (getRHS r)
+createdEdges = TGM.orphanTypedEdges . getRHS
+
+preservedNodes :: GraphRule a b -> [G.NodeId]
+preservedNodes = nodesFromDomain . getLHS
+
+preservedEdges :: GraphRule a b -> [G.EdgeId]
+preservedEdges = edgesFromDomain . getLHS
 
 -- | Returns an empty GraphRule
 emptyGraphRule :: Graph a b -> Production (TypedGraphMorphism a b)
@@ -66,21 +74,21 @@ buildGraphRule typegraph deleted created (preservedNodes, preservedEdges) nacs =
     preservedGraph = build (map fst preservedNodes) (map (\(e,s,t,_) -> (e,s,t)) preservedEdges)
     preservedTypeGraph = GM.buildGraphMorphism preservedGraph typegraph preservedNodes (map (\(e,_,_,t) -> (e,t)) preservedEdges)
     leftAndRightPreserved = M.id preservedTypeGraph
-    
+
     -- Creates indicated elements on codomain of the initial rule
     addCreated = addElementsOnCodomain leftAndRightPreserved created
     addDeleted = addElementsOnCodomain leftAndRightPreserved deleted
-    
+
     ---- Nacs part
-    
+
     -- Each NAC starts from a "initial" id of L ...
     idLeft = M.id (codomain addDeleted)
     -- and adds all forbidden elements on codomain of this initial
     resultingNacs = map (addElementsOnCodomain idLeft) nacs
-    
+
     -- The rule instantiation
     resultingRule = buildProduction addDeleted addCreated resultingNacs
-    
+
     -- Function that adds nodes and edges on the codomain of an init typed graph morphism
     addElementsOnCodomain init (nodes,edges) = addEdges
       where

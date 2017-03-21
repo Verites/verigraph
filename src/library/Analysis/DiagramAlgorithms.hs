@@ -28,8 +28,12 @@ prod2 = l2 r2 {n2}
 module Analysis.DiagramAlgorithms (
     isDeleteUse
   , isProduceDangling
+  , isProduceForbid
+  , isProduceUse
+  , isDeleteForbid
   , deleteUseDangling
   , produceForbidOneNac
+  , findAllPossibleH21
   ) where
 
 import           Abstract.AdhesiveHLR
@@ -48,6 +52,12 @@ isDeleteUse conf p1 (m1,m2) = null h21
         (_,d1) = calculatePushoutComplement m1 (getLHS p1) --gets only the morphism D1 to G
         h21 = findAllPossibleH21 conf m2 d1
 
+isProduceUse :: DPO m => MorphismsConfig -> Production m -> (m, m) -> Bool
+isProduceUse conf p1 (m1',m2) = null h21
+    where
+        (_,e1) = calculatePushoutComplement m1' (getRHS p1) --gets only the morphism D1 to G
+        h21 = findAllPossibleH21 conf m2 e1
+
 -- | Rule @p1@ is in a produce-dangling conflict with @p2@ if @p1@
 -- produces something that disables @p2@.
 --
@@ -60,6 +70,27 @@ isProduceDangling conf p1 p2 (m1,m2) =
     (_,e1) = calculatePushout k1 (getRHS p1)
     h21 = findAllPossibleH21 conf m2 d1
     h21_e1 = compose (head h21) e1 --h21 is unique if it exists
+
+isProduceForbid :: (DPO m) => MorphismsConfig -> Production m -> Production m -> (m,m) -> Bool
+isProduceForbid conf p1 p2 (m1,m2) =
+  let
+    (k1,d1) = calculatePushoutComplement m1 (getLHS p1)
+    (_,e1) = calculatePushout k1 (getRHS p1)
+    h21 = findAllPossibleH21 conf m2 d1
+    h21_e1 = compose (head h21) e1
+  in not (null h21) && satisfiesGluingConditions conf p2 h21_e1 && not (satisfiesNACs conf p2 h21_e1)
+
+
+
+isDeleteForbid :: DPO m => MorphismsConfig -> Production m -> Production m -> (m,m) -> Bool
+isDeleteForbid conf p1 p2 (m1',m2) =
+  let
+    validRewriting = hasPushoutComplement (Monomorphism, m1') (Monomorphism, getRHS p1)
+    (k1,e1) = calculatePushoutComplement m1' (getRHS p1)
+    h21 = findAllPossibleH21 conf m2 e1
+    (_,d1) = calculatePushout k1 (getLHS p1)
+    h21_d1 = compose (head h21) d1
+  in validRewriting && not (null h21) && satisfiesGluingConditions conf p2 h21_d1 && not (satisfiesNACs conf p2 h21_d1)
 
 -- | Given the morphisms @m2: L2 -> G@ and @d1 : D1 -> G@, finds all possible @h21 : L2 -> D1@
 -- where m2 = h21 . d1
@@ -126,4 +157,3 @@ produceForbidOneNac conf p1 p2 (n2,idx) = do
 findMorphisms' :: FindMorphism m => MorphismsConfig -> Obj m -> Obj m -> [m]
 findMorphisms' conf =
   findMorphisms (matchRestrictionToMorphismType $ matchRestriction conf)
-

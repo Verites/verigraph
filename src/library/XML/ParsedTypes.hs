@@ -30,6 +30,7 @@ type Overlappings = (String,String,[ConflictMorphism])
 -- name rule1, name rule2, morphism, index
 type Overlapping = (String,String,ConflictMorphism,Int)
 
-type Sequence = (String, [SubSequence])
+type Sequence = (String, [SubSequence], [ParsedObjectFlow])
 type SubSequence = (Int, [SequenceItem])
 type SequenceItem = (Int, String)
+type ParsedObjectFlow = (String, String, String, [Mapping])

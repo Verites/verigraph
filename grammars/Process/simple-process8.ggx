@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Document version="1.0">
+    <GraphTransformationSystem ID="I1" directed="true" name="GraGra" parallel="true">
+        <TaggedValue Tag="AttrHandler" TagValue="Java Expr">
+            <TaggedValue Tag="Package" TagValue="java.lang"/>
+            <TaggedValue Tag="Package" TagValue="java.util"/>
+        </TaggedValue>
+        <TaggedValue Tag="CSP" TagValue="true"/>
+        <TaggedValue Tag="injective" TagValue="true"/>
+        <TaggedValue Tag="dangling" TagValue="true"/>
+        <TaggedValue Tag="identification" TagValue="true"/>
+        <TaggedValue Tag="NACs" TagValue="true"/>
+        <TaggedValue Tag="PACs" TagValue="true"/>
+        <TaggedValue Tag="GACs" TagValue="true"/>
+        <TaggedValue Tag="ruleSequence" TagValue="true"/>
+        <TaggedValue Tag="breakAllLayer" TagValue="true"/>
+        <TaggedValue Tag="showGraphAfterStep" TagValue="true"/>
+        <TaggedValue Tag="TypeGraphLevel" TagValue="ENABLED_MAX_MIN"/>
+        <Types>
+            <NodeType ID="I2" abstract="false" name="a%:RECT:java.awt.Color[r=0,g=0,b=0]:[NODE]:"/>
+            <NodeType ID="I3" abstract="false" name="b%:RECT:java.awt.Color[r=0,g=0,b=0]:[NODE]:"/>
+            <EdgeType ID="I4" abstract="false" name="a%:SOLID_LINE:java.awt.Color[r=0,g=0,b=0]:[EDGE]:"/>
+            <Graph ID="I5" kind="TG" name="TypeGraph">
+                <Node ID="I6" type="I2">
+                    <NodeLayout X="291" Y="160"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+                <Node ID="I7" type="I3">
+                    <NodeLayout X="518" Y="157"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+                <Edge ID="I8" source="I6" target="I7" type="I4">
+                    <EdgeLayout bendX="0" bendY="0"
+                        sourceMultiplicityOffsetX="-6"
+                        sourceMultiplicityOffsetY="15"
+                        targetMultiplicityOffsetX="-6"
+                        targetMultiplicityOffsetY="7" textOffsetX="0" textOffsetY="-22"/>
+                    <additionalLayout aktlength="200" force="10" preflength="200"/>
+                </Edge>
+            </Graph>
+        </Types>
+        <Graph ID="I9" kind="HOST" name="Graph"/>
+        <Rule ID="I10" formula="true" name="Rule">
+            <Graph ID="I12" kind="LHS" name="LeftOf_Rule">
+                <Node ID="I13" type="I2">
+                    <NodeLayout X="88" Y="141"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+                <Node ID="I14" type="I3">
+                    <NodeLayout X="224" Y="138"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+                <Edge ID="I15" source="I13" target="I14" type="I4">
+                    <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                    <additionalLayout aktlength="200" force="10" preflength="200"/>
+                </Edge>
+            </Graph>
+            <Graph ID="I16" kind="RHS" name="RightOf_Rule">
+                <Node ID="I17" type="I2">
+                    <NodeLayout X="88" Y="141"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+                <Node ID="I18" type="I3">
+                    <NodeLayout X="224" Y="138"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+            </Graph>
+            <Morphism comment="Formula: true" name="Rule">
+                <Mapping image="I17" orig="I13"/>
+                <Mapping image="I18" orig="I14"/>
+            </Morphism>
+            <TaggedValue Tag="layer" TagValue="0"/>
+            <TaggedValue Tag="priority" TagValue="0"/>
+        </Rule>
+        <Rule ID="I19" formula="true" name="Rule_clone">
+            <Graph ID="I21" kind="LHS" name="LeftOf_Rule_clone">
+                <Node ID="I22" type="I2">
+                    <NodeLayout X="88" Y="141"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+                <Node ID="I23" type="I3">
+                    <NodeLayout X="224" Y="138"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+            </Graph>
+            <Graph ID="I24" kind="RHS" name="RightOf_Rule_clone">
+                <Node ID="I25" type="I2">
+                    <NodeLayout X="88" Y="141"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+                <Node ID="I26" type="I3">
+                    <NodeLayout X="224" Y="138"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+                <Edge ID="I27" source="I25" target="I26" type="I4">
+                    <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                    <additionalLayout aktlength="200" force="10" preflength="200"/>
+                </Edge>
+            </Graph>
+            <Morphism comment="Formula: true" name="Rule_clone">
+                <Mapping image="I25" orig="I22"/>
+                <Mapping image="I26" orig="I23"/>
+            </Morphism>
+            <TaggedValue Tag="layer" TagValue="0"/>
+            <TaggedValue Tag="priority" TagValue="0"/>
+        </Rule>
+        <RuleSequences>
+            <Sequence name="RuleSequence">
+                <Graph id="I9"/>
+                <Subsequence iterations="1">
+                    <Item iterations="1" rule="Rule"/>
+                    <Item iterations="1" rule="Rule_clone"/>
+                </Subsequence>
+                <Subsequence iterations="1">
+                    <Item iterations="1" rule="Rule_clone"/>
+                    <Item iterations="1" rule="Rule"/>
+                </Subsequence>
+                <ObjectFlow enabled="true" index="1:2"
+                    input="Rule_clone" output="Rule">
+                    <Mapping image="I22" orig="I17"/>
+                    <Mapping image="I23" orig="I18"/>
+                </ObjectFlow>
+                <ObjectFlow enabled="true" index="3:4" input="Rule" output="Rule_clone"/>
+            </Sequence>
+        </RuleSequences>
+    </GraphTransformationSystem>
+</Document>

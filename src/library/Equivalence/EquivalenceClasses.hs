@@ -5,12 +5,15 @@ module  Equivalence.EquivalenceClasses (
   enaryConstruct,
   getElem,
   getTail,
-  maximumDisjointClass
+  maximumDisjointClass,
+  tsort
 
 
 ) where
 
+import           Data.Foldable (find)
 import           Data.Set as DS
+import Prelude hiding (filter, null, foldr, foldl)
 
 maximumDisjointClass :: (Ord a) => [a] -> Set (EquivalenceClass a)
 maximumDisjointClass l = fromList $ Prelude.map (fromList . (:[])) l
@@ -67,3 +70,60 @@ findEquivalenceClass element set
   | otherwise = getElem domain
   where
     domain = DS.filter (element `elem`) set
+
+type Relation a = Set (a,a)
+
+-- DeleteFOrbid, ProduceForbid
+type CondRelation a = Set ((a,a),(a,a))
+
+updateCond :: Ord a => CondRelation a -> a -> (CondRelation a, Relation a)
+updateCond c i =
+  let
+    contains i ((a,b),(c,d)) = (i == a) || (i == b) || (i == c) || (i == d)
+    (has, hasNot) = partition (contains i) c
+    removeBoth i ((_,b),(c,_)) = if b /= c then error "invalid abstract relations" else i /= b -- && (i /= c)
+    getRelation i ((a,b),(c,d)) = if i == a then (a,b) else (c,d)
+    newConcrete = DS.map (getRelation i) $ filter (removeBoth i) has
+   in (hasNot, newConcrete)
+
+elementInImage :: Ord a => Relation a -> a -> Relation a
+elementInImage rel item = filter ((== item) . snd) rel
+
+elementNotInDomain :: Ord a => Relation a -> a -> Relation a
+elementNotInDomain rel item = filter ((/= item) . fst) rel
+
+noIncoming :: Ord a => Relation a -> Set a -> Maybe a
+noIncoming rel = find (null . elementInImage rel)
+
+isCyclic :: Ord a => Relation a -> Bool
+isCyclic = not . null . until (\rel -> removeOneItem rel == rel) removeOneItem
+  where
+    removeOneItem rel = maybe rel (elementNotInDomain rel) . noIncoming rel $ relationDomain rel
+    relationDomain = DS.map fst
+
+tsort :: Ord a => Relation a -> Set a -> Maybe [a]
+tsort rel disconnected =
+  let
+    items = relationElements rel `union` disconnected
+  in if isCyclic rel then Nothing
+     else Just $ buildOrdering rel items
+
+conditionalTSort :: Ord a => Relation a -> Set a -> CondRelation a -> Maybe [a]
+conditionalTSort r disconnected cr =
+  let
+    items = relationElements r
+   in tsort r disconnected
+
+relationElements :: Ord a => Relation a -> Set a
+relationElements = foldr (\(x,y) -> insert x . insert y) empty
+
+buildOrdering :: Ord a => Relation a -> Set a -> [a]
+buildOrdering relation items = maybe [] addToOrderRemoveFromRelation $ noIncoming relation items
+  where
+    addToOrderRemoveFromRelation i = i : buildOrdering (elementNotInDomain relation i) (delete i items)
+
+buildCondOrdering :: Ord a => Relation a -> CondRelation a -> Set a -> [a]
+buildCondOrdering relation condRelation items = maybe [] addToOrderRemoveFromRelation $ noIncoming relation items
+  where
+    addToOrderRemoveFromRelation i = i : buildOrdering (elementNotInDomain relation i) (delete i items)
+    allNonIncomings relation = filter

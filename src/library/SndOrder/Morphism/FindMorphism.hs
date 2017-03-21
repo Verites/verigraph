@@ -22,6 +22,8 @@ instance FindMorphism (RuleMorphism a b) where
         isPartiallyMonomorphic (mappingRight n) (mappingRight q))
       (findAllMorphisms (codomain n) (codomain m))
 
+  induceSpanMorphism = error "induceSpanMorphism not implemented for RuleMorphism"
+
 leftM :: FindMorphism t => MorphismType -> Production t -> Production t -> t -> [(t, t)]
 leftM prop l g mapK = map (\m -> (m, mapK)) commuting
   where

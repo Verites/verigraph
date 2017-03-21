@@ -516,15 +516,15 @@
         <Rule ID="I120" formula="true" name="sendMsg">
             <Graph ID="I122" kind="LHS" name="LeftOf_sendMsg">
                 <Node ID="I123" type="I2">
-                    <NodeLayout X="64" Y="200"/>
+                    <NodeLayout X="95" Y="129"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Node ID="I124" type="I5">
-                    <NodeLayout X="165" Y="85"/>
+                    <NodeLayout X="88" Y="275"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Node ID="I125" type="I4">
-                    <NodeLayout X="276" Y="206"/>
+                    <NodeLayout X="267" Y="274"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Edge ID="I126" source="I124" target="I123" type="I8">
@@ -534,15 +534,15 @@
             </Graph>
             <Graph ID="I127" kind="RHS" name="RightOf_sendMsg">
                 <Node ID="I128" type="I2">
-                    <NodeLayout X="52" Y="194"/>
+                    <NodeLayout X="68" Y="216"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Node ID="I129" type="I5">
-                    <NodeLayout X="123" Y="73"/>
+                    <NodeLayout X="84" Y="117"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Node ID="I130" type="I4">
-                    <NodeLayout X="261" Y="188"/>
+                    <NodeLayout X="163" Y="219"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Edge ID="I131" source="I129" target="I130" type="I11">
@@ -564,7 +564,7 @@
                                 frozen="true" zone="50"/>
                         </Node>
                         <Node ID="I134" type="I5">
-                            <NodeLayout X="60" Y="76"/>
+                            <NodeLayout X="67" Y="89"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
@@ -574,7 +574,7 @@
                                 frozen="true" zone="50"/>
                         </Node>
                         <Node ID="I136" type="I3">
-                            <NodeLayout X="213" Y="97"/>
+                            <NodeLayout X="229" Y="93"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
@@ -603,15 +603,15 @@
         <Rule ID="I139" formula="true" name="getData">
             <Graph ID="I141" kind="LHS" name="LeftOf_getData">
                 <Node ID="I142" type="I3">
-                    <NodeLayout X="297" Y="213"/>
+                    <NodeLayout X="303" Y="191"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Node ID="I143" type="I5">
-                    <NodeLayout X="226" Y="110"/>
+                    <NodeLayout X="212" Y="60"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Node ID="I144" type="I4">
-                    <NodeLayout X="133" Y="210"/>
+                    <NodeLayout X="70" Y="194"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Edge ID="I145" source="I143" target="I144" type="I11">
@@ -625,15 +625,15 @@
             </Graph>
             <Graph ID="I147" kind="RHS" name="RightOf_getData">
                 <Node ID="I148" type="I3">
-                    <NodeLayout X="363" Y="221"/>
+                    <NodeLayout X="268" Y="219"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Node ID="I149" type="I5">
-                    <NodeLayout X="233" Y="109"/>
+                    <NodeLayout X="169" Y="114"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Node ID="I150" type="I4">
-                    <NodeLayout X="112" Y="207"/>
+                    <NodeLayout X="81" Y="219"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Edge ID="I151" source="I149" target="I150" type="I11">
@@ -661,7 +661,7 @@
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Node ID="I157" type="I3">
-                    <NodeLayout X="353" Y="112"/>
+                    <NodeLayout X="349" Y="121"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Node ID="I158" type="I5">
@@ -669,7 +669,7 @@
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Node ID="I159" type="I4">
-                    <NodeLayout X="360" Y="223"/>
+                    <NodeLayout X="343" Y="207"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Edge ID="I160" source="I157" target="I158" type="I7">
@@ -720,15 +720,15 @@
         <Rule ID="I169" formula="true" name="deleteMsg">
             <Graph ID="I171" kind="LHS" name="LeftOf_deleteMsg">
                 <Node ID="I172" type="I2">
-                    <NodeLayout X="215" Y="218"/>
+                    <NodeLayout X="157" Y="226"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Node ID="I173" type="I3">
-                    <NodeLayout X="373" Y="125"/>
+                    <NodeLayout X="315" Y="121"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Node ID="I174" type="I5">
-                    <NodeLayout X="222" Y="123"/>
+                    <NodeLayout X="157" Y="120"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Edge ID="I175" source="I173" target="I174" type="I7">
@@ -770,6 +770,43 @@
                     <Item iterations="1" rule="receiveMsg"/>
                     <Item iterations="1" rule="deleteMsg"/>
                 </Subsequence>
+                <Subsequence iterations="1">
+                    <Item iterations="1" rule="deleteMsg"/>
+                    <Item iterations="1" rule="receiveMsg"/>
+                    <Item iterations="1" rule="getData"/>
+                    <Item iterations="1" rule="sendMsg"/>
+                </Subsequence>
+                <ObjectFlow enabled="true" index="1:4" input="deleteMsg" output="sendMsg">
+                    <Mapping image="I174" orig="I129"/>
+                    <Mapping image="I172" orig="I128"/>
+                </ObjectFlow>
+                <ObjectFlow enabled="true" index="1:3"
+                    input="receiveMsg" output="sendMsg">
+                    <Mapping image="I161" orig="I131"/>
+                    <Mapping image="I159" orig="I130"/>
+                    <Mapping image="I158" orig="I129"/>
+                    <Mapping image="I156" orig="I128"/>
+                </ObjectFlow>
+                <ObjectFlow enabled="true" index="1:2" input="getData" output="sendMsg">
+                    <Mapping image="I145" orig="I131"/>
+                    <Mapping image="I144" orig="I130"/>
+                    <Mapping image="I143" orig="I129"/>
+                </ObjectFlow>
+                <ObjectFlow enabled="true" index="2:3"
+                    input="receiveMsg" output="getData">
+                    <Mapping image="I157" orig="I148"/>
+                    <Mapping image="I159" orig="I150"/>
+                    <Mapping image="I158" orig="I149"/>
+                    <Mapping image="I161" orig="I151"/>
+                    <Mapping image="I160" orig="I152"/>
+                </ObjectFlow>
+                <ObjectFlow enabled="true" index="3:4" input="deleteMsg" output="receiveMsg">
+                    <Mapping image="I174" orig="I165"/>
+                    <Mapping image="I175" orig="I167"/>
+                    <Mapping image="I176" orig="I168"/>
+                    <Mapping image="I173" orig="I164"/>
+                    <Mapping image="I172" orig="I163"/>
+                </ObjectFlow>
             </Sequence>
         </RuleSequences>
     </GraphTransformationSystem>
