@@ -41,13 +41,13 @@ execute globalOpts opts = do
         conflictsAndDependencies = findConflictsAndDependencies colimit
         inducedByNacs = filterPotential conflictsAndDependencies
 
-        ogg = generateOccurenceGrammar $ head sequences
+        ogg = generateOccurrenceGrammar $ head sequences
         sgg = singleTypedGrammar ogg
         completeOgg = calculateNacRelations ogg inducedByNacs
         newRules = GG.rules . singleTypedGrammar $ ogg
         relation = concreteRelation completeOgg
-        rulesRelation = filterRulesOccurenceRelation relation
-        elementsRelation = filterElementsOccurenceRelation relation
+        rulesRelation = filterRulesOccurrenceRelation relation
+        elementsRelation = filterElementsOccurrenceRelation relation
         unique = (uniqueOrigin newRules)
         (rulesNames, elementsNames) = getElements completeOgg
     forM_ (zip sequences newRules) $ \((name, _, _), rules) ->
@@ -57,12 +57,12 @@ execute globalOpts opts = do
     putStrLn "Conflicts and Dependencies: "
     putStrLn $ show conflictsAndDependencies
 
-    putStrLn "\n##################\n"
+--    putStrLn "\n##################\n"
 
-    putStrLn "Strict Relation: "
-    putStrLn $ show (creationAndDeletionRelation $ newRules!!0)
-    putStrLn $ show (creationAndDeletionRelation $ newRules!!1)
-    putStrLn $ show (creationAndDeletionRelation $ newRules!!2)
+--    putStrLn "Strict Relation: "
+--    putStrLn $ show (creationAndDeletionRelation $ newRules!!0)
+--    putStrLn $ show (creationAndDeletionRelation $ newRules!!1)
+--    putStrLn $ show (creationAndDeletionRelation $ newRules!!2)
 
     putStrLn "\n##################\n"
 

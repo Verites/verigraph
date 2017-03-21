@@ -1,11 +1,11 @@
 {-# LANGUAGE GADTs, ScopedTypeVariables #-}
 module TypedGraph.DPO.GraphProcess
 
-( OccurenceGrammar (..)
-, occurenceRelation
-, filterRulesOccurenceRelation
-, filterElementsOccurenceRelation
-, generateOccurenceGrammar
+( OccurrenceGrammar (..)
+, occurrenceRelation
+, filterRulesOccurrenceRelation
+, filterElementsOccurrenceRelation
+, generateOccurrenceGrammar
 , uniqueOrigin
 , findOrder
 , filterPotential
@@ -42,7 +42,7 @@ instance GenerateProcess (TypedGraphMorphism a b) where
   restrictMorphisms = restrictMorphisms'
   restrictMorphism = restrictMorphism'
 
-data OccurenceGrammar a b = OccurenceGrammar {
+data OccurrenceGrammar a b = OccurrenceGrammar {
   singleTypedGrammar :: Grammar (TypedGraphMorphism a b)
 , originalRulesWithMatches :: [NamedRuleWithMatches (TypedGraphMorphism a b)]
 , doubleType :: TypedGraphMorphism a b
@@ -89,8 +89,8 @@ isRuleAndElement (a,b) = case (a,b) of
                       (_, Rule _)      -> True
                       _                -> False
 
-occurenceRelation :: [NamedProduction (TypedGraphMorphism a b)] -> Relation
-occurenceRelation rules =
+occurrenceRelation :: [NamedProduction (TypedGraphMorphism a b)] -> Relation
+occurrenceRelation rules =
   let
     b = strictRelation rules
     b' = creationAndPreservationRelation rules b
@@ -100,15 +100,15 @@ occurenceRelation rules =
 buildTransitivity :: Relation -> Relation
 buildTransitivity = monadToSet . transitiveClosure . setToMonad
 
-filterRulesOccurenceRelation :: Relation -> Relation
-filterRulesOccurenceRelation = S.filter bothRules
+filterRulesOccurrenceRelation :: Relation -> Relation
+filterRulesOccurrenceRelation = S.filter bothRules
   where
     bothRules (x,y) = case (x,y) of
                         (Rule _, Rule _) -> True
                         _                -> False
 
-filterElementsOccurenceRelation :: Relation -> Relation
-filterElementsOccurenceRelation = S.filter bothElements
+filterElementsOccurrenceRelation :: Relation -> Relation
+filterElementsOccurrenceRelation = S.filter bothElements
   where
     bothElements (x,y) = case (x,y) of
                         (Rule _, _) -> False
@@ -131,13 +131,13 @@ createdElements elementsRelation =
     created = monadToSet c
    in created
 
-generateOccurenceGrammar :: RuleSequence (TypedGraphMorphism a b) -> OccurenceGrammar a b
-generateOccurenceGrammar sequence = OccurenceGrammar singleGrammar originalRulesWithMatches doubleType cdRelation relation empty
+generateOccurrenceGrammar :: RuleSequence (TypedGraphMorphism a b) -> OccurrenceGrammar a b
+generateOccurrenceGrammar sequence = OccurrenceGrammar singleGrammar originalRulesWithMatches doubleType cdRelation relation empty
   where
     originalRulesWithMatches = calculateRulesColimit sequence -- TODO: unify this two functions
     newRules = generateGraphProcess sequence
     cdRelation = S.filter isRuleAndElement $ strictRelation newRules
-    relation = occurenceRelation newRules
+    relation = occurrenceRelation newRules
     created = createdElements cdRelation
     doubleType = getLHS . snd . head $ newRules
     coreGraph = codomain . codomain $ doubleType
@@ -178,7 +178,7 @@ getRuleItems rule =
     es = fromList (deletedEdges rule ++ preservedEdges rule ++ createdEdges rule)
    in S.map Node ns `union` S.map Edge es
 
-getElements :: OccurenceGrammar a b -> (Set RelationItem, Set RelationItem)
+getElements :: OccurrenceGrammar a b -> (Set RelationItem, Set RelationItem)
 getElements ogg =
   let
     (ns,rs) = unzip $ rules (singleTypedGrammar ogg)
@@ -253,7 +253,7 @@ findCoreMorphism dom core =
     initial = buildTypedGraphMorphism dom core (GM.empty (domain dom) (domain core))
   in L.foldr (uncurry updateEdgeRelation) (L.foldr (uncurry untypedUpdateNodeRelation) initial ns) es
 
-calculateNacRelations :: OccurenceGrammar a b -> Set Interaction -> OccurenceGrammar a b
+calculateNacRelations :: OccurrenceGrammar a b -> Set Interaction -> OccurrenceGrammar a b
 calculateNacRelations ogg is = newOgg
   where
     (deleteForbid,produceForbid) = S.partition (\i -> interactionType i == DeleteForbid) is
@@ -267,7 +267,7 @@ calculateNacRelations ogg is = newOgg
 
     (dfs, absDfs) = calculateDeleteForbids ogg deleteForbid
 
-    newOgg = OccurenceGrammar
+    newOgg = OccurrenceGrammar
               (singleTypedGrammar ogg)
               (originalRulesWithMatches ogg)
               (doubleType ogg)
@@ -275,7 +275,7 @@ calculateNacRelations ogg is = newOgg
               (buildTransitivity (concreteRelation ogg `union` dfs)) -- do the reflexive and transitive Closure
               absDfs
 
-calculateDeleteForbids :: OccurenceGrammar a b -> Set Interaction -> (Relation, AbstractRelation)
+calculateDeleteForbids :: OccurrenceGrammar a b -> Set Interaction -> (Relation, AbstractRelation)
 calculateDeleteForbids ogg dfs = (S.map toRelation concreteDF, S.map toAbstractRelation abstract)
   where
     cRelation = S.map swap $ S.filter isCreation (originRelation ogg)
@@ -306,7 +306,7 @@ findRule rel e = fromMaybe (error $ "there should be an action that related to "
 
 
 
-findConcreteTrigger :: OccurenceGrammar a b -> Interaction -> (Interaction, RelationItem) -- check if the order is correct for produce forbids
+findConcreteTrigger :: OccurrenceGrammar a b -> Interaction -> (Interaction, RelationItem) -- check if the order is correct for produce forbids
 findConcreteTrigger ogg interaction@(Interaction a1 a2 t nacIdx) =
   let
     originalRules = L.map (\(a,b,c) -> (a, (b,c))) (originalRulesWithMatches ogg)

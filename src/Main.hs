@@ -229,7 +229,7 @@ derivations = [getDer,getDer']
 
 myc2 = calculateProcess derivations
 
--- Tests for occurence grammars
+-- Tests for occurrence grammars
 -- TypedGraphMorphism a b -> [Constraint (TypedGraphMorphism a b)] -> [(String, Production (TypedGraphMorphism a b))] ->
 myGrammar ::  Grammar (TypedGraphMorphism a b)
 myGrammar = grammar tlr1 [] [("sendMessage", myrule), ("getData", myrule')]
