@@ -25,14 +25,9 @@ module Graph.Graph (
     -- * Extraction
     , edges
     , nodes
-    , outgoingEdges
-    , incomingEdges
     , edgesWithPayload
     , incidentEdges
-    , neighbourNodes
     , nodesOf
-    , targetedNodes
-    , sourceNodes
     , nodesWithPayload
 
     -- * Query
@@ -43,8 +38,6 @@ module Graph.Graph (
     , sourceOfUnsafe
     , targetOf
     , targetOfUnsafe
-    , extractSource
-    , extractTarget
     -- ** Predicates
     , isEdgeOf
     , isNodeOf
@@ -60,7 +53,7 @@ import           Abstract.Cardinality
 import           Abstract.Valid
 import           Data.List
 import           Data.List.Utils
-import           Data.Maybe      (fromMaybe, fromJust)
+import           Data.Maybe      (fromMaybe)
 
 data Node a = Node { getNodePayload :: Maybe a
               } deriving (Show, Read)
@@ -241,18 +234,6 @@ outgoingEdges g n = filter (\e -> sourceOf g e == Just n) (edges g)
 incomingEdges :: Graph a b -> NodeId -> [EdgeId]
 incomingEdges g n = filter (\e -> targetOf g e == Just n) (edges g)
 
--- | Return a list of all nodes that are target of any edge going out from @n@.
-targetedNodes :: Graph a b -> NodeId -> [NodeId]
-targetedNodes g n = filter (isAdjacentTo g n) (nodes g)
-
--- | Return a list of all nodes that are source of any edge going into @n@.
-sourceNodes :: Graph a b -> NodeId -> [NodeId]
-sourceNodes g n = filter (\v -> isAdjacentTo g v n) (nodes g)
-
--- | Return a list of all neighbour nodes from @n@.
-neighbourNodes :: Graph a b -> NodeId -> [NodeId]
-neighbourNodes g n = nub $ sourceNodes g n ++ targetedNodes g n
-
 -- | Return @n@'s payload.
 nodePayload :: Graph a b -> NodeId -> Maybe a
 nodePayload g n = lookup n (nodeMap g) >>= getNodePayload
@@ -305,12 +286,6 @@ sourceOfUnsafe g e = fromMaybe (error "Error, graph with source edges function n
 targetOfUnsafe :: Graph a b -> EdgeId -> NodeId
 targetOfUnsafe g e = fromMaybe (error "Error, graph with target edges function non total") $ targetOf g e
 
--- TODO: following functions should be part of the Graph interface
-extractSource :: Graph a b -> EdgeId -> NodeId
-extractSource gm e = fromJust $ sourceOf gm e
-
-extractTarget :: Graph a b -> EdgeId -> NodeId
-extractTarget gm e = fromJust $ targetOf gm e
 
 -- | Test whether a graph is empty.
 null :: Graph a b -> Bool

@@ -195,13 +195,13 @@ completeFromSourceEdges prop tgm (nodes, h:t) (nodesT, edgesT)
     let tgmN
           | isNothing tgm1 = Nothing
           | otherwise = tgm2
-          where tgm1 = updateNodesMapping (extractSource d h) (extractSource c edgeFromTarget) nodesT tgm
-                tgm2 = updateNodesMapping (extractTarget d h) (extractTarget c edgeFromTarget) nodesT' $ fromJust tgm1
+          where tgm1 = updateNodesMapping (sourceOfUnsafe d h) (sourceOfUnsafe c edgeFromTarget) nodesT tgm
+                tgm2 = updateNodesMapping (targetOfUnsafe d h) (targetOfUnsafe c edgeFromTarget) nodesT' $ fromJust tgm1
                 d = domain $ domain tgm
                 c = domain $ codomain tgm
                 nodesT' = case prop of
-                  Monomorphism    -> L.delete (extractSource c edgeFromTarget) nodesT
-                  Isomorphism     -> L.delete (extractSource c edgeFromTarget) nodesT
+                  Monomorphism    -> L.delete (sourceOfUnsafe c edgeFromTarget) nodesT
+                  Isomorphism     -> L.delete (sourceOfUnsafe c edgeFromTarget) nodesT
                   Epimorphism     -> nodesT
                   GenericMorphism -> nodesT
 
@@ -213,12 +213,12 @@ completeFromSourceEdges prop tgm (nodes, h:t) (nodesT, edgesT)
     --FOR THE COMPATIBLES MAPPINGS, GO TO THE NEXT STEP
     case tgmE of
       Just tgm' -> do
-        let nodes'       = delete (extractSource d h) $ delete (extractTarget d h) nodes
+        let nodes'       = delete (sourceOfUnsafe d h) $ delete (targetOfUnsafe d h) nodes
             d            = domain $ domain tgm
             c            = domain $ codomain tgm
             --REMOVE THE TARGET EDGES AND NODES MAPPED (INJECTIVE MODULE)
             edgesT'      = delete edgeFromTarget edgesT
-            nodesT'      = delete (extractSource c edgeFromTarget) $ delete (extractTarget c edgeFromTarget) nodesT
+            nodesT'      = delete (sourceOfUnsafe c edgeFromTarget) $ delete (targetOfUnsafe c edgeFromTarget) nodesT
             monomorphism = completeMappings prop tgm' (nodes', t) (nodesT', edgesT')
             all          = completeMappings prop tgm' (nodes', t) (nodesT,  edgesT)
             --CHOSE BETWEEN INJECTIVE OR NOT
