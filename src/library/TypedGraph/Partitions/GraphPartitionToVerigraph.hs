@@ -38,9 +38,9 @@ mountTypedGraph graphPartition typeGraph = GM.buildGraphMorphism graph typeGraph
 mountMapping :: Bool -> GP.GraphPartition -> GM.GraphMorphism a b -> GM.GraphMorphism a b
 mountMapping side g@(nodes,edges) m = GM.buildGraphMorphism (domain m) (mountGraph g) nods edgs
   where
-    nods = map (\(G.NodeId n) -> (n, nodeId n)) (G.nodes (domain m))
+    nods = map (\(G.NodeId n) -> (n, nodeId n)) (G.nodeIds (domain m))
     nodeId n = GP.nodeId $ head $ getListContainingNode (side,n) nodes
-    edgs = map (\(G.EdgeId e) -> (e, edgeId e)) (G.edges (domain m))
+    edgs = map (\(G.EdgeId e) -> (e, edgeId e)) (G.edgeIds (domain m))
     edgeId e = GP.edgeId $ head $ getListContainingEdge (side,e) edges
 
 -- | Returns the list which Node is in [[Node]]

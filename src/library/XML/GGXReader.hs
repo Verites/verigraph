@@ -241,7 +241,7 @@ instantiateAtomicConstraint tg (name, premise, conclusion, maps) = buildNamedAto
     m = buildGraphMorphism (domain p) (domain c) (map mapToId mNodes) (map mapToId mEdges)
     isPositive = not $ startswith "-" name
     mapToId (a,_,b) = (toN b, toN a)
-    pNodes = G.nodes (domain p)
+    pNodes = G.nodeIds (domain p)
     (mNodes,mEdges) = L.partition (\(_,_,x) -> G.NodeId (toN x) `elem` pNodes) maps
 
 instantiateConstraints :: [(String, F.Formula)] -> [AtomicConstraint (TypedGraphMorphism a b)] -> [Constraint (TypedGraphMorphism a b)]
@@ -280,11 +280,11 @@ instantiateSpan left right mapping = (leftM, rightM)
     leftM = buildTypedGraphMorphism k left leftMap
     rightM = buildTypedGraphMorphism k right rightMap
 
-    nodesLeft = G.nodes (domain left)
-    nodesRight = G.nodes (domain right)
+    nodesLeft = G.nodeIds (domain left)
+    nodesRight = G.nodeIds (domain right)
 
-    edgesLeft = G.edges (domain left)
-    edgesRight = G.edges (domain right)
+    edgesLeft = G.edgeIds (domain left)
+    edgesRight = G.edgeIds (domain right)
 
     typegraph = codomain left
     initK = empty G.empty typegraph

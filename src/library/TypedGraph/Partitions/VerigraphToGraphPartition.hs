@@ -16,8 +16,8 @@ createDisjointUnion (g1,inj1) (g2,inj2) = disjointUnionGraphs left right
    where
      nodes = fst
      edges = snd
-     injective1 = if inj1 then (G.nodes (M.domain g1), G.edges (M.domain g1)) else ([],[])
-     injective2 = if inj2 then (G.nodes (M.domain g2), G.edges (M.domain g2)) else ([],[])
+     injective1 = if inj1 then (G.nodeIds (M.domain g1), G.edgeIds (M.domain g1)) else ([],[])
+     injective2 = if inj2 then (G.nodeIds (M.domain g2), G.edgeIds (M.domain g2)) else ([],[])
      (left,id) = graphMorphismToPartitionGraph injective1 g1 True 0
      (right,_) = graphMorphismToPartitionGraph injective2 g2 False id
      disjointUnionGraphs a b = (nodes a ++ nodes b, edges a ++ edges b)
@@ -30,7 +30,7 @@ createSatisfyingNacsDisjointUnion (g,injG) (n,injN) = disjointUnionGraphs left r
      edges = snd
      injNodes = filter (\x -> countIncidentMap (TGM.applyNode n) (nodesFromDomain n) x < 2) (nodesFromCodomain n)
      injEdges = filter (\x -> countIncidentMap (TGM.applyEdge n) (edgesFromCodomain n) x < 2) (edgesFromCodomain n)
-     injectiveR = if injG then (G.nodes (M.domain g), G.edges (M.domain g)) else ([],[])
+     injectiveR = if injG then (G.nodeIds (M.domain g), G.edgeIds (M.domain g)) else ([],[])
      injectiveN = if injN then (nodesFromCodomain n, edgesFromCodomain n) else (injNodes, injEdges)
      (left,id) = graphMorphismToPartitionGraph injectiveR g True 0
      (right,_) = graphMorphismToPartitionGraph injectiveN (M.codomain n) False id
@@ -43,8 +43,8 @@ graphMorphismToPartitionGraph :: ([NodeId],[EdgeId]) -> GraphMorphism a b -> Boo
 graphMorphismToPartitionGraph inj@(injNodes,_) morfL side id = ((nodes',edges'), nextId)
    where
       graphL = M.domain morfL
-      nodes'   = nodesToPartitionNodes injNodes morfL side id $ nodes graphL
-      edges'   = edgesToPartitionEdges inj morfL side graphL id $ edges graphL
+      nodes'   = nodesToPartitionNodes injNodes morfL side id $ nodeIds graphL
+      edges'   = edgesToPartitionEdges inj morfL side graphL id $ edgeIds graphL
       nextId = max (length nodes') (length edges')
 
 nodesToPartitionNodes :: [NodeId] -> TypedGraph a b -> Bool -> Int -> [NodeId] -> [GP.Node]

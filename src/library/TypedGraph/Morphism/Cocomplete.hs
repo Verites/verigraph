@@ -116,8 +116,8 @@ relablingFunctions [] _ functions = functions
 relablingFunctions (g:gs) (nodeSeed, edgeSeed) functions =
   relablingFunctions gs (nextNode g + nodeSeed, nextEdge g + edgeSeed) (functions ++ [((+) nodeSeed, (+) edgeSeed)])
   where
-    ns g = nodes (untypedGraph g)
-    es g = edges (untypedGraph g)
+    ns g = nodeIds (untypedGraph g)
+    es g = edgeIds (untypedGraph g)
     nextNode g = if Prelude.null (ns g) then 1 else maximum (ns g) + 1
     nextEdge g = if Prelude.null (es g) then 1 else maximum (es g) + 1
 

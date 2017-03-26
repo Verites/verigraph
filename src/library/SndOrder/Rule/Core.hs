@@ -39,5 +39,3 @@ import           SndOrder.Morphism    as SO
 --
 -- right = interface rule, codomain rule, rightL, rightK, rightR
 type SndOrderRule a b = Production (RuleMorphism a b)
-
-

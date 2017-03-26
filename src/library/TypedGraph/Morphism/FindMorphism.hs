@@ -64,8 +64,8 @@ instance FindMorphism (TypedGraphMorphism a b) where
 partialInjectiveMatches' :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
 partialInjectiveMatches' nac match = do
   let
-    lhsNodes = nodes $ domain $ domain match
-    lhsEdges = edges $ domain $ domain match
+    lhsNodes = nodeIds $ domain $ domain match
+    lhsEdges = edgeIds $ domain $ domain match
     q = preBuildQ nac match
     q' = preBuildEdges q nac match lhsEdges
     q'' = case q' of
@@ -78,8 +78,8 @@ partialInjectiveMatches' nac match = do
       where
         notMappedNodes tgm node = isNothing $ applyNode tgm node
         notMappedEdges tgm edge = isNothing $ applyEdge tgm edge
-        sourceNodes = filter (notMappedNodes q2) (nodes $ domain $ domain q2)
-        sourceEdges = filter (notMappedEdges q2) (edges $ domain $ domain q2)
+        sourceNodes = filter (notMappedNodes q2) (nodeIds $ domain $ domain q2)
+        sourceEdges = filter (notMappedEdges q2) (edgeIds $ domain $ domain q2)
         targetNodes = orphanTypedNodes q2
         targetEdges = orphanTypedEdges q2
 
@@ -131,10 +131,10 @@ findMatches :: MorphismType -> GM.GraphMorphism a b-> GM.GraphMorphism a b -> [T
 findMatches prop graph1 graph2 =
   completeMappings prop tgm (sourceNodes, sourceEdges) (targetNodes, targetEdges)
   where
-    sourceNodes = nodes $ domain graph1
-    targetNodes = nodes $ domain graph2
-    sourceEdges = edges $ domain graph1
-    targetEdges = edges $ domain graph2
+    sourceNodes = nodeIds $ domain graph1
+    targetNodes = nodeIds $ domain graph2
+    sourceEdges = edgeIds $ domain graph1
+    targetEdges = edgeIds $ domain graph2
 
     d   = graph1
     c   = graph2

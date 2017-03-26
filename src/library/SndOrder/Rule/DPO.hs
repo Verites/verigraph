@@ -5,7 +5,7 @@ import           Data.Maybe           (mapMaybe,fromMaybe)
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Valid
-import           Graph.Graph          as G
+import           Graph.Graph          as G hiding (Node, Edge)
 import           SndOrder.Morphism    as SO
 import           TypedGraph.DPO.GraphRule
 import           TypedGraph.Graph
@@ -220,8 +220,8 @@ newNacsPair sideChoose sndRule =
         , not (isOrphan lc (apply gl x))
         , not (isOrphan lc (apply gl y))]
 
-    pairsNodes = pairs applyNode isOrphanNode nodes
-    pairsEdges = pairs applyEdge isOrphanEdge edges
+    pairsNodes = pairs applyNode isOrphanNode nodeIds
+    pairsEdges = pairs applyEdge isOrphanEdge edgeIds
 
     epis = calculateAllPartitions (codomain (getSide ruleL))
 

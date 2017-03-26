@@ -115,7 +115,7 @@ danglingExtension gl l = tlUpdated
     tl = codomain l
     t = codomain tl
     tlx n' = any (\n -> extractNodeType tl n == n') ld
-    dangT = filter (\e -> tlx (sourceOfUnsafe t e) || tlx (targetOfUnsafe t e)) (edges t)
+    dangT = filter (\e -> tlx (sourceOfUnsafe t e) || tlx (targetOfUnsafe t e)) (edgeIds t)
 
     edgesToAdd = concatMap (\n -> map (\e -> (n,e)) dangT) ld
 

@@ -2,7 +2,7 @@ module Image.Dot where
 
 import           Abstract.DPO.StateSpace
 import           Abstract.Morphism
-import           Graph.Graph
+import           Graph.Graph hiding (Node(..))
 import           TypedGraph.DPO.GraphRule
 import           TypedGraph.Graph
 import           TypedGraph.Morphism
@@ -154,7 +154,7 @@ printTypedGraphMorphism context morphismName morphism =
     ([(printSubTypedGraph context "src" (domain morphism))] ++ [printSubTypedGraph context "tgt" (codomain morphism)])
     (map mapNode $ nodesWithType (mapping morphism))
     []
-    
+
   where
     mapNode (src, tgt) = (text "src") <> nodeId src <+> text "->" <+> (text "tgt") <> nodeId tgt <+> brackets
           (text "style=" <> (text "dotted") <> semi)
@@ -172,12 +172,12 @@ printGraphRule context ruleName rule =
     ([(map (mapNode False interfaceName leftName) $ nodesWithType (mapping (getLHS rule)))] ++
      [(map (mapNode True interfaceName rightName) $ nodesWithType (mapping (getRHS rule)))]))
     []
-    
+
   where
     leftName = ruleName++"L"
     interfaceName = ruleName++"K"
     rightName = ruleName++"R"
-    
+
     mapNode False idSrc idTgt (src, tgt) = (text idSrc) <> nodeId src <+> text "->" <+> (text idTgt) <> nodeId tgt <+> brackets
           (text "style=" <> (text "dotted") <> semi)
     mapNode True idSrc idTgt (src, tgt) = (text idTgt) <> nodeId tgt <+> text "->" <+> (text idSrc) <> nodeId src <+> brackets
@@ -195,12 +195,12 @@ printSubGraphRule context ruleName rule =
     ([(map (mapNode False interfaceName leftName) $ nodesWithType (mapping (getLHS rule)))] ++
      [(map (mapNode True interfaceName rightName) $ nodesWithType (mapping (getRHS rule)))]))
     []
-    
+
   where
     leftName = ruleName++"L"
     interfaceName = ruleName++"K"
     rightName = ruleName++"R"
-    
+
     mapNode False idSrc idTgt (src, tgt) = (text idSrc) <> nodeId src <+> text "->" <+> (text idTgt) <> nodeId tgt <+> brackets
           (text "style=" <> (text "dotted") <> semi)
     mapNode True idSrc idTgt (src, tgt) = (text idTgt) <> nodeId tgt <+> text "->" <+> (text idSrc) <> nodeId src <+> brackets
@@ -224,12 +224,12 @@ printSndOrderRule context ruleName rule =
     (map (mapNode True (ruleName++"K"++"R") (ruleName++"R"++"R")) $ nodesWithType (mapping (mappingRight (getRHS rule))))
     )
     []
-    
+
   where
     leftName = ruleName++"L"
     interfaceName = ruleName++"K"
     rightName = ruleName++"R"
-    
+
     mapNode True idSrc idTgt (src, tgt) = (text idSrc) <> nodeId src <+> text "->" <+> (text idTgt) <> nodeId tgt <+> brackets
           (text "style=" <> (text "dashed") <> semi)
     mapNode False idSrc idTgt (src, tgt) = (text idTgt) <> nodeId tgt <+> text "->" <+> (text idSrc) <> nodeId src <+> brackets

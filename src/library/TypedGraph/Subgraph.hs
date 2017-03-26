@@ -14,7 +14,7 @@ subgraphs g = subEdges
     graph = domain g
     emptyGraph = Graph.GraphMorphism.empty Graph.Graph.empty (codomain g)
 
-    listNodesToAdd = [(n, extractNodeType g n) | n <- nodes graph]
+    listNodesToAdd = [(n, extractNodeType g n) | n <- nodeIds graph]
 
     subNodes = decisionTreeNodes listNodesToAdd emptyGraph
 
@@ -22,7 +22,7 @@ subgraphs g = subEdges
                        sourceOfUnsafe graph e,
                        targetOfUnsafe graph e,
                        extractEdgeType g e)
-                       | e <- edges graph]
+                       | e <- edgeIds graph]
 
     subEdges = concatMap (decisionTreeEdges listEdgesToAdd) subNodes
 
