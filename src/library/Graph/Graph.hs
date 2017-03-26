@@ -58,30 +58,20 @@ import           Data.Maybe      (fromMaybe)
 data Node a = Node { getNodePayload :: Maybe a
               } deriving (Show, Read)
 
--- | TODO: why do we need Eq instance for Node? How are **all nodes equal**??
-instance Eq (Node a) where
-    _ == _ = True -- Simplifies all Eq instances that depend upon Node
 
 data Edge a = Edge { getSource      :: NodeId
                    , getTarget      :: NodeId
                    , getEdgePayload :: Maybe a
               } deriving (Show, Read)
 
-instance Eq (Edge a) where
-    e == e' = s == s' && t == t'
-            where
-              s  = getSource e
-              t  = getTarget e
-              s' = getSource e'
-              t' = getTarget e'
 
 data Graph a b = Graph {
     nodeMap :: [(NodeId, Node a)],
     edgeMap :: [(EdgeId, Edge b)]
     } deriving (Read)
 
--- | Verify equality of two Maps
-eq :: (Eq t1, Eq t2) => [(t1, t2)] -> [(t1, t2)] -> Bool
+-- | Verify equality of two lists ignoring order
+eq :: (Eq t) => [t] -> [t] -> Bool
 eq a b = contained a b && contained b a
 
 contained :: Eq t => [t] -> [t] -> Bool
@@ -89,8 +79,13 @@ contained a b = False `notElem` map (`elem` b) a
 
 instance Eq (Graph a b) where
     (Graph nodeMap1 edgeMap1) == (Graph nodeMap2 edgeMap2) =
-         eq nodeMap1 nodeMap2 &&
-         eq edgeMap1 edgeMap2
+      let
+        simplifyNode (nodeId, _) = nodeId
+        simplifyEdge (edgeId, edge) = (edgeId, getSource edge, getTarget edge)
+      in
+       eq (map simplifyNode nodeMap1) (map simplifyNode nodeMap2) &&
+       eq (map simplifyEdge edgeMap1) (map simplifyEdge edgeMap2)
+
 
 instance Show (Graph a b) where
     show (Graph nm em) =
