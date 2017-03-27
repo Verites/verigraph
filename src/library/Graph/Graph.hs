@@ -4,16 +4,16 @@ An implementation of labeled directed graphs, allowing multiple parallel edges.
 The implementation is based on using integer identifiers for nodes and edges, and association lists to store additional information such as payloads, sources and targets.
 
 Operation comments contain the operation time complexity in the Big-O notation
-<http://en.wikipedia.org/wiki/Big_O_notation>, denoting by /v/ the number of nodes in a graph, by
-/e/ the number of edges in a graph, and by /W/ the number of bits in an 'Int' (32 or 64).
+<http://en.wikipedia.org/wiki/Big_O_notation>, denoting by /v/ the number of nodes in a graph, and
+by /e/ the number of edges in a graph.
 -}
 module Graph.Graph (
     -- * Graph Type
       Graph(..)
-    , Edge(..)
+    , NodeId (..)
     , EdgeId (..)
     , Node(..)
-    , NodeId (..)
+    , Edge(..)
 
     -- * Contexts and Graph Traversal
     -- $contexts
@@ -28,47 +28,45 @@ module Graph.Graph (
     -- ** Neighbour nodes
     -- $neighbours
 
+    -- * Query
+    , Graph.Graph.null
+    , isNodeOf
+    , isEdgeOf
+    , isAdjacentTo
+    , isIncidentTo
+    , nodesOf
+    , sourceOf
+    , sourceOfUnsafe
+    , targetOf
+    , targetOfUnsafe
+    , getIncidentEdges
+
     -- * Construction
     , empty
     , build
 
     -- ** Insertion
-    , insertEdge
     , insertNode
-    , insertEdgeWithPayload
     , insertNodeWithPayload
+    , insertEdge
+    , insertEdgeWithPayload
 
-    -- ** Delete/Update
-    , removeEdge
+    -- ** Delete
     , removeNode
-    , updateEdgePayload
-    , updateNodePayload
+    , removeEdge
 
-    -- * Extraction
+    -- ** Update
+    , updateNodePayload
+    , updateEdgePayload
+
+    -- * Conversion
+    -- ** Lists
     , nodes
     , edges
     , nodeIds
     , edgeIds
     , nodesInContext
     , edgesInContext
-    , getIncidentEdges
-    , nodesOf
-
-    -- * Query
-    , Graph.Graph.null
-    , nodePayload
-    , edgePayload
-    , sourceOf
-    , sourceOfUnsafe
-    , targetOf
-    , targetOfUnsafe
-    -- ** Predicates
-    , isEdgeOf
-    , isNodeOf
-    , isAdjacentTo
-    , isIncidentTo
-
-    --
     , newNodes
     , newEdges
 ) where
@@ -148,12 +146,14 @@ data Edge a =
     } deriving (Show)
 
 
--- | A directed graph, allowing parallel edges. Both nodes and edges have payloads of arbitrary
--- types.
+-- | A directed graph, allowing parallel edges. Both nodes and edges have optional payloads
+-- of arbitrary types.
 --
 -- Every node and edge is identified by a unique integer. The "namespaces" of nodes and edges are
 -- independent, i.e. the same number may be used to identify both a node and an edge within the
 -- same graph.
+--
+-- Equality tests cost /O(v² + e²)/, and disregards the payloads.
 data Graph a b =
   Graph
     { nodeMap :: [(NodeId, Node a)]
@@ -161,10 +161,11 @@ data Graph a b =
     }
 
 
--- | Verify equality of two lists ignoring order
+-- | Verify equality of two lists ignoring order /O(m*n)/
 eq :: (Eq t) => [t] -> [t] -> Bool
 eq a b = contained a b && contained b a
 
+-- /O(m*n)/
 contained :: Eq t => [t] -> [t] -> Bool
 contained a b = False `notElem` map (`elem` b) a
 
@@ -209,6 +210,7 @@ As an example, depth-first search could be implemented as follows:
 >      search visitedNodes ((node, context) : rest) =
 >        if node `IntSet.member` visitedNodes then
 >          search visitedNodes rest
+>
 >        else
 >          let
 >            nextNodes =
@@ -232,8 +234,8 @@ type NodeInContext n e =
 -- | Shorthand for having an edge along with its source and target in context.
 --
 -- Because of lazyness, constructing a value of this type does __not__ evaluate the node lookup.
--- Thus, forcing the evaluation of the nodes costs /O(min(n,W))/. Keep this in mind when using
--- values of this type.
+-- Thus, forcing the evaluation of the nodes costs /O(v)/. Keep this in mind when using values
+-- of this type.
 type EdgeInContext n e =
   (NodeInContext n e, Edge e, NodeInContext n e)
 
@@ -257,8 +259,6 @@ edgeInContext graph edge =
 
 -- | Get the edges that are incident on the current node.
 -- /O(e)/, plus the cost of evaluating the nodes of the result (see 'EdgeInContext').
---
--- /todo/: make more efficient?
 incidentEdges :: NodeContext n e -> [EdgeInContext n e]
 incidentEdges (NodeCtx nodeId graph) =
   map (edgeInContext graph)
@@ -269,8 +269,6 @@ incidentEdges (NodeCtx nodeId graph) =
 
 -- | Get the edges that have the current node as target.
 -- /O(e)/, plus the cost of evaluating the nodes of the result (see 'EdgeInContext').
---
--- /todo/: make more efficient?
 incomingEdges :: NodeContext n e -> [EdgeInContext n e]
 incomingEdges (NodeCtx nodeId graph) =
   map (edgeInContext graph)
@@ -281,8 +279,6 @@ incomingEdges (NodeCtx nodeId graph) =
 
 -- | Get the edges that have the current node as source.
 -- /O(e)/, plus the cost of evaluating the nodes of the result (see 'EdgeInContext').
---
--- /todo/: make more efficient?
 outgoingEdges :: NodeContext n e -> [EdgeInContext n e]
 outgoingEdges (NodeCtx nodeId graph) =
   map (edgeInContext graph)
@@ -299,67 +295,72 @@ In order to access the neighbour nodes of the edges, one may simply go through t
 >   map (\(_, _, target) -> target) . outgoingEdges
 >   map (\(source, _, _) -> source) . incomingEdges
 
-These operations were not added to the digraph API because it is not yet clear which of them are commonly used, and which names would be appropriate. If you identify the need for such an operation, submit an issue on github.
+These operations were not added to the graph API because it is not yet clear which of them are commonly used, and which names would be appropriate. If you identify the need for such an operation, submit an issue on github.
 -}
 
 
 
--- | Infinite list of new node identifiers of a graph
+-- | Infinite list of fresh node identifiers for a graph. /O(v)/.
 newNodes :: Graph n e -> [NodeId]
 newNodes g = [succ maxNode..]
   where maxNode = foldr max 0 (nodeIds g)
 
--- | Infinite list of new edge identifiers of a graph
+-- | Infinite list of fresh edge identifiers for a graph. /O(e)/.
 newEdges :: Graph n e -> [EdgeId]
 newEdges g = [succ maxEdge..]
   where maxEdge = foldr max 0 (edgeIds g)
 
--- | Create an empty Graph.
+-- | Empty graph, with no nodes or edges. /O(1)/
 empty :: Graph n e
 empty = Graph [] []
 
--- | Build a Graph
+-- | Build a graph from lists of nodes and edges. Edges with undefined source or target are ignored and omitted from the resulting graph. /O(v + e*v)/
 build :: [Int] -> [(Int,Int,Int)] -> Graph n e
 build n   = foldr ((\(a,b,c) -> insertEdge a b c) . (\(a,b,c) -> (EdgeId a, NodeId b, NodeId c))) g
     where
         g = foldr (insertNode . NodeId) empty n
 
--- | Insert a node @n@ in a graph @g@, without payload.
+-- | Insert a node with given identifier into a graph, without payload. If a node with the given
+-- identifier aready exists, its payload is removed. /O(v)/.
 insertNode :: NodeId -> Graph n e -> Graph n e
 insertNode n (Graph ns es) =
     Graph (addToAL ns n (Node n Nothing)) es
 
--- | Insert a node @n@ in a graph @g@ with payload @p@.
+-- | Insert a node with given identifier and payload into a graph. If a node with the given
+-- identifier already exists, its payload is updated. /O(v)/.
 insertNodeWithPayload :: NodeId -> n -> Graph n e -> Graph n e
 insertNodeWithPayload n p (Graph ns es) =
     Graph (addToAL ns n (Node n (Just p))) es
 
--- | Insert an edge @e@ from @src@ to @tgt@ in graph @g@, without payload.
+-- | (@insertEdge e src tgt g@) will insert an edge with identifier @e@ from @src@ to @tgt@ in graph
+-- @g@, without payload. If @src@ or @tgt@ are not nodes of @g@, the graph is not modified. If an
+-- edge with identifier @e@ already exists, it is updated. /O(v + e)/.
 insertEdge :: EdgeId -> NodeId -> NodeId -> Graph n e -> Graph n e
 insertEdge e src tgt g@(Graph ns es)
     | src `elem` keysAL ns && tgt `elem` keysAL ns =
         Graph ns (addToAL es e (Edge e src tgt Nothing))
     | otherwise = g
 
--- | Insert an edge @e@ from @src@ to @tgt@ in graph @g@ with payload @p@.
+-- | (@insertEdgeWithPayload e src tgt p g@) will insert an edge with identifier @e@ from @src@ to
+-- @tgt@ in graph @g@ with payload @p@. If @src@ or @tgt@ are not nodes of @g@, the graph is not
+-- modified. If an edge with identifier @e@ already exists, it is updated. /O(v + e)/.
 insertEdgeWithPayload :: EdgeId -> NodeId -> NodeId -> e -> Graph n e -> Graph n e
 insertEdgeWithPayload e src tgt p g@(Graph ns es)
     | src `elem` keysAL ns && tgt `elem` keysAL ns =
         Graph ns (addToAL es e (Edge e src tgt (Just p)))
     | otherwise = g
 
--- | If @n@ exists in @g@, and there are no incident edges on it, remove it.
--- Return @g@ otherwise.
+-- | Removes the given node from the graph, unless it has any incident edges. /O(v + e²)/.
 removeNode :: NodeId -> Graph n e -> Graph n e
 removeNode n g@(Graph ns es)
     | Prelude.null $ getIncidentEdges g n = Graph (delFromAL ns n) es
     | otherwise = g
 
--- | Remove edge @e@ from @g@.
+-- | Remove the given edge from the graph. /O(e)/.
 removeEdge :: EdgeId -> Graph n e -> Graph n e
 removeEdge e (Graph ns es) = Graph ns (delFromAL es e)
 
--- | Update the node's payload, applying the given function on it.
+-- | Update the node's payload, applying the given function on it. /O(v)/.
 updateNodePayload :: NodeId -> Graph n e -> (n -> n) -> Graph n e
 updateNodePayload nodeId graph@(Graph nodes _) f =
   case lookup nodeId nodes of
@@ -374,7 +375,7 @@ updateNodePayload nodeId graph@(Graph nodes _) f =
         graph { nodeMap = addToAL nodes nodeId updatedNode }
 
 
--- | Update the edge's payload, applying the function on it.
+-- | Update the edge's payload, applying the function on it. /O(e)/.
 updateEdgePayload :: EdgeId -> Graph n e -> (e -> e) -> Graph n e
 updateEdgePayload edgeId graph@(Graph _ edges) f =
   case lookup edgeId edges of
@@ -390,59 +391,41 @@ updateEdgePayload edgeId graph@(Graph _ edges) f =
         graph { edgeMap = addToAL edges edgeId updatedEdge }
 
 
--- | Return a list of all node id's from from the graph.
+-- | List of all node id's from from the graph. /O(v)/.
 nodeIds :: Graph n e -> [NodeId]
 nodeIds (Graph nodes _) = keysAL nodes
 
 
--- | Return a list of all edge id's from from the graph.
+-- | List of all edge id's from from the graph. /O(e)/.
 edgeIds :: Graph n e -> [EdgeId]
 edgeIds (Graph _ edges) = keysAL edges
 
 
--- | Return a list of all nodes from the graph.
+-- | List of all nodes from the graph. /O(v)/.
 nodes :: Graph n e -> [Node n]
 nodes (Graph nodes _) = map snd nodes
 
 
--- | Return a list of all edges from the graph.
+-- | List of all edges from the graph. /O(e)/.
 edges :: Graph n e -> [Edge e]
 edges (Graph _ edges) = map snd edges
 
 
--- | Return a list of all nodes from the graph, along with their contexts.
+-- | List of all nodes from the graph, along with their contexts. /O(v)/.
 nodesInContext :: Graph n e -> [NodeInContext n e]
 nodesInContext graph@(Graph nodes _) =
   map (nodeInContext graph . snd) nodes
 
 
--- | Return a list of all edges from the graph, along with their contexts.
+-- | List of all edges from the graph, along with their contexts.
+-- /O(e)/, plus the cost of evaluating the nodes of the result (see 'EdgeInContext').
 edgesInContext :: Graph n e -> [EdgeInContext n e]
 edgesInContext graph@(Graph _ edges) =
   map (edgeInContext graph . snd) edges
 
 
--- | Return a list of all edges with @n@ as a source node.
-getOutgoingEdges :: Graph n e -> NodeId -> [EdgeId]
-getOutgoingEdges g n = filter (\e -> sourceOf g e == Just n) (edgeIds g)
 
-
--- | Return a list of all edges with @n@ as a target node.
-getIncomingEdges :: Graph n e -> NodeId -> [EdgeId]
-getIncomingEdges g n = filter (\e -> targetOf g e == Just n) (edgeIds g)
-
-
--- | Return @n@'s payload.
-nodePayload :: Graph n e -> NodeId -> Maybe n
-nodePayload g n = lookup n (nodeMap g) >>= nodeInfo
-
-
--- | Return @e@'s payload.
-edgePayload :: Graph n e -> EdgeId -> Maybe e
-edgePayload g e = lookup e (edgeMap g) >>= edgeInfo
-
-
--- | Return a pair containing @e@'s source and target nodes.
+-- | Gets a pair containing the source and target of the given edge. /O(e)/.
 nodesOf :: Graph n e -> EdgeId -> Maybe (NodeId, NodeId)
 nodesOf (Graph _ es) e =
     let ed = lookup e es
@@ -451,28 +434,28 @@ nodesOf (Graph _ es) e =
         _ -> Nothing
 
 
--- | Return @e@'s source.
+-- | Gets the source of the given edge. /O(e)/.
 sourceOf :: Graph n e -> EdgeId -> Maybe NodeId
 sourceOf graph e =
   fst <$> nodesOf graph e
 
 
--- | Return @e@'s target.
+-- | Gets the target of the given edge. /O(e)/.
 targetOf :: Graph n e -> EdgeId -> Maybe NodeId
 targetOf graph e =
   snd <$> nodesOf graph e
 
 
--- | Return @e@'s source or error in the case of undefined
+-- | Gets the source of the given edge, crashing if no such edge exists. /O(e)/.
 sourceOfUnsafe :: Graph n e -> EdgeId -> NodeId
 sourceOfUnsafe g e = fromMaybe (error "Error, graph with source edges function non total") $ sourceOf g e
 
--- | Return @e@'s target or error in the case of undefined
+-- | Gets the target of the given edge, crashing if no such edge exists. /O(e)/.
 targetOfUnsafe :: Graph n e -> EdgeId -> NodeId
 targetOfUnsafe g e = fromMaybe (error "Error, graph with target edges function non total") $ targetOf g e
 
 
--- | Test whether a graph is empty.
+-- | Test whether a graph is empty. /O(1)/.
 null :: Graph n e -> Bool
 null (Graph [] []) = True
 null _ = False
@@ -481,20 +464,20 @@ null _ = False
 cardinality' :: Graph n e -> Int
 cardinality' g = (length (nodes g)) + (length (edges g))
 
--- | Test if @n@ is a node from graph @g@.
+-- | Test if a node identifier is contained in the graph. /O(v)/.
 isNodeOf :: Graph n e -> NodeId -> Bool
 isNodeOf g n  = n `elem` nodeIds g
 
--- | Test if @e@ is an edge from graph @g@.
+-- | Test if an edge identifier is contained in the graph. /O(e)/.
 isEdgeOf :: Graph n e -> EdgeId -> Bool
 isEdgeOf g e  = e `elem` edgeIds g
 
--- | Test if @n1@ and @n2@ are adjacent.
+-- | Test if the given nodes are adjacent. /O(e²)/
 isAdjacentTo :: Graph n e -> NodeId -> NodeId -> Bool
 isAdjacentTo g n1 n2 =
     any (\e -> nodesOf g e == Just (n1,n2)) (edgeIds g)
 
--- | Test if @n@ is connected to edge @e@.
+-- | Test if the given edge has given node as source or target. /O(e)/.
 isIncidentTo :: Graph n e -> NodeId -> EdgeId -> Bool
 isIncidentTo g n e =
     case res of
@@ -503,9 +486,20 @@ isIncidentTo g n e =
   where
     res = nodesOf g e
 
--- | Return a list of all incident edges on @n@.
+-- | Gets a list of all edges incident to the given node. /O(e²)/
 getIncidentEdges :: Graph n e -> NodeId -> [EdgeId]
 getIncidentEdges g n = nub $ getIncomingEdges g n ++ getOutgoingEdges g n
+
+
+-- | Gets a list of all edges whose source is the given node. /O(e²)/.
+getOutgoingEdges :: Graph n e -> NodeId -> [EdgeId]
+getOutgoingEdges g n = filter (\e -> sourceOf g e == Just n) (edgeIds g)
+
+
+-- | Gets a list of all edges whose target is the given node. /O(e²)/.
+getIncomingEdges :: Graph n e -> NodeId -> [EdgeId]
+getIncomingEdges g n = filter (\e -> targetOf g e == Just n) (edgeIds g)
+
 
 instance Valid (Graph n e) where
     validate graph =
