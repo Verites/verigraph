@@ -425,6 +425,8 @@ edgesInContext graph@(Graph _ edges) =
 
 
 
+{-# DEPRECATED nodesOf, sourceOf, sourceOfUnsafe, targetOf, targetOfUnsafe, getIncidentEdges "This function performs unnecessary dictionary lookups. Try using lookupNode, lookupNodeInContext, nodes or nodesInContext instead." #-}
+
 -- | Gets a pair containing the source and target of the given edge. /O(e)/.
 nodesOf :: Graph n e -> EdgeId -> Maybe (NodeId, NodeId)
 nodesOf (Graph _ es) e =
