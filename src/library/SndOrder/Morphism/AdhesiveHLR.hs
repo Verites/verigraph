@@ -48,11 +48,11 @@ instance AdhesiveHLR (RuleMorphism a b) where
 
           -- The new NACs are the transposed and the created that do not are included on the transposed
           newNACs =
-            transposedNACs ++
-            (filter (\n -> all (\n' -> Prelude.null (findIso n n')) transposedNACs) createdNACs)
-              where
-                findIso :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
-                findIso a b = findMorphisms Isomorphism (domain a) (domain b)
+              transposedNACs ++
+              filter (\n -> all (Prelude.null . findIso n) transposedNACs) createdNACs
+            where
+              findIso :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
+              findIso a b = findMorphisms Isomorphism (domain a) (domain b)
 
   -- This function for second-order must run the first-order initial
   -- pushouts and after add elements to the boundary (B) rule if
@@ -119,7 +119,7 @@ instance AdhesiveHLR (RuleMorphism a b) where
              (compose leftK' (getRHS ruleG)) leftR'
              matchK' (compose (getRHS ruleK) matchR')
 
-       notDeletedNACs = filter (\n -> all (\n' -> Prelude.null (findMorph n n')) (getNACs ruleL)) (getNACs ruleG)
+       notDeletedNACs = filter (\n -> all (Prelude.null . findMorph n) (getNACs ruleL)) (getNACs ruleG)
          where
            findMorph :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
            findMorph a b = findMorphisms Monomorphism (domain a) (domain b)

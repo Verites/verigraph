@@ -462,7 +462,7 @@ null _             = False
 
 -- | Given a graph, it returns the number of vertices plus the number of edges
 cardinality' :: Graph n e -> Int
-cardinality' g = (length (nodes g)) + (length (edges g))
+cardinality' g = length (nodes g) + length (edges g)
 
 -- | Test if a node identifier is contained in the graph. /O(v)/.
 isNodeOf :: Graph n e -> NodeId -> Bool

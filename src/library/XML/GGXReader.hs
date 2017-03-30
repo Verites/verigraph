@@ -101,7 +101,7 @@ readGGName fileName = do
 -- Minimal Safety Nacs Logs
 
 -- FIX: find a better place for this two functions
-minimalSafetyNacsWithLog :: MorphismsConfig -> (GG.Grammar (RuleMorphism a b))
+minimalSafetyNacsWithLog :: MorphismsConfig -> GG.Grammar (RuleMorphism a b)
                          -> (GG.Grammar (RuleMorphism a b), [(String, Int)])
 minimalSafetyNacsWithLog conf oldGG = (newGG, printNewNacs)
   where
@@ -247,7 +247,7 @@ instantiateAtomicConstraint tg (name, premise, conclusion, maps) = buildNamedAto
 instantiateConstraints :: [(String, F.Formula)] -> [AtomicConstraint (TypedGraphMorphism a b)] -> [Constraint (TypedGraphMorphism a b)]
 instantiateConstraints formulas atomicConstraints = map (translateFormula mappings) f
   where
-    f = map (snd) formulas
+    f = map snd formulas
     mappings = M.fromAscList $ zip [1..] atomicConstraints
 
 translateFormula :: M.Map Int (AtomicConstraint (TypedGraphMorphism a b)) -> F.Formula -> Constraint (TypedGraphMorphism a b)

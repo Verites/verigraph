@@ -35,8 +35,8 @@ makeNamingContext assocList =
   in
     Ctx (nameForId . normalizeId) (nameForId . normalizeId)
 
-printDigraph :: String -> [String] -> [Doc] -> [Doc] -> [Doc] -> Doc
-printDigraph name props subgraphs nodes edges =
+printDotGraph :: String -> String -> [String] -> [Doc] -> [Doc] -> [Doc] -> Doc
+printDotGraph kind name props subgraphs nodes edges =
   let
     toLines =
       vcat . map (<> semi)
@@ -47,25 +47,17 @@ printDigraph name props subgraphs nodes edges =
       <> toLines nodes <> line
       <> toLines edges
   in
-    text "digraph" <+> text name <+> braces (line <> body <> line)
+    text kind <+> text name <+> braces (line <> body <> line)
+
+
+printDigraph :: String -> [String] -> [Doc] -> [Doc] -> [Doc] -> Doc
+printDigraph =
+  printDotGraph "digraph"
+
 
 printSubgraph :: String -> [String] -> [Doc] -> [Doc] -> [Doc] -> Doc
-printSubgraph name props subgraphs nodes edges =
-  let
-    toLines =
-      vcat . map (<> semi)
-
-    body =
-      toLines (map text props) <> line
-      <> toLines subgraphs <> line
-      <> toLines nodes <> line
-      <> toLines edges
-  in
-    text "subgraph" <+>
-    text ("cluster_"++ name) <+>
-    braces (
-      (line <> text "label=" <> dquotes (text name) <> semi) <>
-      line <> body <> line)
+printSubgraph name props =
+  printDotGraph "subgraph" ("cluster_" ++ name) (("label=" ++ show name) : props)
 
 
 -- | Create a dotfile representation of the given state space, labeling states with their IDs
@@ -82,14 +74,12 @@ printStateSpace stateSpace =
     prettyState (key, (_, predicates)) =
       let
         label =
-          int key <> newline <> cat (punctuate newline . map text $ predicates)
-        newline =
-          text "\\n"
+          int key <> char '\n' <> cat (punctuate (char '\n') . map text $ predicates)
       in
-        int key <+> brackets (text "label=" <> dquotes label)
+        printNode (int key) [text "label=" <> dquotes label]
 
     prettyTransition (from, to) =
-      int from <+> text "->" <+> int to
+      printEdge (int from) (int to) []
 
 
 -- | Create a dotfile representation of the given typed graph, labeling nodes with their types
@@ -108,16 +98,14 @@ printTypedGraph context graphName graph =
         typeName =
           getNodeTypeName context nodeType
       in
-        nodeId node <+> brackets
-          (text "label=" <> dquotes (text typeName) <> semi)
+        printNode (nodeId node) [text "label=" <> dquotes (text typeName)]
 
     prettyEdge (_, src, tgt, edgeType) =
       let
         typeName =
           getEdgeTypeName context edgeType
       in
-        nodeId src <+> text "->" <+> nodeId tgt <+> brackets
-          (text "label=" <> dquotes (text typeName) <> semi)
+        printEdge (nodeId src) (nodeId tgt) [text "label=" <> dquotes (text typeName)]
 
 printSubTypedGraph :: NamingContext -> String -> TypedGraph a b -> Doc
 printSubTypedGraph context graphName graph =
@@ -131,19 +119,17 @@ printSubTypedGraph context graphName graph =
   where
     prettyNode (node, nodeType) =
       let
-        typeName =
-          getNodeTypeName context nodeType
+        label =
+          text (show node ++ ":" ++ getNodeTypeName context nodeType)
       in
-        nodeSubId graphName node <+> brackets
-          (text "label=" <> dquotes (text (show node ++ ":" ++ typeName)) <> semi)
+        printNode (nodeSubId graphName node) [text "label=" <> dquotes label]
 
     prettyEdge (edge, src, tgt, edgeType) =
       let
-        typeName =
-          getEdgeTypeName context edgeType
+        label =
+          text (show edge ++ ":" ++ getEdgeTypeName context edgeType)
       in
-        nodeSubId graphName src <+> text "->" <+> nodeSubId graphName tgt <+> brackets
-          (text "label=" <> dquotes (text (show edge ++ ":" ++ typeName)) <> semi)
+        printEdge (nodeSubId graphName src) (nodeSubId graphName tgt) [text "label=" <> dquotes label]
 
 -- | Create a dotfile representation of the given typed graph morphism
 printTypedGraphMorphism :: NamingContext -> String -> TypedGraphMorphism a b -> Doc
@@ -151,13 +137,15 @@ printTypedGraphMorphism context morphismName morphism =
   printDigraph
     morphismName
     []
-    ([(printSubTypedGraph context "src" (domain morphism))] ++ [printSubTypedGraph context "tgt" (codomain morphism)])
+    [ printSubTypedGraph context "src" (domain morphism)
+    , printSubTypedGraph context "tgt" (codomain morphism)
+    ]
     (map mapNode $ nodesWithType (mapping morphism))
     []
 
   where
-    mapNode (src, tgt) = (text "src") <> nodeId src <+> text "->" <+> (text "tgt") <> nodeId tgt <+> brackets
-          (text "style=" <> (text "dotted") <> semi)
+    mapNode (src, tgt) =
+      printEdge (text "src" <> nodeId src) (text "tgt" <> nodeId tgt) [text "style=dotted"]
 
 -- | Create a dotfile representation of the given graph rule
 printGraphRule :: NamingContext -> String -> GraphRule a b -> Doc
@@ -165,12 +153,14 @@ printGraphRule context ruleName rule =
   printDigraph
     ruleName
     []
-    ([(printSubTypedGraph context leftName (codomain (getLHS rule)))] ++
-    [(printSubTypedGraph context interfaceName (domain (getLHS rule)))] ++
-    [printSubTypedGraph context rightName (codomain (getRHS rule))])
+    [ printSubTypedGraph context leftName (codomain (getLHS rule))
+    , printSubTypedGraph context interfaceName (domain (getLHS rule))
+    , printSubTypedGraph context rightName (codomain (getRHS rule))
+    ]
     (concat
-    ([(map (mapNode False interfaceName leftName) $ nodesWithType (mapping (getLHS rule)))] ++
-     [(map (mapNode True interfaceName rightName) $ nodesWithType (mapping (getRHS rule)))]))
+      [ map (mapNode False interfaceName leftName) $ nodesWithType (mapping (getLHS rule))
+      , map (mapNode True interfaceName rightName) $ nodesWithType (mapping (getRHS rule))
+      ])
     []
 
   where
@@ -178,22 +168,24 @@ printGraphRule context ruleName rule =
     interfaceName = ruleName++"K"
     rightName = ruleName++"R"
 
-    mapNode False idSrc idTgt (src, tgt) = (text idSrc) <> nodeId src <+> text "->" <+> (text idTgt) <> nodeId tgt <+> brackets
-          (text "style=" <> (text "dotted") <> semi)
-    mapNode True idSrc idTgt (src, tgt) = (text idTgt) <> nodeId tgt <+> text "->" <+> (text idSrc) <> nodeId src <+> brackets
-          (text "dir=back,style=" <> (text "dotted") <> semi)
+    mapNode False idSrc idTgt (src, tgt) =
+      printEdge (text idSrc <> nodeId src) (text idTgt <> nodeId tgt) [text "style=dotted"]
+    mapNode True idSrc idTgt (src, tgt) =
+      printEdge (text idTgt <> nodeId tgt) (text idSrc <> nodeId src) [text "dir=back,style=dotted"]
 
 printSubGraphRule :: NamingContext -> String -> GraphRule a b -> Doc
 printSubGraphRule context ruleName rule =
   printSubgraph
     ruleName
     []
-    ([(printSubTypedGraph context leftName (codomain (getLHS rule)))] ++
-    [(printSubTypedGraph context interfaceName (domain (getLHS rule)))] ++
-    [printSubTypedGraph context rightName (codomain (getRHS rule))])
+    [ printSubTypedGraph context leftName (codomain (getLHS rule))
+    , printSubTypedGraph context interfaceName (domain (getLHS rule))
+    , printSubTypedGraph context rightName (codomain (getRHS rule))
+    ]
     (concat
-    ([(map (mapNode False interfaceName leftName) $ nodesWithType (mapping (getLHS rule)))] ++
-     [(map (mapNode True interfaceName rightName) $ nodesWithType (mapping (getRHS rule)))]))
+      [ map (mapNode False interfaceName leftName) $ nodesWithType (mapping (getLHS rule))
+      , map (mapNode True interfaceName rightName) $ nodesWithType (mapping (getRHS rule))
+      ])
     []
 
   where
@@ -201,10 +193,10 @@ printSubGraphRule context ruleName rule =
     interfaceName = ruleName++"K"
     rightName = ruleName++"R"
 
-    mapNode False idSrc idTgt (src, tgt) = (text idSrc) <> nodeId src <+> text "->" <+> (text idTgt) <> nodeId tgt <+> brackets
-          (text "style=" <> (text "dotted") <> semi)
-    mapNode True idSrc idTgt (src, tgt) = (text idTgt) <> nodeId tgt <+> text "->" <+> (text idSrc) <> nodeId src <+> brackets
-          (text "dir=back,style=" <> (text "dotted") <> semi)
+    mapNode False idSrc idTgt (src, tgt) =
+      printEdge (text idSrc <> nodeId src) (text idTgt <> nodeId tgt) [text "style=dotted"]
+    mapNode True idSrc idTgt (src, tgt) =
+      printEdge (text idTgt <> nodeId tgt) (text idSrc <> nodeId src) [text "dir=back,style=dotted"]
 
 -- | Create a dotfile representation of the given snd order rule
 printSndOrderRule :: NamingContext -> String -> SndOrderRule a b -> Doc
@@ -212,9 +204,10 @@ printSndOrderRule context ruleName rule =
   printDigraph
     ruleName
     []
-    ([(printSubGraphRule context leftName (codomain (getLHS rule)))] ++
-    [(printSubGraphRule context interfaceName (domain (getLHS rule)))] ++
-    [printSubGraphRule context rightName (codomain (getRHS rule))])
+    [ printSubGraphRule context leftName (codomain (getLHS rule))
+    , printSubGraphRule context interfaceName (domain (getLHS rule))
+    , printSubGraphRule context rightName (codomain (getRHS rule))
+    ]
     (
     (map (mapNode False (ruleName++"K"++"L") (ruleName++"L"++"L")) $ nodesWithType (mapping (mappingLeft (getLHS rule)))) ++
     (map (mapNode False (ruleName++"K"++"K") (ruleName++"L"++"K")) $ nodesWithType (mapping (mappingInterface (getLHS rule)))) ++
@@ -230,14 +223,22 @@ printSndOrderRule context ruleName rule =
     interfaceName = ruleName++"K"
     rightName = ruleName++"R"
 
-    mapNode True idSrc idTgt (src, tgt) = (text idSrc) <> nodeId src <+> text "->" <+> (text idTgt) <> nodeId tgt <+> brackets
-          (text "style=" <> (text "dashed") <> semi)
-    mapNode False idSrc idTgt (src, tgt) = (text idTgt) <> nodeId tgt <+> text "->" <+> (text idSrc) <> nodeId src <+> brackets
-          (text "dir=back,style=" <> (text "dashed") <> semi)
+    mapNode True idSrc idTgt (src, tgt) =
+      printEdge (text idSrc <> nodeId src) (text idTgt <> nodeId tgt) [text "style=dashed"]
+    mapNode False idSrc idTgt (src, tgt) =
+      printEdge (text idTgt <> nodeId tgt) (text idSrc <> nodeId src) [text "dir=back,style=dashed"]
+
+printNode :: Doc -> [Doc] -> Doc
+printNode id attributes =
+  id <> (brackets . align . cat) (punctuate comma attributes)
+
+printEdge :: Doc -> Doc -> [Doc] -> Doc
+printEdge srcId tgtId attributes =
+  srcId <+> text "->" <+> tgtId <+> (brackets . align . cat) (punctuate comma attributes) <> semi
 
 nodeSubId :: String -> NodeId -> Doc
 nodeSubId graphName (NodeId n) =
-  (text graphName) <> (int n)
+  text graphName <> int n
 
 nodeId :: NodeId -> Doc
 nodeId (NodeId n) =
@@ -245,7 +246,7 @@ nodeId (NodeId n) =
 
 edgeSubId :: String -> EdgeId -> Doc
 edgeSubId graphName (EdgeId n) =
-  (text graphName) <> (int n)
+  text graphName <> int n
 
 edgeId :: EdgeId -> Doc
 edgeId (EdgeId n) =

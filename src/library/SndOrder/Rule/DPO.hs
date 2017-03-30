@@ -60,11 +60,11 @@ minimalSafetyNacs :: MorphismsConfig -> SndOrderRule a b -> [RuleMorphism a b]
 minimalSafetyNacs conf sndRule =
   newNacsProb LeftSide sndRule ++
   newNacsProb RightSide sndRule ++
-  (if (matchRestriction conf) == AnyMatches
-    then
-      (newNacsPair LeftSide sndRule ++
-       newNacsPair RightSide sndRule)
-    else [])
+  ( if matchRestriction conf == AnyMatches then
+      newNacsPair LeftSide sndRule ++ newNacsPair RightSide sndRule
+    else
+      []
+  )
 
 -- | Generate NACs that forbid deleting elements in L or R but not in K,
 -- It discovers how situations must have a NAC and function createNacProb creates them.
@@ -148,11 +148,11 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
     tgtInR x = fromMaybe (newNodesSide !! 1) (applyNode otherSide (tgtInK x))
 
     (updateLeft, updateRight) =
-      (case x of
-         (Node n) -> createNodes n n' n'' (tpNode n)
-         (Edge e) -> createEdges e e' e'' (tpEdge e)
-                        (src e) (typeSrc e) (srcInK e) (srcInR e)
-                        (tgt e) (typeTgt e) (tgtInK e) (tgtInR e))
+      case x of
+        (Node n) -> createNodes n n' n'' (tpNode n)
+        (Edge e) -> createEdges e e' e'' (tpEdge e)
+                       (src e) (typeSrc e) (srcInK e) (srcInR e)
+                       (tgt e) (typeTgt e) (tgtInK e) (tgtInR e)
 
     nacRule = buildProduction updateLeft updateRight []
     mapL = idMap graphL (codomain updateLeft)
@@ -225,7 +225,7 @@ newNacsPair sideChoose sndRule =
 
     epis = calculateAllPartitions (codomain (getSide ruleL))
 
-    filtered apply pairs = [e | e <- epis, any (\(a,b) -> (apply e) a == (apply e) b) pairs]
+    filtered apply pairs = [e | e <- epis, any (\(a,b) -> apply e a == apply e b) pairs]
 
     retNodes = filtered applyNode pairsNodes
     retEdges = filtered applyEdge pairsEdges
@@ -248,7 +248,7 @@ newNacsPair sideChoose sndRule =
 
 
 calculateAllPartitions :: EpiPairs m => Obj m -> [m]
-calculateAllPartitions graph = createAllSubobjects False graph
+calculateAllPartitions = createAllSubobjects False
 
 isOrphanNode :: TypedGraphMorphism a b -> NodeId -> Bool
 isOrphanNode m n = n `elem` orphanTypedNodes m

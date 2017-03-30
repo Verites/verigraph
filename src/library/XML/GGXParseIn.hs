@@ -140,7 +140,7 @@ parseGraphConstraints :: ArrowXml cat => cat (NTree XNode) (String, Formula)
 parseGraphConstraints = atTag "Formula" >>>
   proc constraint -> do
     name <- getAttrValue "name" -< constraint
-    _ <- isA (\str -> str /= "T") <<< getAttrValue "f" -< constraint -- discards agg not well formed formulas
+    _ <- isA (/= "T") <<< getAttrValue "f" -< constraint -- discards agg not well formed formulas
     formula <- getAttrValue "f" -< constraint
     returnA -< (name, parseFormula formula)
 
