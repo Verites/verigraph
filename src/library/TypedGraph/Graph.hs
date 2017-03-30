@@ -13,8 +13,8 @@ module TypedGraph.Graph
 
 import           Abstract.Cardinality
 import           Abstract.Morphism
-import           Data.Maybe          (fromMaybe)
-import           Graph.Graph         as G
+import           Data.Maybe           (fromMaybe)
+import           Graph.Graph          as G
 import           Graph.GraphMorphism
 
 
@@ -52,11 +52,11 @@ newTypedEdges tg = newEdges $ untypedGraph tg
 
 -- | Obtain a list of tuples @(nodeId, typeId)@ for nodes in the graph.
 nodesWithType :: TypedGraph a b -> [(NodeId, NodeId)]
-nodesWithType tg = map withType $ nodes (untypedGraph tg)
+nodesWithType tg = map withType $ nodeIds (untypedGraph tg)
   where withType node = (node, extractNodeType tg node)
 
 -- | Obtain a list of tuples @(edgeId, srcId, tgtId, typeId)@ for edges in the graph.
 edgesWithType :: TypedGraph a b -> [(EdgeId, NodeId, NodeId, EdgeId)]
-edgesWithType tg = map withType $ edges graph
+edgesWithType tg = map withType $ edgeIds graph
   where graph = untypedGraph tg
         withType edge = (edge, sourceOfUnsafe graph edge, targetOfUnsafe graph edge, extractEdgeType tg edge)

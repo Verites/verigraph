@@ -18,20 +18,20 @@ module XML.GGXReader
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Valid
-import qualified Data.List               as L
-import qualified Data.Map                as M
-import           Data.Maybe              (fromMaybe, mapMaybe, fromJust)
-import           Data.String.Utils       (startswith)
-import qualified Graph.Graph             as G
-import           Graph.GraphMorphism     as GM
-import qualified Grammar.Core       as GG
+import qualified Data.List                as L
+import qualified Data.Map                 as M
+import           Data.Maybe               (fromJust, fromMaybe, mapMaybe)
+import           Data.String.Utils        (startswith)
+import qualified Grammar.Core             as GG
+import qualified Graph.Graph              as G
+import           Graph.GraphMorphism      as GM
 import           SndOrder.Morphism
 import           SndOrder.Rule
-import           Text.XML.HXT.Core       hiding (left, right)
+import           Text.XML.HXT.Core        hiding (left, right)
+import           TypedGraph.DPO.GraphRule as GR
 import           TypedGraph.Graph
-import           TypedGraph.DPO.GraphRule    as GR
 import           TypedGraph.Morphism
-import qualified XML.Formulas            as F
+import qualified XML.Formulas             as F
 import           XML.GGXParseIn
 import           XML.GGXSndOrderReader
 import           XML.ParsedTypes
@@ -101,7 +101,7 @@ readGGName fileName = do
 -- Minimal Safety Nacs Logs
 
 -- FIX: find a better place for this two functions
-minimalSafetyNacsWithLog :: MorphismsConfig -> (GG.Grammar (RuleMorphism a b))
+minimalSafetyNacsWithLog :: MorphismsConfig -> GG.Grammar (RuleMorphism a b)
                          -> (GG.Grammar (RuleMorphism a b), [(String, Int)])
 minimalSafetyNacsWithLog conf oldGG = (newGG, printNewNacs)
   where
@@ -241,13 +241,13 @@ instantiateAtomicConstraint tg (name, premise, conclusion, maps) = buildNamedAto
     m = buildGraphMorphism (domain p) (domain c) (map mapToId mNodes) (map mapToId mEdges)
     isPositive = not $ startswith "-" name
     mapToId (a,_,b) = (toN b, toN a)
-    pNodes = G.nodes (domain p)
+    pNodes = G.nodeIds (domain p)
     (mNodes,mEdges) = L.partition (\(_,_,x) -> G.NodeId (toN x) `elem` pNodes) maps
 
 instantiateConstraints :: [(String, F.Formula)] -> [AtomicConstraint (TypedGraphMorphism a b)] -> [Constraint (TypedGraphMorphism a b)]
 instantiateConstraints formulas atomicConstraints = map (translateFormula mappings) f
   where
-    f = map (snd) formulas
+    f = map snd formulas
     mappings = M.fromAscList $ zip [1..] atomicConstraints
 
 translateFormula :: M.Map Int (AtomicConstraint (TypedGraphMorphism a b)) -> F.Formula -> Constraint (TypedGraphMorphism a b)
@@ -280,11 +280,11 @@ instantiateSpan left right mapping = (leftM, rightM)
     leftM = buildTypedGraphMorphism k left leftMap
     rightM = buildTypedGraphMorphism k right rightMap
 
-    nodesLeft = G.nodes (domain left)
-    nodesRight = G.nodes (domain right)
+    nodesLeft = G.nodeIds (domain left)
+    nodesRight = G.nodeIds (domain right)
 
-    edgesLeft = G.edges (domain left)
-    edgesRight = G.edges (domain right)
+    edgesLeft = G.edgeIds (domain left)
+    edgesRight = G.edgeIds (domain right)
 
     typegraph = codomain left
     initK = empty G.empty typegraph

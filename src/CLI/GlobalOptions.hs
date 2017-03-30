@@ -7,7 +7,8 @@ module GlobalOptions
   , useConstraints
   ) where
 
-import           Abstract.AdhesiveHLR (MorphismsConfig (..), MatchRestriction (..),
+import           Abstract.AdhesiveHLR (MatchRestriction (..),
+                                       MorphismsConfig (..),
                                        NacSatisfaction (..))
 import           Options.Applicative
 
@@ -42,4 +43,3 @@ globalOpts = GOpts
   <*> flag False True
     ( long "use-constraints"
     <> help "Activate use of Constraints [EXPERIMENTAL: Concurrent Rules Only]")
-

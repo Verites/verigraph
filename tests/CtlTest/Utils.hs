@@ -1,8 +1,8 @@
 module CtlTest.Utils where
 
-import Test.QuickCheck
+import           Test.QuickCheck
 
-import Logic.Ctl
+import           Logic.Ctl
 
 
 instance Arbitrary Expr where

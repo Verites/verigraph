@@ -7,14 +7,12 @@ module XML.Formulas
 
 where
 
-import           Control.Monad
-
 import           Data.Functor.Identity
 
 import           Text.Parsec
 import           Text.Parsec.Expr
-import           Text.Parsec.String (Parser)
-import qualified Text.Parsec.Token as T
+import           Text.Parsec.String    (Parser)
+import qualified Text.Parsec.Token     as T
 
 data Formula = IntConst Integer
           | Not Formula
@@ -52,14 +50,14 @@ integer = T.integer lexer
 
 operators :: OperatorTable String () Identity Formula
 operators = [
-  [Prefix (reservedOp "!"     >> return (Not    ))          ],
-  [Infix  (reservedOp "|"     >> return (Or     )) AssocLeft
-  ,Infix  (reservedOp "&amp;" >> return (And    )) AssocLeft
-  ,Infix  (reservedOp "&"     >> return (And    )) AssocLeft]]
+  [Prefix (reservedOp "!"     >> return Not )          ],
+  [Infix  (reservedOp "|"     >> return Or  ) AssocLeft
+  ,Infix  (reservedOp "&amp;" >> return And ) AssocLeft
+  ,Infix  (reservedOp "&"     >> return And ) AssocLeft]]
 
 terms :: Parser Formula
 terms = parens formula
-      <|> liftM IntConst integer
+      <|> fmap IntConst integer
 
 formula :: Parser Formula
 formula = buildExpressionParser operators terms

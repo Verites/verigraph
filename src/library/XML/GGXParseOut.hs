@@ -115,8 +115,8 @@ serializeGraph :: [Mapping] -> [Mapping] -> TypedGraphMorphism a b -> ParsedType
 serializeGraph objNameNodes objNameEdges morphism = ("", nodes, edges)
   where
     graph = M.codomain morphism
-    nodes = map (serializeNode (map (\(x,_,y) -> (x,y)) objNameNodes) graph) (G.nodes $ M.domain graph)
-    edges = map (serializeEdge (map (\(x,_,y) -> (x,y)) objNameEdges) graph) (G.edges $ M.domain graph)
+    nodes = map (serializeNode (map (\(x,_,y) -> (x,y)) objNameNodes) graph) (G.nodeIds $ M.domain graph)
+    edges = map (serializeEdge (map (\(x,_,y) -> (x,y)) objNameEdges) graph) (G.edgeIds $ M.domain graph)
 
 serializeNode :: [(String,String)] -> TypedGraph a b -> G.NodeId -> ParsedTypedNode
 serializeNode objName graph n = ("N" ++ show n,

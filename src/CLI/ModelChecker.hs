@@ -4,24 +4,24 @@ import           GlobalOptions
 import           Options.Applicative
 
 import           Abstract.DPO
-import           Abstract.DPO.StateSpace as StateSpace
+import           Abstract.DPO.StateSpace  as StateSpace
 import           Abstract.Morphism
 import           Abstract.Valid
-import           Grammar.Core            hiding (NamedProduction)
-import qualified Image.Dot               as Dot
-import qualified Logic.Ctl               as Logic
-import qualified Logic.Model             as Logic
+import           Grammar.Core             hiding (NamedProduction)
+import qualified Image.Dot                as Dot
+import qualified Logic.Ctl                as Logic
+import qualified Logic.Model              as Logic
 import           TypedGraph.DPO.GraphRule
 import           TypedGraph.Graph
 import           TypedGraph.Morphism
-import qualified XML.GGXReader           as XML
+import qualified XML.GGXReader            as XML
 
 import           Control.Monad
-import qualified Data.IntMap             as IntMap
-import qualified Data.List               as List
+import qualified Data.IntMap              as IntMap
+import qualified Data.List                as List
 import           System.Exit
 import           System.IO
-import           Text.PrettyPrint.Leijen (hPutDoc)
+import           Text.PrettyPrint.Leijen  (hPutDoc)
 
 
 main :: IO ()

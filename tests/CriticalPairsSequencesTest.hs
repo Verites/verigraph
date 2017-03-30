@@ -3,10 +3,10 @@ import           Abstract.DPO
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
 import           Data.Matrix               hiding ((<|>))
-import qualified Grammar.Core         as GG
+import qualified Grammar.Core              as GG
 import           Test.HUnit
-import qualified XML.GGXReader             as XML
 import           Utils
+import qualified XML.GGXReader             as XML
 
 main :: IO ()
 main = do

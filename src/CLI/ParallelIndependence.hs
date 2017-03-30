@@ -5,17 +5,17 @@ module ParallelIndependence
   ) where
 
 import           Analysis.ParallelIndependent
-import           Control.Monad                (when,unless)
+import           Control.Monad                (unless, when)
 import           Data.Matrix                  hiding ((<|>))
 import           GlobalOptions
-import qualified Grammar.Core            as GG
+import qualified Grammar.Core                 as GG
 import           Options.Applicative
 import qualified XML.GGXReader                as XML
 
 data Options = Options
   { duFlag :: Bool
   , siFlag :: Bool
-  , soFlag       :: Bool
+  , soFlag :: Bool
   }
 
 options :: Parser Options
@@ -53,7 +53,7 @@ execute globalOpts opts = do
         sndOrder = soFlag opts
         comp = False -- flag to compare if deleteuse and pullbacks are generating the same results
         algorithm =
-          if (siFlag opts) then Sequentially else Parallel
+          if siFlag opts then Sequentially else Parallel
         --rules = concatMap (replicate 1) $ map snd (GG.rules gg)
         rules1 = map snd (GG.rules fstOrdGG)
         rules2 = map snd (GG.rules sndOrdGG)
@@ -63,13 +63,15 @@ execute globalOpts opts = do
         analysisPB2 = pairwiseCompareUpperReflected (isIndependent algorithm Pullback dpoConf) rules2
 
         (analysisDU,analysisPB) =
-          case sndOrder of
-            False -> (analysisDU1,analysisPB1)
-            True -> (analysisDU2,analysisPB2)
-    
-    putStrLn $ "Second-order flag: " ++ (show sndOrder)
-    putStrLn $ "Length of the set of first-order rules: " ++ (show (length rules1))
-    putStrLn $ "Length of the set of second-order rules: " ++ (show (length rules2))
+          if sndOrder then
+            (analysisDU2,analysisPB2)
+          else
+            (analysisDU1,analysisPB1)
+
+
+    putStrLn $ "Second-order flag: " ++ show sndOrder
+    putStrLn $ "Length of the set of first-order rules: " ++ show (length rules1)
+    putStrLn $ "Length of the set of second-order rules: " ++ show (length rules2)
     putStrLn ""
 
     when comp $ putStrLn $ "Check if pullback and delete-use algorithms result in the same matrix: " ++ show (analysisPB == analysisDU)
@@ -80,8 +82,8 @@ execute globalOpts opts = do
 
 -- | Applies a function on the upper triangular matrix and reflects the result in the lower part
 pairwiseCompareUpperReflected :: (a -> a -> Bool) -> [a] -> Matrix Bool
-pairwiseCompareUpperReflected compare items = elementwise op m (transpose m)
+pairwiseCompareUpperReflected compare items =
+    elementwise (||) m (transpose m)
   where
-    op = \a b -> or [a,b]
     m = matrix (length items) (length items) $ \(i,j) ->
           not (i > j) && compare (items !! (i-1)) (items !! (j-1))

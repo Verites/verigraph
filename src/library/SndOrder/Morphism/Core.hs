@@ -40,7 +40,7 @@ data RuleMorphism a b =
   , mappingLeft      :: TypedGraphMorphism a b
   , mappingInterface :: TypedGraphMorphism a b
   , mappingRight     :: TypedGraphMorphism a b
-  } deriving (Eq, Show, Read)
+  } deriving (Eq, Show)
 
 ruleMorphism :: Production (TypedGraphMorphism a b)
              -> Production (TypedGraphMorphism a b)

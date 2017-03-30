@@ -69,7 +69,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
         where
           checkExistsOrphanIncidentEdge n = any (isOrphanEdge f) incEdges
             where
-              incEdges = incidentEdges graphA' (applyNodeUnsafe f n)
+              incEdges = getIncidentEdges graphA' (applyNodeUnsafe f n)
 
       -- It captures all nodes in A that are equally mapped by f
       collapsedNodes =
@@ -158,10 +158,10 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
       edgesInB = edgesFromDomain g
 
       -- Discover the nodes and edges of the X
-      nodesWithoutId = getPairs applyNodeUnsafe nodesInA nodesInB nodes
+      nodesWithoutId = getPairs applyNodeUnsafe nodesInA nodesInB nodeIds
       nodesWithId = zip nodesWithoutId ([0..]::[Int])
 
-      egdesWithoutId = getPairs applyEdgeUnsafe edgesInA edgesInB edges
+      egdesWithoutId = getPairs applyEdgeUnsafe edgesInA edgesInB edgeIds
       edgesWithId = zip egdesWithoutId ([0..]::[Int])
 
       -- Run the product for all elements that are mapped on the same element in C
@@ -277,9 +277,9 @@ satisfiesDanglingCondition l m = all (==True) (concat incidentDeletedEdges)
         lhs = graphDomain m
         instanceGraph = graphCodomain m
         checkEdgeDeletion = map (checkDeletion l m applyEdge edgesFromDomain)
-        matchedNodes = mapMaybe (applyNode m) (nodes lhs)
+        matchedNodes = mapMaybe (applyNode m) (nodeIds lhs)
         deletedNodes = filter (checkDeletion l m applyNode nodesFromDomain) matchedNodes
-        incidentEdgesOnDeletedNodes = map (incidentEdges instanceGraph) deletedNodes
+        incidentEdgesOnDeletedNodes = map (getIncidentEdges instanceGraph) deletedNodes
         incidentDeletedEdges = map checkEdgeDeletion incidentEdgesOnDeletedNodes
 
 

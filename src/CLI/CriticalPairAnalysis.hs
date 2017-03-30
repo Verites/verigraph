@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module CriticalPairAnalysis
   ( Options
@@ -17,7 +17,7 @@ import           Control.Monad                         (when)
 import           Data.List.Utils
 import           Data.Matrix                           hiding ((<|>))
 import           GlobalOptions
-import qualified Grammar.Core                     as GG
+import qualified Grammar.Core                          as GG
 import           Options.Applicative
 import           SndOrder.Rule
 import qualified XML.GGXReader                         as XML
@@ -86,7 +86,7 @@ execute globalOpts opts = do
         essentialCP = essentialFlag opts
         secondOrder = sndOrder opts
         writer = defWriterFun essentialCP secondOrder dpoConf action
-        
+
         namedFstOrdRules = GG.rules fstOrderGG
         namedSndOrdRules = GG.rules sndOrderGG
         fstOrdRules = map snd namedFstOrdRules

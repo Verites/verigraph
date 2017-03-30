@@ -1,33 +1,32 @@
 module Abstract.DPO.Process
-( Process(..)
-, GenerateProcess(..)
-, NamedRuleWithMatches
-, Interaction (..)
-, InteractionType (..)
-, getRule, getName, getMatch, getComatch)
+  ( Process(..)
+  , GenerateProcess(..)
+  , NamedRuleWithMatches
+  , Interaction (..)
+  , InteractionType (..)
+  , getRule, getName, getMatch, getComatch
+  ) where
 
-where
-
-import Abstract.Cocomplete
-import Data.Maybe (fromJust)
-import Abstract.DPO.Core
-import Abstract.DPO.Derivation
-import Abstract.Morphism
-import Data.List.NonEmpty (NonEmpty, fromList)
-import Grammar.Core
+import           Abstract.Cocomplete
+import           Abstract.DPO.Core
+import           Abstract.DPO.Derivation
+import           Abstract.Morphism
+import           Data.List.NonEmpty      (NonEmpty, fromList)
+import           Data.Maybe              (fromJust)
+import           Grammar.Core
 
 data Process m = Process
   { productions :: [Production m]
-  , coreObject :: Obj m
+  , coreObject  :: Obj m
   }
 
 data InteractionType = DeleteUse | ProduceForbid | ProduceUse | DeleteForbid deriving (Eq, Show, Ord)
 
 data Interaction = Interaction {
-  firstRule :: String,
-  secondRule :: String,
+  firstRule       :: String,
+  secondRule      :: String,
   interactionType :: InteractionType,
-  nacInvolved :: Maybe Int
+  nacInvolved     :: Maybe Int
 } deriving (Eq, Show, Ord)
 
 class (DPO m) => GenerateProcess m where
@@ -112,9 +111,9 @@ getRights :: [Production m] -> [m]
 getRights = map getRHS
 
 split :: [m] -> [(m,m,m)]
-split [] = []
+split []         = []
 split (a:b:c:ds) = (a,b,c) : split ds
-split _ = error "list of morphisms should have length divisible by 3"
+split _          = error "list of morphisms should have length divisible by 3"
 
 type NamedRuleWithMatches m = (String, Production m, (m,m,m))
 

@@ -1,7 +1,7 @@
 module SndOrder.Rule.Core where
 
 import           Abstract.DPO
-import           SndOrder.Morphism    as SO
+import           SndOrder.Morphism as SO
 
 -- | A second order rule:
 --
@@ -39,5 +39,3 @@ import           SndOrder.Morphism    as SO
 --
 -- right = interface rule, codomain rule, rightL, rightK, rightR
 type SndOrderRule a b = Production (RuleMorphism a b)
-
-

@@ -11,5 +11,3 @@ import           SndOrder.Morphism.Cocomplete   ()
 import           SndOrder.Morphism.Core
 import           SndOrder.Morphism.EpiPairs     ()
 import           SndOrder.Morphism.FindMorphism ()
-
-

@@ -144,8 +144,8 @@ getObjectNacNameMorph :: GraphMorphism a b -> ([Mapping], [Mapping])
 getObjectNacNameMorph m = (nodesMap m, edgesMap m)
   where
     adjustNonMono = parseNonMonoObjNames . group . sort
-    nodesMap = adjustNonMono . getMap GM.applyNodeUnsafe . nodes . domain
-    edgesMap = adjustNonMono . getMap GM.applyEdgeUnsafe . edges . domain
+    nodesMap = adjustNonMono . getMap GM.applyNodeUnsafe . nodeIds . domain
+    edgesMap = adjustNonMono . getMap GM.applyEdgeUnsafe . edgeIds . domain
 
     getMap f = map (\e -> (show (f m e), Nothing, show e))
     group = groupBy (\(x,_,_) (y,_,_) -> x == y)

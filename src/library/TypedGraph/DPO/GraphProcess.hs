@@ -1,4 +1,5 @@
-{-# LANGUAGE GADTs, ScopedTypeVariables #-}
+{-# LANGUAGE GADTs               #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module TypedGraph.DPO.GraphProcess
 
 ( OccurrenceGrammar (..)
@@ -18,23 +19,23 @@ module TypedGraph.DPO.GraphProcess
 
 where
 
-import Abstract.AdhesiveHLR
-import Abstract.DPO
-import Abstract.DPO.Process
-import Abstract.Morphism as M
-import Analysis.DiagramAlgorithms
-import Data.List as L hiding (union)
-import Data.Maybe (fromJust, fromMaybe, isJust)
-import Data.Set as S
-import Data.Tuple (swap)
-import Equivalence.EquivalenceClasses
-import Grammar.Core
-import Graph.Graph (NodeId, EdgeId, Graph)
-import qualified Graph.GraphMorphism as GM
-import Util.Closures as C
-import TypedGraph.DPO.GraphRule
-import TypedGraph.Graph
-import TypedGraph.Morphism as TGM
+import           Abstract.AdhesiveHLR
+import           Abstract.DPO
+import           Abstract.DPO.Process
+import           Abstract.Morphism              as M
+import           Analysis.DiagramAlgorithms
+import           Data.List                      as L hiding (union)
+import           Data.Maybe                     (fromJust, fromMaybe, isJust)
+import           Data.Set                       as S
+import           Data.Tuple                     (swap)
+import           Equivalence.EquivalenceClasses
+import           Grammar.Core
+import           Graph.Graph                    (EdgeId, Graph, NodeId)
+import qualified Graph.GraphMorphism            as GM
+import           TypedGraph.DPO.GraphRule
+import           TypedGraph.Graph
+import           TypedGraph.Morphism            as TGM
+import           Util.Closures                  as C
 
 instance GenerateProcess (TypedGraphMorphism a b) where
   typing = retypeProduction
@@ -43,12 +44,12 @@ instance GenerateProcess (TypedGraphMorphism a b) where
   restrictMorphism = restrictMorphism'
 
 data OccurrenceGrammar a b = OccurrenceGrammar {
-  singleTypedGrammar :: Grammar (TypedGraphMorphism a b)
+  singleTypedGrammar       :: Grammar (TypedGraphMorphism a b)
 , originalRulesWithMatches :: [NamedRuleWithMatches (TypedGraphMorphism a b)]
-, doubleType :: TypedGraphMorphism a b
-, originRelation :: Relation
-, concreteRelation :: Relation
-, restrictRelation :: AbstractRelation
+, doubleType               :: TypedGraphMorphism a b
+, originRelation           :: Relation
+, concreteRelation         :: Relation
+, restrictRelation         :: AbstractRelation
 }
 
 initialGraph = start . singleTypedGrammar
@@ -67,7 +68,7 @@ uniqueOrigin rules = not (repeated createdList) && not (repeated deletedList)
     creationAndDeletion = S.filter isRuleAndElement $ unions $ L.map creationAndDeletionRelation rules
     isCreated a = case a of
       (Rule _, _) -> True
-      _ -> False
+      _           -> False
     (created, deleted) = S.partition isCreated creationAndDeletion
     createdList = S.toList $ S.map snd created
     deletedList = S.toList $ S.map fst deleted
@@ -76,7 +77,7 @@ findOrder :: Relation -> Set RelationItem -> Maybe [RelationItem]
 findOrder = tsort
 
 repeated :: (Eq a) => [a] -> Bool
-repeated [] = False
+repeated []     = False
 repeated (x:xs) = x `elem` xs || repeated xs
 
 strictRelation :: [NamedProduction (TypedGraphMorphism a b)] -> Relation

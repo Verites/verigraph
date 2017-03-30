@@ -1,11 +1,11 @@
 import           Abstract.Morphism
-import qualified Abstract.Relation as R
+import qualified Abstract.Relation   as R
+import           Data.List
+import qualified Data.Map            as M
 import           Graph.Graph
 import qualified Graph.GraphMorphism as GM
-import qualified TypedGraph.Morphism as TGM
-import           Data.List
-import qualified Data.Map as M
 import           Test.HUnit
+import qualified TypedGraph.Morphism as TGM
 import           Utils
 
 -- Type shorthands

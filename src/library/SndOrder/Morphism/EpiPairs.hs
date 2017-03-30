@@ -3,8 +3,8 @@ module SndOrder.Morphism.EpiPairs where
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Morphism
-import           Graph.GraphMorphism  hiding (applyEdge, applyEdgeUnsafe,
-                                       applyNode, applyNodeUnsafe)
+import           Graph.GraphMorphism    hiding (applyEdge, applyEdgeUnsafe,
+                                         applyNode, applyNodeUnsafe)
 import           TypedGraph.Morphism
 
 import           SndOrder.Morphism.Core
@@ -74,4 +74,3 @@ createSideRule inj k1 sideM1 s1 k2 sideM2 s2 = d
     c = map (\(x:y:z:_) -> (x,y,z)) b
     d = filter (\(ss1,ss2,m) -> compose sideM1 ss1 == compose k1 m &&
                                 compose sideM2 ss2 == compose k2 m) c
-

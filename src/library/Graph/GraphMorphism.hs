@@ -47,7 +47,7 @@ data GraphMorphism a b = GraphMorphism {
                         , getCodomain  :: Graph a b
                         , nodeRelation :: R.Relation G.NodeId
                         , edgeRelation :: R.Relation G.EdgeId
-                    } deriving (Read)
+                    }
 
 instance Eq (GraphMorphism a b) where
     m1 == m2 = domain m1 == domain m2 &&
@@ -59,12 +59,12 @@ instance Show (GraphMorphism a b) where
     show m =
         "\nNode mappings: \n" ++
         concatMap (\n -> show n ++ " --> " ++ show (applyNode m n) ++ "\n")
-                  (G.nodes $ getDomain m) ++
+                  (G.nodeIds $ getDomain m) ++
         "\nEdge mappings: \n" ++
         concatMap (\e -> show e ++ " --> " ++ show (applyEdge m e) ++ " (from: " ++
           show (fromJust (G.sourceOf (domain m) e)) ++ " -> " ++
           show (fromJust (G.targetOf (domain m) e)) ++ ")\n")
-                  (G.edges $ getDomain m)
+                  (G.edgeIds $ getDomain m)
 
 -- | Return the orphan nodes in a graph morphism
 orphanNodes :: GraphMorphism a b -> [G.NodeId]
@@ -98,7 +98,7 @@ applyEdgeUnsafe m e = fromMaybe (error "Error, apply edge in a non total morphis
 
 -- | An empty morphism between two graphs.
 empty :: Graph a b -> Graph a b -> GraphMorphism a b
-empty gA gB = GraphMorphism gA gB (R.empty (nodes gA) (nodes gB)) (R.empty (edges gA) (edges gB))
+empty gA gB = GraphMorphism gA gB (R.empty (nodeIds gA) (nodeIds gB)) (R.empty (edgeIds gA) (edgeIds gB))
 
 -- | Construct a graph morphism
 buildGraphMorphism :: Graph a b -> Graph a b -> [(Int,Int)] -> [(Int,Int)] -> GraphMorphism a b
@@ -219,11 +219,11 @@ createNodeOnCodomain n2 gm =
 isPartialInjective :: GraphMorphism a b -> GraphMorphism a b -> Bool
 isPartialInjective nac q = disjointCodomain && injective
   where
-    nodes = mapMaybe (applyNode nac) (G.nodes (domain nac))
-    nodesI = G.nodes (codomain nac) \\ nodes
+    nodes = mapMaybe (applyNode nac) (G.nodeIds (domain nac))
+    nodesI = G.nodeIds (codomain nac) \\ nodes
     codN = mapMaybe (applyNode q)
-    edges = mapMaybe (applyEdge nac) (G.edges (domain nac))
-    edgesI = G.edges (codomain nac) \\ edges
+    edges = mapMaybe (applyEdge nac) (G.edgeIds (domain nac))
+    edgesI = G.edgeIds (codomain nac) \\ edges
     codE = mapMaybe (applyEdge q)
     disjointNodes = Prelude.null (codN nodes `intersect` codN nodesI)
     disjointEdges = Prelude.null (codE edges `intersect` codE edgesI)
@@ -240,7 +240,7 @@ instance Morphism (GraphMorphism a b) where
                       (codomain m2)
                       (R.compose (nodeRelation m1) (nodeRelation m2))
                       (R.compose (edgeRelation m1) (edgeRelation m2))
-    id g = GraphMorphism g g (R.id $ nodes g) (R.id $ edges g)
+    id g = GraphMorphism g g (R.id $ nodeIds g) (R.id $ edgeIds g)
     isMonomorphism m =
         R.isInjective (nodeRelation m) &&
         R.isInjective (edgeRelation m)
@@ -270,4 +270,4 @@ instance Valid (GraphMorphism a b) where
                   &&
                      (G.targetOf cod =<< applyEdge morphism e) ==
                      (applyNode morphism =<< G.targetOf dom e))
-              (G.edges dom)
+              (G.edgeIds dom)

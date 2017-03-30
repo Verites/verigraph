@@ -1,8 +1,8 @@
 module Main where
 
-import Test.Framework (defaultMain, testGroup)
+import           Test.Framework        (defaultMain, testGroup)
 
-import qualified CtlTest.TestParser as Parser
+import qualified CtlTest.TestParser    as Parser
 import qualified CtlTest.TestSemantics as Semantics
 
 

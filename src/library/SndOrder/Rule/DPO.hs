@@ -1,12 +1,12 @@
 module SndOrder.Rule.DPO where
 
-import           Data.Maybe           (mapMaybe,fromMaybe)
+import           Data.Maybe               (fromMaybe, mapMaybe)
 
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Valid
-import           Graph.Graph          as G
-import           SndOrder.Morphism    as SO
+import           Graph.Graph              as G hiding (Edge, Node)
+import           SndOrder.Morphism        as SO
 import           TypedGraph.DPO.GraphRule
 import           TypedGraph.Graph
 import           TypedGraph.Morphism
@@ -60,11 +60,11 @@ minimalSafetyNacs :: MorphismsConfig -> SndOrderRule a b -> [RuleMorphism a b]
 minimalSafetyNacs conf sndRule =
   newNacsProb LeftSide sndRule ++
   newNacsProb RightSide sndRule ++
-  (if (matchRestriction conf) == AnyMatches
-    then
-      (newNacsPair LeftSide sndRule ++
-       newNacsPair RightSide sndRule)
-    else [])
+  ( if matchRestriction conf == AnyMatches then
+      newNacsPair LeftSide sndRule ++ newNacsPair RightSide sndRule
+    else
+      []
+  )
 
 -- | Generate NACs that forbid deleting elements in L or R but not in K,
 -- It discovers how situations must have a NAC and function createNacProb creates them.
@@ -148,11 +148,11 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
     tgtInR x = fromMaybe (newNodesSide !! 1) (applyNode otherSide (tgtInK x))
 
     (updateLeft, updateRight) =
-      (case x of
-         (Node n) -> createNodes n n' n'' (tpNode n)
-         (Edge e) -> createEdges e e' e'' (tpEdge e)
-                        (src e) (typeSrc e) (srcInK e) (srcInR e)
-                        (tgt e) (typeTgt e) (tgtInK e) (tgtInR e))
+      case x of
+        (Node n) -> createNodes n n' n'' (tpNode n)
+        (Edge e) -> createEdges e e' e'' (tpEdge e)
+                       (src e) (typeSrc e) (srcInK e) (srcInR e)
+                       (tgt e) (typeTgt e) (tgtInK e) (tgtInR e)
 
     nacRule = buildProduction updateLeft updateRight []
     mapL = idMap graphL (codomain updateLeft)
@@ -161,7 +161,7 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
 
     createNodes x x' x'' tp =
       case sideChoose of
-        LeftSide -> (updateSide1, updateSide2Map)
+        LeftSide  -> (updateSide1, updateSide2Map)
         RightSide -> (updateSide2Map, updateSide1)
       where
         updateSide1 = createNodeOnDomain x' tp x side
@@ -172,7 +172,7 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
         src typeSrc srcInK srcInR
         tgt typeTgt tgtInK tgtInR =
       case sideChoose of
-        LeftSide -> (updateLeftEdge, updateRightMap)
+        LeftSide  -> (updateLeftEdge, updateRightMap)
         RightSide -> (updateRightMap, updateLeftEdge)
       where
         srcRight = createNodeOnCodomain srcInR typeSrc otherSide
@@ -202,7 +202,7 @@ newNacsPair sideChoose sndRule =
 
     (mapping, getSide) =
       case sideChoose of
-        LeftSide -> (SO.mappingLeft, getLHS)
+        LeftSide  -> (SO.mappingLeft, getLHS)
         RightSide -> (SO.mappingRight, getRHS)
 
     fl = mapping (getLHS sndRule)
@@ -220,12 +220,12 @@ newNacsPair sideChoose sndRule =
         , not (isOrphan lc (apply gl x))
         , not (isOrphan lc (apply gl y))]
 
-    pairsNodes = pairs applyNode isOrphanNode nodes
-    pairsEdges = pairs applyEdge isOrphanEdge edges
+    pairsNodes = pairs applyNode isOrphanNode nodeIds
+    pairsEdges = pairs applyEdge isOrphanEdge edgeIds
 
     epis = calculateAllPartitions (codomain (getSide ruleL))
 
-    filtered apply pairs = [e | e <- epis, any (\(a,b) -> (apply e) a == (apply e) b) pairs]
+    filtered apply pairs = [e | e <- epis, any (\(a,b) -> apply e a == apply e b) pairs]
 
     retNodes = filtered applyNode pairsNodes
     retEdges = filtered applyEdge pairsEdges
@@ -233,7 +233,7 @@ newNacsPair sideChoose sndRule =
     createNac e = if isValid n then Just n else Nothing
       where
         n = case sideChoose of
-              LeftSide -> nLeft
+              LeftSide  -> nLeft
               RightSide -> nRight
 
         nLeft = SO.ruleMorphism ruleL ruleNacLeft e mapK mapR
@@ -248,7 +248,7 @@ newNacsPair sideChoose sndRule =
 
 
 calculateAllPartitions :: EpiPairs m => Obj m -> [m]
-calculateAllPartitions graph = createAllSubobjects False graph
+calculateAllPartitions = createAllSubobjects False
 
 isOrphanNode :: TypedGraphMorphism a b -> NodeId -> Bool
 isOrphanNode m n = n `elem` orphanTypedNodes m

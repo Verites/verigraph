@@ -20,21 +20,21 @@ import           TypedGraph.DPO.GraphRule
 --import System.Environment
 --import System.Exit
 import           Abstract.Morphism
+import           TypedGraph.DPO.GraphProcess
 import           TypedGraph.Morphism.Cocomplete as C
-import TypedGraph.DPO.GraphProcess
 
 
 
 import           Abstract.AdhesiveHLR           as RW
 import           Abstract.DPO                   as RW
 --import Data.Matrix
-import qualified Data.List                      as L
 import           Abstract.Cardinality
+import qualified Data.List                      as L
 import           Data.Maybe
 --import Abstract.DPO.Derivation
 --import Abstract.DPO.Process
-import TypedGraph.DPO.GraphProcess()
-import Grammar.Core
+import           Grammar.Core
+import           TypedGraph.DPO.GraphProcess    ()
 
 --import qualified XML.GGXReader as XML
 

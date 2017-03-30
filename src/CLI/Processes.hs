@@ -4,17 +4,17 @@ module Processes
   , execute
   ) where
 
-import           Abstract.Valid
-import Data.Set (toList)
-import           GlobalOptions
 import           Abstract.DPO
+import           Abstract.Valid
 import           Analysis.Processes
 import           Control.Monad
-import qualified Grammar.Core        as GG
+import           Data.Set                    (toList)
+import           GlobalOptions
+import qualified Grammar.Core                as GG
 import           Options.Applicative
 import           TypedGraph.DPO.GraphProcess
-import qualified XML.GGXReader            as XML
-import qualified XML.GGXWriter            as GW
+import qualified XML.GGXReader               as XML
+import qualified XML.GGXWriter               as GW
 
 data Options = Options
   { outputFile     :: String }
@@ -55,7 +55,7 @@ execute globalOpts opts = do
         (putStrLn $ "No graph process candidates were found for rule sequence '" ++ name ++ "'")
 
     putStrLn "Conflicts and Dependencies: "
-    putStrLn $ show conflictsAndDependencies
+    print conflictsAndDependencies
 
 --    putStrLn "\n##################\n"
 
@@ -67,22 +67,22 @@ execute globalOpts opts = do
     putStrLn "\n##################\n"
 
     putStrLn "Creation and Deletion Relation: "
-    putStrLn $ show (originRelation completeOgg)
+    print (originRelation completeOgg)
 
     putStrLn "\n------------------\n"
-    putStrLn $ "Conflicts and dependencies induced by NACs:\n "
+    putStrLn "Conflicts and dependencies induced by NACs:\n "
 
-    putStrLn $ show $ map (findConcreteTrigger ogg) (toList inducedByNacs)
+    print $ map (findConcreteTrigger ogg) (toList inducedByNacs)
 
     putStrLn "\n##################\n"
 
     putStrLn "Rules Relation: "
-    putStrLn $ show rulesRelation
+    print rulesRelation
 
     putStrLn "\n##################\n"
 
     putStrLn "Elements Relation: "
-    putStrLn $ show elementsRelation
+    print elementsRelation
 
     putStrLn "\n##################\n"
     putStrLn "Tesing Validity\n"
@@ -90,7 +90,7 @@ execute globalOpts opts = do
 
     putStrLn "\n------------------\n"
     putStrLn $ "Initial Graph is valid? \n>>> " ++ show (isValid $ GG.start sgg)
-    putStrLn $ show (GG.start sgg)
+    print (GG.start sgg)
 
     putStrLn "\n------------------\n"
     putStrLn $ "Is there a compatible concrete total order for rules?\n>>> " ++ show (findOrder rulesRelation rulesNames)

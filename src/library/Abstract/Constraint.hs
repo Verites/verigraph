@@ -1,14 +1,12 @@
-module Abstract.Constraint (
-
-    AtomicConstraint (..)
+module Abstract.Constraint
+  ( AtomicConstraint (..)
   , buildNamedAtomicConstraint
   , satisfiesAtomicConstraint
   , satisfiesAllAtomicConstraints
   , Constraint (..)
   , satisfiesConstraint
   , satisfiesAllConstraints
-
-) where
+  ) where
 
 import           Abstract.Morphism
 import           Abstract.Valid
