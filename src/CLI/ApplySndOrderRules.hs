@@ -5,19 +5,19 @@ module ApplySndOrderRules
   ) where
 
 import           Abstract.AdhesiveHLR
-import           Control.Monad           (when)
-import           Graph.Graph             (Graph)
-import qualified Grammar.Core       as GG
-import qualified SndOrder.Rule           as SO
-import qualified TypedGraph.DPO.GraphRule    as GR
+import           Control.Monad            (when)
+import qualified Grammar.Core             as GG
+import           Graph.Graph              (Graph)
+import qualified SndOrder.Rule            as SO
+import qualified TypedGraph.DPO.GraphRule as GR
 import           TypedGraph.Morphism
 
 import           GlobalOptions
 import           Options.Applicative
 
-import qualified XML.GGXReader           as XML
-import qualified XML.GGXWriter           as GW
 import           Image.Dot
+import qualified XML.GGXReader            as XML
+import qualified XML.GGXWriter            as GW
 
 data Options = Options
   { outputFile :: String }
@@ -46,7 +46,7 @@ execute :: GlobalOptions -> Options -> IO ()
 execute globalOpts opts = do
     let dpoConf = morphismsConf globalOpts
         printDot = False --flag to test the print to .dot functions
-    
+
     (fstOrderGG, sndOrderGG, printNewNacs) <- XML.readGrammar (inputFile globalOpts) (useConstraints globalOpts) dpoConf
     ggName <- XML.readGGName (inputFile globalOpts)
     names <- XML.readNames (inputFile globalOpts)
@@ -66,14 +66,14 @@ execute globalOpts opts = do
         newRules = SO.applySecondOrder (SO.applySndOrderRule dpoConf) fstRulesPlusEmpty (GG.rules sndOrderGG)
         newGG = fstOrderGG {GG.rules = GG.rules fstOrderGG ++ newRules}
         namingContext = makeNamingContext names
-    
+
     putStrLn ""
-    
+
     let dots = map (uncurry (printSndOrderRule namingContext)) (GG.rules sndOrderGG)
     when printDot $ mapM_ print dots
 
     GW.writeGrammarFile (newGG,sndOrderGG) ggName names (outputFile opts)
-    
+
     putStrLn "Done!"
     putStrLn ""
 

@@ -5,8 +5,7 @@
 -- | Provides definitions for the Double-Pushout approach to
 -- High-Level Rewriting Systems.
 module Abstract.DPO
-  (
-    Production
+  ( Production
   , buildProduction
   , getLHS
   , getRHS

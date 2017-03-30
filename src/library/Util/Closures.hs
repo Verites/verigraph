@@ -1,5 +1,5 @@
+{-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE MonadComprehensions #-}
-{-# LANGUAGE FlexibleContexts #-}
 module Util.Closures
 ( transitiveClosure
 , reflexiveClosure
@@ -12,9 +12,9 @@ module Util.Closures
 
 where
 
-import qualified Data.Set as S
-import Data.Set.Monad
-import Prelude hiding (null, length,foldr)
+import qualified Data.Set       as S
+import           Data.Set.Monad
+import           Prelude        hiding (foldr, length, null)
 
 setToMonad :: (Ord a) => S.Set a -> Set a
 setToMonad = fromList . S.toList

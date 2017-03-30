@@ -3,14 +3,14 @@ module CtlTest.TestParser
   ) where
 
 
-import Test.Framework (Test, testGroup)
-import Test.Framework.Providers.HUnit
-import Test.Framework.Providers.QuickCheck2 (testProperty)
-import qualified Test.HUnit as HUnit
-import Text.PrettyPrint.Leijen
+import           Test.Framework                       (Test, testGroup)
+import           Test.Framework.Providers.HUnit
+import           Test.Framework.Providers.QuickCheck2 (testProperty)
+import qualified Test.HUnit                           as HUnit
+import           Text.PrettyPrint.Leijen
 
-import Logic.Ctl
-import CtlTest.Utils ()
+import           CtlTest.Utils                        ()
+import           Logic.Ctl
 
 
 tests :: [Test]

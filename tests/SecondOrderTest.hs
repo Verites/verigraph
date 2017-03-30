@@ -1,7 +1,7 @@
 import           Abstract.DPO
 import           Test.HUnit
-import qualified XML.GGXReader             as XML
 import           Utils
+import qualified XML.GGXReader as XML
 
 -- | Checks if the minimalSafetyNACs was correctly generated.
 tests log n = [all (== n) list ~=? True]

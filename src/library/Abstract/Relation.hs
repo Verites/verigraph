@@ -2,7 +2,8 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies          #-}
 
-module Abstract.Relation (
+module Abstract.Relation
+    (
     -- * Types
       Relation
     -- * Construction
@@ -28,7 +29,7 @@ module Abstract.Relation (
     , isPartialInjective
     , isSurjective
     , isTotal
-) where
+    ) where
 
 
 import           Data.List as L

@@ -4,17 +4,17 @@ module Processes
   , execute
   ) where
 
-import           Abstract.Valid
-import Data.Set (toList)
-import           GlobalOptions
 import           Abstract.DPO
+import           Abstract.Valid
 import           Analysis.Processes
 import           Control.Monad
-import qualified Grammar.Core        as GG
+import           Data.Set                    (toList)
+import           GlobalOptions
+import qualified Grammar.Core                as GG
 import           Options.Applicative
 import           TypedGraph.DPO.GraphProcess
-import qualified XML.GGXReader            as XML
-import qualified XML.GGXWriter            as GW
+import qualified XML.GGXReader               as XML
+import qualified XML.GGXWriter               as GW
 
 data Options = Options
   { outputFile     :: String }

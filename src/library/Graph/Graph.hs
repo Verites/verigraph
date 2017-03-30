@@ -75,7 +75,7 @@ import           Abstract.Cardinality
 import           Abstract.Valid
 import           Data.List
 import           Data.List.Utils
-import           Data.Maybe      (fromMaybe, fromJust)
+import           Data.Maybe           (fromJust, fromMaybe)
 
 
 -- | Type of node identifiers, which are essentially integers.
@@ -131,7 +131,7 @@ instance Enum EdgeId where
 -- | Nodes from within a graph.
 data Node n =
   Node
-    { nodeId :: NodeId
+    { nodeId   :: NodeId
     , nodeInfo :: Maybe n
     } deriving (Show)
 
@@ -139,7 +139,7 @@ data Node n =
 -- | Edges from within a graph.
 data Edge a =
   Edge
-    { edgeId :: EdgeId
+    { edgeId   :: EdgeId
     , sourceId :: NodeId
     , targetId :: NodeId
     , edgeInfo :: Maybe a
@@ -431,7 +431,7 @@ nodesOf (Graph _ es) e =
     let ed = lookup e es
     in case ed of
         Just (Edge _ src tgt _) -> Just (src, tgt)
-        _ -> Nothing
+        _                       -> Nothing
 
 
 -- | Gets the source of the given edge. /O(e)/.
@@ -458,7 +458,7 @@ targetOfUnsafe g e = fromMaybe (error "Error, graph with target edges function n
 -- | Test whether a graph is empty. /O(1)/.
 null :: Graph n e -> Bool
 null (Graph [] []) = True
-null _ = False
+null _             = False
 
 -- | Given a graph, it returns the number of vertices plus the number of edges
 cardinality' :: Graph n e -> Int
@@ -482,7 +482,7 @@ isIncidentTo :: Graph n e -> NodeId -> EdgeId -> Bool
 isIncidentTo g n e =
     case res of
         Just (s, t) -> n == s || n == t
-        _ -> False
+        _           -> False
   where
     res = nodesOf g e
 

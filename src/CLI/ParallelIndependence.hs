@@ -5,17 +5,17 @@ module ParallelIndependence
   ) where
 
 import           Analysis.ParallelIndependent
-import           Control.Monad                (when,unless)
+import           Control.Monad                (unless, when)
 import           Data.Matrix                  hiding ((<|>))
 import           GlobalOptions
-import qualified Grammar.Core            as GG
+import qualified Grammar.Core                 as GG
 import           Options.Applicative
 import qualified XML.GGXReader                as XML
 
 data Options = Options
   { duFlag :: Bool
   , siFlag :: Bool
-  , soFlag       :: Bool
+  , soFlag :: Bool
   }
 
 options :: Parser Options
@@ -65,8 +65,8 @@ execute globalOpts opts = do
         (analysisDU,analysisPB) =
           case sndOrder of
             False -> (analysisDU1,analysisPB1)
-            True -> (analysisDU2,analysisPB2)
-    
+            True  -> (analysisDU2,analysisPB2)
+
     putStrLn $ "Second-order flag: " ++ (show sndOrder)
     putStrLn $ "Length of the set of first-order rules: " ++ (show (length rules1))
     putStrLn $ "Length of the set of second-order rules: " ++ (show (length rules2))

@@ -3,18 +3,18 @@ module CtlTest.TestSemantics
   ) where
 
 
-import qualified Data.List as List
-import qualified Data.Char as Char
-import Data.Set (Set)
-import qualified Data.Set as Set
-import Data.IntMap (IntMap)
-import qualified Data.IntMap as IntMap
-import Test.Framework (Test, testGroup)
-import Test.Framework.Providers.HUnit
-import Test.HUnit hiding (Test, State)
+import qualified Data.Char                      as Char
+import           Data.IntMap                    (IntMap)
+import qualified Data.IntMap                    as IntMap
+import qualified Data.List                      as List
+import           Data.Set                       (Set)
+import qualified Data.Set                       as Set
+import           Test.Framework                 (Test, testGroup)
+import           Test.Framework.Providers.HUnit
+import           Test.HUnit                     hiding (State, Test)
 
-import Logic.Model
-import Logic.Ctl
+import           Logic.Ctl
+import           Logic.Model
 
 
 tests :: [Test]

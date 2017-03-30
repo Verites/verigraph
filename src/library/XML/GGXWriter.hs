@@ -17,8 +17,8 @@ import qualified Analysis.CriticalSequence       as CS
 import qualified Analysis.EssentialCriticalPairs as ECP
 import           Data.List.Utils                 (startswith)
 import           Data.Maybe
-import qualified Graph.Graph                     as G
 import           Grammar.Core
+import qualified Graph.Graph                     as G
 import           SndOrder.Morphism
 import qualified SndOrder.Rule                   as SO
 import           Text.XML.HXT.Core

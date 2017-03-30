@@ -1,7 +1,4 @@
-module TypedGraph.Morphism.FindMorphism
-(
-)
-where
+module TypedGraph.Morphism.FindMorphism () where
 
 import           Abstract.AdhesiveHLR
 import           Abstract.Morphism        as M

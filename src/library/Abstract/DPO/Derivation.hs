@@ -9,16 +9,16 @@ module Abstract.DPO.Derivation
 
 where
 
-import Abstract.AdhesiveHLR
-import Abstract.DPO.Core
+import           Abstract.AdhesiveHLR
+import           Abstract.DPO.Core
 
 data Derivation m = Derivation
   { production :: Production m
-  , match :: m
-  , comatch :: m
-  , gluing :: m
-  , dToG :: m
-  , dToH :: m
+  , match      :: m
+  , comatch    :: m
+  , gluing     :: m
+  , dToG       :: m
+  , dToH       :: m
   } deriving (Eq, Show, Read)
 
 generateDerivationUnsafe :: (DPO m) => m -> Production m -> Derivation m

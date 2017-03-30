@@ -50,7 +50,7 @@ import qualified Data.IntMap         as IntMap
 import           Data.Set            (Set)
 import qualified Data.Set            as Set
 
-import           Abstract.DPO hiding (productions)
+import           Abstract.DPO        hiding (productions)
 import           Abstract.Morphism
 import qualified Logic.Model         as Logic
 
@@ -67,12 +67,12 @@ import qualified Logic.Model         as Logic
 -- The states are annotated with the set of predicates that hold in them. Predicates
 -- are expressed as rules, and a predicate holds in a state if the rule is applicable.
 data StateSpace m = SS
-  { states      :: IntMap (State m) -- ^ Obtain the set of (explored) indexed states in a state space.
-  , transitions :: Set (Int, Int) -- ^ Obtain the set of (explored) transitions in a state space.
-  , uid         :: Int -- ^ Provides an unused state index.
-  , morphismsConf   :: MorphismsConfig -- ^ Obtain the configuration of DPO semantics for the state space.
-  , productions :: [Production m] -- ^ Obtain the productions of the HLR system of the state space.
-  , predicates  :: [(String, Production m)] -- ^ Obtain the predicates of the state space.
+  { states        :: IntMap (State m) -- ^ Obtain the set of (explored) indexed states in a state space.
+  , transitions   :: Set (Int, Int) -- ^ Obtain the set of (explored) transitions in a state space.
+  , uid           :: Int -- ^ Provides an unused state index.
+  , morphismsConf :: MorphismsConfig -- ^ Obtain the configuration of DPO semantics for the state space.
+  , productions   :: [Production m] -- ^ Obtain the productions of the HLR system of the state space.
+  , predicates    :: [(String, Production m)] -- ^ Obtain the predicates of the state space.
   }
 
 

@@ -1,26 +1,23 @@
-module  Equivalence.EquivalenceClasses (
-
-  EquivalenceClass,
-  binaryConstruct,
-  enaryConstruct,
-  getElem,
-  getTail,
-  maximumDisjointClass,
-  tsort
-
-
-) where
+module Equivalence.EquivalenceClasses
+  ( EquivalenceClass
+  , binaryConstruct
+  , enaryConstruct
+  , getElem
+  , getTail
+  , maximumDisjointClass
+  , tsort
+  ) where
 
 import           Data.Foldable (find)
-import           Data.Set as DS
-import Prelude hiding (filter, null, foldr, foldl)
+import           Data.Set      as DS
+import           Prelude       hiding (filter, foldl, foldr, null)
 
 maximumDisjointClass :: (Ord a) => [a] -> Set (EquivalenceClass a)
 maximumDisjointClass l = fromList $ Prelude.map (fromList . (:[])) l
 
 type EquivalenceClass a = Set a
 
-binaryConstruct :: (Ord a, Show a) => Set(a,a) -> Set (EquivalenceClass a) -> Set (EquivalenceClass a)
+binaryConstruct :: (Ord a, Show a) => Set (a,a) -> Set (EquivalenceClass a) -> Set (EquivalenceClass a)
 binaryConstruct toBeGlued toBeX
   | DS.null toBeGlued = toBeX
   | otherwise = binaryConstruct (getTail toBeGlued) (merge (getElem toBeGlued) toBeX)

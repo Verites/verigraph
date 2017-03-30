@@ -1,14 +1,15 @@
 {-# LANGUAGE FlexibleContexts #-}
 module Analysis.Processes
-( generateGraphProcess
-, calculateRulesColimit
-, findConflictsAndDependencies ) where
+  ( generateGraphProcess
+  , calculateRulesColimit
+  , findConflictsAndDependencies
+  ) where
 
-import Abstract.AdhesiveHLR
-import Abstract.DPO
-import Abstract.DPO.Process
-import Analysis.DiagramAlgorithms
-import Data.List (partition)
+import           Abstract.AdhesiveHLR
+import           Abstract.DPO
+import           Abstract.DPO.Process
+import           Analysis.DiagramAlgorithms
+import           Data.List                  (partition)
 
 findConflictsAndDependencies :: GenerateProcess m => [NamedRuleWithMatches m] -> [Interaction]
 findConflictsAndDependencies rulesWithMatches = findConflicts pairs ++ findDependencies pairs --concatMap createCritical pairs

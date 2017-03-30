@@ -3,8 +3,8 @@ module TypedGraph.Morphism.Core where
 
 import           Abstract.Morphism   as M
 import           Abstract.Valid
-import           Data.List (nub)
-import           Data.Maybe (fromMaybe, isJust)
+import           Data.List           (nub)
+import           Data.Maybe          (fromMaybe, isJust)
 import           Graph.Graph
 import           Graph.GraphMorphism (GraphMorphism)
 import qualified Graph.GraphMorphism as GM

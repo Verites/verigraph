@@ -9,14 +9,14 @@ module Analysis.Interlevel.InterLevelCP (interLevelCP, InterLevelCP(..)) where
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Morphism
-import           Data.List            (nubBy)
+import           Data.List                (nubBy)
 import           Graph.Graph
-import           Graph.GraphMorphism  hiding (createEdgeOnCodomain,
-                                       createNodeOnCodomain)
+import           Graph.GraphMorphism      hiding (createEdgeOnCodomain,
+                                           createNodeOnCodomain)
 import           SndOrder.Morphism
 import           SndOrder.Rule
-import           TypedGraph.Graph
 import           TypedGraph.DPO.GraphRule
+import           TypedGraph.Graph
 import           TypedGraph.Morphism
 import           TypedGraph.Subgraph
 

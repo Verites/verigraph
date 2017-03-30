@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Analysis.EssentialCriticalPairs
  ( namedEssentialCriticalPairs,
@@ -7,8 +7,8 @@ module Analysis.EssentialCriticalPairs
    findAllEssentialProduceDangling
    ) where
 
-import           Abstract.AdhesiveHLR       as RW
-import           Abstract.DPO               as RW
+import           Abstract.AdhesiveHLR     as RW
+import           Abstract.DPO             as RW
 import           Abstract.Morphism
 import           Analysis.CriticalPairs
 import           Analysis.EpimorphicPairs
@@ -48,7 +48,7 @@ findAllEssentialDeleteUse conf p1 p2 =
         (findPotentialEssentialCPs conf p1 p2)
 
 -- | Generates all "epi" pairs for essential delete-use,
--- returns part of the initial pushout to avoid recalculations. 
+-- returns part of the initial pushout to avoid recalculations.
 findPotentialEssentialCPs :: (DPO m, EpiPairs m) => MorphismsConfig -> Production m -> Production m -> [(m, m, m, m)]
 findPotentialEssentialCPs conf p1 p2 = satisfyingPairs
   where
@@ -99,4 +99,3 @@ findAllEssentialProduceForbid :: --(DPO m, EpiPairs m) =>
 
 -- Returning empty for while
 findAllEssentialProduceForbid _ _ _ = []
-

@@ -1,10 +1,10 @@
-import           Analysis.ParallelIndependent
 import           Abstract.DPO
-import           Data.Matrix                     hiding ((<|>))
-import qualified Grammar.Core               as GG
+import           Analysis.ParallelIndependent
+import           Data.Matrix                  hiding ((<|>))
+import qualified Grammar.Core                 as GG
 import           Test.HUnit
-import qualified XML.GGXReader                   as XML
 import           Utils
+import qualified XML.GGXReader                as XML
 
 -- This test is based on that the pullback scheme for detecting parallel
 -- or sequentially independece is identical to find for delete-use.

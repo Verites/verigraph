@@ -1,12 +1,12 @@
 module SndOrder.Rule.DPO where
 
-import           Data.Maybe           (mapMaybe,fromMaybe)
+import           Data.Maybe               (fromMaybe, mapMaybe)
 
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Valid
-import           Graph.Graph          as G hiding (Node, Edge)
-import           SndOrder.Morphism    as SO
+import           Graph.Graph              as G hiding (Edge, Node)
+import           SndOrder.Morphism        as SO
 import           TypedGraph.DPO.GraphRule
 import           TypedGraph.Graph
 import           TypedGraph.Morphism
@@ -161,7 +161,7 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
 
     createNodes x x' x'' tp =
       case sideChoose of
-        LeftSide -> (updateSide1, updateSide2Map)
+        LeftSide  -> (updateSide1, updateSide2Map)
         RightSide -> (updateSide2Map, updateSide1)
       where
         updateSide1 = createNodeOnDomain x' tp x side
@@ -172,7 +172,7 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
         src typeSrc srcInK srcInR
         tgt typeTgt tgtInK tgtInR =
       case sideChoose of
-        LeftSide -> (updateLeftEdge, updateRightMap)
+        LeftSide  -> (updateLeftEdge, updateRightMap)
         RightSide -> (updateRightMap, updateLeftEdge)
       where
         srcRight = createNodeOnCodomain srcInR typeSrc otherSide
@@ -202,7 +202,7 @@ newNacsPair sideChoose sndRule =
 
     (mapping, getSide) =
       case sideChoose of
-        LeftSide -> (SO.mappingLeft, getLHS)
+        LeftSide  -> (SO.mappingLeft, getLHS)
         RightSide -> (SO.mappingRight, getRHS)
 
     fl = mapping (getLHS sndRule)
@@ -233,7 +233,7 @@ newNacsPair sideChoose sndRule =
     createNac e = if isValid n then Just n else Nothing
       where
         n = case sideChoose of
-              LeftSide -> nLeft
+              LeftSide  -> nLeft
               RightSide -> nRight
 
         nLeft = SO.ruleMorphism ruleL ruleNacLeft e mapK mapR

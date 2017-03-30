@@ -51,9 +51,9 @@ findProduction name grammar = lookup name (rules grammar)
 -- | Object that uses a Span of Morphisms to connect the right-hand-side of a Production with the left-hand-side of another one
 data ObjectFlow m =
   ObjectFlow {
-  index :: String -- ^ A identifier for the Object Flow
-, producer :: String -- ^ The name of the production that will produce the input for the next
-, consumer :: String -- ^ The name of the production that uses the result of the other
+  index       :: String -- ^ A identifier for the Object Flow
+, producer    :: String -- ^ The name of the production that will produce the input for the next
+, consumer    :: String -- ^ The name of the production that uses the result of the other
 , spanMapping :: Span m -- ^ A span of Morphisms @Ri <- IO -> Lo@ where @Ri@ is the right-hand-side of the @producer production@ and @Lo@ is the left-hand-side of the @consumer production@
 }
 

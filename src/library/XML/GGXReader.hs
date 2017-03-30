@@ -18,20 +18,20 @@ module XML.GGXReader
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Valid
-import qualified Data.List               as L
-import qualified Data.Map                as M
-import           Data.Maybe              (fromMaybe, mapMaybe, fromJust)
-import           Data.String.Utils       (startswith)
-import qualified Graph.Graph             as G
-import           Graph.GraphMorphism     as GM
-import qualified Grammar.Core       as GG
+import qualified Data.List                as L
+import qualified Data.Map                 as M
+import           Data.Maybe               (fromJust, fromMaybe, mapMaybe)
+import           Data.String.Utils        (startswith)
+import qualified Grammar.Core             as GG
+import qualified Graph.Graph              as G
+import           Graph.GraphMorphism      as GM
 import           SndOrder.Morphism
 import           SndOrder.Rule
-import           Text.XML.HXT.Core       hiding (left, right)
+import           Text.XML.HXT.Core        hiding (left, right)
+import           TypedGraph.DPO.GraphRule as GR
 import           TypedGraph.Graph
-import           TypedGraph.DPO.GraphRule    as GR
 import           TypedGraph.Morphism
-import qualified XML.Formulas            as F
+import qualified XML.Formulas             as F
 import           XML.GGXParseIn
 import           XML.GGXSndOrderReader
 import           XML.ParsedTypes

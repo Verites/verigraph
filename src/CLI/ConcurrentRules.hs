@@ -9,7 +9,7 @@ import           GlobalOptions
 import           Abstract.AdhesiveHLR
 import           Analysis.ConcurrentRules
 import           Control.Monad
-import qualified Grammar.Core        as GG
+import qualified Grammar.Core             as GG
 import           Options.Applicative
 import           TypedGraph.DPO.GraphRule
 import           TypedGraph.Morphism

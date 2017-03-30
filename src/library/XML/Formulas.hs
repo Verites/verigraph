@@ -13,8 +13,8 @@ import           Data.Functor.Identity
 
 import           Text.Parsec
 import           Text.Parsec.Expr
-import           Text.Parsec.String (Parser)
-import qualified Text.Parsec.Token as T
+import           Text.Parsec.String    (Parser)
+import qualified Text.Parsec.Token     as T
 
 data Formula = IntConst Integer
           | Not Formula

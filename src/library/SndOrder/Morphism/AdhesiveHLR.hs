@@ -4,11 +4,11 @@ import           Abstract.AdhesiveHLR
 import           Abstract.Cocomplete
 import           Abstract.DPO
 import           Abstract.Morphism
-import           Graph.Graph              as G
-import qualified Graph.GraphMorphism      as GM
+import           Graph.Graph                        as G
+import qualified Graph.GraphMorphism                as GM
 import           TypedGraph.Morphism
 
-import           SndOrder.Morphism.Cocomplete ()
+import           SndOrder.Morphism.Cocomplete       ()
 import           SndOrder.Morphism.CommutingSquares
 import           SndOrder.Morphism.Core
 
@@ -32,20 +32,20 @@ instance AdhesiveHLR (RuleMorphism a b) where
     where
       (RuleMorphism _ ruleH f'L f'K f'R,RuleMorphism _ _ g'L g'K g'R) =
         Abstract.Cocomplete.calculatePushout f g
-      
+
       ruleHwithNACs = buildProduction (getLHS ruleH) (getRHS ruleH) nacsToAdd
-      
+
       f' = RuleMorphism ruleR ruleHwithNACs f'L f'K f'R
       g' = RuleMorphism ruleD ruleHwithNACs g'L g'K g'R
-      
+
       nacsToAdd = newNACs
         where
           transposedNACs = map (\nac -> fst (Abstract.Cocomplete.calculatePushout nac g'L)) (getNACs ruleD)
-          
+
           -- conf is used only to indicate AnyMatches, that is the most generic case for nacDownwardShift
           conf = MorphismsConfig AnyMatches MonomorphicNAC
           createdNACs = concatMap (nacDownwardShift conf f'L) (getNACs ruleR)
-          
+
           -- The new NACs are the transposed and the created that do not are included on the transposed
           newNACs =
             transposedNACs ++
@@ -75,38 +75,38 @@ instance AdhesiveHLR (RuleMorphism a b) where
       nodeTypesInAR = GM.applyNodeUnsafe (domain fR)
       edgeTypesInAR = GM.applyEdgeUnsafe (domain fR)
       graphAR = domain (domain fR)
-      
+
       (initBL, _, _) = calculateInitialPushout fL
       (bK, _, _) = calculateInitialPushout fK
       (initBR, _, _) = calculateInitialPushout fR
-      
+
       nodesBL = [n | n <- nodesFromDomain fL, isOrphanNode (getLHS fA) n, not (isOrphanNode (getLHS fA') (applyNodeUnsafe fL n))]
       edgesBL = [e | e <- edgesFromDomain fL, isOrphanEdge (getLHS fA) e, not (isOrphanEdge (getLHS fA') (applyEdgeUnsafe fL e))]
-      
+
       nodesBR = [n | n <- nodesFromDomain fR, isOrphanNode (getRHS fA) n, not (isOrphanNode (getRHS fA') (applyNodeUnsafe fR n))]
       edgesBR = [e | e <- edgesFromDomain fR, isOrphanEdge (getRHS fA) e, not (isOrphanEdge (getRHS fA') (applyEdgeUnsafe fR e))]
-      
+
       prebL = foldr (\n -> createNodeOnDomain n (nodeTypesInAL n) n) initBL nodesBL
       bL = foldr (\e -> createEdgeOnDomain e (src e) (tgt e) (edgeTypesInAL e) e) prebL edgesBL
         where
           src = sourceOfUnsafe graphAL
           tgt = targetOfUnsafe graphAL
-      
+
       prebR = foldr (\n -> createNodeOnDomain n (nodeTypesInAR n) n) initBR nodesBR
       bR = foldr (\e -> createEdgeOnDomain e (src e) (tgt e) (edgeTypesInAR e) e) prebR edgesBR
         where
           src = sourceOfUnsafe graphAR
           tgt = targetOfUnsafe graphAR
-      
+
       l = searchMorphism (compose bK (getLHS fA)) bL
       r = searchMorphism (compose bK (getRHS fA)) bR
       searchMorphism a b = commutingMorphism a b a b
-      
+
       ruleB = buildProduction l r []
       b = RuleMorphism ruleB fA bL bK bR
-      
+
       (d,c) = calculatePushoutComplement f b
-  
+
   calculatePushoutComplement (RuleMorphism _ ruleG matchL matchK matchR) (RuleMorphism ruleK ruleL leftL leftK leftR) = (k,l')
      where
        (matchL', leftL') = calculatePushoutComplement matchL leftL
@@ -118,20 +118,20 @@ instance AdhesiveHLR (RuleMorphism a b) where
        r = commutingMorphismSameCodomain
              (compose leftK' (getRHS ruleG)) leftR'
              matchK' (compose (getRHS ruleK) matchR')
-       
+
        notDeletedNACs = filter (\n -> all (\n' -> Prelude.null (findMorph n n')) (getNACs ruleL)) (getNACs ruleG)
          where
            findMorph :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
            findMorph a b = findMorphisms Monomorphism (domain a) (domain b)
-       
+
        validNACs = filter (satisfiesNACRewriting leftL') notDeletedNACs
-       
+
        newRuleNACs = map (\nac -> fst (calculatePushoutComplement nac leftL')) validNACs
 
        newRule = buildProduction l r newRuleNACs
        k = RuleMorphism ruleK newRule matchL' matchK' matchR'
        l' = RuleMorphism newRule ruleG leftL' leftK' leftR'
-  
+
   -- @
   --        g'
   --     X──────▶A
@@ -146,19 +146,19 @@ instance AdhesiveHLR (RuleMorphism a b) where
       (f'L, g'L) = calculatePullback fL gL
       (f'K, g'K) = calculatePullback fK gK
       (f'R, g'R) = calculatePullback fR gR
-      
+
       l = commutingMorphism
             (compose f'K (getLHS gB)) f'L
             (compose g'K (getLHS fA)) g'L
-      
+
       r = commutingMorphism
             (compose f'K (getRHS gB)) f'R
             (compose g'K (getRHS fA)) g'R
-      
+
       x = buildProduction l r []
       f' = RuleMorphism x gB f'L f'K f'R
       g' = RuleMorphism x fA g'L g'K g'R
-  
+
   hasPushoutComplement (restrictionG, g) (restrictionF, f) =
     hasPushoutComplement (restrictionG, mappingLeft g) (restrictionF, mappingLeft f)
     && hasPushoutComplement (restrictionG, mappingRight g) (restrictionF, mappingRight f)

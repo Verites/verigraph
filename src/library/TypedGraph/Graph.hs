@@ -13,8 +13,8 @@ module TypedGraph.Graph
 
 import           Abstract.Cardinality
 import           Abstract.Morphism
-import           Data.Maybe          (fromMaybe)
-import           Graph.Graph         as G
+import           Data.Maybe           (fromMaybe)
+import           Graph.Graph          as G
 import           Graph.GraphMorphism
 
 

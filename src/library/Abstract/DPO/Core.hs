@@ -4,9 +4,9 @@ module Abstract.DPO.Core
 
 where
 
-import Abstract.AdhesiveHLR
-import Abstract.Morphism
-import Abstract.Valid
+import           Abstract.AdhesiveHLR
+import           Abstract.Morphism
+import           Abstract.Valid
 
 -- | A Double-Pushout production.
 --
