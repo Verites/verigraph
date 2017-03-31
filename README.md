@@ -1,5 +1,4 @@
 # Verigraph [![Build Status](https://travis-ci.org/Verites/verigraph.svg?branch=master)](https://travis-ci.org/Verites/verigraph)
-=========
 
 <img src="./images/Verigraph.png" height="200px"/>
 
