@@ -1,5 +1,7 @@
-verigraph
+# Verigraph [![Build Status](https://travis-ci.org/Verites/verigraph.svg?branch=master)](https://travis-ci.org/Verites/verigraph)
 =========
+
+<img src="http://about.travis-ci.org/images/travis-mascot-200px.p" alt="The Verigraph Logo" style="width: 200px;"/>
 
 Software specification and verification tool based on graph rewriting
 
