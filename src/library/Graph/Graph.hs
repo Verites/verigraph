@@ -32,6 +32,10 @@ module Graph.Graph (
     , Graph.Graph.null
     , isNodeOf
     , isEdgeOf
+    , lookupNode
+    , lookupNodeInContext
+    , lookupEdge
+    , lookupEdgeInContext
     , isAdjacentTo
     , isIncidentTo
     , nodesOf
@@ -44,6 +48,7 @@ module Graph.Graph (
     -- * Construction
     , empty
     , build
+    , fromNodesAndEdges
 
     -- ** Insertion
     , insertNode
@@ -314,11 +319,25 @@ newEdges g = [succ maxEdge..]
 empty :: Graph n e
 empty = Graph [] []
 
--- | Build a graph from lists of nodes and edges. Edges with undefined source or target are ignored and omitted from the resulting graph. /O(v + e*v)/
+-- | Build a graph from lists of nodes and edges. Edges with undefined source or target are ignored
+-- and omitted from the resulting graph. /O(v + e*v)/
 build :: [Int] -> [(Int,Int,Int)] -> Graph n e
 build n   = foldr ((\(a,b,c) -> insertEdge a b c) . (\(a,b,c) -> (EdgeId a, NodeId b, NodeId c))) g
     where
         g = foldr (insertNode . NodeId) empty n
+
+
+-- | Build a graph from lists of nodes and edges. Edges with undefined source or target are ignored
+-- and omitted from the resulting graph. /O(v + e*v)/
+fromNodesAndEdges :: [Node n] -> [Edge e] -> Graph n e
+fromNodesAndEdges nodes edges =
+  Graph
+    [ (nodeId n, n) | n <- nodes ]
+    [ (edgeId e, e)
+        | e <- edges
+        , any (\n -> nodeId n == sourceId e) nodes
+        , any (\n -> nodeId n == targetId e) nodes
+    ]
 
 -- | Insert a node with given identifier into a graph, without payload. If a node with the given
 -- identifier aready exists, its payload is removed. /O(v)/.
@@ -426,6 +445,31 @@ edgesInContext graph@(Graph _ edges) =
 
 
 {-# DEPRECATED nodesOf, sourceOf, sourceOfUnsafe, targetOf, targetOfUnsafe, getIncidentEdges "This function performs unnecessary dictionary lookups. Try using lookupNode, lookupNodeInContext, nodes or nodesInContext instead." #-}
+
+-- | Look up the node with given identifier in the graph. /O(v)/.
+lookupNode :: NodeId -> Graph n e -> Maybe (Node n)
+lookupNode id (Graph nodes _) =
+  lookup id nodes
+
+
+-- | Look up the edge with given identifier in the graph. /O(e)/.
+lookupEdge :: EdgeId -> Graph n e -> Maybe (Edge e)
+lookupEdge id (Graph _ edges) =
+  lookup id edges
+
+
+-- | Look up the node with given identifier, along with its context, in the graph. /O(v)/.
+lookupNodeInContext :: NodeId -> Graph n e -> Maybe (NodeInContext n e)
+lookupNodeInContext id graph =
+  nodeInContext graph <$> lookupNode id graph
+
+
+-- | Look up the edge with given identifier, along with its context, in the graph.
+-- /O(e)/, plus the cost of evaluating the nodes of the result (see 'EdgeInContext').
+lookupEdgeInContext :: EdgeId -> Graph n e -> Maybe (EdgeInContext n e)
+lookupEdgeInContext id graph =
+  edgeInContext graph <$> lookupEdge id graph
+
 
 -- | Gets a pair containing the source and target of the given edge. /O(e)/.
 nodesOf :: Graph n e -> EdgeId -> Maybe (NodeId, NodeId)
