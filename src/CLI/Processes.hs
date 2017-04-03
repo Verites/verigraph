@@ -89,8 +89,12 @@ execute globalOpts opts = do
     putStrLn $ "Are the origins and terminations of elements unique?\n>>> " ++ show unique
 
     putStrLn "\n------------------\n"
-    putStrLn $ "Initial Graph is valid? \n>>> " ++ show (isValid $ GG.start sgg)
+    putStrLn $ "Is the initial graph valid? \n>>> " ++ show (isValid $ GG.start sgg)
     print (GG.start sgg)
+
+    putStrLn "\n------------------\n"
+    putStrLn $ "Is the final graph valid? \n>>> " ++ show (isValid $ finalGraph ogg)
+    print (finalGraph ogg)
 
     putStrLn "\n------------------\n"
     putStrLn $ "Is there a compatible concrete total order for rules?\n>>> " ++ show (findOrder rulesRelation rulesNames)

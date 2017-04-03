@@ -47,6 +47,7 @@ data OccurrenceGrammar a b = OccurrenceGrammar {
   singleTypedGrammar       :: Grammar (TypedGraphMorphism a b)
 , originalRulesWithMatches :: [NamedRuleWithMatches (TypedGraphMorphism a b)]
 , doubleType               :: TypedGraphMorphism a b
+, finalGraph               :: TypedGraph a b
 , originRelation           :: Relation
 , concreteRelation         :: Relation
 , restrictRelation         :: AbstractRelation
@@ -124,6 +125,14 @@ filterCreationRelation = S.filter bothElements
                         (Rule _, Edge _) -> True
                         _                -> False
 
+filterDeletionRelation :: Relation -> Relation
+filterDeletionRelation = S.filter bothElements
+  where
+    bothElements (x,y) = case (x,y) of
+                        (Node _, Rule _) -> True
+                        (Edge _, Rule _) -> True
+                        _                -> False
+
 createdElements :: Relation -> Set RelationItem
 createdElements elementsRelation =
   let
@@ -132,17 +141,27 @@ createdElements elementsRelation =
     created = monadToSet c
    in created
 
+deletedElements :: Relation -> Set RelationItem
+deletedElements elementsRelation =
+  let
+    m = setToMonad (filterDeletionRelation elementsRelation)
+    c = relationDomain m
+    deleted = monadToSet c
+  in deleted
+
 generateOccurrenceGrammar :: RuleSequence (TypedGraphMorphism a b) -> OccurrenceGrammar a b
-generateOccurrenceGrammar sequence = OccurrenceGrammar singleGrammar originalRulesWithMatches doubleType cdRelation relation empty
+generateOccurrenceGrammar sequence = OccurrenceGrammar singleGrammar originalRulesWithMatches doubleType finalGraph cdRelation relation empty
   where
     originalRulesWithMatches = calculateRulesColimit sequence -- TODO: unify this two functions
     newRules = generateGraphProcess sequence
     cdRelation = S.filter isRuleAndElement $ strictRelation newRules
     relation = occurrenceRelation newRules
     created = createdElements cdRelation
+    deleted = deletedElements cdRelation
     doubleType = getLHS . snd . head $ newRules
     coreGraph = codomain . codomain $ doubleType
     startGraph = removeElements coreGraph created
+    finalGraph = removeElements coreGraph deleted
     singleGrammar = grammar startGraph [] newRules
 
 isNode :: RelationItem -> Bool
@@ -272,6 +291,7 @@ calculateNacRelations ogg is = newOgg
               (singleTypedGrammar ogg)
               (originalRulesWithMatches ogg)
               (doubleType ogg)
+              (finalGraph ogg)
               (originRelation ogg)
               (buildTransitivity (concreteRelation ogg `union` dfs)) -- do the reflexive and transitive Closure
               absDfs
