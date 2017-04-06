@@ -7,8 +7,14 @@ import qualified Graph.GraphMorphism      as GM
 import           TypedGraph.Graph
 import           TypedGraph.Morphism.Core
 
+import           Control.Arrow
 import           Data.List                as L
 import           Data.Maybe
+
+instance FindMorphism (TypedGraphMorphism a b) where
+  induceSpanMorphism = induceSpan
+  findMorphisms = findMatches
+  partialInjectiveMatches = partialInjectiveMatches'
 
 -- | Given two lists of TypedGraphMorphism @fi : Ai -> B@ and @gi : Ai -> C@ it induces a Morphism
 -- @h : B -> C@ shuch that @h . fi = gi@ for all @i@. The lists must have the same length and must
@@ -17,43 +23,41 @@ induceSpan :: [TypedGraphMorphism a b] ->  [TypedGraphMorphism a b] -> TypedGrap
 induceSpan fs gs
   | Prelude.null fs = error "can not induce morphism from empty list of morphisms"
   | length fs /= length gs = error "morphisms list should have the same length"
-  | otherwise =
-    let h = initialSpanMorphism (head fs) (head gs)
-     in foldl buildSpanRelation h (zip fs gs)
+  | otherwise = foldl buildSpanRelation morphismH (zip fs gs)
+    where
+      morphismH = initialSpanMorphism (head fs) (head gs)
 
--- | given two TypedGraphMorphism @f : A -> B@ and @g : A -> C@ it builds a TypedGraphMorphism @h : B -> C@
+-- | Given two TypedGraphMorphism @f : A -> B@ and @g : A -> C@ it builds a TypedGraphMorphism @h : B -> C@
 -- with an empty mapping between the objects (auxiliary function)
 initialSpanMorphism :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
-initialSpanMorphism f g =
-  let typedB = codomain f
-      typedC = codomain g
-      b = domain typedB
-      c = domain typedC
-  in buildTypedGraphMorphism typedB typedC (GM.empty b c)
+initialSpanMorphism morphismF morphismG = buildTypedGraphMorphism domainH codomainH mappingH
+  where
+    domainH   = codomain morphismF
+    codomainH = codomain morphismG
+    mappingH  = GM.empty (domain domainH) (domain codomainH)
 
--- | given a TypedGraphMorphism @h : B -> C@ and a tuple of TypedGraphMorphism (f : A -> B, g : A -> C)
+
+-- | Given a TypedGraphMorphism @h : B -> C@ and a tuple of TypedGraphMorphism (f : A -> B, g : A -> C)
 -- it updates @h@ with a mapping from @B to C@ where @h . f = g@ (auxiliary function)
 buildSpanRelation :: TypedGraphMorphism a b ->  (TypedGraphMorphism a b, TypedGraphMorphism a b) -> TypedGraphMorphism a b
-buildSpanRelation new (f,g) =
-  let nodes = nodeIdsFromDomain f
-      edges = edgeIdsFromDomain f
-      nodeOnB = applyNodeUnsafe f
-      nodeOnC = applyNodeUnsafe g
-      edgeOnB = applyEdgeUnsafe f
-      edgeOnC = applyEdgeUnsafe g
-      newNodeRelation = map (\n -> (nodeOnB n, nodeOnC n)) nodes
-      newEdgeRelation = map (\e -> (edgeOnB e, edgeOnC e)) edges
-      updateN (s,t) = untypedUpdateNodeRelation s t
-      updateE (s,t) = updateEdgeRelation s t
-      n' = foldr updateN new newNodeRelation
-   in foldr updateE n' newEdgeRelation
+buildSpanRelation morphismH (morphismF, morphismG) =
+  buildSpanEdgeRelation (buildSpanNodeRelation morphismH (morphismF, morphismG)) (morphismF, morphismG)
 
-instance FindMorphism (TypedGraphMorphism a b) where
-  induceSpanMorphism = induceSpan
-  findMorphisms = findMatches
-  partialInjectiveMatches = partialInjectiveMatches'
+-- | Given a TypedGraphMorphism @h : B -> C@ and a tuple of TypedGraphMorphism (f : A -> B, g : A -> C)
+-- it updates @h@ with a mapping of edges from @B to C@ where @h . f = g@ (auxiliary function)
+buildSpanNodeRelation :: TypedGraphMorphism a b ->  (TypedGraphMorphism a b, TypedGraphMorphism a b) -> TypedGraphMorphism a b
+buildSpanNodeRelation morphismH (morphismF, morphismG) = foldr (uncurry untypedUpdateNodeRelation) morphismH newNodeRelation
+  where
+    newNodeRelation = map (applyNodeUnsafe morphismF &&& applyNodeUnsafe morphismG ) $ nodeIdsFromDomain morphismF
 
----------------------------------------------------------------------------------
+-- | Given a TypedGraphMorphism @h : B -> C@ and a tuple of TypedGraphMorphism (f : A -> B, g : A -> C)
+-- it updates @h@ with a mapping of edges from @B to C@ where @h . f = g@ (auxiliary function)
+buildSpanEdgeRelation :: TypedGraphMorphism a b ->  (TypedGraphMorphism a b, TypedGraphMorphism a b) -> TypedGraphMorphism a b
+buildSpanEdgeRelation morphismH (morphismF, morphismG) = foldr (uncurry updateEdgeRelation) morphismH newEdgeRelation
+  where
+    newEdgeRelation = map (applyEdgeUnsafe morphismF &&& applyEdgeUnsafe morphismG ) $ edgeIdsFromDomain morphismF
+
+------------------------------------------------------------------------------
 
 -- | Finds matches __/q/__ .
 --
@@ -63,7 +67,7 @@ partialInjectiveMatches' nac match = do
   let
     lhsNodes = nodeIds $ domain $ domain match
     lhsEdges = edgeIds $ domain $ domain match
-    q = preBuildQ nac match
+    q = initialSpanMorphism nac match
     q' = preBuildEdges q nac match lhsEdges
     q'' = case q' of
       Just q1 -> preBuildNodes q1 nac match lhsNodes
@@ -80,12 +84,7 @@ partialInjectiveMatches' nac match = do
         targetNodes = orphanTypedNodeIds q2
         targetEdges = orphanTypedEdgeIds q2
 
-preBuildQ :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
-preBuildQ nac match = buildTypedGraphMorphism qDomain qCodomain qMapping
-  where
-    qDomain   = codomain nac
-    qCodomain = codomain match
-    qMapping  = GM.empty (domain qDomain) (domain qCodomain)
+
 
 --VERIFY EDGES MAPPING N <- l AND L -> G AND BUILD A N -> G
 --PARTIAL EDGES MORPHISM
