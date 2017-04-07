@@ -23,11 +23,14 @@ library
                        MissingH >=1.1 && <1.5,
                        mtl >=2.2 && <2.3,
                        parsec >=3.1 && <3.2,
+                       process >=1.4 && <1.5,
                        QuickCheck >=2.8 && <2.10,
-                       semigroups >= 0.18,
-                       set-monad >= 0.2,
                        split >= 0.2,
-                       wl-pprint >=1.2 && <1.3
+                       semigroups >= 0.18 && <1.0,
+                       set-monad >= 0.2 && <1.0,
+                       text >=1.2 && <2.0,
+                       wl-pprint >=1.2 && <1.3,
+                       wl-pprint-text >=1.1 && <1.2
   exposed-modules:     Abstract.AdhesiveHLR
                        Abstract.Cardinality
                        Abstract.Cocomplete
@@ -56,6 +59,9 @@ library
                        SndOrder.Morphism
                        SndOrder.Morphism.NACmanipulation
                        SndOrder.Rule
+                       SymbolicGraph.DataAlgebra
+                       SymbolicGraph.DataAlgebra.Parser
+                       SymbolicGraph.DataAlgebra.QuickCheck
                        TypedGraph.DPO.GraphProcess
                        TypedGraph.DPO.GraphRule
                        TypedGraph.DPO.OccurenceRelation
@@ -89,6 +95,12 @@ library
                        SndOrder.Morphism.FindMorphism
                        SndOrder.Rule.Core
                        SndOrder.Rule.DPO
+                       SymbolicGraph.DataAlgebra.Core
+                       SymbolicGraph.DataAlgebra.PrettyPrint
+                       SymbolicGraph.DataAlgebra.Solver
+                       SymbolicGraph.DataAlgebra.Solver.Cvc4
+                       SymbolicGraph.DataAlgebra.Solver.SmtLib
+                       SymbolicGraph.Core
                        Util.Closures
                        Util.List
                        XML.Formulas
@@ -143,8 +155,10 @@ test-suite HSpecTests
   type:                exitcode-stdio-1.0
   build-depends:       base, verigraph,
                        containers,
-                       wl-pprint,
+                       parsec,
                        QuickCheck,
+                       wl-pprint,
+                       wl-pprint-text,
                        hspec >=2.4,
                        hspec-discover >=2.4,
                        HUnit >=1.3.1.2
