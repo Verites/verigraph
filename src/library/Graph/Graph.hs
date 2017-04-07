@@ -137,17 +137,17 @@ instance Enum EdgeId where
 data Node n =
   Node
     { nodeId   :: NodeId
-    , nodeInfo :: Maybe n
+    , nodeInfo :: n
     } deriving (Show)
 
 
 -- | Edges from within a graph.
-data Edge a =
+data Edge e =
   Edge
     { edgeId   :: EdgeId
     , sourceId :: NodeId
     , targetId :: NodeId
-    , edgeInfo :: Maybe a
+    , edgeInfo :: e
     } deriving (Show)
 
 
@@ -159,10 +159,10 @@ data Edge a =
 -- same graph.
 --
 -- Equality tests cost /O(v² + e²)/, and disregards the payloads.
-data Graph a b =
+data Graph n e =
   Graph
-    { nodeMap :: [(NodeId, Node a)]
-    , edgeMap :: [(EdgeId, Edge b)]
+    { nodeMap :: [(NodeId, Node n)]
+    , edgeMap :: [(EdgeId, Edge e)]
     }
 
 
@@ -321,7 +321,7 @@ empty = Graph [] []
 
 -- | Build a graph from lists of nodes and edges. Edges with undefined source or target are ignored
 -- and omitted from the resulting graph. /O(v + e*v)/
-build :: [Int] -> [(Int,Int,Int)] -> Graph n e
+build :: [Int] -> [(Int,Int,Int)] -> Graph (Maybe n) (Maybe e)
 build n   = foldr ((\(a,b,c) -> insertEdge a b c) . (\(a,b,c) -> (EdgeId a, NodeId b, NodeId c))) g
     where
         g = foldr (insertNode . NodeId) empty n
@@ -341,7 +341,7 @@ fromNodesAndEdges nodes edges =
 
 -- | Insert a node with given identifier into a graph, without payload. If a node with the given
 -- identifier aready exists, its payload is removed. /O(v)/.
-insertNode :: NodeId -> Graph n e -> Graph n e
+insertNode :: NodeId -> Graph (Maybe n) e -> Graph (Maybe n) e
 insertNode n (Graph ns es) =
     Graph (addToAL ns n (Node n Nothing)) es
 
@@ -349,12 +349,12 @@ insertNode n (Graph ns es) =
 -- identifier already exists, its payload is updated. /O(v)/.
 insertNodeWithPayload :: NodeId -> n -> Graph n e -> Graph n e
 insertNodeWithPayload n p (Graph ns es) =
-    Graph (addToAL ns n (Node n (Just p))) es
+    Graph (addToAL ns n (Node n p)) es
 
 -- | (@insertEdge e src tgt g@) will insert an edge with identifier @e@ from @src@ to @tgt@ in graph
 -- @g@, without payload. If @src@ or @tgt@ are not nodes of @g@, the graph is not modified. If an
 -- edge with identifier @e@ already exists, it is updated. /O(v + e)/.
-insertEdge :: EdgeId -> NodeId -> NodeId -> Graph n e -> Graph n e
+insertEdge :: EdgeId -> NodeId -> NodeId -> Graph n (Maybe e) -> Graph n (Maybe e)
 insertEdge e src tgt g@(Graph ns es)
     | src `elem` keysAL ns && tgt `elem` keysAL ns =
         Graph ns (addToAL es e (Edge e src tgt Nothing))
@@ -366,7 +366,7 @@ insertEdge e src tgt g@(Graph ns es)
 insertEdgeWithPayload :: EdgeId -> NodeId -> NodeId -> e -> Graph n e -> Graph n e
 insertEdgeWithPayload e src tgt p g@(Graph ns es)
     | src `elem` keysAL ns && tgt `elem` keysAL ns =
-        Graph ns (addToAL es e (Edge e src tgt (Just p)))
+        Graph ns (addToAL es e (Edge e src tgt p))
     | otherwise = g
 
 -- | Removes the given node from the graph, unless it has any incident edges. /O(v + e²)/.
@@ -389,7 +389,7 @@ updateNodePayload nodeId graph@(Graph nodes _) f =
     Just node ->
       let
         updatedNode =
-          node { nodeInfo = f <$> nodeInfo node }
+          node { nodeInfo = f (nodeInfo node) }
       in
         graph { nodeMap = addToAL nodes nodeId updatedNode }
 
@@ -404,7 +404,7 @@ updateEdgePayload edgeId graph@(Graph _ edges) f =
     Just edge ->
       let
         updatedEdge =
-          edge { edgeInfo = f <$> edgeInfo edge }
+          edge { edgeInfo = f (edgeInfo edge) }
 
       in
         graph { edgeMap = addToAL edges edgeId updatedEdge }

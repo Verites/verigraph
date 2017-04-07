@@ -19,17 +19,17 @@ import           Graph.GraphMorphism
 
 
 -- | A typed graph is a morphism whose codomain is the type graph.
-type TypedGraph a b = GraphMorphism a b
+type TypedGraph a b = GraphMorphism (Maybe a) (Maybe b)
 
 instance Cardinality (GraphMorphism a b) where
   cardinality = cardinality . domain
 
 -- | Obtain the untyped version of the typed graph
-untypedGraph :: TypedGraph a b -> Graph a b
+untypedGraph :: TypedGraph a b -> Graph (Maybe a) (Maybe b)
 untypedGraph = domain
 
 -- | Obtain the type graph from a typed graph
-typeGraph :: TypedGraph a b -> Graph a b
+typeGraph :: TypedGraph a b -> Graph (Maybe a) (Maybe b)
 typeGraph = codomain
 
 -- | Test if the typed graph is empty

@@ -13,11 +13,11 @@ import           TypedGraph.Graph
 data TypedGraphMorphism a b = TypedGraphMorphism {
                               getDomain   :: TypedGraph a b
                             , getCodomain :: TypedGraph a b
-                            , mapping     :: GraphMorphism a b
+                            , mapping     :: GraphMorphism (Maybe a) (Maybe b)
                          } deriving (Eq, Show)
 
 -- | Given two @TypedGraph@s @G1@ and @G2@ and a simple @GraphMorphism@ between them, it returns a @TypedGraphMorphism@ from @G1@ to @G2@
-buildTypedGraphMorphism :: TypedGraph a b -> TypedGraph a b -> GraphMorphism a b -> TypedGraphMorphism a b
+buildTypedGraphMorphism :: TypedGraph a b -> TypedGraph a b -> GraphMorphism (Maybe a) (Maybe b) -> TypedGraphMorphism a b
 buildTypedGraphMorphism = TypedGraphMorphism
 
 instance Morphism (TypedGraphMorphism a b) where
@@ -64,11 +64,11 @@ applyEdge :: TypedGraphMorphism a b -> EdgeId -> Maybe EdgeId
 applyEdge tgm = GM.applyEdge (mapping tgm)
 
 -- | Return the domain graph
-graphDomain :: TypedGraphMorphism a b -> Graph a b
+graphDomain :: TypedGraphMorphism a b -> Graph (Maybe a) (Maybe b)
 graphDomain = untypedGraph . domain
 
 -- | Return the codomain graph
-graphCodomain :: TypedGraphMorphism a b -> Graph a b
+graphCodomain :: TypedGraphMorphism a b -> Graph (Maybe a) (Maybe b)
 graphCodomain = untypedGraph . codomain
 
 -- | Given a @TypedGraphMorphism@ @__t__@and a node @n@ in the domain of @__t__@, return the node in the image
@@ -181,8 +181,8 @@ removeEdgeFromCodomain e tgm =
 isPartialInjective :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
 isPartialInjective nac q = GM.isPartialInjective (mapping nac) (mapping q)
 
--- | Creates a TypedGraphMorphism mapping the same elements of theirs codomains, from @tgm1@ to @tgm2@
-idMap :: GM.GraphMorphism a b -> GM.GraphMorphism a b -> TypedGraphMorphism a b
+-- | Creates a TypedGraphMorphism mapping nodes and edges according to their identifiers.
+idMap :: TypedGraph a b -> TypedGraph a b -> TypedGraphMorphism a b
 idMap gm1 gm2 =
   buildTypedGraphMorphism gm1 gm2 edgesUpdate
     where
@@ -207,8 +207,8 @@ reflectIdsFromTypeGraph tgm =
     newMaps = GM.buildGraphMorphism (domain newDomain) (domain newCodomain) (map (\(NodeId x) -> (x,x)) (nodeIds $ domain newDomain)) (map (\(EdgeId x) -> (x,x)) (edgeIds $ domain newDomain))
   in buildTypedGraphMorphism newDomain newCodomain newMaps
 
--- | Given a TypedGraphMorphism tgm, creates an isomorphic TypedGraphMorphism tgm' where the nodes and edges in the domain have the same ids
--- as the ones in the codomain
+-- | Given a TypedGraphMorphism tgm, creates an isomorphic TypedGraphMorphism tgm' where the nodes
+-- and edges in the domain have the same ids as the ones in the codomain
 reflectIdsFromCodomain :: TypedGraphMorphism a b -> TypedGraphMorphism a b
 reflectIdsFromCodomain tgm =
   let

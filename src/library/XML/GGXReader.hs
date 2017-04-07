@@ -38,7 +38,7 @@ import           XML.ParsedTypes
 import           XML.Utilities
 import           XML.XMLUtilities
 
-type TypeGraph a b = G.Graph a b
+type TypeGraph a b = G.Graph (Maybe a) (Maybe b)
 
 -- | Reads the grammar in the XML, adds the needed minimal safety nacs
 --   to second order, and returns the grammar and a log
@@ -227,7 +227,7 @@ instantiateRule typeGraph ((_, lhs, rhs, mappings), nacs) = buildProduction lhsT
     (lhsTgm, rhsTgm) = instantiateSpan lm rm mappings
     nacsTgm = map (instantiateNac lm typeGraph) nacs
 
-instantiateNac :: TypedGraph a b -> G.Graph a b -> Nac -> TypedGraphMorphism a b
+instantiateNac :: TypedGraph a b -> G.Graph (Maybe a) (Maybe b) -> Nac -> TypedGraphMorphism a b
 instantiateNac lhs tg (nacGraph, maps) = nacTgm
   where
     nacMorphism = instantiateTypedGraph nacGraph tg
@@ -261,7 +261,7 @@ translateFormula m formula =
       F.Or formula' formula''  -> Or (translateFormula m formula') (translateFormula m formula'')
       F.And formula' formula'' -> And (translateFormula m formula') (translateFormula m formula'')
 
-instantiateTypedGraph :: ParsedTypedGraph -> TypeGraph a b -> GraphMorphism a b
+instantiateTypedGraph :: ParsedTypedGraph -> TypeGraph a b -> GraphMorphism (Maybe a) (Maybe b)
 instantiateTypedGraph (_, nodes, edges) tg = buildGraphMorphism g tg nodeTyping edgeTyping
   where
     g = G.build nodesG edgesG

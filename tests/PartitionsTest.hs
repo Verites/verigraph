@@ -33,7 +33,7 @@ tests =
         ]
         )
 
-getPart :: GraphMorphism a b -> [TypedGraphMorphism a b]
+getPart :: GraphMorphism (Maybe a) (Maybe b) -> [TypedGraphMorphism a b]
 getPart = createAllSubobjects False
 
 limitBellNumber = 8

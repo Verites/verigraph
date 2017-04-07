@@ -39,7 +39,7 @@ createSatisfyingNacsDisjointUnion (g,injG) (n,injN) = disjointUnionGraphs left r
 countIncidentMap :: Eq a => (a -> Maybe a) -> [a] -> a -> Int
 countIncidentMap f l y = length $ filter (\x -> f x == Just y) l
 
-graphMorphismToPartitionGraph :: ([NodeId],[EdgeId]) -> GraphMorphism a b -> Bool -> Int -> (GP.Graph,Int)
+graphMorphismToPartitionGraph :: ([NodeId],[EdgeId]) -> GraphMorphism (Maybe a) (Maybe b) -> Bool -> Int -> (GP.Graph,Int)
 graphMorphismToPartitionGraph inj@(injNodes,_) morfL side id = ((nodes',edges'), nextId)
    where
       graphL = M.domain morfL
@@ -54,7 +54,7 @@ nodesToPartitionNodes injNodes tg side id (NodeId b:xs) = GP.Node n b id flag si
      Just (NodeId n) = GM.applyNode tg (NodeId b)
      flag = NodeId b `elem` injNodes
 
-edgesToPartitionEdges :: ([NodeId],[EdgeId]) -> TypedGraph a b -> Bool -> Graph a b -> Int -> [EdgeId] -> [GP.Edge]
+edgesToPartitionEdges :: ([NodeId],[EdgeId]) -> TypedGraph a b -> Bool -> Graph (Maybe a) (Maybe b) -> Int -> [EdgeId] -> [GP.Edge]
 edgesToPartitionEdges _        _  _    _ _  []            = []
 edgesToPartitionEdges inj@(injNodes,injEdges) tg side g id (EdgeId b:xs) = GP.Edge typ b id src tgt flag side : edgesToPartitionEdges inj tg side g (id+1) xs
    where

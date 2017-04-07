@@ -590,5 +590,5 @@ writeAdditionalEdgeLayout =
   mkelem "additionalLayout"
   [ sattr "aktlength" "200", sattr "force" "10", sattr "preflength" "200" ] []
 
-typeGraph :: Grammar (TypedGraphMorphism a b) -> G.Graph a b
+typeGraph :: Grammar (TypedGraphMorphism a b) -> G.Graph (Maybe a) (Maybe b)
 typeGraph = codomain . start

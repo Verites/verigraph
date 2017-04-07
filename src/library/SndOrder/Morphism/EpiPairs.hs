@@ -3,8 +3,7 @@ module SndOrder.Morphism.EpiPairs where
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Morphism
-import           Graph.GraphMorphism    hiding (applyEdge, applyEdgeUnsafe,
-                                         applyNode, applyNodeUnsafe)
+import           TypedGraph.Graph       (TypedGraph)
 import           TypedGraph.Morphism
 
 import           SndOrder.Morphism.Core
@@ -64,8 +63,8 @@ instance EpiPairs (RuleMorphism a b) where
 --      K2─────▶S2
 --        sideM2
 -- @
-createSideRule :: Bool -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> GraphMorphism a b
-            -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> GraphMorphism a b
+createSideRule :: Bool -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraph a b
+            -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraph a b
             -> [(TypedGraphMorphism a b, TypedGraphMorphism a b, TypedGraphMorphism a b)]
 createSideRule inj k1 sideM1 s1 k2 sideM2 s2 = d
   where

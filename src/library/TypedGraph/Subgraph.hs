@@ -18,11 +18,10 @@ subgraphs g = subEdges
 
     subNodes = decisionTreeNodes listNodesToAdd emptyGraph
 
-    listEdgesToAdd = [(e,
-                       sourceOfUnsafe graph e,
-                       targetOfUnsafe graph e,
-                       extractEdgeType g e)
-                       | e <- edgeIds graph]
+    listEdgesToAdd =
+      [ (e, srcId, tgtId, extractEdgeType g e)
+          | (Edge e srcId tgtId _) <- edges graph
+      ]
 
     subEdges = concatMap (decisionTreeEdges listEdgesToAdd) subNodes
 

@@ -19,7 +19,7 @@ mountTypedGraphMorphisms tg1 tg2 graphPartition = (mountTGM True tg1, mountTGM F
     typedGraph = mountTypedGraph graphPartition typeGraph
     mountTGM side match = TGM.buildTypedGraphMorphism match typedGraph (mountMapping side graphPartition match)
 
-mountGraph :: GP.GraphPartition -> G.Graph a b
+mountGraph :: GP.GraphPartition -> G.Graph (Maybe a) (Maybe b)
 mountGraph (nodes,edges) = G.build nodes' edges'
   where
     nodes' = map (\(n:_) -> GP.nodeId n) nodes
@@ -28,14 +28,14 @@ mountGraph (nodes,edges) = G.build nodes' edges'
     nodeTgt e = GP.nodeId $ GP.getNode (nodeNameAndSource (GP.target e)) nodes
     nodeNameAndSource node = (nodeName node, nodeFromLeft node)
 
-mountTypedGraph :: GP.GraphPartition -> G.Graph a b -> TypedGraph a b
+mountTypedGraph :: GP.GraphPartition -> G.Graph (Maybe a) (Maybe b) -> TypedGraph a b
 mountTypedGraph graphPartition typeGraph = GM.buildGraphMorphism graph typeGraph nodes edges
   where
     nodes = map (\(n:_) -> (GP.nodeId n, GP.nodeType n)) (fst graphPartition)
     edges = map (\(e:_) -> (GP.edgeId e, GP.edgeType e)) (snd graphPartition)
     graph = mountGraph graphPartition
 
-mountMapping :: Bool -> GP.GraphPartition -> GM.GraphMorphism a b -> GM.GraphMorphism a b
+mountMapping :: Bool -> GP.GraphPartition -> GM.GraphMorphism (Maybe a) (Maybe b) -> GM.GraphMorphism (Maybe a) (Maybe b)
 mountMapping side g@(nodes,edges) m = GM.buildGraphMorphism (domain m) (mountGraph g) nods edgs
   where
     nods = map (\(G.NodeId n) -> (n, nodeId n)) (G.nodeIds (domain m))

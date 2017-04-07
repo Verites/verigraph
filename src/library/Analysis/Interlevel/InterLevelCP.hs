@@ -73,10 +73,10 @@ interLevelConflictOneMatch conf sndRule match = m0s
 
     m0s = concatMap defineMatches (removeDuplicated relevantGraphs)
 
-removeDuplicated :: [GraphMorphism a b] -> [GraphMorphism a b]
+removeDuplicated :: [GraphMorphism (Maybe a) (Maybe b)] -> [GraphMorphism (Maybe a) (Maybe b)]
 removeDuplicated = nubBy (\x y -> not $ Prelude.null $ find x y)
   where
-    find :: GraphMorphism a b -> GraphMorphism a b -> [TypedGraphMorphism a b]
+    find :: GraphMorphism (Maybe a) (Maybe b) -> GraphMorphism (Maybe a) (Maybe b) -> [TypedGraphMorphism a b]
     find = findMorphisms Isomorphism
 
 -- | For a relevant graph, gets all matches and check conflict

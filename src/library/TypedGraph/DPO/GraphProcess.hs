@@ -169,7 +169,7 @@ isNode x = case x of
            Node _ -> True
            _      -> False
 
-removeElements :: Graph a b -> Set RelationItem -> TypedGraph a b
+removeElements :: Graph (Maybe a) (Maybe b) -> Set RelationItem -> TypedGraph a b
 removeElements coreGraph elementsToRemove =
   let
     (n,e) = S.partition isNode elementsToRemove

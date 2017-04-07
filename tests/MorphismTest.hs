@@ -10,7 +10,7 @@ import           Utils
 
 -- Type shorthands
 type TGM a b = TGM.TypedGraphMorphism a b
-type GM a b = GM.GraphMorphism a b
+type GM a b = GM.GraphMorphism (Maybe a) (Maybe b)
 type CanonicalMorphism = ([(NodeId, NodeId)], [(EdgeId, EdgeId)])
 
 main :: IO()
@@ -67,7 +67,7 @@ genericTest src tgt = (sort . map toCanonical $ mono src tgt,
 
 
 --Testing Graphs
-typegraph :: Graph a b
+typegraph :: Graph (Maybe a) (Maybe b)
 typegraph = build [1,2] [(3,1,1),(4,2,2),(5,1,2),(6,2,1)]
 
 

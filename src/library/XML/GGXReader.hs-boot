@@ -6,6 +6,6 @@ import           TypedGraph.Morphism
 import           TypedGraph.Graph
 import           XML.ParsedTypes
 
-instantiateRule :: G.Graph a b -> RuleWithNacs -> GraphRule a b
+instantiateRule :: G.Graph (Maybe a) (Maybe b) -> RuleWithNacs -> GraphRule a b
 
 instantiateSpan :: TypedGraph a b -> TypedGraph a b -> [Mapping] -> (TypedGraphMorphism a b, TypedGraphMorphism a b)

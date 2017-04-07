@@ -56,8 +56,8 @@ preservedEdges :: GraphRule a b -> [G.EdgeId]
 preservedEdges = edgesFromDomain . getLHS
 
 -- | Returns an empty GraphRule
-emptyGraphRule :: Graph a b -> Production (TypedGraphMorphism a b)
-emptyGraphRule typegraph = emptyRule
+emptyGraphRule :: Graph (Maybe a) (Maybe b) -> Production (TypedGraphMorphism a b)
+emptyGraphRule typegraph = undefined
   where
     emptyGraph = empty
     emptyGM = GM.empty emptyGraph typegraph
@@ -67,7 +67,7 @@ emptyGraphRule typegraph = emptyRule
 type ListOfNodesAndEdges = ([(Int,Int)],[(Int,Int,Int,Int)])
 
 -- | It builds a GraphRule with lists of deleted, created, preserved and forbidden elements
-buildGraphRule :: Graph a b -> ListOfNodesAndEdges -> ListOfNodesAndEdges -> ListOfNodesAndEdges -> [ListOfNodesAndEdges] -> Production (TypedGraphMorphism a b)
+buildGraphRule :: Graph (Maybe a) (Maybe b) -> ListOfNodesAndEdges -> ListOfNodesAndEdges -> ListOfNodesAndEdges -> [ListOfNodesAndEdges] -> Production (TypedGraphMorphism a b)
 buildGraphRule typegraph deleted created (preservedNodes, preservedEdges) nacs = resultingRule
   where
     -- Creates a typedgraph with the preserved elements and mounts an initial rule with preserves them

@@ -124,7 +124,7 @@ preBuildNodes tgm nac match (h:t) = do
 -- | Finds matches __/m/__
 --
 --   Injective, surjective, isomorphic or all possible matches
-findMatches :: MorphismType -> GM.GraphMorphism a b-> GM.GraphMorphism a b -> [TypedGraphMorphism a b]
+findMatches :: MorphismType -> GM.GraphMorphism (Maybe a) (Maybe b) -> GM.GraphMorphism (Maybe a) (Maybe b) -> [TypedGraphMorphism a b]
 findMatches prop graph1 graph2 =
   completeMappings prop tgm (sourceNodes, sourceEdges) (targetNodes, targetEdges)
   where
@@ -250,5 +250,5 @@ updateEdgesMapping e1 e2 edgesT tgm =
     then Just $ buildTypedGraphMorphism d c (GM.updateEdges e1 e2 m)
     else Nothing
 
-decomposeTypedGraphMorphism :: TypedGraphMorphism a b -> (GM.GraphMorphism a b, GM.GraphMorphism a b, GM.GraphMorphism a b)
+decomposeTypedGraphMorphism :: TypedGraphMorphism a b -> (GM.GraphMorphism (Maybe a) (Maybe b), GM.GraphMorphism (Maybe a) (Maybe b), GM.GraphMorphism (Maybe a) (Maybe b))
 decomposeTypedGraphMorphism tgm = (domain tgm, codomain tgm, mapping tgm)
