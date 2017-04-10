@@ -11,12 +11,13 @@ import           TypedGraph.Morphism
 import           SndOrder.Morphism.Cocomplete       ()
 import           SndOrder.Morphism.CommutingSquares
 import           SndOrder.Morphism.Core
+import           SndOrder.Morphism.NACmanipulation
 
 instance AdhesiveHLR (RuleMorphism a b) where
 
   -- Pushout for second-order with creation of NACs.
   -- It runs the pushout without NACs (from cocomplete),
-  -- generates all NACs (considering arbitrary matches) for the rule H,
+  -- generates all NACs (considering arbitrary matches) for the rule P,
   -- and updates the morphisms f and g to get the new NACs.
   --
   -- @
@@ -25,34 +26,24 @@ instance AdhesiveHLR (RuleMorphism a b) where
   --    │       │
   --  f │       │ f'
   --    ▼       ▼
-  --    D──────▶H
+  --    D──────▶P
   --       g'
   -- @
   calculatePushout f@(RuleMorphism _ ruleD _ _ _) g@(RuleMorphism _ ruleR _ _ _) = (f',g')
     where
-      (RuleMorphism _ ruleH f'L f'K f'R,RuleMorphism _ _ g'L g'K g'R) =
+      (RuleMorphism _ preRuleP f'L f'K f'R,RuleMorphism _ _ g'L g'K g'R) =
         Abstract.Cocomplete.calculatePushout f g
 
-      ruleHwithNACs = buildProduction (getLHS ruleH) (getRHS ruleH) nacsToAdd
+      ruleP = buildProduction (getLHS preRuleP) (getRHS preRuleP) nacsToAdd
 
-      f' = RuleMorphism ruleR ruleHwithNACs f'L f'K f'R
-      g' = RuleMorphism ruleD ruleHwithNACs g'L g'K g'R
+      f' = RuleMorphism ruleR ruleP f'L f'K f'R
+      g' = RuleMorphism ruleD ruleP g'L g'K g'R
+      
+      transposedNACs = map (\nac -> fst (Abstract.Cocomplete.calculatePushout nac g'L)) (getNACs ruleD)
 
-      nacsToAdd = newNACs
-        where
-          transposedNACs = map (\nac -> fst (Abstract.Cocomplete.calculatePushout nac g'L)) (getNACs ruleD)
+      createdNACs = createStep ShiftNACs f'L (getNACs ruleR)
 
-          -- conf is used only to indicate AnyMatches, that is the most generic case for nacDownwardShift
-          conf = MorphismsConfig AnyMatches MonomorphicNAC
-          createdNACs = concatMap (nacDownwardShift conf f'L) (getNACs ruleR)
-
-          -- The new NACs are the transposed and the created that do not are included on the transposed
-          newNACs =
-              transposedNACs ++
-              filter (\n -> all (Prelude.null . findIso n) transposedNACs) createdNACs
-            where
-              findIso :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
-              findIso a b = findMorphisms Isomorphism (domain a) (domain b)
+      nacsToAdd = transposedNACs ++ createdNACs
 
   -- This function for second-order must run the first-order initial
   -- pushouts and after add elements to the boundary (B) rule if
@@ -107,30 +98,42 @@ instance AdhesiveHLR (RuleMorphism a b) where
 
       (d,c) = calculatePushoutComplement f b
 
+  -- Pushout Complement for second-order with deletion and transposing of NACs.
+  -- It runs the pushout complement without NACs,
+  -- filters the NACs in the matched rule (ruleG) selecting the non deleted,
+  -- and updates the rule H with the transposed NACs.
+  --
+  -- @
+  --        l
+  --    L◀──────K
+  --    │       │
+  --  m │       │ k
+  --    ▼       ▼
+  --    G◀──────H
+  --        l'
+  -- @
+  -- calculatePushoutComplement m l = (k,l')
   calculatePushoutComplement (RuleMorphism _ ruleG matchL matchK matchR) (RuleMorphism ruleK ruleL leftL leftK leftR) = (k,l')
      where
        (matchL', leftL') = calculatePushoutComplement matchL leftL
        (matchK', leftK') = calculatePushoutComplement matchK leftK
        (matchR', leftR') = calculatePushoutComplement matchR leftR
-       l = commutingMorphismSameCodomain
+       leftH = commutingMorphismSameCodomain
              (compose leftK' (getLHS ruleG)) leftL'
              matchK' (compose (getLHS ruleK) matchL')
-       r = commutingMorphismSameCodomain
+       rightH = commutingMorphismSameCodomain
              (compose leftK' (getRHS ruleG)) leftR'
              matchK' (compose (getRHS ruleK) matchR')
 
-       notDeletedNACs = filter (\n -> all (Prelude.null . findMorph n) (getNACs ruleL)) (getNACs ruleG)
-         where
-           findMorph :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
-           findMorph a b = findMorphisms Monomorphism (domain a) (domain b)
+       notDeletedNACs = deleteStep InitialPushouts matchL (getNACs ruleL) (getNACs ruleG)
 
        validNACs = filter (satisfiesNACRewriting leftL') notDeletedNACs
 
        newRuleNACs = map (\nac -> fst (calculatePushoutComplement nac leftL')) validNACs
 
-       newRule = buildProduction l r newRuleNACs
-       k = RuleMorphism ruleK newRule matchL' matchK' matchR'
-       l' = RuleMorphism newRule ruleG leftL' leftK' leftR'
+       ruleH = buildProduction leftH rightH newRuleNACs
+       k = RuleMorphism ruleK ruleH matchL' matchK' matchR'
+       l' = RuleMorphism ruleH ruleG leftL' leftK' leftR'
 
   -- @
   --        g'

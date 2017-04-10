@@ -56,7 +56,7 @@ instance Cocomplete (RuleMorphism a b) where
       initGraph = initialObject (getLHS (domain morph))
 
 coequalizerTGM :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
-coequalizerTGM a b = calculateCoequalizer a b
+coequalizerTGM = calculateCoequalizer
 
 coproductCod :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> (TypedGraphMorphism a b, TypedGraphMorphism a b)
 coproductCod a b = calculateCoproduct (codomain a) (codomain b)

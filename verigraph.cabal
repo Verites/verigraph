@@ -83,6 +83,7 @@ library
                        SndOrder.Morphism.Core
                        SndOrder.Morphism.EpiPairs
                        SndOrder.Morphism.FindMorphism
+                       SndOrder.Morphism.NACmanipulation
                        SndOrder.Rule.Core
                        SndOrder.Rule.DPO
                        Util.Closures
