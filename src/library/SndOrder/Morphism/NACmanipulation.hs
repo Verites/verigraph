@@ -3,7 +3,6 @@ module SndOrder.Morphism.NACmanipulation where
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Morphism
-import qualified Graph.GraphMorphism                as GM
 import           TypedGraph.Morphism
 import           SndOrder.Morphism.Cocomplete       ()
 
@@ -15,7 +14,7 @@ deleteStep :: DeleteScheme -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
 deleteStep DisableDelete _ _ concreteNACs = concreteNACs
 
 deleteStep Monomorphisms _ modeledNACs concreteNACs =
-  [nn' | nn' <- concreteNACs, all (\nn -> maintainTest nn nn') modeledNACs]
+  [nn' | nn' <- concreteNACs, all (`maintainTest` nn') modeledNACs]
     where
       findMorph :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
       findMorph a b = findMorphisms Monomorphism (codomain a) (codomain b)
@@ -27,7 +26,7 @@ deleteStep Monomorphisms _ modeledNACs concreteNACs =
 deleteStep InitialPushouts _ modeledNACs concreteNACs =
   [fst nn' | nn' <- ipoConcrete, all (\nn -> not (verifyIsoBetweenMorphisms nn (snd nn'))) ipoModeled]
   where
-    ipoModeled = map (\(_,x,_) -> x) (map calculateInitialPushout modeledNACs)
+    ipoModeled = map ((\ (_, x, _) -> x) . calculateInitialPushout) modeledNACs
     ipoConcrete = map (\(n,(_,x,_)) -> (n,x)) (zip concreteNACs (map calculateInitialPushout concreteNACs))
 
 verifyIsoBetweenMorphisms :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
@@ -37,7 +36,7 @@ verifyIsoBetweenMorphisms n n' = not $ Prelude.null comb
     findIsoCod = findIso codomain n n'
     comb = [(d,c) | d <- findIsoDom, c <- findIsoCod, compose d n' == compose n c]
 
-findIso :: (TypedGraphMorphism a b -> GM.GraphMorphism a b) -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
+findIso :: FindMorphism m => (t -> Obj m) -> t -> t -> [m]
 findIso f x y = findMorphisms Isomorphism (f x) (f y)
 
 -- | Auxiliar structure and function to create first-order NACs
@@ -48,7 +47,7 @@ createStep :: CreateScheme -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
 createStep DisableCreate _ _ = []
 
 createStep Pushout match modeledNACs =
-  map snd $ map (Abstract.AdhesiveHLR.calculatePushout match) modeledNACs
+  map (snd . calculatePushout match) modeledNACs
 
 createStep ShiftNACs match modeledNACs =
   concatMap (nacDownwardShift conf match) modeledNACs
