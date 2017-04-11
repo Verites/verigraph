@@ -23,10 +23,11 @@ library
                        MissingH >=1.1 && <1.5,
                        mtl >=2.2 && <2.3,
                        parsec >=3.1 && <3.2,
-                       split >= 0.2,
-                       wl-pprint >=1.2 && <1.3,
+                       QuickCheck >=2.8 && <2.10,
                        semigroups >= 0.18,
-                       set-monad >= 0.2
+                       set-monad >= 0.2,
+                       split >= 0.2,
+                       wl-pprint >=1.2 && <1.3
   exposed-modules:     Abstract.AdhesiveHLR
                        Abstract.Cardinality
                        Abstract.Cocomplete
@@ -47,6 +48,7 @@ library
                        Image.Dot
                        Graph.Graph
                        Graph.GraphMorphism
+                       Graph.QuickCheck
                        Grammar.Core
                        Logic.Model
                        Logic.Ctl
@@ -136,10 +138,9 @@ test-suite MorphismTest
   hs-source-dirs:      tests/
   main-is:             MorphismTest.hs
   type:                exitcode-stdio-1.0
-  build-depends:       HUnit >= 1.3.1.2,
-                       base,
+  build-depends:       base, verigraph,
                        containers,
-                       verigraph
+                       HUnit >= 1.3.1.2
   other-modules:       Utils
 
 test-suite EssentialCPTest
@@ -147,11 +148,10 @@ test-suite EssentialCPTest
   hs-source-dirs:      tests/
   main-is:             EssentialCPTest.hs
   type:                exitcode-stdio-1.0
-  build-depends:       HUnit >= 1.3.1.2,
-                       base,
-                       containers >=0.4 && <0.6,
-                       matrix >= 0.3.4,
-                       verigraph
+  build-depends:       base, verigraph,
+                       containers,
+                       HUnit >= 1.3.1.2,
+                       matrix >= 0.3.4
   other-modules:       Utils
 
 test-suite CriticalPairsSequencesTest
@@ -159,11 +159,10 @@ test-suite CriticalPairsSequencesTest
   hs-source-dirs:      tests/
   main-is:             CriticalPairsSequencesTest.hs
   type:                exitcode-stdio-1.0
-  build-depends:       HUnit >= 1.3.1.2,
-                       base,
-                       containers >=0.4 && <0.6,
-                       matrix >= 0.3.4,
-                       verigraph
+  build-depends:       base, verigraph,
+                       containers,
+                       HUnit >= 1.3.1.2,
+                       matrix >= 0.3.4
   other-modules:       Utils
 
 test-suite SecondOrderTest
@@ -171,9 +170,8 @@ test-suite SecondOrderTest
   hs-source-dirs:      tests/
   main-is:             SecondOrderTest.hs
   type:                exitcode-stdio-1.0
-  build-depends:       HUnit >= 1.3.1.2,
-                       base,
-                       verigraph
+  build-depends:       base, verigraph,
+                       HUnit >= 1.3.1.2
   other-modules:       Utils
 
 test-suite PullbackTest
@@ -181,10 +179,9 @@ test-suite PullbackTest
   hs-source-dirs:      tests/
   main-is:             PullbackTest.hs
   type:                exitcode-stdio-1.0
-  build-depends:       HUnit >= 1.3.1.2,
-                       base,
-                       matrix >= 0.3.4,
-                       verigraph
+  build-depends:       base, verigraph,
+                       HUnit >= 1.3.1.2,
+                       matrix >= 0.3.4
   other-modules:       Utils
 
 test-suite PartitionsTest
@@ -192,10 +189,9 @@ test-suite PartitionsTest
   hs-source-dirs:      tests/
   main-is:             PartitionsTest.hs
   type:                exitcode-stdio-1.0
-  build-depends:       HUnit >= 1.3.1.2,
-                       base,
-                       combinat >= 0.2.8,
-                       verigraph
+  build-depends:       base, verigraph,
+                       HUnit >= 1.3.1.2,
+                       combinat >= 0.2.8
   other-modules:       Utils
 
 test-suite CtlTest
@@ -203,27 +199,38 @@ test-suite CtlTest
   hs-source-dirs:      tests/
   main-is:             CtlTest.hs
   type:                exitcode-stdio-1.0
-  build-depends:       HUnit >= 1.3.1.2,
-                       QuickCheck >= 2.8.1,
-                       base,
+  build-depends:       base, verigraph,
                        containers,
+                       wl-pprint,
+                       QuickCheck,
+                       HUnit >= 1.3.1.2,
                        test-framework >=0.8,
                        test-framework-hunit >=0.3,
-                       test-framework-quickcheck2 >=0.3,
-                       verigraph,
-                       wl-pprint
+                       test-framework-quickcheck2 >=0.3
   other-modules:       CtlTest.Utils
                        CtlTest.TestParser
                        CtlTest.TestSemantics
+
+test-suite GraphTest
+  default-language:    Haskell2010
+  hs-source-dirs:      tests/
+  main-is:             GraphTest.hs
+  type:                exitcode-stdio-1.0
+  build-depends:       base, verigraph,
+                       containers,
+                       QuickCheck,
+                       HUnit >=1.3.1.1,
+                       test-framework >=0.8,
+                       test-framework-hunit >=0.3,
+                       test-framework-quickcheck2 >=0.3
 
 test-suite GraphProcessTest
   default-language:    Haskell2010
   hs-source-dirs:      tests/
   main-is:             GraphProcessTest.hs
   type:                exitcode-stdio-1.0
-  build-depends:       HUnit >= 1.3.1.2,
-                       base,
-                       verigraph
+  build-depends:       base, verigraph,
+                       HUnit >= 1.3.1.2
   other-modules:       Utils
 
 test-suite CocompleteTest
@@ -231,7 +238,6 @@ test-suite CocompleteTest
   hs-source-dirs:      tests/
   main-is:             CocompleteTest.hs
   type:                exitcode-stdio-1.0
-  build-depends:       HUnit >= 1.3.1.2,
-                       base,
-                       verigraph
+  build-depends:       base, verigraph,
+                       HUnit >= 1.3.1.2
   other-modules:       Utils

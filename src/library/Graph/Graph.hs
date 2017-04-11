@@ -58,6 +58,7 @@ module Graph.Graph (
 
     -- ** Delete
     , removeNode
+    , removeNodeAndIncidentEdges
     , removeEdge
 
     -- ** Update
@@ -185,11 +186,19 @@ instance Eq (Graph n e) where
 
 
 instance Show (Graph n e) where
-    show (Graph nm em) =
-              "Nodes:\n" ++
-              concatMap (\(n, _) -> "\t" ++ show n ++ "\n") nm ++
-              "Edges:\n" ++
-              concatMap (\(eid, _) -> "\t" ++ show eid ++ "\n") em
+    show (Graph nodes edges) =
+        "Nodes:\n"
+        ++ concatMap showNode nodes
+        ++ "Edges:\n"
+        ++ concatMap showEdge edges
+      where
+        showNode (n, _) =
+          "\t" ++ show n ++ "\n"
+
+        showEdge (e, Edge _ src tgt _) =
+          "\t" ++ show e ++ " (" ++ show src ++ "->" ++ show tgt ++ ")\n"
+
+
 
 instance Cardinality (Graph n e) where
   cardinality = cardinality'
@@ -374,6 +383,13 @@ removeNode :: NodeId -> Graph n e -> Graph n e
 removeNode n g@(Graph ns es)
     | Prelude.null $ getIncidentEdges g n = Graph (delFromAL ns n) es
     | otherwise = g
+
+-- | Removes the given node and all incident edges from the graph. /O(v + e)/
+removeNodeAndIncidentEdges :: NodeId -> Graph n e -> Graph n e
+removeNodeAndIncidentEdges nodeId (Graph nodes edges) =
+  Graph
+    (delFromAL nodes nodeId)
+    (filter (\(_, e) -> sourceId e /= nodeId && targetId e /= nodeId) edges)
 
 -- | Remove the given edge from the graph. /O(e)/.
 removeEdge :: EdgeId -> Graph n e -> Graph n e
