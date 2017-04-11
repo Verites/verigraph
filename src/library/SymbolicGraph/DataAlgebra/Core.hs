@@ -1,3 +1,6 @@
+{-|
+Description : Datatypes for representing the data algebra.
+-}
 module SymbolicGraph.DataAlgebra.Core
   ( Restriction(..)
   , Predicate(..)
@@ -17,16 +20,6 @@ module SymbolicGraph.DataAlgebra.Core
   , freeVariablesOf
   , renameVariables
   ) where
-
-{-|
-Description : Datatypes for representing the base algebra.
-Copyright   : (c) Guilherme Azzi, 2017
-License     : MIT
-Stability   : experimental
-
-The base algebra used for symbolic graphs is the algebra of integers with
-addition, subtraction and multiplication.
--}
 
 import           Data.Set  (Set)
 import qualified Data.Set  as Set

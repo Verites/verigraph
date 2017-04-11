@@ -127,7 +127,7 @@ spec = describe "graph API" $ do
       not (Prelude.null $ nodes graph) ==>
       (`all` nodeIds graph) $ \nodeId ->
         let
-          graph' = updateNodePayload nodeId graph (apply f) :: Graph Int Int
+          graph' = updateNodePayload (apply f) nodeId graph :: Graph Int Int
         in
           (nodeInfo <$> lookupNode nodeId graph')
           == (apply f . nodeInfo <$> lookupNode nodeId graph)
@@ -139,7 +139,7 @@ spec = describe "graph API" $ do
       not (Prelude.null $ edges graph) ==>
       (`all` edgeIds graph) $ \edgeId ->
         let
-          graph' = updateEdgePayload edgeId graph (apply f) :: Graph Int Int
+          graph' = updateEdgePayload (apply f) edgeId graph :: Graph Int Int
         in
           (edgeInfo <$> lookupEdge edgeId graph')
           == (apply f . edgeInfo <$> lookupEdge edgeId graph)

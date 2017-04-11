@@ -59,6 +59,7 @@ library
                        SndOrder.Morphism
                        SndOrder.Morphism.NACmanipulation
                        SndOrder.Rule
+                       SymbolicGraph
                        SymbolicGraph.DataAlgebra
                        SymbolicGraph.DataAlgebra.Parser
                        SymbolicGraph.DataAlgebra.QuickCheck

@@ -76,6 +76,9 @@ module Graph.Graph (
     , edgesInContext
     , newNodes
     , newEdges
+
+    -- * Map
+    , mapNodes
 ) where
 
 import           Abstract.Cardinality
@@ -402,8 +405,8 @@ removeEdge :: EdgeId -> Graph n e -> Graph n e
 removeEdge e (Graph ns es) = Graph ns (delFromAL es e)
 
 -- | Update the node's payload, applying the given function on it. /O(v)/.
-updateNodePayload :: NodeId -> Graph n e -> (n -> n) -> Graph n e
-updateNodePayload nodeId graph@(Graph nodes _) f =
+updateNodePayload :: (n -> n) -> NodeId -> Graph n e -> Graph n e
+updateNodePayload f nodeId graph@(Graph nodes _) =
   case lookup nodeId nodes of
     Nothing ->
       graph
@@ -417,8 +420,8 @@ updateNodePayload nodeId graph@(Graph nodes _) f =
 
 
 -- | Update the edge's payload, applying the function on it. /O(e)/.
-updateEdgePayload :: EdgeId -> Graph n e -> (e -> e) -> Graph n e
-updateEdgePayload edgeId graph@(Graph _ edges) f =
+updateEdgePayload :: (e -> e) -> EdgeId -> Graph n e -> Graph n e
+updateEdgePayload f edgeId graph@(Graph _ edges) =
   case lookup edgeId edges of
     Nothing ->
       graph
@@ -567,6 +570,16 @@ getOutgoingEdges g n = filter (\e -> sourceOf g e == Just n) (edgeIds g)
 -- | Gets a list of all edges whose target is the given node. /O(e²)/.
 getIncomingEdges :: Graph n e -> NodeId -> [EdgeId]
 getIncomingEdges g n = filter (\e -> targetOf g e == Just n) (edgeIds g)
+
+
+-- | Modify the payloads of all nodes.
+mapNodes :: (Node n -> n') -> Graph n e -> Graph n' e
+mapNodes f (Graph nodes edges) =
+    Graph (map updateNode nodes) edges
+
+  where
+    updateNode (id, node) =
+      (id, node { nodeInfo = f node })
 
 
 instance Valid (Graph n e) where
