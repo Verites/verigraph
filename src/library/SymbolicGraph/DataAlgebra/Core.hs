@@ -67,7 +67,7 @@ type Variable =
 
 data Restriction =
   Restriction Predicate Expr Expr
-  deriving (Show)
+  deriving (Eq, Show)
 
 
 data Predicate

@@ -87,6 +87,7 @@ data SymbolicGraph =
     { graphPart    :: InnerGraph
     , restrictions :: [Restriction]
     }
+  deriving Eq
 
 
 modifyGraphPart :: (InnerGraph -> InnerGraph) -> SymbolicGraph -> SymbolicGraph
