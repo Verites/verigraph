@@ -1,3 +1,4 @@
+{-# LANGUAGE PatternSynonyms #-}
 {-|
 An implementation of symbolic graphs.
 
@@ -18,12 +19,12 @@ module SymbolicGraph
     SymbolicGraph
   , NodeId
   , Node
-  , node
+  , pattern N
   , nodeId
   , nodeAttribute
   , EdgeId
   , Edge
-  , edge
+  , pattern E
   , edgeId
   , sourceId
   , targetId

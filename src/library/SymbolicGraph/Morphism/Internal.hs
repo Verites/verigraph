@@ -1,4 +1,5 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE PatternSynonyms           #-}
 {-# LANGUAGE TypeFamilies              #-}
 module SymbolicGraph.Morphism.Internal
   (
@@ -290,7 +291,7 @@ isEdgeDefined edgeId m =
 -- mapping and attribution, then mapping additional variables according to the given list.
 --
 -- WARNING: the result could be an invalid morphism for any of the following reasons:
---  * Some node ids, edge ids or variables isn't part of the appropriate graph
+--  * Some node id, edge id or variable isn't part of the appropriate graph
 --  * Incidence is not preserved (i.e. the source/target of an edge is mapped to a node that is not
 --    the source/target of the mapped edge)
 --  * Attribution is not preserved (i.e. a node with defined attribute is mapped to a node with

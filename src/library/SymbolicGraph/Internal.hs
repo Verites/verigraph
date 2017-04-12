@@ -1,3 +1,4 @@
+{-# LANGUAGE PatternSynonyms #-}
 {- |
 = WARNING
 
@@ -11,12 +12,12 @@ module SymbolicGraph.Internal
     SymbolicGraph(..)
   , NodeId(..)
   , Node(..)
-  , node
+  , pattern N
   , nodeId
   , nodeAttribute
   , EdgeId(..)
   , Edge(..)
-  , edge
+  , pattern E
   , edgeId
   , sourceId
   , targetId
@@ -110,20 +111,22 @@ newtype Node =
   Node { unNode :: Graph.Node (Maybe Variable) }
 
 
--- | Construct a node. Used to insert nodes into symbolic graphs.
-node :: NodeId -> Maybe Variable -> Node
-node n v =
-  Node (Graph.Node n v)
-
-
-nodeId :: Node -> NodeId
-nodeId =
-  Graph.nodeId . unNode
-
-
-nodeAttribute :: Node -> Maybe Variable
-nodeAttribute =
-  Graph.nodeInfo . unNode
+-- | Pattern for constructing/deconstructing nodes, to be used as if it were a constructor.
+--
+-- Examples:
+--
+-- @
+-- let
+--   someNode = N 0 Nothing
+--   anotherNode = N { nodeId = 1, nodeAttribute = Just "x" }
+--   N someId someAttr = someNode
+--   modifiedNode = anotherNode { nodeAttribute = Just "y" }
+-- in
+--   -- some expression
+-- @
+pattern N :: NodeId -> Maybe Variable -> Node
+pattern N {nodeId, nodeAttribute} =
+  Node (Graph.Node nodeId nodeAttribute)
 
 
 -- | Edges from within a symbolic graph, also containing their source and target.
@@ -131,25 +134,22 @@ newtype Edge =
   Edge { unEdge :: Graph.Edge () }
 
 
--- | Construct an edge. Used to insert edges into symbolic graphs.
-edge :: EdgeId -> NodeId -> NodeId -> Edge
-edge e src tgt =
-  Edge (Graph.Edge e src tgt ())
-
-
-edgeId :: Edge -> EdgeId
-edgeId =
-  Graph.edgeId . unEdge
-
-
-sourceId :: Edge -> NodeId
-sourceId =
-  Graph.sourceId . unEdge
-
-
-targetId :: Edge -> NodeId
-targetId =
-  Graph.targetId . unEdge
+-- | Pattern for constructing/deconstructing edges, to be used as if it were a constructor.
+--
+-- Examples:
+--
+-- @
+-- let
+--   someEdge = E 0 1 2
+--   anotherEdge = E { edgeId = 1, sourceId = 2, targetId = 1 }
+--   E someId src tgt = someEdge
+--   modifiedEdge = anotherEdge { targetId = 2 }
+-- in
+--   -- some expression
+-- @
+pattern E :: EdgeId -> NodeId -> NodeId -> Edge
+pattern E {edgeId, sourceId, targetId} =
+  Edge (Graph.Edge edgeId sourceId targetId ())
 
 
 
