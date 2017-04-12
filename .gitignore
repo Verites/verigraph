@@ -11,6 +11,7 @@ m.txt
 mpf.txt
 *.swp
 hellow.*
+*travis.log
 
 # Cabal stuff
 .cabal-sandbox
