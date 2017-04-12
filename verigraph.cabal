@@ -96,12 +96,13 @@ library
                        SndOrder.Morphism.FindMorphism
                        SndOrder.Rule.Core
                        SndOrder.Rule.DPO
-                       SymbolicGraph.DataAlgebra.Core
+                       SymbolicGraph.DataAlgebra.Syntax
                        SymbolicGraph.DataAlgebra.PrettyPrint
                        SymbolicGraph.DataAlgebra.Solver
                        SymbolicGraph.DataAlgebra.Solver.Cvc4
                        SymbolicGraph.DataAlgebra.Solver.SmtLib
-                       SymbolicGraph.Core
+                       SymbolicGraph.Internal
+                       SymbolicGraph.Morphism.Internal
                        Util.Closures
                        Util.List
                        XML.Formulas

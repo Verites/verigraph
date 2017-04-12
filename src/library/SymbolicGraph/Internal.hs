@@ -5,7 +5,7 @@ This module is considered __internal__.
 
 It should _not_ be imported anywhere except in other `SymbolicGraph` modules.
 -}
-module SymbolicGraph.Core
+module SymbolicGraph.Internal
   (
   -- * Symbolic Graph type
     SymbolicGraph(..)
@@ -30,7 +30,7 @@ module SymbolicGraph.Core
   , outgoingEdges
 
   -- * Query
-  , SymbolicGraph.Core.null
+  , SymbolicGraph.Internal.null
   , isNodeOf
   , isEdgeOf
   , lookupNode

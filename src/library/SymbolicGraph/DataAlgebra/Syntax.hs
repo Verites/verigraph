@@ -1,7 +1,7 @@
 {-|
-Description : Datatypes for representing the data algebra.
+Description : Abstract syntax for the data algebra, its expressions and restrictions.
 -}
-module SymbolicGraph.DataAlgebra.Core
+module SymbolicGraph.DataAlgebra.Syntax
   ( Restriction(..)
   , Predicate(..)
   , Expr(..)

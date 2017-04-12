@@ -1,6 +1,6 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE TypeFamilies              #-}
-module SymbolicGraph.Morphism.Core
+module SymbolicGraph.Morphism.Internal
   (
   -- * Morphism type
     SymbolicMorphism(..)
@@ -41,8 +41,8 @@ import           Abstract.Morphism
 import           Abstract.Relation         (Relation)
 import qualified Abstract.Relation         as Relation
 import           Abstract.Valid
-import           SymbolicGraph.Core
 import           SymbolicGraph.DataAlgebra
+import           SymbolicGraph.Internal
 
 import           Control.Arrow
 import           Data.Foldable             (foldl')

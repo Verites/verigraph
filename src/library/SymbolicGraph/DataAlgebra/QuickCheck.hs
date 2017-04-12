@@ -1,8 +1,8 @@
 module SymbolicGraph.DataAlgebra.QuickCheck where
 
-import           SymbolicGraph.DataAlgebra.Core
+import           SymbolicGraph.DataAlgebra.Syntax
 
-import qualified Data.Text                      as T
+import qualified Data.Text                        as T
 import           Test.QuickCheck.Arbitrary
 import           Test.QuickCheck.Gen
 

@@ -1,11 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 module SymbolicGraph.DataAlgebra.PrettyPrint where
 
-import           Prelude                        hiding ((<$>))
+import           Prelude                          hiding ((<$>))
 
-import           Data.String                    (fromString)
-import qualified Data.Text.Lazy                 as LazyText
-import           SymbolicGraph.DataAlgebra.Core
+import           Data.String                      (fromString)
+import qualified Data.Text.Lazy                   as LazyText
+import           SymbolicGraph.DataAlgebra.Syntax
 import           Text.PrettyPrint.Leijen.Text
 
 

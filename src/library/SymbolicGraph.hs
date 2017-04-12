@@ -24,7 +24,7 @@ module SymbolicGraph
   , outgoingEdges
 
   -- * Query
-  , SymbolicGraph.Core.null
+  , SymbolicGraph.Internal.null
   , isNodeOf
   , isEdgeOf
   , lookupNode
@@ -61,4 +61,4 @@ module SymbolicGraph
   , mapNodeAttributes
   ) where
 
-import           SymbolicGraph.Core
+import           SymbolicGraph.Internal
