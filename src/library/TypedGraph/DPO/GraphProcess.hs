@@ -47,7 +47,7 @@ instance GenerateProcess (TypedGraphMorphism a b) where
 data OccurrenceGrammar a b = OccurrenceGrammar {
   singleTypedGrammar       :: Grammar (TypedGraphMorphism a b)
 , originalRulesWithMatches :: [NamedRuleWithMatches (TypedGraphMorphism a b)]
-, doubleType               :: TypedGraphMorphism a b
+, doubleType               :: TypedGraph a b
 , originRelation           :: Relation
 , concreteRelation         :: Relation
 , restrictRelation         :: AbstractRelation
@@ -162,11 +162,11 @@ generateOccurrenceGrammar sequence = OccurrenceGrammar singleGrammar originalRul
     relation = occurrenceRelation newRules
     created = createdElements cdRelation
     deleted = deletedElements cdRelation
-    doubleType = getLHS . snd . head $ newRules
-    coreGraph = codomain . codomain $ doubleType
+    doubleType = codomain $ getMatch $ head originalRulesWithMatches
+    coreGraph = domain $ doubleType
     startGraph = removeElements coreGraph created
     finalGraph = removeElements coreGraph deleted
-    singleGrammar = addReachableGraphs [("final",finalGraph)] (grammar startGraph [] newRules) 
+    singleGrammar = addReachableGraphs [("final",finalGraph)] (grammar startGraph [] newRules)
 
 isNode :: RelationItem -> Bool
 isNode x = case x of
