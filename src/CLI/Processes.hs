@@ -107,5 +107,5 @@ execute globalOpts opts = do
 --    putStrLn $ show $ getUnderlyingDerivation (snd . head $ newRules)
 
     let newStart = GG.start sgg
-        gg' = GG.grammar newStart [] newRules
+        gg' = GG.addReachableGraphs (GG.reachableGraphs sgg) (GG.grammar newStart [] newRules) 
     GW.writeGrammarFile (gg',gg2) ggName names (outputFile opts)

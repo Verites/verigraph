@@ -15,6 +15,7 @@ module TypedGraph.DPO.GraphProcess
 , strictRelation
 , creationAndDeletionRelation
 , getElements
+, finalGraph
 )
 
 where
@@ -47,13 +48,16 @@ data OccurrenceGrammar a b = OccurrenceGrammar {
   singleTypedGrammar       :: Grammar (TypedGraphMorphism a b)
 , originalRulesWithMatches :: [NamedRuleWithMatches (TypedGraphMorphism a b)]
 , doubleType               :: TypedGraphMorphism a b
-, finalGraph               :: TypedGraph a b
 , originRelation           :: Relation
 , concreteRelation         :: Relation
 , restrictRelation         :: AbstractRelation
 }
 
+initialGraph :: OccurrenceGrammar a b -> TypedGraph a b
 initialGraph = start . singleTypedGrammar
+
+finalGraph :: OccurrenceGrammar a b -> TypedGraph a b
+finalGraph ogg = fromJust $ lookup "final" (reachableGraphs $ singleTypedGrammar ogg)
 
 data RelationItem = Node NodeId
                   | Edge EdgeId
@@ -150,7 +154,7 @@ deletedElements elementsRelation =
   in deleted
 
 generateOccurrenceGrammar :: RuleSequence (TypedGraphMorphism a b) -> OccurrenceGrammar a b
-generateOccurrenceGrammar sequence = OccurrenceGrammar singleGrammar originalRulesWithMatches doubleType finalGraph cdRelation relation empty
+generateOccurrenceGrammar sequence = OccurrenceGrammar singleGrammar originalRulesWithMatches doubleType cdRelation relation empty
   where
     originalRulesWithMatches = calculateRulesColimit sequence -- TODO: unify this two functions
     newRules = generateGraphProcess sequence
@@ -162,7 +166,7 @@ generateOccurrenceGrammar sequence = OccurrenceGrammar singleGrammar originalRul
     coreGraph = codomain . codomain $ doubleType
     startGraph = removeElements coreGraph created
     finalGraph = removeElements coreGraph deleted
-    singleGrammar = grammar startGraph [] newRules
+    singleGrammar = addReachableGraphs [("final",finalGraph)] (grammar startGraph [] newRules) 
 
 isNode :: RelationItem -> Bool
 isNode x = case x of
@@ -291,7 +295,6 @@ calculateNacRelations ogg is = newOgg
               (singleTypedGrammar ogg)
               (originalRulesWithMatches ogg)
               (doubleType ogg)
-              (finalGraph ogg)
               (originRelation ogg)
               (buildTransitivity (concreteRelation ogg `union` dfs)) -- do the reflexive and transitive Closure
               absDfs
