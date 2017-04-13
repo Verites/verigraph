@@ -23,3 +23,8 @@ images/.directory
 
 # HSpec stuff
 .hspec-failures
+
+
+#Emacs stuff
+TAGS
+*#

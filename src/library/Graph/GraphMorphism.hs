@@ -6,6 +6,7 @@ module Graph.GraphMorphism (
     -- * Construction
     , Graph.GraphMorphism.empty
     , buildGraphMorphism
+    , fromGraphsAndRelations
     -- * Transformation
     , invertGraphMorphism
     , updateCodomain
@@ -117,6 +118,10 @@ buildGraphMorphism :: Graph a b -> Graph a b -> [(Int,Int)] -> [(Int,Int)] -> Gr
 buildGraphMorphism gA gB n = foldr (uncurry updateEdges . (\(x,y) -> (EdgeId x,EdgeId y))) g
     where
         g = foldr (uncurry updateNodes . (\(x,y) -> (NodeId x,NodeId y))) (Graph.GraphMorphism.empty gA gB) n
+
+-- | Constructs a @GraphMorphism@ from two Graphs, a node relation and a edge relation.
+fromGraphsAndRelations :: Graph a b -> Graph a b -> R.Relation NodeId -> R.Relation EdgeId -> GraphMorphism a b
+fromGraphsAndRelations = GraphMorphism
 
 -- | The inverse graph morphism.
 invertGraphMorphism :: GraphMorphism a b -> GraphMorphism a b
