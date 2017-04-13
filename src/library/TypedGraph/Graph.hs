@@ -7,8 +7,10 @@ module TypedGraph.Graph
   , TypedGraph.Graph.null
   , newTypedNodes
   , newTypedEdges
-  , nodesWithType
-  , edgesWithType
+  , typedNodes
+  , typedEdges
+  , untypedNodes
+  , untypedEdges
   ) where
 
 import           Abstract.Cardinality
@@ -51,12 +53,20 @@ newTypedEdges :: TypedGraph a b -> [EdgeId]
 newTypedEdges tg = newEdges $ untypedGraph tg
 
 -- | Obtain a list of tuples @(nodeId, typeId)@ for nodes in the graph.
-nodesWithType :: TypedGraph a b -> [(NodeId, NodeId)]
-nodesWithType tg = map withType $ nodeIds (untypedGraph tg)
+typedNodes :: TypedGraph a b -> [(NodeId, NodeId)]
+typedNodes tg = map withType $ nodeIds (untypedGraph tg)
   where withType node = (node, extractNodeType tg node)
 
 -- | Obtain a list of tuples @(edgeId, srcId, tgtId, typeId)@ for edges in the graph.
-edgesWithType :: TypedGraph a b -> [(EdgeId, NodeId, NodeId, EdgeId)]
-edgesWithType tg = map withType $ edgeIds graph
+typedEdges :: TypedGraph a b -> [(EdgeId, NodeId, NodeId, EdgeId)]
+typedEdges tg = map withType $ edgeIds graph
   where graph = untypedGraph tg
         withType edge = (edge, sourceOfUnsafe graph edge, targetOfUnsafe graph edge, extractEdgeType tg edge)
+
+-- | Obtain the list of untyped nodes, i.e., the list of node ids from the typed graph domain
+untypedNodes :: TypedGraph a b -> [NodeId]
+untypedNodes tg = nodeIds $ untypedGraph tg
+
+-- | Obtain the list of untyped edges, i.e., the list of edge ids from the typed graph domain
+untypedEdges :: TypedGraph a b -> [EdgeId]
+untypedEdges tg = edgeIds $ untypedGraph tg

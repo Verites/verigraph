@@ -272,8 +272,8 @@ findMono a b =
 findCoreMorphism :: TypedGraph a b -> TypedGraph a b -> TypedGraphMorphism a b
 findCoreMorphism dom core =
   let
-    ns = L.map (\(n,_) -> (n,n)) (nodesWithType dom)
-    es = L.map (\(a,_,_,_) -> (a,a)) (edgesWithType dom)
+    ns = L.map (\(n,_) -> (n,n)) (typedNodes dom)
+    es = L.map (\(a,_,_,_) -> (a,a)) (typedEdges dom)
     initial = buildTypedGraphMorphism dom core (GM.empty (domain dom) (domain core))
   in L.foldr (uncurry updateEdgeRelation) (L.foldr (uncurry untypedUpdateNodeRelation) initial ns) es
 
