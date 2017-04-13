@@ -238,8 +238,8 @@ reflectIdsFromDomains (m,e) =
     m' = invert m
     e' = invert e
 
-    newNodes = nub (nodesWithType typedL ++ nodesWithType typedD)
-    newEdges = nub (edgesWithType typedL ++ edgesWithType typedD)
+    newNodes = nub (typedNodes typedL ++ typedNodes typedD)
+    newEdges = nub (typedEdges typedL ++ typedEdges typedD)
 
     typedG' = foldr (\(e,s,ta,ty) -> GM.createEdgeOnDomain e s ta ty)
                       (foldr (uncurry GM.createNodeOnDomain) (GM.empty empty typeGraph) newNodes)

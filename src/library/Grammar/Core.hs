@@ -21,6 +21,8 @@ module Grammar.Core (
     , constraints
     , rules
     , findProduction
+    , reachableGraphs
+    , addReachableGraphs
 ) where
 
 import           Abstract.AdhesiveHLR
@@ -34,10 +36,14 @@ data Grammar m =
       start       :: Obj m
     , constraints :: [Constraint m]
     , rules       :: [NamedProduction m]
+    , reachableGraphs :: [(String, Obj m)]
     }
 
 grammar :: Obj m -> [Constraint m] -> [NamedProduction m] -> Grammar m
-grammar = Grammar
+grammar s c r = Grammar s c r []
+
+addReachableGraphs :: [(String, Obj m)] -> Grammar m -> Grammar m
+addReachableGraphs gs' (Grammar s c r gs)  = Grammar s c r (gs ++ gs')
 
 getProductionName :: NamedProduction m -> String
 getProductionName = fst

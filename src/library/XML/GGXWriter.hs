@@ -23,6 +23,7 @@ import           SndOrder.Morphism
 import qualified SndOrder.Rule                   as SO
 import           Text.XML.HXT.Core
 import qualified TypedGraph.DPO.GraphRule        as GR
+import           TypedGraph.DPO.GraphProcess     ()
 import           TypedGraph.Graph                (TypedGraph)
 import           TypedGraph.Morphism
 import           XML.GGXParseOut
@@ -214,18 +215,31 @@ writeRuleSets rules =
 writeGrammar :: ArrowXml a => Grammars b c -> [(String,String)] -> [a XmlTree XmlTree]
 writeGrammar (gg1,gg2) names = writeAggProperties ++
                              [writeTypes (XML.GGXWriter.typeGraph gg1) names] ++
-                             [writeHostGraph (start gg1)] ++
+                             [writeInitialGraph (start gg1)] ++
+                             writeReachableGraphs gg1 ++
                              (writeRules gg1 nacNames) ++
                              (writeSndOrderRules gg2)
   where
     nacNames = filter (\(x,_) -> startswith "NAC" x) names
 
-writeHostGraph :: ArrowXml a => TypedGraph b c -> a XmlTree XmlTree
-writeHostGraph initial = writeGraph "initial_graph" "HOST" "Init" nodes edges
+writeInitialGraph :: ArrowXml a => TypedGraph b c -> a XmlTree XmlTree
+writeInitialGraph initial = writeHostGraph ("Init", initial)
+
+writeReachableGraphs :: ArrowXml a => Grammar (TypedGraphMorphism b c) -> [a XmlTree XmlTree]
+writeReachableGraphs gg = map writeHostGraph (reachableGraphs gg)
+--    write (name,graph) writeGraph "initial_graph" "HOST" "Init" nodes edges
+--    -- Reuses the serialize for rules to serialize the initial graph
+--    tgm = idMap initial initial
+--    (_, nodes, edges) = serializeGraph [] [] tgm
+
+writeHostGraph :: ArrowXml a => (String,TypedGraph b c) -> a XmlTree XmlTree
+writeHostGraph (name,graph) = writeGraph ("graph_" ++ name) "HOST" name nodes edges
   where
     -- Reuses the serialize for rules to serialize the initial graph
-    tgm = idMap initial initial
+    tgm = idMap graph graph
     (_, nodes, edges) = serializeGraph [] [] tgm
+
+
 
 writeTypes :: ArrowXml a => G.Graph b c -> [(String,String)] -> a XmlTree XmlTree
 writeTypes graph names = mkelem "Types" []

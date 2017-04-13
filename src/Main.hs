@@ -197,7 +197,7 @@ r2 = buildTypedGraphMorphism tkr2 trr2 kr2_rr2
 graph' = build [1,2,3,4] [(1,2,1),(4,4,3)]
 graph'' = GM.buildGraphMorphism graph' grafotipo [(3,4),(2,3),(1,1),(4,2)] [(1,1),(4,4)]
 
-meu :: GM.GraphMorphism a b -> GM.GraphMorphism a b -> [TypedGraphMorphism a b]
+--meu :: GM.GraphMorphism (Maybe a) (Maybe b) -> GM.GraphMorphism (Maybe a) (Maybe b) -> [TypedGraphMorphism (Maybe a) (Maybe b)]
 meu = findMonomorphisms
 
 myconfig = MorphismsConfig MonoMatches MonomorphicNAC

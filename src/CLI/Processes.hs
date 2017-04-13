@@ -8,11 +8,13 @@ import           Abstract.DPO
 import           Abstract.Valid
 import           Analysis.Processes
 import           Control.Monad
+import           Data.Maybe                  (fromJust)
 import           Data.Set                    (toList)
 import           GlobalOptions
 import qualified Grammar.Core                as GG
 import           Options.Applicative
 import           TypedGraph.DPO.GraphProcess
+import qualified TypedGraph.Graph            as TG
 import qualified XML.GGXReader               as XML
 import qualified XML.GGXWriter               as GW
 
@@ -107,5 +109,15 @@ execute globalOpts opts = do
 --    putStrLn $ show $ getUnderlyingDerivation (snd . head $ newRules)
 
     let newStart = GG.start sgg
-        gg' = GG.grammar newStart [] newRules
-    GW.writeGrammarFile (gg',gg2) ggName names (outputFile opts)
+        gg' = GG.addReachableGraphs (GG.reachableGraphs sgg) (GG.grammar newStart [] newRules)
+    GW.writeGrammarFile (gg',gg2) ggName (buildNewNames names (doubleType ogg)) (outputFile opts)
+
+buildNewNames :: [(String,String)] -> TG.TypedGraph a b -> [(String,String)]
+buildNewNames oldNames tg = newNs ++ newEs
+  where
+    ns = map (\(n,t) -> (n, "I" ++ show t)) (TG.typedNodes tg)
+    es = map (\(e,_,_,t) -> (e, "I" ++ show t)) (TG.typedEdges tg)
+    newNs = map (\(n,it) -> ("I" ++ show n, rename (show n,it))) ns
+    newEs = map (\(e,it) -> ("I" ++ show e, rename (show e,it))) es
+    rename (z,it) = (\(x,y) -> x ++ "-" ++ z ++ y) (break (=='%') (find it))
+    find it = fromJust (lookup it oldNames)
