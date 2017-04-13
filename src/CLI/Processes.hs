@@ -105,7 +105,8 @@ execute globalOpts opts = do
 
     putStrLn "\n------------------\n"
     putStrLn $ "Set of Restrictions:" ++ show (restrictRelation completeOgg)
-    putStrLn "Is there a compatible concrete total order respecting NACs?\n>>> Undefined"
+    putStrLn $ "Is there a compatible concrete total order respecting NACs?\n>>> "
+                ++ if emptyRestrictions completeOgg then "True" else "undefined"
 
     let newStart = GG.start sgg
         gg' = GG.addReachableGraphs (GG.reachableGraphs sgg) (GG.grammar newStart [] newRules)

@@ -18,6 +18,7 @@ module TypedGraph.DPO.GraphProcess
 , initialGraph
 , finalGraph
 , eliminateSelfConflictsAndDependencies
+, emptyRestrictions
 )
 
 where
@@ -61,6 +62,9 @@ initialGraph = start . singleTypedGrammar
 
 finalGraph :: OccurrenceGrammar a b -> TypedGraph a b
 finalGraph ogg = fromJust $ lookup "final" (reachableGraphs $ singleTypedGrammar ogg)
+
+emptyRestrictions :: OccurrenceGrammar a b -> Bool
+emptyRestrictions = S.null . restrictRelation
 
 uniqueOrigin :: [NamedProduction (TypedGraphMorphism a b)] -> Bool
 uniqueOrigin rules = not (repeated createdList) && not (repeated deletedList)
@@ -330,7 +334,7 @@ findH21 :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphis
 findH21 m2 d1 =
   let
     h21 = findAllPossibleH21 conf m2 d1
-  in if Prelude.null h21 then error "aqui" else head h21
+  in if Prelude.null h21 then error "morphism h21 not found" else head h21
 
 relatedByPreservationAndDeletion :: Relation -> NamedProduction (TypedGraphMorphism a b) -> Relation
 relatedByPreservationAndDeletion relation namedRule
