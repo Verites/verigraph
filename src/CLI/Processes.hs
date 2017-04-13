@@ -58,14 +58,7 @@ execute globalOpts opts = do
         (putStrLn $ "No graph process candidates were found for rule sequence '" ++ name ++ "'")
 
     putStrLn "Conflicts and Dependencies: "
-    print conflictsAndDependencies
-
---    putStrLn "\n##################\n"
-
---    putStrLn "Strict Relation: "
---    putStrLn $ show (creationAndDeletionRelation $ newRules!!0)
---    putStrLn $ show (creationAndDeletionRelation $ newRules!!1)
---    putStrLn $ show (creationAndDeletionRelation $ newRules!!2)
+    print $ eliminateSelfConflictsAndDependencies conflictsAndDependencies
 
     putStrLn "\n##################\n"
 
@@ -75,16 +68,20 @@ execute globalOpts opts = do
     putStrLn "\n------------------\n"
     putStrLn "Conflicts and dependencies induced by NACs:\n "
 
-    print $ map (findConcreteTrigger ogg) (toList inducedByNacs)
+    print $ map (findConcreteTrigger completeOgg) (toList inducedByNacs)
 
     putStrLn "\n##################\n"
 
-    putStrLn "Rules Relation: "
+    putStrLn "All Rules:"
+    print rulesNames
+    putStrLn "\nRules Relation: "
     print rulesRelation
 
     putStrLn "\n##################\n"
 
-    putStrLn "Elements Relation: "
+    putStrLn "All Elements:"
+    print elementsNames
+    putStrLn "\nElements Relation: "
     print elementsRelation
 
     putStrLn "\n##################\n"
@@ -101,18 +98,18 @@ execute globalOpts opts = do
     putStrLn "\n------------------\n"
     putStrLn $ "Is the final graph valid? \n>>> " ++ show validFinalGraph
     if not validFinalGraph then putStrLn $ fromJust (errorMessages $ validate $ finalGraph ogg) else putStrLn ""
-    print (finalGraph ogg)
 
     putStrLn "\n------------------\n"
     putStrLn $ "Is there a compatible concrete total order for rules?\n>>> " ++ show (findOrder rulesRelation rulesNames)
     putStrLn $ "Is there a compatible concrete total order for elements?\n>>> " ++ show (findOrder elementsRelation elementsNames)
 
     putStrLn "\n------------------\n"
+    putStrLn $ "Set of Restrictions:" ++ show (restrictRelation completeOgg)
     putStrLn "Is there a compatible concrete total order respecting NACs?\n>>> Undefined"
 
     let newStart = GG.start sgg
         gg' = GG.addReachableGraphs (GG.reachableGraphs sgg) (GG.grammar newStart [] newRules)
-    GW.writeGrammarFile (gg',gg2) ggName (buildNewNames names (doubleType ogg)) (outputFile opts)
+    GW.writeGrammarFile (gg',gg2) ggName (buildNewNames names (doubleType completeOgg)) (outputFile opts)
 
 buildNewNames :: [(String,String)] -> TG.TypedGraph a b -> [(String,String)]
 buildNewNames oldNames tg = newNs ++ newEs

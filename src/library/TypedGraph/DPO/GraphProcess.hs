@@ -17,6 +17,7 @@ module TypedGraph.DPO.GraphProcess
 , getElements
 , initialGraph
 , finalGraph
+, eliminateSelfConflictsAndDependencies
 )
 
 where
@@ -177,20 +178,20 @@ creationAndPreservationRelation rules cdRelation =
   in S.unions result
 
 relatedByCreationAndPreservation :: Relation -> NamedProduction (TypedGraphMorphism a b) -> Relation
-relatedByCreationAndPreservation relation namedRule
+relatedByCreationAndPreservation relation preservingRule
   | S.null relation = S.empty
   | otherwise =
   let
     r = getElem relation
     rs = getTail relation
-    name = getProductionName namedRule
-    nodes = preservedNodes (getProduction namedRule)
-    edges = preservedEdges (getProduction namedRule)
+    name = getProductionName preservingRule
+    nodes = preservedNodes (getProduction preservingRule)
+    edges = preservedEdges (getProduction preservingRule)
     related (_,c) nodes edges = case c of
-                                Node x -> nodes `intersect` [x] /= []
-                                Edge x -> edges `intersect` [x] /= []
+                                Node x -> x `elem` nodes
+                                Edge x -> x `elem` edges
                                 _      -> False
-  in if related r nodes edges then singleton (fst r, Rule name) else relatedByCreationAndPreservation rs namedRule
+  in if related r nodes edges then singleton (fst r, Rule name) else relatedByCreationAndPreservation rs preservingRule
 
 preservationAndDeletionRelation :: [NamedProduction (TypedGraphMorphism a b)] -> Relation -> Relation
 preservationAndDeletionRelation rules cdRelation =
@@ -232,6 +233,8 @@ findCoreMorphism dom core =
     es = L.map (\(a,_,_,_) -> (a,a)) (typedEdges dom)
     initial = buildTypedGraphMorphism dom core (GM.empty (domain dom) (domain core))
   in L.foldr (uncurry updateEdgeRelation) (L.foldr (uncurry untypedUpdateNodeRelation) initial ns) es
+
+eliminateSelfConflictsAndDependencies = L.filter (\i -> firstRule i /= secondRule i)
 
 calculateNacRelations :: OccurrenceGrammar a b -> Set Interaction -> OccurrenceGrammar a b
 calculateNacRelations ogg is = newOgg
