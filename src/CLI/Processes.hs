@@ -8,6 +8,7 @@ import           Abstract.DPO
 import           Abstract.Valid
 import           Analysis.Processes
 import           Control.Monad
+import           Data.Maybe                  (fromJust)
 import           Data.Set                    (toList)
 import           GlobalOptions
 import qualified Grammar.Core                as GG
@@ -109,7 +110,14 @@ execute globalOpts opts = do
 
     let newStart = GG.start sgg
         gg' = GG.addReachableGraphs (GG.reachableGraphs sgg) (GG.grammar newStart [] newRules)
-    GW.writeGrammarFile (gg',gg2) ggName names (outputFile opts)
+    GW.writeGrammarFile (gg',gg2) ggName (buildNewNames names (doubleType ogg)) (outputFile opts)
 
 buildNewNames :: [(String,String)] -> TG.TypedGraph a b -> [(String,String)]
-buildNewNames a tg = a
+buildNewNames oldNames tg = newNs ++ newEs
+  where
+    ns = map (\(n,t) -> (n, "I" ++ show t)) (TG.typedNodes tg)
+    es = map (\(e,_,_,t) -> (e, "I" ++ show t)) (TG.typedEdges tg)
+    newNs = map (\(n,it) -> ("I" ++ show n, rename (show n,it))) ns
+    newEs = map (\(e,it) -> ("I" ++ show e, rename (show e,it))) es
+    rename (z,it) = (\(x,y) -> x ++ "-" ++ z ++ y) (break (=='%') (find it))
+    find it = fromJust (lookup it oldNames)
