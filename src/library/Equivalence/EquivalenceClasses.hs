@@ -1,72 +1,97 @@
 module Equivalence.EquivalenceClasses
   ( EquivalenceClass
-  , binaryConstruct
-  , enaryConstruct
+  , Partition
+  , discretePartition
+  , mergePairs
+  , mergeSets
   , getElem
   , getTail
-  , maximumDisjointClass
   , tsort
   ) where
 
-import           Data.Foldable (find)
-import           Data.Set      as DS
-import           Prelude       hiding (filter, foldl, foldr, null)
+import           Data.Foldable (find, foldl')
+import           Data.Set      (Set)
+import qualified Data.Set      as Set
 
-maximumDisjointClass :: (Ord a) => [a] -> Set (EquivalenceClass a)
-maximumDisjointClass l = fromList $ Prelude.map (fromList . (:[])) l
 
-type EquivalenceClass a = Set a
+-- | An equivalence class is just a set of elements.
+type EquivalenceClass a =
+  Set a
 
-binaryConstruct :: (Ord a, Show a) => Set (a,a) -> Set (EquivalenceClass a) -> Set (EquivalenceClass a)
-binaryConstruct toBeGlued toBeX
-  | DS.null toBeGlued = toBeX
-  | otherwise = binaryConstruct (getTail toBeGlued) (merge (getElem toBeGlued) toBeX)
+
+-- | A partition is a set of disjoint equivalence classes.
+type Partition a =
+  Set (EquivalenceClass a)
+
+
+-- | Create the discrete partition of the given set, i.e. the most disjoint partition. In this
+-- partition, each element has its own equivalence class.
+discretePartition :: (Ord a) => [a] -> Partition a
+discretePartition =
+    Set.fromList . map Set.singleton
+
+
+-- | Given a list of pairs of elements that should belong to the same equivalence class, "collapse"
+-- the necessary equivalence classes of the partition.
+mergePairs :: (Ord a, Show a) => [(a, a)] -> Partition a -> Partition a
+mergePairs toBeGlued partition =
+    foldl' (flip merge) partition toBeGlued
+
   where
-    merge (e1,e2) s =  mergeEquivalences (e1,e2) s `union` (s `diff` (e1,e2))
-    diff s (e1,e2) = if e1 == e2 then
-        s `difference` singleton (findEquivalenceClass e1 s)
+    merge (e1, e2) s =
+      mergeEquivalences (e1, e2) s `Set.union` (s `diff` (e1,e2))
+
+    diff s (e1, e2) =
+      if e1 == e2 then
+        Set.delete (findEquivalenceClass e1 s) s
       else
-        s `difference` singleton (findEquivalenceClass e1 s) `difference` singleton (findEquivalenceClass e2 s)
+        Set.delete (findEquivalenceClass e1 s)
+         . Set.delete (findEquivalenceClass e2 s)
+         $ s
 
-enaryConstruct :: (Ord a, Show a) => Set(Set a) -> Set (EquivalenceClass a) -> Set (EquivalenceClass a)
-enaryConstruct toBeGlued toBeX
-  | DS.null toBeGlued = toBeX
-  | otherwise = enaryConstruct (getTail toBeGlued) (merge (getElem toBeGlued) toBeX)
+
+-- | Given a list of sets of elements that should belong to the same equivalence class, "collapse"
+-- the necessary equivalence classes of the partition.
+mergeSets :: (Ord a, Show a) => [Set a] -> Partition a -> Partition a
+mergeSets toBeGlued partition =
+    foldl' (flip merge) partition toBeGlued
   where
-    merge eq s =  mergeNEquivalences eq s `union`  diffNEquivalences eq s
+    merge eq s =
+      mergeNEquivalences eq s `Set.union` diffNEquivalences eq s
 
-diffNEquivalences :: (Ord a, Show a) => Set a -> Set(EquivalenceClass a) -> Set(EquivalenceClass a)
+diffNEquivalences :: (Ord a, Show a) => Set a -> Partition a -> Partition a
 diffNEquivalences eq set = actualDiff allSubSets
   where
-    actualDiff = DS.foldl difference set
-    allSubSets = DS.map newFind eq
-    newFind = singleton . (`findEquivalenceClass` set)
+    actualDiff = Set.foldl Set.difference set
+    allSubSets = Set.map newFind eq
+    newFind = Set.singleton . (`findEquivalenceClass` set)
 
-mergeNEquivalences :: (Ord a, Show a) => Set a -> Set(EquivalenceClass a) -> Set(EquivalenceClass a)
-mergeNEquivalences eq set = singleton $ actualMerge allSubSets
+mergeNEquivalences :: (Ord a, Show a) => Set a -> Partition a -> Partition a
+mergeNEquivalences eq set = Set.singleton $ actualMerge allSubSets
   where
-    actualMerge = DS.foldl union DS.empty
-    allSubSets = DS.map (`findEquivalenceClass` set) eq
+    actualMerge = Set.foldl Set.union Set.empty
+    allSubSets = Set.map (`findEquivalenceClass` set) eq
 
 getElem :: Set a -> a
-getElem = elemAt 0
+getElem = Set.elemAt 0
 
 getUnitSubset :: Set a -> Set a
-getUnitSubset set = singleton (getElem set)
+getUnitSubset set = Set.singleton (getElem set)
 
 getTail :: (Ord a) => Set a -> Set a
-getTail set = set `difference` getUnitSubset set
+getTail set = set `Set.difference` getUnitSubset set
 
-mergeEquivalences :: (Ord a, Show a) => (a, a) -> Set(EquivalenceClass a) -> Set(EquivalenceClass a)
-mergeEquivalences (e1,e2) set = singleton (findEquivalenceClass e1 set `union` findEquivalenceClass e2 set)
+mergeEquivalences :: (Ord a, Show a) => (a, a) -> Partition a -> Partition a
+mergeEquivalences (e1,e2) set =
+  Set.singleton (findEquivalenceClass e1 set `Set.union` findEquivalenceClass e2 set)
 
 -- works only with non-empty sets
-findEquivalenceClass :: (Eq a, Show a) => a -> Set(EquivalenceClass a) -> EquivalenceClass a
+findEquivalenceClass :: (Eq a, Show a) => a -> Partition a -> EquivalenceClass a
 findEquivalenceClass element set
-  | DS.null domain = error $ "could not find equivalence class for " ++ show element ++ " in " ++ show set
+  | Set.null domain = error $ "could not find equivalence class for " ++ show element ++ " in " ++ show set
   | otherwise = getElem domain
   where
-    domain = DS.filter (element `elem`) set
+    domain = Set.filter (element `elem`) set
 
 type Relation a = Set (a,a)
 
@@ -77,17 +102,17 @@ updateCond :: Ord a => CondRelation a -> a -> (CondRelation a, Relation a)
 updateCond c i =
   let
     contains i ((a,b),(c,d)) = (i == a) || (i == b) || (i == c) || (i == d)
-    (has, hasNot) = partition (contains i) c
+    (has, hasNot) = Set.partition (contains i) c
     removeBoth i ((_,b),(c,_)) = if b /= c then error "invalid abstract relations" else i /= b -- && (i /= c)
     getRelation i ((a,b),(c,d)) = if i == a then (a,b) else (c,d)
-    newConcrete = DS.map (getRelation i) $ filter (removeBoth i) has
+    newConcrete = Set.map (getRelation i) $ Set.filter (removeBoth i) has
    in (hasNot, newConcrete)
 
 elementInImage :: Ord a => Relation a -> a -> Relation a
-elementInImage rel item = filter ((== item) . snd) rel
+elementInImage rel item = Set.filter ((== item) . snd) rel
 
 elementNotInDomain :: Ord a => Relation a -> a -> Relation a
-elementNotInDomain rel item = filter ((/= item) . fst) rel
+elementNotInDomain rel item = Set.filter ((/= item) . fst) rel
 
 noIncoming :: Ord a => Relation a -> Set a -> Maybe a
 noIncoming rel = find (null . elementInImage rel)
@@ -96,12 +121,12 @@ isCyclic :: Ord a => Relation a -> Bool
 isCyclic = not . null . until (\rel -> removeOneItem rel == rel) removeOneItem
   where
     removeOneItem rel = maybe rel (elementNotInDomain rel) . noIncoming rel $ relationDomain rel
-    relationDomain = DS.map fst
+    relationDomain = Set.map fst
 
 tsort :: Ord a => Relation a -> Set a -> Maybe [a]
 tsort rel disconnected =
   let
-    items = relationElements rel `union` disconnected
+    items = relationElements rel `Set.union` disconnected
   in if isCyclic rel then Nothing
      else Just $ buildOrdering rel items
 
@@ -112,15 +137,15 @@ conditionalTSort r disconnected cr =
    in tsort r disconnected
 
 relationElements :: Ord a => Relation a -> Set a
-relationElements = foldr (\(x,y) -> insert x . insert y) empty
+relationElements = foldr (\(x,y) -> Set.insert x . Set.insert y) Set.empty
 
 buildOrdering :: Ord a => Relation a -> Set a -> [a]
 buildOrdering relation items = maybe [] addToOrderRemoveFromRelation $ noIncoming relation items
   where
-    addToOrderRemoveFromRelation i = i : buildOrdering (elementNotInDomain relation i) (delete i items)
+    addToOrderRemoveFromRelation i = i : buildOrdering (elementNotInDomain relation i) (Set.delete i items)
 
 buildCondOrdering :: Ord a => Relation a -> CondRelation a -> Set a -> [a]
 buildCondOrdering relation condRelation items = maybe [] addToOrderRemoveFromRelation $ noIncoming relation items
   where
-    addToOrderRemoveFromRelation i = i : buildOrdering (elementNotInDomain relation i) (delete i items)
+    addToOrderRemoveFromRelation i = i : buildOrdering (elementNotInDomain relation i) (Set.delete i items)
     allNonIncomings relation = filter

@@ -126,29 +126,29 @@ createNodeNEquivalences fs = nodesOnX
   where
     representant = head fs
     equivalentNodes (n,nt) = fromList $ Prelude.map (\f -> (fromJust $ applyNode f n,nt)) fs
-    nodesFromA = fromList $ typedNodes (getDomain representant)
-    nodesToGluingOnB = DS.map equivalentNodes nodesFromA
-    initialNodesOnX = maximumDisjointClass (typedNodes (getCodomain representant))
-    nodesOnX = enaryConstruct nodesToGluingOnB initialNodesOnX
+    nodesFromA = typedNodes (getDomain representant)
+    nodesToGluingOnB = fmap equivalentNodes nodesFromA
+    initialNodesOnX = discretePartition (typedNodes (getCodomain representant))
+    nodesOnX = mergeSets nodesToGluingOnB initialNodesOnX
 
 createEdgeNEquivalences :: [TypedGraphMorphism a b] -> Set (EquivalenceClass TypedEdge)
 createEdgeNEquivalences fs = edgesOnX
   where
     representant = head fs
     equivalentEdges (e,s,t,et) = fromList $ Prelude.map (\f -> (fromJust $ applyEdge f e, fromJust $ applyNode f s, fromJust $ applyNode f t,et)) fs
-    edgesFromA = fromList $ typedEdges (getDomain representant)
-    edgesToGluingOnB = DS.map equivalentEdges edgesFromA
-    initialEdgesOnX = maximumDisjointClass (typedEdges (getCodomain representant))
-    edgesOnX = enaryConstruct edgesToGluingOnB initialEdgesOnX
+    edgesFromA = typedEdges (getDomain representant)
+    edgesToGluingOnB = fmap equivalentEdges edgesFromA
+    initialEdgesOnX = discretePartition (typedEdges (getCodomain representant))
+    edgesOnX = mergeSets edgesToGluingOnB initialEdgesOnX
 
 createNodeEquivalences :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Set (EquivalenceClass TypedNode)
 createNodeEquivalences f g = nodesOnX
   where
     equivalentNodes (n,nt) = ((fromJust $ applyNode f n,nt), (fromJust $ applyNode g n,nt))
-    nodesFromA = fromList $ typedNodes (getDomain f)
-    nodesToGluingOnB = DS.map equivalentNodes nodesFromA
-    initialNodesOnX = maximumDisjointClass (typedNodes (getCodomain f))
-    nodesOnX = binaryConstruct nodesToGluingOnB initialNodesOnX
+    nodesFromA = typedNodes (getDomain f)
+    nodesToGluingOnB = fmap equivalentNodes nodesFromA
+    initialNodesOnX = discretePartition (typedNodes (getCodomain f))
+    nodesOnX = mergePairs nodesToGluingOnB initialNodesOnX
 
 createEdgeEquivalences :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Set (EquivalenceClass TypedEdge)
 createEdgeEquivalences f g = edgesOnX
@@ -157,10 +157,10 @@ createEdgeEquivalences f g = edgesOnX
       ((fromJust $ applyEdge f e, mapByF s, mapByF t,et), (fromJust $ applyEdge g e,mapByG s,mapByG t,et))
     mapByF = fromJust . applyNode f
     mapByG = fromJust . applyNode g
-    edgesFromA = fromList $ typedEdges (getDomain f)
-    edgesToGluingOnB = DS.map equivalentEdges edgesFromA
-    initialEdgesOnX = maximumDisjointClass (typedEdges (getCodomain f))
-    edgesOnX = binaryConstruct edgesToGluingOnB initialEdgesOnX
+    edgesFromA = typedEdges (getDomain f)
+    edgesToGluingOnB = fmap equivalentEdges edgesFromA
+    initialEdgesOnX = discretePartition (typedEdges (getCodomain f))
+    edgesOnX = mergePairs edgesToGluingOnB initialEdgesOnX
 
 addNode :: EquivalenceClass TypedNode -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 addNode nodes h
