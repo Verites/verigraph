@@ -108,7 +108,7 @@ instance Show SymbolicMorphism where
         show (edgeId e) ++ " [" ++ show (sourceId e) ++ "->" ++ show (targetId e) ++ "]"
 
       showVarRenaming (v1, v2) =
-        Text.unpack v1 ++ " => " ++ Text.unpack v2
+        Text.unpack v1 ++ " => " ++ Text.unpack v2 ++ "\n"
 
 
 
