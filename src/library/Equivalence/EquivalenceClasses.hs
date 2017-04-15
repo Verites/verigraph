@@ -4,12 +4,15 @@ module Equivalence.EquivalenceClasses
   , discretePartition
   , mergePairs
   , mergeSets
+  , partitionToMapping
   , getElem
   , getTail
   , tsort
   ) where
 
 import           Data.Foldable (find, foldl')
+import           Data.Map      (Map)
+import qualified Data.Map      as Map
 import           Data.Set      (Set)
 import qualified Data.Set      as Set
 
@@ -43,6 +46,20 @@ mergeSets :: (Ord a, Show a) => [Set a] -> Partition a -> Partition a
 mergeSets toBeGlued partition = foldl' (flip merge) partition toBeGlued
   where
     merge eq s = mergeNEquivalences eq s `Set.union` diffNEquivalences eq s
+
+
+-- | Obtain a surjective mapping that maps every element of the partitioned set to the
+-- representative of its equivalence class, given a function to select representatives.
+partitionToMapping :: Ord a => Partition a -> (EquivalenceClass a -> b) -> Map a b
+partitionToMapping partition pickRepresentative =
+  Map.fromList
+    [ (element, representative)
+        | equivalenceClass <- Set.toList partition
+        , let representative = pickRepresentative equivalenceClass
+        , element <- Set.toList equivalenceClass
+    ]
+
+
 
 diffNEquivalences :: (Ord a, Show a) => Set a -> Partition a -> Partition a
 diffNEquivalences eq set = actualDiff allSubSets

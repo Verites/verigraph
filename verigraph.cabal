@@ -103,6 +103,7 @@ library
                        SymbolicGraph.DataAlgebra.Solver.SmtLib
                        SymbolicGraph.Internal
                        SymbolicGraph.Morphism.Internal
+                       SymbolicGraph.Morphism.Cocomplete
                        Util.Closures
                        Util.List
                        XML.Formulas

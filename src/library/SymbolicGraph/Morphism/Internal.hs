@@ -13,6 +13,8 @@ module SymbolicGraph.Morphism.Internal
   , applyToVariable
   , applyToNodeId
   , applyToEdgeId
+  , lookupNodeId
+  , lookupEdgeId
   , isNodeDefined
   , isEdgeDefined
 
@@ -126,8 +128,8 @@ instance Valid SymbolicMorphism where
       preservesIncidence =
         let
           preservedAtEdge edge =
-            (sourceId <$> applyToEdge edge morphism) == applyToNodeId (sourceId edge) morphism
-            && (targetId <$> applyToEdge edge morphism) == applyToNodeId (targetId edge) morphism
+            (sourceId <$> applyToEdge edge morphism) == lookupNodeId (sourceId edge) morphism
+            && (targetId <$> applyToEdge edge morphism) == lookupNodeId (targetId edge) morphism
         in
           all preservedAtEdge (edges $ domain morphism)
 
@@ -246,14 +248,24 @@ isTotal m =
 
 
 applyToNode :: Node -> SymbolicMorphism -> Maybe Node
-applyToNode node f = do
-  nodeId' <- applyToNodeId (nodeId node) f
-  lookupNode nodeId' (codomain f)
+applyToNode =
+  applyToNodeId . nodeId
 
 
 applyToEdge :: Edge -> SymbolicMorphism -> Maybe Edge
-applyToEdge edge f = do
-  edgeId' <- applyToEdgeId (edgeId edge) f
+applyToEdge =
+  applyToEdgeId . edgeId
+
+
+applyToNodeId :: NodeId -> SymbolicMorphism -> Maybe Node
+applyToNodeId nodeId f = do
+  nodeId' <- lookupNodeId nodeId f
+  lookupNode nodeId' (codomain f)
+
+
+applyToEdgeId :: EdgeId -> SymbolicMorphism -> Maybe Edge
+applyToEdgeId edgeId f = do
+  edgeId' <- lookupEdgeId edgeId f
   lookupEdge edgeId' (codomain f)
 
 
@@ -262,13 +274,13 @@ applyToVariable var =
   Map.lookup var . variableRenaming
 
 
-applyToNodeId :: NodeId -> SymbolicMorphism -> Maybe NodeId
-applyToNodeId nodeId =
+lookupNodeId :: NodeId -> SymbolicMorphism -> Maybe NodeId
+lookupNodeId nodeId =
   IntMap.lookup (fromEnum nodeId) . nodeMapping
 
 
-applyToEdgeId :: EdgeId -> SymbolicMorphism -> Maybe EdgeId
-applyToEdgeId edgeId =
+lookupEdgeId :: EdgeId -> SymbolicMorphism -> Maybe EdgeId
+lookupEdgeId edgeId =
   IntMap.lookup (fromEnum edgeId) . edgeMapping
 
 
