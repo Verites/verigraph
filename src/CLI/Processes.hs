@@ -91,13 +91,14 @@ execute globalOpts opts = do
     let validInitialGraph = isValid $ initialGraph completeOgg
     putStrLn "\n------------------\n"
     putStrLn $ "Is the initial graph valid? \n>>> " ++ show validInitialGraph
-    if not validInitialGraph then putStrLn $ fromJust (errorMessages $ validate $ initialGraph completeOgg) else print "\n"
+    if not validInitialGraph then putStrLn $ fromJust (errorMessages $ validate $ initialGraph completeOgg) else putStrLn ""
     print (initialGraph completeOgg)
 
     let validFinalGraph = isValid $ finalGraph ogg
     putStrLn "\n------------------\n"
     putStrLn $ "Is the final graph valid? \n>>> " ++ show validFinalGraph
-    if not validFinalGraph then putStrLn $ fromJust (errorMessages $ validate $ finalGraph ogg) else putStrLn ""
+    if not validFinalGraph then putStrLn $ fromJust (errorMessages $ validate $ finalGraph completeOgg) else putStrLn ""
+    print (finalGraph completeOgg)
 
     putStrLn "\n------------------\n"
     putStrLn $ "Is there a compatible concrete total order for rules?\n>>> " ++ show (findOrder rulesRelation rulesNames)
