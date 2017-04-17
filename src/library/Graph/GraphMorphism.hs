@@ -17,6 +17,7 @@ module Graph.GraphMorphism (
     , removeEdgeFromDomain
     , removeEdgeFromCodomain
     , removeNodeFromDomain
+    , removeNodeFromDomainForced
     , removeNodeFromCodomain
     , createEdgeOnDomain
     , createEdgeOnCodomain
@@ -160,6 +161,13 @@ removeEdgeFromCodomain e gm =
 removeNodeFromDomain :: G.NodeId -> GraphMorphism a b -> GraphMorphism a b
 removeNodeFromDomain n gm =
   gm { getDomain = removeNode n (domain gm)
+     , nodeRelation = R.removeFromDomain n (nodeRelation gm) }
+
+-- | Remove a node from the domain of the morphism
+-- It does not verify if the node has incident edges, thus it may generate invalid graph morphisms.
+removeNodeFromDomainForced :: G.NodeId -> GraphMorphism a b -> GraphMorphism a b
+removeNodeFromDomainForced n gm =
+  gm { getDomain = removeNodeForced n (domain gm)
      , nodeRelation = R.removeFromDomain n (nodeRelation gm) }
 
 -- | Remove a node from the codomain of the morphism

@@ -15,6 +15,7 @@ module TypedGraph.DPO.GraphProcess
 , strictRelation
 , creationAndDeletionRelation
 , getElements
+, initialGraph
 , finalGraph
 )
 
@@ -163,7 +164,7 @@ generateOccurrenceGrammar sequence = OccurrenceGrammar singleGrammar originalRul
     created = createdElements cdRelation
     deleted = deletedElements cdRelation
     doubleType = codomain $ getMatch $ head originalRulesWithMatches
-    coreGraph = domain $ doubleType
+    coreGraph = domain doubleType
     startGraph = removeElements coreGraph created
     finalGraph = removeElements coreGraph deleted
     singleGrammar = addReachableGraphs [("final",finalGraph)] (grammar startGraph [] newRules)
@@ -179,7 +180,7 @@ removeElements coreGraph elementsToRemove =
     (n,e) = S.partition isNode elementsToRemove
     nodes = S.map (\(Node x) -> x) n
     edges = S.map (\(Edge x) -> x) e
-  in S.foldr GM.removeNodeFromDomain (S.foldr GM.removeEdgeFromDomain (M.id coreGraph) edges) nodes
+  in S.foldr GM.removeNodeFromDomainForced (S.foldr GM.removeEdgeFromDomain (M.id coreGraph) edges) nodes
 
 -- use with the retyped rules
 creationAndDeletionRelation :: NamedProduction (TypedGraphMorphism a b) -> Relation

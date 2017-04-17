@@ -90,12 +90,16 @@ execute globalOpts opts = do
     putStrLn "Tesing Validity\n"
     putStrLn $ "Are the origins and terminations of elements unique?\n>>> " ++ show unique
 
+    let validInitialGraph = isValid $ initialGraph completeOgg
     putStrLn "\n------------------\n"
-    putStrLn $ "Is the initial graph valid? \n>>> " ++ show (isValid $ GG.start sgg)
-    print (GG.start sgg)
+    putStrLn $ "Is the initial graph valid? \n>>> " ++ show validInitialGraph
+    if not validInitialGraph then putStrLn $ fromJust (errorMessages $ validate $ initialGraph completeOgg) else print "\n"
+    print (initialGraph completeOgg)
 
+    let validFinalGraph = isValid $ finalGraph ogg
     putStrLn "\n------------------\n"
-    putStrLn $ "Is the final graph valid? \n>>> " ++ show (isValid $ finalGraph ogg)
+    putStrLn $ "Is the final graph valid? \n>>> " ++ show validFinalGraph
+    if not validFinalGraph then putStrLn $ fromJust (errorMessages $ validate $ finalGraph ogg) else putStrLn ""
     print (finalGraph ogg)
 
     putStrLn "\n------------------\n"
@@ -104,9 +108,6 @@ execute globalOpts opts = do
 
     putStrLn "\n------------------\n"
     putStrLn "Is there a compatible concrete total order respecting NACs?\n>>> Undefined"
-
---    putStrLn "\n\n\n"
---    putStrLn $ show $ getUnderlyingDerivation (snd . head $ newRules)
 
     let newStart = GG.start sgg
         gg' = GG.addReachableGraphs (GG.reachableGraphs sgg) (GG.grammar newStart [] newRules)

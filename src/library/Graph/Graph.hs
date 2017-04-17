@@ -58,6 +58,7 @@ module Graph.Graph (
 
     -- ** Delete
     , removeNode
+    , removeNodeForced
     , removeNodeAndIncidentEdges
     , removeEdge
 
@@ -383,6 +384,11 @@ removeNode :: NodeId -> Graph n e -> Graph n e
 removeNode n g@(Graph ns es)
     | Prelude.null $ getIncidentEdges g n = Graph (delFromAL ns n) es
     | otherwise = g
+
+-- | Removes the given node from the graph, unless it has any incident edges. /O(v + e²)/.
+-- It does not verify if the node has incident edges, thus it may generate invalid graphs.
+removeNodeForced :: NodeId -> Graph n e -> Graph n e
+removeNodeForced n (Graph ns es) = Graph (delFromAL ns n) es
 
 -- | Removes the given node and all incident edges from the graph. /O(v + e)/
 removeNodeAndIncidentEdges :: NodeId -> Graph n e -> Graph n e
