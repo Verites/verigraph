@@ -66,6 +66,7 @@ library
                        Data.Relation
                        Data.TypedGraph
                        Data.TypedGraph.Morphism
+                       Data.Variable
                        GrLang.AST
                        GrLang.Compiler
                        GrLang.Monad
