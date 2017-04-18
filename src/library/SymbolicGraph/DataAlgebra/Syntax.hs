@@ -16,18 +16,13 @@ module SymbolicGraph.DataAlgebra.Syntax
   , kindOf
   , arityOf
   , Substitution
-  , FreeVariables
-  , freeVariablesOf
-  , renameVariables
   ) where
 
-import           Data.Set  (Set)
-import qualified Data.Set  as Set
 
-import           Data.Map  (Map)
-import qualified Data.Map  as Map
+import           Abstract.Variable
 
-import           Data.Text (Text)
+import qualified Data.Map          as Map
+import qualified Data.Set          as Set
 
 
 
@@ -61,10 +56,6 @@ data OpAssociativity
   | AssocNone
 
 
-type Variable =
-  Text
-
-
 data Restriction =
   Restriction Predicate Expr Expr
   deriving (Eq, Show)
@@ -76,10 +67,6 @@ data Predicate
   | LessEqual
   | Less
   deriving (Eq, Show)
-
-
-type Substitution =
-  Map Variable Variable
 
 
 nameOf :: Operation -> String
@@ -126,41 +113,15 @@ isWellFormed expr =
     Right _ -> True
 
 
-class FreeVariables t where
-
-  freeVariablesOf :: t -> Set Variable
-
-  renameVariables :: Substitution -> t -> t
-
-
-
-instance FreeVariables a => FreeVariables [a] where
-
-  freeVariablesOf xs =
-    Set.unions (map freeVariablesOf xs)
-
-
-  renameVariables subst =
-    map (renameVariables subst)
-
-
-
-instance (FreeVariables a, FreeVariables b) => FreeVariables (a, b) where
-
-  freeVariablesOf (x, y) =
-    freeVariablesOf x `Set.union` freeVariablesOf y
-
-  renameVariables subst (x, y) =
-    (renameVariables subst x, renameVariables subst y)
-
-
 
 instance FreeVariables Restriction where
 
-  freeVariablesOf (Restriction _ e1 e2) =
-    freeVariablesOf e1 `Set.union` freeVariablesOf e2
+  {-# INLINE freeVariableSet #-}
+  freeVariableSet (Restriction _ e1 e2) =
+    freeVariableSet e1 `Set.union` freeVariableSet e2
 
 
+  {-# INLINE renameVariables #-}
   renameVariables subst (Restriction relation e1 e2) =
     Restriction relation (renameVariables subst e1) (renameVariables subst e2)
 
@@ -168,9 +129,9 @@ instance FreeVariables Restriction where
 
 instance FreeVariables Expr where
 
-  freeVariablesOf (EVariable var) = Set.singleton var
-  freeVariablesOf (EConstant _) = Set.empty
-  freeVariablesOf (EApplication _ args) = Set.unions (map freeVariablesOf args)
+  freeVariableSet (EVariable var) = Set.singleton var
+  freeVariableSet (EConstant _) = Set.empty
+  freeVariableSet (EApplication _ args) = Set.unions (map freeVariableSet args)
 
 
   renameVariables subst expr =

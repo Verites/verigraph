@@ -2,11 +2,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 module SymbolicGraph.DataAlgebra.Solver.SmtLib (makeSmtLibSolver) where
 
+import           Abstract.Variable
 import           SymbolicGraph.DataAlgebra
 import           SymbolicGraph.DataAlgebra.Solver
 
 import qualified Data.List                        as List
-import qualified Data.Set                         as Set
 
 import           Data.Monoid
 import qualified Data.Text                        as T
@@ -18,23 +18,16 @@ makeSmtLibSolver :: (Text -> IO (Maybe Bool)) -> Solver
 makeSmtLibSolver checkSat =
   let
     checkSatisfability restrictions =
-      let
-        variables =
-          freeVariablesOf restrictions
-      in
-        checkSat . concatLines $
-          [ TB.fromText "(set-logic QF_NIA)" ]
-          ++ map (\var -> declareConst var "Int") (Set.toList variables)
-          ++ map assert restrictions
-          ++ [ TB.fromText "(check-sat)"
-             , TB.fromText "(exit)"
-             ]
+      checkSat . concatLines $
+        [ TB.fromText "(set-logic QF_NIA)" ]
+        ++ map (`declareConst` "Int") (freeVariablesOf restrictions)
+        ++ map assert restrictions
+        ++ [ TB.fromText "(check-sat)"
+           , TB.fromText "(exit)"
+           ]
 
     checkStrengthening weaker stronger =
       let
-        variables =
-          freeVariablesOf (weaker, stronger)
-
         premises = stronger
 
         conclusion =
@@ -45,7 +38,7 @@ makeSmtLibSolver checkSat =
       in
         fmap (fmap not) . checkSat . concatLines $
           [ TB.fromText "(set-logic QF_NIA)" ]
-          ++ map (\var -> declareConst var "Int") (Set.toList variables)
+          ++ map (`declareConst` "Int") (freeVariablesOf (weaker, stronger))
           ++ map assert premises
           ++ [ assert negatedConclusion
              , TB.fromText "(check-sat)"

@@ -44,7 +44,8 @@ import           Abstract.Morphism
 import           Abstract.Relation         (Relation)
 import qualified Abstract.Relation         as Relation
 import           Abstract.Valid
-import           SymbolicGraph.DataAlgebra
+import           Abstract.Variable
+import           SymbolicGraph.DataAlgebra ()
 import           SymbolicGraph.Internal
 
 import           Control.Arrow
@@ -175,7 +176,7 @@ instance Morphism SymbolicMorphism where
       , _codomain = graph
       , nodeMapping = IntMap.fromList [ (fromEnum n, n) | n <- nodeIds graph ]
       , edgeMapping = IntMap.fromList [ (fromEnum e, e) | e <- edgeIds graph ]
-      , variableRenaming = Map.fromList [ (v, v) | v <- Set.toList (freeVariablesOf graph) ]
+      , variableRenaming = Map.fromList [ (v, v) | v <- freeVariablesOf graph ]
       }
 
 
@@ -222,7 +223,7 @@ instance Morphism SymbolicMorphism where
   isEpimorphism m =
       intMapRange (nodeMapping m) == asIntSet (nodeIds $ _codomain m)
         && intMapRange (edgeMapping m) == asIntSet (edgeIds $ _codomain m)
-        && mapRange (variableRenaming m) == freeVariablesOf (_codomain m)
+        && mapRange (variableRenaming m) == freeVariableSet (_codomain m)
 
     where
       intMapRange =
@@ -244,7 +245,7 @@ isTotal :: SymbolicMorphism -> Bool
 isTotal m =
   IntMap.keysSet (nodeMapping m) == asIntSet (nodeIds $ domain m)
     && IntMap.keysSet (edgeMapping m) == asIntSet (nodeIds $ domain m)
-    && Map.keysSet (variableRenaming m) == freeVariablesOf (domain m)
+    && Map.keysSet (variableRenaming m) == freeVariableSet (domain m)
 
 
 applyToNode :: Node -> SymbolicMorphism -> Maybe Node
@@ -370,8 +371,8 @@ edgeRelation f =
 variableRelation :: SymbolicMorphism -> Relation Variable
 variableRelation f =
   Relation.fromPairs
-    (Set.toList . freeVariablesOf $ domain f)
-    (Set.toList . freeVariablesOf $ codomain f)
+    (Set.toList . freeVariableSet $ domain f)
+    (Set.toList . freeVariableSet $ codomain f)
     (Map.toList $ variableRenaming f)
 
 
@@ -404,7 +405,7 @@ orphanVariables :: SymbolicMorphism -> [Variable]
 orphanVariables f =
   Set.toList $
     Set.difference
-      (freeVariablesOf $ domain f)
+      (freeVariableSet $ domain f)
       (Map.keysSet $ variableRenaming f)
 
 

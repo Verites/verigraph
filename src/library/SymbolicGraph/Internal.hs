@@ -69,6 +69,7 @@ module SymbolicGraph.Internal
 import           SymbolicGraph.DataAlgebra
 
 import           Abstract.Valid
+import           Abstract.Variable
 import           Graph.Graph               (EdgeId, Graph, NodeId)
 import qualified Graph.Graph               as Graph
 
@@ -155,8 +156,8 @@ pattern E {edgeId, sourceId, targetId} =
 
 instance FreeVariables Node where
 
-  {-# INLINE freeVariablesOf #-}
-  freeVariablesOf (Node n) =
+  {-# INLINE freeVariableSet #-}
+  freeVariableSet (Node n) =
     case Graph.nodeInfo n of
       Nothing ->
         Set.empty
@@ -179,11 +180,11 @@ instance FreeVariables Node where
 
 instance FreeVariables SymbolicGraph where
 
-  {-# INLINE freeVariablesOf #-}
-  freeVariablesOf graph =
+  {-# INLINE freeVariableSet #-}
+  freeVariableSet graph =
     Set.union
-      (freeVariablesOf $ restrictions graph)
-      (freeVariablesOf $ nodes graph)
+      (freeVariableSet $ restrictions graph)
+      (freeVariableSet $ nodes graph)
 
   {-# INLINE renameVariables #-}
   renameVariables subst (SymbGraph graph restrictions) =

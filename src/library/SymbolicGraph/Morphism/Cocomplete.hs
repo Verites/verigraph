@@ -7,13 +7,13 @@ module SymbolicGraph.Morphism.Cocomplete where
 
 import           Abstract.Cocomplete
 import           Abstract.Morphism
-import           Control.Arrow
+import           Abstract.Variable
 import           Equivalence.EquivalenceClasses
-import           SymbolicGraph.DataAlgebra
 import           SymbolicGraph.Internal
 import           SymbolicGraph.Morphism.Internal
 
 
+import           Control.Arrow
 import           Control.Monad
 import           Data.IntMap                     (IntMap)
 import qualified Data.IntMap                     as IntMap
@@ -24,7 +24,6 @@ import qualified Data.Map                        as Map
 import           Data.Maybe                      (catMaybes, listToMaybe,
                                                   mapMaybe)
 import           Data.Monoid
-import           Data.Set                        (Set)
 import qualified Data.Set                        as Set
 import           Data.Text                       (Text)
 import qualified Data.Text                       as Text
@@ -120,7 +119,7 @@ relableGraph :: SymbolicGraph -> [Int] -> [Int] -> Text -> Relabeling
 relableGraph graph newNodeIds newEdgeIds varSuffix =
   let
     varMap =
-      Map.fromList [ (v, v <> varSuffix) | v <- Set.toList $ freeVariablesOf graph ]
+      Map.fromList [ (v, v <> varSuffix) | v <- freeVariablesOf graph ]
 
     nodeMap =
       Map.fromList
@@ -189,14 +188,14 @@ calculateGenericCoequalizer sharedDomain sharedCodomain parallelMorphisms =
     collapsedVarsFromFunctions =
       catMaybes
         [ filterMap (applyToVariable v) parallelMorphisms
-            | v <- Set.toList (freeVariablesOf sharedDomain)
+            | v <- freeVariablesOf sharedDomain
         ]
 
     variableRenaming =
       partitionToMapping
         (mergeElements
           (collapsedVarsFromFunctions ++ collapsedVarsFromNodes)
-          (discretePartition . Set.toList $ freeVariablesOf sharedCodomain))
+          (discretePartition $ freeVariablesOf sharedCodomain))
         (Text.concat . List.intersperse "__" . Set.toList)
 
     nodeMapping =
