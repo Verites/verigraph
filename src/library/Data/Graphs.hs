@@ -79,6 +79,9 @@ module Data.Graphs (
     , edgesInContext
     , newNodes
     , newEdges
+
+    -- * Map
+    , mapNodes
 ) where
 
 import           Data.Function             (on)
@@ -170,7 +173,7 @@ instance Eq (Graph n e) where
        eq (map simplifyEdge edgeMap1) (map simplifyEdge edgeMap2)
 
 
-instance Show (Graph n e) where
+instance {-# OVERLAPPABLE #-} Show (Graph n e) where
     show (Graph nodes edges) = concat $
         "Nodes:\n" : map showNode (sortBy (compare `on` fst) nodes)
         ++ "Edges:\n" : map showEdge (sortBy (compare `on` fst) edges)
@@ -195,7 +198,6 @@ instance {-# OVERLAPPABLE #-} Pretty n => Pretty (Node n) where
 instance {-# OVERLAPPABLE #-} Pretty e => Pretty (Edge e) where
   pretty (Edge e src tgt p) =
     PP.hsep [pretty e, PP.brackets (pretty p), ":", pretty src, "->", pretty tgt]
-
 instance Cardinality (Graph n e) where
   cardinality = cardinality'
 
@@ -566,6 +568,12 @@ getOutgoingEdges g n = filter (\e -> sourceOf g e == Just n) (edgeIds g)
 -- | Gets a list of all edges whose target is the given node. /O(e²)/.
 getIncomingEdges :: Graph n e -> NodeId -> [EdgeId]
 getIncomingEdges g n = filter (\e -> targetOf g e == Just n) (edgeIds g)
+
+
+-- | Modify the payloads of all nodes.
+mapNodes :: (Node n -> n') -> Graph n e -> Graph n' e
+mapNodes f (Graph nodes edges) = Graph (map updateNode nodes) edges
+  where updateNode (id, node) = (id, node { nodeInfo = f node })
 
 
 instance Valid (Graph n e) where

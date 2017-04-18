@@ -8,6 +8,7 @@ module Data.Relation
       Relation
     -- * Construction
     , empty
+    , fromPairs
     , fromLists
     , fromMapAndCodomain
     -- * Transformation
@@ -87,6 +88,17 @@ empty dom cod = Relation  orderedDomain orderedCodomain emptyMap
     orderedDomain = sort $ nub dom
     orderedCodomain = sort $ nub cod
     emptyMap = foldr (\x -> Map.insert x []) Map.empty orderedDomain
+
+
+-- | A relation with given domain and codomain, mapped according to the given list.
+fromPairs :: Ord a => [a] -> [a] -> [(a, a)] -> Relation a
+fromPairs dom cod pairs = Relation (sort $ nub dom) (sort $ nub cod) mapping
+  where  mapping = foldl' (\m (x, y) -> Map.insertWith (++) x [y] m) Map.empty pairs
+
+-- | A relation with given domain and codomain, mapped according to the given list.
+fromList :: Ord a => [a] -> [a] -> [(a, [a])] -> Relation a
+fromList dom cod pairs = Relation (sort $ nub dom) (sort $ nub cod) (Map.fromList pairs)
+
 
 -- | The identity relation on @dom@.
 id :: Ord a => [a] -> Relation a
