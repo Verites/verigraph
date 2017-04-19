@@ -23,6 +23,7 @@ import qualified Graph.Graph       as Graph
 
 import qualified Data.Map          as Map
 import qualified Data.Set          as Set
+import qualified Data.Text         as Text
 
 
 
@@ -79,3 +80,22 @@ instance FreeVariables LabeledGraph where
     where
       renameVariable v =
         Map.findWithDefault v v subst
+
+
+
+instance {-# OVERLAPPING #-} Show LabeledGraph where
+
+  show (Graph.Graph nodes edges) =
+      "Nodes:\n"
+      ++ concatMap showNode nodes
+      ++ "Edges:\n"
+      ++ concatMap showEdge edges
+    where
+      showNode (n, Graph.Node _ label) =
+        "\t" ++ show n ++ " [" ++ showLabel label ++ "]" ++ "\n"
+
+      showLabel Nothing  = ""
+      showLabel (Just v) = Text.unpack v
+
+      showEdge (e, Graph.Edge _ src tgt _) =
+        "\t" ++ show e ++ " (" ++ show src ++ "->" ++ show tgt ++ ")\n"

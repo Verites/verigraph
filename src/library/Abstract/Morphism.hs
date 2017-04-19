@@ -18,7 +18,7 @@ data MorphismType
   | Monomorphism
   | Epimorphism
   | Isomorphism
-  deriving (Show, Enum)
+  deriving (Eq, Show, Enum)
 
 type Span m = (m, m)
 

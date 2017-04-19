@@ -5,6 +5,9 @@ module LabeledGraph.Morphism
 
   -- * Query
   , isTotal
+  , isTotalOnNodes
+  , isTotalOnEdges
+  , isTotalOnVariables
   , applyToNode
   , applyToEdge
   , applyToVariable
@@ -36,4 +39,5 @@ module LabeledGraph.Morphism
   , orphanVariables
   ) where
 
+import           LabeledGraph.Morphism.FindMorphism ()
 import           LabeledGraph.Morphism.Internal

@@ -8,6 +8,9 @@ module LabeledGraph.Morphism.Internal
 
   -- * Query
   , isTotal
+  , isTotalOnNodes
+  , isTotalOnEdges
+  , isTotalOnVariables
   , applyToNode
   , applyToEdge
   , applyToVariable
@@ -119,7 +122,9 @@ instance Valid LabeledMorphism where
     mconcat
       [ withContext "domain" $ validate (domain morphism)
       , withContext "codomain" $ validate (codomain morphism)
-      , ensure (isTotal morphism) "the morphism is not total"
+      , ensure (isTotalOnNodes morphism) "the morphism is not total on nodes"
+      , ensure (isTotalOnEdges morphism) "the morphism is not total on edges"
+      , ensure (isTotalOnVariables morphism) "the morphism is not total on variables"
       , ensure preservesIncidence "the morphism doesn't preseve incidence/adjacency"
       , ensure preservesLabeling "the morphism doesn't preserve labeling"
       ]
@@ -145,8 +150,8 @@ instance Valid LabeledMorphism where
               (Just _, Nothing) ->
                 False
 
-              (justV, Just w) ->
-                justV == applyToVariable w morphism
+              (Just v, justW) ->
+                applyToVariable v morphism == justW
         in
           all preservedAtNode (nodes $ domain morphism)
 
@@ -242,9 +247,22 @@ instance Morphism LabeledMorphism where
 
 isTotal :: LabeledMorphism -> Bool
 isTotal m =
+    isTotalOnNodes m && isTotalOnEdges m && isTotalOnVariables m
+
+
+isTotalOnNodes :: LabeledMorphism -> Bool
+isTotalOnNodes m =
   IntMap.keysSet (nodeMapping m) == asIntSet (nodeIds $ domain m)
-    && IntMap.keysSet (edgeMapping m) == asIntSet (nodeIds $ domain m)
-    && Map.keysSet (variableRenaming m) == freeVariableSet (domain m)
+
+
+isTotalOnEdges :: LabeledMorphism -> Bool
+isTotalOnEdges m =
+  IntMap.keysSet (edgeMapping m) == asIntSet (edgeIds $ domain m)
+
+
+isTotalOnVariables :: LabeledMorphism -> Bool
+isTotalOnVariables m =
+  Map.keysSet (variableRenaming m) == freeVariableSet (domain m)
 
 
 applyToNode :: LNode -> LabeledMorphism -> Maybe LNode

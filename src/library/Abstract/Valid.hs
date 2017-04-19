@@ -41,6 +41,7 @@ class Valid a where
 data ValidationResult
   = IsValid -- ^ Indicates that no error was found
   | IsInvalid [String] -- ^ Indicates that errors were found, with messages explaining them
+  deriving Show
 
 
 instance Monoid ValidationResult where

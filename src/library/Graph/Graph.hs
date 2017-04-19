@@ -189,7 +189,7 @@ instance Eq (Graph n e) where
        eq (map simplifyEdge edgeMap1) (map simplifyEdge edgeMap2)
 
 
-instance Show (Graph n e) where
+instance {-# OVERLAPPABLE #-} Show (Graph n e) where
     show (Graph nodes edges) =
         "Nodes:\n"
         ++ concatMap showNode nodes
@@ -201,7 +201,6 @@ instance Show (Graph n e) where
 
         showEdge (e, Edge _ src tgt _) =
           "\t" ++ show e ++ " (" ++ show src ++ "->" ++ show tgt ++ ")\n"
-
 
 
 instance Cardinality (Graph n e) where
