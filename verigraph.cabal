@@ -56,6 +56,7 @@ library
                        Graph.GraphMorphism
                        Graph.QuickCheck
                        LabeledGraph
+                       LabeledGraph.QuickCheck
                        LabeledGraph.Morphism
                        Logic.Model
                        Logic.Ctl

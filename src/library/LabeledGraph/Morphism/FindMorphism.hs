@@ -1,7 +1,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 module LabeledGraph.Morphism.FindMorphism where
 
-import           Abstract.Morphism              hiding (codomain, domain, id)
+import           Abstract.Morphism              hiding (id)
 import           Abstract.Variable
 import           Graph.Graph                    (Edge (..), EdgeId, Node (..),
                                                  NodeId)
@@ -10,6 +10,7 @@ import           LabeledGraph.Internal
 import           LabeledGraph.Morphism.Internal hiding (edgeMap, id, nodeMap,
                                                  variableMap)
 
+import           Control.Applicative
 import           Control.Arrow
 import           Control.Monad
 import           Data.IntMap                    (IntMap)
@@ -25,16 +26,82 @@ import qualified Data.Set                       as Set
 
 instance FindMorphism LabeledMorphism where
 
-  induceSpanMorphism =
-    undefined
+
+  {-# INLINE findMorphisms #-}
+  findMorphisms restriction domain codomain =
+    let
+      config =
+        makeConfig restriction
+    in
+      runMorphismBuilder config domain codomain $
+        buildMorphisms (makeConfig restriction)
 
 
-  findMorphisms restriction =
-    buildMorphisms (makeConfig restriction)
+  {-# INLINE partialInjectiveMatches #-}
+  partialInjectiveMatches nac match =
+    runMorphismBuilder config (codomain nac) (codomain match) $
+      addMappingsFromSpan >=> buildMorphisms config
+    where
+      config = makeConfig Monomorphism
+
+      addMappingsFromSpan :: BuilderState -> [BuilderState]
+      addMappingsFromSpan state =
+        do
+          let
+            mappedVariables =
+              [ (v1, v2)
+                  | v <- freeVariablesOf (domain nac)
+                  , Just v1 <- [applyToVariable v nac]
+                  , Just v2 <- [applyToVariable v match]
+              ]
+          state1 <- foldM addVariableMapping' state mappedVariables
+
+          let
+            mappedNodes =
+              [ (n1, n2)
+                  | n <- Graph.nodeIds (domain nac)
+                  , Just n1 <- [applyToNodeId n nac]
+                  , Just n2 <- [applyToNodeId n match]
+              ]
+          state2 <- foldM addNodeMapping' state1 mappedNodes
+
+          let
+            mappedEdges =
+              [ (e1, e2)
+                  | e <- Graph.edgeIds (domain nac)
+                  , Just e1 <- [applyToEdgeId e nac]
+                  , Just e2 <- [applyToEdgeId e match]
+              ]
+          foldM addEdgeMapping' state2 mappedEdges
+
+      addNodeMapping' state (domainNode, codomainNode) =
+        case IntMap.lookup (fromEnum $ nodeId domainNode) (nodeMap state) of
+          Just previousMapping ->
+            [ state | previousMapping == nodeId codomainNode ]
+
+          Nothing ->
+            addNodeMapping config domainNode codomainNode state
+
+      addEdgeMapping' state (domainEdge, codomainEdge) =
+        case IntMap.lookup (fromEnum $ edgeId domainEdge) (edgeMap state) of
+          Just previousMapping ->
+            [ state | previousMapping == edgeId codomainEdge ]
+
+          Nothing ->
+            addEdgeMapping config domainEdge codomainEdge state
+
+      addVariableMapping' state (domainVar, codomainVar) =
+        case Map.lookup domainVar (variableMap state) of
+          Just previousMapping ->
+            [ state | previousMapping == codomainVar ]
+
+          Nothing ->
+            addVariableMapping config domainVar codomainVar state
 
 
-  partialInjectiveMatches =
-    undefined
+
+type MorphismBuilder =
+  BuilderState -> [BuilderState]
 
 
 data BuilderState =
@@ -62,6 +129,7 @@ data BuilderConfig =
 
 
 makeConfig :: MorphismType -> BuilderConfig
+{-# INLINE makeConfig #-}
 makeConfig restriction =
   case restriction of
     GenericMorphism ->
@@ -109,33 +177,34 @@ makeConfig restriction =
         }
 
 
-makeInitialState :: LabeledGraph -> LabeledGraph -> BuilderState
-makeInitialState domain codomain =
-  State
-    { unmappedDomainNodes = asIntMap (Graph.nodeMap domain)
-    , unmappedDomainEdges = asIntMap (Graph.edgeMap domain)
-    , unmappedDomainVariables = freeVariableSet domain
-    , availableCodomainNodes = asIntMap (Graph.nodeMap codomain)
-    , availableCodomainEdges = asIntMap (Graph.edgeMap codomain)
-    , availableCodomainVariables = freeVariableSet codomain
-    , nodeMap = IntMap.empty
-    , edgeMap = IntMap.empty
-    , variableMap = Map.empty
-    }
+runMorphismBuilder :: (Alternative m, Monad m) =>
+  BuilderConfig -> LabeledGraph -> LabeledGraph ->
+  (BuilderState -> m BuilderState) -> m LabeledMorphism
+runMorphismBuilder config domain codomain build =
+  let
+    initialState =
+      State
+        { unmappedDomainNodes = asIntMap (Graph.nodeMap domain)
+        , unmappedDomainEdges = asIntMap (Graph.edgeMap domain)
+        , unmappedDomainVariables = freeVariableSet domain
+        , availableCodomainNodes = asIntMap (Graph.nodeMap codomain)
+        , availableCodomainEdges = asIntMap (Graph.edgeMap codomain)
+        , availableCodomainVariables = freeVariableSet codomain
+        , nodeMap = IntMap.empty
+        , edgeMap = IntMap.empty
+        , variableMap = Map.empty
+        }
+    in do
+      finalState <- build initialState
+      guard $ validateFinalState config domain codomain finalState
+      return $
+        LabeledMor domain codomain (nodeMap finalState) (edgeMap finalState) (variableMap finalState)
 
 
-
-buildMorphisms :: BuilderConfig -> LabeledGraph -> LabeledGraph -> [LabeledMorphism]
-buildMorphisms config domain codomain =
-  do
-    state1 <- mapAllEdges config (makeInitialState domain codomain)
-    state2 <- mapAllNodes config state1
-    state3 <- mapAllVariables config state2
-
-    guard $ validateFinalState config domain codomain state3
-    return $
-      LabeledMor domain codomain
-        (nodeMap state3) (edgeMap state3) (variableMap state3)
+buildMorphisms :: BuilderConfig -> BuilderState -> [BuilderState]
+{-# INLINE buildMorphisms #-}
+buildMorphisms config =
+  mapAllEdges config >=> mapAllNodes config >=> mapAllVariables config
 
 
 mapAll :: Monad m =>
@@ -154,6 +223,7 @@ mapAll noUnmappedElements pickDomainElement pickCodomainElement addMapping confi
         codomainElement <- pickCodomainElement state
         state' <- addMapping config domainElement codomainElement state
         recurse state'
+
 
 mapAllEdges :: BuilderConfig -> BuilderState -> [BuilderState]
 mapAllEdges =

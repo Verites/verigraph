@@ -2,6 +2,7 @@ module Graph.QuickCheck where
 
 import           Graph.Graph
 
+import           Control.Arrow
 import           Test.QuickCheck.Arbitrary
 import           Test.QuickCheck.Gen
 
@@ -43,24 +44,10 @@ instance (Arbitrary e) => Arbitrary (Edge e) where
 
 
 
-instance (Arbitrary n, Arbitrary e) => Arbitrary (Graph n e) where
+instance {-# OVERLAPPABLE #-} (Arbitrary n, Arbitrary e) => Arbitrary (Graph n e) where
 
   arbitrary =
-    sized $ \size ->
-      let
-        nodeSizePeriod =
-          10
-
-        numNodes =
-          size `div` nodeSizePeriod
-
-        edgeIncrement =
-          (numNodes * numNodes) `div` nodeSizePeriod
-
-        numEdges =
-          (size `mod` nodeSizePeriod) * edgeIncrement
-      in
-        randomGraph arbitrary arbitrary numNodes numEdges
+    sized $ randomSizedGraph arbitrary arbitrary
 
 
   shrink =
@@ -171,6 +158,47 @@ randomGraph randomNodePayload randomEdgePayload numNodes numEdges =
     fromNodesAndEdges
       <$> mapM randomNode nodeIds
       <*> mapM randomEdge edgeIds
+
+
+-- | Given generators for payloads, the number of nodes and a size parameter,
+-- generates a random graph.
+randomSizedGraph :: Gen n -> Gen e -> Int -> Gen (Graph n e)
+randomSizedGraph randomNodePayload randomEdgePayload size =
+  let
+    (numNodes, numEdges) =
+      numNodesAndEdgesFor size
+  in
+    randomGraph randomNodePayload randomEdgePayload numNodes numEdges
+
+
+-- | Defines how the number of nodes in a random graph grows with the QuickCheck size parameter.
+-- Essentially, the number of nodes is about @size / nodeSizePeriod@.
+nodeSizePeriod :: Double
+nodeSizePeriod =
+  10
+
+
+numNodesAndEdgesFor :: Int -> (Int, Int)
+numNodesAndEdgesFor =
+    (floor *** round) . numNodesAndEdgesFor' . fromIntegral
+  where
+    numNodesAndEdgesFor' :: Double -> (Double, Double)
+    numNodesAndEdgesFor' size
+      | size <= 0 = (0, 0)
+      | size <= 3 = (1, size - 1)
+      | size <= 7 = (2, (size - 3) * 2)
+      | otherwise =
+        let
+          size' =
+            size - 7
+
+          numNodes =
+            fromIntegral (floor $ (size' / nodeSizePeriod) + 3 :: Int)
+
+          edgeIncrement =
+            (numNodes * numNodes * 1.1) / nodeSizePeriod
+        in
+          (numNodes, (size' - (numNodes - 3) * nodeSizePeriod) * edgeIncrement)
 
 
 -- | Produces all immediate shrinks of the given graph. Each shrink step may remove a single node
