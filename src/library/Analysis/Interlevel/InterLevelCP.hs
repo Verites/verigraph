@@ -108,44 +108,55 @@ relevantMatches conf dangFl dangGl = concatMap (createAllSubobjects matchInjecti
     --axs = induzedSubgraphs al
     axs = subgraphs (codomain al)
 
+-- Algorithm proposed in (MACHADO, 2012) to extend a TGM.
+-- For each orphan node in the received morphism l, it must add all
+-- possible edges that connects in this node according to the type graph.
 danglingExtension :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 danglingExtension gl l = tlUpdated
   where
-    ld = orphanTypedNodes l
-    tl = codomain l
-    t = codomain tl
-    tlx n' = any (\n -> extractNodeType tl n == n') ld
-    dangT = filter (\e -> tlx (sourceOfUnsafe t e) || tlx (targetOfUnsafe t e)) (edgeIds t)
+    -- TODO: orphanTypedNodes /= orphanTypedNodesIds
+    orphanNodes = orphanTypedNodes l
+    typesOfOrphanNodes = map (extractNodeType typingMorphism) orphanNodes
 
-    edgesToAdd = concatMap (\n -> map (\e -> (n,e)) dangT) ld
-
+    typingMorphism = codomain l
+    typeGraph = codomain typingMorphism
+    edgesOfTypeGraph = edges typeGraph
+    
+    -- Select edges to be added
+    dangT = [e | e <- edgesOfTypeGraph,
+                 sourceId e `elem` typesOfOrphanNodes ||
+                 targetId e `elem` typesOfOrphanNodes]
+    
+    -- Merge edges to be added with their nodes
+    edgesToAdd = concatMap (\n -> map (\e -> (n,e)) dangT) orphanNodes
+    
     tlUpdated = foldl addEdge gl edgesToAdd
 
     addEdge tgm (n,e) =
       case (isSrc,isTgt) of
-        (True,True) -> createSrcTgt tgm e n
-        (True,False) -> createSrc tgm e n
-        (False,True) -> createTgt tgm e n
+        (True,True) -> createSrcTgt tgm
+        (True,False) -> createSrc tgm
+        (False,True) -> createTgt tgm
         (False,False) -> error "danglingExtension: it's not supposed to be here"
       where
         typeNode = extractNodeType (codomain tgm) n
-        isSrc = typeNode == sourceOfUnsafe t e
-        isTgt = typeNode == targetOfUnsafe t e
-
-        createEdge tgm e s t = createEdgeOnCodomain edgeId s t e tgm
+        isSrc = typeNode == sourceId e
+        isTgt = typeNode == targetId e
+        
+        createEdge src tgt newGraph = createEdgeOnCodomain newEdgeId src tgt (edgeId e) newGraph
           where
-            edgeId = head (newTypedEdges (codomain tgm))
+            newEdgeId = head (newTypedEdges (codomain newGraph))
 
-        createSrcTgt tgm e n = createTgt (createSrc tgm e n) e n
+        createSrcTgt morp = createTgt (createSrc morp)
 
-        createSrc tgm e n = createEdge newGraph e n nodeId
+        createSrc morp = createEdge n nodeId newGraph
           where
-            nodeId = head (newTypedNodes (codomain tgm))
-            typeNewNode = targetOfUnsafe (codomain (codomain tgm)) e
-            newGraph = createNodeOnCodomain nodeId typeNewNode tgm
+            nodeId = head (newTypedNodes (codomain morp))
+            typeNewNode = targetId e
+            newGraph = createNodeOnCodomain nodeId typeNewNode morp
 
-        createTgt tgm e n = createEdge newGraph e nodeId n
+        createTgt morp = createEdge nodeId n newGraph
           where
-            nodeId = head (newTypedNodes (codomain tgm))
-            typeNewNode = sourceOfUnsafe (codomain (codomain tgm)) e
-            newGraph = createNodeOnCodomain nodeId typeNewNode tgm
+            nodeId = head (newTypedNodes (codomain morp))
+            typeNewNode = sourceId e
+            newGraph = createNodeOnCodomain nodeId typeNewNode morp
