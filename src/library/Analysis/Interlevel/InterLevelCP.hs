@@ -63,8 +63,8 @@ interLevelConflictOneMatch conf sndRule match = m0s
     fl = mappingLeft l'
     gl = mappingLeft r'
 
-    danglingExtFl = compose fl (danglingExtension fl bigL)
-    danglingExtGl = compose gl (danglingExtension gl bigL'')
+    danglingExtFl = compose fl (danglingExtension bigL)
+    danglingExtGl = compose gl (danglingExtension bigL'')
 
     axs = relevantMatches conf danglingExtFl danglingExtGl
     relevantGraphs = map codomain axs
@@ -111,9 +111,11 @@ relevantMatches conf dangFl dangGl = concatMap (createAllSubobjects matchInjecti
 -- Algorithm proposed in (MACHADO, 2012) to extend a TGM.
 -- For each orphan node in the received morphism l, it must add all
 -- possible edges that connects in this node according to the type graph.
-danglingExtension :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
-danglingExtension gl l = tlUpdated
+danglingExtension :: TypedGraphMorphism a b -> TypedGraphMorphism a b
+danglingExtension l = tlUpdated
   where
+    initObject = idMap (codomain l) (codomain l)
+    
     -- TODO: orphanTypedNodes /= orphanTypedNodesIds
     orphanNodes = orphanTypedNodes l
     typesOfOrphanNodes = map (extractNodeType typingMorphism) orphanNodes
@@ -130,7 +132,7 @@ danglingExtension gl l = tlUpdated
     -- Merge edges to be added with their nodes
     edgesToAdd = concatMap (\n -> map (\e -> (n,e)) dangT) orphanNodes
     
-    tlUpdated = foldl addEdge gl edgesToAdd
+    tlUpdated = foldl addEdge initObject edgesToAdd
 
     addEdge tgm (n,e) =
       case (isSrc,isTgt) of
