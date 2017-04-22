@@ -2,6 +2,7 @@ import           Abstract.DPO
 import           Abstract.Morphism
 import           Analysis.Interlevel.InterLevelCP
 import           Data.List.Utils                  (countElem)
+import           Data.Maybe                       (fromMaybe)
 import           Grammar.Core
 import           Test.HUnit
 import           TypedGraph.Graph
@@ -22,9 +23,10 @@ checkDanglingExtension gg1 =
   , length edgs ~=? 8
   ]
   where
-    ruleC = case lookup "ruleC" (rules gg1) of
-          Just x -> x
-          Nothing -> error "secondOrderTest: ruleC is not in secondOrderMatchTest.ggx"
+    ruleC =
+      fromMaybe
+        (error "secondOrderTest: ruleC is not in secondOrderMatchTest.ggx")
+        (lookup "ruleC" (rules gg1))
     
     left = getLHS ruleC
     dangGraph = codomain (danglingExtension left)
