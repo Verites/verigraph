@@ -96,7 +96,7 @@ execute globalOpts opts = do
         evoConflicts = allEvolSpans dpoConf namedSndOrdRules
 
 
-    putStrLn $ "injective satisfability of nacs: " ++ show (nacSatisfaction dpoConf)
+    putStrLn $ "injective satisfiability of nacs: " ++ show (nacSatisfaction dpoConf)
     putStrLn $ "only injective matches morphisms: " ++ show (matchRestriction dpoConf)
     putStrLn ""
 
@@ -121,7 +121,7 @@ execute globalOpts opts = do
       if matchRestriction dpoConf == AnyMatches
         then mapM_ putStrLn $
           "Inter-level Critical Pairs Analysis:" :
-          "(First Order Rule) (Sencond Order Rule) (Conflict Index)" :
+          "(First Order Rule) (Second Order Rule) (Conflict Index)" :
           map printILCP interlevelCPs
         else putStrLn "Inter-level CP not defined for only injective matches"
 
@@ -129,7 +129,7 @@ execute globalOpts opts = do
 
     when secondOrder $
       mapM_ putStrLn $
-        "Evolutionary Spans Interlevel CP:" : printEvoConflicts evoConflicts
+        "Evolutionary Spans Inter-level CP:" : printEvoConflicts evoConflicts
 
     putStrLn ""
     putStrLn "Critical Pair Analysis done!"
@@ -164,10 +164,10 @@ printAnalysis essential action dpoConf rules =
       depMatrix = triDepMatrix ++ irrDepMatrix
       triDepMatrix = analysisMatrix dpoConf rules
         findAllProduceUse findAllRemoveDangling findAllDeleteForbid
-        "Produce-Use" "Remove-Dangling" "Deliver-Forbid" "Triggereds Dependencies"
+        "Produce-Use" "Remove-Dangling" "Deliver-Forbid" "Triggered Dependencies"
       irrDepMatrix = analysisMatrix dpoConf rules
         findAllDeliverDelete findAllDeliverDangling findAllForbidProduce
-        "Deliver-Delete" "Deliver-Dangling" "Forbid-Produce" "Irreversibles Dependencies"
+        "Deliver-Delete" "Deliver-Dangling" "Forbid-Produce" "Irreversible Dependencies"
   in mapM_
        putStrLn $
        (case (essential, calculateConflicts action) of
