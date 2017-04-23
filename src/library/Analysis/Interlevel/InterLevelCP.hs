@@ -120,8 +120,7 @@ danglingExtension l = tlUpdated
   where
     initObject = idMap (codomain l) (codomain l)
     
-    -- TODO: orphanTypedNodes /= orphanTypedNodesIds
-    orphanNodes = orphanTypedNodes l
+    orphanNodes = orphanTypedNodeIds l
     typesOfOrphanNodes = map (extractNodeType typingMorphism) orphanNodes
 
     typingMorphism = codomain l

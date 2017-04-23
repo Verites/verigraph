@@ -251,7 +251,7 @@ calculateAllPartitions :: EpiPairs m => Obj m -> [m]
 calculateAllPartitions = createAllSubobjects False
 
 isOrphanNode :: TypedGraphMorphism a b -> NodeId -> Bool
-isOrphanNode m n = n `elem` orphanTypedNodes m
+isOrphanNode m n = n `elem` orphanTypedNodeIds m
 
 isOrphanEdge :: TypedGraphMorphism a b -> EdgeId -> Bool
-isOrphanEdge m n = n `elem` orphanTypedEdges m
+isOrphanEdge m n = n `elem` orphanTypedEdgeIds m

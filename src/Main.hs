@@ -533,8 +533,8 @@ k = fst (RW.calculatePushoutComplement g (left inverseRule))
 r = right inverseRule
 
 kr = M.compose (TGM.invert r) k                                 -- invert r and compose with k, obtain kr : R -> D
-createdNodess = TGM.orphanTypedNodes r                                -- nodes in R to be created
-createdEdgess = TGM.orphanTypedEdges r                                -- edges in R to be created
+createdNodess = TGM.orphanTypedNodeIds r                                -- nodes in R to be created
+createdEdgess = TGM.orphanTypedEdgeIds r                                -- edges in R to be created
 nodeTable    = zip createdNodess (GM.newTypedNodes $ M.codomain kr) -- table mapping NodeIds in R to NodeIds in G'
 edgeTable    = zip createdEdgess (GM.newTypedEdges $ M.codomain kr) -- table mapping EdgeIds in R to EdgeIds in G'
 

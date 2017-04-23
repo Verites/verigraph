@@ -182,7 +182,7 @@ danglingSpan matchRuleSide matchMorp matchK l k = deletedNodesInK && deletedEdge
     deletedEdgesInK = all (checkDeletion k matchK applyEdge edgesFromDomain) edgesInK
 
 isOrphanNode :: TypedGraphMorphism a b -> NodeId -> Bool
-isOrphanNode m n = n `elem` orphanTypedNodes m
+isOrphanNode m n = n `elem` orphanTypedNodeIds m
 
 isOrphanEdge :: TypedGraphMorphism a b -> EdgeId -> Bool
-isOrphanEdge m e = e `elem` orphanTypedEdges m
+isOrphanEdge m e = e `elem` orphanTypedEdgeIds m

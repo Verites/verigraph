@@ -114,10 +114,10 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
      4. delete all nodes
   -}
   calculatePushoutComplement m l =
-    let ml       = compose l m                                              -- compose l and m obtaining ml
-        delEdges = mapMaybe (GM.applyEdge $ mapping m) (orphanTypedEdges l) -- obtain list of edges to be deleted in G
-        delNodes = mapMaybe (GM.applyNode $ mapping m) (orphanTypedNodes l) -- obtain list of nodes to be deleted in G
-        k        = foldr removeNodeFromCodomain                             -- delete all edges, then all nodes from ml
+    let ml       = compose l m                                                -- compose l and m obtaining ml
+        delEdges = mapMaybe (GM.applyEdge $ mapping m) (orphanTypedEdgeIds l) -- obtain list of edges to be deleted in G
+        delNodes = mapMaybe (GM.applyNode $ mapping m) (orphanTypedNodeIds l) -- obtain list of nodes to be deleted in G
+        k        = foldr removeNodeFromCodomain                               -- delete all edges, then all nodes from ml
                        (foldr removeEdgeFromCodomain ml delEdges)
                            delNodes
     in (k, idMap (codomain k) (codomain m))
@@ -296,4 +296,4 @@ checkDeletion l m apply list e = elementInL && not elementInK
     elementInK = any (\x -> apply kToG x == Just e) (list kToG)
 
 isOrphanEdge :: TypedGraphMorphism a b -> EdgeId -> Bool
-isOrphanEdge m n = n `elem` orphanTypedEdges m
+isOrphanEdge m n = n `elem` orphanTypedEdgeIds m

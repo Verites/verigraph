@@ -77,8 +77,8 @@ partialInjectiveMatches' nac match = do
         notMappedEdges tgm edge = isNothing $ applyEdge tgm edge
         sourceNodes = filter (notMappedNodes q2) (nodeIds $ domain $ domain q2)
         sourceEdges = filter (notMappedEdges q2) (edgeIds $ domain $ domain q2)
-        targetNodes = orphanTypedNodes q2
-        targetEdges = orphanTypedEdges q2
+        targetNodes = orphanTypedNodeIds q2
+        targetEdges = orphanTypedEdgeIds q2
 
 preBuildQ :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 preBuildQ nac match = buildTypedGraphMorphism qDomain qCodomain qMapping
@@ -161,7 +161,7 @@ completeFromEmptySource prop tgm (nodesT, edgesT) =
     isomorphism | L.null nodesT && L.null edgesT = return tgm
                 | otherwise = []
 
-    epimorphism | L.null (orphanTypedNodes tgm) && L.null (orphanTypedEdges tgm) = return tgm
+    epimorphism | L.null (orphanTypedNodeIds tgm) && L.null (orphanTypedEdgeIds tgm) = return tgm
                 | otherwise = []
 
 completeWithRemainingNodes :: MorphismType -> TypedGraphMorphism a b -> ExpandedGraph -> ExpandedGraph -> [TypedGraphMorphism a b]

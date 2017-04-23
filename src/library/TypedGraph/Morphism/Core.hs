@@ -81,12 +81,16 @@ applyNodeUnsafe m n = fromMaybe (error "Error, apply node in a non total morphis
 applyEdgeUnsafe :: TypedGraphMorphism a b -> EdgeId -> EdgeId
 applyEdgeUnsafe m e = fromMaybe (error "Error, apply edge in a non total morphism") $ applyEdge m e
 
--- | Given a @TypedGraphMorphism@, return its orphan nodes
-orphanTypedNodes :: TypedGraphMorphism a b -> [NodeId]
-orphanTypedNodes tgm = GM.orphanNodes (mapping tgm)
+-- | Given a @TypedGraphMorphism@, return its orphan nodes ids
+orphanTypedNodeIds :: TypedGraphMorphism a b -> [NodeId]
+orphanTypedNodeIds tgm = GM.orphanNodeIds (mapping tgm)
+
+-- | Given a @TypedGraphMorphism@, return its orphan edges ids
+orphanTypedEdgeIds :: TypedGraphMorphism a b -> [EdgeId]
+orphanTypedEdgeIds tgm = GM.orphanEdgeIds (mapping tgm)
 
 -- | Given a @TypedGraphMorphism@, return its orphan edges
-orphanTypedEdges :: TypedGraphMorphism a b -> [EdgeId]
+orphanTypedEdges :: TypedGraphMorphism a b -> [Edge (Maybe b)]
 orphanTypedEdges tgm = GM.orphanEdges (mapping tgm)
 
 -- | Invert a typed graph morphism

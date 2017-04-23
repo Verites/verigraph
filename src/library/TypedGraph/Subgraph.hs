@@ -33,14 +33,14 @@ inducedSubgraphs m = map (idMap (domain m)) subEdges
     g = codomain m
     graph = domain g
 
-    listNodesToAdd = [(n, extractNodeType g n) | n <- orphanTypedNodes m]
+    listNodesToAdd = [(n, extractNodeType g n) | n <- orphanTypedNodeIds m]
 
     subNodes = decisionTreeNodes listNodesToAdd (domain m)
 
-    listEdgesToAdd = [(e,
-                       sourceOfUnsafe graph e,
-                       targetOfUnsafe graph e,
-                       extractEdgeType g e)
+    listEdgesToAdd = [(edgeId e,
+                       sourceId e,
+                       targetId e,
+                       extractEdgeType g (edgeId e))
                        | e <- orphanTypedEdges m]
 
     subEdges = concatMap (decisionTreeEdges listEdgesToAdd) subNodes

@@ -27,7 +27,8 @@ module TypedGraph.Morphism (
     , updateEdgeRelation
     , updateNodeRelation
     , untypedUpdateNodeRelation
-    , orphanTypedNodes
+    , orphanTypedNodeIds
+    , orphanTypedEdgeIds
     , orphanTypedEdges
     , reflectIdsFromTypeGraph
     , reflectIdsFromCodomain
