@@ -118,12 +118,10 @@ execute globalOpts opts = do
           else fstOrderAnalysis
 
     when secondOrder $
-      if matchRestriction dpoConf == AnyMatches
-        then mapM_ putStrLn $
-          "Inter-level Critical Pairs Analysis:" :
-          "(First Order Rule) (Second Order Rule) (Conflict Index)" :
-          map printILCP interlevelCPs
-        else putStrLn "Inter-level CP not defined for only injective matches"
+      mapM_ putStrLn $
+        "Inter-level Critical Pairs Analysis:" :
+        "(First Order Rule) (Second Order Rule) (Conflict Index)" :
+        map printILCP interlevelCPs
 
     putStrLn ""
 

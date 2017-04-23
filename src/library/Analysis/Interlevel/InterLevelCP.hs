@@ -70,12 +70,11 @@ interLevelConflictOneMatch conf sndRule match = m0s
     danglingExtFl = compose fl (danglingExtension bigL)
     danglingExtGl = compose gl (danglingExtension bigL'')
 
-    axs = relevantMatches conf danglingExtFl danglingExtGl
     relevantGraphs = map codomain axs
-
-    defineMatches = allILCP conf p p'' fl gl
+    axs = relevantMatches conf danglingExtFl danglingExtGl
 
     m0s = concatMap defineMatches (removeDuplicated relevantGraphs)
+    defineMatches = allILCP conf p p'' fl gl
 
 removeDuplicated :: [GraphMorphism (Maybe a) (Maybe b)] -> [GraphMorphism (Maybe a) (Maybe b)]
 removeDuplicated = nubBy (\x y -> not $ Prelude.null $ find x y)
@@ -105,12 +104,12 @@ ilCP conf fl gl p'' m0 = Prelude.null validM0''-- or all (==False) (map (\m'' ->
 
 relevantMatches :: MorphismsConfig -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
 --relevantMatches inj dangFl dangGl = concatMap (\ax -> partitions inj (codomain ax)) axs
-relevantMatches conf dangFl dangGl = concatMap (createAllSubobjects matchInjective) axs
+relevantMatches conf dangFl dangGl = concatMap (createAllSubobjects matchInjective) allSubgraphs
   where
     matchInjective = matchRestriction conf == MonoMatches
     (_,al) = calculatePushout dangFl dangGl
     --axs = induzedSubgraphs al
-    axs = subgraphs (codomain al)
+    allSubgraphs = subgraphs (codomain al)
 
 -- Algorithm proposed in (MACHADO, 2012) to extend a TGM.
 -- For each orphan node in the received morphism l, it must add all
