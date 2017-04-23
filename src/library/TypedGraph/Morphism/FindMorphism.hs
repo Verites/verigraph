@@ -35,8 +35,8 @@ initialSpanMorphism f g =
 -- it updates @h@ with a mapping from @B to C@ where @h . f = g@ (auxiliary function)
 buildSpanRelation :: TypedGraphMorphism a b ->  (TypedGraphMorphism a b, TypedGraphMorphism a b) -> TypedGraphMorphism a b
 buildSpanRelation new (f,g) =
-  let nodes = nodesFromDomain f
-      edges = edgesFromDomain f
+  let nodes = nodeIdsFromDomain f
+      edges = edgeIdsFromDomain f
       nodeOnB = applyNodeUnsafe f
       nodeOnC = applyNodeUnsafe g
       edgeOnB = applyEdgeUnsafe f

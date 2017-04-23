@@ -3,9 +3,11 @@ module TypedGraph.Morphism (
     , idMap
     , isPartialInjective
     , invert
-    , nodesFromDomain
+    , nodeIdsFromDomain
+    , edgeIdsFromDomain
     , edgesFromDomain
-    , nodesFromCodomain
+    , nodeIdsFromCodomain
+    , edgeIdsFromCodomain
     , edgesFromCodomain
     , graphDomain
     , graphCodomain

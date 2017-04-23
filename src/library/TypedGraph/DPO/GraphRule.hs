@@ -50,10 +50,10 @@ createdEdges :: GraphRule a b -> [G.EdgeId]
 createdEdges = TGM.orphanTypedEdgeIds . getRHS
 
 preservedNodes :: GraphRule a b -> [G.NodeId]
-preservedNodes = nodesFromDomain . getLHS
+preservedNodes = nodeIdsFromDomain . getLHS
 
 preservedEdges :: GraphRule a b -> [G.EdgeId]
-preservedEdges = edgesFromDomain . getLHS
+preservedEdges = edgeIdsFromDomain . getLHS
 
 -- | Returns an empty GraphRule
 emptyGraphRule :: Graph (Maybe a) (Maybe b) -> Production (TypedGraphMorphism a b)

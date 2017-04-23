@@ -62,32 +62,24 @@ instance AdhesiveHLR (RuleMorphism a b) where
     where
       nodeTypesInAL = GM.applyNodeUnsafe (domain fL)
       edgeTypesInAL = GM.applyEdgeUnsafe (domain fL)
-      graphAL = domain (domain fL)
       nodeTypesInAR = GM.applyNodeUnsafe (domain fR)
       edgeTypesInAR = GM.applyEdgeUnsafe (domain fR)
-      graphAR = domain (domain fR)
 
       (initBL, _, _) = calculateInitialPushout fL
       (bK, _, _) = calculateInitialPushout fK
       (initBR, _, _) = calculateInitialPushout fR
 
-      nodesBL = [n | n <- nodesFromDomain fL, isOrphanNode (getLHS fA) n, not (isOrphanNode (getLHS fA') (applyNodeUnsafe fL n))]
-      edgesBL = [e | e <- edgesFromDomain fL, isOrphanEdge (getLHS fA) e, not (isOrphanEdge (getLHS fA') (applyEdgeUnsafe fL e))]
+      nodesBL = [n | n <- nodeIdsFromDomain fL, isOrphanNode (getLHS fA) n, not (isOrphanNode (getLHS fA') (applyNodeUnsafe fL n))]
+      edgesBL = [e | e <- edgesFromDomain fL, isOrphanEdge (getLHS fA) (edgeId e), not (isOrphanEdge (getLHS fA') (applyEdgeUnsafe fL (edgeId e)))]
 
-      nodesBR = [n | n <- nodesFromDomain fR, isOrphanNode (getRHS fA) n, not (isOrphanNode (getRHS fA') (applyNodeUnsafe fR n))]
-      edgesBR = [e | e <- edgesFromDomain fR, isOrphanEdge (getRHS fA) e, not (isOrphanEdge (getRHS fA') (applyEdgeUnsafe fR e))]
+      nodesBR = [n | n <- nodeIdsFromDomain fR, isOrphanNode (getRHS fA) n, not (isOrphanNode (getRHS fA') (applyNodeUnsafe fR n))]
+      edgesBR = [e | e <- edgesFromDomain fR, isOrphanEdge (getRHS fA) (edgeId e), not (isOrphanEdge (getRHS fA') (applyEdgeUnsafe fR (edgeId e)))]
 
       prebL = foldr (\n -> createNodeOnDomain n (nodeTypesInAL n) n) initBL nodesBL
-      bL = foldr (\e -> createEdgeOnDomain e (src e) (tgt e) (edgeTypesInAL e) e) prebL edgesBL
-        where
-          src = sourceOfUnsafe graphAL
-          tgt = targetOfUnsafe graphAL
+      bL = foldr (\e -> createEdgeOnDomain (edgeId e) (sourceId e) (targetId e) (edgeTypesInAL (edgeId e)) (edgeId e)) prebL edgesBL
 
       prebR = foldr (\n -> createNodeOnDomain n (nodeTypesInAR n) n) initBR nodesBR
-      bR = foldr (\e -> createEdgeOnDomain e (src e) (tgt e) (edgeTypesInAR e) e) prebR edgesBR
-        where
-          src = sourceOfUnsafe graphAR
-          tgt = targetOfUnsafe graphAR
+      bR = foldr (\e -> createEdgeOnDomain (edgeId e) (sourceId e) (targetId e) (edgeTypesInAR (edgeId e)) (edgeId e)) prebR edgesBR
 
       l = searchMorphism (compose bK (getLHS fA)) bL
       r = searchMorphism (compose bK (getRHS fA)) bR
@@ -173,13 +165,13 @@ instance AdhesiveHLR (RuleMorphism a b) where
 danglingSpan :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
 danglingSpan matchRuleSide matchMorp matchK l k = deletedNodesInK && deletedEdgesInK
   where
-    deletedNodes = filter (checkDeletion l matchMorp applyNode nodesFromDomain) (nodesFromCodomain matchMorp)
-    nodesInK = [a | a <- nodesFromDomain matchRuleSide, applyNodeUnsafe matchRuleSide a `elem` deletedNodes]
-    deletedNodesInK = all (checkDeletion k matchK applyNode nodesFromDomain) nodesInK
+    deletedNodes = filter (checkDeletion l matchMorp applyNode nodeIdsFromDomain) (nodeIdsFromCodomain matchMorp)
+    nodesInK = [a | a <- nodeIdsFromDomain matchRuleSide, applyNodeUnsafe matchRuleSide a `elem` deletedNodes]
+    deletedNodesInK = all (checkDeletion k matchK applyNode nodeIdsFromDomain) nodesInK
 
-    deletedEdges = filter (checkDeletion l matchMorp applyEdge edgesFromDomain) (edgesFromCodomain matchMorp)
-    edgesInK = [a | a <- edgesFromDomain matchRuleSide, applyEdgeUnsafe matchRuleSide a `elem` deletedEdges]
-    deletedEdgesInK = all (checkDeletion k matchK applyEdge edgesFromDomain) edgesInK
+    deletedEdges = filter (checkDeletion l matchMorp applyEdge edgeIdsFromDomain) (edgeIdsFromCodomain matchMorp)
+    edgesInK = [a | a <- edgeIdsFromDomain matchRuleSide, applyEdgeUnsafe matchRuleSide a `elem` deletedEdges]
+    deletedEdgesInK = all (checkDeletion k matchK applyEdge edgeIdsFromDomain) edgesInK
 
 isOrphanNode :: TypedGraphMorphism a b -> NodeId -> Bool
 isOrphanNode m n = n `elem` orphanTypedNodeIds m

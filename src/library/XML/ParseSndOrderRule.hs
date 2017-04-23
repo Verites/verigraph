@@ -179,6 +179,6 @@ parseNonMonoObjNames (x:xs) = (a,b,newObjName) : parseNonMonoObjNames xs
 getObjectNameMorphism :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [Mapping]
 getObjectNameMorphism left right = nodesMap ++ edgesMap
   where
-    nodesMap = getMap TGM.applyNodeUnsafe (nodesFromDomain left)
-    edgesMap = getMap TGM.applyEdgeUnsafe (edgesFromDomain left)
+    nodesMap = getMap TGM.applyNodeUnsafe (nodeIdsFromDomain left)
+    edgesMap = getMap TGM.applyEdgeUnsafe (edgeIdsFromDomain left)
     getMap f = map (\e -> (show (f right e), Nothing, show (f left e)))

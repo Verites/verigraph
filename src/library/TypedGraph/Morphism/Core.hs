@@ -39,21 +39,29 @@ instance Valid (TypedGraphMorphism a b) where
         , ensure (dom == compose m cod) "Morphism doesn't preserve typing"
         ]
 
--- | Return the nodes in the domain of a given @TypedGraphMorphism@
-nodesFromDomain :: TypedGraphMorphism a b -> [NodeId]
-nodesFromDomain = nodeIds . domain . getDomain
+-- | Return the nodes ids in the domain of a given @TypedGraphMorphism@
+nodeIdsFromDomain :: TypedGraphMorphism a b -> [NodeId]
+nodeIdsFromDomain = nodeIds . domain . getDomain
+
+-- | Return the edges ids in the domain of a given @TypedGraphMorphism@
+edgeIdsFromDomain :: TypedGraphMorphism a b -> [EdgeId]
+edgeIdsFromDomain = edgeIds . domain . getDomain
 
 -- | Return the edges in the domain of a given @TypedGraphMorphism@
-edgesFromDomain :: TypedGraphMorphism a b -> [EdgeId]
-edgesFromDomain = edgeIds . domain . getDomain
+edgesFromDomain :: TypedGraphMorphism a b -> [Edge (Maybe b)]
+edgesFromDomain = edges . domain . getDomain
 
--- | Return the nodes in the codomain of a given @TypedGraphMorphism@
-nodesFromCodomain :: TypedGraphMorphism a b -> [NodeId]
-nodesFromCodomain = nodeIds . domain . getCodomain
+-- | Return the nodes ids in the codomain of a given @TypedGraphMorphism@
+nodeIdsFromCodomain :: TypedGraphMorphism a b -> [NodeId]
+nodeIdsFromCodomain = nodeIds . domain . getCodomain
+
+-- | Return the edges ids in the codomain of a given @TypedGraphMorphism@
+edgeIdsFromCodomain :: TypedGraphMorphism a b -> [EdgeId]
+edgeIdsFromCodomain = edgeIds . domain . getCodomain
 
 -- | Return the edges in the codomain of a given @TypedGraphMorphism@
-edgesFromCodomain :: TypedGraphMorphism a b -> [EdgeId]
-edgesFromCodomain = edgeIds . domain . getCodomain
+edgesFromCodomain :: TypedGraphMorphism a b -> [Edge (Maybe b)]
+edgesFromCodomain = edges . domain . getCodomain
 
 -- | Given a TypedGraphMorphism @/__t__: G1 -> G2/@ and a node @__n__@ in @G1@, it returns the node in @G2@ to which @__n__@ gets mapped
 applyNode :: TypedGraphMorphism a b -> NodeId -> Maybe NodeId
@@ -203,7 +211,7 @@ reflectIdsFromTypeGraph tgm =
     gmCodomain = codomain tgm
 
     newNodes gm = map (GM.applyNodeUnsafe gm) (nodeIds (domain gm))
-    newEdges gm = map (\x -> (GM.applyEdgeUnsafe gm x, GM.applyNodeUnsafe gm (sourceOfUnsafe (domain gm) x), GM.applyNodeUnsafe gm (targetOfUnsafe (domain gm) x))) (edgeIds $ domain gm)
+    newEdges gm = map (\x -> (GM.applyEdgeUnsafe gm (edgeId x), GM.applyNodeUnsafe gm (sourceId x), GM.applyNodeUnsafe gm (targetId x))) (edges $ domain gm)
 
     newDomain = foldr (\(e,s,t) -> GM.createEdgeOnDomain e s t e) (foldr (\x -> GM.createNodeOnDomain x x) (GM.empty empty (codomain gmDomain)) (newNodes gmDomain)) (newEdges gmDomain)
     newCodomain = foldr (\(e,s,t) -> GM.createEdgeOnDomain e s t e) (foldr (\x -> GM.createNodeOnDomain x x) (GM.empty empty (codomain gmCodomain)) (newNodes gmCodomain)) (newEdges gmCodomain)
@@ -220,16 +228,16 @@ reflectIdsFromCodomain tgm =
     typedB = codomain tgm
     typeGraph = codomain typedA
     typedB' = GM.empty empty typeGraph
-    nodes = nodesFromDomain tgm
+    nodes = nodeIdsFromDomain tgm
     edges = edgesFromDomain tgm
     initial = buildTypedGraphMorphism typedB' typedB (GM.empty (domain typedB') (domain typedB))
     addNodes = foldr (\n -> createNodeOnDomain (applyNodeUnsafe tgm n) (GM.applyNodeUnsafe typedA n) (applyNodeUnsafe tgm n)) initial nodes
     addEdges = foldr (\e ->
-      createEdgeOnDomain (applyEdgeUnsafe tgm e)
-                         (applyNodeUnsafe tgm (sourceOfUnsafe (domain typedA) e))
-                         (applyNodeUnsafe tgm (targetOfUnsafe (domain typedA) e))
-                         (GM.applyEdgeUnsafe typedA e)
-                         (applyEdgeUnsafe tgm e)) addNodes edges
+      createEdgeOnDomain (applyEdgeUnsafe tgm (edgeId e))
+                         (applyNodeUnsafe tgm (sourceId e))
+                         (applyNodeUnsafe tgm (targetId e))
+                         (GM.applyEdgeUnsafe typedA (edgeId e))
+                         (applyEdgeUnsafe tgm (edgeId e))) addNodes edges
    in addEdges
 
 reflectIdsFromDomains :: (TypedGraphMorphism a b, TypedGraphMorphism a b) -> (TypedGraphMorphism a b, TypedGraphMorphism a b)
@@ -251,8 +259,8 @@ reflectIdsFromDomains (m,e) =
     nodeR n = if isJust (applyNode m' n) then (n, applyNodeUnsafe m' n) else (n, applyNodeUnsafe e' n)
     edgeR e = if isJust (applyEdge m' e) then (e, applyEdgeUnsafe m' e) else (e, applyEdgeUnsafe e' e)
 
-    nodeRelation = map nodeR (nodesFromDomain m')
-    edgeRelation = map edgeR (edgesFromDomain m')
+    nodeRelation = map nodeR (nodeIdsFromDomain m')
+    edgeRelation = map edgeR (edgeIdsFromDomain m')
 
     initial = buildTypedGraphMorphism typedG typedG' (GM.empty (domain typedG) (domain typedG'))
 
