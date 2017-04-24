@@ -53,6 +53,7 @@ library
                        Logic.Model
                        Logic.Ctl
                        SndOrder.Morphism
+                       SndOrder.Morphism.NACmanipulation
                        SndOrder.Rule
                        TypedGraph.DPO.GraphProcess
                        TypedGraph.DPO.GraphRule
@@ -85,7 +86,6 @@ library
                        SndOrder.Morphism.Core
                        SndOrder.Morphism.EpiPairs
                        SndOrder.Morphism.FindMorphism
-                       SndOrder.Morphism.NACmanipulation
                        SndOrder.Rule.Core
                        SndOrder.Rule.DPO
                        Util.Closures

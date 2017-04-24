@@ -117,7 +117,7 @@ instance AdhesiveHLR (RuleMorphism a b) where
              (compose leftK' (getRHS ruleG)) leftR'
              matchK' (compose (getRHS ruleK) matchR')
 
-       notDeletedNACs = deleteStep InitialPushouts matchL (getNACs ruleL) (getNACs ruleG)
+       notDeletedNACs = deleteStep InitialPushouts (getNACs ruleL) (getNACs ruleG)
 
        validNACs = filter (satisfiesNACRewriting leftL') notDeletedNACs
 
