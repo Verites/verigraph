@@ -1,13 +1,9 @@
-# This is the simple Travis configuration, which is intended for use
-# on applications which do not require cross-platform and
-# multiple-GHC-version support. For more information and other
-# options, see:
+# This is a simple Travis configuration to verigraph repository.
 #
-# https://docs.haskellstack.org/en/stable/travis_ci/
-#
-# Copy these contents into the root directory of your Github project in a file
-# named .travis.yml
+# Based in example files from https://docs.haskellstack.org/en/stable/travis_ci/
 
+
+# Build enviroment setup
 # Use new container infrastructure to enable caching
 sudo: false
 
@@ -31,17 +27,28 @@ before_install:
 - export PATH=$HOME/.local/bin:$PATH
 - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
 
+#Install tool to send coverage data to coveralls.io
+- stack install stack-hpc-coveralls
+
+
+# Verigraph build
+
 install:
 # Build dependencies
 - stack --no-terminal --install-ghc test --only-dependencies
 
 script:
 # Build the package, its tests, and its docs and run the tests
-- stack --no-terminal test --haddock --no-haddock-deps
+- stack --no-terminal test --haddock --no-haddock-deps --coverage
 
+
+# Send results and notify
+
+after_script:
+#Send coverage data to coveralls.io
+- shc verigraph MorphismTest EssentialCPTest CriticalPairsSequencesTest SecondOrderTest PullbackTest PartitionsTest CtlTest GraphTest GraphProcessTest CocompleteTest
 
 notifications:
-
   email: false
 
   webhooks:
