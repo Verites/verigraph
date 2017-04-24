@@ -3,9 +3,11 @@ module TypedGraph.Morphism (
     , idMap
     , isPartialInjective
     , invert
-    , nodesFromDomain
+    , nodeIdsFromDomain
+    , edgeIdsFromDomain
     , edgesFromDomain
-    , nodesFromCodomain
+    , nodeIdsFromCodomain
+    , edgeIdsFromCodomain
     , edgesFromCodomain
     , graphDomain
     , graphCodomain
@@ -27,7 +29,8 @@ module TypedGraph.Morphism (
     , updateEdgeRelation
     , updateNodeRelation
     , untypedUpdateNodeRelation
-    , orphanTypedNodes
+    , orphanTypedNodeIds
+    , orphanTypedEdgeIds
     , orphanTypedEdges
     , reflectIdsFromTypeGraph
     , reflectIdsFromCodomain

@@ -359,8 +359,8 @@ getOverlapping (_,(_,_,comatch)) (_,(match,_,_)) = restrictMorphisms (comatch, m
 getTrigger :: TypedGraphMorphism a b ->  RelationItem
 getTrigger nac =
   let
-    orphanNodes = orphanTypedNodes nac
-    orphanEdges = orphanTypedEdges nac
+    orphanNodes = orphanTypedNodeIds nac
+    orphanEdges = orphanTypedEdgeIds nac
   in if L.null orphanEdges then Node $ head orphanNodes else Edge $ head orphanEdges
 
 isInInitial :: TypedGraph a b -> RelationItem -> Bool
@@ -430,13 +430,13 @@ retype (p, (g1,g2,g3)) = newProduction
 restrictMorphisms' :: (TypedGraphMorphism a b, TypedGraphMorphism a b) -> (TypedGraphMorphism a b, TypedGraphMorphism a b)
 restrictMorphisms' (a,b) = (removeOrphans a, removeOrphans b)
   where
-    orphanNodes = orphanTypedNodes a `intersect` orphanTypedNodes b
-    orphanEdges = orphanTypedEdges a `intersect` orphanTypedEdges b
+    orphanNodes = orphanTypedNodeIds a `intersect` orphanTypedNodeIds b
+    orphanEdges = orphanTypedEdgeIds a `intersect` orphanTypedEdgeIds b
     removeOrphans m = L.foldr removeNodeFromCodomain (L.foldr removeEdgeFromCodomain m orphanEdges) orphanNodes
 
 restrictMorphism' :: TypedGraphMorphism a b -> TypedGraphMorphism a b
 restrictMorphism' a = removeOrphans
   where
-    orphanNodes = orphanTypedNodes a
-    orphanEdges = orphanTypedEdges a
+    orphanNodes = orphanTypedNodeIds a
+    orphanEdges = orphanTypedEdgeIds a
     removeOrphans = L.foldr removeNodeFromCodomain (L.foldr removeEdgeFromCodomain a orphanEdges) orphanNodes

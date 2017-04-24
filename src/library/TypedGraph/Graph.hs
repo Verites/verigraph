@@ -59,9 +59,9 @@ typedNodes tg = map withType $ nodeIds (untypedGraph tg)
 
 -- | Obtain a list of tuples @(edgeId, srcId, tgtId, typeId)@ for edges in the graph.
 typedEdges :: TypedGraph a b -> [(EdgeId, NodeId, NodeId, EdgeId)]
-typedEdges tg = map withType $ edgeIds graph
+typedEdges tg = map withType $ edges graph
   where graph = untypedGraph tg
-        withType edge = (edge, sourceOfUnsafe graph edge, targetOfUnsafe graph edge, extractEdgeType tg edge)
+        withType edge = (edgeId edge, sourceId edge, targetId edge, extractEdgeType tg (edgeId edge))
 
 -- | Obtain the list of untyped nodes, i.e., the list of node ids from the typed graph domain
 untypedNodes :: TypedGraph a b -> [NodeId]

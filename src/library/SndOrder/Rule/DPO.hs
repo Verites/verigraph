@@ -92,13 +92,13 @@ newNacsProb side sndRule = nacNodes ++ nacEdges
     sc = getSide ruleR
 
     nodeProb = [applyNode f n |
-                 n <- nodesFromCodomain sb
+                 n <- nodeIdsFromCodomain sb
                , isOrphanNode sa (applyNode f n)
                , isOrphanNode sb n
                , not (isOrphanNode sc (applyNode g n))]
 
     edgeProb = [applyEdge f n |
-                 n <- edgesFromCodomain sb
+                 n <- edgeIdsFromCodomain sb
                , isOrphanEdge sa (applyEdge f n)
                , isOrphanEdge sb n
                , not (isOrphanEdge sc (applyEdge g n))]
@@ -251,7 +251,7 @@ calculateAllPartitions :: EpiPairs m => Obj m -> [m]
 calculateAllPartitions = createAllSubobjects False
 
 isOrphanNode :: TypedGraphMorphism a b -> NodeId -> Bool
-isOrphanNode m n = n `elem` orphanTypedNodes m
+isOrphanNode m n = n `elem` orphanTypedNodeIds m
 
 isOrphanEdge :: TypedGraphMorphism a b -> EdgeId -> Bool
-isOrphanEdge m n = n `elem` orphanTypedEdges m
+isOrphanEdge m n = n `elem` orphanTypedEdgeIds m

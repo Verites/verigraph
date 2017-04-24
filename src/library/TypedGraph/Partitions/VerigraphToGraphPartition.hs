@@ -28,10 +28,10 @@ createSatisfyingNacsDisjointUnion (g,injG) (n,injN) = disjointUnionGraphs left r
    where
      nodes = fst
      edges = snd
-     injNodes = filter (\x -> countIncidentMap (TGM.applyNode n) (nodesFromDomain n) x < 2) (nodesFromCodomain n)
-     injEdges = filter (\x -> countIncidentMap (TGM.applyEdge n) (edgesFromCodomain n) x < 2) (edgesFromCodomain n)
+     injNodes = filter (\x -> countIncidentMap (TGM.applyNode n) (nodeIdsFromDomain n) x < 2) (nodeIdsFromCodomain n)
+     injEdges = filter (\x -> countIncidentMap (TGM.applyEdge n) (edgeIdsFromCodomain n) x < 2) (edgeIdsFromCodomain n)
      injectiveR = if injG then (G.nodeIds (M.domain g), G.edgeIds (M.domain g)) else ([],[])
-     injectiveN = if injN then (nodesFromCodomain n, edgesFromCodomain n) else (injNodes, injEdges)
+     injectiveN = if injN then (nodeIdsFromCodomain n, edgeIdsFromCodomain n) else (injNodes, injEdges)
      (left,id) = graphMorphismToPartitionGraph injectiveR g True 0
      (right,_) = graphMorphismToPartitionGraph injectiveN (M.codomain n) False id
      disjointUnionGraphs a b = (nodes a ++ nodes b, edges a ++ edges b)
@@ -44,7 +44,7 @@ graphMorphismToPartitionGraph inj@(injNodes,_) morfL side id = ((nodes',edges'),
    where
       graphL = M.domain morfL
       nodes'   = nodesToPartitionNodes injNodes morfL side id $ nodeIds graphL
-      edges'   = edgesToPartitionEdges inj morfL side graphL id $ edgeIds graphL
+      edges'   = edgesToPartitionEdges inj morfL side graphL id $ edges graphL
       nextId = max (length nodes') (length edges')
 
 nodesToPartitionNodes :: [NodeId] -> TypedGraph a b -> Bool -> Int -> [NodeId] -> [GP.Node]
@@ -54,17 +54,24 @@ nodesToPartitionNodes injNodes tg side id (NodeId b:xs) = GP.Node n b id flag si
      Just (NodeId n) = GM.applyNode tg (NodeId b)
      flag = NodeId b `elem` injNodes
 
-edgesToPartitionEdges :: ([NodeId],[EdgeId]) -> TypedGraph a b -> Bool -> Graph (Maybe a) (Maybe b) -> Int -> [EdgeId] -> [GP.Edge]
+edgesToPartitionEdges :: ([NodeId],[EdgeId]) -> TypedGraph a b -> Bool -> Graph (Maybe a) (Maybe b) -> Int -> [Edge (Maybe b)] -> [GP.Edge]
 edgesToPartitionEdges _        _  _    _ _  []            = []
-edgesToPartitionEdges inj@(injNodes,injEdges) tg side g id (EdgeId b:xs) = GP.Edge typ b id src tgt flag side : edgesToPartitionEdges inj tg side g (id+1) xs
-   where
-      Just (EdgeId typ) = GM.applyEdge tg (EdgeId b)
-      Just (NodeId src_) = sourceOf g (EdgeId b)
+edgesToPartitionEdges inj@(injNodes,injEdges) tg side g id (e:xs) =
+  GP.Edge typ edgeNumber id src tgt flag side : edgesToPartitionEdges inj tg side g (id+1) xs
+    where
+      EdgeId edgeNumber = edgeId e
+      
+      Just (EdgeId typ) = GM.applyEdge tg (edgeId e)
+      
       src = GP.Node n1 src_ (-1) flagSrc side
-      Just (NodeId tgt_) = targetOf g (EdgeId b)
+      NodeId src_ = sourceId e
+      
       tgt = GP.Node n2 tgt_ (-1) flagTgt side
+      NodeId tgt_ = targetId e
+      
       Just (NodeId n1) = GM.applyNode tg (NodeId src_)
       Just (NodeId n2) = GM.applyNode tg (NodeId tgt_)
-      flag = EdgeId b `elem` injEdges
+      
+      flag = (edgeId e) `elem` injEdges
       flagSrc = NodeId src_ `elem` injNodes
       flagTgt = NodeId tgt_ `elem` injNodes

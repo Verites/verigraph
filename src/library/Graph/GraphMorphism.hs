@@ -30,7 +30,8 @@ module Graph.GraphMorphism (
     , applyEdgeUnsafe
     , nodeRelation
     , edgeRelation
-    , orphanNodes
+    , orphanNodeIds
+    , orphanEdgeIds
     , orphanEdges
 
     , isPartialInjective
@@ -68,13 +69,22 @@ instance Show (GraphMorphism a b) where
          show e ++ " --> " ++ show (applyEdge m e)
          ++ " (from: " ++ show srcId ++ " to:" ++ show tgtId ++ ")\n"
 
--- | Return the orphan nodes in a graph morphism
-orphanNodes :: GraphMorphism a b -> [G.NodeId]
-orphanNodes gm = R.orphans (nodeRelation gm)
+-- | Return the orphan nodes ids in a graph morphism
+orphanNodeIds :: GraphMorphism a b -> [G.NodeId]
+orphanNodeIds gm = R.orphans (nodeRelation gm)
 
 -- | Return the orphan edges in a graph morphism
-orphanEdges :: GraphMorphism a b -> [G.EdgeId]
-orphanEdges gm = R.orphans (edgeRelation gm)
+orphanEdges :: GraphMorphism a b -> [G.Edge b]
+orphanEdges gm = map idToEdge (R.orphans (edgeRelation gm))
+  where
+    idToEdge id =
+      fromMaybe
+        (error "orphanEdges: EdgeId is not in graph")
+        (lookupEdge id (domain gm))
+
+-- | Return the orphan edgesIds in a graph morphism
+orphanEdgeIds :: GraphMorphism a b -> [G.EdgeId]
+orphanEdgeIds gm = R.orphans (edgeRelation gm)
 
 -- | Return the node to which @ln@ gets mapped.
 applyNode :: GraphMorphism a b -> G.NodeId -> Maybe G.NodeId

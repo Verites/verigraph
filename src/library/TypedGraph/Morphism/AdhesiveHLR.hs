@@ -54,7 +54,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
       graphA = domain typedGraphA
       graphA' = domain (codomain f)
       edgesOfA = edgesFromDomain f
-      nodesOfA = nodesFromDomain f
+      nodesOfA = nodeIdsFromDomain f
 
       emptyMorphismToA = buildTypedGraphMorphism emptyTypedGraph typedGraphA emptyMapToA
         where
@@ -86,8 +86,8 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
       collapsedEdges =
         concatMap
           (\e ->
-            [(e, sourceOfUnsafe graphA e, targetOfUnsafe graphA e) |
-              any  (\ e' -> e /= e' && (applyEdgeUnsafe f e == applyEdgeUnsafe f e')) edgesOfA]
+            [(edgeId e, sourceId e, targetId e) |
+              any  (\e' -> (edgeId e) /= (edgeId e') && (applyEdgeUnsafe f (edgeId e) == applyEdgeUnsafe f (edgeId e'))) edgesOfA]
           ) edgesOfA
 
       -- It adds a list of nodes in a morphism
@@ -114,10 +114,10 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
      4. delete all nodes
   -}
   calculatePushoutComplement m l =
-    let ml       = compose l m                                              -- compose l and m obtaining ml
-        delEdges = mapMaybe (GM.applyEdge $ mapping m) (orphanTypedEdges l) -- obtain list of edges to be deleted in G
-        delNodes = mapMaybe (GM.applyNode $ mapping m) (orphanTypedNodes l) -- obtain list of nodes to be deleted in G
-        k        = foldr removeNodeFromCodomain                             -- delete all edges, then all nodes from ml
+    let ml       = compose l m                                                -- compose l and m obtaining ml
+        delEdges = mapMaybe (GM.applyEdge $ mapping m) (orphanTypedEdgeIds l) -- obtain list of edges to be deleted in G
+        delNodes = mapMaybe (GM.applyNode $ mapping m) (orphanTypedNodeIds l) -- obtain list of nodes to be deleted in G
+        k        = foldr removeNodeFromCodomain                               -- delete all edges, then all nodes from ml
                        (foldr removeEdgeFromCodomain ml delEdges)
                            delNodes
     in (k, idMap (codomain k) (codomain m))
@@ -152,10 +152,10 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
       graphB = domain typedGraphB
       graphA = domain typedGraphA
 
-      nodesInA = nodesFromDomain f
-      nodesInB = nodesFromDomain g
-      edgesInA = edgesFromDomain f
-      edgesInB = edgesFromDomain g
+      nodesInA = nodeIdsFromDomain f
+      nodesInB = nodeIdsFromDomain g
+      edgesInA = edgeIdsFromDomain f
+      edgesInB = edgeIdsFromDomain g
 
       -- Discover the nodes and edges of the X
       nodesWithoutId = getPairs applyNodeUnsafe nodesInA nodesInB nodeIds
@@ -199,22 +199,20 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
 
           -- To add an edge, their source and target nodes must be found (they already exists).
           -- It searches the node in X that is mapped by f' and g' to the same source (resp. target) node of the related edges on A and B.
-          sourceOfUnsafe g e = fromMaybe (error "sourceOf error") $ sourceOf g e
           src1 =
             filter
               (\n ->
                 applyNodeUnsafe f' n == sourceOfUnsafe graphB b &&
                 applyNodeUnsafe g' n == sourceOfUnsafe graphA a)
-              (nodesFromDomain f')
+              (nodeIdsFromDomain f')
           src = if Prelude.null src1 then error "src not found" else head src1
 
-          targetOfUnsafe g e = fromMaybe (error "targetOf error") $ targetOf g e
           tgt1 =
             filter
               (\n ->
                 applyNodeUnsafe f' n == targetOfUnsafe graphB b &&
                 applyNodeUnsafe g' n == targetOfUnsafe graphA a)
-              (nodesFromDomain f')
+              (nodeIdsFromDomain f')
           tgt = if Prelude.null tgt1 then error "tgt not found" else head tgt1
 
           updateG' = createEdgeOnDomain newEdge src tgt (edgeTypeInA a) a g'
@@ -251,9 +249,9 @@ satisfiesIdentificationCondition l m =
   all (==True) (notIdentificatedNodes ++ notIdentificatedEdges)
   where
     notIdentificatedNodes =
-      map (notIdentificatedElement l m nodesFromDomain applyNode) (nodesFromCodomain m)
+      map (notIdentificatedElement l m nodeIdsFromDomain applyNode) (nodeIdsFromCodomain m)
     notIdentificatedEdges =
-      map (notIdentificatedElement l m edgesFromDomain applyEdge) (edgesFromCodomain m)
+      map (notIdentificatedElement l m edgeIdsFromDomain applyEdge) (edgeIdsFromCodomain m)
 
 
 -- | Given a left-hand-side morphism /l : K -> L/, a match /m : L -> G/, two functions /domain/ (to get all elements
@@ -276,9 +274,9 @@ satisfiesDanglingCondition l m = all (==True) (concat incidentDeletedEdges)
     where
         lhs = graphDomain m
         instanceGraph = graphCodomain m
-        checkEdgeDeletion = map (checkDeletion l m applyEdge edgesFromDomain)
+        checkEdgeDeletion = map (checkDeletion l m applyEdge edgeIdsFromDomain)
         matchedNodes = mapMaybe (applyNode m) (nodeIds lhs)
-        deletedNodes = filter (checkDeletion l m applyNode nodesFromDomain) matchedNodes
+        deletedNodes = filter (checkDeletion l m applyNode nodeIdsFromDomain) matchedNodes
         incidentEdgesOnDeletedNodes = map (getIncidentEdges instanceGraph) deletedNodes
         incidentDeletedEdges = map checkEdgeDeletion incidentEdgesOnDeletedNodes
 
@@ -296,4 +294,4 @@ checkDeletion l m apply list e = elementInL && not elementInK
     elementInK = any (\x -> apply kToG x == Just e) (list kToG)
 
 isOrphanEdge :: TypedGraphMorphism a b -> EdgeId -> Bool
-isOrphanEdge m n = n `elem` orphanTypedEdges m
+isOrphanEdge m n = n `elem` orphanTypedEdgeIds m
