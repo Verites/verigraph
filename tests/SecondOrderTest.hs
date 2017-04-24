@@ -5,6 +5,7 @@ import           Data.List.Utils                  (countElem)
 import           Data.Maybe                       (fromMaybe)
 import           Grammar.Core
 import           SndOrder.Morphism
+import           SndOrder.Morphism.NACmanipulation
 import           Test.HUnit
 import           TypedGraph.Graph
 import           TypedGraph.Morphism
@@ -84,6 +85,42 @@ checkInterlevelConflict mono arbitrary gg1 gg2 =
     c = ("c", getRule "c" gg2)
     d = ("d", getRule "d" gg2)
 
+-- | Checks if the NAC manipulations functions create/delete the
+-- expected number of NACs
+checkNacManipulation gg =
+  [ length createDisable ~?= 0
+  , length createPO ~?= 1
+  , length createShift ~?= 3
+  , length deleteDisable ~?= 3
+  , length deleteMono ~?= 0
+  , length deleteIPO ~?= 2
+  ]
+  where
+    find :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
+    find x y = findAllMorphisms (codomain x) (codomain y)
+    
+    -- Creation
+    creation_modeledNACs_rule = getRule "creation_modeledNACs" gg
+    creation_concreteNACs_rule = getRule "creation_concreteNACs" gg
+    
+    match = head (find (getLHS creation_modeledNACs_rule) (getLHS creation_concreteNACs_rule))
+    creation_modeledNACs = getNACs creation_modeledNACs_rule
+    
+    createDisable = createStep DisableCreate match creation_modeledNACs
+    createPO = createStep Pushout match creation_modeledNACs
+    createShift = createStep ShiftNACs match creation_modeledNACs
+    
+    -- Deletion
+    deletion_modeledNACs_rule = getRule "deletion_modeledNACs" gg
+    deletion_concreteNACs_rule = getRule "deletion_concreteNACs" gg
+    
+    deletion_modeledNACs = getNACs deletion_modeledNACs_rule
+    deletion_concreteNACs = getNACs deletion_concreteNACs_rule
+    
+    deleteDisable = deleteStep DisableDelete deletion_modeledNACs deletion_concreteNACs
+    deleteMono = deleteStep Monomorphisms deletion_modeledNACs deletion_concreteNACs
+    deleteIPO = deleteStep InitialPushouts deletion_modeledNACs deletion_concreteNACs
+
 getRule :: String -> Grammar m -> Production m
 getRule str gg =
   fromMaybe
@@ -100,12 +137,15 @@ main :: IO ()
 main = do
   let fileName1 = "tests/grammars/nacs2rule.ggx"
       fileName2 = "tests/grammars/secondOrderMatchTest.ggx"
+      fileName3 = "tests/grammars/NacManipulation.ggx"
       dpoConf1 = MorphismsConfig MonoMatches MonomorphicNAC
       dpoConf2 = MorphismsConfig AnyMatches MonomorphicNAC
+  
   (_,_,log1) <- XML.readGrammar fileName1 False dpoConf1
   (_,_,log2) <- XML.readGrammar fileName1 False dpoConf2
   (gg1,gg2,log3) <- XML.readGrammar fileName2 False dpoConf1
   (_,_,log4) <- XML.readGrammar fileName2 False dpoConf2
+  (ggNac,_,_) <- XML.readGrammar fileName3 False dpoConf1
 
   runTests $
     checkMinimalSafetyNACs log1 2 ++
@@ -113,4 +153,5 @@ main = do
     checkMinimalSafetyNACs log3 0 ++
     checkMinimalSafetyNACs log4 0 ++
     checkDanglingExtension gg1 ++
+    checkNacManipulation ggNac ++
     checkInterlevelConflict dpoConf1 dpoConf2 gg1 gg2
