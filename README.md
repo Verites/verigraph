@@ -1,4 +1,6 @@
-# Verigraph [![Build Status](https://travis-ci.org/Verites/verigraph.svg?branch=master)](https://travis-ci.org/Verites/verigraph)
+# Verigraph
+[![Build Status](https://travis-ci.org/Verites/verigraph.svg?branch=master)](https://travis-ci.org/Verites/verigraph)
+[![Coverage Status](https://coveralls.io/repos/github/Verites/verigraph/badge.svg?branch=master)](https://coveralls.io/github/Verites/verigraph?branch=master)
 
 <img src="./images/Verigraph.png" height="200px"/>
 
