@@ -32,7 +32,7 @@ data EvoSpan a b = EvoSpan {
 
 -- | Given a list of second order rules, calculate all Evolutionary Spans
 -- This analysis is supposed to be symmetric, here is considering only this case
-allEvolSpans :: MorphismsConfig -> [(String, SndOrderRule a b)] -> [(String, [EvoSpan a b])]
+allEvolSpans :: MorphismsConfig -> [(String, SndOrderRule a b)] -> [(String, String, [EvoSpan a b])]
 -- combine rules symmetrically
 allEvolSpans _ [] = []
 allEvolSpans dpoConf rules@(r:rs) = map (evolSpans dpoConf r) rules ++ allEvolSpans dpoConf rs
@@ -41,10 +41,9 @@ allEvolSpans dpoConf rules@(r:rs) = map (evolSpans dpoConf r) rules ++ allEvolSp
 --allEvolSpans dpoConf sndOrderRules = concatMap (\r1 -> map (evolSpans dpoConf r1) sndOrderRules) sndOrderRules
 
 -- | Gets all Evolutionary Spans of two Second Order Rules
-evolSpans :: MorphismsConfig -> (String, SndOrderRule a b) -> (String, SndOrderRule a b) -> (String, [EvoSpan a b])
-evolSpans conf (n1,r1) (n2,r2) = (ruleNames, spans)
+evolSpans :: MorphismsConfig -> (String, SndOrderRule a b) -> (String, SndOrderRule a b) -> (String, String, [EvoSpan a b])
+evolSpans conf (n1,r1) (n2,r2) = (n1, n2, spans)
   where
-    ruleNames = n1 ++ " (evoSpan) " ++ n2
     spans = map (\m@(m1,m2) -> EvoSpan m1 m2 (classify conf r1 r2 m)) xs''
 
     -- filter to catch only interesting situations

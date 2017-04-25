@@ -16,6 +16,7 @@ import           Analysis.Interlevel.InterLevelCP
 import           Control.Monad                         (when)
 import           Data.List.Utils
 import           Data.Matrix                           hiding ((<|>))
+import qualified Data.Set                              as Set
 import           GlobalOptions
 import qualified Grammar.Core                          as GG
 import           Options.Applicative
@@ -93,6 +94,7 @@ execute globalOpts opts = do
         sndOrdRules = map snd namedSndOrdRules
 
         interlevelCPs = applySecondOrder (interLevelCP dpoConf) namedFstOrdRules namedSndOrdRules
+        interlevelWithoutCounting = Set.fromList $ map (\(x,y,_,_) -> (x,y)) interlevelCPs
         evoConflicts = allEvolSpans dpoConf namedSndOrdRules
 
 
@@ -119,36 +121,40 @@ execute globalOpts opts = do
 
     when secondOrder $
       mapM_ putStrLn $
-        "Inter-level Critical Pairs Analysis:" :
-        "(First Order Rule) (Second Order Rule) (Conflict Index)" :
-        map printILCP interlevelCPs
-
+        "Inter-level Critical Pairs Analysis" :
+        "This log shows a list of (first-order rule, second-order rule) that are in conflict:" :
+        [show interlevelWithoutCounting] --map printILCP interlevelCPs
+    
     putStrLn ""
-
+    
     when secondOrder $
       mapM_ putStrLn $
-        "Evolutionary Spans Inter-level CP:" : printEvoConflicts evoConflicts
-
+        "Evolutionary Spans Inter-level CP:" :
+        "This log shows pairs of (second-order rule, second-order rule, number of FolFol, number of DuseFol, number of FolDuse, number of DuseDuse)" : 
+        printEvoConflicts evoConflicts
+    
     putStrLn ""
     putStrLn "Critical Pair Analysis done!"
 
 -- | Inter-level CP to Strings
-printILCP :: (String, String, Int, InterLevelCP a b) -> String
-printILCP (fstName, sndName, idx, _) =
-  fstName ++ " " ++ sndName ++ " (id:" ++ show idx ++ ") ... (conflict omitted)"
+--printILCP :: (String, String, Int, InterLevelCP a b) -> String
+--printILCP (fstName, sndName, idx, _) =
+--  fstName ++ " " ++ sndName ++ " (id:" ++ show idx ++ ") ... (conflict omitted)"
 
 -- | Evolutionary Spans to Strings
-printEvoConflicts :: [(String, [EvoSpan a b])] -> [String]
+printEvoConflicts :: [(String, String, [EvoSpan a b])] -> [String]
 printEvoConflicts evo = map printOneEvo evo
   where
-    printOneEvo e = fst e ++ "\n" ++ printEvos (snd e)
-    -- FIX: test with CPE type, not with String
-    printEvos evos =
-      printConf "FolFol" evos ++
-      printConf "DuseFol" evos ++
-      printConf "FolDuse" evos ++
-      printConf "DuseDuse" evos
-    printConf str evos = str ++ " : " ++ show (countElem str (map (show . cpe) evos)) ++ "\n"
+    fst = \(y,_,_) -> y
+    snd = \(_,y,_) -> y
+    thd = \(_,_,y) -> y
+    
+    printOneEvo e = "(" ++ fst e ++ ", " ++ snd e ++ ", " ++
+                       show (printConf "FolFol" (thd e)) ++ ", " ++
+                       show (printConf "DuseFol" (thd e)) ++ ", " ++
+                       show (printConf "FolDuse" (thd e)) ++ ", " ++
+                       show (printConf "DuseDuse" (thd e)) ++ ")"
+    printConf str evos = countElem str (map (show . cpe) evos)
 
 printAnalysis :: (EpiPairs m, DPO m) =>
   Bool -> AnalysisType -> MorphismsConfig -> [Production m] -> IO ()
