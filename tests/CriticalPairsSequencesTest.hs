@@ -10,24 +10,33 @@ import qualified XML.GGXReader             as XML
 
 main :: IO ()
 main = do
-  let fileName = "tests/grammars/teseRodrigo.ggx"
+  let fileName1 = "tests/grammars/teseRodrigo.ggx"
+      fileName2 = "tests/grammars/secondOrderMatchTest.ggx"
       dpoConf = MorphismsConfig MonoMatches PartiallyMonomorphicNAC
-  (gg,_,_) <- XML.readGrammar fileName False dpoConf
+  (gg1,_,_) <- XML.readGrammar fileName1 False dpoConf
+  (_,gg2,_) <- XML.readGrammar fileName2 False dpoConf
 
-  --let rules = map snd (GG.rules gg)
-  let rules = map snd (GG.rules gg)
+  let fstRules = map snd (GG.rules gg1)
+      sndRules = map snd (GG.rules gg2)
 
-  runTests
-    [ testTeseRodrigo (MorphismsConfig MonoMatches PartiallyMonomorphicNAC) rules
-    , testTeseRodrigo (MorphismsConfig MonoMatches MonomorphicNAC) rules
-    , testTeseRodrigo (MorphismsConfig AnyMatches PartiallyMonomorphicNAC) rules
-    , testTeseRodrigo (MorphismsConfig AnyMatches MonomorphicNAC) rules
-    ]
+  runTests $
+    [ testTeseRodrigo (MorphismsConfig MonoMatches PartiallyMonomorphicNAC) fstRules
+    , testTeseRodrigo (MorphismsConfig MonoMatches MonomorphicNAC) fstRules
+    , testTeseRodrigo (MorphismsConfig AnyMatches PartiallyMonomorphicNAC) fstRules
+    , testTeseRodrigo (MorphismsConfig AnyMatches MonomorphicNAC) fstRules
+    ] ++
+    [testSndOrder (MorphismsConfig AnyMatches MonomorphicNAC) sndRules]
 
 testTeseRodrigo dpoConf rules =
   "tese rodrigo" ~:
     [ testTeseRodrigoConflicts dpoConf rules
     , testTeseRodrigoDeps dpoConf rules
+    ]
+
+testSndOrder dpoConf rules =
+  "second order" ~:
+    [ testSndOrderConflicts dpoConf rules
+    , testSndOrderDeps dpoConf rules
     ]
 
 printConf dpoConf =
@@ -73,6 +82,38 @@ testTeseRodrigoConflicts dpoConf rules =
         "( 0 0 0 0 0 0 0 0 )\n"++
         "( 0 0 0 0 0 0 0 0 )\n"++
         "( 0 0 0 0 0 1 0 0 )\n"
+    ]
+  where
+    testCase name findConflicts expected =
+      "Test " ++ name ++ printConf dpoConf ~:
+        [expected ~=? show (pairwise (findConflicts dpoConf) rules)]
+
+testSndOrderConflicts dpoConf rules =
+  "conflicts" ~:
+    [ testCase "Delete-Use" findAllDeleteUse $
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 5 0 0 )\n"++
+        "( 0 0 0 3 0 )\n"++
+        "( 0 0 0 0 3 )\n"
+    , testCase "Produce-Dangling" findAllProduceDangling $
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"
+    , testCase "Delete-Use and Produce-Dangling" findAllDeleteUseAndProduceDangling $
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 5 0 0 )\n"++
+        "( 0 0 0 3 0 )\n"++
+        "( 0 0 0 0 3 )\n"
+    , testCase "Produce-Forbid" findAllProduceForbid $
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"
     ]
   where
     testCase name findConflicts expected =
@@ -144,6 +185,56 @@ testTeseRodrigoDeps dpoConf rules =
         "( 0 0 0 0 0 0 0 0 )\n"++
         "( 0 0 0 0 0 0 0 0 )\n"++
         "( 0 0 1 0 2 0 0 0 )\n"
+    ]
+  where
+  testCase name findDependencies expected =
+    "Test " ++ name ++ printConf dpoConf ~:
+      [expected ~=? show (pairwise (findDependencies dpoConf) rules)]
+
+testSndOrderDeps dpoConf rules =
+  "dependencies" ~:
+    [ testCase "Produce-Use" findAllProduceUse $
+        "( 0 0 1 0 0 )\n"++
+        "( 0 0 1 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"
+    , testCase "Delete-Forbid" findAllDeleteForbid $
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"
+    , testCase "Remove-Dangling" findAllRemoveDangling $
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"
+    , testCase "Deliver-Delete" findAllDeliverDelete $
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 1 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"
+    , testCase "Deliver-Dangling" findAllDeliverDangling $
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"
+    , testCase "Forbid-Produce" findAllForbidProduce $
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"
+    , testCase "Produce-Use and Remove-Dangling" findAllProduceUseAndRemoveDangling $
+        "( 0 0 1 0 0 )\n"++
+        "( 0 0 1 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"
     ]
   where
   testCase name findDependencies expected =
