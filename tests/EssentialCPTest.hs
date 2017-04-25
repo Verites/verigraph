@@ -39,10 +39,11 @@ printConf dpoConf =
 testSndOrderConflicts dpoConf rules =
   "conflicts" ~:
     [ testCase "Essential Second-Order Delete-Use" findAllEssentialDeleteUse $
-        "( 0 0 0 0 )\n"++
-        "( 0 2 0 0 )\n"++
-        "( 0 0 1 0 )\n"++
-        "( 0 0 0 1 )\n"
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 2 0 0 )\n"++
+        "( 0 0 0 1 0 )\n"++
+        "( 0 0 0 0 1 )\n"
     ]
   where
     testCase name findConflicts expected =
