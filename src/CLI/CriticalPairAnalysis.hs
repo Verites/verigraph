@@ -130,7 +130,7 @@ execute globalOpts opts = do
     when secondOrder $
       mapM_ putStrLn $
         "Evolutionary Spans Inter-level CP:" :
-        "This log shows pairs of (second-order rule, second-order rule, number of FolFol, number of DuseFol, number of FolDuse, number of DuseDuse)" : 
+        "This log shows pairs of (second-order rule, second-order rule, number of FolFol, number of ConfFol, number of FolConf, number of ConfConf)" :
         printEvoConflicts evoConflicts
     
     putStrLn ""
@@ -150,11 +150,11 @@ printEvoConflicts evo = map printOneEvo evo
     thd = \(_,_,y) -> y
     
     printOneEvo e = "(" ++ fst e ++ ", " ++ snd e ++ ", " ++
-                       show (printConf "FolFol" (thd e)) ++ ", " ++
-                       show (printConf "DuseFol" (thd e)) ++ ", " ++
-                       show (printConf "FolDuse" (thd e)) ++ ", " ++
-                       show (printConf "DuseDuse" (thd e)) ++ ")"
-    printConf str evos = countElem str (map (show . cpe) evos)
+                       show (printConf (False,False) (thd e)) ++ ", " ++
+                       show (printConf (True,False) (thd e)) ++ ", " ++
+                       show (printConf (False,True) (thd e)) ++ ", " ++
+                       show (printConf (True,True) (thd e)) ++ ")"
+    printConf str evos = countElem str (map cpe evos)
 
 printAnalysis :: (EpiPairs m, DPO m) =>
   Bool -> AnalysisType -> MorphismsConfig -> [Production m] -> IO ()
