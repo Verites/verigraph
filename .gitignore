@@ -12,9 +12,14 @@ mpf.txt
 *.swp
 hellow.*
 *travis.log
+*.tix
 
 # Cabal stuff
 .cabal-sandbox
 cabal.sandbox.config
 
 images/.directory
+
+
+# HSpec stuff
+.hspec-failures

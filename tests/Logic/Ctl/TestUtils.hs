@@ -1,4 +1,4 @@
-module CtlTest.Utils where
+module Logic.Ctl.TestUtils where
 
 import           Test.QuickCheck
 
