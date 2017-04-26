@@ -9,6 +9,7 @@ module Analysis.CriticalPairs
 
    -- * Finding Critical Pairs
    findCriticalPairs,
+   findPotentialCriticalPairs,
    namedCriticalPairs,
    findAllDeleteUse,
    findAllProduceForbid,
@@ -104,6 +105,7 @@ namedCriticalPairs conf namedRules =
         (n1, n2, findCriticalPairs conf r1 r2)
 
 -- TODO: Use this as an auxiliary function to optimize the search for critical pairs
+-- | Returns a list of morphisms from left side of rules to all valid overlapping pairs
 findPotentialCriticalPairs :: (DPO m, EpiPairs m) => MorphismsConfig -> Production m -> Production m -> [(m, m)]
 findPotentialCriticalPairs conf p1 p2 = satisfyingPairs
   where

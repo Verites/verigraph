@@ -1,5 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
-
 module Analysis.EssentialCriticalPairs
  ( namedEssentialCriticalPairs,
    findAllEssentialDeleteUse,

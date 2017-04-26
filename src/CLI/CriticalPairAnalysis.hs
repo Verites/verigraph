@@ -1,5 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
-
 module CriticalPairAnalysis
   ( Options
   , options
