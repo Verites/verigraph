@@ -19,9 +19,9 @@ import           Analysis.DiagramAlgorithms
 import           SndOrder.Morphism
 import           SndOrder.Rule
 
--- | All actual possible kinds of Evolutionary Spans,
--- it indicates the overlap situation before and after evolution
-data CPE = FolFol | DuseDuse | FolDuse | DuseFol deriving(Eq,Show)
+-- | All actual possible kinds of Evolutionary Spans, it indicates the
+-- conflict existence on an overlap situation before and after evolution
+type CPE = (Bool, Bool)
 
 -- | Represents the two evolutionary matches, and the kind of span
 data EvoSpan a b = EvoSpan {
@@ -32,7 +32,7 @@ data EvoSpan a b = EvoSpan {
 
 -- | Given a list of second order rules, calculate all Evolutionary Spans
 -- This analysis is supposed to be symmetric, here is considering only this case
-allEvolSpans :: MorphismsConfig -> [(String, SndOrderRule a b)] -> [(String, [EvoSpan a b])]
+allEvolSpans :: MorphismsConfig -> [(String, SndOrderRule a b)] -> [(String, String, [EvoSpan a b])]
 -- combine rules symmetrically
 allEvolSpans _ [] = []
 allEvolSpans dpoConf rules@(r:rs) = map (evolSpans dpoConf r) rules ++ allEvolSpans dpoConf rs
@@ -41,10 +41,9 @@ allEvolSpans dpoConf rules@(r:rs) = map (evolSpans dpoConf r) rules ++ allEvolSp
 --allEvolSpans dpoConf sndOrderRules = concatMap (\r1 -> map (evolSpans dpoConf r1) sndOrderRules) sndOrderRules
 
 -- | Gets all Evolutionary Spans of two Second Order Rules
-evolSpans :: MorphismsConfig -> (String, SndOrderRule a b) -> (String, SndOrderRule a b) -> (String, [EvoSpan a b])
-evolSpans conf (n1,r1) (n2,r2) = (ruleNames, spans)
+evolSpans :: MorphismsConfig -> (String, SndOrderRule a b) -> (String, SndOrderRule a b) -> (String, String, [EvoSpan a b])
+evolSpans conf (n1,r1) (n2,r2) = (n1, n2, spans)
   where
-    ruleNames = n1 ++ " (evoSpan) " ++ n2
     spans = map (\m@(m1,m2) -> EvoSpan m1 m2 (classify conf r1 r2 m)) xs''
 
     -- filter to catch only interesting situations
@@ -66,25 +65,29 @@ evolSpans conf (n1,r1) (n2,r2) = (ruleNames, spans)
 
 -- | Given two second order rules and their matches overlaped, return their type
 classify :: MorphismsConfig -> SndOrderRule a b -> SndOrderRule a b -> (RuleMorphism a b, RuleMorphism a b) -> CPE
-classify conf r1 r2 (m1,m2) =
-  case (deleteUseFlGl, deleteUseFlGl'') of
-    (True,True)   -> DuseDuse
-    (True,False)  -> DuseFol
-    (False,True)  -> FolDuse
-    (False,False) -> FolFol
+classify conf r1 r2 (m1,m2) = (deleteUseFlGl, deleteUseFlGl'')
   where
+    isConflict c l1 l2 m =
+         isDeleteUse c l1 m
+      || isProduceDangling c l1 l2 m
+      || isProduceForbid c l1 l2 m
+    
     deleteUseFlGl =
-      isDeleteUse conf
+      isConflict conf
         (codomain (getLHS r1))
-        (mappingLeft m1, mappingLeft m2) ||
-      isDeleteUse conf
         (codomain (getLHS r2))
+        (mappingLeft m1, mappingLeft m2) ||
+      isConflict conf
+        (codomain (getLHS r2))
+        (codomain (getLHS r1))
         (mappingLeft m2, mappingLeft m1)
 
     deleteUseFlGl'' =
-      isDeleteUse conf
+      isConflict conf
         (codomain (getRHS r1))
-        (mappingRight m1, mappingRight m2) ||
-      isDeleteUse conf
         (codomain (getRHS r2))
+        (mappingRight m1, mappingRight m2) ||
+      isConflict conf
+        (codomain (getRHS r2))
+        (codomain (getRHS r1))
         (mappingRight m2, mappingRight m1)

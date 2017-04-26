@@ -18,7 +18,8 @@ This diagram shows objects and morphisms names used in the algorithms below:
  @
 
 q21 : N2 -> P1
-h21e1 : L2 -> P1
+h21 : L2 -> D1
+h21_e1 : L2 -> P1
 
 prod1 = l1 r1 {n1}
 
@@ -48,15 +49,25 @@ import           Control.Monad
 -- Verifies the non existence of h21: L2 -> D1 such that d1 . h21 = m2
 isDeleteUse :: DPO m => MorphismsConfig -> Production m -> (m, m) -> Bool
 isDeleteUse conf p1 (m1,m2) = null h21
-    where
-        (_,d1) = calculatePushoutComplement m1 (getLHS p1) --gets only the morphism D1 to G
-        h21 = findAllPossibleH21 conf m2 d1
+  where
+    (_,d1) = calculatePushoutComplement m1 (getLHS p1) --gets only the morphism D1 to G
+    h21 = findAllPossibleH21 conf m2 d1
 
 isProduceUse :: DPO m => MorphismsConfig -> Production m -> (m, m) -> Bool
 isProduceUse conf p1 (m1',m2) = null h21
-    where
-        (_,e1) = calculatePushoutComplement m1' (getRHS p1) --gets only the morphism D1 to G
-        h21 = findAllPossibleH21 conf m2 e1
+  where
+    (_,e1) = calculatePushoutComplement m1' (getRHS p1) --gets only the morphism D1 to G
+    h21 = findAllPossibleH21 conf m2 e1
+
+-- Runs the DPO rewriting on p1 with m1 and
+-- returns h21 and h21_e1 morphism as diagram above
+getH21fromRewriting :: DPO m => MorphismsConfig -> Production m -> m -> m -> ([m], m)
+getH21fromRewriting conf p1 m1 m2 = (h21,h21_e1)
+  where
+    (k1,d1) = calculatePushoutComplement m1 (getLHS p1)
+    (_,e1) = calculatePushout k1 (getRHS p1)
+    h21 = findAllPossibleH21 conf m2 d1
+    h21_e1 = compose (head h21) e1 --h21 is unique if it exists
 
 -- | Rule @p1@ is in a produce-dangling conflict with @p2@ if @p1@
 -- produces something that disables @p2@.
@@ -64,23 +75,13 @@ isProduceUse conf p1 (m1',m2) = null h21
 -- Gets the match of @p1@ from L2 to P1, checks if satisfiesNACs and not satisfiesGluingConditions
 isProduceDangling :: DPO m => MorphismsConfig -> Production m -> Production m -> (m, m) -> Bool
 isProduceDangling conf p1 p2 (m1,m2) =
-  not (null h21) && not (satisfiesGluingConditions conf p2 h21_e1) && satisfiesNACs conf p2 h21_e1
-  where
-    (k1,d1) = calculatePushoutComplement m1 (getLHS p1)
-    (_,e1) = calculatePushout k1 (getRHS p1)
-    h21 = findAllPossibleH21 conf m2 d1
-    h21_e1 = compose (head h21) e1 --h21 is unique if it exists
+  let (h21,h21_e1) = getH21fromRewriting conf p1 m1 m2
+  in not (null h21) && not (satisfiesGluingConditions conf p2 h21_e1) && satisfiesNACs conf p2 h21_e1
 
 isProduceForbid :: (DPO m) => MorphismsConfig -> Production m -> Production m -> (m,m) -> Bool
 isProduceForbid conf p1 p2 (m1,m2) =
-  let
-    (k1,d1) = calculatePushoutComplement m1 (getLHS p1)
-    (_,e1) = calculatePushout k1 (getRHS p1)
-    h21 = findAllPossibleH21 conf m2 d1
-    h21_e1 = compose (head h21) e1
+  let (h21,h21_e1) = getH21fromRewriting conf p1 m1 m2
   in not (null h21) && satisfiesGluingConditions conf p2 h21_e1 && not (satisfiesNACs conf p2 h21_e1)
-
-
 
 isDeleteForbid :: DPO m => MorphismsConfig -> Production m -> Production m -> (m,m) -> Bool
 isDeleteForbid conf p1 p2 (m1',m2) =
@@ -113,10 +114,7 @@ deleteUseDangling conf p1 p2 (m1,m2) =
     (False,True) -> Just (Right (m1,m2)) -- produce dangling case
     _            -> Nothing              -- free overlap case
   where
-    (k1,d1) = calculatePushoutComplement m1 (getLHS p1)
-    (_,e1) = calculatePushout k1 (getRHS p1)
-    h21 = findAllPossibleH21 conf m2 d1
-    h21_e1 = compose (head h21) e1
+    (h21,h21_e1) = getH21fromRewriting conf p1 m1 m2
     dangling = not (satisfiesGluingConditions conf p2 h21_e1) && satisfiesNACs conf p2 h21_e1
 
 -- | Rule @p1@ is in a produce-forbid conflict with @p2@ if @p1@
