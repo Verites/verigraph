@@ -46,7 +46,7 @@ script:
 
 after_script:
 #Send coverage data to coveralls.io
-- shc verigraph MorphismTest EssentialCPTest CriticalPairsSequencesTest SecondOrderTest PullbackTest PartitionsTest CtlTest GraphTest GraphProcessTest CocompleteTest
+- shc verigraph HSpecTests MorphismTest EssentialCPTest CriticalPairsSequencesTest SecondOrderTest PullbackTest PartitionsTest GraphProcessTest CocompleteTest
 
 notifications:
   email: false
