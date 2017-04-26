@@ -239,8 +239,6 @@ writeHostGraph (name,graph) = writeGraph ("graph_" ++ name) "HOST" name nodes ed
     tgm = idMap graph graph
     (_, nodes, edges) = serializeGraph [] [] tgm
 
-
-
 writeTypes :: ArrowXml a => G.Graph b c -> [(String,String)] -> a XmlTree XmlTree
 writeTypes graph names = mkelem "Types" []
   $ writeNodeTypes names nodeTypeList ++ writeEdgeTypes names edgeTypeList
@@ -252,10 +250,8 @@ writeTypes graph names = mkelem "Types" []
 writeTypeGraph :: ArrowXml a => G.Graph b c -> a XmlTree XmlTree
 writeTypeGraph graph = writeGraph "TypeGraph" "TG" "TypeGraph" nodeList edgeList
   where
-    src = G.sourceOfUnsafe
-    tgt = G.targetOfUnsafe
     nodeList = map (\n -> ("n" ++ show n, Nothing, "N" ++ show n)) (G.nodeIds graph)
-    edgeList = map (\e -> ("e" ++ show e, Nothing, "E" ++ show e, "n" ++ show (src graph e), "n" ++ show (tgt graph e))) (G.edgeIds graph)
+    edgeList = map (\e -> ("e" ++ show (G.edgeId e), Nothing, "E" ++ show (G.edgeId e), "n" ++ show (G.sourceId e), "n" ++ show (G.targetId e))) (G.edges graph)
 
 writeNodeTypes :: ArrowXml a => [(String,String)] -> [(String,String)] -> [a XmlTree XmlTree]
 writeNodeTypes names = map (writeNodeType names)
