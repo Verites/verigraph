@@ -106,12 +106,12 @@ type MorphismBuilder =
 
 data BuilderState =
   State
-    { unmappedDomainNodes        :: IntMap LNode
-    , unmappedDomainEdges        :: IntMap LEdge
-    , unmappedDomainVariables    :: Set Variable
-    , availableCodomainNodes     :: IntMap LNode
-    , availableCodomainEdges     :: IntMap LEdge
-    , availableCodomainVariables :: Set Variable
+    { unmappedDomNodes        :: IntMap LNode
+    , unmappedDomEdges        :: IntMap LEdge
+    , unmappedDomVariables    :: Set Variable
+    , availableCodNodes     :: IntMap LNode
+    , availableCodEdges     :: IntMap LEdge
+    , availableCodVariables :: Set Variable
     , nodeMap                    :: IntMap NodeId
     , edgeMap                    :: IntMap EdgeId
     , variableMap                :: Map Variable Variable
@@ -143,11 +143,11 @@ makeConfig restriction =
     Monomorphism ->
       Config
         { updateAfterMappingEdge = \_ (Edge e _ _ _) state ->
-            state { availableCodomainEdges = IntMap.delete (fromEnum e) (availableCodomainEdges state) }
+            state { availableCodEdges = IntMap.delete (fromEnum e) (availableCodEdges state) }
         , updateAfterMappingNode = \_ (Node n _) state ->
-            state { availableCodomainNodes = IntMap.delete (fromEnum n) (availableCodomainNodes state)}
+            state { availableCodNodes = IntMap.delete (fromEnum n) (availableCodNodes state)}
         , updateAfterMappingVariable = \_ v state ->
-            state { availableCodomainVariables = Set.delete v (availableCodomainVariables state) }
+            state { availableCodVariables = Set.delete v (availableCodVariables state) }
         , validateFinalState = \_ _ _ -> True
         }
 
@@ -165,15 +165,15 @@ makeConfig restriction =
     Isomorphism ->
       Config
         { updateAfterMappingEdge = \_ (Edge e _ _ _) state ->
-            state { availableCodomainEdges = IntMap.delete (fromEnum e) (availableCodomainEdges state) }
+            state { availableCodEdges = IntMap.delete (fromEnum e) (availableCodEdges state) }
         , updateAfterMappingNode = \_ (Node n _) state ->
-            state { availableCodomainNodes = IntMap.delete (fromEnum n) (availableCodomainNodes state)}
+            state { availableCodNodes = IntMap.delete (fromEnum n) (availableCodNodes state)}
         , updateAfterMappingVariable = \_ v state ->
-            state { availableCodomainVariables = Set.delete v (availableCodomainVariables state) }
+            state { availableCodVariables = Set.delete v (availableCodVariables state) }
         , validateFinalState = \_ _ state ->
-            IntMap.null (availableCodomainNodes state)
-              && IntMap.null (availableCodomainEdges state)
-              && Set.null (availableCodomainVariables state)
+            IntMap.null (availableCodNodes state)
+              && IntMap.null (availableCodEdges state)
+              && Set.null (availableCodVariables state)
         }
 
 
@@ -184,12 +184,12 @@ runMorphismBuilder config domain codomain build =
   let
     initialState =
       State
-        { unmappedDomainNodes = asIntMap (Graph.nodeMap domain)
-        , unmappedDomainEdges = asIntMap (Graph.edgeMap domain)
-        , unmappedDomainVariables = freeVariableSet domain
-        , availableCodomainNodes = asIntMap (Graph.nodeMap codomain)
-        , availableCodomainEdges = asIntMap (Graph.edgeMap codomain)
-        , availableCodomainVariables = freeVariableSet codomain
+        { unmappedDomNodes = asIntMap (Graph.nodeMap domain)
+        , unmappedDomEdges = asIntMap (Graph.edgeMap domain)
+        , unmappedDomVariables = freeVariableSet domain
+        , availableCodNodes = asIntMap (Graph.nodeMap codomain)
+        , availableCodEdges = asIntMap (Graph.edgeMap codomain)
+        , availableCodVariables = freeVariableSet codomain
         , nodeMap = IntMap.empty
         , edgeMap = IntMap.empty
         , variableMap = Map.empty
@@ -212,15 +212,15 @@ mapAll :: Monad m =>
   -> (BuilderConfig -> element -> element -> BuilderState -> m BuilderState)
   -> BuilderConfig -> BuilderState -> m BuilderState
 {-# INLINE mapAll #-}
-mapAll noUnmappedElements pickDomainElement pickCodomainElement addMapping config =
+mapAll noUnmappedElements pickDomElement pickCodElement addMapping config =
     recurse
   where
     recurse state =
       if noUnmappedElements state then
         return state
       else do
-        let domainElement = pickDomainElement state
-        codomainElement <- pickCodomainElement state
+        let domainElement = pickDomElement state
+        codomainElement <- pickCodElement state
         state' <- addMapping config domainElement codomainElement state
         recurse state'
 
@@ -228,25 +228,25 @@ mapAll noUnmappedElements pickDomainElement pickCodomainElement addMapping confi
 mapAllEdges :: BuilderConfig -> BuilderState -> [BuilderState]
 mapAllEdges =
   mapAll
-    (IntMap.null . unmappedDomainEdges)
-    (snd . IntMap.findMin . unmappedDomainEdges)
-    (IntMap.elems . availableCodomainEdges)
+    (IntMap.null . unmappedDomEdges)
+    (snd . IntMap.findMin . unmappedDomEdges)
+    (IntMap.elems . availableCodEdges)
     addEdgeMapping
 
 mapAllNodes :: BuilderConfig -> BuilderState -> [BuilderState]
 mapAllNodes =
   mapAll
-    (IntMap.null . unmappedDomainNodes)
-    (snd . IntMap.findMin . unmappedDomainNodes)
-    (IntMap.elems . availableCodomainNodes)
+    (IntMap.null . unmappedDomNodes)
+    (snd . IntMap.findMin . unmappedDomNodes)
+    (IntMap.elems . availableCodNodes)
     addNodeMapping
 
 mapAllVariables :: BuilderConfig -> BuilderState -> [BuilderState]
 mapAllVariables =
   mapAll
-    (Set.null . unmappedDomainVariables)
-    (Set.findMin . unmappedDomainVariables)
-    (Set.elems . availableCodomainVariables)
+    (Set.null . unmappedDomVariables)
+    (Set.findMin . unmappedDomVariables)
+    (Set.elems . availableCodVariables)
     addVariableMapping
 
 
@@ -265,19 +265,19 @@ addEdgeMapping config domainEdge codomainEdge state =
     return $
       state'''
         { edgeMap = IntMap.insert domainId codomainId (edgeMap state''')
-        , unmappedDomainEdges = IntMap.delete domainId (unmappedDomainEdges state''')
+        , unmappedDomEdges = IntMap.delete domainId (unmappedDomEdges state''')
         }
 
   where
     addNodeMapping' domainNodeId codomainNodeId state =
-      case IntMap.lookup (fromEnum domainNodeId) (unmappedDomainNodes state) of
+      case IntMap.lookup (fromEnum domainNodeId) (unmappedDomNodes state) of
         Nothing -> do
           -- Ensure the node was already mapped correctly
           guard $ IntMap.lookup (fromEnum domainNodeId) (nodeMap state) == Just codomainNodeId
           return state
 
         Just domainNode ->
-          case IntMap.lookup (fromEnum codomainNodeId) (availableCodomainNodes state) of
+          case IntMap.lookup (fromEnum codomainNodeId) (availableCodNodes state) of
             Nothing ->
               []
 
@@ -298,7 +298,7 @@ addNodeMapping config domainNode codomainNode state =
     return $
       state''
         { nodeMap = IntMap.insert domainId codomainId (nodeMap state'')
-        , unmappedDomainNodes = IntMap.delete domainId (unmappedDomainNodes state'')
+        , unmappedDomNodes = IntMap.delete domainId (unmappedDomNodes state'')
         }
 
   where
@@ -318,7 +318,7 @@ addNodeMapping config domainNode codomainNode state =
               [ state | previousMapping == codomainVar ]
 
             Nothing ->
-              if Set.member codomainVar (availableCodomainVariables state) then
+              if Set.member codomainVar (availableCodVariables state) then
                 addVariableMapping config domainVar codomainVar state
 
               else
@@ -336,8 +336,8 @@ addVariableMapping config domainVar codomainVar state =
       state'
         { variableMap =
             Map.insert domainVar codomainVar (variableMap state')
-        , unmappedDomainVariables =
-            Set.delete domainVar (unmappedDomainVariables state')
+        , unmappedDomVariables =
+            Set.delete domainVar (unmappedDomVariables state')
         }
 
 
