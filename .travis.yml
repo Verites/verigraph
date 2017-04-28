@@ -26,13 +26,10 @@ before_install:
 - mkdir -p ~/.local/bin
 - export PATH=$HOME/.local/bin:$PATH
 - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
-
-#Install tool to send coverage data to coveralls.io
-- stack install stack-hpc-coveralls
+- travis_retry curl -L https://github.com/rubik/stack-hpc-coveralls/releases/download/v0.0.4.0/shc-linux-x64-8.0.1.tar.bz2 | tar xj -C ~/.local/bin 'shc'
 
 
 # Verigraph build
-
 install:
 # Build dependencies
 - stack --no-terminal --install-ghc test --only-dependencies
@@ -41,12 +38,11 @@ script:
 # Build the package, its tests, and its docs and run the tests
 - stack --no-terminal test --haddock --no-haddock-deps --coverage --test-arguments "$(cat .hspec)"
 
-
 # Send results and notify
 
 after_script:
 #Send coverage data to coveralls.io
-- shc verigraph HSpecTests MorphismTest EssentialCPTest CriticalPairsSequencesTest SecondOrderTest PullbackTest PartitionsTest GraphProcessTest CocompleteTest
+- shc combined all
 
 notifications:
   email: false
