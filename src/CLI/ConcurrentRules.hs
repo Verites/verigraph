@@ -4,6 +4,7 @@ module ConcurrentRules
   , execute
   ) where
 
+import           Data.Monoid              ((<>))
 import           GlobalOptions
 
 import           Abstract.AdhesiveHLR
