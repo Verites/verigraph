@@ -7,6 +7,7 @@ module ParallelIndependence
 import           Analysis.ParallelIndependent
 import           Control.Monad                (unless, when)
 import           Data.Matrix                  hiding ((<|>))
+import           Data.Monoid                  ((<>))
 import           GlobalOptions
 import qualified Grammar.Core                 as GG
 import           Options.Applicative

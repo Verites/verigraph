@@ -10,6 +10,7 @@ module GlobalOptions
 import           Abstract.AdhesiveHLR (MatchRestriction (..),
                                        MorphismsConfig (..),
                                        NacSatisfaction (..))
+import           Data.Monoid          ((<>))
 import           Options.Applicative
 
 data GlobalOptions = GOpts

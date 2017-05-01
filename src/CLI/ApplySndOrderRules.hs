@@ -12,6 +12,7 @@ import qualified SndOrder.Rule            as SO
 import qualified TypedGraph.DPO.GraphRule as GR
 import           TypedGraph.Morphism
 
+import           Data.Monoid              ((<>))
 import           GlobalOptions
 import           Options.Applicative
 

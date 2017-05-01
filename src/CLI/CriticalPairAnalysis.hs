@@ -14,6 +14,7 @@ import           Analysis.Interlevel.InterLevelCP
 import           Control.Monad                         (when)
 import           Data.List.Utils
 import           Data.Matrix                           hiding ((<|>))
+import           Data.Monoid                           ((<>))
 import qualified Data.Set                              as Set
 import           GlobalOptions
 import qualified Grammar.Core                          as GG
@@ -122,15 +123,15 @@ execute globalOpts opts = do
         "Inter-level Critical Pairs Analysis" :
         "This log shows a list of (first-order rule, second-order rule) that are in conflict:" :
         [show interlevelWithoutCounting] --map printILCP interlevelCPs
-    
+
     putStrLn ""
-    
+
     when secondOrder $
       mapM_ putStrLn $
         "Evolutionary Spans Inter-level CP:" :
         "This log shows pairs of (second-order rule, second-order rule, number of FolFol, number of ConfFol, number of FolConf, number of ConfConf)" :
         printEvoConflicts evoConflicts
-    
+
     putStrLn ""
     putStrLn "Critical Pair Analysis done!"
 
@@ -146,7 +147,7 @@ printEvoConflicts evo = map printOneEvo evo
     fst = \(y,_,_) -> y
     snd = \(_,y,_) -> y
     thd = \(_,_,y) -> y
-    
+
     printOneEvo e = "(" ++ fst e ++ ", " ++ snd e ++ ", " ++
                        show (printConf (False,False) (thd e)) ++ ", " ++
                        show (printConf (True,False) (thd e)) ++ ", " ++
