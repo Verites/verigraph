@@ -5,6 +5,7 @@ module Processes
   ) where
 
 import           Abstract.DPO
+import           Abstract.DPO.Process
 import           Abstract.Valid
 import           Analysis.Processes
 import           Control.Monad
@@ -15,6 +16,7 @@ import           GlobalOptions
 import qualified Grammar.Core                as GG
 import           Options.Applicative
 import           TypedGraph.DPO.GraphProcess
+import           TypedGraph.DPO.OccurenceRelation
 import qualified TypedGraph.Graph            as TG
 import qualified XML.GGXReader               as XML
 import qualified XML.GGXWriter               as GW
@@ -42,9 +44,9 @@ execute globalOpts opts = do
 
     let colimit = calculateRulesColimit $ head sequences
         conflictsAndDependencies = findConflictsAndDependencies colimit
-        inducedByNacs = filterPotential conflictsAndDependencies
+        inducedByNacs = filterInducedByNacs conflictsAndDependencies
 
-        ogg = generateOccurrenceGrammar $ head sequences
+        ogg = generateDoublyTypedGrammar $ head sequences
         sgg = singleTypedGrammar ogg
         completeOgg = calculateNacRelations ogg inducedByNacs
         newRules = GG.rules . singleTypedGrammar $ ogg

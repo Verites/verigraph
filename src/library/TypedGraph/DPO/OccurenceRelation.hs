@@ -9,12 +9,21 @@ module TypedGraph.DPO.OccurenceRelation
 , filterCreationRelation
 , filterDeletionRelation
 , isCreation
-, isDeletion)
+, isDeletion
+, isNode
+, happensAfterAction
+, happensBeforeAction
+, neverDeleted
+, findOrder
+, buildTransitivity)
 
 where
 
+import           Equivalence.EquivalenceClasses
 import           Graph.Graph                    (EdgeId, NodeId)
-import Data.Set as S
+import           Data.Maybe                     (isNothing)
+import           Data.Set as S
+import           Util.Closures                  as C
 
 data RelationItem = Node NodeId
                   | Edge EdgeId
@@ -74,3 +83,25 @@ isDeletion (a,b) = case (a,b) of
                       (Node _, Rule _) -> True
                       (Edge _, Rule _) -> True
                       _                -> False
+
+isNode :: RelationItem -> Bool
+isNode x = case x of
+           Node _ -> True
+           _      -> False
+
+happensBeforeAction :: Relation -> RelationItem -> String -> Bool
+happensBeforeAction rel item name = member (item, Rule name) rel
+
+happensAfterAction :: Relation -> RelationItem -> String -> Bool
+happensAfterAction rel item name = member (Rule name,item) rel
+
+-- | Given a relation item @i@ and the deletion relation of an doubly typed grammar,
+-- it returns True if the item is deleted by some rule in this relation and False otherwise
+neverDeleted :: RelationItem -> Relation -> Bool
+neverDeleted e rel = isNothing (lookup e $ toList rel)
+
+findOrder :: Relation -> Set RelationItem -> Maybe [RelationItem]
+findOrder = tsort
+
+buildTransitivity :: Relation -> Relation
+buildTransitivity = monadToSet . transitiveClosure . setToMonad

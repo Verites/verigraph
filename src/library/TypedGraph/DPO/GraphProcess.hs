@@ -2,14 +2,12 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module TypedGraph.DPO.GraphProcess
 
-( OccurrenceGrammar (..)
+( DoublyTypedGrammar (..)
 , occurrenceRelation
 , filterRulesOccurrenceRelation
 , filterElementsOccurrenceRelation
-, generateOccurrenceGrammar
+, generateDoublyTypedGrammar
 , uniqueOrigin
-, findOrder
-, filterPotential
 , findConcreteTrigger
 , calculateNacRelations
 , strictRelation
@@ -17,7 +15,6 @@ module TypedGraph.DPO.GraphProcess
 , getElements
 , initialGraph
 , finalGraph
-, eliminateSelfConflictsAndDependencies
 , emptyRestrictions
 )
 
@@ -29,7 +26,7 @@ import           Abstract.DPO.Process
 import           Abstract.Morphism              as M
 import           Analysis.DiagramAlgorithms
 import           Data.List                      as L hiding (union)
-import           Data.Maybe                     (fromJust, fromMaybe, isJust, isNothing)
+import           Data.Maybe                     (fromJust, fromMaybe, isJust)
 import           Data.Set                       as S
 import           Data.Tuple                     (swap)
 import           Equivalence.EquivalenceClasses
@@ -41,6 +38,7 @@ import           TypedGraph.DPO.OccurenceRelation
 import           TypedGraph.Graph
 import           TypedGraph.Morphism            as TGM
 import           Util.Closures                  as C
+import           Util.List
 
 instance GenerateProcess (TypedGraphMorphism a b) where
   typing = retypeProduction
@@ -48,23 +46,118 @@ instance GenerateProcess (TypedGraphMorphism a b) where
   restrictMorphisms = restrictMorphisms'
   restrictMorphism = restrictMorphism'
 
-data OccurrenceGrammar a b = OccurrenceGrammar {
-  singleTypedGrammar       :: Grammar (TypedGraphMorphism a b)
-, originalRulesWithMatches :: [NamedRuleWithMatches (TypedGraphMorphism a b)]
-, doubleType               :: TypedGraph a b
-, originRelation           :: Relation
-, concreteRelation         :: Relation
-, restrictRelation         :: AbstractRelation
+data DoublyTypedGrammar a b = DoublyTypedGrammar {
+  singleTypedGrammar       :: Grammar (TypedGraphMorphism a b) -- ^ The grammar typed over the double type graph
+, originalRulesWithMatches :: [NamedRuleWithMatches (TypedGraphMorphism a b)] -- ^ The rules of the original grammar, together with their matches in the double type graph
+, doubleType               :: TypedGraph a b -- ^ The double type graph, typed over the simple type graph
+, originRelation           :: Relation -- ^ The relation that shows the rule that originated each element (node or edge) in the grammar
+, concreteRelation         :: Relation -- ^ The occurrence relation of the grammar (existencial relation + concrete conflicts and dependencies induced by NACs)
+, restrictRelation         :: AbstractRelation -- ^ The set of restrictions given by the abstract conflicts and dependencies
 }
 
-initialGraph :: OccurrenceGrammar a b -> TypedGraph a b
+-- | Given an doubly typed grammar, it returns its initial graph
+initialGraph :: DoublyTypedGrammar a b -> TypedGraph a b
 initialGraph = start . singleTypedGrammar
 
-finalGraph :: OccurrenceGrammar a b -> TypedGraph a b
+-- | Given an doubly typed grammar, it returns its final graph
+finalGraph :: DoublyTypedGrammar a b -> TypedGraph a b
 finalGraph ogg = fromJust $ lookup "final" (reachableGraphs $ singleTypedGrammar ogg)
 
-emptyRestrictions :: OccurrenceGrammar a b -> Bool
+-- | Checks whether the restrict relation of an doubly typed grammar is empty
+emptyRestrictions :: DoublyTypedGrammar a b -> Bool
 emptyRestrictions = S.null . restrictRelation
+
+-- | Given a rule sequence, it calculates its underlying doubly-typed graph grammar
+generateDoublyTypedGrammar :: RuleSequence (TypedGraphMorphism a b) -> DoublyTypedGrammar a b
+generateDoublyTypedGrammar sequence = DoublyTypedGrammar singleGrammar originalRulesWithMatches doubleType cdRelation relation empty
+  where
+    originalRulesWithMatches = calculateRulesColimit sequence -- TODO: unify this two functions
+    newRules = generateGraphProcess sequence
+    cdRelation = S.filter isRuleAndElement $ strictRelation newRules
+    relation = occurrenceRelation newRules
+    created = createdElements cdRelation
+    deleted = deletedElements cdRelation
+    doubleType = codomain $ getMatch $ head originalRulesWithMatches
+    coreGraph = domain doubleType
+    startGraph = removeElements coreGraph created
+    finalGraph = removeElements coreGraph deleted
+    singleGrammar = addReachableGraphs [("final",finalGraph)] (grammar startGraph [] newRules)
+
+-- | Given an doubly typed grammar, it returns a tuple @(rs,es)@ where @rs@ is the set of rule names in this grammar
+-- and @es@ is the set of elements that appear in the rules
+getElements :: DoublyTypedGrammar a b -> (Set RelationItem, Set RelationItem)
+getElements ogg =
+  let
+    (ns,rs) = unzip $ rules (singleTypedGrammar ogg)
+    ruleNames = S.map Rule (fromList ns)
+    elements = L.map getRuleItems rs
+  in (ruleNames, unions elements)
+
+calculateNacRelations :: DoublyTypedGrammar a b -> Set Interaction -> DoublyTypedGrammar a b
+calculateNacRelations ogg is = newOgg
+  where
+    (deleteForbid,produceForbid) = S.partition (\i -> interactionType i == DeleteForbid) is
+    (dfs, absDfs) = calculateDeleteForbids ogg deleteForbid
+    (pfs, absPfs) = calculateProduceForbids ogg produceForbid
+
+    newOgg = DoublyTypedGrammar
+              (singleTypedGrammar ogg)
+              (originalRulesWithMatches ogg)
+              (doubleType ogg)
+              (originRelation ogg)
+              (buildTransitivity (concreteRelation ogg `union` dfs `union` pfs)) -- do the reflexive and transitive Closure
+              (absDfs `union` absPfs)
+
+calculateDeleteForbids :: DoublyTypedGrammar a b -> Set Interaction -> (Relation, AbstractRelation)
+calculateDeleteForbids ogg dfs = (S.map toRelation concreteDF, S.map toAbstractRelation abstract)
+  where
+    creationRelation = S.map swap $ S.filter isCreation (originRelation ogg)
+    isConcreteDeleteForbid (i, t) = isInGraph (initialGraph ogg) t || happensBeforeAction (concreteRelation ogg) t (secondRule i)
+    isDiscardedDeleteForbid (i, t) = happensAfterAction (concreteRelation ogg) t (secondRule i)
+    (concreteDF,potentialDF) = S.partition isConcreteDeleteForbid (S.map (findConcreteTrigger ogg) dfs)
+    (_,abstract) = S.partition isDiscardedDeleteForbid potentialDF
+    toAbstractRelation (i, c) = (toRelation (i, c), (Rule (secondRule i), findRule creationRelation c))
+
+toRelation (i, _) = (Rule (firstRule i), Rule (secondRule i))
+
+calculateProduceForbids :: DoublyTypedGrammar a b -> Set Interaction -> (Relation, AbstractRelation)
+calculateProduceForbids ogg pfs = (S.map toRelation concretePF, S.empty)
+  where
+    deletionRelation = S.filter isDeletion (originRelation ogg)
+    isConcreteProduceForbid (i,t) = neverDeleted t deletionRelation
+       && (happensBeforeAction (concreteRelation ogg) t (firstRule i) || not (happensAfterAction (concreteRelation ogg) t (firstRule i))) -- should it be the second rule?
+    (concretePF, _) = S.partition isConcreteProduceForbid (S.map (findConcreteTrigger ogg) pfs)
+
+-- | Given an doubly typed grammar and an interaction of the types ProduceForbid or DeleteForbid between two rules
+-- it returns the interaction together with the element that triggered the NAC involved in this conflict or dependency
+findConcreteTrigger :: DoublyTypedGrammar a b -> Interaction -> (Interaction, RelationItem) -- check if the order is correct for produce forbids
+findConcreteTrigger ogg interaction@(Interaction a1 a2 t nacIdx) =
+  let
+    originalRules = L.map (\(a,b,c) -> (a, (b,c))) (originalRulesWithMatches ogg)
+    p1Candidate = fromJust $ lookup a1 originalRules
+    p1 = if t == DeleteForbid then p1Candidate else invert p1Candidate
+    p2 = fromJust $ lookup a2 originalRules
+    triggeredNAC = getNACs (fst p2) !! fromJust nacIdx
+
+    (r1',m2) = getOverlapping p1 p2
+    d1 = getUnderlyingDerivation p1 r1'
+    h21 = findH21 m2 (dToH d1)
+    d1h21 = compose h21 (dToG d1)
+    q21 = findMono (codomain triggeredNAC) (codomain d1h21)
+
+    concreteTrigger = case getTrigger triggeredNAC of
+      Node n -> Node (applyNodeUnsafe q21 n)
+      Edge e -> Edge (applyEdgeUnsafe q21 e)
+      _      -> error "this pattern shouldn't exist"
+    invert (p1,(m1,k1,r1)) = (invertProduction conf p1, (r1,k1,m1))
+   in (interaction, concreteTrigger)
+
+getTrigger :: TypedGraphMorphism a b ->  RelationItem
+getTrigger nac =
+  let
+    orphanNodes = orphanTypedNodeIds nac
+    orphanEdges = orphanTypedEdgeIds nac
+  in if L.null orphanEdges then Node $ head orphanNodes else Edge $ head orphanEdges
 
 uniqueOrigin :: [NamedProduction (TypedGraphMorphism a b)] -> Bool
 uniqueOrigin rules = not (repeated createdList) && not (repeated deletedList)
@@ -77,13 +170,6 @@ uniqueOrigin rules = not (repeated createdList) && not (repeated deletedList)
     createdList = S.toList $ S.map snd created
     deletedList = S.toList $ S.map fst deleted
 
-findOrder :: Relation -> Set RelationItem -> Maybe [RelationItem]
-findOrder = tsort
-
-repeated :: (Eq a) => [a] -> Bool
-repeated []     = False
-repeated (x:xs) = x `elem` xs || repeated xs
-
 strictRelation :: [NamedProduction (TypedGraphMorphism a b)] -> Relation
 strictRelation = unions . L.map creationAndDeletionRelation
 
@@ -94,9 +180,6 @@ occurrenceRelation rules =
     b' = creationAndPreservationRelation rules b
     b'' = preservationAndDeletionRelation rules b
   in buildTransitivity (unions [b,b',b''])
-
-buildTransitivity :: Relation -> Relation
-buildTransitivity = monadToSet . transitiveClosure . setToMonad
 
 createdElements :: Relation -> Set RelationItem
 createdElements elementsRelation =
@@ -113,26 +196,6 @@ deletedElements elementsRelation =
     c = relationDomain m
     deleted = monadToSet c
   in deleted
-
-generateOccurrenceGrammar :: RuleSequence (TypedGraphMorphism a b) -> OccurrenceGrammar a b
-generateOccurrenceGrammar sequence = OccurrenceGrammar singleGrammar originalRulesWithMatches doubleType cdRelation relation empty
-  where
-    originalRulesWithMatches = calculateRulesColimit sequence -- TODO: unify this two functions
-    newRules = generateGraphProcess sequence
-    cdRelation = S.filter isRuleAndElement $ strictRelation newRules
-    relation = occurrenceRelation newRules
-    created = createdElements cdRelation
-    deleted = deletedElements cdRelation
-    doubleType = codomain $ getMatch $ head originalRulesWithMatches
-    coreGraph = domain doubleType
-    startGraph = removeElements coreGraph created
-    finalGraph = removeElements coreGraph deleted
-    singleGrammar = addReachableGraphs [("final",finalGraph)] (grammar startGraph [] newRules)
-
-isNode :: RelationItem -> Bool
-isNode x = case x of
-           Node _ -> True
-           _      -> False
 
 removeElements :: Graph (Maybe a) (Maybe b) -> Set RelationItem -> TypedGraph a b
 removeElements coreGraph elementsToRemove =
@@ -162,14 +225,6 @@ getRuleItems rule =
     ns = fromList (deletedNodes rule ++ preservedNodes rule ++ createdNodes rule)
     es = fromList (deletedEdges rule ++ preservedEdges rule ++ createdEdges rule)
    in S.map Node ns `union` S.map Edge es
-
-getElements :: OccurrenceGrammar a b -> (Set RelationItem, Set RelationItem)
-getElements ogg =
-  let
-    (ns,rs) = unzip $ rules (singleTypedGrammar ogg)
-    ruleNames = S.map Rule (fromList ns)
-    elements = L.map getRuleItems rs
-  in (ruleNames, unions elements)
 
 creationAndPreservationRelation :: [NamedProduction (TypedGraphMorphism a b)] -> Relation -> Relation
 creationAndPreservationRelation rules cdRelation =
@@ -207,10 +262,6 @@ preservationAndDeletionRelation rules cdRelation =
     result = L.map (relatedByPreservationAndDeletion deleting) rules
   in S.unions result
 
-filterPotential :: [Interaction] -> Set Interaction
-filterPotential conflictsAndDependencies =
-  S.filter (\i -> interactionType i == ProduceForbid || interactionType i == DeleteForbid) $ fromList conflictsAndDependencies
-
 type RuleWithMatches a b = (Production (TypedGraphMorphism a b), (TypedGraphMorphism a b, TypedGraphMorphism a b, TypedGraphMorphism a b))
 
 getUnderlyingDerivation :: RuleWithMatches a b -> TypedGraphMorphism a b -> Derivation (TypedGraphMorphism a b)
@@ -238,94 +289,21 @@ findCoreMorphism dom core =
     initial = buildTypedGraphMorphism dom core (GM.empty (domain dom) (domain core))
   in L.foldr (uncurry updateEdgeRelation) (L.foldr (uncurry untypedUpdateNodeRelation) initial ns) es
 
-eliminateSelfConflictsAndDependencies = L.filter (\i -> firstRule i /= secondRule i)
-
-calculateNacRelations :: OccurrenceGrammar a b -> Set Interaction -> OccurrenceGrammar a b
-calculateNacRelations ogg is = newOgg
-  where
-    (deleteForbid,produceForbid) = S.partition (\i -> interactionType i == DeleteForbid) is
-    (dfs, absDfs) = calculateDeleteForbids ogg deleteForbid
-    (pfs, absPfs) = calculateProduceForbids ogg produceForbid
-
-    newOgg = OccurrenceGrammar
-              (singleTypedGrammar ogg)
-              (originalRulesWithMatches ogg)
-              (doubleType ogg)
-              (originRelation ogg)
-              (buildTransitivity (concreteRelation ogg `union` dfs `union` pfs)) -- do the reflexive and transitive Closure
-              (absDfs `union` absPfs)
-
-calculateDeleteForbids :: OccurrenceGrammar a b -> Set Interaction -> (Relation, AbstractRelation)
-calculateDeleteForbids ogg dfs = (S.map toRelation concreteDF, S.map toAbstractRelation abstract)
-  where
-    creationRelation = S.map swap $ S.filter isCreation (originRelation ogg)
-    isConcreteDeleteForbid (i, t) = isInInitial (initialGraph ogg) t || happensBeforeAction (concreteRelation ogg) t (secondRule i)
-    isDiscardedDeleteForbid (i, t) = happensAfterAction (concreteRelation ogg) t (secondRule i)
-    (concreteDF,potentialDF) = S.partition isConcreteDeleteForbid (S.map (findConcreteTrigger ogg) dfs)
-    (_,abstract) = S.partition isDiscardedDeleteForbid potentialDF
-    toAbstractRelation (i, c) = (toRelation (i, c), (Rule (secondRule i), findRule creationRelation c))
-
-toRelation (i, _) = (Rule (firstRule i), Rule (secondRule i))
-
-calculateProduceForbids :: OccurrenceGrammar a b -> Set Interaction -> (Relation, AbstractRelation)
-calculateProduceForbids ogg pfs = (S.map toRelation concretePF, S.empty)
-  where
-    deletionRelation = S.filter isDeletion (originRelation ogg)
-    isConcreteProduceForbid (i,t) = neverDeleted t deletionRelation
-       && (happensBeforeAction (concreteRelation ogg) t (firstRule i) || not (happensAfterAction (concreteRelation ogg) t (firstRule i))) -- should it be the second rule?
-    (concretePF, _) = S.partition isConcreteProduceForbid (S.map (findConcreteTrigger ogg) pfs)
-
-neverDeleted :: RelationItem -> Relation -> Bool
-neverDeleted e rel = isNothing (lookup e $ toList rel)
-
 findRule :: Relation -> RelationItem -> RelationItem
 findRule rel e = fromMaybe (error $ "there should be an action related to " ++ show e) find
   where
     find = lookup e $ toList rel
 
-findConcreteTrigger :: OccurrenceGrammar a b -> Interaction -> (Interaction, RelationItem) -- check if the order is correct for produce forbids
-findConcreteTrigger ogg interaction@(Interaction a1 a2 t nacIdx) =
-  let
-    originalRules = L.map (\(a,b,c) -> (a, (b,c))) (originalRulesWithMatches ogg)
-    p1Candidate = fromJust $ lookup a1 originalRules
-    p1 = if t == DeleteForbid then p1Candidate else invert p1Candidate
-    p2 = fromJust $ lookup a2 originalRules
-    triggeredNAC = getNACs (fst p2) !! fromJust nacIdx
-
-    (r1',m2) = getOverlapping p1 p2
-    d1 = getUnderlyingDerivation p1 r1'
-    h21 = findH21 m2 (dToH d1)
-    d1h21 = compose h21 (dToG d1)
-    q21 = findMono (codomain triggeredNAC) (codomain d1h21)
-
-    concreteTrigger = case getTrigger triggeredNAC of
-      Node n -> Node (applyNodeUnsafe q21 n)
-      Edge e -> Edge (applyEdgeUnsafe q21 e)
-      _      -> error "this pattern shouldn't exist"
-    invert (p1,(m1,k1,r1)) = (invertProduction conf p1, (r1,k1,m1))
-   in (interaction, concreteTrigger)
-
 getOverlapping :: RuleWithMatches a b -> RuleWithMatches a b -> (TypedGraphMorphism a b, TypedGraphMorphism a b)
 getOverlapping (_,(_,_,comatch)) (_,(match,_,_)) = restrictMorphisms (comatch, match)
 
-getTrigger :: TypedGraphMorphism a b ->  RelationItem
-getTrigger nac =
-  let
-    orphanNodes = orphanTypedNodeIds nac
-    orphanEdges = orphanTypedEdgeIds nac
-  in if L.null orphanEdges then Node $ head orphanNodes else Edge $ head orphanEdges
-
-isInInitial :: TypedGraph a b -> RelationItem -> Bool
-isInInitial initial x = case x of
+-- | Given a typed graph @tg@ and an item @i@ which can be a node or an edge, it returns True if @i@ is in
+-- @t@ and False otherwise
+isInGraph :: TypedGraph a b -> RelationItem -> Bool
+isInGraph initial x = case x of
   Node n -> isJust $ GM.applyNode initial n
   Edge e -> isJust $ GM.applyEdge initial e
   _      -> error $ "case " ++ show x ++ "shouldn't occur"
-
-happensBeforeAction :: Relation -> RelationItem -> String -> Bool
-happensBeforeAction rel item name = member (item, Rule name) rel
-
-happensAfterAction :: Relation -> RelationItem -> String -> Bool
-happensAfterAction rel item name = member (Rule name,item) rel
 
 conf :: MorphismsConfig
 conf = MorphismsConfig MonoMatches MonomorphicNAC

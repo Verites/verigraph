@@ -33,6 +33,7 @@ library
                        Abstract.Cocomplete
                        Abstract.Constraint
                        Abstract.DPO
+                       Abstract.DPO.Process
                        Abstract.DPO.StateSpace
                        Abstract.Morphism
                        Abstract.Relation
@@ -57,6 +58,7 @@ library
                        SndOrder.Rule
                        TypedGraph.DPO.GraphProcess
                        TypedGraph.DPO.GraphRule
+                       TypedGraph.DPO.OccurenceRelation
                        TypedGraph.Graph
                        TypedGraph.Morphism
                        XML.GGXReader
@@ -64,14 +66,12 @@ library
   other-modules:
                        Abstract.DPO.Core
                        Abstract.DPO.Derivation
-                       Abstract.DPO.Process
                        Analysis.DiagramAlgorithms
                        Analysis.EpimorphicPairs
                        Equivalence.EquivalenceClasses
                        Logic.Ctl.Base
                        Logic.Ctl.Parser
                        Logic.Ctl.Semantics
-                       TypedGraph.DPO.OccurenceRelation
                        TypedGraph.Morphism.AdhesiveHLR
                        TypedGraph.Morphism.Cocomplete
                        TypedGraph.Morphism.Core

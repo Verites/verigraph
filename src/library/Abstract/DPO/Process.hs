@@ -7,6 +7,8 @@ module Abstract.DPO.Process
   , Interaction (..)
   , InteractionType (..)
   , getRule, getName, getMatch, getComatch
+  , filterInducedByNacs
+  , eliminateSelfConflictsAndDependencies
   ) where
 
 import           Abstract.Cocomplete
@@ -15,6 +17,7 @@ import           Abstract.DPO.Derivation
 import           Abstract.Morphism
 import           Data.List.NonEmpty      (NonEmpty, fromList)
 import           Data.Maybe              (fromJust)
+import qualified Data.Set as S
 import           Grammar.Core
 
 data Process m = Process
@@ -38,6 +41,13 @@ data Interaction = Interaction {
   interactionType :: InteractionType,
   nacInvolved     :: Maybe Int
 } deriving (Eq, Show, Ord)
+
+filterInducedByNacs :: [Interaction] -> S.Set Interaction
+filterInducedByNacs conflictsAndDependencies =
+  S.filter (\i -> interactionType i == ProduceForbid || interactionType i == DeleteForbid) $ S.fromList conflictsAndDependencies
+
+eliminateSelfConflictsAndDependencies :: [Interaction] -> [Interaction]
+eliminateSelfConflictsAndDependencies = filter (\i -> firstRule i /= secondRule i)
 
 class (DPO m) => GenerateProcess m where
 
