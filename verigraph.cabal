@@ -71,6 +71,7 @@ library
                        Logic.Ctl.Base
                        Logic.Ctl.Parser
                        Logic.Ctl.Semantics
+                       TypedGraph.DPO.OccurenceRelation
                        TypedGraph.Morphism.AdhesiveHLR
                        TypedGraph.Morphism.Cocomplete
                        TypedGraph.Morphism.Core
