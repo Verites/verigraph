@@ -3,6 +3,7 @@ module TypedGraph.DPO.OccurenceRelation
 ( RelationItem(..)
 , Relation
 , AbstractRelation
+, AbstractType (..)
 , isRuleAndElement
 , filterRulesOccurrenceRelation
 , filterElementsOccurrenceRelation
@@ -13,7 +14,9 @@ module TypedGraph.DPO.OccurenceRelation
 , isNode
 , happensAfterAction
 , happensBeforeAction
+, relatedItens
 , neverDeleted
+, present
 , findOrder
 , buildTransitivity)
 
@@ -21,7 +24,7 @@ where
 
 import           Equivalence.EquivalenceClasses
 import           Graph.Graph                    (EdgeId, NodeId)
-import           Data.Maybe                     (isNothing)
+import           Data.Maybe                     (isJust, isNothing)
 import           Data.Set as S
 import           Util.Closures                  as C
 
@@ -31,7 +34,8 @@ data RelationItem = Node NodeId
                   deriving (Eq, Ord, Show)
 
 type Relation = S.Set(RelationItem, RelationItem)
-type AbstractRelation = S.Set ((RelationItem, RelationItem), (RelationItem, RelationItem))
+data AbstractType = AbstractProduceForbid | AbstractDeleteForbid deriving (Eq, Ord, Show)
+type AbstractRelation = S.Set (AbstractType, (RelationItem, RelationItem), (RelationItem, RelationItem))
 
 isRuleAndElement :: (RelationItem, RelationItem) -> Bool
 isRuleAndElement (a,b) = case (a,b) of
@@ -93,6 +97,9 @@ isNode x = case x of
 happensBeforeAction :: Relation -> RelationItem -> String -> Bool
 happensBeforeAction rel item name = member (item, Rule name) rel
 
+relatedItens :: Relation -> (RelationItem, RelationItem) -> Bool
+relatedItens rel (i1,i2) = member (i1,i2) rel || member (i2,i1) rel
+
 -- | Tests wether an item appears after a rule in a given occurrence relation
 happensAfterAction :: Relation -> RelationItem -> String -> Bool
 happensAfterAction rel item name = member (Rule name,item) rel
@@ -101,6 +108,9 @@ happensAfterAction rel item name = member (Rule name,item) rel
 -- it returns True if the item is deleted by some rule in this relation and False otherwise
 neverDeleted :: RelationItem -> Relation -> Bool
 neverDeleted e rel = isNothing (lookup e $ toList rel)
+
+present :: RelationItem -> Relation -> Bool
+present e rel = isJust (lookup e $ toList rel)
 
 findOrder :: Relation -> Set RelationItem -> Maybe [RelationItem]
 findOrder = tsort

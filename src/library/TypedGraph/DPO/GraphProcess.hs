@@ -81,6 +81,12 @@ generateDoublyTypedGrammar sequence = DoublyTypedGrammar singleGrammar originalR
     finalGraph = removeElements coreGraph deleted
     singleGrammar = addReachableGraphs [("final",finalGraph)] (grammar startGraph [] newRules)
 
+creationRelation :: DoublyTypedGrammar a b -> Relation
+creationRelation ogg = S.map swap $ S.filter isCreation (originRelation ogg)
+
+deletionRelation :: DoublyTypedGrammar a b -> Relation
+deletionRelation ogg = S.filter isDeletion (originRelation ogg)
+
 -- | Given an doubly typed grammar, it returns a tuple @(rs,es)@ where @rs@ is the set of rule names in this grammar
 -- and @es@ is the set of elements that appear in the rules
 getElements :: DoublyTypedGrammar a b -> (Set RelationItem, Set RelationItem)
@@ -109,23 +115,24 @@ calculateNacRelations ogg is = newOgg
 calculateDeleteForbids :: DoublyTypedGrammar a b -> Set Interaction -> (Relation, AbstractRelation)
 calculateDeleteForbids ogg dfs = (S.map toRelation concreteDF, S.map toAbstractRelation abstract)
   where
-    creationRelation = S.map swap $ S.filter isCreation (originRelation ogg)
     isConcreteDeleteForbid (i, t) = isInGraph (initialGraph ogg) t || happensBeforeAction (concreteRelation ogg) t (secondRule i)
     isDiscardedDeleteForbid (i, t) = happensAfterAction (concreteRelation ogg) t (secondRule i)
     (concreteDF,potentialDF) = S.partition isConcreteDeleteForbid (S.map (findConcreteTrigger ogg) dfs)
     (_,abstract) = S.partition isDiscardedDeleteForbid potentialDF
-    toAbstractRelation (i, c) = (toRelation (i, c), (Rule (secondRule i), findRule creationRelation c))
+    toAbstractRelation (i, c) = (AbstractDeleteForbid, toRelation (i, c), (Rule (secondRule i), findRule (creationRelation ogg) c))
 
 toRelation :: (Interaction, t) -> (RelationItem, RelationItem)
 toRelation (i, _) = (Rule (firstRule i), Rule (secondRule i))
 
 calculateProduceForbids :: DoublyTypedGrammar a b -> Set Interaction -> (Relation, AbstractRelation)
-calculateProduceForbids ogg pfs = (S.map toRelation concretePF, S.empty)
+calculateProduceForbids ogg pfs = (S.map toRelation concretePF, S.map toAbstractRelation abstract)
   where
-    deletionRelation = S.filter isDeletion (originRelation ogg)
-    isConcreteProduceForbid (i,t) = neverDeleted t deletionRelation
+    isConcreteProduceForbid (i,t) = neverDeleted t (deletionRelation ogg)
        && (happensBeforeAction (concreteRelation ogg) t (firstRule i) || not (happensAfterAction (concreteRelation ogg) t (firstRule i))) -- should it be the second rule?
-    (concretePF, _) = S.partition isConcreteProduceForbid (S.map (findConcreteTrigger ogg) pfs)
+    isAbstractProduceForbid (i,t) = present t (deletionRelation ogg) && not (relatedItens (concreteRelation ogg) (Rule (firstRule i), Rule (secondRule i)))
+    (concretePF, potentialPF) = S.partition isConcreteProduceForbid (S.map (findConcreteTrigger ogg) pfs)
+    (abstract, _) = S.partition isAbstractProduceForbid potentialPF
+    toAbstractRelation (i, c) = (AbstractProduceForbid, toRelation (i, c), (Rule (secondRule i), findRule (deletionRelation ogg) c))
 
 -- | Given an doubly typed grammar and an interaction of the types ProduceForbid or DeleteForbid between two rules
 -- it returns the interaction together with the element that triggered the NAC involved in this conflict or dependency
