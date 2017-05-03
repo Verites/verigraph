@@ -89,9 +89,11 @@ isNode x = case x of
            Node _ -> True
            _      -> False
 
+-- | Tests wether an item appears before a rule in a given occurrence relation
 happensBeforeAction :: Relation -> RelationItem -> String -> Bool
 happensBeforeAction rel item name = member (item, Rule name) rel
 
+-- | Tests wether an item appears after a rule in a given occurrence relation
 happensAfterAction :: Relation -> RelationItem -> String -> Bool
 happensAfterAction rel item name = member (Rule name,item) rel
 

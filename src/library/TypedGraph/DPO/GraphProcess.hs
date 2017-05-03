@@ -118,6 +118,7 @@ calculateDeleteForbids ogg dfs = (S.map toRelation concreteDF, S.map toAbstractR
     (_,abstract) = S.partition isDiscardedDeleteForbid potentialDF
     toAbstractRelation (i, c) = (toRelation (i, c), (Rule (secondRule i), findRule creationRelation c))
 
+toRelation :: (Interaction, t) -> (RelationItem, RelationItem)
 toRelation (i, _) = (Rule (firstRule i), Rule (secondRule i))
 
 calculateProduceForbids :: DoublyTypedGrammar a b -> Set Interaction -> (Relation, AbstractRelation)
