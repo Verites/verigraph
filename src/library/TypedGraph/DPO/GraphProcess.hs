@@ -4,8 +4,6 @@ module TypedGraph.DPO.GraphProcess
 
 ( DoublyTypedGrammar (..)
 , occurrenceRelation
-, filterRulesOccurrenceRelation
-, filterElementsOccurrenceRelation
 , generateDoublyTypedGrammar
 , uniqueOrigin
 , findConcreteTrigger
