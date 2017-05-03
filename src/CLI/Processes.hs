@@ -44,7 +44,7 @@ execute globalOpts opts = do
 
     let colimit = calculateRulesColimit $ head sequences
         conflictsAndDependencies = findConflictsAndDependencies colimit
-        inducedByNacs = filterInducedByNacs conflictsAndDependencies
+        inducedByNacs = filterInducedByNacs (eliminateSelfConflictsAndDependencies conflictsAndDependencies)
 
         ogg = generateDoublyTypedGrammar $ head sequences
         sgg = singleTypedGrammar ogg
