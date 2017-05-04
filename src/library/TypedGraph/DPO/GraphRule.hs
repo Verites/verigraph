@@ -57,7 +57,7 @@ preservedEdges = edgeIdsFromDomain . getLHS
 
 -- | Returns an empty GraphRule
 emptyGraphRule :: Graph (Maybe a) (Maybe b) -> Production (TypedGraphMorphism a b)
-emptyGraphRule typegraph = undefined
+emptyGraphRule typegraph = emptyRule
   where
     emptyGraph = empty
     emptyGM = GM.empty emptyGraph typegraph
