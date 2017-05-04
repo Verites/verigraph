@@ -71,7 +71,7 @@ classify conf r1 r2 (m1,m2) = (deleteUseFlGl, deleteUseFlGl'')
          isDeleteUse c l1 m
       || isProduceDangling c l1 l2 m
       || isProduceForbid c l1 l2 m
-    
+
     deleteUseFlGl =
       isConflict conf
         (codomain (getLHS r1))

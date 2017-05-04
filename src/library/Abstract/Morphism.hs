@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeFamilies #-}
 module Abstract.Morphism where
 
 class (Eq m) => Morphism m where

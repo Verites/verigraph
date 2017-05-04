@@ -16,7 +16,7 @@ import           TypedGraph.Morphism
 -- 3. An error: if two or more commuting morphisms are found, which is probably an implementation error.
 
 output :: String -> [TypedGraphMorphism a b] -> TypedGraphMorphism a b
-output fname morphisms = 
+output fname morphisms =
   case morphisms of
     [] -> error $ "("++fname++") Error when commuting monomorphic morphisms (must be generating an invalid rule)"
     [x] -> x

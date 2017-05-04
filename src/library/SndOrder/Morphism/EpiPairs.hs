@@ -26,9 +26,9 @@ instance EpiPairs (RuleMorphism a b) where
       rights = concatMap
                 (\(k1,k2,ll1,ll2,l) -> let rs = createSideRule inj k1 (getRHS m1) r1 k2 (getRHS m2) r2
                                        in map (\(rr1,rr2,r) -> (k1,k2,ll1,ll2,l,rr1,rr2,r)) rs) lefts
-      
+
       transposeNACs l = map (snd . calculatePushout l)
-      
+
       ret = map (\(k1,k2,ll1,ll2,l,r1,r2,r) ->
                    let rule = buildProduction l r $ transposeNACs ll1 (getNACs m1) ++ transposeNACs ll2 (getNACs m2)
                    in (ruleMorphism m1 rule ll1 k1 r1,

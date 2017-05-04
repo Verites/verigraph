@@ -38,7 +38,7 @@ instance AdhesiveHLR (RuleMorphism a b) where
 
       f' = RuleMorphism ruleR ruleP f'L f'K f'R
       g' = RuleMorphism ruleD ruleP g'L g'K g'R
-      
+
       transposedNACs = map (\nac -> fst (Abstract.Cocomplete.calculatePushout nac g'L)) (getNACs ruleD)
 
       createdNACs = createStep ShiftNACs f'L (getNACs ruleR)

@@ -1,4 +1,4 @@
-{-# LANGUAGE GADTs               #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module TypedGraph.DPO.GraphProcess
 

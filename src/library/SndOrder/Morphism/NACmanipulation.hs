@@ -3,8 +3,8 @@ module SndOrder.Morphism.NACmanipulation where
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Morphism
+import           SndOrder.Morphism.Cocomplete ()
 import           TypedGraph.Morphism
-import           SndOrder.Morphism.Cocomplete       ()
 
 -- | Auxiliar structure and function to delete first-order NACs
 data DeleteScheme = DisableDelete | Monomorphisms | InitialPushouts
@@ -18,8 +18,8 @@ deleteStep Monomorphisms modeledNACs concreteNACs =
     where
       findMorph :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
       findMorph a b = findMorphisms Monomorphism (codomain a) (codomain b)
-      
-      --it forces commuting 
+
+      --it forces commuting
       --maintainTest a b = Prelude.null $ filter (\morp -> compose a morp == compose match b) (findMorph a b)
       maintainTest a b = Prelude.null $ findMorph a b
 

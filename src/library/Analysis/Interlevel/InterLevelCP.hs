@@ -15,8 +15,7 @@ import           Abstract.DPO
 import           Abstract.Morphism
 import           Data.List                (nubBy)
 import           Graph.Graph
-import           Graph.GraphMorphism      hiding (createEdgeOnCodomain,
-                                           createNodeOnCodomain)
+import           Graph.GraphMorphism      hiding (createEdgeOnCodomain, createNodeOnCodomain)
 import           SndOrder.Morphism
 import           SndOrder.Rule
 import           TypedGraph.DPO.GraphRule
@@ -118,22 +117,22 @@ danglingExtension :: TypedGraphMorphism a b -> TypedGraphMorphism a b
 danglingExtension l = tlUpdated
   where
     initObject = idMap (codomain l) (codomain l)
-    
+
     orphanNodes = orphanTypedNodeIds l
     typesOfOrphanNodes = map (extractNodeType typingMorphism) orphanNodes
 
     typingMorphism = codomain l
     typeGraph = codomain typingMorphism
     edgesOfTypeGraph = edges typeGraph
-    
+
     -- Select edges to be added
     dangT = [e | e <- edgesOfTypeGraph,
                  sourceId e `elem` typesOfOrphanNodes ||
                  targetId e `elem` typesOfOrphanNodes]
-    
+
     -- Merge edges to be added with their nodes
     edgesToAdd = concatMap (\n -> map (\e -> (n,e)) dangT) orphanNodes
-    
+
     tlUpdated = foldl addEdge initObject edgesToAdd
 
     addEdge tgm (n,e) =
@@ -146,7 +145,7 @@ danglingExtension l = tlUpdated
         typeNode = extractNodeType (codomain tgm) n
         isSrc = typeNode == sourceId e
         isTgt = typeNode == targetId e
-        
+
         createEdge src tgt newGraph = createEdgeOnCodomain newEdgeId src tgt (edgeId e) newGraph
           where
             newEdgeId = head (newTypedEdges (codomain newGraph))
