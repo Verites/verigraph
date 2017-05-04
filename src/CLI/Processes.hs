@@ -5,6 +5,7 @@ module Processes
   ) where
 
 import           Abstract.DPO
+import           Abstract.DPO.Process
 import           Abstract.Valid
 import           Analysis.Processes
 import           Control.Monad
@@ -15,6 +16,7 @@ import           GlobalOptions
 import qualified Grammar.Core                as GG
 import           Options.Applicative
 import           TypedGraph.DPO.GraphProcess
+import           TypedGraph.DPO.OccurenceRelation
 import qualified TypedGraph.Graph            as TG
 import qualified XML.GGXReader               as XML
 import qualified XML.GGXWriter               as GW
@@ -42,9 +44,9 @@ execute globalOpts opts = do
 
     let colimit = calculateRulesColimit $ head sequences
         conflictsAndDependencies = findConflictsAndDependencies colimit
-        inducedByNacs = filterPotential conflictsAndDependencies
+        inducedByNacs = filterInducedByNacs (eliminateSelfConflictsAndDependencies conflictsAndDependencies)
 
-        ogg = generateOccurrenceGrammar $ head sequences
+        ogg = generateDoublyTypedGrammar $ head sequences
         sgg = singleTypedGrammar ogg
         completeOgg = calculateNacRelations ogg inducedByNacs
         newRules = GG.rules . singleTypedGrammar $ ogg
@@ -58,14 +60,7 @@ execute globalOpts opts = do
         (putStrLn $ "No graph process candidates were found for rule sequence '" ++ name ++ "'")
 
     putStrLn "Conflicts and Dependencies: "
-    print conflictsAndDependencies
-
---    putStrLn "\n##################\n"
-
---    putStrLn "Strict Relation: "
---    putStrLn $ show (creationAndDeletionRelation $ newRules!!0)
---    putStrLn $ show (creationAndDeletionRelation $ newRules!!1)
---    putStrLn $ show (creationAndDeletionRelation $ newRules!!2)
+    print $ eliminateSelfConflictsAndDependencies conflictsAndDependencies
 
     putStrLn "\n##################\n"
 
@@ -75,16 +70,20 @@ execute globalOpts opts = do
     putStrLn "\n------------------\n"
     putStrLn "Conflicts and dependencies induced by NACs:\n "
 
-    print $ map (findConcreteTrigger ogg) (toList inducedByNacs)
+    print $ map (findConcreteTrigger completeOgg) (toList inducedByNacs)
 
     putStrLn "\n##################\n"
 
-    putStrLn "Rules Relation: "
+    putStrLn "All Rules:"
+    print rulesNames
+    putStrLn "\nRules Relation: "
     print rulesRelation
 
     putStrLn "\n##################\n"
 
-    putStrLn "Elements Relation: "
+    putStrLn "All Elements:"
+    print elementsNames
+    putStrLn "\nElements Relation: "
     print elementsRelation
 
     putStrLn "\n##################\n"
@@ -94,25 +93,27 @@ execute globalOpts opts = do
     let validInitialGraph = isValid $ initialGraph completeOgg
     putStrLn "\n------------------\n"
     putStrLn $ "Is the initial graph valid? \n>>> " ++ show validInitialGraph
-    if not validInitialGraph then putStrLn $ fromJust (errorMessages $ validate $ initialGraph completeOgg) else print "\n"
+    if not validInitialGraph then putStrLn $ fromJust (errorMessages $ validate $ initialGraph completeOgg) else putStrLn ""
     print (initialGraph completeOgg)
 
     let validFinalGraph = isValid $ finalGraph ogg
     putStrLn "\n------------------\n"
     putStrLn $ "Is the final graph valid? \n>>> " ++ show validFinalGraph
-    if not validFinalGraph then putStrLn $ fromJust (errorMessages $ validate $ finalGraph ogg) else putStrLn ""
-    print (finalGraph ogg)
+    if not validFinalGraph then putStrLn $ fromJust (errorMessages $ validate $ finalGraph completeOgg) else putStrLn ""
+    print (finalGraph completeOgg)
 
     putStrLn "\n------------------\n"
     putStrLn $ "Is there a compatible concrete total order for rules?\n>>> " ++ show (findOrder rulesRelation rulesNames)
     putStrLn $ "Is there a compatible concrete total order for elements?\n>>> " ++ show (findOrder elementsRelation elementsNames)
 
     putStrLn "\n------------------\n"
-    putStrLn "Is there a compatible concrete total order respecting NACs?\n>>> Undefined"
+    putStrLn $ "Set of Restrictions:" ++ show (restrictRelation completeOgg)
+    putStrLn $ "Is there a compatible concrete total order respecting NACs?\n>>> "
+                ++ if emptyRestrictions completeOgg then "True" else "undefined"
 
     let newStart = GG.start sgg
         gg' = GG.addReachableGraphs (GG.reachableGraphs sgg) (GG.grammar newStart [] newRules)
-    GW.writeGrammarFile (gg',gg2) ggName (buildNewNames names (doubleType ogg)) (outputFile opts)
+    GW.writeGrammarFile (gg',gg2) ggName (buildNewNames names (doubleType completeOgg)) (outputFile opts)
 
 buildNewNames :: [(String,String)] -> TG.TypedGraph a b -> [(String,String)]
 buildNewNames oldNames tg = newNs ++ newEs
