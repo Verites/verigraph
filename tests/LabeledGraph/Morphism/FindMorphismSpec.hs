@@ -1,6 +1,6 @@
-{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module LabeledGraph.FindMorphismSpec where
+module LabeledGraph.Morphism.FindMorphismSpec where
 
 
 import           Abstract.Morphism       as Morphism
@@ -8,7 +8,7 @@ import           Abstract.Valid
 import           Abstract.Variable
 import           LabeledGraph            as Graph
 import           LabeledGraph.Morphism   as Morphism
-import           LabeledGraph.QuickCheck ()
+import           LabeledGraph.QuickCheck
 
 
 import           Control.Monad
@@ -26,22 +26,23 @@ maxGraphSize :: Int
 maxGraphSize = 5
 
 
-withSmallGraphs :: SpecWith a -> SpecWith a
-withSmallGraphs =
+withSmallerGraphs :: SpecWith a -> SpecWith a
+withSmallerGraphs =
   modifyMaxSize (`div` 4)
 
 
 spec :: Spec
-spec = withSmallGraphs $ do
+spec = withSmallerGraphs $ do
 
   describe "findMorphisms" $ do
 
-    it "always produces valid morphisms" $
-      property $ \domain codomain ->
-        all isValid (findMorphisms GenericMorphism domain codomain :: [LabeledMorphism])
+    prop "always produces valid morphisms" $ \domain codomain ->
+      forAllMorphismsBetween GenericMorphism domain codomain $ \m ->
+        isValid (m :: LabeledMorphism)
 
 
     context "from any empty graph" $ do
+
       it "always produces a single morphism" $
         property $ \codomain ->
           length (findMorphisms GenericMorphism Graph.empty codomain :: [LabeledMorphism]) == 1
@@ -167,6 +168,49 @@ spec = withSmallGraphs $ do
         assertEqual ("with " ++ show (e, e))
           (foldl' (*) 1 [1..e])
           (length (findMorphisms Isomorphism (makeGraph e) (makeGraph e) :: [LabeledMorphism]))
+
+
+    context "producing Monomorphims" $ modifyMaxSuccess (const 50) $ modifyMaxSize (const 20) $ do
+
+      prop "always produces valid morphisms" $ \domain codomain ->
+        forAllMorphismsBetween Monomorphism domain codomain $ \m ->
+          isValid (m :: LabeledMorphism)
+
+      prop "always produces monomorphisms" $ \domain codomain ->
+        forAllMorphismsBetween Monomorphism domain codomain $ \m ->
+          isMonomorphism (m :: LabeledMorphism)
+
+
+    context "producing Epimorphisms" $ modifyMaxSuccess (const 20) $ modifyMaxSize (const 20) $ do
+
+      prop "always produces valid morphisms" $ \codomain ->
+        forAll (randomSubgraphOf codomain) $ \domain ->
+        forAllMorphismsBetween Epimorphism domain codomain $ \m ->
+          isValid (m :: LabeledMorphism)
+
+      prop "always produces epimorphisms" $ \codomain ->
+        forAll (randomSubgraphOf codomain) $ \domain ->
+        forAllMorphismsBetween Epimorphism domain codomain $ \m ->
+          isEpimorphism (m :: LabeledMorphism)
+
+
+    context "producing Isomorphisms" $ modifyMaxSuccess (const 50) $ modifyMaxSize (const 25) $ do
+
+      prop "always produces valid morphisms" $ \graph ->
+        forAllMorphismsBetween Isomorphism graph graph $ \m ->
+          isValid (m :: LabeledMorphism)
+
+      prop "always produces isomorphisms" $ \graph ->
+        forAllMorphismsBetween Isomorphism graph graph $ \m ->
+          isIsomorphism (m :: LabeledMorphism)
+
+      prop "always produces epimorphisms" $ \graph ->
+        forAllMorphismsBetween Isomorphism graph graph $ \m ->
+          isEpimorphism (m :: LabeledMorphism)
+
+      prop "always produces monomorphisms" $ \graph ->
+        forAllMorphismsBetween Isomorphism graph graph $ \m ->
+          isMonomorphism (m :: LabeledMorphism)
 
 
     it "doesn't map labeled nodes to unlabeled nodes" $ do

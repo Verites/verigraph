@@ -1,6 +1,6 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
-{-# LANGUAGE PatternSynonyms           #-}
-{-# LANGUAGE TypeFamilies              #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE TypeFamilies #-}
 module LabeledGraph.Morphism.Internal
   (
   -- * Morphism type
@@ -210,7 +210,7 @@ instance Morphism LabeledMorphism where
           ]
 
   isMonomorphism m =
-      isInjective (IntMap.elems $ nodeMapping m) && isInjective (IntMap.elems $ nodeMapping m)
+      isInjective (IntMap.elems $ nodeMapping m) && isInjective (IntMap.elems $ edgeMapping m)
         && isInjective (Map.elems $ variableRenaming m)
 
     where
@@ -218,7 +218,7 @@ instance Morphism LabeledMorphism where
         let
           preimageCounts = foldl' incrementCount Map.empty pairs
         in
-          any (>1) preimageCounts
+          all (<=1) preimageCounts
 
       incrementCount counts x =
         Map.insertWith (+) x (1 :: Int) counts
@@ -345,7 +345,7 @@ fromGraphsAndLists dom cod nodeMap edgeMap varMap =
         [ (v1, v2)
             | (n1, n2) <- nodeMap
             , v1 <- maybeToList $ nodeLabel =<< lookupNode n1 dom
-            , v2 <- maybeToList $ nodeLabel =<< lookupNode n2 dom
+            , v2 <- maybeToList $ nodeLabel =<< lookupNode n2 cod
         ]
 
 

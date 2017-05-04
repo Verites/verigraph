@@ -1,12 +1,17 @@
-{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 module LabeledGraph.QuickCheck where
 
-import qualified Graph.QuickCheck      as Graph
-import           LabeledGraph.Internal
 
+import           Data.Foldable
 import qualified Data.Text             as Text
 import           Test.QuickCheck
+
+
+import           Abstract.Variable
+import           Graph.Graph
+import qualified Graph.QuickCheck      as Graph
+import           LabeledGraph.Internal
 
 
 
@@ -35,6 +40,26 @@ randomGraph numNodes numEdges maxVariables =
         pure Nothing
   in
     Graph.randomGraph randomLabel arbitrary numNodes numEdges
+
+
+-- | Generates a random labeled graph that is smaller or equal in size to the given one.
+-- That is, the number of nodes, edges and variables of the generated graph will be at most
+-- the same as the given graph.
+randomGraphSmallerThan :: LabeledGraph -> Gen LabeledGraph
+randomGraphSmallerThan graph = do
+  numNodes <- choose (0, length (nodes graph))
+  numEdges <- choose (0, length (edges graph))
+  maxVariables <- choose (0, length (freeVariablesOf graph))
+  randomGraph numNodes numEdges maxVariables
+
+-- | Generates a random subgraph of the given graph.
+randomSubgraphOf :: LabeledGraph -> Gen LabeledGraph
+randomSubgraphOf graph = do
+  deletedNodeIds <- sublistOf =<< shuffle (nodeIds graph)
+  let graph' = foldl' (flip removeNodeAndIncidentEdges) graph deletedNodeIds
+  deletedEdgeIds <- sublistOf =<< shuffle (edgeIds graph)
+  let graph'' = foldl' (flip removeEdge) graph' deletedEdgeIds
+  return graph''
 
 
 -- | Generates a random labeled graph with a given size parameter.
