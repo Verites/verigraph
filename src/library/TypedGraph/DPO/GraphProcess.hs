@@ -119,10 +119,8 @@ calculateDeleteForbids ogg dfs = (S.map toRelation concreteDF, S.map toAbstractR
     isDiscardedDeleteForbid (i, t) = happensAfterAction (concreteRelation ogg) t (secondRule i)
     (concreteDF,potentialDF) = S.partition isConcreteDeleteForbid (S.map (findConcreteTrigger ogg) dfs)
     (_,abstract) = S.partition isDiscardedDeleteForbid potentialDF
-    toAbstractRelation (i, c) = (AbstractDeleteForbid, toRelation (i, c), (Rule (secondRule i), findRule (creationRelation ogg) c))
-
-toRelation :: (Interaction, t) -> (RelationItem, RelationItem)
-toRelation (i, _) = (Rule (firstRule i), Rule (secondRule i))
+    toRelation (i, _) = (Rule (secondRule i), Rule (firstRule i))
+    toAbstractRelation (i, c) = (AbstractDeleteForbid, (findRule (creationRelation ogg) c, Rule (secondRule i)), toRelation (i, c))
 
 calculateProduceForbids :: DoublyTypedGrammar a b -> Set Interaction -> (Relation, AbstractRelation)
 calculateProduceForbids ogg pfs = (S.map toRelation concretePF, S.map toAbstractRelation abstract)
@@ -132,6 +130,7 @@ calculateProduceForbids ogg pfs = (S.map toRelation concretePF, S.map toAbstract
     isAbstractProduceForbid (i,t) = present t (deletionRelation ogg) && not (relatedItens (concreteRelation ogg) (Rule (firstRule i), Rule (secondRule i)))
     (concretePF, potentialPF) = S.partition isConcreteProduceForbid (S.map (findConcreteTrigger ogg) pfs)
     (abstract, _) = S.partition isAbstractProduceForbid potentialPF
+    toRelation (i, _) = (Rule (firstRule i), Rule (secondRule i))
     toAbstractRelation (i, c) = (AbstractProduceForbid, toRelation (i, c), (Rule (secondRule i), findRule (deletionRelation ogg) c))
 
 -- | Given an doubly typed grammar and an interaction of the types ProduceForbid or DeleteForbid between two rules
