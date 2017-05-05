@@ -1,15 +1,14 @@
-module XML.GGXSndOrderReader (instantiateSndOrderRules) where
+module XML.GGXReader.SndOrder (instantiateSndOrderRules) where
 
 import           Abstract.DPO
 import           Abstract.Morphism
 import qualified Graph.Graph              as G
 import           Graph.GraphMorphism      as GM
 import           SndOrder.Morphism
-import           SndOrder.Rule            ()
 import           TypedGraph.DPO.GraphRule as GR
 import           TypedGraph.Graph
 import           TypedGraph.Morphism
-import {-# SOURCE #-} XML.GGXReader
+import           XML.GGXReader.Span
 import           XML.ParsedTypes
 import qualified XML.ParseSndOrderRule    as SO
 import           XML.Utilities

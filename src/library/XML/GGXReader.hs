@@ -1,4 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
 module XML.GGXReader
  ( readGrammar,
    readGGName,
@@ -27,18 +26,17 @@ import qualified Graph.Graph              as G
 import           Graph.GraphMorphism      as GM
 import           SndOrder.Morphism
 import           SndOrder.Rule
-import           Text.XML.HXT.Core        hiding (left, right)
+import           Text.XML.HXT.Core
 import           TypedGraph.DPO.GraphRule as GR
 import           TypedGraph.Graph
 import           TypedGraph.Morphism
 import qualified XML.Formulas             as F
 import           XML.GGXParseIn
-import           XML.GGXSndOrderReader
+import           XML.GGXReader.SndOrder
+import           XML.GGXReader.Span
 import           XML.ParsedTypes
 import           XML.Utilities
 import           XML.XMLUtilities
-
-type TypeGraph a b = G.Graph (Maybe a) (Maybe b)
 
 -- | Reads the grammar in the XML, adds the needed minimal safety nacs
 --   to second order, and returns the grammar and a log
@@ -191,7 +189,7 @@ instantiateObjectsFlow [] _ = []
 instantiateObjectsFlow rules (o:os) =
   let
     createObject (idx,cons,prod,maps) = GG.ObjectFlow idx prod cons (createSpan prod cons maps)
-    createSpan prod cons maps = instantiateSpan (rightGraph (searchRight prod)) (leftGraph (searchLeft cons)) maps
+    createSpan prod cons = instantiateSpan (rightGraph (searchRight prod)) (leftGraph (searchLeft cons))
     leftGraph = codomain . getLHS
     rightGraph = codomain . getRHS
     searchLeft ruleName = fromJust $ L.lookup ruleName rules
@@ -218,20 +216,6 @@ lookupNodes nodes n = fromMaybe
                         (lookup n changeToListOfPairs)
   where
     changeToListOfPairs = map (\(x,_,y) -> (x,y)) nodes
-
-instantiateRule :: TypeGraph a b -> RuleWithNacs -> GraphRule a b
-instantiateRule typeGraph ((_, lhs, rhs, mappings), nacs) = buildProduction lhsTgm rhsTgm nacsTgm
-  where
-    lm = instantiateTypedGraph lhs typeGraph
-    rm = instantiateTypedGraph rhs typeGraph
-    (lhsTgm, rhsTgm) = instantiateSpan lm rm mappings
-    nacsTgm = map (instantiateNac lm typeGraph) nacs
-
-instantiateNac :: TypedGraph a b -> G.Graph (Maybe a) (Maybe b) -> Nac -> TypedGraphMorphism a b
-instantiateNac lhs tg (nacGraph, maps) = nacTgm
-  where
-    nacMorphism = instantiateTypedGraph nacGraph tg
-    (_,nacTgm) = instantiateSpan lhs nacMorphism maps
 
 instantiateAtomicConstraint :: TypeGraph a b -> ParsedAtomicConstraint -> AtomicConstraint (TypedGraphMorphism a b)
 instantiateAtomicConstraint tg (name, premise, conclusion, maps) = buildNamedAtomicConstraint name (buildTypedGraphMorphism p c m) isPositive
@@ -260,64 +244,3 @@ translateFormula m formula =
       F.Not formula'           -> Not (translateFormula m formula')
       F.Or formula' formula''  -> Or (translateFormula m formula') (translateFormula m formula'')
       F.And formula' formula'' -> And (translateFormula m formula') (translateFormula m formula'')
-
-instantiateTypedGraph :: ParsedTypedGraph -> TypeGraph a b -> GraphMorphism (Maybe a) (Maybe b)
-instantiateTypedGraph (_, nodes, edges) tg = buildGraphMorphism g tg nodeTyping edgeTyping
-  where
-    g = G.build nodesG edgesG
-
-    nodesG = map (toN . fstOfThree) nodes
-    edgesG = map (\(id,_,_,src,tgt) -> (toN id, toN src, toN tgt)) edges
-
-    nodeTyping = map (\(id,_,typ) -> (toN id, toN typ)) nodes
-    edgeTyping = map (\(id,_,typ,_,_) -> (toN id, toN typ)) edges
-
-instantiateSpan :: TypedGraph a b -> TypedGraph a b -> [Mapping] -> (TypedGraphMorphism a b, TypedGraphMorphism a b)
-instantiateSpan left right mapping = (leftM, rightM)
-  where
-    parsedMap = map (\(t,_,s) -> (toN t, toN s)) mapping
-
-    leftM = buildTypedGraphMorphism k left leftMap
-    rightM = buildTypedGraphMorphism k right rightMap
-
-    nodesLeft = G.nodeIds (domain left)
-    nodesRight = G.nodeIds (domain right)
-
-    edgesLeft = G.edgeIds (domain left)
-    edgesRight = G.edgeIds (domain right)
-
-    typegraph = codomain left
-    initK = empty G.empty typegraph
-    initL = empty G.empty (domain left)
-    initR = empty G.empty (domain right)
-
-    updateEdgeMorphisms (k,l,r) (tgt,src)
-      | edgeSrc `elem` edgesLeft && edgeTgt `elem` edgesRight = (newEdgeK, updateEdgesL, updateEdgesR)
-      | otherwise = (k, l, r)
-      where
-        edgeSrc = G.EdgeId src
-        edgeTgt = G.EdgeId tgt
-        src_ e = fromMaybe (error (show e)) (G.sourceOf (domain left) e)
-        tgt_ e = fromMaybe (error (show e)) (G.targetOf (domain left) e)
-        edgeDom
-          = G.insertEdge edgeSrc (src_ edgeSrc) (tgt_ edgeSrc) (domain k)
-        edgeType = extractEdgeType left edgeSrc
-        newEdgeK = updateEdges edgeSrc edgeType (updateDomain edgeDom k)
-        updateEdgesL = updateEdges edgeSrc edgeSrc (updateDomain edgeDom l)
-        updateEdgesR = updateEdges edgeSrc edgeTgt (updateDomain edgeDom r)
-
-
-    updateMorphisms (k,l,r) (tgt,src)
-      | nodeSrc `elem` nodesLeft && nodeTgt `elem` nodesRight = (newNodeK, updateNodesL, updateNodesR)
-      | otherwise = (k, l, r)
-      where nodeSrc = G.NodeId src
-            nodeTgt = G.NodeId tgt
-            nodeDom = G.insertNode nodeSrc (domain k)
-            nodeType = extractNodeType left nodeSrc
-            newNodeK = updateNodes nodeSrc nodeType (updateDomain nodeDom k)
-            updateNodesL = updateNodes nodeSrc nodeSrc (updateDomain nodeDom l)
-            updateNodesR = updateNodes nodeSrc nodeTgt (updateDomain nodeDom r)
-
-
-    (k, leftMap, rightMap) = foldl updateEdgeMorphisms morphismWithNodes parsedMap
-    morphismWithNodes = foldl updateMorphisms (initK, initL, initR) parsedMap

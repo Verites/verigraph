@@ -94,7 +94,8 @@ library
                        XML.Formulas
                        XML.GGXParseIn
                        XML.GGXParseOut
-                       XML.GGXSndOrderReader
+                       XML.GGXReader.SndOrder
+                       XML.GGXReader.Span
                        XML.ParsedTypes
                        XML.ParseSndOrderRule
                        XML.Utilities
