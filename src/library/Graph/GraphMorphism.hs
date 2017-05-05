@@ -153,22 +153,25 @@ removeEdgeFromCodomain e gm =
      , edgeRelation = R.removeFromCodomain e (edgeRelation gm)
      }
 
--- | Remove a node from the domain of the morphism
---
--- TODO: what happens if there were edges incident to the node?
+-- | Remove a node from the domain of the morphism.
+-- Don't change the morphism if there were edges incident to the node.
 removeNodeFromDomain :: G.NodeId -> GraphMorphism a b -> GraphMorphism a b
-removeNodeFromDomain n gm =
-  gm { getDomain = removeNode n (domain gm)
-     , nodeRelation = R.removeFromDomain n (nodeRelation gm) }
+removeNodeFromDomain n gm = if currentDomain == updatedDomain then gm else updatedGM
+  where
+    currentDomain = domain gm
+    updatedDomain = removeNode n currentDomain
+    updatedGM = gm { getDomain = updatedDomain
+                   , nodeRelation = R.removeFromDomain n $ nodeRelation gm }
 
 -- | Remove a node from the codomain of the morphism
---
--- TODO: what happens if there were edges incident to the node?
+-- Don't change the morphism if there were edges incident to the node.
 removeNodeFromCodomain :: G.NodeId -> GraphMorphism a b -> GraphMorphism a b
-removeNodeFromCodomain n gm =
-  gm { getCodomain = removeNode n (codomain gm)
-     , nodeRelation = R.removeFromCodomain n (nodeRelation gm)
-     }
+removeNodeFromCodomain n gm =  if currentCodomain == updatedCodomain then gm else updatedGM
+  where
+    currentCodomain = codomain gm
+    updatedCodomain = removeNode n currentCodomain
+    updatedGM = gm { getCodomain = updatedCodomain
+                   , nodeRelation = R.removeFromCodomain n $ nodeRelation gm }
 
 -- | Inserts nodes in a graph morphism, if the nodes do not exist, they are created
 updateNodeRelation :: G.NodeId -> G.NodeId -> GraphMorphism a b -> GraphMorphism a b
