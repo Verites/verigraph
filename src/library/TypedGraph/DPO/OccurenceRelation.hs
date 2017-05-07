@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeSynonymInstances #-}
 module TypedGraph.DPO.OccurenceRelation
 
 ( RelationItem(..)
@@ -18,7 +19,9 @@ module TypedGraph.DPO.OccurenceRelation
 , neverDeleted
 , present
 , findOrder
-, buildTransitivity)
+, buildTransitivity
+, relationToString
+, restrictionToString)
 
 where
 
@@ -36,6 +39,22 @@ data RelationItem = Node NodeId
 type Relation = S.Set(RelationItem, RelationItem)
 data AbstractType = AbstractProduceForbid | AbstractDeleteForbid deriving (Eq, Ord, Show)
 type AbstractRelation = S.Set (AbstractType, (RelationItem, RelationItem), (RelationItem, RelationItem))
+
+relationToString :: Relation -> String
+relationToString rel = "[" ++ concatSet (toList rel) ++"]"
+    where
+      concatSet [] = ""
+      concatSet [x] = format x
+      concatSet (x:xs) = format x ++ "," ++ concatSet xs
+      format (a,b) = "(" ++ show a ++ " < " ++ show b ++")"
+
+restrictionToString :: AbstractRelation -> String
+restrictionToString res = "[" ++ concatSet (toList res) ++"]"
+    where
+      concatSet [] = ""
+      concatSet [x] = format x
+      concatSet (x:xs) = format x ++ ",\n" ++ concatSet xs
+      format (t,(a,b),(_,d)) = "(" ++ show t ++ ": " ++ show b ++ " not in between "++ "[" ++ show a ++ " < " ++ show d ++"])"
 
 isRuleAndElement :: (RelationItem, RelationItem) -> Bool
 isRuleAndElement (a,b) = case (a,b) of

@@ -4,19 +4,19 @@ module Processes
   , execute
   ) where
 
-import           Abstract.DPO
-import           Abstract.DPO.Process
-import           Abstract.Valid
-import           Analysis.Processes
-import           Control.Monad
-import           Data.Maybe                  (fromJust)
-import           Data.Monoid                 ((<>))
-import           Data.Set                    (toList)
-import           GlobalOptions
+import                Abstract.DPO
+import                Abstract.DPO.Process
+import                Abstract.Valid
+import                Analysis.Processes
+import                Control.Monad
+import                Data.Maybe                  (fromJust, isJust)
+import                Data.Monoid                 ((<>))
+import                Data.Set                    (toList)
+import                GlobalOptions
 import qualified Grammar.Core                as GG
-import           Options.Applicative
-import           TypedGraph.DPO.GraphProcess
-import           TypedGraph.DPO.OccurenceRelation
+import                Options.Applicative
+import                TypedGraph.DPO.GraphProcess
+import                TypedGraph.DPO.OccurenceRelation
 import qualified TypedGraph.Graph            as TG
 import qualified XML.GGXReader               as XML
 import qualified XML.GGXWriter               as GW
@@ -60,62 +60,66 @@ execute globalOpts opts = do
         (putStrLn $ "No graph process candidates were found for rule sequence '" ++ name ++ "'")
 
     if null sequences then error "input file must have at least a rule sequence" else print ""
+        
+    let analysis =
+            "Conflicts and Dependencies: {\n"
+            ++ show  (eliminateSelfConflictsAndDependencies conflictsAndDependencies) ++ "\n}\n"
+            ++ "Creation and Deletion Relation: {\n"
+            ++ show (originRelation completeOgg) ++"\n}\n"
+            ++ "Conflicts and dependencies induced by NACs: \n{"
+            ++ show (map (findConcreteTrigger completeOgg) (toList inducedByNacs)) ++ "\n}\n"
 
-    putStrLn "Conflicts and Dependencies: "
-    print $ eliminateSelfConflictsAndDependencies conflictsAndDependencies
+        rulesOrdering = findOrder rulesRelation rulesNames
+        elementsOrdering = findOrder elementsRelation elementsNames
 
-    putStrLn "\n##################\n"
+        testCases = "Rules involved: {\n"
+          ++ show rulesNames ++ "\n}\n"
+          ++ "Concrete Rules Relation: {\n"
+          ++ relationToString rulesRelation ++ "\n}\n"
+          ++ "Elements involved: {\n"
+          ++ show elementsNames ++ "\n}\n"
+          ++ "Elements Relation: {\n"
+          ++ relationToString elementsRelation ++ "\n}\n"
+          ++ "\n\n"
+          ++ "Rules Ordering: {"
+          ++ show rulesOrdering ++ "\n}\n"
+          ++ "Element Ordering: {"
+          ++ show elementsOrdering ++"\n}\n\n"
+          ++ "Set of Abstract Restrictions: {\n"
+          ++ restrictionToString (restrictRelation completeOgg) ++ "\n}"
 
-    putStrLn "Creation and Deletion Relation: "
-    print (originRelation completeOgg)
+    putStrLn "Tesing Serialization: "
+    if unique then putStrLn "[OK] Unique creations and deletions"
+                     else putStrLn "[FAIL] At least one element is created or deleted for more than one rule"
 
-    putStrLn "\n------------------\n"
-    putStrLn "Conflicts and dependencies induced by NACs:\n "
+    if isValid (initialGraph completeOgg)
+        then putStrLn "[OK] Inital graph is valid"
+        else putStrLn $ "[FAIL] Initial graph is not valid: \n" ++ fromJust (errorMessages $ validate $ initialGraph completeOgg)
+                                  ++ "\n" ++ show (initialGraph completeOgg)
 
-    print $ map (findConcreteTrigger completeOgg) (toList inducedByNacs)
+    if isValid (finalGraph completeOgg)
+        then putStrLn "[OK] Final graph is valid"
+        else putStrLn $ "[FAIL] Final graph is not valid: \n" ++ fromJust (errorMessages $ validate $ finalGraph completeOgg)
+                                  ++ "\n" ++ show (finalGraph completeOgg)
 
-    putStrLn "\n##################\n"
+    if isJust rulesOrdering then putStrLn "[OK] Concrete occurence relation is a total order"
+                                       else putStrLn "[FAIL] Concrete occurrence relation is no a total order"
 
-    putStrLn "All Rules:"
-    print rulesNames
-    putStrLn "\nRules Relation: "
-    print rulesRelation
+    if isJust elementsOrdering then putStrLn "[OK] Concrete elements relation is a total order"
+                                              else putStrLn "[FAIL] Concrete elements relation is no a total order"
 
-    putStrLn "\n##################\n"
+    if emptyRestrictions completeOgg then putStrLn "[OK] There are no abstract restrictions"
+                                                           else putStrLn "[WARN] There are abstract restrictions"
 
-    putStrLn "All Elements:"
-    print elementsNames
-    putStrLn "\nElements Relation: "
-    print elementsRelation
+    writeFile (outputFile opts ++ "_analysis") analysis
+    putStrLn $ "Analysis written in " ++ (outputFile opts ++ "_analysis")
 
-    putStrLn "\n##################\n"
-    putStrLn "Tesing Validity\n"
-    putStrLn $ "Are the origins and terminations of elements unique?\n>>> " ++ show unique
-
-    let validInitialGraph = isValid $ initialGraph completeOgg
-    putStrLn "\n------------------\n"
-    putStrLn $ "Is the initial graph valid? \n>>> " ++ show validInitialGraph
-    if not validInitialGraph then putStrLn $ fromJust (errorMessages $ validate $ initialGraph completeOgg) else putStrLn ""
-    print (initialGraph completeOgg)
-
-    let validFinalGraph = isValid $ finalGraph ogg
-    putStrLn "\n------------------\n"
-    putStrLn $ "Is the final graph valid? \n>>> " ++ show validFinalGraph
-    if not validFinalGraph then putStrLn $ fromJust (errorMessages $ validate $ finalGraph completeOgg) else putStrLn ""
-    print (finalGraph completeOgg)
-
-    putStrLn "\n------------------\n"
-    putStrLn $ "Is there a compatible concrete total order for rules?\n>>> " ++ show (findOrder rulesRelation rulesNames)
-    putStrLn $ "Is there a compatible concrete total order for elements?\n>>> " ++ show (findOrder elementsRelation elementsNames)
-
-    putStrLn "\n------------------\n"
-    putStrLn $ "Set of Restrictions:" ++ show (restrictRelation completeOgg)
-    putStrLn $ "Is there a compatible concrete total order respecting NACs?\n>>> "
-                ++ if emptyRestrictions completeOgg then "True" else "undefined"
+    writeFile (outputFile opts ++ "_test_cases") testCases
+    putStrLn $ "Test cases written in " ++ (outputFile opts ++ "_test_cases")
 
     let newStart = GG.start sgg
         gg' = GG.addReachableGraphs (GG.reachableGraphs sgg) (GG.grammar newStart [] newRules)
-    GW.writeGrammarFile (gg',gg2) ggName (buildNewNames names (doubleType completeOgg)) (outputFile opts)
+    GW.writeGrammarFile (gg',gg2) ggName (buildNewNames names (doubleType completeOgg)) (outputFile opts ++ ".ggx")
 
 buildNewNames :: [(String,String)] -> TG.TypedGraph a b -> [(String,String)]
 buildNewNames oldNames tg = newNs ++ newEs
