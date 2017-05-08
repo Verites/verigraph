@@ -59,6 +59,8 @@ execute globalOpts opts = do
       when (null rules)
         (putStrLn $ "No graph process candidates were found for rule sequence '" ++ name ++ "'")
 
+    if null sequences then error "input file must have at least a rule sequence" else print ""
+
     putStrLn "Conflicts and Dependencies: "
     print $ eliminateSelfConflictsAndDependencies conflictsAndDependencies
 
