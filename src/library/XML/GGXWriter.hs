@@ -1,13 +1,17 @@
 module XML.GGXWriter
  ( Grammars,
+   writeGrammarFile,
    writeConfDepFile,
    writeConflictsFile,
    writeDependenciesFile,
    writeSndOderConfDepFile,
    writeSndOderConflictsFile,
-   writeSndOderDependenciesFile,
-   writeGrammarFile
+   writeSndOderDependenciesFile
  ) where
+
+import           Data.List.Utils                 (startswith)
+import           Data.Maybe
+import           Text.XML.HXT.Core
 
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
@@ -15,13 +19,10 @@ import           Abstract.Morphism               (codomain)
 import qualified Analysis.CriticalPairs          as CP
 import qualified Analysis.CriticalSequence       as CS
 import qualified Analysis.EssentialCriticalPairs as ECP
-import           Data.List.Utils                 (startswith)
-import           Data.Maybe
 import           Grammar.Core
 import qualified Graph.Graph                     as G
 import           SndOrder.Morphism
 import qualified SndOrder.Rule                   as SO
-import           Text.XML.HXT.Core
 import           TypedGraph.DPO.GraphProcess     ()
 import qualified TypedGraph.DPO.GraphRule        as GR
 import           TypedGraph.Graph                (TypedGraph)
@@ -38,22 +39,22 @@ appendSndOrderConflicts conf (gg1,gg2) = (newGG1, gg2)
   where
     conflicts = CP.namedCriticalPairs conf (rules gg2)
     matches = concatMap (\(n1,n2,c) -> map (\ol -> (n1, n2, CP.getCriticalPairType ol, codomain (fst (CP.getCriticalPairMatches ol)))) c) conflicts
-    conflictRules = map (\(idx,(n1,n2,tp,rule)) -> ("conflict_"++(show tp)++"_"++n1++"_"++n2++"_"++(show idx), rule)) (zip ([0..]::[Int]) matches)
-    newGG1 = grammar (start gg1) [] ((rules gg1) ++ conflictRules)
+    conflictRules = map (\(idx,(n1,n2,tp,rule)) -> ("conflict_" ++ show tp ++ "_" ++ n1 ++ "_" ++ n2 ++ "_" ++ show idx, rule)) (zip ([0..]::[Int]) matches)
+    newGG1 = grammar (start gg1) [] (rules gg1 ++ conflictRules)
 
 appendSndOrderDependencies :: MorphismsConfig -> Grammars a b -> Grammars a b
 appendSndOrderDependencies conf (gg1,gg2) = (newGG1, gg2)
   where
     conflicts = CS.namedCriticalSequences conf (rules gg2)
     matches = concatMap (\(n1,n2,c) -> map (\ol -> (n1, n2, CS.getCriticalSequenceType ol, codomain (fst (CS.getCriticalSequenceComatches ol)))) c) conflicts
-    conflictRules = map (\(idx,(n1,n2,tp,rule)) -> ("dependency_"++(show tp)++"_"++n1++"_"++n2++"_"++(show idx), rule)) (zip ([0..]::[Int]) matches)
-    newGG1 = grammar (start gg1) [] ((rules gg1) ++ conflictRules)
+    conflictRules = map (\(idx,(n1,n2,tp,rule)) -> ("dependency_" ++ show tp ++ "_" ++ n1 ++ "_" ++ n2 ++ "_" ++ show idx, rule)) (zip ([0..]::[Int]) matches)
+    newGG1 = grammar (start gg1) [] (rules gg1 ++ conflictRules)
 
 -- | Writes grammar, second order conflicts and dependencies (.ggx)
 writeSndOderConfDepFile :: MorphismsConfig -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
 writeSndOderConfDepFile conf ggs name names fileName =
   do
-    let newGG = ((appendSndOrderDependencies conf) . (appendSndOrderConflicts conf)) ggs
+    let newGG = (appendSndOrderDependencies conf . appendSndOrderConflicts conf) ggs
         essential = False
     runX $ writeConfDep essential conf newGG name names fileName
     putStrLn $ "Saved in " ++ fileName
@@ -217,8 +218,8 @@ writeGrammar (gg1,gg2) names = writeAggProperties ++
                              [writeTypes (XML.GGXWriter.typeGraph gg1) names] ++
                              [writeInitialGraph (start gg1)] ++
                              writeReachableGraphs gg1 ++
-                             (writeRules gg1 nacNames) ++
-                             (writeSndOrderRules gg2)
+                             writeRules gg1 nacNames ++
+                             writeSndOrderRules gg2
   where
     nacNames = filter (\(x,_) -> startswith "NAC" x) names
 
@@ -261,7 +262,7 @@ writeNodeType names (nodeId,nodeType) =
   mkelem "NodeType"
     [sattr "ID" nodeId, sattr "abstract" "false", sattr "name" name] []
   where
-    adjNames = map (\(x,y) -> (clearId x,y)) names
+    adjNames = map (first clearId) names
     name = fromMaybe nodeType (lookup (clearId nodeType) adjNames)
 
 writeEdgeTypes :: ArrowXml a => [(String,String)] -> [(String,String)] -> [a XmlTree XmlTree]
@@ -272,7 +273,7 @@ writeEdgeType names (edgeId,edgeType) =
   mkelem "EdgeType"
     [sattr "ID" edgeId, sattr "abstract" "false", sattr "name" name] []
   where
-    adjNames = map (\(x,y) -> (clearId x,y)) names
+    adjNames = map (first clearId) names
     name = fromMaybe edgeType (lookup (clearId edgeType) adjNames)
 
 writeGraph :: ArrowXml a => String -> String -> String
@@ -411,7 +412,7 @@ writeNode :: ArrowXml a => String -> ParsedTypedNode -> a XmlTree XmlTree
 writeNode graphId (nodeId, objName, nodeType) =
   mkelem "Node"
    ([ sattr "ID" (graphId++"_"++nodeId) ] ++
-    (writeObjName objName) ++
+    writeObjName objName ++
     [ sattr "type" nodeType ])
     [ writeDefaultNodeLayout, writeAdditionalNodeLayout ]
 
@@ -422,7 +423,7 @@ writeNodeConflict :: ArrowXml a => String -> ParsedTypedNode -> a XmlTree XmlTre
 writeNodeConflict graphId (nodeId, objName, nodeType) =
   mkelem "Node"
    ([sattr "ID" (graphId++"_"++nodeId) ] ++
-    (writeObjName objName) ++
+    writeObjName objName ++
     [ sattr "type" nodeType ])
    []
 
@@ -433,7 +434,7 @@ writeEdge :: ArrowXml a => String -> ParsedTypedEdge -> a XmlTree XmlTree
 writeEdge prefix (edgeId, objName, edgeType, source, target) =
   mkelem "Edge"
    ([ sattr "ID" (prefix++"_"++edgeId) ] ++
-    (writeObjName objName) ++
+    writeObjName objName ++
     [ sattr "source" (prefix++"_"++source),
       sattr "target" (prefix++"_"++target),
       sattr "type" edgeType])
@@ -450,7 +451,7 @@ writeEdgeConflict :: ArrowXml a => String -> ParsedTypedEdge -> a XmlTree XmlTre
 writeEdgeConflict graphId (edgeId, objName, edgeType, source, target) =
   mkelem "Edge"
    ([ sattr "ID" (graphId++"_"++edgeId) ] ++
-      (writeObjName objName) ++
+      writeObjName objName ++
     [ sattr "source" (graphId++"_"++source),
       sattr "target" (graphId++"_"++target),
       sattr "type" edgeType])
@@ -461,7 +462,7 @@ writeSndOrderRules grammar = concatMap writeSndOrderRule (rules grammar)
 
 writeSndOrderRule :: ArrowXml a => (String, SO.SndOrderRule b c) -> [a XmlTree XmlTree]
 writeSndOrderRule (name, sndOrderRule) =
- ([writeSndOrderRuleSide
+  [writeSndOrderRuleSide
     ("2rule_left_" ++ name)
     objNameMapLeftLeft objNameMapLeftLeft
     objNameMapLeftRight objNameMapLeftRight
@@ -471,7 +472,7 @@ writeSndOrderRule (name, sndOrderRule) =
     objNameMapRightLeft objNameMapRightLeft
     objNameMapRightRight objNameMapRightRight
     (GR.getRHS sndOrderRule)] ++
-  (map (\(n,idx) ->
+    map (\(n,idx) ->
           writeSndOrderRuleSide
             ("2rule_nac" ++ show idx ++ "_" ++ name)
             (objNameMapNacLeftN n)
@@ -479,7 +480,7 @@ writeSndOrderRule (name, sndOrderRule) =
             (objNameMapNacRightN n)
             (objNameMapNacRightE n)
             n)
-       (zip (getNACs sndOrderRule) ([0..] :: [Int]))))
+       (zip (getNACs sndOrderRule) ([0..] :: [Int]))
     where
       objNameMapNacLeftN n = getObjectNacNameMorphismNodes (mapping (mappingLeft n))
       objNameMapNacLeftE n = getObjectNacNameMorphismEdges (mapping (mappingLeft n))
@@ -520,9 +521,9 @@ writeRHS ruleName (_, nodes, edges)= writeGraph ("RightOf_" ++ ruleName) "RHS" (
 writeMorphism :: ArrowXml a => (String, String) -> String -> String -> [Mapping] -> a XmlTree XmlTree
 writeMorphism (tgtPrefix, srcPrefix) name source mappings =
   mkelem "Morphism" (sattr "name" name : [sattr "source" source | source /= ""])
-    $ writeMappings (map (\(tgt,elemSrcPrefix,src) ->
-                           (tgtPrefix ++"_"++tgt,
-                            (chooseSrcPrefix elemSrcPrefix)++"_"++src)) mappings)
+    $ writeMappings (map (\(tgt, elemSrcPrefix, src) ->
+                           (tgtPrefix ++ "_" ++ tgt,
+                            chooseSrcPrefix elemSrcPrefix ++ "_" ++ src)) mappings)
   where
     chooseSrcPrefix = fromMaybe srcPrefix
 

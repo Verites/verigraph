@@ -72,6 +72,6 @@ edgesToPartitionEdges inj@(injNodes,injEdges) tg side g id (e:xs) =
       Just (NodeId n1) = GM.applyNode tg (NodeId src_)
       Just (NodeId n2) = GM.applyNode tg (NodeId tgt_)
 
-      flag = (edgeId e) `elem` injEdges
+      flag = edgeId e `elem` injEdges
       flagSrc = NodeId src_ `elem` injNodes
       flagTgt = NodeId tgt_ `elem` injNodes

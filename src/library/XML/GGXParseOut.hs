@@ -30,9 +30,7 @@ overlapsCP name2 cs = (graph, mapM1, mapM2 ++ mapM2WithNac, nacName cs, csType c
     (m1,m2) = case CP.getCriticalPairType cs of
                 CP.ProduceForbid -> fromMaybe (error "Error when exporting ProduceForbid") (CP.getCriticalPairComatches cs)
                 _ -> CP.getCriticalPairMatches cs
-    graph = serializeGraph [] [] m1
-    mapM1 = getTgmMappings Nothing m1
-    mapM2 = getTgmMappings Nothing m2
+    (graph, mapM1, mapM2) = serializePair m1 m2
     mapM2WithNac = case CP.getCriticalPairType cs of
                      CP.ProduceForbid -> addNacMap
                      _                -> []
@@ -54,9 +52,7 @@ overlapsCS name2 cs = (graph, mapM1, mapM2 ++ mapM2WithNac, nacName cs, csType c
                 CS.DeleteForbid -> fromMaybe (error "Error when exporting DeleteForbid") (CS.getCriticalSequenceMatches cs)
                 CS.ForbidProduce -> fromMaybe (error "Error when exporting ForbidProduce") (CS.getCriticalSequenceMatches cs)
                 _ -> CS.getCriticalSequenceComatches cs
-    graph = serializeGraph [] [] m1
-    mapM1 = getTgmMappings Nothing m1
-    mapM2 = getTgmMappings Nothing m2
+    (graph, mapM1, mapM2) = serializePair m1 m2
     mapM2WithNac = case CS.getCriticalSequenceType cs of
                      CS.DeleteForbid  -> addNacMap
                      CS.ForbidProduce -> addNacMap
@@ -110,6 +106,9 @@ parseNacName :: String -> (t -> Maybe Int) -> t -> String
 parseNacName ruleName f x = case f x of
                    Just n  -> "NAC_" ++ ruleName ++ "_" ++ show n
                    Nothing -> ""
+
+serializePair :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> (ParsedTypedGraph, [Mapping], [Mapping])
+serializePair m1 m2 = (serializeGraph [] [] m1, getTgmMappings Nothing m1, getTgmMappings Nothing m2)
 
 serializeGraph :: [Mapping] -> [Mapping] -> TypedGraphMorphism a b -> ParsedTypedGraph
 serializeGraph objNameNodes objNameEdges morphism = ("", nodes, edges)

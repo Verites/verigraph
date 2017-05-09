@@ -87,4 +87,4 @@ pairwiseCompareUpperReflected compare items =
     elementwise (||) m (transpose m)
   where
     m = matrix (length items) (length items) $ \(i,j) ->
-          not (i > j) && compare (items !! (i-1)) (items !! (j-1))
+          (i <= j) && compare (items !! (i-1)) (items !! (j-1))

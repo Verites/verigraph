@@ -87,7 +87,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
         concatMap
           (\e ->
             [(edgeId e, sourceId e, targetId e) |
-              any  (\e' -> (edgeId e) /= (edgeId e') && (applyEdgeUnsafe f (edgeId e) == applyEdgeUnsafe f (edgeId e'))) edgesOfA]
+              any  (\e' -> edgeId e /= edgeId e' && (applyEdgeUnsafe f (edgeId e) == applyEdgeUnsafe f (edgeId e'))) edgesOfA]
           ) edgesOfA
 
       -- It adds a list of nodes in a morphism

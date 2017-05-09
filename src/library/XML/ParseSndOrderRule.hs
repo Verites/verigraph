@@ -55,11 +55,13 @@ module XML.ParseSndOrderRule (
   , getObjectNameMorphism
   ) where
 
-import           Abstract.Morphism
 import           Data.Char           (toLower)
+import           Data.Function       (on)
 import           Data.List           (find, groupBy, sortBy, sortOn, (\\))
 import           Data.Maybe          (fromMaybe, mapMaybe)
 import           Data.String.Utils   (join, split)
+
+import           Abstract.Morphism
 import           Graph.Graph
 import           Graph.GraphMorphism as GM
 import           TypedGraph.Morphism as TGM
@@ -133,7 +135,7 @@ groupRules rules =
     side (x,_,_) = x
     name (_,x,_) = x
     sorted = sortOn name rules
-    grouped = groupBy (\x y -> name x == name y) sorted
+    grouped = groupBy ((==) `on` name) sorted
     getLeft list = fromMaybe (error "Second order rule without left") (findSide "left" list)
     getRight list = fromMaybe (error "Second order rule without right") (findSide "right" list)
     findSide str = find (\x -> side x == str)
