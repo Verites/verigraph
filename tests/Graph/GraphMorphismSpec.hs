@@ -30,6 +30,10 @@ spec = describe "Graph Morphism API" $ do
       removeNodeFromCodomain 1 g1 `shouldBe` g1
       removeNodeFromCodomain 2 g1 `shouldBe` g1
 
+    it "Should remove node without incident edges" $ do
+      removeNodeFromCodomain 3 g1 `shouldBe` g4
+      removeNodeFromCodomain 4 g1 `shouldBe` g5
+
 g1' :: Graph (Maybe a) (Maybe b)
 g1' = build [1,2,3,4] [(1,1,2)]
 
