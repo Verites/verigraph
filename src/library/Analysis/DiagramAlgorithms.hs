@@ -102,8 +102,7 @@ findAllPossibleH21 conf m2 d1 =
     else h21
   where
     morphismRestriction = matchRestrictionToMorphismType (matchRestriction conf)
-    l2TOd1 = findMorphisms morphismRestriction (domain m2) (domain d1)
-    h21 = filter (\x -> m2 == compose x d1) l2TOd1
+    h21 = findCospanCommuter morphismRestriction m2 d1
 
 -- | Verifies delete-use, if false verifies produce-dangling.
 -- Returns Left in the case of delete-use and Right for produce-dangling.

@@ -24,6 +24,11 @@ instance FindMorphism (RuleMorphism a b) where
 
   induceSpanMorphism = error "induceSpanMorphism not implemented for RuleMorphism"
 
+  findCospanCommuter conf morphismOne morphismTwo = commuterMorphisms
+    where
+      allMorphisms  = findMorphisms conf (domain morphismOne) (domain morphismTwo)
+      commuterMorphisms = filter (\x -> morphismOne == compose x morphismTwo) allMorphisms
+
 leftM :: FindMorphism t => MorphismType -> Production t -> Production t -> t -> [(t, t)]
 leftM prop l g mapK = map (\m -> (m, mapK)) commuting
   where

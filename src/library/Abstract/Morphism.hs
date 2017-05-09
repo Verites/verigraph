@@ -54,3 +54,7 @@ class Morphism m => FindMorphism m where
   -- | Given a NAC /n : L -> N / and a match /m : L -> G/, finds the morphisms
   -- from /N/ to /G/ that are injective out of the image of /n/
   partialInjectiveMatches :: m -> m -> [m]
+
+  -- | Given two TypedGraphMorphism @f : B -> A@ and @g : C -> A@ it finds a list of Morphisms
+  -- @hi : B -> C@ shuch that @f . ¬g  = hi@ for all @i@.
+  findCospanCommuter :: MorphismType -> m -> m -> [m]
