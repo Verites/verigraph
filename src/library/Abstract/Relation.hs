@@ -58,7 +58,11 @@ image = nub . concat . Map.elems . mapping
 
 -- | An empty relation, with domain and codomain specified.
 empty :: Ord a => [a] -> [a] -> Relation a
-empty dom cod = Relation (sort $ nub dom) (sort $ nub cod) Map.empty
+empty dom cod = Relation  orderedDomain orderedCodomain emptyMap
+  where
+    orderedDomain = sort $ nub dom
+    orderedCodomain = sort $ nub cod
+    emptyMap = foldr (\x -> Map.insert x []) Map.empty orderedDomain
 
 -- | The identity relation on @dom@.
 id :: Ord a => [a] -> Relation a
