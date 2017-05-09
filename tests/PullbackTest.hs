@@ -21,9 +21,8 @@ main =
           ,"tests/grammars/elevator.ggx"
           ,"tests/grammars/mutex.ggx"]
 
-        --dpoConf = MorphismsConfig AnyMatches MonomorphicNAC
-        dpoConf = MorphismsConfig MonoMatches MonomorphicNAC
-
+        dpoConf = MorphismsConfig AnyMatches MonomorphicNAC
+        
         tests fn =
             [TestLabel ("Parallel Test for " ++ fn) (test1 dpoConf fn Parallel)
             ,TestLabel ("Sequentially Test for " ++ fn) (test1 dpoConf fn Sequentially)]
