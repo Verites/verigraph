@@ -194,8 +194,7 @@ instantiateObjectsFlow rules (o:os) =
     rightGraph = codomain . getRHS
     searchLeft ruleName = fromJust $ L.lookup ruleName rules
     searchRight ruleName = fromJust $ L.lookup ruleName rules
-    (_,c,p,m) = o
-  in createObject o : instantiateObjectsFlow rules os -- error $ (show $ leftGraph (searchLeft c)) ++ (show $ rightGraph (searchRight p)) ++ (show m)--
+  in createObject o : instantiateObjectsFlow rules os
 
 
 instantiateTypeGraph :: ParsedTypeGraph -> TypeGraph a b
