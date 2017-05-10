@@ -65,8 +65,8 @@ overlapsCS name2 cs = (graph, mapM1, mapM2 ++ mapM2WithNac, nacName cs, csType c
 getTgmMappings :: Maybe String -> TypedGraphMorphism a b -> [Mapping]
 getTgmMappings prefix tgm = nodesMorph ++ edgesMorph
   where
-    nodeMap = applyNodeUnsafe tgm
-    edgeMap = applyEdgeUnsafe tgm
+    nodeMap = applyNodeIdUnsafe tgm
+    edgeMap = applyEdgeIdUnsafe tgm
     nodesMorph = map (\n -> ("N" ++ show (nodeMap n), prefix, "N" ++ show n)) (nodeIdsFromDomain tgm)
     edgesMorph = map (\e -> ("E" ++ show (edgeMap e), prefix, "E" ++ show e)) (edgeIdsFromDomain tgm)
 
@@ -95,11 +95,11 @@ getMappings rule = nodesMorph ++ edgesMorph
     no = Nothing
     invL = invert (GR.getLHS rule)
     lr = M.compose invL (GR.getRHS rule)
-    nodeMap = applyNodeUnsafe lr
-    nodes = filter (isJust . applyNode lr) (nodeIdsFromDomain lr)
+    nodeMap = applyNodeIdUnsafe lr
+    nodes = filter (isJust . applyNodeId lr) (nodeIdsFromDomain lr)
     nodesMorph = map (\n -> ("N" ++ show (nodeMap n), no, "N" ++ show n)) nodes
-    edgeMap = applyEdgeUnsafe lr
-    edges = filter (isJust . applyEdge lr) (edgeIdsFromDomain lr)
+    edgeMap = applyEdgeIdUnsafe lr
+    edges = filter (isJust . applyEdgeId lr) (edgeIdsFromDomain lr)
     edgesMorph = map (\e -> ("E" ++ show (edgeMap e), no, "E" ++ show e)) edges
 
 parseNacName :: String -> (t -> Maybe Int) -> t -> String

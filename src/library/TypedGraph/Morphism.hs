@@ -12,16 +12,16 @@ module TypedGraph.Morphism (
     , graphDomain
     , graphCodomain
     , mapping
-    , applyNode
-    , applyEdge
+    , applyNodeId
+    , applyNodeIdUnsafe
+    , applyEdgeId
+    , applyEdgeIdUnsafe
     , buildTypedGraphMorphism
     , checkDeletion
     , removeNodeFromDomain
     , removeEdgeFromDomain
     , removeNodeFromCodomain
     , removeEdgeFromCodomain
-    , applyNodeUnsafe
-    , applyEdgeUnsafe
     , createEdgeOnDomain
     , createEdgeOnCodomain
     , createNodeOnDomain

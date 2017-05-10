@@ -76,8 +76,8 @@ newNacsProb side sndRule = nacNodes ++ nacEdges
         LeftSide  -> (SO.mappingLeft, getLHS)
         RightSide -> (SO.mappingRight, getRHS)
 
-    applyNode = applyNodeUnsafe
-    applyEdge = applyEdgeUnsafe
+    applyNode = applyNodeIdUnsafe
+    applyEdge = applyEdgeIdUnsafe
 
     ruleL = codomain (getLHS sndRule)
     ruleK = domain (getLHS sndRule)
@@ -141,10 +141,10 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
 
     invertSide = invert side
 
-    srcInK x = fromMaybe (newNodesK !! 0) (applyNode invertSide (src x))
-    tgtInK x = fromMaybe (newNodesK !! 1) (applyNode invertSide (tgt x))
-    srcInR x = fromMaybe (newNodesSide !! 0) (applyNode otherSide (srcInK x))
-    tgtInR x = fromMaybe (newNodesSide !! 1) (applyNode otherSide (tgtInK x))
+    srcInK x = fromMaybe (newNodesK !! 0) (applyNodeId invertSide (src x))
+    tgtInK x = fromMaybe (newNodesK !! 1) (applyNodeId invertSide (tgt x))
+    srcInR x = fromMaybe (newNodesSide !! 0) (applyNodeId otherSide (srcInK x))
+    tgtInR x = fromMaybe (newNodesSide !! 1) (applyNodeId otherSide (tgtInK x))
 
     (updateLeft, updateRight) =
       case x of
@@ -194,8 +194,8 @@ newNacsPair :: Side -> SndOrderRule a b -> [SO.RuleMorphism a b]
 newNacsPair sideChoose sndRule =
   mapMaybe createNac retNodes ++ mapMaybe createNac retEdges
   where
-    applyNode = applyNodeUnsafe
-    applyEdge = applyEdgeUnsafe
+    applyNode = applyNodeIdUnsafe
+    applyEdge = applyEdgeIdUnsafe
 
     ruleL = codomain (getLHS sndRule)
     ruleK = domain (getLHS sndRule)

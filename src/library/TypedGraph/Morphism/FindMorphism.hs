@@ -209,14 +209,14 @@ buildSpanRelation morphismH (morphismF, morphismG) =
 buildSpanNodeRelation :: TypedGraphMorphism a b ->  (TypedGraphMorphism a b, TypedGraphMorphism a b) -> TypedGraphMorphism a b
 buildSpanNodeRelation morphismH (morphismF, morphismG) = foldr (uncurry untypedUpdateNodeRelation) morphismH newNodeRelation
   where
-    newNodeRelation = map (applyNodeUnsafe morphismF &&& applyNodeUnsafe morphismG ) $ nodeIdsFromDomain morphismF
+    newNodeRelation = map (applyNodeIdUnsafe morphismF &&& applyNodeIdUnsafe morphismG ) $ nodeIdsFromDomain morphismF
 
 -- | Given a TypedGraphMorphism @h : B -> C@ and a tuple of TypedGraphMorphism (f : A -> B, g : A -> C)
 -- it updates @h@ with a mapping of edges from @B to C@ where @h . f = g@ (auxiliary function)
 buildSpanEdgeRelation :: TypedGraphMorphism a b ->  (TypedGraphMorphism a b, TypedGraphMorphism a b) -> TypedGraphMorphism a b
 buildSpanEdgeRelation morphismH (morphismF, morphismG) = foldr (uncurry updateEdgeRelation) morphismH newEdgeRelation
   where
-    newEdgeRelation = map (applyEdgeUnsafe morphismF &&& applyEdgeUnsafe morphismG ) $ edgeIdsFromDomain morphismF
+    newEdgeRelation = map (applyEdgeIdUnsafe morphismF &&& applyEdgeIdUnsafe morphismG ) $ edgeIdsFromDomain morphismF
 
 ------------------------------------------------------------------------------
 
@@ -238,8 +238,8 @@ partialInjectiveMatches' nac match = do
     Nothing -> []
     Just q2 -> completeMappings Monomorphism q2 (sourceNodes, sourceEdges) (targetNodes, targetEdges)
       where
-        notMappedNodes tgm node = isNothing $ applyNode tgm node
-        notMappedEdges tgm edge = isNothing $ applyEdge tgm edge
+        notMappedNodes tgm node = isNothing $ applyNodeId tgm node
+        notMappedEdges tgm edge = isNothing $ applyEdgeId tgm edge
         sourceNodes = filter (notMappedNodes q2) (nodeIds $ domain $ domain q2)
         sourceEdges = filter (notMappedEdges q2) (edgeIds $ domain $ domain q2)
         targetNodes = orphanTypedNodeIds q2
@@ -252,11 +252,11 @@ partialInjectiveMatches' nac match = do
 preBuildEdges :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> [G.EdgeId] -> Maybe (TypedGraphMorphism a b)
 preBuildEdges tgm _ _ [] = Just tgm
 preBuildEdges tgm nac match (h:t) = do
-  let nacEdge = applyEdgeUnsafe nac h
-      matchEdge   = applyEdgeUnsafe match h
+  let nacEdge = applyEdgeIdUnsafe nac h
+      matchEdge   = applyEdgeIdUnsafe match h
       (dom, cod, _) = decomposeTypedGraphMorphism tgm
       tgm' = if (extractEdgeType dom nacEdge == extractEdgeType cod matchEdge) &&
-                (isNothing (applyEdge tgm nacEdge) || (applyEdge tgm nacEdge == Just matchEdge))
+                (isNothing (applyEdgeId tgm nacEdge) || (applyEdgeId tgm nacEdge == Just matchEdge))
              then Just $ buildTypedGraphMorphism dom cod (GM.updateEdges nacEdge matchEdge $ mapping tgm)
              else Nothing
   case tgm' of
@@ -268,11 +268,11 @@ preBuildEdges tgm nac match (h:t) = do
 preBuildNodes :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> [G.NodeId] -> Maybe (TypedGraphMorphism a b)
 preBuildNodes tgm _   _     []    = Just tgm
 preBuildNodes tgm nac match (h:t) = do
-  let nacNode   = applyNodeUnsafe nac h
-      matchNode = applyNodeUnsafe match h
+  let nacNode   = applyNodeIdUnsafe nac h
+      matchNode = applyNodeIdUnsafe match h
       (tgmDomain, tgmCodomain, tgmMapping) = decomposeTypedGraphMorphism tgm
       tgm' = if (extractNodeType tgmDomain nacNode == extractNodeType tgmCodomain matchNode) &&
-                (isNothing (applyNode tgm nacNode) || (applyNode tgm nacNode == Just matchNode))
+                (isNothing (applyNodeId tgm nacNode) || (applyNodeId tgm nacNode == Just matchNode))
              then Just $ buildTypedGraphMorphism tgmDomain tgmCodomain (GM.updateNodes nacNode matchNode tgmMapping)
              else Nothing
   case tgm' of
@@ -393,7 +393,7 @@ updateNodesMapping n1 n2 nodesT tgm =
   do
     let (d, c, m) = decomposeTypedGraphMorphism tgm
     if extractNodeType d n1 == extractNodeType c n2 &&
-       ((isNothing (applyNode tgm n1) && L.elem n2 nodesT) || applyNode tgm n1 == Just n2)
+       ((isNothing (applyNodeId tgm n1) && L.elem n2 nodesT) || applyNodeId tgm n1 == Just n2)
     then Just $ buildTypedGraphMorphism d c $ GM.updateNodes n1 n2 m
     else Nothing
 
@@ -406,7 +406,7 @@ updateEdgesMapping e1 e2 edgesT tgm =
   do
     let (d, c, m) = decomposeTypedGraphMorphism tgm
     if extractEdgeType d e1 == extractEdgeType c e2 &&
-       ((isNothing (applyEdge tgm e1) && L.elem e2 edgesT ) || applyEdge tgm e1 == Just e2)
+       ((isNothing (applyEdgeId tgm e1) && L.elem e2 edgesT ) || applyEdgeId tgm e1 == Just e2)
     then Just $ buildTypedGraphMorphism d c (GM.updateEdges e1 e2 m)
     else Nothing
 

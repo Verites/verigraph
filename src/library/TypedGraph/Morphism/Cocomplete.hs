@@ -125,7 +125,7 @@ createNodeNEquivalences :: [TypedGraphMorphism a b] -> Set (EquivalenceClass Typ
 createNodeNEquivalences fs = nodesOnX
   where
     representant = head fs
-    equivalentNodes (n,nt) = fromList $ Prelude.map (\f -> (fromJust $ applyNode f n,nt)) fs
+    equivalentNodes (n,nt) = fromList $ Prelude.map (\f -> (fromJust $ applyNodeId f n,nt)) fs
     nodesFromA = typedNodes (getDomain representant)
     nodesToGluingOnB = fmap equivalentNodes nodesFromA
     initialNodesOnX = discretePartition (typedNodes (getCodomain representant))
@@ -135,7 +135,7 @@ createEdgeNEquivalences :: [TypedGraphMorphism a b] -> Set (EquivalenceClass Typ
 createEdgeNEquivalences fs = edgesOnX
   where
     representant = head fs
-    equivalentEdges (e,s,t,et) = fromList $ Prelude.map (\f -> (fromJust $ applyEdge f e, fromJust $ applyNode f s, fromJust $ applyNode f t,et)) fs
+    equivalentEdges (e,s,t,et) = fromList $ Prelude.map (\f -> (fromJust $ applyEdgeId f e, fromJust $ applyNodeId f s, fromJust $ applyNodeId f t,et)) fs
     edgesFromA = typedEdges (getDomain representant)
     edgesToGluingOnB = fmap equivalentEdges edgesFromA
     initialEdgesOnX = discretePartition (typedEdges (getCodomain representant))
@@ -144,7 +144,7 @@ createEdgeNEquivalences fs = edgesOnX
 createNodeEquivalences :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Set (EquivalenceClass TypedNode)
 createNodeEquivalences f g = nodesOnX
   where
-    equivalentNodes (n,nt) = ((fromJust $ applyNode f n,nt), (fromJust $ applyNode g n,nt))
+    equivalentNodes (n,nt) = ((fromJust $ applyNodeId f n,nt), (fromJust $ applyNodeId g n,nt))
     nodesFromA = typedNodes (getDomain f)
     nodesToGluingOnB = fmap equivalentNodes nodesFromA
     initialNodesOnX = discretePartition (typedNodes (getCodomain f))
@@ -154,9 +154,9 @@ createEdgeEquivalences :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Se
 createEdgeEquivalences f g = edgesOnX
   where
     equivalentEdges (e,s,t,et) =
-      ((fromJust $ applyEdge f e, mapByF s, mapByF t,et), (fromJust $ applyEdge g e,mapByG s,mapByG t,et))
-    mapByF = fromJust . applyNode f
-    mapByG = fromJust . applyNode g
+      ((fromJust $ applyEdgeId f e, mapByF s, mapByF t,et), (fromJust $ applyEdgeId g e,mapByG s,mapByG t,et))
+    mapByF = fromJust . applyNodeId f
+    mapByG = fromJust . applyNodeId g
     edgesFromA = typedEdges (getDomain f)
     edgesToGluingOnB = fmap equivalentEdges edgesFromA
     initialEdgesOnX = discretePartition (typedEdges (getCodomain f))
@@ -184,8 +184,8 @@ addEdge edges h
   | otherwise = buildEdgeMaps (createEdgeOnCodomain e2 s2 t2 tp h) e2 edges
   where
     (e2, s, t, tp) = getElem edges
-    s2 = fromJust $ applyNode h s
-    t2 = fromJust $ applyNode h t
+    s2 = fromJust $ applyNodeId h s
+    t2 = fromJust $ applyNodeId h t
 
 buildEdgeMaps :: TypedGraphMorphism a b -> EdgeId -> EquivalenceClass TypedEdge -> TypedGraphMorphism a b
 buildEdgeMaps h edgeInX edges
