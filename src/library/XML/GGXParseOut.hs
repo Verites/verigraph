@@ -115,16 +115,16 @@ serializeGraph objNameNodes objNameEdges morphism = ("", nodes, edges)
   where
     graph = M.codomain morphism
     nodes = map (serializeNode (map (\(x,_,y) -> (x,y)) objNameNodes) graph) (G.nodeIds $ M.domain graph)
-    edges = map (serializeEdge (map (\(x,_,y) -> (x,y)) objNameEdges) graph) (G.edgeIds $ M.domain graph)
+    edges = map (serializeEdge (map (\(x,_,y) -> (x,y)) objNameEdges) graph) (G.edges $ M.domain graph)
 
 serializeNode :: [(String,String)] -> TypedGraph a b -> G.NodeId -> ParsedTypedNode
 serializeNode objName graph n = ("N" ++ show n,
                          lookup (show n) objName,
                          "N" ++ show (extractNodeType graph n))
 
-serializeEdge :: [(String,String)] -> TypedGraph a b -> G.EdgeId -> ParsedTypedEdge
-serializeEdge objName graph e = ("E" ++ show e,
-                         lookup (show e) objName,
-                         "E" ++ show (extractEdgeType graph e),
-                         "N" ++ show (G.sourceOfUnsafe (M.domain graph) e),
-                         "N" ++ show (G.targetOfUnsafe (M.domain graph) e))
+serializeEdge :: [(String,String)] -> TypedGraph a b -> G.Edge (Maybe b) -> ParsedTypedEdge
+serializeEdge objName graph e = ("E" ++ show (G.edgeId e),
+                         lookup (show (G.edgeId e)) objName,
+                         "E" ++ show (extractEdgeType graph (G.edgeId e)),
+                         "N" ++ show (G.sourceId e),
+                         "N" ++ show (G.targetId e))

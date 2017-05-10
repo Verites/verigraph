@@ -30,11 +30,11 @@ inducedSubgraphs :: TypedGraphMorphism a b -> [TypedGraphMorphism a b]
 inducedSubgraphs m = map (idMap (domain m)) subEdges
   where
     g = codomain m
-    graph = domain g
 
     listNodesToAdd = [(n, extractNodeType g n) | n <- orphanTypedNodeIds m]
 
     subNodes = decisionTreeNodes listNodesToAdd (domain m)
+
 
     listEdgesToAdd = [(edgeId e,
                        sourceId e,
