@@ -76,9 +76,7 @@ newNacsProb side sndRule = nacNodes ++ nacEdges
         LeftSide  -> (SO.mappingLeft, getLHS)
         RightSide -> (SO.mappingRight, getRHS)
 
-    ruleL = codomain (getLHS sndRule)
-    ruleK = domain (getLHS sndRule)
-    ruleR = codomain (getRHS sndRule)
+    (ruleL, ruleK, ruleR) = getRulesFrom2Rule sndRule
 
     f = mapSide (getLHS sndRule)
     g = mapSide (getRHS sndRule)
@@ -179,7 +177,6 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
         updateLeft2 = createNodeOnDomain tgtInK typeTgt tgt updateLeft
         updateLeftEdge = createEdgeOnDomain x' srcInK tgtInK tp x updateLeft2
 
-
 -- | Generate NACs that forbid non monomorphic rule generation.
 -- Insert NACs to avoid condition (b) in Thm 70 (rodrigo machado phd thesis, 2012)
 newNacsPair :: Side -> SndOrderRule a b -> [SO.RuleMorphism a b]
@@ -189,9 +186,7 @@ newNacsPair sideChoose sndRule =
     applyNode = applyNodeIdUnsafe
     applyEdge = applyEdgeIdUnsafe
 
-    ruleL = codomain (getLHS sndRule)
-    ruleK = domain (getLHS sndRule)
-    ruleR = codomain (getRHS sndRule)
+    (ruleL, ruleK, ruleR) = getRulesFrom2Rule sndRule
 
     (mapping, getSide) =
       case sideChoose of
@@ -239,6 +234,8 @@ newNacsPair sideChoose sndRule =
         mapK = idMap (domain (getLHS ruleL)) (domain (getLHS ruleL))
         mapR = idMap (codomain (getRHS ruleL)) (codomain (getRHS ruleL))
 
+getRulesFrom2Rule :: SndOrderRule a b -> (Production (TypedGraphMorphism a b), Production (TypedGraphMorphism a b), Production (TypedGraphMorphism a b))
+getRulesFrom2Rule sndRule = (codomain (getLHS sndRule), domain (getLHS sndRule), codomain (getRHS sndRule))
 
 calculateAllPartitions :: EpiPairs m => Obj m -> [m]
 calculateAllPartitions = createAllSubobjects False

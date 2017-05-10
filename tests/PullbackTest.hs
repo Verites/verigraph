@@ -37,8 +37,8 @@ test1 dpoConf fileName alg =
       (gg,_,_) <- XML.readGrammar fileName False dpoConf
 
       let rules = map snd (GG.rules gg)
-          analysisDU = pairwiseCompare (isIndependent alg DeleteUse dpoConf) rules
-          analysisPB = pairwiseCompare (isIndependent alg Pullback dpoConf) rules
+          analysisDU = pairwiseCompare (isIndependent alg Cond3 dpoConf) rules
+          analysisPB = pairwiseCompare (isIndependent alg Cond2 dpoConf) rules
 
       assertEqual (show alg ++ "Independent on " ++ fileName) analysisDU analysisPB
 

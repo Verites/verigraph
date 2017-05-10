@@ -58,10 +58,10 @@ execute globalOpts opts = do
         --rules = concatMap (replicate 1) $ map snd (GG.rules gg)
         rules1 = map snd (GG.rules fstOrdGG)
         rules2 = map snd (GG.rules sndOrdGG)
-        analysisDU1 = pairwiseCompareUpperReflected (isIndependent algorithm DeleteUse dpoConf) rules1
-        analysisPB1 = pairwiseCompareUpperReflected (isIndependent algorithm Pullback dpoConf) rules1
-        analysisDU2 = pairwiseCompareUpperReflected (isIndependent algorithm DeleteUse dpoConf) rules2
-        analysisPB2 = pairwiseCompareUpperReflected (isIndependent algorithm Pullback dpoConf) rules2
+        analysisPB1 = pairwiseCompareUpperReflected (isIndependent algorithm Cond2 dpoConf) rules1
+        analysisDU1 = pairwiseCompareUpperReflected (isIndependent algorithm Cond3 dpoConf) rules1
+        analysisPB2 = pairwiseCompareUpperReflected (isIndependent algorithm Cond2 dpoConf) rules2
+        analysisDU2 = pairwiseCompareUpperReflected (isIndependent algorithm Cond3 dpoConf) rules2
 
         (analysisDU,analysisPB) =
           if sndOrder then

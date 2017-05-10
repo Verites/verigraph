@@ -6,7 +6,11 @@ import           Abstract.Morphism
 import           Analysis.DiagramAlgorithms
 import           Analysis.EpimorphicPairs
 
-data Algorithm = DeleteUse | Pullback | Cond1
+-- | Algorithm used to determine independence between two rules
+-- Cond1 -> 3 pullbacks and two iso tests
+-- Cond2 -> 2 pullbacks and one iso test
+-- Cond3 -> classical delete-use
+data Algorithm = Cond1 | Cond2 | Cond3
 data IndependenceType = Parallel | Sequentially deriving (Eq, Show)
 
 -- | Checks if two transformations are independent (just delete-use),
@@ -22,30 +26,26 @@ isIndependent ind algorithm conf p1' p2 = not $ conflict algorithm
     pairs = createJointlyEpimorphicPairsFromCodomains (matchRestriction conf) (getLHS p1) (getLHS p2)
     satisfyingPairs = filter (\(m1,m2) -> satisfyRewritingConditions conf (p1,m1) (p2,m2)) pairs
 
-    conflict Cond1 = any (uncurry (cond1 p1 p2)) satisfyingPairs
-    conflict DeleteUse = any (\(m1,m2) -> isDeleteUse conf p1 (m1,m2) || isDeleteUse conf p2 (m2,m1)) satisfyingPairs
-    conflict Pullback = any (uncurry (pbTest p1 p2)) satisfyingPairs
+    conflict Cond1 = any (cond1 p1 p2) satisfyingPairs
+    conflict Cond2 = any (pbTest p1 p2) satisfyingPairs
+    conflict Cond3 = any (\(m1,m2) -> isDeleteUse conf p1 (m1,m2) || isDeleteUse conf p2 (m2,m1)) satisfyingPairs
 
 -- | Checks independence between transformations via pullback tests
-pbTest :: (AdhesiveHLR m, FindMorphism m) => Production m -> Production m -> m -> m -> Bool
-pbTest p1 p2 m1 m2 = Prelude.null (findIsoFromDomains (compose pb2 a1) (compose pb1 m1))
+pbTest :: (AdhesiveHLR m, FindMorphism m) => Production m -> Production m -> (m, m) -> Bool
+pbTest p1 p2 (m1,m2) = Prelude.null searchIso
   where
     (_,pb1) = calculatePullback m1 m2
 
     a1 = compose (getLHS p1) m1
     a2 = compose (getLHS p2) m2
     (_,pb2) = calculatePullback a1 a2
+    
+    searchIso = findCospanCommuter Isomorphism (compose pb2 a1) (compose pb1 m1)
 
-cond1 :: (AdhesiveHLR m, FindMorphism m) => Production m -> Production m -> m -> m -> Bool
-cond1 p1 p2 m1 m2 = not (isIsomorphism a && isIsomorphism b)
+cond1 :: (AdhesiveHLR m, FindMorphism m) => Production m -> Production m -> (m, m) -> Bool
+cond1 p1 p2 (m1,m2) = not (isIsomorphism a && isIsomorphism b)
   where
     (pb2,pb1) = calculatePullback m1 m2
     
     (a,_) = calculatePullback (getLHS p1) pb1
     (b,_) = calculatePullback (getLHS p2) pb2
-    
-    
-
-findIsoFromDomains :: FindMorphism m => m -> m -> [m]
---findIsoFromDomains a b = findIsomorphisms (domain a) (domain b)
-findIsoFromDomains a b = findCospanCommuter Isomorphism a b

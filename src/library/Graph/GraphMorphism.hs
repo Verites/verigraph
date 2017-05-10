@@ -40,6 +40,8 @@ module Graph.GraphMorphism (
     , isPartialInjective
     ) where
 
+import           Control.Arrow
+
 import           Abstract.Morphism
 import qualified Abstract.Relation as R
 import           Abstract.Valid
@@ -128,9 +130,9 @@ empty gA gB = GraphMorphism gA gB (R.empty (nodeIds gA) (nodeIds gB)) (R.empty (
 
 -- | Construct a graph morphism
 buildGraphMorphism :: Graph a b -> Graph a b -> [(Int,Int)] -> [(Int,Int)] -> GraphMorphism a b
-buildGraphMorphism gA gB n = foldr (uncurry updateEdges . (\(x,y) -> (EdgeId x,EdgeId y))) g
+buildGraphMorphism gA gB n = foldr (uncurry updateEdges . (EdgeId *** EdgeId)) g
     where
-        g = foldr (uncurry updateNodes . (\(x,y) -> (NodeId x,NodeId y))) (Graph.GraphMorphism.empty gA gB) n
+        g = foldr (uncurry updateNodes . (NodeId *** NodeId)) (Graph.GraphMorphism.empty gA gB) n
 
 -- | Constructs a @GraphMorphism@ from two Graphs, a node relation and a edge relation.
 fromGraphsAndRelations :: Graph a b -> Graph a b -> R.Relation NodeId -> R.Relation EdgeId -> GraphMorphism a b
