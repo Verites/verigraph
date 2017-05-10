@@ -1,10 +1,14 @@
 # Verigraph
+
 [![Build Status](https://travis-ci.org/Verites/verigraph.svg?branch=master)](https://travis-ci.org/Verites/verigraph)
 [![Coverage Status](https://coveralls.io/repos/github/Verites/verigraph/badge.svg?branch=master)](https://coveralls.io/github/Verites/verigraph?branch=master)
 
 <img src="./images/Verigraph.png" height="200px"/>
 
-Software specification and verification tool based on graph rewriting
+Software specification and verification tool based on graph rewriting.
+
+[![DOI](https://zenodo.org/badge/22760294.svg)](https://zenodo.org/badge/latestdoi/22760294)
+
 
 ## Tutorial
 
