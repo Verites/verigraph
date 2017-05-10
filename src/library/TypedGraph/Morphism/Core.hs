@@ -67,6 +67,10 @@ edgesFromCodomain = edges . domain . getCodomain
 applyNodeId :: TypedGraphMorphism a b -> NodeId -> Maybe NodeId
 applyNodeId tgm = GM.applyNodeId (mapping tgm)
 
+-- | Given a TypedGraphMorphism @/__t__: G1 -> G2/@ and an edge @__e__@ in @G1@, it returns the edge in @G2@ to which @__e__@ gets mapped
+applyEdge :: TypedGraphMorphism a b -> Edge (Maybe b) -> Maybe (Edge (Maybe b))
+applyEdge tgm = GM.applyEdge (mapping tgm)
+
 -- | Given a TypedGraphMorphism @/__t__: G1 -> G2/@ and an edgeId @__e__@ in @G1@, it returns the edgeId in @G2@ to which @__e__@ gets mapped
 applyEdgeId :: TypedGraphMorphism a b -> EdgeId -> Maybe EdgeId
 applyEdgeId tgm = GM.applyEdgeId (mapping tgm)
@@ -83,6 +87,11 @@ graphCodomain = untypedGraph . codomain
 --of @t@ to which @n@ gets mapped or error in the case of undefined
 applyNodeIdUnsafe :: TypedGraphMorphism a b -> NodeId -> NodeId
 applyNodeIdUnsafe m n = fromMaybe (error "Error, apply node in a non total morphism") $ applyNodeId m n
+
+-- | Given a @TypedGraphMorphism@ @__t__@and an edge @e@ in the domain of @__t__@, return the edge in the image
+--of @t@ to which @e@ gets mapped or error in the case of undefined
+applyEdgeUnsafe :: TypedGraphMorphism a b -> Edge (Maybe b) -> Edge (Maybe b)
+applyEdgeUnsafe m e = fromMaybe (error "Error, apply edge in a non total morphism") $ applyEdge m e
 
 -- | Given a @TypedGraphMorphism@ @__t__@and an edgeId @e@ in the domain of @__t__@, return the edgeId in the image
 --of @t@ to which @e@ gets mapped or error in the case of undefined

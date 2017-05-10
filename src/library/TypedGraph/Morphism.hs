@@ -14,6 +14,8 @@ module TypedGraph.Morphism (
     , mapping
     , applyNodeId
     , applyNodeIdUnsafe
+    , applyEdge
+    , applyEdgeUnsafe
     , applyEdgeId
     , applyEdgeIdUnsafe
     , buildTypedGraphMorphism

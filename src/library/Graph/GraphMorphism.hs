@@ -27,6 +27,8 @@ module Graph.GraphMorphism (
     -- * Query
     , applyNodeId
     , applyNodeIdUnsafe
+    , applyEdge
+    , applyEdgeUnsafe
     , applyEdgeId
     , applyEdgeIdUnsafe
     , nodeRelation
@@ -94,6 +96,13 @@ applyNodeId m ln =
         (x:_) -> Just x
         _     -> Nothing
 
+-- | Return the edge to which @le@ gets mapped.
+applyEdge :: GraphMorphism a b -> G.Edge b -> Maybe (G.Edge b)
+applyEdge m le =
+    case applyEdgeId m (edgeId le) of
+        Just x  -> lookupEdge x (codomain m)
+        Nothing -> Nothing
+
 -- | Return the edgeId to which @le@ gets mapped.
 applyEdgeId :: GraphMorphism a b -> G.EdgeId -> Maybe G.EdgeId
 applyEdgeId m le =
@@ -103,11 +112,15 @@ applyEdgeId m le =
 
 -- | Return the nodeId to which @le@ gets mapped or error in the case of undefined
 applyNodeIdUnsafe :: GraphMorphism a b -> NodeId -> NodeId
-applyNodeIdUnsafe m n = fromMaybe (error "Error, apply node in a non total morphism") $ applyNodeId m n
+applyNodeIdUnsafe m n = fromMaybe (error "Error, apply nodeId in a non total morphism") $ applyNodeId m n
+
+-- | Return the edge to which @le@ gets mapped or error in the case of undefined
+applyEdgeUnsafe :: GraphMorphism a b -> G.Edge b -> G.Edge b
+applyEdgeUnsafe m e = fromMaybe (error "Error, apply edge in a non total morphism") $ applyEdge m e
 
 -- | Return the edgeId to which @le@ gets mapped or error in the case of undefined
 applyEdgeIdUnsafe :: GraphMorphism a b -> EdgeId -> EdgeId
-applyEdgeIdUnsafe m e = fromMaybe (error "Error, apply edge in a non total morphism") $ applyEdgeId m e
+applyEdgeIdUnsafe m e = fromMaybe (error "Error, apply edgeId in a non total morphism") $ applyEdgeId m e
 
 -- | An empty morphism between two graphs.
 empty :: Graph a b -> Graph a b -> GraphMorphism a b
