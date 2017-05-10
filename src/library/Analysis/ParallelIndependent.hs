@@ -27,12 +27,12 @@ isIndependent ind algorithm conf p1' p2 = not $ conflict algorithm
     satisfyingPairs = filter (\(m1,m2) -> satisfyRewritingConditions conf (p1,m1) (p2,m2)) pairs
 
     conflict Cond1 = any (cond1 p1 p2) satisfyingPairs
-    conflict Cond2 = any (pbTest p1 p2) satisfyingPairs
+    conflict Cond2 = any (cond2 p1 p2) satisfyingPairs
     conflict Cond3 = any (\(m1,m2) -> isDeleteUse conf p1 (m1,m2) || isDeleteUse conf p2 (m2,m1)) satisfyingPairs
 
--- | Checks independence between transformations via pullback tests
-pbTest :: (AdhesiveHLR m, FindMorphism m) => Production m -> Production m -> (m, m) -> Bool
-pbTest p1 p2 (m1,m2) = Prelude.null searchIso
+-- | Checks independence between transformations via 2 pullbacks
+cond2 :: (AdhesiveHLR m, FindMorphism m) => Production m -> Production m -> (m, m) -> Bool
+cond2 p1 p2 (m1,m2) = Prelude.null (findIso k1k2ToG l1l2ToG)
   where
     (_,pb1) = calculatePullback m1 m2
 
@@ -40,8 +40,15 @@ pbTest p1 p2 (m1,m2) = Prelude.null searchIso
     a2 = compose (getLHS p2) m2
     (_,pb2) = calculatePullback a1 a2
     
-    searchIso = findCospanCommuter Isomorphism (compose pb2 a1) (compose pb1 m1)
+    k1k2ToG = compose pb2 a1
+    l1l2ToG = compose pb1 m1
 
+-- naive find ISO is running faster for known cases in this context
+findIso :: FindMorphism m => m -> m -> [m]
+--findIso a b = findIsomorphisms (domain a) (domain b)
+findIso a b = findCospanCommuter Isomorphism a b
+
+-- | Checks independence between transformations via 3 pullbacks
 cond1 :: (AdhesiveHLR m, FindMorphism m) => Production m -> Production m -> (m, m) -> Bool
 cond1 p1 p2 (m1,m2) = not (isIsomorphism a && isIsomorphism b)
   where
