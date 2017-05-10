@@ -60,7 +60,7 @@ execute globalOpts opts = do
         (putStrLn $ "No graph process candidates were found for rule sequence '" ++ name ++ "'")
 
     if null sequences then error "input file must have at least a rule sequence" else print ""
-        
+
     let analysis =
             "Conflicts and Dependencies: {\n"
             ++ show  (eliminateSelfConflictsAndDependencies conflictsAndDependencies) ++ "\n}\n"
@@ -89,27 +89,33 @@ execute globalOpts opts = do
           ++ restrictionToString (restrictRelation completeOgg) ++ "\n}"
 
     putStrLn "Tesing Serialization: "
-    if unique then putStrLn "[OK] Unique creations and deletions"
-                     else putStrLn "[FAIL] At least one element is created or deleted for more than one rule"
+    if unique
+      then putStrLn "[OK] Unique creations and deletions"
+      else putStrLn "[FAIL] At least one element is created or deleted for more than one rule"
 
     if isValid (initialGraph completeOgg)
-        then putStrLn "[OK] Inital graph is valid"
-        else putStrLn $ "[FAIL] Initial graph is not valid: \n" ++ fromJust (errorMessages $ validate $ initialGraph completeOgg)
-                                  ++ "\n" ++ show (initialGraph completeOgg)
+      then putStrLn "[OK] Inital graph is valid"
+      else putStrLn $ "[FAIL] Initial graph is not valid: \n"
+                    ++ fromJust (errorMessages $ validate $ initialGraph completeOgg)
+                    ++ "\n" ++ show (initialGraph completeOgg)
 
     if isValid (finalGraph completeOgg)
-        then putStrLn "[OK] Final graph is valid"
-        else putStrLn $ "[FAIL] Final graph is not valid: \n" ++ fromJust (errorMessages $ validate $ finalGraph completeOgg)
-                                  ++ "\n" ++ show (finalGraph completeOgg)
+      then putStrLn "[OK] Final graph is valid"
+      else putStrLn $ "[FAIL] Final graph is not valid: \n"
+                    ++ fromJust (errorMessages $ validate $ finalGraph completeOgg)
+                    ++ "\n" ++ show (finalGraph completeOgg)
 
-    if isJust rulesOrdering then putStrLn "[OK] Concrete occurence relation is a total order"
-                                       else putStrLn "[FAIL] Concrete occurrence relation is no a total order"
+    if isJust rulesOrdering
+      then putStrLn "[OK] Concrete occurence relation is a total order"
+      else putStrLn "[FAIL] Concrete occurrence relation is no a total order"
 
-    if isJust elementsOrdering then putStrLn "[OK] Concrete elements relation is a total order"
-                                              else putStrLn "[FAIL] Concrete elements relation is no a total order"
+    if isJust elementsOrdering
+      then putStrLn "[OK] Concrete elements relation is a total order"
+      else putStrLn "[FAIL] Concrete elements relation is no a total order"
 
-    if emptyRestrictions completeOgg then putStrLn "[OK] There are no abstract restrictions"
-                                                           else putStrLn "[WARN] There are abstract restrictions"
+    if emptyRestrictions completeOgg
+      then putStrLn "[OK] There are no abstract restrictions"
+      else putStrLn "[WARN] There are abstract restrictions"
 
     writeFile (outputFile opts ++ "_analysis") analysis
     putStrLn $ "Analysis written in " ++ (outputFile opts ++ "_analysis")

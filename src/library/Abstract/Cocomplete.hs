@@ -1,3 +1,8 @@
+{-|
+
+A Cocomplete category is one which has all small colimits. This module provides a signature for
+such colimits and a default implementation of pushouts based on coequalizers and coproducts.
+-}
 module Abstract.Cocomplete (
 
   Cocomplete(..)
