@@ -5,12 +5,11 @@ import           Data.Maybe               (fromMaybe, mapMaybe)
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
 import           Abstract.Valid
-import           Graph.Graph              as G hiding (Edge, Node)
+import           Graph.Graph              as G
 import           SndOrder.Morphism        as SO
 import           TypedGraph.DPO.GraphRule
 import           TypedGraph.Graph
 import           TypedGraph.Morphism
-
 import           SndOrder.Rule.Core
 
 instance DPO (RuleMorphism a b) where
@@ -43,7 +42,7 @@ instance DPO (RuleMorphism a b) where
 data Side = LeftSide | RightSide
 
 -- | Either NodeId EdgeId
-data NodeOrEdge = Node NodeId | Edge EdgeId deriving (Show)
+data NodeOrEdge = Node_ NodeId | Edge_ EdgeId NodeId NodeId deriving (Show)
 
 -- | Adds the minimal safety nacs needed to this production always produce a second order rule.
 -- If the nacs that going to be added not satisfies the others nacs, then it do not need to be added.
@@ -91,20 +90,20 @@ newNacsProb side sndRule = nacNodes ++ nacEdges
     sb = getSide ruleK
     sc = getSide ruleR
 
-    nodeProb = [applyNode f n |
+    nodeProb = [Node_ (applyNode f n) |
                  n <- nodeIdsFromCodomain sb
                , isOrphanNode sa (applyNode f n)
                , isOrphanNode sb n
                , not (isOrphanNode sc (applyNode g n))]
 
-    edgeProb = [applyEdge f n |
-                 n <- edgeIdsFromCodomain sb
-               , isOrphanEdge sa (applyEdge f n)
-               , isOrphanEdge sb n
-               , not (isOrphanEdge sc (applyEdge g n))]
+    edgeProb = [Edge_ (applyEdge f (edgeId e)) undefined undefined |
+                 e <- edgesFromCodomain sb
+               , isOrphanEdge sa (applyEdge f (edgeId e))
+               , isOrphanEdge sb (edgeId e)
+               , not (isOrphanEdge sc (applyEdge g (edgeId e)))]
 
-    nacNodes = map (createNacProb side ruleL . Node) nodeProb
-    nacEdges = map (createNacProb side ruleL . Edge) edgeProb
+    nacNodes = map (createNacProb side ruleL) nodeProb
+    nacEdges = map (createNacProb side ruleL) edgeProb
 
 -- | Auxiliar function that creates concrectly the NACs for newNacsProb
 createNacProb :: Side -> GraphRule a b -> NodeOrEdge -> SO.RuleMorphism a b
@@ -122,8 +121,8 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
         LeftSide  -> (graphR, graphL, l, r)
         RightSide -> (graphL, graphR, r, l)
 
-    src = G.sourceOfUnsafe (domain otherSideGraph)
-    tgt = G.targetOfUnsafe (domain otherSideGraph)
+    src x = G.sourceOfUnsafe (domain otherSideGraph) x
+    tgt x = G.targetOfUnsafe (domain otherSideGraph) x
 
     tpNode = extractNodeType otherSideGraph
     tpEdge = extractEdgeType otherSideGraph
@@ -149,10 +148,12 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
 
     (updateLeft, updateRight) =
       case x of
-        (Node n) -> createNodes n n' n'' (tpNode n)
-        (Edge e) -> createEdges e e' e'' (tpEdge e)
+        (Node_ n) -> createNodes n n' n'' (tpNode n)
+        (Edge_ e _ _) -> createEdges e e' e'' (tpEdge e)
                        (src e) (typeSrc e) (srcInK e) (srcInR e)
                        (tgt e) (typeTgt e) (tgtInK e) (tgtInR e)
+                       -- (src (edgeId e)) (typeSrc (edgeId e)) (srcInK (edgeId e)) (srcInR (edgeId e))
+                       -- (tgt (edgeId e)) (typeTgt (edgeId e)) (tgtInK (edgeId e)) (tgtInR (edgeId e))
 
     nacRule = buildProduction updateLeft updateRight []
     mapL = idMap graphL (codomain updateLeft)
