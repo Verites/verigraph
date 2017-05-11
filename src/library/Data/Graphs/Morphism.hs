@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeFamilies #-}
 
 module Data.Graphs.Morphism (
@@ -40,18 +42,20 @@ module Data.Graphs.Morphism (
     ) where
 
 import           Control.Arrow
+import           Control.DeepSeq
+import           GHC.Generics
 
 import           Base.Valid
-import           Data.Graphs   as G
-import           Data.Maybe    (fromMaybe, isNothing)
-import qualified Data.Relation as R
+import           Data.Graphs     as G
+import           Data.Maybe      (fromMaybe, isNothing)
+import qualified Data.Relation   as R
 
 data GraphMorphism a b = GraphMorphism {
     domainGraph   :: Graph a b
   , codomainGraph :: Graph a b
   , nodeRelation  :: R.Relation G.NodeId
   , edgeRelation  :: R.Relation G.EdgeId
-}
+} deriving(Read, Show, Generic, NFData)
 
 compose :: GraphMorphism a b -> GraphMorphism a b -> GraphMorphism a b
 compose m2 m1 = GraphMorphism (domainGraph m1)
@@ -64,18 +68,6 @@ instance Eq (GraphMorphism a b) where
                codomainGraph m1 == codomainGraph m2 &&
                nodeRelation m1 == nodeRelation m2 &&
                edgeRelation m1 == edgeRelation m2
-
-instance Show (GraphMorphism a b) where
-    show m =
-      "\nNode mappings: \n" ++ concatMap showNode (G.nodeIds $ domainGraph m)
-      ++ "\nEdge mappings: \n" ++ concatMap showEdge (G.edges $ domainGraph m)
-     where
-       showNode n =
-         show n ++ " --> " ++ show (applyNodeId m n) ++ "\n"
-
-       showEdge (Edge e srcId tgtId _) =
-         show e ++ " --> " ++ show (applyEdgeId m e)
-         ++ " (from: " ++ show srcId ++ " to:" ++ show tgtId ++ ")\n"
 
 -- | Return the orphan nodes ids in a graph morphism
 orphanNodeIds :: GraphMorphism a b -> [G.NodeId]

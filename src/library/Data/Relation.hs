@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -30,9 +32,11 @@ module Data.Relation
     , isTotal
     ) where
 
+import           Control.DeepSeq
+import           GHC.Generics
 
-import           Data.List as L
-import qualified Data.Map  as Map
+import           Data.List       as L
+import qualified Data.Map        as Map
 
 -- | Datatype for endorelations on a
 data Relation a =
@@ -40,7 +44,7 @@ data Relation a =
        domain   :: [a],
        codomain :: [a],
        mapping  :: Map.Map a [a]
-   } deriving (Ord,Show,Read)
+   } deriving (Ord,Show,Read, Generic, NFData)
 
 instance (Eq a, Ord a) => Eq (Relation a) where
     r1 == r2 = sort(domain r1) == sort(domain r2) &&

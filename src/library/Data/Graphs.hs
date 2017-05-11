@@ -1,4 +1,6 @@
+{-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 {-|
 An implementation of labeled directed graphs, allowing multiple parallel edges.
 
@@ -79,6 +81,9 @@ module Data.Graphs (
     , newEdges
 ) where
 
+import           Control.DeepSeq
+import           GHC.Generics
+
 import           Base.Cardinality
 import           Base.Valid
 import           Data.List
@@ -89,20 +94,13 @@ import           Util.List
 -- | Type of node identifiers, which are essentially integers.
 newtype NodeId =
   NodeId Int
-  deriving (Eq, Ord, Num, Real, Integral)
+  deriving (Eq, Ord, Num, Real, Integral, Read, Show, Generic, NFData)
 
 
 -- | Type of edge identifiers, which are essentially integers.
 newtype EdgeId
   = EdgeId Int
-  deriving (Eq, Ord, Num, Real, Integral)
-
-
-instance Show NodeId where
-    show (NodeId i) = show i
-
-instance Show EdgeId where
-    show (EdgeId i) = show i
+  deriving (Eq, Ord, Num, Real,Integral, Read, Show, Generic, NFData)
 
 instance Enum NodeId where
   toEnum = NodeId
@@ -118,7 +116,9 @@ data Node n =
   Node
     { nodeId   :: NodeId
     , nodeInfo :: n
-    } deriving (Show)
+    } deriving (Read, Show, Generic)
+
+instance (NFData n) => NFData (Node n)
 
 
 -- | Edges from within a graph.
@@ -128,7 +128,9 @@ data Edge e =
     , sourceId :: NodeId
     , targetId :: NodeId
     , edgeInfo :: e
-    } deriving (Show)
+    } deriving (Read, Show, Generic)
+
+instance (NFData e) => NFData (Edge e)
 
 
 -- | A directed graph, allowing parallel edges. Both nodes and edges have optional payloads
@@ -143,7 +145,9 @@ data Graph n e =
   Graph
     { nodeMap :: [(NodeId, Node n)]
     , edgeMap :: [(EdgeId, Edge e)]
-    }
+    } deriving (Read, Show, Generic)
+
+instance (NFData n, NFData e) => NFData (Graph n e)
 
 
 -- | Verify equality of two lists ignoring order /O(m*n)/
@@ -162,22 +166,6 @@ instance Eq (Graph n e) where
       in
        eq (map simplifyNode nodeMap1) (map simplifyNode nodeMap2) &&
        eq (map simplifyEdge edgeMap1) (map simplifyEdge edgeMap2)
-
-
-instance Show (Graph n e) where
-    show (Graph nodes edges) =
-        "Nodes:\n"
-        ++ concatMap showNode nodes
-        ++ "Edges:\n"
-        ++ concatMap showEdge edges
-      where
-        showNode (n, _) =
-          "\t" ++ show n ++ "\n"
-
-        showEdge (e, Edge _ src tgt _) =
-          "\t" ++ show e ++ " (" ++ show src ++ "->" ++ show tgt ++ ")\n"
-
-
 
 instance Cardinality (Graph n e) where
   cardinality = cardinality'

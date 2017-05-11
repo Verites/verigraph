@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+#Generates all the four possible kinds of pre-inputs to run the benchmarks.
+
+echo "Generation Epi Pairs (Mono) for elevator" && \
+verigraph pre-inputs -o elevator-mono.ep ../grammars/Elevator/elevator.ggx && \
+
+echo "Generation Epi Pairs (Generic) for elevator" && \
+verigraph --all-matches pre-inputs -o elevator-generic.ep ../grammars/Elevator/elevator.ggx && \
+
+echo "Generation Matches Pairs (Mono) for elevator" && \
+verigraph pre-inputs -m -o elevator-mono.mp ../grammars/Elevator/elevator.ggx && \
+
+echo "Generation Matches Pairs (Generic) for elevator" && \
+verigraph --all-matches pre-inputs -m -o elevator-generic.mp ../grammars/Elevator/elevator.ggx

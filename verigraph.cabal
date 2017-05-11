@@ -26,7 +26,9 @@ library
                        semigroups >= 0.18,
                        set-monad >= 0.2,
                        split >= 0.2,
-                       wl-pprint >=1.2 && <1.3
+                       wl-pprint >=1.2 && <1.3,
+                       deepseq == 1.4.2.0
+
   exposed-modules:     Abstract.Category.AdhesiveHLR
                        Abstract.Category.AdhesiveHLR.Constraint
                        Abstract.Category.Cocomplete
@@ -113,13 +115,18 @@ executable verigraph
                        hxt,
                        matrix >= 0.3,
                        optparse-applicative>=0.12 && < 0.14,
-                       split >= 0.2
+                       split >= 0.2,
+                       deepseq == 1.4.2.0,
+                       criterion == 1.1.4.0,
+                       text == 1.2.2.1
   other-modules:       ApplySndOrderRules
                        ConcurrentRules
                        CriticalPairAnalysis
                        ParallelIndependence
                        Processes
                        GlobalOptions
+                       RunBenchs
+                       SavePreInputs
 
 executable verigraph-mcheck
   default-language:    Haskell2010

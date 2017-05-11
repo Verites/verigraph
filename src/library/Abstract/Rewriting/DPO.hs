@@ -1,6 +1,9 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
+
 
 -- | Provides definitions for the Double-Pushout approach to
 -- High-Level Rewriting Systems.
@@ -59,6 +62,9 @@ module Abstract.Rewriting.DPO
   , nacDownwardShift
   ) where
 
+import           Control.DeepSeq
+import           GHC.Generics
+
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.FinitaryCategory
 import           Abstract.Category.JointlyEpimorphisms
@@ -74,7 +80,7 @@ data Production morph = Production {
    left  :: morph   -- ^ The morphism /K -> L/ of a production
 ,  right :: morph  -- ^ The morphism /K -> R/ of a production
 ,  nacs  :: [morph] -- ^ The set of nacs /L -> Ni/ of a production
-}  deriving (Eq, Show, Read)
+}  deriving (Eq, Show, Read, Generic, NFData)
 
 instance (FinitaryCategory morph, Valid morph, Eq (Obj morph)) => Valid (Production morph) where
   validate (Production l r nacs) =

@@ -58,7 +58,7 @@
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
                 <Edge ID="I20" source="I17" target="I17" type="I12">
-                    <EdgeLayout bendX="422" bendY="227" loopH="45"
+                    <EdgeLayout bendX="424" bendY="227" loopH="45"
                         loopW="60" sourceMultiplicityOffsetX="5"
                         sourceMultiplicityOffsetY="16"
                         targetMultiplicityOffsetX="-7"
@@ -67,7 +67,7 @@
                 </Edge>
                 <Edge ID="I21" source="I17" sourcemax="1" sourcemin="0"
                     target="I17" targetmax="1" targetmin="0" type="I11">
-                    <EdgeLayout bendX="359" bendY="178" loopH="110"
+                    <EdgeLayout bendX="361" bendY="178" loopH="110"
                         loopW="144" sourceMultiplicityOffsetX="5"
                         sourceMultiplicityOffsetY="16"
                         targetMultiplicityOffsetX="-7"
@@ -85,7 +85,7 @@
                 </Edge>
                 <Edge ID="I23" source="I16" sourcemax="1" sourcemin="0"
                     target="I16" targetmax="1" targetmin="0" type="I8">
-                    <EdgeLayout bendX="593" bendY="63" loopH="46"
+                    <EdgeLayout bendX="595" bendY="63" loopH="46"
                         loopW="53" sourceMultiplicityOffsetX="5"
                         sourceMultiplicityOffsetY="16"
                         targetMultiplicityOffsetX="-7"
@@ -94,7 +94,7 @@
                 </Edge>
                 <Edge ID="I24" source="I16" sourcemax="1" sourcemin="0"
                     target="I16" targetmax="1" targetmin="0" type="I9">
-                    <EdgeLayout bendX="529" bendY="28" loopH="92"
+                    <EdgeLayout bendX="531" bendY="28" loopH="92"
                         loopW="138" sourceMultiplicityOffsetX="5"
                         sourceMultiplicityOffsetY="16"
                         targetMultiplicityOffsetX="-7"
@@ -105,50 +105,251 @@
         </Types>
         <Graph ID="I25" kind="HOST" name="start_graph">
             <Node ID="I26" type="I6">
-                <NodeLayout X="319" Y="59"/>
+                <NodeLayout X="388" Y="824"/>
                 <additionalLayout age="0" force="10" frozen="true" zone="50"/>
             </Node>
-            <Node ID="I27" type="I6">
-                <NodeLayout X="317" Y="183"/>
+            <Node ID="I27" type="I5">
+                <NodeLayout X="208" Y="823"/>
                 <additionalLayout age="0" force="10" frozen="true" zone="50"/>
             </Node>
-            <Node ID="I28" type="I5">
-                <NodeLayout X="137" Y="182"/>
+            <Node ID="I28" type="I2">
+                <NodeLayout X="202" Y="741"/>
                 <additionalLayout age="0" force="10" frozen="true" zone="50"/>
             </Node>
-            <Node ID="I29" type="I2">
-                <NodeLayout X="134" Y="66"/>
-                <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+            <Node ID="I29" type="I6">
+                <NodeLayout X="393" Y="523"/>
+                <additionalLayout age="0" force="10" frozen="false" zone="50"/>
             </Node>
-            <Edge ID="I30" source="I28" target="I27" type="I7">
+            <Node ID="I30" type="I6">
+                <NodeLayout X="391" Y="631"/>
+                <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+            </Node>
+            <Node ID="I31" type="I6">
+                <NodeLayout X="392" Y="743"/>
+                <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+            </Node>
+            <Node ID="I32" type="I6">
+                <NodeLayout X="392" Y="412"/>
+                <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+            </Node>
+            <Node ID="I33" type="I4">
+                <NodeLayout X="482" Y="766"/>
+                <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+            </Node>
+            <Node ID="I34" type="I4">
+                <NodeLayout X="486" Y="685"/>
+                <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+            </Node>
+            <Node ID="I35" type="I4">
+                <NodeLayout X="485" Y="573"/>
+                <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+            </Node>
+            <Node ID="I36" type="I4">
+                <NodeLayout X="487" Y="465"/>
+                <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+            </Node>
+            <Node ID="I37" type="I4">
+                <NodeLayout X="314" Y="563"/>
+                <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+            </Node>
+            <Node ID="I38" type="I4">
+                <NodeLayout X="315" Y="344"/>
+                <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+            </Node>
+            <Node ID="I39" type="I4">
+                <NodeLayout X="315" Y="675"/>
+                <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+            </Node>
+            <Node ID="I40" type="I4">
+                <NodeLayout X="316" Y="455"/>
+                <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+            </Node>
+            <Node ID="I41" type="I4">
+                <NodeLayout X="311" Y="756"/>
+                <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+            </Node>
+            <Node ID="I42" type="I6">
+                <NodeLayout X="395" Y="334"/>
+                <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+            </Node>
+            <Node ID="I43" type="I6">
+                <NodeLayout X="395" Y="248"/>
+                <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+            </Node>
+            <Node ID="I44" type="I6">
+                <NodeLayout X="395" Y="169"/>
+                <additionalLayout age="0" force="10" frozen="false" zone="50"/>
+            </Node>
+            <Edge ID="I45" source="I27" target="I26" type="I7">
                 <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
                 <additionalLayout aktlength="200" force="10" preflength="200"/>
             </Edge>
-            <Edge ID="I31" source="I27" target="I26" type="I11">
+            <Edge ID="I46" source="I26" target="I31" type="I11">
+                <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I47" source="I31" target="I30" type="I11">
+                <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I48" source="I29" target="I32" type="I11">
+                <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I49" source="I31" target="I26" type="I12">
+                <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I50" source="I32" target="I29" type="I12">
+                <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I51" source="I30" target="I31" type="I12">
+                <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I52" source="I29" target="I30" type="I12">
+                <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I53" source="I30" target="I26" type="I12">
+                <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I54" source="I29" target="I31" type="I12">
+                <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I55" source="I29" target="I26" type="I12">
+                <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I56" source="I32" target="I30" type="I12">
+                <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I57" source="I32" target="I31" type="I12">
+                <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I58" source="I32" target="I26" type="I12">
+                <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I59" source="I26" target="I33" type="I10">
+                <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I60" source="I33" target="I33" type="I8">
+                <EdgeLayout bendX="441" bendY="741" loopH="20"
+                    loopW="20" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I61" source="I31" target="I34" type="I10">
+                <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I62" source="I34" target="I34" type="I8">
+                <EdgeLayout bendX="445" bendY="660" loopH="20"
+                    loopW="20" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I63" source="I30" target="I35" type="I10">
+                <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I64" source="I35" target="I35" type="I8">
+                <EdgeLayout bendX="444" bendY="548" loopH="20"
+                    loopW="20" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I65" source="I29" target="I36" type="I10">
+                <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I66" source="I36" target="I36" type="I8">
+                <EdgeLayout bendX="446" bendY="440" loopH="20"
+                    loopW="20" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I67" source="I30" target="I37" type="I10">
+                <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I68" source="I37" target="I37" type="I9">
+                <EdgeLayout bendX="273" bendY="538" loopH="20"
+                    loopW="20" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I69" source="I32" target="I38" type="I10">
+                <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I70" source="I38" target="I38" type="I9">
+                <EdgeLayout bendX="274" bendY="319" loopH="20"
+                    loopW="20" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I71" source="I31" target="I39" type="I10">
+                <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I72" source="I39" target="I39" type="I9">
+                <EdgeLayout bendX="274" bendY="650" loopH="20"
+                    loopW="20" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I73" source="I29" target="I40" type="I10">
+                <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I74" source="I40" target="I40" type="I9">
+                <EdgeLayout bendX="275" bendY="430" loopH="20"
+                    loopW="20" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I75" source="I26" target="I41" type="I10">
+                <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I76" source="I41" target="I41" type="I9">
+                <EdgeLayout bendX="270" bendY="731" loopH="20"
+                    loopW="20" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I77" source="I32" target="I42" type="I11">
+                <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I78" source="I42" target="I43" type="I11">
+                <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                <additionalLayout aktlength="200" force="10" preflength="200"/>
+            </Edge>
+            <Edge ID="I79" source="I43" target="I44" type="I11">
                 <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
                 <additionalLayout aktlength="200" force="10" preflength="200"/>
             </Edge>
         </Graph>
         <Constraints>
-            <Graphconstraint_Atomic ID="I32" name="-floors_no_same_request">
+            <Graphconstraint_Atomic ID="I80" name="-floors_no_same_request">
                 <Premise>
-                    <Graph ID="I33" kind="PREMISE" name="Premise of -floors_no_same_request">
-                        <Node ID="I34" type="I6">
+                    <Graph ID="I81" kind="PREMISE" name="Premise of -floors_no_same_request">
+                        <Node ID="I82" type="I6">
                             <NodeLayout X="44" Y="70"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I35" type="I6">
+                        <Node ID="I83" type="I6">
                             <NodeLayout X="154" Y="67"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I36" type="I4">
+                        <Node ID="I84" type="I4">
                             <NodeLayout X="99" Y="127"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Edge ID="I37" source="I34" target="I36" type="I10">
+                        <Edge ID="I85" source="I82" target="I84" type="I10">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
@@ -156,55 +357,55 @@
                     </Graph>
                 </Premise>
                 <Conclusion>
-                    <Graph ID="I38" kind="CONCLUSION" name="Conclusion of -floors_no_same_request">
-                        <Node ID="I39" type="I6">
+                    <Graph ID="I86" kind="CONCLUSION" name="Conclusion of -floors_no_same_request">
+                        <Node ID="I87" type="I6">
                             <NodeLayout X="65" Y="66"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I40" type="I6">
+                        <Node ID="I88" type="I6">
                             <NodeLayout X="206" Y="61"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I41" type="I4">
+                        <Node ID="I89" type="I4">
                             <NodeLayout X="126" Y="124"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Edge ID="I42" source="I39" target="I41" type="I10">
+                        <Edge ID="I90" source="I87" target="I89" type="I10">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I43" source="I40" target="I41" type="I10">
+                        <Edge ID="I91" source="I88" target="I89" type="I10">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
                     </Graph>
                     <Morphism name="Conclusion0">
-                        <Mapping image="I39" orig="I34"/>
-                        <Mapping image="I40" orig="I35"/>
-                        <Mapping image="I41" orig="I36"/>
-                        <Mapping image="I42" orig="I37"/>
+                        <Mapping image="I87" orig="I82"/>
+                        <Mapping image="I88" orig="I83"/>
+                        <Mapping image="I89" orig="I84"/>
+                        <Mapping image="I90" orig="I85"/>
                     </Morphism>
                 </Conclusion>
             </Graphconstraint_Atomic>
-            <Graphconstraint_Atomic ID="I44" name="-higher_is_not_next">
+            <Graphconstraint_Atomic ID="I92" name="-higher_is_not_next">
                 <Premise>
-                    <Graph ID="I45" kind="PREMISE" name="Premise of -higher_is_not_next">
-                        <Node ID="I46" type="I6">
+                    <Graph ID="I93" kind="PREMISE" name="Premise of -higher_is_not_next">
+                        <Node ID="I94" type="I6">
                             <NodeLayout X="49" Y="81"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I47" type="I6">
+                        <Node ID="I95" type="I6">
                             <NodeLayout X="203" Y="81"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Edge ID="I48" source="I46" target="I47" type="I12">
+                        <Edge ID="I96" source="I94" target="I95" type="I12">
                             <EdgeLayout bendX="123" bendY="116"
                                 textOffsetX="-26" textOffsetY="7"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
@@ -212,49 +413,49 @@
                     </Graph>
                 </Premise>
                 <Conclusion>
-                    <Graph ID="I49" kind="CONCLUSION" name="Conclusion of -higher_is_not_next">
-                        <Node ID="I50" type="I6">
+                    <Graph ID="I97" kind="CONCLUSION" name="Conclusion of -higher_is_not_next">
+                        <Node ID="I98" type="I6">
                             <NodeLayout X="70" Y="81"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I51" type="I6">
+                        <Node ID="I99" type="I6">
                             <NodeLayout X="227" Y="83"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Edge ID="I52" source="I50" target="I51" type="I12">
+                        <Edge ID="I100" source="I98" target="I99" type="I12">
                             <EdgeLayout bendX="130" bendY="117"
                                 textOffsetX="-26" textOffsetY="7"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I53" source="I50" target="I51" type="I11">
+                        <Edge ID="I101" source="I98" target="I99" type="I11">
                             <EdgeLayout bendX="135" bendY="57"
                                 textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
                     </Graph>
                     <Morphism name="Conclusion0">
-                        <Mapping image="I50" orig="I46"/>
-                        <Mapping image="I51" orig="I47"/>
-                        <Mapping image="I52" orig="I48"/>
+                        <Mapping image="I98" orig="I94"/>
+                        <Mapping image="I99" orig="I95"/>
+                        <Mapping image="I100" orig="I96"/>
                     </Morphism>
                 </Conclusion>
             </Graphconstraint_Atomic>
-            <Graphconstraint_Atomic ID="I54" name="-higher_is_not_opposite">
+            <Graphconstraint_Atomic ID="I102" name="-higher_is_not_opposite">
                 <Premise>
-                    <Graph ID="I55" kind="PREMISE" name="Premise of -higher_is_not_opposite">
-                        <Node ID="I56" type="I6">
+                    <Graph ID="I103" kind="PREMISE" name="Premise of -higher_is_not_opposite">
+                        <Node ID="I104" type="I6">
                             <NodeLayout X="37" Y="80"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I57" type="I6">
+                        <Node ID="I105" type="I6">
                             <NodeLayout X="181" Y="82"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Edge ID="I58" source="I56" target="I57" type="I12">
+                        <Edge ID="I106" source="I104" target="I105" type="I12">
                             <EdgeLayout bendX="109" bendY="118"
                                 textOffsetX="-35" textOffsetY="10"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
@@ -262,49 +463,49 @@
                     </Graph>
                 </Premise>
                 <Conclusion>
-                    <Graph ID="I59" kind="CONCLUSION" name="Conclusion of -higher_is_not_opposite">
-                        <Node ID="I60" type="I6">
+                    <Graph ID="I107" kind="CONCLUSION" name="Conclusion of -higher_is_not_opposite">
+                        <Node ID="I108" type="I6">
                             <NodeLayout X="53" Y="78"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I61" type="I6">
+                        <Node ID="I109" type="I6">
                             <NodeLayout X="198" Y="80"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Edge ID="I62" source="I60" target="I61" type="I12">
+                        <Edge ID="I110" source="I108" target="I109" type="I12">
                             <EdgeLayout bendX="120" bendY="118"
                                 textOffsetX="-35" textOffsetY="10"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I63" source="I61" target="I60" type="I12">
+                        <Edge ID="I111" source="I109" target="I108" type="I12">
                             <EdgeLayout bendX="124" bendY="43"
                                 textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
                     </Graph>
                     <Morphism name="Conclusion0">
-                        <Mapping image="I60" orig="I56"/>
-                        <Mapping image="I61" orig="I57"/>
-                        <Mapping image="I62" orig="I58"/>
+                        <Mapping image="I108" orig="I104"/>
+                        <Mapping image="I109" orig="I105"/>
+                        <Mapping image="I110" orig="I106"/>
                     </Morphism>
                 </Conclusion>
             </Graphconstraint_Atomic>
-            <Graphconstraint_Atomic ID="I64" name="-next_is_not_opposite">
+            <Graphconstraint_Atomic ID="I112" name="-next_is_not_opposite">
                 <Premise>
-                    <Graph ID="I65" kind="PREMISE" name="Premise of -next_is_not_opposite">
-                        <Node ID="I66" type="I6">
+                    <Graph ID="I113" kind="PREMISE" name="Premise of -next_is_not_opposite">
+                        <Node ID="I114" type="I6">
                             <NodeLayout X="54" Y="86"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I67" type="I6">
+                        <Node ID="I115" type="I6">
                             <NodeLayout X="209" Y="85"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Edge ID="I68" source="I66" target="I67" type="I11">
+                        <Edge ID="I116" source="I114" target="I115" type="I11">
                             <EdgeLayout bendX="118" bendY="119"
                                 textOffsetX="-21" textOffsetY="8"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
@@ -312,215 +513,215 @@
                     </Graph>
                 </Premise>
                 <Conclusion>
-                    <Graph ID="I69" kind="CONCLUSION" name="Conclusion of -next_is_not_opposite">
-                        <Node ID="I70" type="I6">
+                    <Graph ID="I117" kind="CONCLUSION" name="Conclusion of -next_is_not_opposite">
+                        <Node ID="I118" type="I6">
                             <NodeLayout X="72" Y="90"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I71" type="I6">
+                        <Node ID="I119" type="I6">
                             <NodeLayout X="218" Y="85"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Edge ID="I72" source="I70" target="I71" type="I11">
+                        <Edge ID="I120" source="I118" target="I119" type="I11">
                             <EdgeLayout bendX="128" bendY="117"
                                 textOffsetX="-21" textOffsetY="8"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I73" source="I71" target="I70" type="I11">
+                        <Edge ID="I121" source="I119" target="I118" type="I11">
                             <EdgeLayout bendX="143" bendY="52"
                                 textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
                     </Graph>
                     <Morphism name="Conclusion0">
-                        <Mapping image="I70" orig="I66"/>
-                        <Mapping image="I71" orig="I67"/>
-                        <Mapping image="I72" orig="I68"/>
+                        <Mapping image="I118" orig="I114"/>
+                        <Mapping image="I119" orig="I115"/>
+                        <Mapping image="I120" orig="I116"/>
                     </Morphism>
                 </Conclusion>
             </Graphconstraint_Atomic>
-            <Graphconstraint_Atomic ID="I74" name="-floor_no_two_stops">
+            <Graphconstraint_Atomic ID="I122" name="-floor_no_two_stops">
                 <Premise>
-                    <Graph ID="I75" kind="PREMISE" name="Premise of -floor_no_two_stops">
-                        <Node ID="I76" type="I6">
+                    <Graph ID="I123" kind="PREMISE" name="Premise of -floor_no_two_stops">
+                        <Node ID="I124" type="I6">
                             <NodeLayout X="161" Y="124"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I77" type="I4">
+                        <Node ID="I125" type="I4">
                             <NodeLayout X="102" Y="63"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I78" type="I4">
+                        <Node ID="I126" type="I4">
                             <NodeLayout X="212" Y="64"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Edge ID="I79" source="I76" target="I77" type="I10">
+                        <Edge ID="I127" source="I124" target="I125" type="I10">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="-28" textOffsetY="5"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I80" source="I76" target="I78" type="I10">
+                        <Edge ID="I128" source="I124" target="I126" type="I10">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="19" textOffsetY="-3"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I81" source="I77" target="I77" type="I9">
-                            <EdgeLayout bendX="54" bendY="38" loopH="20"
+                        <Edge ID="I129" source="I125" target="I125" type="I9">
+                            <EdgeLayout bendX="55" bendY="38" loopH="20"
                                 loopW="20" textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
                     </Graph>
                 </Premise>
                 <Conclusion>
-                    <Graph ID="I82" kind="CONCLUSION" name="Conclusion of -floor_no_two_stops">
-                        <Node ID="I83" type="I6">
+                    <Graph ID="I130" kind="CONCLUSION" name="Conclusion of -floor_no_two_stops">
+                        <Node ID="I131" type="I6">
                             <NodeLayout X="161" Y="124"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I84" type="I4">
+                        <Node ID="I132" type="I4">
                             <NodeLayout X="102" Y="63"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I85" type="I4">
+                        <Node ID="I133" type="I4">
                             <NodeLayout X="212" Y="64"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Edge ID="I86" source="I83" target="I84" type="I10">
+                        <Edge ID="I134" source="I131" target="I132" type="I10">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="-28" textOffsetY="5"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I87" source="I83" target="I85" type="I10">
+                        <Edge ID="I135" source="I131" target="I133" type="I10">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="19" textOffsetY="-3"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I88" source="I84" target="I84" type="I9">
-                            <EdgeLayout bendX="54" bendY="38" loopH="20"
+                        <Edge ID="I136" source="I132" target="I132" type="I9">
+                            <EdgeLayout bendX="55" bendY="38" loopH="20"
                                 loopW="20" textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I89" source="I85" target="I85" type="I9">
-                            <EdgeLayout bendX="164" bendY="39"
+                        <Edge ID="I137" source="I133" target="I133" type="I9">
+                            <EdgeLayout bendX="165" bendY="39"
                                 loopH="20" loopW="20" textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
                     </Graph>
                     <Morphism name="Conclusion0">
-                        <Mapping image="I83" orig="I76"/>
-                        <Mapping image="I84" orig="I77"/>
-                        <Mapping image="I85" orig="I78"/>
-                        <Mapping image="I88" orig="I81"/>
-                        <Mapping image="I87" orig="I80"/>
-                        <Mapping image="I86" orig="I79"/>
+                        <Mapping image="I131" orig="I124"/>
+                        <Mapping image="I132" orig="I125"/>
+                        <Mapping image="I133" orig="I126"/>
+                        <Mapping image="I136" orig="I129"/>
+                        <Mapping image="I135" orig="I128"/>
+                        <Mapping image="I134" orig="I127"/>
                     </Morphism>
                 </Conclusion>
             </Graphconstraint_Atomic>
-            <Graphconstraint_Atomic ID="I90" name="-floor_no_two_calls">
+            <Graphconstraint_Atomic ID="I138" name="-floor_no_two_calls">
                 <Premise>
-                    <Graph ID="I91" kind="PREMISE" name="Premise of -floor_no_two_calls">
-                        <Node ID="I92" type="I6">
+                    <Graph ID="I139" kind="PREMISE" name="Premise of -floor_no_two_calls">
+                        <Node ID="I140" type="I6">
                             <NodeLayout X="152" Y="129"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I93" type="I4">
+                        <Node ID="I141" type="I4">
                             <NodeLayout X="93" Y="68"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I94" type="I4">
+                        <Node ID="I142" type="I4">
                             <NodeLayout X="203" Y="69"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Edge ID="I95" source="I92" target="I93" type="I10">
+                        <Edge ID="I143" source="I140" target="I141" type="I10">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="-28" textOffsetY="5"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I96" source="I92" target="I94" type="I10">
+                        <Edge ID="I144" source="I140" target="I142" type="I10">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="19" textOffsetY="-3"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I97" source="I93" target="I93" type="I8">
-                            <EdgeLayout bendX="45" bendY="43" loopH="20"
+                        <Edge ID="I145" source="I141" target="I141" type="I8">
+                            <EdgeLayout bendX="46" bendY="43" loopH="20"
                                 loopW="20" textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
                     </Graph>
                 </Premise>
                 <Conclusion>
-                    <Graph ID="I98" kind="CONCLUSION" name="Conclusion of -floor_no_two_calls">
-                        <Node ID="I99" type="I6">
+                    <Graph ID="I146" kind="CONCLUSION" name="Conclusion of -floor_no_two_calls">
+                        <Node ID="I147" type="I6">
                             <NodeLayout X="152" Y="129"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I100" type="I4">
+                        <Node ID="I148" type="I4">
                             <NodeLayout X="93" Y="68"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I101" type="I4">
+                        <Node ID="I149" type="I4">
                             <NodeLayout X="203" Y="69"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Edge ID="I102" source="I99" target="I100" type="I10">
+                        <Edge ID="I150" source="I147" target="I148" type="I10">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="-28" textOffsetY="5"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I103" source="I99" target="I101" type="I10">
+                        <Edge ID="I151" source="I147" target="I149" type="I10">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="19" textOffsetY="-3"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I104" source="I100" target="I100" type="I8">
-                            <EdgeLayout bendX="45" bendY="43" loopH="20"
+                        <Edge ID="I152" source="I148" target="I148" type="I8">
+                            <EdgeLayout bendX="46" bendY="43" loopH="20"
                                 loopW="20" textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I105" source="I101" target="I101" type="I8">
-                            <EdgeLayout bendX="155" bendY="44"
+                        <Edge ID="I153" source="I149" target="I149" type="I8">
+                            <EdgeLayout bendX="156" bendY="44"
                                 loopH="20" loopW="20" textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
                     </Graph>
                     <Morphism name="Conclusion0">
-                        <Mapping image="I99" orig="I92"/>
-                        <Mapping image="I100" orig="I93"/>
-                        <Mapping image="I101" orig="I94"/>
-                        <Mapping image="I102" orig="I95"/>
-                        <Mapping image="I103" orig="I96"/>
-                        <Mapping image="I104" orig="I97"/>
+                        <Mapping image="I147" orig="I140"/>
+                        <Mapping image="I148" orig="I141"/>
+                        <Mapping image="I149" orig="I142"/>
+                        <Mapping image="I152" orig="I145"/>
+                        <Mapping image="I151" orig="I144"/>
+                        <Mapping image="I150" orig="I143"/>
                     </Morphism>
                 </Conclusion>
             </Graphconstraint_Atomic>
-            <Graphconstraint_Atomic ID="I106" name="-no_two_holds">
+            <Graphconstraint_Atomic ID="I154" name="-no_two_holds">
                 <Premise>
-                    <Graph ID="I107" kind="PREMISE" name="Premise of -no_two_holds">
-                        <Node ID="I108" type="I6">
+                    <Graph ID="I155" kind="PREMISE" name="Premise of -no_two_holds">
+                        <Node ID="I156" type="I6">
                             <NodeLayout X="46" Y="90"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I109" type="I4">
+                        <Node ID="I157" type="I4">
                             <NodeLayout X="209" Y="90"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Edge ID="I110" source="I108" target="I109" type="I10">
+                        <Edge ID="I158" source="I156" target="I157" type="I10">
                             <EdgeLayout bendX="120" bendY="58"
                                 textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
@@ -528,39 +729,39 @@
                     </Graph>
                 </Premise>
                 <Conclusion>
-                    <Graph ID="I111" kind="CONCLUSION" name="Conclusion of -no_two_holds">
-                        <Node ID="I112" type="I6">
+                    <Graph ID="I159" kind="CONCLUSION" name="Conclusion of -no_two_holds">
+                        <Node ID="I160" type="I6">
                             <NodeLayout X="46" Y="90"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I113" type="I4">
+                        <Node ID="I161" type="I4">
                             <NodeLayout X="238" Y="86"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Edge ID="I114" source="I112" target="I113" type="I10">
+                        <Edge ID="I162" source="I160" target="I161" type="I10">
                             <EdgeLayout bendX="129" bendY="58"
                                 textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I115" source="I112" target="I113" type="I10">
+                        <Edge ID="I163" source="I160" target="I161" type="I10">
                             <EdgeLayout bendX="134" bendY="119"
                                 textOffsetX="-14" textOffsetY="11"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
                     </Graph>
                     <Morphism name="Conclusion0">
-                        <Mapping image="I112" orig="I108"/>
-                        <Mapping image="I113" orig="I109"/>
-                        <Mapping image="I114" orig="I110"/>
+                        <Mapping image="I160" orig="I156"/>
+                        <Mapping image="I161" orig="I157"/>
+                        <Mapping image="I162" orig="I158"/>
                     </Morphism>
                 </Conclusion>
             </Graphconstraint_Atomic>
-            <Graphconstraint_Atomic ID="I116" name="-no_stop_and_call">
+            <Graphconstraint_Atomic ID="I164" name="-no_stop_and_call">
                 <Premise>
-                    <Graph ID="I117" kind="PREMISE" name="Premise of -no_stop_and_call">
-                        <Node ID="I118" type="I4">
+                    <Graph ID="I165" kind="PREMISE" name="Premise of -no_stop_and_call">
+                        <Node ID="I166" type="I4">
                             <NodeLayout X="131" Y="86"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
@@ -568,42 +769,42 @@
                     </Graph>
                 </Premise>
                 <Conclusion>
-                    <Graph ID="I119" kind="CONCLUSION" name="Conclusion of -no_stop_and_call">
-                        <Node ID="I120" type="I4">
+                    <Graph ID="I167" kind="CONCLUSION" name="Conclusion of -no_stop_and_call">
+                        <Node ID="I168" type="I4">
                             <NodeLayout X="131" Y="86"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Edge ID="I121" source="I120" target="I120" type="I8">
-                            <EdgeLayout bendX="79" bendY="55" loopH="29"
+                        <Edge ID="I169" source="I168" target="I168" type="I8">
+                            <EdgeLayout bendX="80" bendY="55" loopH="29"
                                 loopW="27" textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I122" source="I120" target="I120" type="I9">
-                            <EdgeLayout bendX="58" bendY="34" loopH="56"
+                        <Edge ID="I170" source="I168" target="I168" type="I9">
+                            <EdgeLayout bendX="59" bendY="34" loopH="56"
                                 loopW="54" textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
                     </Graph>
                     <Morphism name="Conclusion0">
-                        <Mapping image="I120" orig="I118"/>
+                        <Mapping image="I168" orig="I166"/>
                     </Morphism>
                 </Conclusion>
             </Graphconstraint_Atomic>
-            <Graphconstraint_Atomic ID="I123" name="-no_two_higher_than">
+            <Graphconstraint_Atomic ID="I171" name="-no_two_higher_than">
                 <Premise>
-                    <Graph ID="I124" kind="PREMISE" name="Premise of -no_two_higher_than">
-                        <Node ID="I125" type="I6">
+                    <Graph ID="I172" kind="PREMISE" name="Premise of -no_two_higher_than">
+                        <Node ID="I173" type="I6">
                             <NodeLayout X="50" Y="83"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I126" type="I6">
+                        <Node ID="I174" type="I6">
                             <NodeLayout X="216" Y="90"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Edge ID="I127" source="I125" target="I126" type="I12">
+                        <Edge ID="I175" source="I173" target="I174" type="I12">
                             <EdgeLayout bendX="133" bendY="123"
                                 textOffsetX="-29" textOffsetY="9"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
@@ -611,59 +812,59 @@
                     </Graph>
                 </Premise>
                 <Conclusion>
-                    <Graph ID="I128" kind="CONCLUSION" name="Conclusion of -no_two_higher_than">
-                        <Node ID="I129" type="I6">
+                    <Graph ID="I176" kind="CONCLUSION" name="Conclusion of -no_two_higher_than">
+                        <Node ID="I177" type="I6">
                             <NodeLayout X="50" Y="83"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I130" type="I6">
+                        <Node ID="I178" type="I6">
                             <NodeLayout X="216" Y="90"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Edge ID="I131" source="I129" target="I130" type="I12">
+                        <Edge ID="I179" source="I177" target="I178" type="I12">
                             <EdgeLayout bendX="133" bendY="123"
                                 textOffsetX="-29" textOffsetY="9"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I132" source="I129" target="I130" type="I12">
+                        <Edge ID="I180" source="I177" target="I178" type="I12">
                             <EdgeLayout bendX="130" bendY="56"
                                 textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
                     </Graph>
                     <Morphism name="Conclusion0">
-                        <Mapping image="I129" orig="I125"/>
-                        <Mapping image="I130" orig="I126"/>
-                        <Mapping image="I131" orig="I127"/>
+                        <Mapping image="I177" orig="I173"/>
+                        <Mapping image="I178" orig="I174"/>
+                        <Mapping image="I179" orig="I175"/>
                     </Morphism>
                 </Conclusion>
             </Graphconstraint_Atomic>
-            <Graphconstraint_Atomic ID="I133" name="-no_intermediate">
+            <Graphconstraint_Atomic ID="I181" name="-no_intermediate">
                 <Premise>
-                    <Graph ID="I134" kind="PREMISE" name="Premise of -no_intermediate">
-                        <Node ID="I135" type="I6">
+                    <Graph ID="I182" kind="PREMISE" name="Premise of -no_intermediate">
+                        <Node ID="I183" type="I6">
                             <NodeLayout X="78" Y="134"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I136" type="I6">
+                        <Node ID="I184" type="I6">
                             <NodeLayout X="207" Y="83"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I137" type="I6">
+                        <Node ID="I185" type="I6">
                             <NodeLayout X="82" Y="30"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Edge ID="I138" source="I136" target="I135" type="I12">
+                        <Edge ID="I186" source="I184" target="I183" type="I12">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="-2" textOffsetY="3"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I139" source="I137" target="I136" type="I12">
+                        <Edge ID="I187" source="I185" target="I184" type="I12">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
@@ -671,59 +872,59 @@
                     </Graph>
                 </Premise>
                 <Conclusion>
-                    <Graph ID="I140" kind="CONCLUSION" name="Conclusion of -no_intermediate">
-                        <Node ID="I141" type="I6">
+                    <Graph ID="I188" kind="CONCLUSION" name="Conclusion of -no_intermediate">
+                        <Node ID="I189" type="I6">
                             <NodeLayout X="78" Y="134"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I142" type="I6">
+                        <Node ID="I190" type="I6">
                             <NodeLayout X="184" Y="86"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I143" type="I6">
+                        <Node ID="I191" type="I6">
                             <NodeLayout X="82" Y="30"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Edge ID="I144" source="I142" target="I141" type="I12">
+                        <Edge ID="I192" source="I190" target="I189" type="I12">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="-4" textOffsetY="-2"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I145" source="I143" target="I142" type="I12">
+                        <Edge ID="I193" source="I191" target="I190" type="I12">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I146" source="I141" target="I143" type="I11">
+                        <Edge ID="I194" source="I189" target="I191" type="I11">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
                     </Graph>
                     <Morphism name="Conclusion0">
-                        <Mapping image="I141" orig="I135"/>
-                        <Mapping image="I142" orig="I136"/>
-                        <Mapping image="I143" orig="I137"/>
-                        <Mapping image="I145" orig="I139"/>
-                        <Mapping image="I144" orig="I138"/>
+                        <Mapping image="I189" orig="I183"/>
+                        <Mapping image="I190" orig="I184"/>
+                        <Mapping image="I191" orig="I185"/>
+                        <Mapping image="I193" orig="I187"/>
+                        <Mapping image="I192" orig="I186"/>
                     </Morphism>
                 </Conclusion>
             </Graphconstraint_Atomic>
-            <Graphconstraint_Atomic ID="I147" name="-no_up_and_down">
+            <Graphconstraint_Atomic ID="I195" name="-no_up_and_down">
                 <Premise>
-                    <Graph ID="I148" kind="PREMISE" name="Premise of -no_up_and_down"/>
+                    <Graph ID="I196" kind="PREMISE" name="Premise of -no_up_and_down"/>
                 </Premise>
                 <Conclusion>
-                    <Graph ID="I149" kind="CONCLUSION" name="Conclusion of -no_up_and_down">
-                        <Node ID="I150" type="I2">
+                    <Graph ID="I197" kind="CONCLUSION" name="Conclusion of -no_up_and_down">
+                        <Node ID="I198" type="I2">
                             <NodeLayout X="71" Y="79"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I151" type="I3">
+                        <Node ID="I199" type="I3">
                             <NodeLayout X="161" Y="78"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
@@ -732,18 +933,18 @@
                     <Morphism name="Conclusion0"/>
                 </Conclusion>
             </Graphconstraint_Atomic>
-            <Graphconstraint_Atomic ID="I152" name="-no_two_elevators">
+            <Graphconstraint_Atomic ID="I200" name="-no_two_elevators">
                 <Premise>
-                    <Graph ID="I153" kind="PREMISE" name="Premise of -no_two_elevators"/>
+                    <Graph ID="I201" kind="PREMISE" name="Premise of -no_two_elevators"/>
                 </Premise>
                 <Conclusion>
-                    <Graph ID="I154" kind="CONCLUSION" name="Conclusion of -no_two_elevators">
-                        <Node ID="I155" type="I5">
+                    <Graph ID="I202" kind="CONCLUSION" name="Conclusion of -no_two_elevators">
+                        <Node ID="I203" type="I5">
                             <NodeLayout X="103" Y="151"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I156" type="I5">
+                        <Node ID="I204" type="I5">
                             <NodeLayout X="245" Y="147"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
@@ -752,33 +953,33 @@
                     <Morphism name="Conclusion0"/>
                 </Conclusion>
             </Graphconstraint_Atomic>
-            <Graphconstraint_Atomic ID="I157" name="-no-more-than-4floors">
+            <Graphconstraint_Atomic ID="I205" name="-no-more-than-4floors">
                 <Premise>
-                    <Graph ID="I158" kind="PREMISE" name="Premise of -no-more-than-4floors"/>
+                    <Graph ID="I206" kind="PREMISE" name="Premise of -no-more-than-4floors"/>
                 </Premise>
                 <Conclusion>
-                    <Graph ID="I159" kind="CONCLUSION" name="Conclusion of -no-more-than-4floors">
-                        <Node ID="I160" type="I6">
+                    <Graph ID="I207" kind="CONCLUSION" name="Conclusion of -no-more-than-4floors">
+                        <Node ID="I208" type="I6">
                             <NodeLayout X="112" Y="170"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I161" type="I6">
+                        <Node ID="I209" type="I6">
                             <NodeLayout X="217" Y="171"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I162" type="I6">
+                        <Node ID="I210" type="I6">
                             <NodeLayout X="113" Y="248"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I163" type="I6">
+                        <Node ID="I211" type="I6">
                             <NodeLayout X="213" Y="249"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I164" type="I6">
+                        <Node ID="I212" type="I6">
                             <NodeLayout X="160" Y="208"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
@@ -787,821 +988,581 @@
                     <Morphism name="Conclusion0"/>
                 </Conclusion>
             </Graphconstraint_Atomic>
-            <Formula ID="I165" comment="" enabled="true"
+            <Formula ID="I213" comment="" enabled="true"
                 f="(!( 9 &amp; ( 1 | 2 ) ))" name="Constraint">
                 <Layer Layer="" Size="0"/>
                 <Priority Priority="" Size="0"/>
             </Formula>
         </Constraints>
-        <Rule ID="I166" formula="true" name="add_floor">
-            <Graph ID="I168" kind="LHS" name="LeftOf_add_floor">
-                <Node ID="I169" type="I6">
+        <Rule ID="I214" formula="true" name="add_floor">
+            <Graph ID="I216" kind="LHS" name="LeftOf_add_floor">
+                <Node ID="I217" type="I6">
                     <NodeLayout X="327" Y="234"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I170" type="I6">
+                <Node ID="I218" type="I6">
                     <NodeLayout X="321" Y="161"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Edge ID="I171" source="I169" target="I170" type="I11">
+                <Edge ID="I219" source="I217" target="I218" type="I11">
                     <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
             </Graph>
-            <Graph ID="I172" kind="RHS" name="RightOf_add_floor">
-                <Node ID="I173" type="I6">
+            <Graph ID="I220" kind="RHS" name="RightOf_add_floor">
+                <Node ID="I221" type="I6">
                     <NodeLayout X="327" Y="234"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I174" type="I6">
+                <Node ID="I222" type="I6">
                     <NodeLayout X="323" Y="100"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I175" type="I6">
+                <Node ID="I223" type="I6">
                     <NodeLayout X="322" Y="160"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Edge ID="I176" source="I173" target="I175" type="I11">
+                <Edge ID="I224" source="I221" target="I223" type="I11">
                     <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
-                <Edge ID="I177" source="I175" target="I174" type="I11">
+                <Edge ID="I225" source="I223" target="I222" type="I11">
                     <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
             </Graph>
             <Morphism comment="Formula: true" name="add_floor">
-                <Mapping image="I173" orig="I169"/>
-                <Mapping image="I174" orig="I170"/>
+                <Mapping image="I221" orig="I217"/>
+                <Mapping image="I222" orig="I218"/>
             </Morphism>
             <TaggedValue Tag="layer" TagValue="0"/>
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
-        <Rule ID="I178" formula="true" name="initial_higher">
-            <Graph ID="I180" kind="LHS" name="LeftOf_initial_higher">
-                <Node ID="I181" type="I6">
+        <Rule ID="I226" formula="true" name="initial_higher">
+            <Graph ID="I228" kind="LHS" name="LeftOf_initial_higher">
+                <Node ID="I229" type="I6">
                     <NodeLayout X="172" Y="95"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I182" type="I6">
+                <Node ID="I230" type="I6">
                     <NodeLayout X="180" Y="243"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Edge ID="I183" source="I182" target="I181" type="I11">
+                <Edge ID="I231" source="I230" target="I229" type="I11">
                     <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
             </Graph>
-            <Graph ID="I184" kind="RHS" name="RightOf_initial_higher">
-                <Node ID="I185" type="I6">
+            <Graph ID="I232" kind="RHS" name="RightOf_initial_higher">
+                <Node ID="I233" type="I6">
                     <NodeLayout X="317" Y="85"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I186" type="I6">
+                <Node ID="I234" type="I6">
                     <NodeLayout X="311" Y="201"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Edge ID="I187" source="I186" target="I185" type="I11">
+                <Edge ID="I235" source="I234" target="I233" type="I11">
                     <EdgeLayout bendX="251" bendY="154" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
-                <Edge ID="I188" source="I185" target="I186" type="I12">
+                <Edge ID="I236" source="I233" target="I234" type="I12">
                     <EdgeLayout bendX="376" bendY="151" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
             </Graph>
             <Morphism comment="Formula: true" name="initial_higher">
-                <Mapping image="I185" orig="I181"/>
-                <Mapping image="I186" orig="I182"/>
-                <Mapping image="I187" orig="I183"/>
+                <Mapping image="I233" orig="I229"/>
+                <Mapping image="I234" orig="I230"/>
+                <Mapping image="I235" orig="I231"/>
             </Morphism>
             <ApplCondition>
                 <NAC>
-                    <Graph ID="I189" kind="NAC" name="not_yet">
-                        <Node ID="I190" type="I6">
+                    <Graph ID="I237" kind="NAC" name="not_yet">
+                        <Node ID="I238" type="I6">
                             <NodeLayout X="169" Y="94"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I191" type="I6">
+                        <Node ID="I239" type="I6">
                             <NodeLayout X="163" Y="210"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Edge ID="I192" source="I191" target="I190" type="I11">
+                        <Edge ID="I240" source="I239" target="I238" type="I11">
                             <EdgeLayout bendX="103" bendY="163"
                                 textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I193" source="I190" target="I191" type="I12">
+                        <Edge ID="I241" source="I238" target="I239" type="I12">
                             <EdgeLayout bendX="228" bendY="160"
                                 textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
                     </Graph>
                     <Morphism name="not_yet">
-                        <Mapping image="I190" orig="I181"/>
-                        <Mapping image="I191" orig="I182"/>
-                        <Mapping image="I192" orig="I183"/>
+                        <Mapping image="I238" orig="I229"/>
+                        <Mapping image="I239" orig="I230"/>
+                        <Mapping image="I240" orig="I231"/>
                     </Morphism>
                 </NAC>
             </ApplCondition>
             <TaggedValue Tag="layer" TagValue="0"/>
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
-        <Rule ID="I194" formula="true" name="transitive_higher">
-            <Graph ID="I196" kind="LHS" name="LeftOf_transitive_higher">
-                <Node ID="I197" type="I6">
+        <Rule ID="I242" formula="true" name="transitive_higher">
+            <Graph ID="I244" kind="LHS" name="LeftOf_transitive_higher">
+                <Node ID="I245" type="I6">
                     <NodeLayout X="91" Y="68"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I198" type="I6">
+                <Node ID="I246" type="I6">
                     <NodeLayout X="254" Y="149"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I199" type="I6">
+                <Node ID="I247" type="I6">
                     <NodeLayout X="120" Y="207"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Edge ID="I200" source="I197" target="I198" type="I12">
+                <Edge ID="I248" source="I245" target="I246" type="I12">
                     <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
-                <Edge ID="I201" source="I198" target="I199" type="I12">
+                <Edge ID="I249" source="I246" target="I247" type="I12">
                     <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
             </Graph>
-            <Graph ID="I202" kind="RHS" name="RightOf_transitive_higher">
-                <Node ID="I203" type="I6">
+            <Graph ID="I250" kind="RHS" name="RightOf_transitive_higher">
+                <Node ID="I251" type="I6">
                     <NodeLayout X="91" Y="68"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I204" type="I6">
+                <Node ID="I252" type="I6">
                     <NodeLayout X="254" Y="149"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I205" type="I6">
+                <Node ID="I253" type="I6">
                     <NodeLayout X="120" Y="207"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Edge ID="I206" source="I203" target="I204" type="I12">
+                <Edge ID="I254" source="I251" target="I252" type="I12">
                     <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
-                <Edge ID="I207" source="I204" target="I205" type="I12">
+                <Edge ID="I255" source="I252" target="I253" type="I12">
                     <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
-                <Edge ID="I208" source="I203" target="I205" type="I12">
+                <Edge ID="I256" source="I251" target="I253" type="I12">
                     <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
             </Graph>
             <Morphism comment="Formula: true" name="transitive_higher">
-                <Mapping image="I203" orig="I197"/>
-                <Mapping image="I204" orig="I198"/>
-                <Mapping image="I205" orig="I199"/>
-                <Mapping image="I206" orig="I200"/>
-                <Mapping image="I207" orig="I201"/>
+                <Mapping image="I251" orig="I245"/>
+                <Mapping image="I252" orig="I246"/>
+                <Mapping image="I253" orig="I247"/>
+                <Mapping image="I254" orig="I248"/>
+                <Mapping image="I255" orig="I249"/>
             </Morphism>
             <ApplCondition>
                 <NAC>
-                    <Graph ID="I209" kind="NAC" name="not_yet">
-                        <Node ID="I210" type="I6">
+                    <Graph ID="I257" kind="NAC" name="not_yet">
+                        <Node ID="I258" type="I6">
                             <NodeLayout X="91" Y="68"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I211" type="I6">
+                        <Node ID="I259" type="I6">
                             <NodeLayout X="254" Y="149"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I212" type="I6">
+                        <Node ID="I260" type="I6">
                             <NodeLayout X="120" Y="207"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Edge ID="I213" source="I210" target="I211" type="I12">
+                        <Edge ID="I261" source="I258" target="I259" type="I12">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I214" source="I211" target="I212" type="I12">
+                        <Edge ID="I262" source="I259" target="I260" type="I12">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I215" source="I210" target="I212" type="I12">
+                        <Edge ID="I263" source="I258" target="I260" type="I12">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
                     </Graph>
                     <Morphism name="not_yet">
-                        <Mapping image="I210" orig="I197"/>
-                        <Mapping image="I211" orig="I198"/>
-                        <Mapping image="I212" orig="I199"/>
-                        <Mapping image="I213" orig="I200"/>
-                        <Mapping image="I214" orig="I201"/>
+                        <Mapping image="I258" orig="I245"/>
+                        <Mapping image="I259" orig="I246"/>
+                        <Mapping image="I260" orig="I247"/>
+                        <Mapping image="I261" orig="I248"/>
+                        <Mapping image="I262" orig="I249"/>
                     </Morphism>
                 </NAC>
             </ApplCondition>
             <TaggedValue Tag="layer" TagValue="0"/>
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
-        <Rule ID="I216" formula="true" name="call_request">
-            <Graph ID="I218" kind="LHS" name="LeftOf_call_request">
-                <Node ID="I219" type="I6">
+        <Rule ID="I264" formula="true" name="call_request">
+            <Graph ID="I266" kind="LHS" name="LeftOf_call_request">
+                <Node ID="I267" type="I6">
                     <NodeLayout X="250" Y="183"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
             </Graph>
-            <Graph ID="I220" kind="RHS" name="RightOf_call_request">
-                <Node ID="I221" type="I6">
+            <Graph ID="I268" kind="RHS" name="RightOf_call_request">
+                <Node ID="I269" type="I6">
                     <NodeLayout X="250" Y="183"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I222" type="I4">
+                <Node ID="I270" type="I4">
                     <NodeLayout X="344" Y="125"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Edge ID="I223" source="I221" target="I222" type="I10">
+                <Edge ID="I271" source="I269" target="I270" type="I10">
                     <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
-                <Edge ID="I224" source="I222" target="I222" type="I8">
+                <Edge ID="I272" source="I270" target="I270" type="I8">
                     <EdgeLayout bendX="303" bendY="100" loopH="20"
                         loopW="20" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
             </Graph>
             <Morphism comment="Formula: true" name="call_request">
-                <Mapping image="I221" orig="I219"/>
+                <Mapping image="I269" orig="I267"/>
             </Morphism>
             <ApplCondition>
                 <NAC>
-                    <Graph ID="I225" kind="NAC" name="no_call_yet">
-                        <Node ID="I226" type="I6">
+                    <Graph ID="I273" kind="NAC" name="no_call_yet">
+                        <Node ID="I274" type="I6">
                             <NodeLayout X="171" Y="183"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I227" type="I4">
+                        <Node ID="I275" type="I4">
                             <NodeLayout X="265" Y="125"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Edge ID="I228" source="I226" target="I227" type="I10">
+                        <Edge ID="I276" source="I274" target="I275" type="I10">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I229" source="I227" target="I227" type="I8">
+                        <Edge ID="I277" source="I275" target="I275" type="I8">
                             <EdgeLayout bendX="224" bendY="100"
                                 loopH="20" loopW="20" textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
                     </Graph>
                     <Morphism name="no_call_yet">
-                        <Mapping image="I226" orig="I219"/>
+                        <Mapping image="I274" orig="I267"/>
                     </Morphism>
                 </NAC>
             </ApplCondition>
             <TaggedValue Tag="layer" TagValue="0"/>
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
-        <Rule ID="I230" formula="true" name="move_down">
-            <Graph ID="I232" kind="LHS" name="LeftOf_move_down">
-                <Node ID="I233" type="I5">
+        <Rule ID="I278" formula="true" name="move_down">
+            <Graph ID="I280" kind="LHS" name="LeftOf_move_down">
+                <Node ID="I281" type="I5">
                     <NodeLayout X="94" Y="74"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I234" type="I6">
+                <Node ID="I282" type="I6">
                     <NodeLayout X="273" Y="69"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I235" type="I3">
+                <Node ID="I283" type="I3">
                     <NodeLayout X="81" Y="156"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I236" type="I6">
+                <Node ID="I284" type="I6">
                     <NodeLayout X="310" Y="163"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I237" type="I6">
+                <Node ID="I285" type="I6">
                     <NodeLayout X="90" Y="249"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I238" type="I4">
+                <Node ID="I286" type="I4">
                     <NodeLayout X="278" Y="256"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Edge ID="I239" source="I233" target="I234" type="I7">
+                <Edge ID="I287" source="I281" target="I282" type="I7">
                     <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
-                <Edge ID="I240" source="I236" target="I234" type="I11">
+                <Edge ID="I288" source="I284" target="I282" type="I11">
                     <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
-                <Edge ID="I241" source="I234" target="I237" type="I12">
+                <Edge ID="I289" source="I282" target="I285" type="I12">
                     <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
-                <Edge ID="I242" source="I237" target="I238" type="I10">
+                <Edge ID="I290" source="I285" target="I286" type="I10">
                     <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
             </Graph>
-            <Graph ID="I243" kind="RHS" name="RightOf_move_down">
-                <Node ID="I244" type="I5">
+            <Graph ID="I291" kind="RHS" name="RightOf_move_down">
+                <Node ID="I292" type="I5">
                     <NodeLayout X="288" Y="201"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I245" type="I6">
+                <Node ID="I293" type="I6">
                     <NodeLayout X="215" Y="55"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I246" type="I3">
+                <Node ID="I294" type="I3">
                     <NodeLayout X="81" Y="156"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I247" type="I6">
+                <Node ID="I295" type="I6">
                     <NodeLayout X="283" Y="159"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I248" type="I6">
+                <Node ID="I296" type="I6">
                     <NodeLayout X="90" Y="249"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I249" type="I4">
+                <Node ID="I297" type="I4">
                     <NodeLayout X="278" Y="256"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Edge ID="I250" source="I247" target="I245" type="I11">
+                <Edge ID="I298" source="I295" target="I293" type="I11">
                     <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
-                <Edge ID="I251" source="I245" target="I248" type="I12">
+                <Edge ID="I299" source="I293" target="I296" type="I12">
                     <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
-                <Edge ID="I252" source="I248" target="I249" type="I10">
+                <Edge ID="I300" source="I296" target="I297" type="I10">
                     <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
-                <Edge ID="I253" source="I244" target="I247" type="I7">
+                <Edge ID="I301" source="I292" target="I295" type="I7">
                     <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
             </Graph>
             <Morphism comment="Formula: true" name="move_down">
-                <Mapping image="I244" orig="I233"/>
-                <Mapping image="I245" orig="I234"/>
-                <Mapping image="I246" orig="I235"/>
-                <Mapping image="I247" orig="I236"/>
-                <Mapping image="I248" orig="I237"/>
-                <Mapping image="I249" orig="I238"/>
-                <Mapping image="I252" orig="I242"/>
-                <Mapping image="I250" orig="I240"/>
-                <Mapping image="I251" orig="I241"/>
+                <Mapping image="I292" orig="I281"/>
+                <Mapping image="I293" orig="I282"/>
+                <Mapping image="I294" orig="I283"/>
+                <Mapping image="I295" orig="I284"/>
+                <Mapping image="I296" orig="I285"/>
+                <Mapping image="I297" orig="I286"/>
+                <Mapping image="I300" orig="I290"/>
+                <Mapping image="I299" orig="I289"/>
+                <Mapping image="I298" orig="I288"/>
             </Morphism>
             <ApplCondition>
                 <NAC>
-                    <Graph ID="I254" kind="NAC" name="no_request">
-                        <Node ID="I255" type="I5">
+                    <Graph ID="I302" kind="NAC" name="no_request">
+                        <Node ID="I303" type="I5">
                             <NodeLayout X="94" Y="74"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I256" type="I6">
+                        <Node ID="I304" type="I6">
                             <NodeLayout X="273" Y="69"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I257" type="I3">
+                        <Node ID="I305" type="I3">
                             <NodeLayout X="81" Y="156"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I258" type="I6">
+                        <Node ID="I306" type="I6">
                             <NodeLayout X="313" Y="169"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I259" type="I6">
+                        <Node ID="I307" type="I6">
                             <NodeLayout X="90" Y="249"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I260" type="I4">
+                        <Node ID="I308" type="I4">
                             <NodeLayout X="278" Y="256"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I261" type="I4">
+                        <Node ID="I309" type="I4">
                             <NodeLayout X="382" Y="69"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Edge ID="I262" source="I255" target="I256" type="I7">
+                        <Edge ID="I310" source="I303" target="I304" type="I7">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I263" source="I258" target="I256" type="I11">
+                        <Edge ID="I311" source="I306" target="I304" type="I11">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I264" source="I256" target="I259" type="I12">
+                        <Edge ID="I312" source="I304" target="I307" type="I12">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I265" source="I259" target="I260" type="I10">
+                        <Edge ID="I313" source="I307" target="I308" type="I10">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I266" source="I256" target="I261" type="I10">
+                        <Edge ID="I314" source="I304" target="I309" type="I10">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
                     </Graph>
                     <Morphism name="no_request">
-                        <Mapping image="I255" orig="I233"/>
-                        <Mapping image="I256" orig="I234"/>
-                        <Mapping image="I257" orig="I235"/>
-                        <Mapping image="I258" orig="I236"/>
-                        <Mapping image="I259" orig="I237"/>
-                        <Mapping image="I260" orig="I238"/>
-                        <Mapping image="I262" orig="I239"/>
-                        <Mapping image="I265" orig="I242"/>
-                        <Mapping image="I263" orig="I240"/>
-                        <Mapping image="I264" orig="I241"/>
+                        <Mapping image="I303" orig="I281"/>
+                        <Mapping image="I304" orig="I282"/>
+                        <Mapping image="I305" orig="I283"/>
+                        <Mapping image="I306" orig="I284"/>
+                        <Mapping image="I307" orig="I285"/>
+                        <Mapping image="I308" orig="I286"/>
+                        <Mapping image="I313" orig="I290"/>
+                        <Mapping image="I312" orig="I289"/>
+                        <Mapping image="I310" orig="I287"/>
+                        <Mapping image="I311" orig="I288"/>
                     </Morphism>
                 </NAC>
             </ApplCondition>
             <TaggedValue Tag="layer" TagValue="0"/>
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
-        <Rule ID="I267" formula="true" name="set-direction_down">
-            <Graph ID="I269" kind="LHS" name="LeftOf_set-direction_down">
-                <Node ID="I270" type="I5">
+        <Rule ID="I315" formula="true" name="set-direction_down">
+            <Graph ID="I317" kind="LHS" name="LeftOf_set-direction_down">
+                <Node ID="I318" type="I5">
                     <NodeLayout X="111" Y="89"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I271" type="I6">
+                <Node ID="I319" type="I6">
                     <NodeLayout X="341" Y="85"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I272" type="I6">
+                <Node ID="I320" type="I6">
                     <NodeLayout X="339" Y="180"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I273" type="I4">
+                <Node ID="I321" type="I4">
                     <NodeLayout X="102" Y="187"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I274" type="I2">
+                <Node ID="I322" type="I2">
                     <NodeLayout X="100" Y="131"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Edge ID="I275" source="I270" target="I271" type="I7">
+                <Edge ID="I323" source="I318" target="I319" type="I7">
                     <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
-                <Edge ID="I276" source="I271" target="I272" type="I12">
+                <Edge ID="I324" source="I319" target="I320" type="I12">
                     <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
-                <Edge ID="I277" source="I272" target="I273" type="I10">
+                <Edge ID="I325" source="I320" target="I321" type="I10">
                     <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
             </Graph>
-            <Graph ID="I278" kind="RHS" name="RightOf_set-direction_down">
-                <Node ID="I279" type="I5">
+            <Graph ID="I326" kind="RHS" name="RightOf_set-direction_down">
+                <Node ID="I327" type="I5">
                     <NodeLayout X="154" Y="87"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I280" type="I6">
+                <Node ID="I328" type="I6">
                     <NodeLayout X="341" Y="85"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I281" type="I6">
+                <Node ID="I329" type="I6">
                     <NodeLayout X="339" Y="180"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I282" type="I4">
+                <Node ID="I330" type="I4">
                     <NodeLayout X="102" Y="187"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I283" type="I3">
+                <Node ID="I331" type="I3">
                     <NodeLayout X="121" Y="137"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Edge ID="I284" source="I279" target="I280" type="I7">
+                <Edge ID="I332" source="I327" target="I328" type="I7">
                     <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
-                <Edge ID="I285" source="I280" target="I281" type="I12">
+                <Edge ID="I333" source="I328" target="I329" type="I12">
                     <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
-                <Edge ID="I286" source="I281" target="I282" type="I10">
+                <Edge ID="I334" source="I329" target="I330" type="I10">
                     <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
             </Graph>
             <Morphism comment="Formula: true" name="set-direction_down">
-                <Mapping image="I279" orig="I270"/>
-                <Mapping image="I280" orig="I271"/>
-                <Mapping image="I281" orig="I272"/>
-                <Mapping image="I282" orig="I273"/>
-                <Mapping image="I286" orig="I277"/>
-                <Mapping image="I284" orig="I275"/>
-                <Mapping image="I285" orig="I276"/>
+                <Mapping image="I327" orig="I318"/>
+                <Mapping image="I328" orig="I319"/>
+                <Mapping image="I329" orig="I320"/>
+                <Mapping image="I330" orig="I321"/>
+                <Mapping image="I333" orig="I324"/>
+                <Mapping image="I332" orig="I323"/>
+                <Mapping image="I334" orig="I325"/>
             </Morphism>
             <ApplCondition>
                 <NAC>
-                    <Graph ID="I287" kind="NAC" name="no_higher_request">
-                        <Node ID="I288" type="I5">
+                    <Graph ID="I335" kind="NAC" name="no_higher_request">
+                        <Node ID="I336" type="I5">
                             <NodeLayout X="123" Y="164"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I289" type="I6">
+                        <Node ID="I337" type="I6">
                             <NodeLayout X="267" Y="156"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I290" type="I6">
+                        <Node ID="I338" type="I6">
                             <NodeLayout X="252" Y="262"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I291" type="I4">
+                        <Node ID="I339" type="I4">
                             <NodeLayout X="114" Y="262"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I292" type="I2">
+                        <Node ID="I340" type="I2">
                             <NodeLayout X="112" Y="206"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I293" type="I6">
+                        <Node ID="I341" type="I6">
                             <NodeLayout X="271" Y="71"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I294" type="I4">
-                            <NodeLayout X="136" Y="70"/>
-                            <additionalLayout age="0" force="10"
-                                frozen="true" zone="50"/>
-                        </Node>
-                        <Edge ID="I295" source="I288" target="I289" type="I7">
-                            <EdgeLayout bendX="0" bendY="0"
-                                textOffsetX="0" textOffsetY="-22"/>
-                            <additionalLayout aktlength="200" force="10" preflength="200"/>
-                        </Edge>
-                        <Edge ID="I296" source="I289" target="I290" type="I12">
-                            <EdgeLayout bendX="0" bendY="0"
-                                textOffsetX="0" textOffsetY="-22"/>
-                            <additionalLayout aktlength="200" force="10" preflength="200"/>
-                        </Edge>
-                        <Edge ID="I297" source="I290" target="I291" type="I10">
-                            <EdgeLayout bendX="0" bendY="0"
-                                textOffsetX="0" textOffsetY="-22"/>
-                            <additionalLayout aktlength="200" force="10" preflength="200"/>
-                        </Edge>
-                        <Edge ID="I298" source="I293" target="I289" type="I12">
-                            <EdgeLayout bendX="0" bendY="0"
-                                textOffsetX="0" textOffsetY="-22"/>
-                            <additionalLayout aktlength="200" force="10" preflength="200"/>
-                        </Edge>
-                        <Edge ID="I299" source="I293" target="I294" type="I10">
-                            <EdgeLayout bendX="0" bendY="0"
-                                textOffsetX="0" textOffsetY="-22"/>
-                            <additionalLayout aktlength="200" force="10" preflength="200"/>
-                        </Edge>
-                    </Graph>
-                    <Morphism name="no_higher_request">
-                        <Mapping image="I288" orig="I270"/>
-                        <Mapping image="I289" orig="I271"/>
-                        <Mapping image="I290" orig="I272"/>
-                        <Mapping image="I291" orig="I273"/>
-                        <Mapping image="I292" orig="I274"/>
-                        <Mapping image="I297" orig="I277"/>
-                        <Mapping image="I295" orig="I275"/>
-                        <Mapping image="I296" orig="I276"/>
-                    </Morphism>
-                </NAC>
-                <NAC>
-                    <Graph ID="I300" kind="NAC" name="no_stop_request">
-                        <Node ID="I301" type="I5">
-                            <NodeLayout X="85" Y="95"/>
-                            <additionalLayout age="0" force="10"
-                                frozen="true" zone="50"/>
-                        </Node>
-                        <Node ID="I302" type="I6">
-                            <NodeLayout X="213" Y="99"/>
-                            <additionalLayout age="0" force="10"
-                                frozen="true" zone="50"/>
-                        </Node>
-                        <Node ID="I303" type="I6">
-                            <NodeLayout X="224" Y="197"/>
-                            <additionalLayout age="0" force="10"
-                                frozen="true" zone="50"/>
-                        </Node>
-                        <Node ID="I304" type="I4">
-                            <NodeLayout X="76" Y="193"/>
-                            <additionalLayout age="0" force="10"
-                                frozen="true" zone="50"/>
-                        </Node>
-                        <Node ID="I305" type="I2">
-                            <NodeLayout X="74" Y="137"/>
-                            <additionalLayout age="0" force="10"
-                                frozen="true" zone="50"/>
-                        </Node>
-                        <Node ID="I306" type="I4">
-                            <NodeLayout X="369" Y="75"/>
-                            <additionalLayout age="0" force="10"
-                                frozen="true" zone="50"/>
-                        </Node>
-                        <Edge ID="I307" source="I301" target="I302" type="I7">
-                            <EdgeLayout bendX="0" bendY="0"
-                                textOffsetX="0" textOffsetY="-22"/>
-                            <additionalLayout aktlength="200" force="10" preflength="200"/>
-                        </Edge>
-                        <Edge ID="I308" source="I302" target="I303" type="I12">
-                            <EdgeLayout bendX="0" bendY="0"
-                                textOffsetX="0" textOffsetY="-22"/>
-                            <additionalLayout aktlength="200" force="10" preflength="200"/>
-                        </Edge>
-                        <Edge ID="I309" source="I303" target="I304" type="I10">
-                            <EdgeLayout bendX="0" bendY="0"
-                                textOffsetX="0" textOffsetY="-22"/>
-                            <additionalLayout aktlength="200" force="10" preflength="200"/>
-                        </Edge>
-                        <Edge ID="I310" source="I302" target="I306" type="I10">
-                            <EdgeLayout bendX="0" bendY="0"
-                                textOffsetX="0" textOffsetY="-22"/>
-                            <additionalLayout aktlength="200" force="10" preflength="200"/>
-                        </Edge>
-                        <Edge ID="I311" source="I306" target="I306" type="I9">
-                            <EdgeLayout bendX="327" bendY="50"
-                                loopH="20" loopW="20" textOffsetX="0" textOffsetY="-22"/>
-                            <additionalLayout aktlength="200" force="10" preflength="200"/>
-                        </Edge>
-                    </Graph>
-                    <Morphism name="no_stop_request">
-                        <Mapping image="I301" orig="I270"/>
-                        <Mapping image="I302" orig="I271"/>
-                        <Mapping image="I303" orig="I272"/>
-                        <Mapping image="I304" orig="I273"/>
-                        <Mapping image="I305" orig="I274"/>
-                        <Mapping image="I309" orig="I277"/>
-                        <Mapping image="I307" orig="I275"/>
-                        <Mapping image="I308" orig="I276"/>
-                    </Morphism>
-                </NAC>
-            </ApplCondition>
-            <TaggedValue Tag="layer" TagValue="0"/>
-            <TaggedValue Tag="priority" TagValue="0"/>
-        </Rule>
-        <Rule ID="I312" formula="true" name="move_up">
-            <Graph ID="I314" kind="LHS" name="LeftOf_move_up">
-                <Node ID="I315" type="I5">
-                    <NodeLayout X="76" Y="263"/>
-                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
-                </Node>
-                <Node ID="I316" type="I6">
-                    <NodeLayout X="191" Y="266"/>
-                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
-                </Node>
-                <Node ID="I317" type="I6">
-                    <NodeLayout X="189" Y="195"/>
-                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
-                </Node>
-                <Node ID="I318" type="I2">
-                    <NodeLayout X="61" Y="199"/>
-                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
-                </Node>
-                <Node ID="I319" type="I6">
-                    <NodeLayout X="94" Y="126"/>
-                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
-                </Node>
-                <Node ID="I320" type="I4">
-                    <NodeLayout X="171" Y="57"/>
-                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
-                </Node>
-                <Edge ID="I321" source="I315" target="I316" type="I7">
-                    <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
-                    <additionalLayout aktlength="200" force="10" preflength="200"/>
-                </Edge>
-                <Edge ID="I322" source="I316" target="I317" type="I11">
-                    <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
-                    <additionalLayout aktlength="200" force="10" preflength="200"/>
-                </Edge>
-                <Edge ID="I323" source="I319" target="I316" type="I12">
-                    <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
-                    <additionalLayout aktlength="200" force="10" preflength="200"/>
-                </Edge>
-                <Edge ID="I324" source="I319" target="I320" type="I10">
-                    <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
-                    <additionalLayout aktlength="200" force="10" preflength="200"/>
-                </Edge>
-            </Graph>
-            <Graph ID="I325" kind="RHS" name="RightOf_move_up">
-                <Node ID="I326" type="I5">
-                    <NodeLayout X="76" Y="263"/>
-                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
-                </Node>
-                <Node ID="I327" type="I6">
-                    <NodeLayout X="191" Y="266"/>
-                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
-                </Node>
-                <Node ID="I328" type="I6">
-                    <NodeLayout X="189" Y="195"/>
-                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
-                </Node>
-                <Node ID="I329" type="I2">
-                    <NodeLayout X="61" Y="199"/>
-                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
-                </Node>
-                <Node ID="I330" type="I6">
-                    <NodeLayout X="94" Y="126"/>
-                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
-                </Node>
-                <Node ID="I331" type="I4">
-                    <NodeLayout X="171" Y="57"/>
-                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
-                </Node>
-                <Edge ID="I332" source="I327" target="I328" type="I11">
-                    <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
-                    <additionalLayout aktlength="200" force="10" preflength="200"/>
-                </Edge>
-                <Edge ID="I333" source="I330" target="I327" type="I12">
-                    <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
-                    <additionalLayout aktlength="200" force="10" preflength="200"/>
-                </Edge>
-                <Edge ID="I334" source="I330" target="I331" type="I10">
-                    <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
-                    <additionalLayout aktlength="200" force="10" preflength="200"/>
-                </Edge>
-            </Graph>
-            <Morphism comment="Formula: true" name="move_up">
-                <Mapping image="I326" orig="I315"/>
-                <Mapping image="I327" orig="I316"/>
-                <Mapping image="I328" orig="I317"/>
-                <Mapping image="I329" orig="I318"/>
-                <Mapping image="I330" orig="I319"/>
-                <Mapping image="I331" orig="I320"/>
-                <Mapping image="I334" orig="I324"/>
-                <Mapping image="I333" orig="I323"/>
-                <Mapping image="I332" orig="I322"/>
-            </Morphism>
-            <ApplCondition>
-                <NAC>
-                    <Graph ID="I335" kind="NAC" name="no_stop_request">
-                        <Node ID="I336" type="I5">
-                            <NodeLayout X="76" Y="263"/>
-                            <additionalLayout age="0" force="10"
-                                frozen="true" zone="50"/>
-                        </Node>
-                        <Node ID="I337" type="I6">
-                            <NodeLayout X="191" Y="266"/>
-                            <additionalLayout age="0" force="10"
-                                frozen="true" zone="50"/>
-                        </Node>
-                        <Node ID="I338" type="I2">
-                            <NodeLayout X="61" Y="199"/>
-                            <additionalLayout age="0" force="10"
-                                frozen="true" zone="50"/>
-                        </Node>
-                        <Node ID="I339" type="I4">
-                            <NodeLayout X="237" Y="319"/>
-                            <additionalLayout age="0" force="10"
-                                frozen="true" zone="50"/>
-                        </Node>
-                        <Node ID="I340" type="I6">
-                            <NodeLayout X="189" Y="195"/>
-                            <additionalLayout age="0" force="10"
-                                frozen="true" zone="50"/>
-                        </Node>
-                        <Node ID="I341" type="I6">
-                            <NodeLayout X="94" Y="126"/>
-                            <additionalLayout age="0" force="10"
-                                frozen="true" zone="50"/>
-                        </Node>
                         <Node ID="I342" type="I4">
-                            <NodeLayout X="171" Y="57"/>
+                            <NodeLayout X="136" Y="70"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
@@ -1610,135 +1571,147 @@
                                 textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I344" source="I337" target="I339" type="I10">
+                        <Edge ID="I344" source="I337" target="I338" type="I12">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I345" source="I339" target="I339" type="I9">
-                            <EdgeLayout bendX="195" bendY="294"
+                        <Edge ID="I345" source="I338" target="I339" type="I10">
+                            <EdgeLayout bendX="0" bendY="0"
+                                textOffsetX="0" textOffsetY="-22"/>
+                            <additionalLayout aktlength="200" force="10" preflength="200"/>
+                        </Edge>
+                        <Edge ID="I346" source="I341" target="I337" type="I12">
+                            <EdgeLayout bendX="0" bendY="0"
+                                textOffsetX="0" textOffsetY="-22"/>
+                            <additionalLayout aktlength="200" force="10" preflength="200"/>
+                        </Edge>
+                        <Edge ID="I347" source="I341" target="I342" type="I10">
+                            <EdgeLayout bendX="0" bendY="0"
+                                textOffsetX="0" textOffsetY="-22"/>
+                            <additionalLayout aktlength="200" force="10" preflength="200"/>
+                        </Edge>
+                    </Graph>
+                    <Morphism name="no_higher_request">
+                        <Mapping image="I336" orig="I318"/>
+                        <Mapping image="I337" orig="I319"/>
+                        <Mapping image="I338" orig="I320"/>
+                        <Mapping image="I339" orig="I321"/>
+                        <Mapping image="I340" orig="I322"/>
+                        <Mapping image="I344" orig="I324"/>
+                        <Mapping image="I343" orig="I323"/>
+                        <Mapping image="I345" orig="I325"/>
+                    </Morphism>
+                </NAC>
+                <NAC>
+                    <Graph ID="I348" kind="NAC" name="no_stop_request">
+                        <Node ID="I349" type="I5">
+                            <NodeLayout X="85" Y="95"/>
+                            <additionalLayout age="0" force="10"
+                                frozen="true" zone="50"/>
+                        </Node>
+                        <Node ID="I350" type="I6">
+                            <NodeLayout X="213" Y="99"/>
+                            <additionalLayout age="0" force="10"
+                                frozen="true" zone="50"/>
+                        </Node>
+                        <Node ID="I351" type="I6">
+                            <NodeLayout X="224" Y="197"/>
+                            <additionalLayout age="0" force="10"
+                                frozen="true" zone="50"/>
+                        </Node>
+                        <Node ID="I352" type="I4">
+                            <NodeLayout X="76" Y="193"/>
+                            <additionalLayout age="0" force="10"
+                                frozen="true" zone="50"/>
+                        </Node>
+                        <Node ID="I353" type="I2">
+                            <NodeLayout X="74" Y="137"/>
+                            <additionalLayout age="0" force="10"
+                                frozen="true" zone="50"/>
+                        </Node>
+                        <Node ID="I354" type="I4">
+                            <NodeLayout X="369" Y="75"/>
+                            <additionalLayout age="0" force="10"
+                                frozen="true" zone="50"/>
+                        </Node>
+                        <Edge ID="I355" source="I349" target="I350" type="I7">
+                            <EdgeLayout bendX="0" bendY="0"
+                                textOffsetX="0" textOffsetY="-22"/>
+                            <additionalLayout aktlength="200" force="10" preflength="200"/>
+                        </Edge>
+                        <Edge ID="I356" source="I350" target="I351" type="I12">
+                            <EdgeLayout bendX="0" bendY="0"
+                                textOffsetX="0" textOffsetY="-22"/>
+                            <additionalLayout aktlength="200" force="10" preflength="200"/>
+                        </Edge>
+                        <Edge ID="I357" source="I351" target="I352" type="I10">
+                            <EdgeLayout bendX="0" bendY="0"
+                                textOffsetX="0" textOffsetY="-22"/>
+                            <additionalLayout aktlength="200" force="10" preflength="200"/>
+                        </Edge>
+                        <Edge ID="I358" source="I350" target="I354" type="I10">
+                            <EdgeLayout bendX="0" bendY="0"
+                                textOffsetX="0" textOffsetY="-22"/>
+                            <additionalLayout aktlength="200" force="10" preflength="200"/>
+                        </Edge>
+                        <Edge ID="I359" source="I354" target="I354" type="I9">
+                            <EdgeLayout bendX="327" bendY="50"
                                 loopH="20" loopW="20" textOffsetX="0" textOffsetY="-22"/>
-                            <additionalLayout aktlength="200" force="10" preflength="200"/>
-                        </Edge>
-                        <Edge ID="I346" source="I337" target="I340" type="I11">
-                            <EdgeLayout bendX="0" bendY="0"
-                                textOffsetX="0" textOffsetY="-22"/>
-                            <additionalLayout aktlength="200" force="10" preflength="200"/>
-                        </Edge>
-                        <Edge ID="I347" source="I341" target="I337" type="I12">
-                            <EdgeLayout bendX="0" bendY="0"
-                                textOffsetX="0" textOffsetY="-22"/>
-                            <additionalLayout aktlength="200" force="10" preflength="200"/>
-                        </Edge>
-                        <Edge ID="I348" source="I341" target="I342" type="I10">
-                            <EdgeLayout bendX="0" bendY="0"
-                                textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
                     </Graph>
                     <Morphism name="no_stop_request">
-                        <Mapping image="I336" orig="I315"/>
-                        <Mapping image="I337" orig="I316"/>
-                        <Mapping image="I338" orig="I318"/>
-                        <Mapping image="I340" orig="I317"/>
-                        <Mapping image="I341" orig="I319"/>
-                        <Mapping image="I342" orig="I320"/>
-                        <Mapping image="I348" orig="I324"/>
-                        <Mapping image="I347" orig="I323"/>
-                        <Mapping image="I343" orig="I321"/>
-                        <Mapping image="I346" orig="I322"/>
+                        <Mapping image="I349" orig="I318"/>
+                        <Mapping image="I350" orig="I319"/>
+                        <Mapping image="I351" orig="I320"/>
+                        <Mapping image="I352" orig="I321"/>
+                        <Mapping image="I353" orig="I322"/>
+                        <Mapping image="I356" orig="I324"/>
+                        <Mapping image="I355" orig="I323"/>
+                        <Mapping image="I357" orig="I325"/>
                     </Morphism>
                 </NAC>
             </ApplCondition>
             <TaggedValue Tag="layer" TagValue="0"/>
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
-        <Rule ID="I349" formula="true" name="stop_request">
-            <Graph ID="I351" kind="LHS" name="LeftOf_stop_request">
-                <Node ID="I352" type="I6">
-                    <NodeLayout X="129" Y="143"/>
+        <Rule ID="I360" formula="true" name="move_up">
+            <Graph ID="I362" kind="LHS" name="LeftOf_move_up">
+                <Node ID="I363" type="I5">
+                    <NodeLayout X="76" Y="263"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-            </Graph>
-            <Graph ID="I353" kind="RHS" name="RightOf_stop_request">
-                <Node ID="I354" type="I6">
-                    <NodeLayout X="143" Y="144"/>
+                <Node ID="I364" type="I6">
+                    <NodeLayout X="191" Y="266"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I355" type="I4">
-                    <NodeLayout X="66" Y="76"/>
+                <Node ID="I365" type="I6">
+                    <NodeLayout X="189" Y="195"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Edge ID="I356" source="I354" target="I355" type="I10">
-                    <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
-                    <additionalLayout aktlength="200" force="10" preflength="200"/>
-                </Edge>
-                <Edge ID="I357" source="I355" target="I355" type="I9">
-                    <EdgeLayout bendX="24" bendY="51" loopH="20"
-                        loopW="20" textOffsetX="0" textOffsetY="-22"/>
-                    <additionalLayout aktlength="200" force="10" preflength="200"/>
-                </Edge>
-            </Graph>
-            <Morphism comment="Formula: true" name="stop_request">
-                <Mapping image="I354" orig="I352"/>
-            </Morphism>
-            <ApplCondition>
-                <NAC>
-                    <Graph ID="I358" kind="NAC" name="no_stop_yet">
-                        <Node ID="I359" type="I6">
-                            <NodeLayout X="194" Y="138"/>
-                            <additionalLayout age="0" force="10"
-                                frozen="true" zone="50"/>
-                        </Node>
-                        <Node ID="I360" type="I4">
-                            <NodeLayout X="79" Y="76"/>
-                            <additionalLayout age="0" force="10"
-                                frozen="true" zone="50"/>
-                        </Node>
-                        <Edge ID="I361" source="I359" target="I360" type="I10">
-                            <EdgeLayout bendX="0" bendY="0"
-                                textOffsetX="0" textOffsetY="-22"/>
-                            <additionalLayout aktlength="200" force="10" preflength="200"/>
-                        </Edge>
-                        <Edge ID="I362" source="I360" target="I360" type="I9">
-                            <EdgeLayout bendX="37" bendY="51" loopH="20"
-                                loopW="20" textOffsetX="0" textOffsetY="-22"/>
-                            <additionalLayout aktlength="200" force="10" preflength="200"/>
-                        </Edge>
-                    </Graph>
-                    <Morphism name="no_stop_yet">
-                        <Mapping image="I359" orig="I352"/>
-                    </Morphism>
-                </NAC>
-            </ApplCondition>
-            <TaggedValue Tag="layer" TagValue="0"/>
-            <TaggedValue Tag="priority" TagValue="0"/>
-        </Rule>
-        <Rule ID="I363" formula="true" name="process_stop_up">
-            <Graph ID="I365" kind="LHS" name="LeftOf_process_stop_up">
-                <Node ID="I366" type="I5">
-                    <NodeLayout X="360" Y="348"/>
+                <Node ID="I366" type="I2">
+                    <NodeLayout X="61" Y="199"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Node ID="I367" type="I6">
-                    <NodeLayout X="478" Y="347"/>
+                    <NodeLayout X="94" Y="126"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Node ID="I368" type="I4">
-                    <NodeLayout X="378" Y="203"/>
+                    <NodeLayout X="171" Y="57"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I369" type="I2">
-                    <NodeLayout X="237" Y="211"/>
-                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
-                </Node>
-                <Edge ID="I370" source="I366" target="I367" type="I7">
+                <Edge ID="I369" source="I363" target="I364" type="I7">
                     <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
-                <Edge ID="I371" source="I368" target="I368" type="I9">
-                    <EdgeLayout bendX="330" bendY="178" loopH="20"
-                        loopW="20" textOffsetX="0" textOffsetY="-22"/>
+                <Edge ID="I370" source="I364" target="I365" type="I11">
+                    <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                    <additionalLayout aktlength="200" force="10" preflength="200"/>
+                </Edge>
+                <Edge ID="I371" source="I367" target="I364" type="I12">
+                    <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
                 <Edge ID="I372" source="I367" target="I368" type="I10">
@@ -1746,97 +1719,325 @@
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
             </Graph>
-            <Graph ID="I373" kind="RHS" name="RightOf_process_stop_up">
+            <Graph ID="I373" kind="RHS" name="RightOf_move_up">
                 <Node ID="I374" type="I5">
-                    <NodeLayout X="360" Y="348"/>
+                    <NodeLayout X="76" Y="263"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Node ID="I375" type="I6">
-                    <NodeLayout X="478" Y="347"/>
+                    <NodeLayout X="191" Y="266"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I376" type="I4">
-                    <NodeLayout X="378" Y="203"/>
+                <Node ID="I376" type="I6">
+                    <NodeLayout X="189" Y="195"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Node ID="I377" type="I2">
+                    <NodeLayout X="61" Y="199"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+                <Node ID="I378" type="I6">
+                    <NodeLayout X="94" Y="126"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+                <Node ID="I379" type="I4">
+                    <NodeLayout X="171" Y="57"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+                <Edge ID="I380" source="I375" target="I376" type="I11">
+                    <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                    <additionalLayout aktlength="200" force="10" preflength="200"/>
+                </Edge>
+                <Edge ID="I381" source="I378" target="I375" type="I12">
+                    <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                    <additionalLayout aktlength="200" force="10" preflength="200"/>
+                </Edge>
+                <Edge ID="I382" source="I378" target="I379" type="I10">
+                    <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                    <additionalLayout aktlength="200" force="10" preflength="200"/>
+                </Edge>
+            </Graph>
+            <Morphism comment="Formula: true" name="move_up">
+                <Mapping image="I374" orig="I363"/>
+                <Mapping image="I375" orig="I364"/>
+                <Mapping image="I376" orig="I365"/>
+                <Mapping image="I377" orig="I366"/>
+                <Mapping image="I378" orig="I367"/>
+                <Mapping image="I379" orig="I368"/>
+                <Mapping image="I381" orig="I371"/>
+                <Mapping image="I382" orig="I372"/>
+                <Mapping image="I380" orig="I370"/>
+            </Morphism>
+            <ApplCondition>
+                <NAC>
+                    <Graph ID="I383" kind="NAC" name="no_stop_request">
+                        <Node ID="I384" type="I5">
+                            <NodeLayout X="76" Y="263"/>
+                            <additionalLayout age="0" force="10"
+                                frozen="true" zone="50"/>
+                        </Node>
+                        <Node ID="I385" type="I6">
+                            <NodeLayout X="191" Y="266"/>
+                            <additionalLayout age="0" force="10"
+                                frozen="true" zone="50"/>
+                        </Node>
+                        <Node ID="I386" type="I2">
+                            <NodeLayout X="61" Y="199"/>
+                            <additionalLayout age="0" force="10"
+                                frozen="true" zone="50"/>
+                        </Node>
+                        <Node ID="I387" type="I4">
+                            <NodeLayout X="237" Y="319"/>
+                            <additionalLayout age="0" force="10"
+                                frozen="true" zone="50"/>
+                        </Node>
+                        <Node ID="I388" type="I6">
+                            <NodeLayout X="189" Y="195"/>
+                            <additionalLayout age="0" force="10"
+                                frozen="true" zone="50"/>
+                        </Node>
+                        <Node ID="I389" type="I6">
+                            <NodeLayout X="94" Y="126"/>
+                            <additionalLayout age="0" force="10"
+                                frozen="true" zone="50"/>
+                        </Node>
+                        <Node ID="I390" type="I4">
+                            <NodeLayout X="171" Y="57"/>
+                            <additionalLayout age="0" force="10"
+                                frozen="true" zone="50"/>
+                        </Node>
+                        <Edge ID="I391" source="I384" target="I385" type="I7">
+                            <EdgeLayout bendX="0" bendY="0"
+                                textOffsetX="0" textOffsetY="-22"/>
+                            <additionalLayout aktlength="200" force="10" preflength="200"/>
+                        </Edge>
+                        <Edge ID="I392" source="I385" target="I387" type="I10">
+                            <EdgeLayout bendX="0" bendY="0"
+                                textOffsetX="0" textOffsetY="-22"/>
+                            <additionalLayout aktlength="200" force="10" preflength="200"/>
+                        </Edge>
+                        <Edge ID="I393" source="I387" target="I387" type="I9">
+                            <EdgeLayout bendX="196" bendY="294"
+                                loopH="20" loopW="20" textOffsetX="0" textOffsetY="-22"/>
+                            <additionalLayout aktlength="200" force="10" preflength="200"/>
+                        </Edge>
+                        <Edge ID="I394" source="I385" target="I388" type="I11">
+                            <EdgeLayout bendX="0" bendY="0"
+                                textOffsetX="0" textOffsetY="-22"/>
+                            <additionalLayout aktlength="200" force="10" preflength="200"/>
+                        </Edge>
+                        <Edge ID="I395" source="I389" target="I385" type="I12">
+                            <EdgeLayout bendX="0" bendY="0"
+                                textOffsetX="0" textOffsetY="-22"/>
+                            <additionalLayout aktlength="200" force="10" preflength="200"/>
+                        </Edge>
+                        <Edge ID="I396" source="I389" target="I390" type="I10">
+                            <EdgeLayout bendX="0" bendY="0"
+                                textOffsetX="0" textOffsetY="-22"/>
+                            <additionalLayout aktlength="200" force="10" preflength="200"/>
+                        </Edge>
+                    </Graph>
+                    <Morphism name="no_stop_request">
+                        <Mapping image="I384" orig="I363"/>
+                        <Mapping image="I385" orig="I364"/>
+                        <Mapping image="I386" orig="I366"/>
+                        <Mapping image="I388" orig="I365"/>
+                        <Mapping image="I389" orig="I367"/>
+                        <Mapping image="I390" orig="I368"/>
+                        <Mapping image="I391" orig="I369"/>
+                        <Mapping image="I395" orig="I371"/>
+                        <Mapping image="I396" orig="I372"/>
+                        <Mapping image="I394" orig="I370"/>
+                    </Morphism>
+                </NAC>
+            </ApplCondition>
+            <TaggedValue Tag="layer" TagValue="0"/>
+            <TaggedValue Tag="priority" TagValue="0"/>
+        </Rule>
+        <Rule ID="I397" formula="true" name="stop_request">
+            <Graph ID="I399" kind="LHS" name="LeftOf_stop_request">
+                <Node ID="I400" type="I6">
+                    <NodeLayout X="129" Y="143"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+            </Graph>
+            <Graph ID="I401" kind="RHS" name="RightOf_stop_request">
+                <Node ID="I402" type="I6">
+                    <NodeLayout X="143" Y="144"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+                <Node ID="I403" type="I4">
+                    <NodeLayout X="66" Y="76"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+                <Edge ID="I404" source="I402" target="I403" type="I10">
+                    <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                    <additionalLayout aktlength="200" force="10" preflength="200"/>
+                </Edge>
+                <Edge ID="I405" source="I403" target="I403" type="I9">
+                    <EdgeLayout bendX="25" bendY="51" loopH="20"
+                        loopW="20" textOffsetX="0" textOffsetY="-22"/>
+                    <additionalLayout aktlength="200" force="10" preflength="200"/>
+                </Edge>
+            </Graph>
+            <Morphism comment="Formula: true" name="stop_request">
+                <Mapping image="I402" orig="I400"/>
+            </Morphism>
+            <ApplCondition>
+                <NAC>
+                    <Graph ID="I406" kind="NAC" name="no_stop_yet">
+                        <Node ID="I407" type="I6">
+                            <NodeLayout X="194" Y="138"/>
+                            <additionalLayout age="0" force="10"
+                                frozen="true" zone="50"/>
+                        </Node>
+                        <Node ID="I408" type="I4">
+                            <NodeLayout X="79" Y="76"/>
+                            <additionalLayout age="0" force="10"
+                                frozen="true" zone="50"/>
+                        </Node>
+                        <Edge ID="I409" source="I407" target="I408" type="I10">
+                            <EdgeLayout bendX="0" bendY="0"
+                                textOffsetX="0" textOffsetY="-22"/>
+                            <additionalLayout aktlength="200" force="10" preflength="200"/>
+                        </Edge>
+                        <Edge ID="I410" source="I408" target="I408" type="I9">
+                            <EdgeLayout bendX="38" bendY="51" loopH="20"
+                                loopW="20" textOffsetX="0" textOffsetY="-22"/>
+                            <additionalLayout aktlength="200" force="10" preflength="200"/>
+                        </Edge>
+                    </Graph>
+                    <Morphism name="no_stop_yet">
+                        <Mapping image="I407" orig="I400"/>
+                    </Morphism>
+                </NAC>
+            </ApplCondition>
+            <TaggedValue Tag="layer" TagValue="0"/>
+            <TaggedValue Tag="priority" TagValue="0"/>
+        </Rule>
+        <Rule ID="I411" formula="true" name="process_stop_up">
+            <Graph ID="I413" kind="LHS" name="LeftOf_process_stop_up">
+                <Node ID="I414" type="I5">
+                    <NodeLayout X="360" Y="348"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+                <Node ID="I415" type="I6">
+                    <NodeLayout X="478" Y="347"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+                <Node ID="I416" type="I4">
+                    <NodeLayout X="378" Y="203"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+                <Node ID="I417" type="I2">
                     <NodeLayout X="237" Y="211"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Edge ID="I378" source="I374" target="I375" type="I7">
+                <Edge ID="I418" source="I414" target="I415" type="I7">
+                    <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                    <additionalLayout aktlength="200" force="10" preflength="200"/>
+                </Edge>
+                <Edge ID="I419" source="I416" target="I416" type="I9">
+                    <EdgeLayout bendX="331" bendY="178" loopH="20"
+                        loopW="20" textOffsetX="0" textOffsetY="-22"/>
+                    <additionalLayout aktlength="200" force="10" preflength="200"/>
+                </Edge>
+                <Edge ID="I420" source="I415" target="I416" type="I10">
+                    <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
+                    <additionalLayout aktlength="200" force="10" preflength="200"/>
+                </Edge>
+            </Graph>
+            <Graph ID="I421" kind="RHS" name="RightOf_process_stop_up">
+                <Node ID="I422" type="I5">
+                    <NodeLayout X="360" Y="348"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+                <Node ID="I423" type="I6">
+                    <NodeLayout X="478" Y="347"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+                <Node ID="I424" type="I4">
+                    <NodeLayout X="378" Y="203"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+                <Node ID="I425" type="I2">
+                    <NodeLayout X="237" Y="211"/>
+                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
+                </Node>
+                <Edge ID="I426" source="I422" target="I423" type="I7">
                     <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
             </Graph>
             <Morphism comment="Formula: true" name="process_stop_up">
-                <Mapping image="I374" orig="I366"/>
-                <Mapping image="I375" orig="I367"/>
-                <Mapping image="I376" orig="I368"/>
-                <Mapping image="I377" orig="I369"/>
-                <Mapping image="I378" orig="I370"/>
+                <Mapping image="I422" orig="I414"/>
+                <Mapping image="I423" orig="I415"/>
+                <Mapping image="I424" orig="I416"/>
+                <Mapping image="I425" orig="I417"/>
+                <Mapping image="I426" orig="I418"/>
             </Morphism>
             <ApplCondition>
                 <NAC>
-                    <Graph ID="I379" kind="NAC" name="no_call">
-                        <Node ID="I380" type="I5">
+                    <Graph ID="I427" kind="NAC" name="no_call">
+                        <Node ID="I428" type="I5">
                             <NodeLayout X="74" Y="351"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I381" type="I6">
+                        <Node ID="I429" type="I6">
                             <NodeLayout X="234" Y="346"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I382" type="I4">
+                        <Node ID="I430" type="I4">
                             <NodeLayout X="137" Y="201"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I383" type="I2">
+                        <Node ID="I431" type="I2">
                             <NodeLayout X="45" Y="247"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I384" type="I4">
+                        <Node ID="I432" type="I4">
                             <NodeLayout X="264" Y="209"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Edge ID="I385" source="I380" target="I381" type="I7">
+                        <Edge ID="I433" source="I428" target="I429" type="I7">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I386" source="I382" target="I382" type="I9">
-                            <EdgeLayout bendX="89" bendY="176"
+                        <Edge ID="I434" source="I430" target="I430" type="I9">
+                            <EdgeLayout bendX="90" bendY="176"
                                 loopH="20" loopW="20" textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I387" source="I381" target="I382" type="I10">
+                        <Edge ID="I435" source="I429" target="I430" type="I10">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I388" source="I381" target="I384" type="I10">
+                        <Edge ID="I436" source="I429" target="I432" type="I10">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I389" source="I384" target="I384" type="I8">
-                            <EdgeLayout bendX="222" bendY="184"
+                        <Edge ID="I437" source="I432" target="I432" type="I8">
+                            <EdgeLayout bendX="223" bendY="184"
                                 loopH="20" loopW="20" textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
                     </Graph>
                     <Morphism name="no_call">
-                        <Mapping image="I380" orig="I366"/>
-                        <Mapping image="I381" orig="I367"/>
-                        <Mapping image="I382" orig="I368"/>
-                        <Mapping image="I383" orig="I369"/>
-                        <Mapping image="I386" orig="I371"/>
-                        <Mapping image="I387" orig="I372"/>
-                        <Mapping image="I385" orig="I370"/>
+                        <Mapping image="I428" orig="I414"/>
+                        <Mapping image="I429" orig="I415"/>
+                        <Mapping image="I430" orig="I416"/>
+                        <Mapping image="I431" orig="I417"/>
+                        <Mapping image="I433" orig="I418"/>
+                        <Mapping image="I435" orig="I420"/>
+                        <Mapping image="I434" orig="I419"/>
                     </Morphism>
                 </NAC>
             </ApplCondition>

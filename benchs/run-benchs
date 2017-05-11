@@ -1,0 +1,15 @@
+#!/bin/env bash
+
+if [ -z "$1" ] || [ "$1" == "-h" ] || [ "$1" == "--help" ]
+then
+    echo ""
+    echo "run-benchs INPUT_FILE [--all-matches]"
+    echo ""
+else
+    if [ -z "$2" ]
+    then
+	verigraph run-benchs -o "$1.html" "$1"
+    else
+	verigraph "$2" run-benchs -o "$1.html" "$1"
+    fi
+fi

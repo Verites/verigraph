@@ -9,6 +9,8 @@ import qualified ConcurrentRules      as CR
 import qualified CriticalPairAnalysis as CPA
 import qualified ParallelIndependence as PI
 import qualified Processes            as PR
+import qualified RunBenchs            as RB
+import qualified SavePreInputs        as SPI
 
 main :: IO ()
 main = execParser opts >>= execute
@@ -23,6 +25,8 @@ execute (globalOpts, ApplySndOrderRules opts)   = ASO.execute globalOpts opts
 execute (globalOpts, ConcurrentRules opts)      = CR.execute globalOpts opts
 execute (globalOpts, ParallelIndependence opts) = PI.execute globalOpts opts
 execute (globalOpts, Processes opts)            = PR.execute globalOpts opts
+execute (globalOpts, SavePreInputs opts)        = SPI.execute globalOpts opts
+execute (globalOpts, RunBenchs opts)            = RB.execute globalOpts opts
 
 options :: Parser (GlobalOptions, Command)
 options = (\cmd opts -> (opts, cmd)) <$> commands <*> globalOpts
@@ -33,9 +37,11 @@ data Command =
   | ConcurrentRules CR.Options
   | ParallelIndependence PI.Options
   | Processes PR.Options
+  | SavePreInputs SPI.Options
+  | RunBenchs RB.Options
 
 commands :: Parser Command
-commands = subparser (cpAnalysis <> secondOrder <> concurrentRule <> parallelIndependence <> process)
+commands = subparser (cpAnalysis <> secondOrder <> concurrentRule <> parallelIndependence <> process <> preInputs <> runBenchs)
   where
     cpAnalysis = command "analysis" . fmap CPAnalysis $ info (helper <*> CPA.options)
       ( fullDesc <> progDesc "Run critical pair analysis on the input grammar")
@@ -51,3 +57,9 @@ commands = subparser (cpAnalysis <> secondOrder <> concurrentRule <> parallelInd
 
     process = command "process" . fmap Processes $ info (helper <*> PR.options)
       ( fullDesc <> progDesc "Generate graph processes for the input grammar and rule sequences")
+
+    preInputs = command "pre-inputs" . fmap SavePreInputs $ info (helper <*> SPI.options)
+      ( fullDesc <> progDesc "Save pre inputs for run-tests, can generate epi pairs or matches from rules to initial graph")
+
+    runBenchs = command "run-benchs" . fmap RunBenchs $ info (helper <*> RB.options)
+      ( fullDesc <> progDesc "Read a file with pre-calculated inputs and get execution times.")

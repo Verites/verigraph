@@ -1,5 +1,10 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeFamilies #-}
 module Data.TypedGraph.Morphism where
+
+import           Control.DeepSeq
+import           GHC.Generics
 
 import           Base.Valid
 import           Data.Graphs
@@ -13,7 +18,7 @@ data TypedGraphMorphism a b = TypedGraphMorphism {
     domainGraph   :: TypedGraph a b
   , codomainGraph :: TypedGraph a b
   , mapping       :: GraphMorphism (Maybe a) (Maybe b)
-} deriving (Eq, Show)
+  } deriving (Eq, Read, Show, Generic, NFData)
 
 compose :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 compose t2 t1 = TypedGraphMorphism (domainGraph t1) (codomainGraph t2) $ GM.compose (mapping t2) (mapping t1)

@@ -12,31 +12,21 @@ import           Data.Matrix                                 hiding ((<|>))
 import           Data.Monoid                                 ((<>))
 import           GlobalOptions
 import           Options.Applicative
+import           Rewriting.DPO.TypedGraph
+import           Rewriting.DPO.TypedGraphRule
 import qualified XML.GGXReader                               as XML
 
 data Options = Options
-  { duFlag :: Bool
-  , c1Flag :: Bool
-  , siFlag :: Bool
-  , soFlag :: Bool
+  { siFlag   :: Bool
+  , soFlag   :: Bool
+  , calcCond :: Algorithm
   }
 
 options :: Parser Options
 options = Options
-  <$> duf
-  <*> c1f
-  <*> sif
+  <$> sif
   <*> sof
-
-duf :: Parser Bool
-duf = flag False True
-    ( long "delete-use"
-    <> help "use delete-use instead pullbacks")
-
-c1f :: Parser Bool
-c1f = flag False True
-    ( long "cond1"
-    <> help "use cond1 instead pullbacks")
+  <*> condition
 
 sif :: Parser Bool
 sif = flag False True
@@ -48,55 +38,107 @@ sof = flag False True
     ( long "snd-order"
     <> help "use second-order productions instead first-order")
 
+condition :: Parser Algorithm
+condition =
+  abovePB
+  <|> aboveM
+  <|> belowPB
+  <|> belowM
+  <|> abovePBISO
+
+abovePB :: Parser Algorithm
+abovePB = flag' AbovePullback
+  ( long "above-pullback"
+  <> help "Above of rule, with pullbacks" )
+
+aboveM :: Parser Algorithm
+aboveM = flag' AboveMorphism
+  ( long "above-morphism"
+  <> help "Above of rule, with morphisms" )
+
+belowPB :: Parser Algorithm
+belowPB = flag' BelowPullback
+  ( long "below-pullback"
+  <> help "Below of rule, with pullbacks" )
+
+belowM :: Parser Algorithm
+belowM = flag' BelowMorphism
+  ( long "below-morphism"
+  <> help "Below of rule, with morphisms" )
+
+abovePBISO :: Parser Algorithm
+abovePBISO = flag' AbovePullbackIso
+  ( long "above-pullback-iso"
+  <> help "Above of rule, with pullbacks ans isomorphisms" )
+
 execute :: GlobalOptions -> Options -> IO ()
-execute globalOpts opts = do
-    let dpoConf = morphismsConf globalOpts
+execute globalOptions opts = do
+    let dpoConf = morphismsConf globalOptions
         useConstrains = False
 
-    (fstOrdGG, sndOrdGG, _) <- XML.readGrammar (inputFile globalOpts) useConstrains dpoConf
+    (fstOrdGG, sndOrdGG, _) <- XML.readGrammar (inputFile globalOptions) useConstrains dpoConf
 
     putStrLn "Warning: Produce-Forbid conflicts are not considered in this analysis."
     putStrLn ""
 
-    let du = duFlag opts
-        c1 = c1Flag opts
-        sndOrder = soFlag opts
-        comp = False -- flag to compare if deleteuse and pullbacks are generating the same results
+    let sndOrder = soFlag opts
+        comp = False-- flag to compare if deleteuse and pullbacks are generating the same results
         algorithm =
           if siFlag opts then Sequentially else Parallel
-        --productions = concatMap (replicate 1) $ map snd (productions gg)
-        rules1 = map snd (productions fstOrdGG)
-        rules2 = map snd (productions sndOrdGG)
-        analysisC11 = pairwiseCompareUpperReflected (isIndependent algorithm Cond1 dpoConf) rules1
-        analysisPB1 = pairwiseCompareUpperReflected (isIndependent algorithm Cond2 dpoConf) rules1
-        analysisDU1 = pairwiseCompareUpperReflected (isIndependent algorithm Cond3 dpoConf) rules1
-        analysisC12 = pairwiseCompareUpperReflected (isIndependent algorithm Cond1 dpoConf) rules2
-        analysisPB2 = pairwiseCompareUpperReflected (isIndependent algorithm Cond2 dpoConf) rules2
-        analysisDU2 = pairwiseCompareUpperReflected (isIndependent algorithm Cond3 dpoConf) rules2
+        rules1 = map snd (productions fstOrdGG) :: [TypedGraphRule () ()]
+        rules2 = map snd (productions sndOrdGG) :: [SndOrderRule () ()]
 
-        (analysisDU,analysisPB,analysisC1) =
-          if sndOrder then
-            (analysisDU2,analysisPB2,analysisC12)
-          else
-            (analysisDU1,analysisPB1,analysisC11)
+        analysisAbovePullBackFST = pairwiseCompareUpperReflected (isIndependent algorithm AbovePullback    dpoConf) rules1
+        analysisBelowPullBackFST = pairwiseCompareUpperReflected (isIndependent algorithm BelowPullback    dpoConf) rules1
+        analysisAboveMorphismFST = pairwiseCompareUpperReflected (isIndependent algorithm AboveMorphism    dpoConf) rules1
+        analysisBelowMorphismFST = pairwiseCompareUpperReflected (isIndependent algorithm BelowMorphism    dpoConf) rules1
+        analysisAbovePbIsoFST    = pairwiseCompareUpperReflected (isIndependent algorithm AbovePullbackIso dpoConf) rules1
 
+        analysisAbovePullBackSND = pairwiseCompareUpperReflected (isIndependent algorithm AbovePullback    dpoConf) rules2
+        analysisBelowPullBackSND = pairwiseCompareUpperReflected (isIndependent algorithm BelowPullback    dpoConf) rules2
+        analysisAboveMorphismSND = pairwiseCompareUpperReflected (isIndependent algorithm AboveMorphism    dpoConf) rules2
+        analysisBelowMorphismSND = pairwiseCompareUpperReflected (isIndependent algorithm BelowMorphism    dpoConf) rules2
+        analysisAbovePbIsoSND    = pairwiseCompareUpperReflected (isIndependent algorithm AbovePullbackIso dpoConf) rules2
+
+
+        (analysisAbovePullBack, analysisBelowPullBack, analysisAboveMorphism, analysisBelowMorphism, analysisAbovePbIso ) =
+          if sndOrder
+          then (analysisAbovePullBackSND, analysisBelowPullBackSND, analysisAboveMorphismSND, analysisBelowMorphismSND, analysisAbovePbIsoSND )
+          else (analysisAbovePullBackFST, analysisBelowPullBackFST, analysisAboveMorphismFST, analysisBelowMorphismFST, analysisAbovePbIsoFST )
 
     putStrLn $ "Second-order flag: " ++ show sndOrder
     putStrLn $ "Length of the set of first-order productions: " ++ show (length rules1)
     putStrLn $ "Length of the set of second-order productions: " ++ show (length rules2)
     putStrLn ""
 
-    when comp $ putStrLn $ "Check if pullback and delete-use algorithms result in the same matrix: " ++ show (analysisPB == analysisDU)
+    when comp $ putStrLn $
+      "Check if pullback and delete-use algorithms result in the same matrix: " ++
+      show ( analysisAbovePullBack == analysisAboveMorphism &&
+             analysisAbovePullBack == analysisBelowPullBack &&
+             analysisAbovePullBack == analysisBelowMorphism &&
+             analysisAbovePullBack == analysisAbovePbIso )
 
-    unless comp $ putStrLn ("Matrix of all pairs of productions (True means this pair is "++ show algorithm ++ " Independent):")
-    when (not comp && du) $ print analysisDU
-    when (not comp && c1) $ print analysisC1
-    when (not comp && not du && not c1) $ print analysisPB
 
--- | Applies a function on the upper triangular matrix and reflects the result in the lower part
-pairwiseCompareUpperReflected :: (a -> a -> Bool) -> [a] -> Matrix Bool
+    unless comp $ putStrLn ("Matrix of all pairs of productions (True means this pair is "++ show algorithm ++ " Independent):\n")
+    unless comp $ case calcCond opts of
+                    AbovePullback ->
+                      print analysisAbovePullBack
+
+                    AboveMorphism ->
+                      print analysisAboveMorphism
+
+                    BelowPullback ->
+                      print analysisBelowPullBack
+
+                    BelowMorphism ->
+                      print analysisBelowMorphism
+
+                    AbovePullbackIso ->
+                      print analysisAbovePbIso
+
+
+-- | Applies a function on the upper triangular matrix
+pairwiseCompareUpperReflected :: (a -> a -> Int) -> [a] -> Matrix Int
 pairwiseCompareUpperReflected compare items =
-    elementwise (||) m (transpose m)
-  where
-    m = matrix (length items) (length items) $ \(i,j) ->
-          (i <= j) && compare (items !! (i-1)) (items !! (j-1))
+  matrix (length items) (length items) $
+    \(i,j) -> if i <= j then compare (items !! (i-1)) (items !! (j-1)) else 0

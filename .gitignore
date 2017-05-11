@@ -29,3 +29,8 @@ images/.directory
 #Emacs stuff
 TAGS
 *#
+
+
+#Benchmarks stuff
+*.ep
+*.mp

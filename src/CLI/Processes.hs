@@ -98,13 +98,13 @@ execute globalOpts opts = do
       then putStrLn "[OK] Initial graph is valid"
       else putStrLn $ "[FAIL] Initial graph is not valid: \n"
                     ++ fromJust (errorMessages $ validate $ initialGraph completeOgg)
-                    ++ "\n" ++ show (initialGraph completeOgg)
+                    ++ "\n (WIP)"-- ++ show (initialGraph completeOgg)
 
     if isValid (finalGraph completeOgg)
       then putStrLn "[OK] Final graph is valid"
       else putStrLn $ "[FAIL] Final graph is not valid: \n"
                     ++ fromJust (errorMessages $ validate $ finalGraph completeOgg)
-                    ++ "\n" ++ show (finalGraph completeOgg)
+                    ++ "\n (WIP)"-- ++ show (finalGraph completeOgg)
 
     if isJust rulesOrdering
       then putStrLn "[OK] Concrete occurrence relation is a total order"

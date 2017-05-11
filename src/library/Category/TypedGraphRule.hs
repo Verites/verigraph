@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeFamilies #-}
 
 module Category.TypedGraphRule
@@ -5,6 +7,9 @@ module Category.TypedGraphRule
 ,  ruleMorphism
 ,  satisfiesNACRewriting
 ) where
+
+import           Control.DeepSeq
+import           GHC.Generics
 
 import           Abstract.Category.FinitaryCategory
 import           Abstract.Rewriting.DPO
@@ -43,7 +48,7 @@ data RuleMorphism a b =
   , mappingLeft      :: TypedGraphMorphism a b
   , mappingInterface :: TypedGraphMorphism a b
   , mappingRight     :: TypedGraphMorphism a b
-  } deriving (Eq, Show)
+  } deriving (Eq, Read, Show, Generic, NFData)
 
 ruleMorphism :: TypedGraphRule a b -> TypedGraphRule a b -> TypedGraphMorphism a b
              -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> RuleMorphism a b

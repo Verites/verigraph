@@ -13,6 +13,9 @@ module Data.TypedGraph
   , untypedEdges
   ) where
 
+
+
+
 import           Base.Cardinality
 import           Data.Graphs          as G
 import           Data.Graphs.Morphism

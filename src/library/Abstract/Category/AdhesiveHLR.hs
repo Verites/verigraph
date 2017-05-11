@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 
@@ -17,6 +19,9 @@ module Abstract.Category.AdhesiveHLR
   , NacSatisfaction(..)
   , MorphismsConfig(..)
   ) where
+
+import           Control.DeepSeq
+import           GHC.Generics
 
 import           Abstract.Category.AdhesiveHLR.Constraint
 import           Abstract.Category.Cocomplete
@@ -122,7 +127,7 @@ class (Cocomplete morph) => AdhesiveHLR morph where
   calculatePullback :: morph -> morph -> (morph,morph)
 
 -- | Flag indicating what restrictions are required or assumed of matches.
-data MatchRestriction = MonoMatches | AnyMatches deriving (Eq, Show)
+data MatchRestriction = MonoMatches | AnyMatches deriving (Eq, Show, Generic, NFData)
 
 -- | Converts a match restriction to the corresponding MorphismType
 matchRestrictionToMorphismType :: MatchRestriction -> MorphismType
@@ -130,9 +135,9 @@ matchRestrictionToMorphismType MonoMatches = Monomorphism
 matchRestrictionToMorphismType AnyMatches  = GenericMorphism
 
 -- | Flag indicating the semantics of NAC satisfaction.
-data NacSatisfaction = MonomorphicNAC | PartiallyMonomorphicNAC deriving (Eq, Show)
+data NacSatisfaction = MonomorphicNAC | PartiallyMonomorphicNAC deriving (Eq, Show, Generic, NFData)
 
 data MorphismsConfig = MorphismsConfig
   { matchRestriction :: MatchRestriction
   , nacSatisfaction  :: NacSatisfaction
-  }
+  } deriving (Generic, NFData)

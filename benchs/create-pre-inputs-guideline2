@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+#Generates all the four possible kinds of pre-inputs to run the benchmarks.
+
+echo "Generation Epi Pairs (Mono) for medical guideline 2" && \
+verigraph pre-inputs -o guid2-mono.ep ../grammars/MedicalGuideline/instrutivo2.ggx && \
+
+echo "Generation Epi Pairs (Generic) for medical guideline 2" && \
+verigraph --all-matches pre-inputs -o guid2-generic.ep ../grammars/MedicalGuideline/instrutivo2.ggx && \
+
+echo "Generation Matches Pairs (Mono) for medical guideline 2" && \
+verigraph pre-inputs -m -o guid2-mono.mp ../grammars/MedicalGuideline/instrutivo2.ggx && \
+
+echo "Generation Matches Pairs (Generic) for medical guideline 2" && \
+verigraph --all-matches pre-inputs -m -o guid2-generic.mp ../grammars/MedicalGuideline/instrutivo2.ggx

@@ -1,5 +1,11 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE TypeFamilies #-}
+
 module Abstract.Category.FinitaryCategory where
+
+import           Control.DeepSeq
+import           GHC.Generics
 
 {- | Defines finitary categories and the basic operations they have-}
 class (Eq morph) => FinitaryCategory morph where
@@ -26,7 +32,7 @@ data MorphismType
   | Monomorphism
   | Epimorphism
   | Isomorphism
-  deriving (Show, Enum)
+  deriving (Show, Enum, Generic, NFData)
 
 type Span morph = (morph, morph)
 
