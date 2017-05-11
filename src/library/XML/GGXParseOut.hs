@@ -30,9 +30,7 @@ overlapsCP name2 cs = (graph, mapM1, mapM2 ++ mapM2WithNac, nacName cs, csType c
     (m1,m2) = case CP.getCriticalPairType cs of
                 CP.ProduceForbid -> fromMaybe (error "Error when exporting ProduceForbid") (CP.getCriticalPairComatches cs)
                 _ -> CP.getCriticalPairMatches cs
-    graph = serializeGraph [] [] m1
-    mapM1 = getTgmMappings Nothing m1
-    mapM2 = getTgmMappings Nothing m2
+    (graph, mapM1, mapM2) = serializePair m1 m2
     mapM2WithNac = case CP.getCriticalPairType cs of
                      CP.ProduceForbid -> addNacMap
                      _                -> []
@@ -54,9 +52,7 @@ overlapsCS name2 cs = (graph, mapM1, mapM2 ++ mapM2WithNac, nacName cs, csType c
                 CS.DeleteForbid -> fromMaybe (error "Error when exporting DeleteForbid") (CS.getCriticalSequenceMatches cs)
                 CS.ForbidProduce -> fromMaybe (error "Error when exporting ForbidProduce") (CS.getCriticalSequenceMatches cs)
                 _ -> CS.getCriticalSequenceComatches cs
-    graph = serializeGraph [] [] m1
-    mapM1 = getTgmMappings Nothing m1
-    mapM2 = getTgmMappings Nothing m2
+    (graph, mapM1, mapM2) = serializePair m1 m2
     mapM2WithNac = case CS.getCriticalSequenceType cs of
                      CS.DeleteForbid  -> addNacMap
                      CS.ForbidProduce -> addNacMap
@@ -69,8 +65,8 @@ overlapsCS name2 cs = (graph, mapM1, mapM2 ++ mapM2WithNac, nacName cs, csType c
 getTgmMappings :: Maybe String -> TypedGraphMorphism a b -> [Mapping]
 getTgmMappings prefix tgm = nodesMorph ++ edgesMorph
   where
-    nodeMap = applyNodeUnsafe tgm
-    edgeMap = applyEdgeUnsafe tgm
+    nodeMap = applyNodeIdUnsafe tgm
+    edgeMap = applyEdgeIdUnsafe tgm
     nodesMorph = map (\n -> ("N" ++ show (nodeMap n), prefix, "N" ++ show n)) (nodeIdsFromDomain tgm)
     edgesMorph = map (\e -> ("E" ++ show (edgeMap e), prefix, "E" ++ show e)) (edgeIdsFromDomain tgm)
 
@@ -99,11 +95,11 @@ getMappings rule = nodesMorph ++ edgesMorph
     no = Nothing
     invL = invert (GR.getLHS rule)
     lr = M.compose invL (GR.getRHS rule)
-    nodeMap = applyNodeUnsafe lr
-    nodes = filter (isJust . applyNode lr) (nodeIdsFromDomain lr)
+    nodeMap = applyNodeIdUnsafe lr
+    nodes = filter (isJust . applyNodeId lr) (nodeIdsFromDomain lr)
     nodesMorph = map (\n -> ("N" ++ show (nodeMap n), no, "N" ++ show n)) nodes
-    edgeMap = applyEdgeUnsafe lr
-    edges = filter (isJust . applyEdge lr) (edgeIdsFromDomain lr)
+    edgeMap = applyEdgeIdUnsafe lr
+    edges = filter (isJust . applyEdgeId lr) (edgeIdsFromDomain lr)
     edgesMorph = map (\e -> ("E" ++ show (edgeMap e), no, "E" ++ show e)) edges
 
 parseNacName :: String -> (t -> Maybe Int) -> t -> String
@@ -111,21 +107,24 @@ parseNacName ruleName f x = case f x of
                    Just n  -> "NAC_" ++ ruleName ++ "_" ++ show n
                    Nothing -> ""
 
+serializePair :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> (ParsedTypedGraph, [Mapping], [Mapping])
+serializePair m1 m2 = (serializeGraph [] [] m1, getTgmMappings Nothing m1, getTgmMappings Nothing m2)
+
 serializeGraph :: [Mapping] -> [Mapping] -> TypedGraphMorphism a b -> ParsedTypedGraph
 serializeGraph objNameNodes objNameEdges morphism = ("", nodes, edges)
   where
     graph = M.codomain morphism
     nodes = map (serializeNode (map (\(x,_,y) -> (x,y)) objNameNodes) graph) (G.nodeIds $ M.domain graph)
-    edges = map (serializeEdge (map (\(x,_,y) -> (x,y)) objNameEdges) graph) (G.edgeIds $ M.domain graph)
+    edges = map (serializeEdge (map (\(x,_,y) -> (x,y)) objNameEdges) graph) (G.edges $ M.domain graph)
 
 serializeNode :: [(String,String)] -> TypedGraph a b -> G.NodeId -> ParsedTypedNode
 serializeNode objName graph n = ("N" ++ show n,
                          lookup (show n) objName,
                          "N" ++ show (extractNodeType graph n))
 
-serializeEdge :: [(String,String)] -> TypedGraph a b -> G.EdgeId -> ParsedTypedEdge
-serializeEdge objName graph e = ("E" ++ show e,
-                         lookup (show e) objName,
-                         "E" ++ show (extractEdgeType graph e),
-                         "N" ++ show (G.sourceOfUnsafe (M.domain graph) e),
-                         "N" ++ show (G.targetOfUnsafe (M.domain graph) e))
+serializeEdge :: [(String,String)] -> TypedGraph a b -> G.Edge (Maybe b) -> ParsedTypedEdge
+serializeEdge objName graph e = ("E" ++ show (G.edgeId e),
+                         lookup (show (G.edgeId e)) objName,
+                         "E" ++ show (extractEdgeType graph (G.edgeId e)),
+                         "N" ++ show (G.sourceId e),
+                         "N" ++ show (G.targetId e))

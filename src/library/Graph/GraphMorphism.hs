@@ -25,10 +25,12 @@ module Graph.GraphMorphism (
     , createNodeOnDomain
     , createNodeOnCodomain
     -- * Query
-    , applyNode
-    , applyNodeUnsafe
+    , applyNodeId
+    , applyNodeIdUnsafe
     , applyEdge
     , applyEdgeUnsafe
+    , applyEdgeId
+    , applyEdgeIdUnsafe
     , nodeRelation
     , edgeRelation
     , orphanNodeIds
@@ -37,6 +39,8 @@ module Graph.GraphMorphism (
 
     , isPartialInjective
     ) where
+
+import           Control.Arrow
 
 import           Abstract.Morphism
 import qualified Abstract.Relation as R
@@ -64,10 +68,10 @@ instance Show (GraphMorphism a b) where
       ++ "\nEdge mappings: \n" ++ concatMap showEdge (G.edges $ getDomain m)
      where
        showNode n =
-         show n ++ " --> " ++ show (applyNode m n) ++ "\n"
+         show n ++ " --> " ++ show (applyNodeId m n) ++ "\n"
 
        showEdge (Edge e srcId tgtId _) =
-         show e ++ " --> " ++ show (applyEdge m e)
+         show e ++ " --> " ++ show (applyEdgeId m e)
          ++ " (from: " ++ show srcId ++ " to:" ++ show tgtId ++ ")\n"
 
 -- | Return the orphan nodes ids in a graph morphism
@@ -87,27 +91,38 @@ orphanEdges gm = map idToEdge (R.orphans (edgeRelation gm))
 orphanEdgeIds :: GraphMorphism a b -> [G.EdgeId]
 orphanEdgeIds gm = R.orphans (edgeRelation gm)
 
--- | Return the node to which @ln@ gets mapped.
-applyNode :: GraphMorphism a b -> G.NodeId -> Maybe G.NodeId
-applyNode m ln =
+-- | Return the nodeId to which @ln@ gets mapped.
+applyNodeId :: GraphMorphism a b -> G.NodeId -> Maybe G.NodeId
+applyNodeId m ln =
     case R.apply (nodeRelation m) ln of
         (x:_) -> Just x
         _     -> Nothing
 
 -- | Return the edge to which @le@ gets mapped.
-applyEdge :: GraphMorphism a b -> G.EdgeId -> Maybe G.EdgeId
+applyEdge :: GraphMorphism a b -> G.Edge b -> Maybe (G.Edge b)
 applyEdge m le =
+    case applyEdgeId m (edgeId le) of
+        Just x  -> lookupEdge x (codomain m)
+        Nothing -> Nothing
+
+-- | Return the edgeId to which @le@ gets mapped.
+applyEdgeId :: GraphMorphism a b -> G.EdgeId -> Maybe G.EdgeId
+applyEdgeId m le =
     case R.apply (edgeRelation m) le of
         (x:_) -> Just x
         _     -> Nothing
 
--- | Return the node to which @le@ gets mapped or error in the case of undefined
-applyNodeUnsafe :: GraphMorphism a b -> NodeId -> NodeId
-applyNodeUnsafe m n = fromMaybe (error "Error, apply node in a non total morphism") $ applyNode m n
+-- | Return the nodeId to which @le@ gets mapped or error in the case of undefined
+applyNodeIdUnsafe :: GraphMorphism a b -> NodeId -> NodeId
+applyNodeIdUnsafe m n = fromMaybe (error "Error, apply nodeId in a non total morphism") $ applyNodeId m n
 
 -- | Return the edge to which @le@ gets mapped or error in the case of undefined
-applyEdgeUnsafe :: GraphMorphism a b -> EdgeId -> EdgeId
+applyEdgeUnsafe :: GraphMorphism a b -> G.Edge b -> G.Edge b
 applyEdgeUnsafe m e = fromMaybe (error "Error, apply edge in a non total morphism") $ applyEdge m e
+
+-- | Return the edgeId to which @le@ gets mapped or error in the case of undefined
+applyEdgeIdUnsafe :: GraphMorphism a b -> EdgeId -> EdgeId
+applyEdgeIdUnsafe m e = fromMaybe (error "Error, apply edgeId in a non total morphism") $ applyEdgeId m e
 
 -- | An empty morphism between two graphs.
 empty :: Graph a b -> Graph a b -> GraphMorphism a b
@@ -115,9 +130,9 @@ empty gA gB = GraphMorphism gA gB (R.empty (nodeIds gA) (nodeIds gB)) (R.empty (
 
 -- | Construct a graph morphism
 buildGraphMorphism :: Graph a b -> Graph a b -> [(Int,Int)] -> [(Int,Int)] -> GraphMorphism a b
-buildGraphMorphism gA gB n = foldr (uncurry updateEdges . (\(x,y) -> (EdgeId x,EdgeId y))) g
+buildGraphMorphism gA gB n = foldr (uncurry updateEdges . (EdgeId *** EdgeId)) g
     where
-        g = foldr (uncurry updateNodes . (\(x,y) -> (NodeId x,NodeId y))) (Graph.GraphMorphism.empty gA gB) n
+        g = foldr (uncurry updateNodes . (NodeId *** NodeId)) (Graph.GraphMorphism.empty gA gB) n
 
 -- | Constructs a @GraphMorphism@ from two Graphs, a node relation and a edge relation.
 fromGraphsAndRelations :: Graph a b -> Graph a b -> R.Relation NodeId -> R.Relation EdgeId -> GraphMorphism a b
@@ -144,7 +159,7 @@ updateNodes ln gn morphism@(GraphMorphism l g nm em)
     | G.isNodeOf l ln && G.isNodeOf g gn && notMapped morphism ln = GraphMorphism l g (R.updateRelation ln gn nm) em
     | otherwise = morphism
   where
-    notMapped m = isNothing . applyNode m
+    notMapped m = isNothing . applyNodeId m
 
 -- | Add a mapping between both edges into the morphism. If @le@ is already
 -- mapped, or neither edges are in their respective graphs, return the original
@@ -154,7 +169,7 @@ updateEdges le ge morphism@(GraphMorphism l g nm em)
     | G.isEdgeOf l le && G.isEdgeOf g ge && notMapped morphism le = GraphMorphism l g nm (R.updateRelation le ge em)
     | otherwise = morphism
   where
-    notMapped m = isNothing . applyEdge m
+    notMapped m = isNothing . applyEdgeId m
 
 -- | Remove an edge from the domain of the morphism
 removeEdgeFromDomain :: G.EdgeId -> GraphMorphism a b -> GraphMorphism a b
@@ -246,12 +261,12 @@ createNodeOnCodomain n2 gm =
 isPartialInjective :: GraphMorphism a b -> GraphMorphism a b -> Bool
 isPartialInjective nac q = disjointCodomain && injective
   where
-    nodes = mapMaybe (applyNode nac) (G.nodeIds (domain nac))
+    nodes = mapMaybe (applyNodeId nac) (G.nodeIds (domain nac))
     nodesI = G.nodeIds (codomain nac) \\ nodes
-    codN = mapMaybe (applyNode q)
-    edges = mapMaybe (applyEdge nac) (G.edgeIds (domain nac))
+    codN = mapMaybe (applyNodeId q)
+    edges = mapMaybe (applyEdgeId nac) (G.edgeIds (domain nac))
     edgesI = G.edgeIds (codomain nac) \\ edges
-    codE = mapMaybe (applyEdge q)
+    codE = mapMaybe (applyEdgeId q)
     disjointNodes = Prelude.null (codN nodes `intersect` codN nodesI)
     disjointEdges = Prelude.null (codE edges `intersect` codE edgesI)
     disjointCodomain = disjointNodes && disjointEdges
@@ -294,6 +309,6 @@ instance Valid (GraphMorphism a b) where
         incidencePreserved =
           all
             (\(Edge e domSrc domTgt _) ->
-                (G.sourceOf cod =<< applyEdge morphism e) == applyNode morphism domSrc
-                  && (G.targetOf cod =<< applyEdge morphism e) == applyNode morphism domTgt)
+                (G.sourceOf cod =<< applyEdgeId morphism e) == applyNodeId morphism domSrc
+                  && (G.targetOf cod =<< applyEdgeId morphism e) == applyNodeId morphism domTgt)
             (G.edges dom)

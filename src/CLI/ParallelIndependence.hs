@@ -15,6 +15,7 @@ import qualified XML.GGXReader                as XML
 
 data Options = Options
   { duFlag :: Bool
+  , c1Flag :: Bool
   , siFlag :: Bool
   , soFlag :: Bool
   }
@@ -22,6 +23,7 @@ data Options = Options
 options :: Parser Options
 options = Options
   <$> duf
+  <*> c1f
   <*> sif
   <*> sof
 
@@ -29,6 +31,11 @@ duf :: Parser Bool
 duf = flag False True
     ( long "delete-use"
     <> help "use delete-use instead pullbacks")
+
+c1f :: Parser Bool
+c1f = flag False True
+    ( long "cond1"
+    <> help "use cond1 instead pullbacks")
 
 sif :: Parser Bool
 sif = flag False True
@@ -51,6 +58,7 @@ execute globalOpts opts = do
     putStrLn ""
 
     let du = duFlag opts
+        c1 = c1Flag opts
         sndOrder = soFlag opts
         comp = False -- flag to compare if deleteuse and pullbacks are generating the same results
         algorithm =
@@ -58,16 +66,18 @@ execute globalOpts opts = do
         --rules = concatMap (replicate 1) $ map snd (GG.rules gg)
         rules1 = map snd (GG.rules fstOrdGG)
         rules2 = map snd (GG.rules sndOrdGG)
-        analysisDU1 = pairwiseCompareUpperReflected (isIndependent algorithm DeleteUse dpoConf) rules1
-        analysisPB1 = pairwiseCompareUpperReflected (isIndependent algorithm Pullback dpoConf) rules1
-        analysisDU2 = pairwiseCompareUpperReflected (isIndependent algorithm DeleteUse dpoConf) rules2
-        analysisPB2 = pairwiseCompareUpperReflected (isIndependent algorithm Pullback dpoConf) rules2
+        analysisC11 = pairwiseCompareUpperReflected (isIndependent algorithm Cond1 dpoConf) rules1
+        analysisPB1 = pairwiseCompareUpperReflected (isIndependent algorithm Cond2 dpoConf) rules1
+        analysisDU1 = pairwiseCompareUpperReflected (isIndependent algorithm Cond3 dpoConf) rules1
+        analysisC12 = pairwiseCompareUpperReflected (isIndependent algorithm Cond1 dpoConf) rules2
+        analysisPB2 = pairwiseCompareUpperReflected (isIndependent algorithm Cond2 dpoConf) rules2
+        analysisDU2 = pairwiseCompareUpperReflected (isIndependent algorithm Cond3 dpoConf) rules2
 
-        (analysisDU,analysisPB) =
+        (analysisDU,analysisPB,analysisC1) =
           if sndOrder then
-            (analysisDU2,analysisPB2)
+            (analysisDU2,analysisPB2,analysisC12)
           else
-            (analysisDU1,analysisPB1)
+            (analysisDU1,analysisPB1,analysisC11)
 
 
     putStrLn $ "Second-order flag: " ++ show sndOrder
@@ -79,7 +89,8 @@ execute globalOpts opts = do
 
     unless comp $ putStrLn ("Matrix of all pairs of rules (True means this pair is "++ show algorithm ++ " Independent):")
     when (not comp && du) $ print analysisDU
-    when (not comp && not du) $ print analysisPB
+    when (not comp && c1) $ print analysisC1
+    when (not comp && not du && not c1) $ print analysisPB
 
 -- | Applies a function on the upper triangular matrix and reflects the result in the lower part
 pairwiseCompareUpperReflected :: (a -> a -> Bool) -> [a] -> Matrix Bool
@@ -87,4 +98,4 @@ pairwiseCompareUpperReflected compare items =
     elementwise (||) m (transpose m)
   where
     m = matrix (length items) (length items) $ \(i,j) ->
-          not (i > j) && compare (items !! (i-1)) (items !! (j-1))
+          (i <= j) && compare (items !! (i-1)) (items !! (j-1))

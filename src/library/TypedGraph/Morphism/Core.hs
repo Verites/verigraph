@@ -63,13 +63,17 @@ edgeIdsFromCodomain = edgeIds . domain . getCodomain
 edgesFromCodomain :: TypedGraphMorphism a b -> [Edge (Maybe b)]
 edgesFromCodomain = edges . domain . getCodomain
 
--- | Given a TypedGraphMorphism @/__t__: G1 -> G2/@ and a node @__n__@ in @G1@, it returns the node in @G2@ to which @__n__@ gets mapped
-applyNode :: TypedGraphMorphism a b -> NodeId -> Maybe NodeId
-applyNode tgm = GM.applyNode (mapping tgm)
+-- | Given a TypedGraphMorphism @/__t__: G1 -> G2/@ and a nodeId @__n__@ in @G1@, it returns the nodeId in @G2@ to which @__n__@ gets mapped
+applyNodeId :: TypedGraphMorphism a b -> NodeId -> Maybe NodeId
+applyNodeId tgm = GM.applyNodeId (mapping tgm)
 
 -- | Given a TypedGraphMorphism @/__t__: G1 -> G2/@ and an edge @__e__@ in @G1@, it returns the edge in @G2@ to which @__e__@ gets mapped
-applyEdge :: TypedGraphMorphism a b -> EdgeId -> Maybe EdgeId
+applyEdge :: TypedGraphMorphism a b -> Edge (Maybe b) -> Maybe (Edge (Maybe b))
 applyEdge tgm = GM.applyEdge (mapping tgm)
+
+-- | Given a TypedGraphMorphism @/__t__: G1 -> G2/@ and an edgeId @__e__@ in @G1@, it returns the edgeId in @G2@ to which @__e__@ gets mapped
+applyEdgeId :: TypedGraphMorphism a b -> EdgeId -> Maybe EdgeId
+applyEdgeId tgm = GM.applyEdgeId (mapping tgm)
 
 -- | Return the domain graph
 graphDomain :: TypedGraphMorphism a b -> Graph (Maybe a) (Maybe b)
@@ -79,15 +83,20 @@ graphDomain = untypedGraph . domain
 graphCodomain :: TypedGraphMorphism a b -> Graph (Maybe a) (Maybe b)
 graphCodomain = untypedGraph . codomain
 
--- | Given a @TypedGraphMorphism@ @__t__@and a node @n@ in the domain of @__t__@, return the node in the image
+-- | Given a @TypedGraphMorphism@ @__t__@and a nodeId @n@ in the domain of @__t__@, return the nodeId in the image
 --of @t@ to which @n@ gets mapped or error in the case of undefined
-applyNodeUnsafe :: TypedGraphMorphism a b -> NodeId -> NodeId
-applyNodeUnsafe m n = fromMaybe (error "Error, apply node in a non total morphism") $ applyNode m n
+applyNodeIdUnsafe :: TypedGraphMorphism a b -> NodeId -> NodeId
+applyNodeIdUnsafe m n = fromMaybe (error "Error, apply node in a non total morphism") $ applyNodeId m n
 
 -- | Given a @TypedGraphMorphism@ @__t__@and an edge @e@ in the domain of @__t__@, return the edge in the image
 --of @t@ to which @e@ gets mapped or error in the case of undefined
-applyEdgeUnsafe :: TypedGraphMorphism a b -> EdgeId -> EdgeId
+applyEdgeUnsafe :: TypedGraphMorphism a b -> Edge (Maybe b) -> Edge (Maybe b)
 applyEdgeUnsafe m e = fromMaybe (error "Error, apply edge in a non total morphism") $ applyEdge m e
+
+-- | Given a @TypedGraphMorphism@ @__t__@and an edgeId @e@ in the domain of @__t__@, return the edgeId in the image
+--of @t@ to which @e@ gets mapped or error in the case of undefined
+applyEdgeIdUnsafe :: TypedGraphMorphism a b -> EdgeId -> EdgeId
+applyEdgeIdUnsafe m e = fromMaybe (error "Error, apply edge in a non total morphism") $ applyEdgeId m e
 
 -- | Given a @TypedGraphMorphism@, return its orphan nodes ids
 orphanTypedNodeIds :: TypedGraphMorphism a b -> [NodeId]
@@ -210,8 +219,8 @@ reflectIdsFromTypeGraph tgm =
     gmDomain = domain tgm
     gmCodomain = codomain tgm
 
-    newNodes gm = map (GM.applyNodeUnsafe gm) (nodeIds (domain gm))
-    newEdges gm = map (\x -> (GM.applyEdgeUnsafe gm (edgeId x), GM.applyNodeUnsafe gm (sourceId x), GM.applyNodeUnsafe gm (targetId x))) (edges $ domain gm)
+    newNodes gm = map (GM.applyNodeIdUnsafe gm) (nodeIds (domain gm))
+    newEdges gm = map (\x -> (GM.applyEdgeIdUnsafe gm (edgeId x), GM.applyNodeIdUnsafe gm (sourceId x), GM.applyNodeIdUnsafe gm (targetId x))) (edges $ domain gm)
 
     newDomain = foldr (\(e,s,t) -> GM.createEdgeOnDomain e s t e) (foldr (\x -> GM.createNodeOnDomain x x) (GM.empty empty (codomain gmDomain)) (newNodes gmDomain)) (newEdges gmDomain)
     newCodomain = foldr (\(e,s,t) -> GM.createEdgeOnDomain e s t e) (foldr (\x -> GM.createNodeOnDomain x x) (GM.empty empty (codomain gmCodomain)) (newNodes gmCodomain)) (newEdges gmCodomain)
@@ -231,13 +240,13 @@ reflectIdsFromCodomain tgm =
     nodes = nodeIdsFromDomain tgm
     edges = edgesFromDomain tgm
     initial = buildTypedGraphMorphism typedB' typedB (GM.empty (domain typedB') (domain typedB))
-    addNodes = foldr (\n -> createNodeOnDomain (applyNodeUnsafe tgm n) (GM.applyNodeUnsafe typedA n) (applyNodeUnsafe tgm n)) initial nodes
+    addNodes = foldr (\n -> createNodeOnDomain (applyNodeIdUnsafe tgm n) (GM.applyNodeIdUnsafe typedA n) (applyNodeIdUnsafe tgm n)) initial nodes
     addEdges = foldr (\e ->
-      createEdgeOnDomain (applyEdgeUnsafe tgm (edgeId e))
-                         (applyNodeUnsafe tgm (sourceId e))
-                         (applyNodeUnsafe tgm (targetId e))
-                         (GM.applyEdgeUnsafe typedA (edgeId e))
-                         (applyEdgeUnsafe tgm (edgeId e))) addNodes edges
+      createEdgeOnDomain (applyEdgeIdUnsafe tgm (edgeId e))
+                         (applyNodeIdUnsafe tgm (sourceId e))
+                         (applyNodeIdUnsafe tgm (targetId e))
+                         (GM.applyEdgeIdUnsafe typedA (edgeId e))
+                         (applyEdgeIdUnsafe tgm (edgeId e))) addNodes edges
    in addEdges
 
 reflectIdsFromDomains :: (TypedGraphMorphism a b, TypedGraphMorphism a b) -> (TypedGraphMorphism a b, TypedGraphMorphism a b)
@@ -256,8 +265,8 @@ reflectIdsFromDomains (m,e) =
     typedG' = foldr (\(e,s,ta,ty) -> GM.createEdgeOnDomain e s ta ty)
                       (foldr (uncurry GM.createNodeOnDomain) (GM.empty empty typeGraph) newNodes)
                     newEdges
-    nodeR n = if isJust (applyNode m' n) then (n, applyNodeUnsafe m' n) else (n, applyNodeUnsafe e' n)
-    edgeR e = if isJust (applyEdge m' e) then (e, applyEdgeUnsafe m' e) else (e, applyEdgeUnsafe e' e)
+    nodeR n = if isJust (applyNodeId m' n) then (n, applyNodeIdUnsafe m' n) else (n, applyNodeIdUnsafe e' n)
+    edgeR e = if isJust (applyEdgeId m' e) then (e, applyEdgeIdUnsafe m' e) else (e, applyEdgeIdUnsafe e' e)
 
     nodeRelation = map nodeR (nodeIdsFromDomain m')
     edgeRelation = map edgeR (edgeIdsFromDomain m')

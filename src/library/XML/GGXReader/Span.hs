@@ -60,19 +60,22 @@ instantiateSpan left right mapping = (leftM, rightM)
     initR = empty G.empty (domain right)
 
     updateEdgeMorphisms (k,l,r) (tgt,src)
-      | edgeSrc `elem` edgesLeft && edgeTgt `elem` edgesRight = (newEdgeK, updateEdgesL, updateEdgesR)
+      | edgeIdSrc `elem` edgesLeft && edgeIdTgt `elem` edgesRight = (newEdgeK, updateEdgesL, updateEdgesR)
       | otherwise = (k, l, r)
       where
-        edgeSrc = G.EdgeId src
-        edgeTgt = G.EdgeId tgt
-        src_ e = fromMaybe (error (show e)) (G.sourceOf (domain left) e)
-        tgt_ e = fromMaybe (error (show e)) (G.targetOf (domain left) e)
-        edgeDom
-          = G.insertEdge edgeSrc (src_ edgeSrc) (tgt_ edgeSrc) (domain k)
-        edgeType = extractEdgeType left edgeSrc
-        newEdgeK = updateEdges edgeSrc edgeType (updateDomain edgeDom k)
-        updateEdgesL = updateEdges edgeSrc edgeSrc (updateDomain edgeDom l)
-        updateEdgesR = updateEdges edgeSrc edgeTgt (updateDomain edgeDom r)
+        edgeIdSrc = G.EdgeId src
+        edgeIdTgt = G.EdgeId tgt
+        
+        edgeSrc = fromMaybe
+                    (error "updateEdgeMorphisms: edgeId is not in its graph")
+                    (G.lookupEdge edgeIdSrc (domain left))
+        
+        edgeDom = G.insertEdge edgeIdSrc (G.sourceId edgeSrc) (G.targetId edgeSrc) (domain k)
+        
+        edgeType = extractEdgeType left edgeIdSrc
+        newEdgeK = updateEdges edgeIdSrc edgeType (updateDomain edgeDom k)
+        updateEdgesL = updateEdges edgeIdSrc edgeIdSrc (updateDomain edgeDom l)
+        updateEdgesR = updateEdges edgeIdSrc edgeIdTgt (updateDomain edgeDom r)
 
 
     updateMorphisms (k,l,r) (tgt,src)

@@ -39,10 +39,10 @@ null :: TypedGraph a b -> Bool
 null = G.null . untypedGraph
 
 extractNodeType :: TypedGraph a b -> NodeId -> NodeId
-extractNodeType gm n = fromMaybe (error "Node not typed") $ applyNode gm n
+extractNodeType gm n = fromMaybe (error "Node not typed") $ applyNodeId gm n
 
 extractEdgeType :: TypedGraph a b -> EdgeId -> EdgeId
-extractEdgeType gm e = fromMaybe (error "edge not typed") $ applyEdge gm e
+extractEdgeType gm e = fromMaybe (error "edge not typed") $ applyEdgeId gm e
 
 -- | Infinite list of new node instances of a typed graph
 newTypedNodes :: TypedGraph a b -> [NodeId]

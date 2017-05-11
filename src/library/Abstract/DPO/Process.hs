@@ -78,7 +78,7 @@ class (DPO m) => GenerateProcess m where
         (h1,h2,h3) = generateMorphismFamilies ds fs gs
         coEq = calculateNCoequalizer $ fromList [h1,h2,h3]
         hs = reduce $ map (`compose` coEq) gs
-     in Process (map typing (zip ds hs)) (codomain coEq)
+     in Process (zipWith (curry typing) ds hs) (codomain coEq)
 
   calculateRulesColimit :: RuleSequence m -> [NamedRuleWithMatches m]
   calculateRulesColimit (_,g,os) =

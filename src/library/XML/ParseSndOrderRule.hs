@@ -55,11 +55,13 @@ module XML.ParseSndOrderRule (
   , getObjectNameMorphism
   ) where
 
-import           Abstract.Morphism
 import           Data.Char           (toLower)
+import           Data.Function       (on)
 import           Data.List           (find, groupBy, sortBy, sortOn, (\\))
 import           Data.Maybe          (fromMaybe, mapMaybe)
 import           Data.String.Utils   (join, split)
+
+import           Abstract.Morphism
 import           Graph.Graph
 import           Graph.GraphMorphism as GM
 import           TypedGraph.Morphism as TGM
@@ -133,7 +135,7 @@ groupRules rules =
     side (x,_,_) = x
     name (_,x,_) = x
     sorted = sortOn name rules
-    grouped = groupBy (\x y -> name x == name y) sorted
+    grouped = groupBy ((==) `on` name) sorted
     getLeft list = fromMaybe (error "Second order rule without left") (findSide "left" list)
     getRight list = fromMaybe (error "Second order rule without right") (findSide "right" list)
     findSide str = find (\x -> side x == str)
@@ -144,8 +146,8 @@ getObjectNacNameMorph :: GraphMorphism a b -> ([Mapping], [Mapping])
 getObjectNacNameMorph m = (nodesMap m, edgesMap m)
   where
     adjustNonMono = parseNonMonoObjNames . group . sort
-    nodesMap = adjustNonMono . getMap GM.applyNodeUnsafe . nodeIds . domain
-    edgesMap = adjustNonMono . getMap GM.applyEdgeUnsafe . edgeIds . domain
+    nodesMap = adjustNonMono . getMap GM.applyNodeIdUnsafe . nodeIds . domain
+    edgesMap = adjustNonMono . getMap GM.applyEdgeIdUnsafe . edgeIds . domain
 
     getMap f = map (\e -> (show (f m e), Nothing, show e))
     group = groupBy (\(x,_,_) (y,_,_) -> x == y)
@@ -179,6 +181,6 @@ parseNonMonoObjNames (x:xs) = (a,b,newObjName) : parseNonMonoObjNames xs
 getObjectNameMorphism :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [Mapping]
 getObjectNameMorphism left right = nodesMap ++ edgesMap
   where
-    nodesMap = getMap TGM.applyNodeUnsafe (nodeIdsFromDomain left)
-    edgesMap = getMap TGM.applyEdgeUnsafe (edgeIdsFromDomain left)
+    nodesMap = getMap TGM.applyNodeIdUnsafe (nodeIdsFromDomain left)
+    edgesMap = getMap TGM.applyEdgeIdUnsafe (edgeIdsFromDomain left)
     getMap f = map (\e -> (show (f right e), Nothing, show (f left e)))

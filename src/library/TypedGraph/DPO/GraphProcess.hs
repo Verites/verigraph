@@ -151,8 +151,8 @@ findConcreteTrigger ogg interaction@(Interaction a1 a2 t nacIdx) =
     q21 = findMono (codomain triggeredNAC) (codomain d1h21)
 
     concreteTrigger = case getTrigger triggeredNAC of
-      Node n -> Node (applyNodeUnsafe q21 n)
-      Edge e -> Edge (applyEdgeUnsafe q21 e)
+      Node n -> Node (applyNodeIdUnsafe q21 n)
+      Edge e -> Edge (applyEdgeIdUnsafe q21 e)
       _      -> error "this pattern shouldn't exist"
     invert (p1,(m1,k1,r1)) = (invertProduction conf p1, (r1,k1,m1))
    in (interaction, concreteTrigger)
@@ -306,8 +306,8 @@ getOverlapping (_,(_,_,comatch)) (_,(match,_,_)) = restrictMorphisms (comatch, m
 -- @t@ and False otherwise
 isInGraph :: TypedGraph a b -> RelationItem -> Bool
 isInGraph initial x = case x of
-  Node n -> isJust $ GM.applyNode initial n
-  Edge e -> isJust $ GM.applyEdge initial e
+  Node n -> isJust $ GM.applyNodeId initial n
+  Edge e -> isJust $ GM.applyEdgeId initial e
   _      -> error $ "case " ++ show x ++ "shouldn't occur"
 
 conf :: MorphismsConfig

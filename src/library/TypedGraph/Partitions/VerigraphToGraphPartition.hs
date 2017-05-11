@@ -28,8 +28,8 @@ createSatisfyingNacsDisjointUnion (g,injG) (n,injN) = disjointUnionGraphs left r
    where
      nodes = fst
      edges = snd
-     injNodes = filter (\x -> countIncidentMap (TGM.applyNode n) (nodeIdsFromDomain n) x < 2) (nodeIdsFromCodomain n)
-     injEdges = filter (\x -> countIncidentMap (TGM.applyEdge n) (edgeIdsFromCodomain n) x < 2) (edgeIdsFromCodomain n)
+     injNodes = filter (\x -> countIncidentMap (TGM.applyNodeId n) (nodeIdsFromDomain n) x < 2) (nodeIdsFromCodomain n)
+     injEdges = filter (\x -> countIncidentMap (TGM.applyEdgeId n) (edgeIdsFromCodomain n) x < 2) (edgeIdsFromCodomain n)
      injectiveR = if injG then (G.nodeIds (M.domain g), G.edgeIds (M.domain g)) else ([],[])
      injectiveN = if injN then (nodeIdsFromCodomain n, edgeIdsFromCodomain n) else (injNodes, injEdges)
      (left,id) = graphMorphismToPartitionGraph injectiveR g True 0
@@ -51,7 +51,7 @@ nodesToPartitionNodes :: [NodeId] -> TypedGraph a b -> Bool -> Int -> [NodeId] -
 nodesToPartitionNodes _        _  _    _  []            = []
 nodesToPartitionNodes injNodes tg side id (NodeId b:xs) = GP.Node n b id flag side : nodesToPartitionNodes injNodes tg side (id+1) xs
    where
-     Just (NodeId n) = GM.applyNode tg (NodeId b)
+     NodeId n = GM.applyNodeIdUnsafe tg (NodeId b)
      flag = NodeId b `elem` injNodes
 
 edgesToPartitionEdges :: ([NodeId],[EdgeId]) -> TypedGraph a b -> Bool -> Graph (Maybe a) (Maybe b) -> Int -> [Edge (Maybe b)] -> [GP.Edge]
@@ -61,7 +61,7 @@ edgesToPartitionEdges inj@(injNodes,injEdges) tg side g id (e:xs) =
     where
       EdgeId edgeNumber = edgeId e
 
-      Just (EdgeId typ) = GM.applyEdge tg (edgeId e)
+      EdgeId typ = GM.applyEdgeIdUnsafe tg (edgeId e)
 
       src = GP.Node n1 src_ (-1) flagSrc side
       NodeId src_ = sourceId e
@@ -69,9 +69,9 @@ edgesToPartitionEdges inj@(injNodes,injEdges) tg side g id (e:xs) =
       tgt = GP.Node n2 tgt_ (-1) flagTgt side
       NodeId tgt_ = targetId e
 
-      Just (NodeId n1) = GM.applyNode tg (NodeId src_)
-      Just (NodeId n2) = GM.applyNode tg (NodeId tgt_)
+      NodeId n1 = GM.applyNodeIdUnsafe tg (NodeId src_)
+      NodeId n2 = GM.applyNodeIdUnsafe tg (NodeId tgt_)
 
-      flag = (edgeId e) `elem` injEdges
+      flag = edgeId e `elem` injEdges
       flagSrc = NodeId src_ `elem` injNodes
       flagTgt = NodeId tgt_ `elem` injNodes

@@ -142,11 +142,11 @@ execute globalOpts opts = do
 
 -- | Evolutionary Spans to Strings
 printEvoConflicts :: [(String, String, [EvoSpan a b])] -> [String]
-printEvoConflicts evo = map printOneEvo evo
+printEvoConflicts = map printOneEvo
   where
-    fst = \(y,_,_) -> y
-    snd = \(_,y,_) -> y
-    thd = \(_,_,y) -> y
+    fst (y,_,_) = y
+    snd (_,y,_) = y
+    thd (_,_,y) = y
 
     printOneEvo e = "(" ++ fst e ++ ", " ++ snd e ++ ", " ++
                        show (printConf (False,False) (thd e)) ++ ", " ++

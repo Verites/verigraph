@@ -153,20 +153,15 @@ printGraphRule context ruleName rule =
   printDigraph
     ruleName
     []
-    [ printSubTypedGraph context leftName (codomain (getLHS rule))
-    , printSubTypedGraph context interfaceName (domain (getLHS rule))
-    , printSubTypedGraph context rightName (codomain (getRHS rule))
-    ]
-    (concat
-      [ map (mapNode False interfaceName leftName) $ typedNodes (mapping (getLHS rule))
-      , map (mapNode True interfaceName rightName) $ typedNodes (mapping (getRHS rule))
-      ])
+    (printGraphRuleCore context leftName interfaceName rightName rule)
+    (
+     map (mapNode False interfaceName leftName) (typedNodes (mapping (getLHS rule))) ++
+     map (mapNode True interfaceName rightName) (typedNodes (mapping (getRHS rule)))
+    )
     []
 
   where
-    leftName = ruleName++"L"
-    interfaceName = ruleName++"K"
-    rightName = ruleName++"R"
+    (leftName, interfaceName, rightName) = getRuleName ruleName
 
     mapNode False idSrc idTgt (src, tgt) =
       printEdge (text idSrc <> nodeId src) (text idTgt <> nodeId tgt) [text "style=dotted"]
@@ -178,25 +173,30 @@ printSubGraphRule context ruleName rule =
   printSubgraph
     ruleName
     []
-    [ printSubTypedGraph context leftName (codomain (getLHS rule))
-    , printSubTypedGraph context interfaceName (domain (getLHS rule))
-    , printSubTypedGraph context rightName (codomain (getRHS rule))
-    ]
-    (concat
-      [ map (mapNode False interfaceName leftName) $ typedNodes (mapping (getLHS rule))
-      , map (mapNode True interfaceName rightName) $ typedNodes (mapping (getRHS rule))
-      ])
+    (printGraphRuleCore context leftName interfaceName rightName rule)
+    (
+     map (mapNode False interfaceName leftName) (typedNodes (mapping (getLHS rule))) ++
+     map (mapNode True interfaceName rightName) (typedNodes (mapping (getRHS rule)))
+    )
     []
 
   where
-    leftName = ruleName++"L"
-    interfaceName = ruleName++"K"
-    rightName = ruleName++"R"
+    (leftName, interfaceName, rightName) = getRuleName ruleName
 
     mapNode False idSrc idTgt (src, tgt) =
       printEdge (text idSrc <> nodeId src) (text idTgt <> nodeId tgt) [text "style=dotted"]
     mapNode True idSrc idTgt (src, tgt) =
       printEdge (text idTgt <> nodeId tgt) (text idSrc <> nodeId src) [text "dir=back,style=dotted"]
+
+printGraphRuleCore :: NamingContext -> String -> String -> String -> GraphRule a b -> [Doc]
+printGraphRuleCore context leftName interfaceName rightName rule =
+  [ printSubTypedGraph context leftName (codomain (getLHS rule))
+  , printSubTypedGraph context interfaceName (domain (getLHS rule))
+  , printSubTypedGraph context rightName (codomain (getRHS rule))
+  ]
+
+getRuleName :: String -> (String, String, String)
+getRuleName ruleName = (ruleName ++ "L", ruleName ++ "K", ruleName ++ "R")
 
 -- | Create a dotfile representation of the given snd order rule
 printSndOrderRule :: NamingContext -> String -> SndOrderRule a b -> Doc
@@ -209,12 +209,12 @@ printSndOrderRule context ruleName rule =
     , printSubGraphRule context rightName (codomain (getRHS rule))
     ]
     (
-    (map (mapNode False (ruleName++"K"++"L") (ruleName++"L"++"L")) $ typedNodes (mapping (mappingLeft (getLHS rule)))) ++
-    (map (mapNode False (ruleName++"K"++"K") (ruleName++"L"++"K")) $ typedNodes (mapping (mappingInterface (getLHS rule)))) ++
-    (map (mapNode False (ruleName++"K"++"R") (ruleName++"L"++"R")) $ typedNodes (mapping (mappingRight (getLHS rule)))) ++
-    (map (mapNode True (ruleName++"K"++"L") (ruleName++"R"++"L")) $ typedNodes (mapping (mappingLeft (getRHS rule)))) ++
-    (map (mapNode True (ruleName++"K"++"K") (ruleName++"R"++"K")) $ typedNodes (mapping (mappingInterface (getRHS rule)))) ++
-    (map (mapNode True (ruleName++"K"++"R") (ruleName++"R"++"R")) $ typedNodes (mapping (mappingRight (getRHS rule))))
+    map (mapNode False (ruleName ++ "K" ++ "L") (ruleName ++ "L" ++ "L")) (typedNodes (mapping (mappingLeft (getLHS rule)))) ++
+    map (mapNode False (ruleName ++ "K" ++ "K") (ruleName ++ "L" ++ "K")) (typedNodes (mapping (mappingInterface (getLHS rule)))) ++
+    map (mapNode False (ruleName ++ "K" ++ "R") (ruleName ++ "L" ++ "R")) (typedNodes (mapping (mappingRight (getLHS rule)))) ++
+    map (mapNode True  (ruleName ++ "K" ++ "L") (ruleName ++ "R" ++ "L")) (typedNodes (mapping (mappingLeft (getRHS rule)))) ++
+    map (mapNode True  (ruleName ++ "K" ++ "K") (ruleName ++ "R" ++ "K")) (typedNodes (mapping (mappingInterface (getRHS rule)))) ++
+    map (mapNode True  (ruleName ++ "K" ++ "R") (ruleName ++ "R" ++ "R")) (typedNodes (mapping (mappingRight (getRHS rule))))
     )
     []
 

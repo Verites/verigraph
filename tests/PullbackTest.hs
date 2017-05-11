@@ -1,8 +1,9 @@
+import           Data.Matrix                  hiding ((<|>))
+import           Test.HUnit
+
 import           Abstract.DPO
 import           Analysis.ParallelIndependent
-import           Data.Matrix                  hiding ((<|>))
 import qualified Grammar.Core                 as GG
-import           Test.HUnit
 import           Utils
 import qualified XML.GGXReader                as XML
 
@@ -21,25 +22,26 @@ main =
           ,"tests/grammars/elevator.ggx"
           ,"tests/grammars/mutex.ggx"]
 
-        --dpoConf = MorphismsConfig AnyMatches MonomorphicNAC
-        dpoConf = MorphismsConfig MonoMatches MonomorphicNAC
-
+        dpoConf = MorphismsConfig AnyMatches MonomorphicNAC
+        
         tests fn =
-            [TestLabel ("Parallel Test for " ++ fn) (test1 dpoConf fn Parallel)
-            ,TestLabel ("Sequentially Test for " ++ fn) (test1 dpoConf fn Sequentially)]
+            [ TestLabel ("Parallel Test for " ++ fn ++ " with Cond1") (test1 dpoConf fn Parallel Cond1)
+            , TestLabel ("Parallel Test for " ++ fn ++ " with Cond2") (test1 dpoConf fn Parallel Cond2)
+            , TestLabel ("Sequentially Test for " ++ fn ++ " with Cond1") (test1 dpoConf fn Sequentially Cond1)
+            , TestLabel ("Sequentially Test for " ++ fn ++ " with Cond2") (test1 dpoConf fn Sequentially Cond2)]
 
         allTests = TestList $ concatMap tests filenames
 
     runTestTT allTests
 
-test1 dpoConf fileName alg =
+test1 dpoConf fileName alg pb =
   TestCase $
     do
       (gg,_,_) <- XML.readGrammar fileName False dpoConf
 
       let rules = map snd (GG.rules gg)
-          analysisDU = pairwiseCompare (isIndependent alg DeleteUse dpoConf) rules
-          analysisPB = pairwiseCompare (isIndependent alg Pullback dpoConf) rules
+          analysisPB = pairwiseCompare (isIndependent alg pb dpoConf) rules
+          analysisDU = pairwiseCompare (isIndependent alg Cond3 dpoConf) rules
 
       assertEqual (show alg ++ "Independent on " ++ fileName) analysisDU analysisPB
 
