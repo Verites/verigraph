@@ -24,3 +24,6 @@ ratings:
   - "**.md"
   - "**.sh"
 
+exclude_paths:
+  - "**.ggx"
+  - "**.png"  
