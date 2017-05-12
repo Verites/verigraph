@@ -2,6 +2,8 @@
 
 [![Build Status](https://travis-ci.org/Verites/verigraph.svg?branch=master)](https://travis-ci.org/Verites/verigraph)
 [![Coverage Status](https://coveralls.io/repos/github/Verites/verigraph/badge.svg?branch=master)](https://coveralls.io/github/Verites/verigraph?branch=master)
+[![Code Climate](https://codeclimate.com/github/Verites/verigraph/badges/gpa.svg)](https://codeclimate.com/github/Verites/verigraph)
+[![Issue Count](https://codeclimate.com/github/Verites/verigraph/badges/issue_count.svg)](https://codeclimate.com/github/Verites/verigraph)
 
 <img src="./images/Verigraph.png" height="200px"/>
 
