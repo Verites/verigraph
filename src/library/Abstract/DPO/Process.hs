@@ -18,7 +18,6 @@ import           Abstract.Morphism
 import           Data.List.NonEmpty      (NonEmpty, fromList)
 import           Data.Maybe              (fromJust)
 import qualified Data.Set as S
-import           Grammar.Core
 
 data Process m = Process
   { productions :: [Production m]

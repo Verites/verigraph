@@ -2,7 +2,6 @@ import           Abstract.AdhesiveHLR            (EpiPairs)
 import           Abstract.DPO
 import           Analysis.EssentialCriticalPairs
 import           Data.Matrix                     hiding ((<|>))
-import qualified Grammar.Core                    as GG
 import           Test.HUnit
 import           Utils
 import qualified XML.GGXReader                   as XML
@@ -15,8 +14,8 @@ main = do
   (gg1,_,_) <- XML.readGrammar fileName1 False dpoConf
   (_,gg2,_) <- XML.readGrammar fileName2 False dpoConf
 
-  let rules1 = map snd (GG.rules gg1)
-      rules2 = map snd (GG.rules gg2)
+  let rules1 = map snd (rules gg1)
+      rules2 = map snd (rules gg2)
 
   runTests
     [ testElevator (MorphismsConfig MonoMatches PartiallyMonomorphicNAC) rules1

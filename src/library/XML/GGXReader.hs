@@ -21,7 +21,6 @@ import qualified Data.List                as L
 import qualified Data.Map                 as M
 import           Data.Maybe               (fromJust, fromMaybe, mapMaybe)
 import           Data.String.Utils        (startswith)
-import qualified Grammar.Core             as GG
 import qualified Graph.Graph              as G
 import           Graph.GraphMorphism      as GM
 import           SndOrder.Morphism
@@ -41,7 +40,7 @@ import           XML.XMLUtilities
 -- | Reads the grammar in the XML, adds the needed minimal safety nacs
 --   to second order, and returns the grammar and a log
 readGrammar :: String -> Bool -> MorphismsConfig
-            -> IO (GG.Grammar (TypedGraphMorphism a b), GG.Grammar (RuleMorphism a b), [(String, Int)])
+            -> IO (Grammar (TypedGraphMorphism a b), Grammar (RuleMorphism a b), [(String, Int)])
 readGrammar fileName useConstraints morphismsConf = do
   parsedTypeGraphs <- readTypeGraph fileName
   let parsedTypeGraph = case parsedTypeGraphs of
@@ -70,11 +69,11 @@ readGrammar fileName useConstraints morphismsConf = do
 
   -- gets only the first graph as initial, because verigraph supports only one initial graph per grammar.
   let initGraph = head (map snd parsedGraphs)
-      fstOrderGrammar = GG.grammar initGraph cons (zip rulesNames rules)
+      fstOrderGrammar = grammar initGraph cons (zip rulesNames rules)
 
       sndOrderRules = instantiateSndOrderRules typeGraph sndOrdRules
       emptyRule = emptyGraphRule typeGraph
-      sndOrderGrammar = GG.grammar emptyRule [] sndOrderRules
+      sndOrderGrammar = grammar emptyRule [] sndOrderRules
 
       (sndOrderGrammarWithMinimalSafetyNacs, logNewNacs) =
         minimalSafetyNacsWithLog morphismsConf sndOrderGrammar
@@ -99,8 +98,8 @@ readGGName fileName = do
 -- Minimal Safety Nacs Logs
 
 -- FIX: find a better place for this two functions
-minimalSafetyNacsWithLog :: MorphismsConfig -> GG.Grammar (RuleMorphism a b)
-                         -> (GG.Grammar (RuleMorphism a b), [(String, Int)])
+minimalSafetyNacsWithLog :: MorphismsConfig -> Grammar (RuleMorphism a b)
+                         -> (Grammar (RuleMorphism a b), [(String, Int)])
 minimalSafetyNacsWithLog conf oldGG = (newGG, printNewNacs)
   where
     newNacs =
@@ -109,8 +108,8 @@ minimalSafetyNacsWithLog conf oldGG = (newGG, printNewNacs)
             tamNewNacs = length (getNACs newRule)
             tamNacs = length (getNACs r)
          in ((n, newRule), (n, tamNewNacs - tamNacs))
-        ) (GG.rules oldGG)
-    newGG = oldGG {GG.rules = map fst newNacs}
+        ) (rules oldGG)
+    newGG = oldGG {rules = map fst newNacs}
     printNewNacs = map snd newNacs
 
 printMinimalSafetyNacsLog :: [(String, Int)] -> [String]
@@ -162,33 +161,33 @@ readGraphs fileName =
 readRules :: String -> IO[RuleWithNacs]
 readRules fileName = runX (parseXML fileName >>> parseRule)
 
-readSequences :: GG.Grammar (TypedGraphMorphism a b) -> String -> IO [(String, [GR.GraphRule a b])]
+readSequences :: Grammar (TypedGraphMorphism a b) -> String -> IO [(String, [GR.GraphRule a b])]
 readSequences grammar fileName = map (expandSequence grammar) <$> runX (parseXML fileName >>> parseRuleSequence)
 
-expandSequence :: GG.Grammar (TypedGraphMorphism a b) -> Sequence -> (String, [GR.GraphRule a b])
+expandSequence :: Grammar (TypedGraphMorphism a b) -> Sequence -> (String, [GR.GraphRule a b])
 expandSequence grammar (name,s,_) = (name, mapMaybe lookupRule . concat $ map expandSub s)
   where
     expandSub (i, s) = concat $ replicate i $ concatMap expandItens s
     expandItens (i, r) = replicate i r
-    lookupRule name = L.lookup name (GG.rules grammar)
+    lookupRule name = L.lookup name (rules grammar)
 
-readSequencesWithObjectFlow :: GG.Grammar (TypedGraphMorphism a b) -> String -> IO [(String, [(String, GR.GraphRule a b)], [GG.ObjectFlow (TypedGraphMorphism a b)])]
+readSequencesWithObjectFlow :: Grammar (TypedGraphMorphism a b) -> String -> IO [(String, [(String, GR.GraphRule a b)], [ObjectFlow (TypedGraphMorphism a b)])]
 readSequencesWithObjectFlow grammar fileName = map (prepareFlows grammar) <$> runX (parseXML fileName >>> parseRuleSequence)
 
-prepareFlows :: GG.Grammar (TypedGraphMorphism a b) -> Sequence -> (String, [(String, GR.GraphRule a b)], [GG.ObjectFlow (TypedGraphMorphism a b)])
+prepareFlows :: Grammar (TypedGraphMorphism a b) -> Sequence -> (String, [(String, GR.GraphRule a b)], [ObjectFlow (TypedGraphMorphism a b)])
 prepareFlows grammar (name,s,flows) = (name, map fun getAll, objs)
   where
     fun name = (name, fromJust $ lookupRule name)
     getAll = map snd (snd $ head s) -- gets only the first subsequence
-    lookupRule name = L.lookup name (GG.rules grammar)
-    objs = instantiateObjectsFlow (GG.rules grammar) flows
+    lookupRule name = L.lookup name (rules grammar)
+    objs = instantiateObjectsFlow (rules grammar) flows
 
-instantiateObjectsFlow :: [(String, Production (TypedGraphMorphism a b))] -> [ParsedObjectFlow] -> [GG.ObjectFlow (TypedGraphMorphism a b)]
+instantiateObjectsFlow :: [(String, Production (TypedGraphMorphism a b))] -> [ParsedObjectFlow] -> [ObjectFlow (TypedGraphMorphism a b)]
 instantiateObjectsFlow _ [] = []
 instantiateObjectsFlow [] _ = []
 instantiateObjectsFlow rules (o:os) =
   let
-    createObject (idx,cons,prod,maps) = GG.ObjectFlow idx prod cons (createSpan prod cons maps)
+    createObject (idx,cons,prod,maps) = ObjectFlow idx prod cons (createSpan prod cons maps)
     createSpan prod cons = instantiateSpan (rightGraph (searchRight prod)) (leftGraph (searchLeft cons))
     leftGraph = codomain . getLHS
     rightGraph = codomain . getRHS

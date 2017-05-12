@@ -4,12 +4,12 @@ module ParallelIndependence
   , execute
   ) where
 
+import           Abstract.DPO
 import           Analysis.ParallelIndependent
 import           Control.Monad                (unless, when)
 import           Data.Matrix                  hiding ((<|>))
 import           Data.Monoid                  ((<>))
 import           GlobalOptions
-import qualified Grammar.Core                 as GG
 import           Options.Applicative
 import qualified XML.GGXReader                as XML
 
@@ -63,9 +63,9 @@ execute globalOpts opts = do
         comp = False -- flag to compare if deleteuse and pullbacks are generating the same results
         algorithm =
           if siFlag opts then Sequentially else Parallel
-        --rules = concatMap (replicate 1) $ map snd (GG.rules gg)
-        rules1 = map snd (GG.rules fstOrdGG)
-        rules2 = map snd (GG.rules sndOrdGG)
+        --rules = concatMap (replicate 1) $ map snd (rules gg)
+        rules1 = map snd (rules fstOrdGG)
+        rules2 = map snd (rules sndOrdGG)
         analysisC11 = pairwiseCompareUpperReflected (isIndependent algorithm Cond1 dpoConf) rules1
         analysisPB1 = pairwiseCompareUpperReflected (isIndependent algorithm Cond2 dpoConf) rules1
         analysisDU1 = pairwiseCompareUpperReflected (isIndependent algorithm Cond3 dpoConf) rules1

@@ -51,7 +51,6 @@ library
                        Graph.Graph
                        Graph.GraphMorphism
                        Graph.QuickCheck
-                       Grammar.Core
                        Logic.Model
                        Logic.Ctl
                        SndOrder.Morphism

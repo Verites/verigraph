@@ -1,5 +1,15 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE UndecidableInstances #-}
+
+{-|
+Description : Basic structures and functions to deal with the DPO rewritting approach.
+
+This module includes the definition of a data types for DPO productions and DPO graph grammars,
+alongside their constructors and manipulators.
+
+Also, this module has the functions to deal with Productions applicability, nacs satisfactions
+and the DPO rewritting.
+-}
 module Abstract.DPO.Core
 
 where
@@ -8,16 +18,36 @@ import           Abstract.AdhesiveHLR
 import           Abstract.Morphism
 import           Abstract.Valid
 
+
+
 -- | A Double-Pushout production.
 --
 -- Consists of two morphisms /'left' : K -> L/ and /'right' : K -> R/,
 -- as well as a set of 'nacs' /L -> Ni/.
-data Production m = Production
-  { left  :: m   -- ^ The morphism /K -> L/ of a production
-  , right :: m  -- ^ The morphism /K -> R/ of a production
-  , nacs  :: [m] -- ^ The set of nacs /L -> Ni/ of a production
-  }
-  deriving (Eq, Show, Read)
+data Production m = Production {
+   left  :: m   -- ^ The morphism /K -> L/ of a production
+,  right :: m  -- ^ The morphism /K -> R/ of a production
+,  nacs  :: [m] -- ^ The set of nacs /L -> Ni/ of a production
+}  deriving (Eq, Show, Read)
+
+instance (Morphism m, Valid m, Eq (Obj m)) => Valid (Production m) where
+  validate (Production l r nacs) =
+    mconcat $
+      [ withContext "left morphism" (validate l)
+      , withContext "right morphism" (validate r)
+      , ensure (isMonomorphism l) "The left side of the production is not monic"
+      , ensure (isMonomorphism r) "The right side of the production is not monic"
+      , ensure (domain l == domain r) "The domains of the left and right morphisms aren't the same"
+      ] ++ zipWith validateNac nacs ([1..] :: [Int])
+    where
+      validateNac nac index =
+        mconcat
+          [ withContext ("NAC #" ++ show index) (validate nac)
+          , ensure (codomain l == domain nac) ("The domain of NAC #" ++ show index ++ " is not the left side of the rule")
+          ]
+
+
+type NamedProduction m = (String, Production m)
 
 -- | Construct a production from the morphism /l : K -> L/,
 -- the morphism /r : K -> R/, and the nacs /L -> Ni/, respectively.
@@ -38,21 +68,57 @@ getRHS = right
 getNACs :: Production m -> [m]
 getNACs = nacs
 
-instance (Morphism m, Valid m, Eq (Obj m)) => Valid (Production m) where
-  validate (Production l r nacs) =
+-- TODO: should we use only one name to refer to the rules instead of rules and productions?
+data Grammar m = Grammar {
+   start       :: Obj m
+,  constraints :: [Constraint m]
+,  rules       :: [NamedProduction m]
+,  reachableGraphs :: [(String, Obj m)]
+}
+
+instance (Morphism m, Valid m, Valid (Obj m), Eq (Obj m)) => Valid (Grammar m) where
+
+  validate (Grammar s c r rg) =
     mconcat $
-      [ withContext "left morphism" (validate l)
-      , withContext "right morphism" (validate r)
-      , ensure (isMonomorphism l) "The left side of the production is not monic"
-      , ensure (isMonomorphism r) "The right side of the production is not monic"
-      , ensure (domain l == domain r) "The domains of the left and right morphisms aren't the same"
-      ] ++ zipWith validateNac nacs ([1..] :: [Int])
+      [ withContext "Start graph" (validate s)]
+      ++ zipWith validateConstraint c ([1..] :: [Int])
+      ++ map validateProduction r
+      ++ map validateGraph rg
     where
-      validateNac nac index =
-        mconcat
-          [ withContext ("NAC #" ++ show index) (validate nac)
-          , ensure (codomain l == domain nac) ("The domain of NAC #" ++ show index ++ " is not the left side of the rule")
-          ]
+      validateConstraint constraint index =
+        mconcat [ withContext ("Constraint #" ++ show index) (validate constraint) ]
+      validateProduction (name, rule) =
+        mconcat [ withContext ("Rule " ++ name) (validate rule)]
+      validateGraph (name, graph) =
+        mconcat [ withContext ("Graph " ++ name) (validate graph)]
+
+
+-- | Object that uses a Span of Morphisms to connect the right-hand-side of a Production with the left-hand-side of another one
+data ObjectFlow m =
+  ObjectFlow {
+  index       :: String -- ^ A identifier for the Object Flow
+, producer    :: String -- ^ The name of the production that will produce the input for the next
+, consumer    :: String -- ^ The name of the production that uses the result of the other
+, spanMapping :: Span m -- ^ A span of Morphisms @Ri <- IO -> Lo@ where @Ri@ is the right-hand-side of the @producer production@ and @Lo@ is the left-hand-side of the @consumer production@
+}
+
+type RuleSequence m = (String,[(String, Production m)],[ObjectFlow m])
+
+grammar :: Obj m -> [Constraint m] -> [NamedProduction m] -> Grammar m
+grammar s c r = Grammar s c r []
+
+addReachableGraphs :: [(String, Obj m)] -> Grammar m -> Grammar m
+addReachableGraphs gs' (Grammar s c r gs)  = Grammar s c r (gs ++ gs')
+
+getProductionName :: NamedProduction m -> String
+getProductionName = fst
+
+getProduction :: NamedProduction m -> Production m
+getProduction = snd
+
+findProduction :: String -> Grammar m -> Maybe (Production m)
+findProduction name grammar = lookup name (rules grammar)
+
 
 -- | Class for morphisms whose category is Adhesive-HLR, and which can be
 -- used for double-pushout transformations.
@@ -147,8 +213,7 @@ satisfiesSingleNac conf match nac =
             partialInjectiveMatches nac match
       commutes nacMatch =
         compose nac nacMatch == match
-  in
-    not $ any commutes nacMatches
+  in not $ any commutes nacMatches
 
 -- | Given a match and a production, calculate the calculateComatch for the
 -- corresponding transformation.

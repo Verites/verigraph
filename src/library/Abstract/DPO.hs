@@ -11,6 +11,20 @@ module Abstract.DPO
   , getRHS
   , getNACs
 
+  , grammar
+  , Grammar
+  , ObjectFlow (..)
+  , RuleSequence
+  , NamedProduction
+  , getProductionName
+  , getProduction
+  , start
+  , constraints
+  , rules
+  , findProduction
+  , reachableGraphs
+  , addReachableGraphs
+
   , Derivation(..)
   , generateDerivation
 

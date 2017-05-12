@@ -17,7 +17,6 @@ import           Data.Matrix                           hiding ((<|>))
 import           Data.Monoid                           ((<>))
 import qualified Data.Set                              as Set
 import           GlobalOptions
-import qualified Grammar.Core                          as GG
 import           Options.Applicative
 import           SndOrder.Rule
 import qualified XML.GGXReader                         as XML
@@ -87,8 +86,8 @@ execute globalOpts opts = do
         secondOrder = sndOrder opts
         writer = defWriterFun essentialCP secondOrder dpoConf action
 
-        namedFstOrdRules = GG.rules fstOrderGG
-        namedSndOrdRules = GG.rules sndOrderGG
+        namedFstOrdRules = rules fstOrderGG
+        namedSndOrdRules = rules sndOrderGG
         fstOrdRules = map snd namedFstOrdRules
         sndOrdRules = map snd namedSndOrdRules
 

@@ -3,7 +3,6 @@ import           Abstract.DPO
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
 import           Data.Matrix               hiding ((<|>))
-import qualified Grammar.Core              as GG
 import           Test.HUnit
 import           Utils
 import qualified XML.GGXReader             as XML
@@ -16,8 +15,8 @@ main = do
   (gg1,_,_) <- XML.readGrammar fileName1 False dpoConf
   (_,gg2,_) <- XML.readGrammar fileName2 False dpoConf
 
-  let fstRules = map snd (GG.rules gg1)
-      sndRules = map snd (GG.rules gg2)
+  let fstRules = map snd (rules gg1)
+      sndRules = map snd (rules gg2)
 
   runTests $
     [ testTeseRodrigo (MorphismsConfig MonoMatches PartiallyMonomorphicNAC) fstRules

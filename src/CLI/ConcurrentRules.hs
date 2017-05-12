@@ -8,9 +8,9 @@ import           Data.Monoid              ((<>))
 import           GlobalOptions
 
 import           Abstract.AdhesiveHLR
+import           Abstract.DPO
 import           Analysis.ConcurrentRules
 import           Control.Monad
-import qualified Grammar.Core             as GG
 import           Options.Applicative
 import           TypedGraph.DPO.GraphRule
 import           TypedGraph.Morphism
@@ -65,13 +65,13 @@ execute globalOpts opts = do
                                 MaxConcurrentRule  -> makeMaxConcurrentRules
                                 AllConcurrentRules -> makeAllConcurrentRules
         dependencies = concRulesbyDep opts
-        newRules = map (makeConcurrentRules dependencies (morphismsConf globalOpts) (GG.constraints gg)) sequences
+        newRules = map (makeConcurrentRules dependencies (morphismsConf globalOpts) (constraints gg)) sequences
 
     forM_ (zip sequences newRules) $ \((name, _), rules) ->
       when (null rules)
         (putStrLn $ "No concurrent rules were found for rule sequence '" ++ name ++ "'")
 
-    let gg' = GG.grammar (GG.start gg) [] (GG.rules gg ++ concat newRules)
+    let gg' = grammar (start gg) [] (rules gg ++ concat newRules)
     GW.writeGrammarFile (gg',gg2) ggName names (outputFile opts)
 
 

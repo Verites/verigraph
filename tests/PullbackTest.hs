@@ -1,10 +1,8 @@
 import           Data.Matrix                  hiding ((<|>))
 import           Test.HUnit
 
-import           Abstract.DPO
+import           Abstract.DPO                 as DPO
 import           Analysis.ParallelIndependent
-import qualified Grammar.Core                 as GG
-import           Utils
 import qualified XML.GGXReader                as XML
 
 -- This test is based on that the pullback scheme for detecting parallel
@@ -23,7 +21,7 @@ main =
           ,"tests/grammars/mutex.ggx"]
 
         dpoConf = MorphismsConfig AnyMatches MonomorphicNAC
-        
+
         tests fn =
             [ TestLabel ("Parallel Test for " ++ fn ++ " with Cond1") (test1 dpoConf fn Parallel Cond1)
             , TestLabel ("Parallel Test for " ++ fn ++ " with Cond2") (test1 dpoConf fn Parallel Cond2)
@@ -39,7 +37,7 @@ test1 dpoConf fileName alg pb =
     do
       (gg,_,_) <- XML.readGrammar fileName False dpoConf
 
-      let rules = map snd (GG.rules gg)
+      let rules = map snd (DPO.rules gg)
           analysisPB = pairwiseCompare (isIndependent alg pb dpoConf) rules
           analysisDU = pairwiseCompare (isIndependent alg Cond3 dpoConf) rules
 

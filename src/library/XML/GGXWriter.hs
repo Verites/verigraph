@@ -19,7 +19,6 @@ import           Abstract.Morphism               (codomain)
 import qualified Analysis.CriticalPairs          as CP
 import qualified Analysis.CriticalSequence       as CS
 import qualified Analysis.EssentialCriticalPairs as ECP
-import           Grammar.Core
 import qualified Graph.Graph                     as G
 import           SndOrder.Morphism
 import qualified SndOrder.Rule                   as SO

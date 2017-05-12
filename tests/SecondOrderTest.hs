@@ -3,7 +3,6 @@ import           Abstract.Morphism
 import           Analysis.Interlevel.InterLevelCP
 import           Data.List.Utils                  (countElem)
 import           Data.Maybe                       (fromMaybe)
-import           Grammar.Core
 import           SndOrder.Morphism
 import           SndOrder.Morphism.NACmanipulation
 import           Test.HUnit
@@ -27,12 +26,12 @@ checkDanglingExtension gg1 =
   ]
   where
     ruleC = getRule "ruleC" gg1
-    
+
     left = getLHS ruleC
     dangGraph = codomain (danglingExtension left)
-    
+
     [(_,typeOfMsg),(_,typeOfData)] = typedNodes (codomain left)
-    
+
     msgsInDang = countElem typeOfMsg (map snd nods)
     dataInDang = countElem typeOfData (map snd nods)
     nods = typedNodes dangGraph
@@ -79,7 +78,7 @@ checkInterlevelConflict mono arbitrary gg1 gg2 =
     ruleB = ("ruleB", getRule "ruleB" gg1)
     ruleC = ("ruleC", getRule "ruleC" gg1)
     ruleD = ("ruleD", getRule "ruleD" gg1)
-    
+
     a = ("a", getRule "a" gg2)
     b = ("b", getRule "b" gg2)
     c = ("c", getRule "c" gg2)
@@ -98,25 +97,25 @@ checkNacManipulation gg =
   where
     find :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
     find x y = findAllMorphisms (codomain x) (codomain y)
-    
+
     -- Creation
     creation_modeledNACs_rule = getRule "creation_modeledNACs" gg
     creation_concreteNACs_rule = getRule "creation_concreteNACs" gg
-    
+
     match = head (find (getLHS creation_modeledNACs_rule) (getLHS creation_concreteNACs_rule))
     creation_modeledNACs = getNACs creation_modeledNACs_rule
-    
+
     createDisable = createStep DisableCreate match creation_modeledNACs
     createPO = createStep Pushout match creation_modeledNACs
     createShift = createStep ShiftNACs match creation_modeledNACs
-    
+
     -- Deletion
     deletion_modeledNACs_rule = getRule "deletion_modeledNACs" gg
     deletion_concreteNACs_rule = getRule "deletion_concreteNACs" gg
-    
+
     deletion_modeledNACs = getNACs deletion_modeledNACs_rule
     deletion_concreteNACs = getNACs deletion_concreteNACs_rule
-    
+
     deleteDisable = deleteStep DisableDelete deletion_modeledNACs deletion_concreteNACs
     deleteMono = deleteStep Monomorphisms deletion_modeledNACs deletion_concreteNACs
     deleteIPO = deleteStep InitialPushouts deletion_modeledNACs deletion_concreteNACs
@@ -140,7 +139,7 @@ main = do
       fileName3 = "tests/grammars/NacManipulation.ggx"
       dpoConf1 = MorphismsConfig MonoMatches MonomorphicNAC
       dpoConf2 = MorphismsConfig AnyMatches MonomorphicNAC
-  
+
   (_,_,log1) <- XML.readGrammar fileName1 False dpoConf1
   (_,_,log2) <- XML.readGrammar fileName1 False dpoConf2
   (gg1,gg2,log3) <- XML.readGrammar fileName2 False dpoConf1

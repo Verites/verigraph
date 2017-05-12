@@ -13,7 +13,6 @@ import                Data.Maybe                  (fromJust, isJust)
 import                Data.Monoid                 ((<>))
 import                Data.Set                    (toList)
 import                GlobalOptions
-import qualified Grammar.Core                as GG
 import                Options.Applicative
 import                TypedGraph.DPO.GraphProcess
 import                TypedGraph.DPO.OccurenceRelation
@@ -49,7 +48,7 @@ execute globalOpts opts = do
         ogg = generateDoublyTypedGrammar $ head sequences
         sgg = singleTypedGrammar ogg
         completeOgg = calculateNacRelations ogg inducedByNacs
-        newRules = GG.rules . singleTypedGrammar $ ogg
+        newRules = rules . singleTypedGrammar $ ogg
         relation = concreteRelation completeOgg
         rulesRelation = filterRulesOccurrenceRelation relation
         elementsRelation = filterElementsOccurrenceRelation relation
@@ -123,8 +122,8 @@ execute globalOpts opts = do
     writeFile (outputFile opts ++ "_test_cases") testCases
     putStrLn $ "Test cases written in " ++ (outputFile opts ++ "_test_cases")
 
-    let newStart = GG.start sgg
-        gg' = GG.addReachableGraphs (GG.reachableGraphs sgg) (GG.grammar newStart [] newRules)
+    let newStart = start sgg
+        gg' = addReachableGraphs (reachableGraphs sgg) (grammar newStart [] newRules)
     GW.writeGrammarFile (gg',gg2) ggName (buildNewNames names (doubleType completeOgg)) (outputFile opts ++ ".ggx")
 
 buildNewNames :: [(String,String)] -> TG.TypedGraph a b -> [(String,String)]
