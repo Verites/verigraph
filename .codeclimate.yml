@@ -1,6 +1,16 @@
 engines:
   hlint:
     enabled: true
+    
+  fixme:
+    enabled: true
+    config:
+      strings:
+      - TODO
+      - FIXME
+      - HACK
+      - BUG
+
 ratings:
   paths:
   - "**.hs"
