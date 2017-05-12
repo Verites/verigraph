@@ -9,9 +9,8 @@
 
 Software specification and verification tool based on graph rewriting.
 
-[![DOI](https://zenodo.org/badge/22760294.svg)](https://zenodo.org/badge/latestdoi/22760294) 
+[![DOI](https://zenodo.org/badge/22760294.svg)](https://zenodo.org/badge/latestdoi/22760294)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/Verites/verigraph/blob/master/LICENSE)
-
 
 ## Tutorial
 
@@ -29,9 +28,11 @@ Once you have cloned this repository, install `verigraph` by running:
   $ echo "export PATH=${PATH}:~/.local/bin" >> ~/.bashrc
   $ source ~/.bashrc
 ```
+
 ### Installing via Cabal
 
 Once you have cloned this repository, install `verigraph` by running:
+
 ```bash
   $ cabal install
   $ echo "export PATH=${PATH}:~/.cabal/bin" >> ~/.bashrc
@@ -41,6 +42,7 @@ Once you have cloned this repository, install `verigraph` by running:
 ### Usage
 
 Run verigraph helper:
+
 ```bash
   $ verigraph --help
 ```
@@ -50,6 +52,14 @@ Some example grammars are provided in the `grammars` directory, try something li
   $ verigraph analysis grammars/Pacman/pacman.ggx
 ```
 
+If you use bash, you can enable autocompletion of verigraph options for the current
+session by running the following command.
+
+```bash
+  $ source <(verigraph --bash-completion-script "$(which verigraph)")
+```
+
 ## Modeling and Visualization
 
-We use [AGG](http://www.user.tu-berlin.de/o.runge/agg/) to read and write the .ggx and .cpx files with the Graph Grammars and their analysis
+We use [AGG](http://www.user.tu-berlin.de/o.runge/agg/) to read and write the .ggx
+and .cpx files with the Graph Grammars and their analysis
