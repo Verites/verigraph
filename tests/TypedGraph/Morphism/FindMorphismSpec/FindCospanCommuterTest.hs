@@ -39,6 +39,10 @@ findCospanCommuterTest =
   genericTest tgm9 tgm8
   genericTest tgm8 tgm9
 
+  -- | Tests with loops
+  genericTest tgm10 tgm11
+  genericTest tgm11 tgm10
+
 
 -- | TypedGraphMorphism instances. Digraphs with only nodes
 
@@ -57,6 +61,7 @@ tgm4 = TGM.buildTypedGraphMorphism g1 g2 $ GM.buildGraphMorphism g1' g2' [(1,1)]
 tgm5 :: TGM a b
 tgm5 = TGM.buildTypedGraphMorphism g3 g2 $ GM.buildGraphMorphism g3' g2' [(1,1),(2,2),(3,2)] []
 
+
 -- | TypedGraphMorphism instances. Digraphs with only nodes
 
 tgm6 :: TGM a b
@@ -70,6 +75,16 @@ tgm8 = TGM.buildTypedGraphMorphism g5 g5 $ GM.buildGraphMorphism g5' g5' [(1,1),
 
 tgm9 :: TGM a b
 tgm9 = TGM.buildTypedGraphMorphism g6 g5 $ GM.buildGraphMorphism g6' g5' [(1,1),(2,2)][(1,1),(2,2),(3,1)]
+
+
+-- | TypedGraphMorphism instances. Digraphs with loops
+
+tgm10 :: TGM a b
+tgm10 = TGM.buildTypedGraphMorphism g7 g7 $ GM.buildGraphMorphism g7' g7' [(1,1)] [(1,1)]
+
+tgm11 :: TGM a b
+tgm11 = TGM.buildTypedGraphMorphism g8 g7 $ GM.buildGraphMorphism g8' g7' [(1,1),(2,1)][(1,1),(2,1)]
+
 
 -- | Graphs instances for tests
 
@@ -153,6 +168,35 @@ g6 = GM.buildGraphMorphism g6' typegraph [(1,1),(2,1)] [(1,1),(2,1),(3,1)]
 
 g6' :: G a b
 g6' = build [1,2] [(1,1,2),(2,1,2),(3,1,2)]
+
+
+-- | Digraphs with loops for validity tests
+
+-- | digraph G7 {
+--    1 [shape = circle];
+--
+--    1 -> 1;
+--
+--   }
+g7 :: GM a b
+g7 = GM.buildGraphMorphism g7' typegraph [(1,1)] [(1,1)]
+
+g7' :: G a b
+g7' = build [1] [(1,1,1)]
+
+-- | digraph G8 {
+--    1 [shape = circle];
+--    2 [shape = circle];
+--
+--    1 -> 1;
+--    2 -> 2;
+--
+--   }
+g8 :: GM a b
+g8 = GM.buildGraphMorphism g8' typegraph [(1,1),(2,1)] [(1,1),(2,1)]
+
+g8' :: G a b
+g8' = build [1,2] [(1,1,1),(2,2,2)]
 
 
 -- | Auxiliary functions to tests
