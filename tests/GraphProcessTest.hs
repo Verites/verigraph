@@ -1,10 +1,9 @@
 -- | Test Suite for GraphProcess Module
 
 import           Abstract.AdhesiveHLR
-import           Abstract.Cocomplete
 import           Abstract.DPO
+import           Abstract.DPO.Process
 import           Abstract.Morphism
-import           Data.List.NonEmpty          (fromList)
 import           Data.Maybe                  (fromJust)
 import           Graph.Graph
 import           Graph.GraphMorphism

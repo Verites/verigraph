@@ -1,7 +1,7 @@
 import           Data.Matrix                  hiding ((<|>))
 import           Test.HUnit
 
-import           Abstract.DPO                 as DPO
+import           Abstract.DPO
 import           Analysis.ParallelIndependent
 import qualified XML.GGXReader                as XML
 
@@ -37,7 +37,7 @@ test1 dpoConf fileName alg pb =
     do
       (gg,_,_) <- XML.readGrammar fileName False dpoConf
 
-      let rules = map snd (DPO.rules gg)
+      let rules = map snd (productions gg)
           analysisPB = pairwiseCompare (isIndependent alg pb dpoConf) rules
           analysisDU = pairwiseCompare (isIndependent alg Cond3 dpoConf) rules
 

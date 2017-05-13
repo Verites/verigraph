@@ -14,8 +14,8 @@ main = do
   (gg1,_,_) <- XML.readGrammar fileName1 False dpoConf
   (_,gg2,_) <- XML.readGrammar fileName2 False dpoConf
 
-  let rules1 = map snd (rules gg1)
-      rules2 = map snd (rules gg2)
+  let rules1 = map snd (productions gg1)
+      rules2 = map snd (productions gg2)
 
   runTests
     [ testElevator (MorphismsConfig MonoMatches PartiallyMonomorphicNAC) rules1

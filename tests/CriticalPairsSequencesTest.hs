@@ -15,8 +15,8 @@ main = do
   (gg1,_,_) <- XML.readGrammar fileName1 False dpoConf
   (_,gg2,_) <- XML.readGrammar fileName2 False dpoConf
 
-  let fstRules = map snd (rules gg1)
-      sndRules = map snd (rules gg2)
+  let fstRules = map snd (productions gg1)
+      sndRules = map snd (productions gg2)
 
   runTests $
     [ testTeseRodrigo (MorphismsConfig MonoMatches PartiallyMonomorphicNAC) fstRules

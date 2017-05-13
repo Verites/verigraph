@@ -124,13 +124,7 @@ getRule :: String -> Grammar m -> Production m
 getRule str gg =
   fromMaybe
     (error ("secondOrderTest: " ++ str ++ " is not in secondOrderMatchTest.ggx"))
-    (lookup str (rules gg))
-
-getFstOrdRules :: Grammar (TypedGraphMorphism a b) -> [(String, Production (TypedGraphMorphism a b))]
-getFstOrdRules = rules
-
-getSndOrdRules :: Grammar (RuleMorphism a b) -> [(String, Production (RuleMorphism a b))]
-getSndOrdRules = rules
+    (lookup str (productions gg))
 
 main :: IO ()
 main = do

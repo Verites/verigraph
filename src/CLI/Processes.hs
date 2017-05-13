@@ -4,6 +4,7 @@ module Processes
   , execute
   ) where
 
+
 import           Control.Monad
 import           Data.Maybe                       (fromJust, isJust)
 import           Data.Monoid                      ((<>))
@@ -12,7 +13,7 @@ import           GlobalOptions
 import           Options.Applicative
 
 import           Abstract.DPO
-import           Abstract.DPO.Process
+import           Abstract.DPO.Process        hiding (productions)
 import           Abstract.Valid
 import           Analysis.Processes
 import           TypedGraph.DPO.GraphProcess
@@ -31,7 +32,7 @@ options = Options
     <> short 'o'
     <> metavar "FILE"
     <> action "file"
-    <> help "GGX file that will be written, adding the concurrent rules to the original graph grammar")
+    <> help "GGX file that will be written, adding the concurrent productions to the original graph grammar")
 
 execute :: GlobalOptions -> Options -> IO ()
 execute globalOpts opts = do
@@ -49,14 +50,14 @@ execute globalOpts opts = do
         ogg = generateDoublyTypedGrammar $ head sequences
         sgg = singleTypedGrammar ogg
         completeOgg = calculateNacRelations ogg inducedByNacs
-        newRules = rules . singleTypedGrammar $ ogg
+        newRules = productions . singleTypedGrammar $ ogg
         relation = concreteRelation completeOgg
         rulesRelation = filterRulesOccurrenceRelation relation
         elementsRelation = filterElementsOccurrenceRelation relation
         unique = uniqueOrigin newRules
         (rulesNames, elementsNames) = getElements completeOgg
-    forM_ (zip sequences newRules) $ \((name, _, _), rules) ->
-      when (null rules)
+    forM_ (zip sequences newRules) $ \((name, _, _), productions) ->
+      when (null productions)
         (putStrLn $ "No graph process candidates were found for rule sequence '" ++ name ++ "'")
 
     if null sequences then error "input file must have at least a rule sequence" else print ""

@@ -36,18 +36,18 @@ type Grammars a b = (Grammar (TypedGraphMorphism a b), Grammar (RuleMorphism a b
 appendSndOrderConflicts :: MorphismsConfig -> Grammars a b -> Grammars a b
 appendSndOrderConflicts conf (gg1,gg2) = (newGG1, gg2)
   where
-    conflicts = CP.namedCriticalPairs conf (rules gg2)
+    conflicts = CP.namedCriticalPairs conf (productions gg2)
     matches = concatMap (\(n1,n2,c) -> map (\ol -> (n1, n2, CP.getCriticalPairType ol, codomain (fst (CP.getCriticalPairMatches ol)))) c) conflicts
     conflictRules = map (\(idx,(n1,n2,tp,rule)) -> ("conflict_" ++ show tp ++ "_" ++ n1 ++ "_" ++ n2 ++ "_" ++ show idx, rule)) (zip ([0..]::[Int]) matches)
-    newGG1 = grammar (start gg1) [] (rules gg1 ++ conflictRules)
+    newGG1 = grammar (start gg1) [] (productions gg1 ++ conflictRules)
 
 appendSndOrderDependencies :: MorphismsConfig -> Grammars a b -> Grammars a b
 appendSndOrderDependencies conf (gg1,gg2) = (newGG1, gg2)
   where
-    conflicts = CS.namedCriticalSequences conf (rules gg2)
+    conflicts = CS.namedCriticalSequences conf (productions gg2)
     matches = concatMap (\(n1,n2,c) -> map (\ol -> (n1, n2, CS.getCriticalSequenceType ol, codomain (fst (CS.getCriticalSequenceComatches ol)))) c) conflicts
     conflictRules = map (\(idx,(n1,n2,tp,rule)) -> ("dependency_" ++ show tp ++ "_" ++ n1 ++ "_" ++ n2 ++ "_" ++ show idx, rule)) (zip ([0..]::[Int]) matches)
-    newGG1 = grammar (start gg1) [] (rules gg1 ++ conflictRules)
+    newGG1 = grammar (start gg1) [] (productions gg1 ++ conflictRules)
 
 -- | Writes grammar, second order conflicts and dependencies (.ggx)
 writeSndOderConfDepFile :: MorphismsConfig -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
@@ -111,22 +111,22 @@ writeConfDep essential conf ggs@(gg1,_) name names fileName = root [] [writeCpx 
   where
     cps =
       if essential
-        then ECP.namedEssentialCriticalPairs conf (rules gg1)
-        else CP.namedCriticalPairs conf (rules gg1)
-    css = CS.namedCriticalSequences conf (rules gg1)
+        then ECP.namedEssentialCriticalPairs conf (productions gg1)
+        else CP.namedCriticalPairs conf (productions gg1)
+    css = CS.namedCriticalSequences conf (productions gg1)
 
 writeConf :: Bool -> MorphismsConfig -> Grammars a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
 writeConf essential conf ggs@(gg1,_) name names fileName = root [] [writeCpx ggs cps [] name names] >>> writeDocument [withIndent yes] fileName
   where
     cps =
       if essential
-        then ECP.namedEssentialCriticalPairs conf (rules gg1)
-        else CP.namedCriticalPairs conf (rules gg1)
+        then ECP.namedEssentialCriticalPairs conf (productions gg1)
+        else CP.namedCriticalPairs conf (productions gg1)
 
 writeDep :: MorphismsConfig -> Grammars a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
 writeDep conf ggs@(gg1,_) name names fileName = root [] [writeCpx ggs [] cps name names] >>> writeDocument [withIndent yes] fileName
   where
-    cps = CS.namedCriticalSequences conf (rules gg1)
+    cps = CS.namedCriticalSequences conf (productions gg1)
 
 --Functions to deal with ggx format specificities
 writeRoot :: ArrowXml a => Grammars b c -> String -> [(String,String)] -> a XmlTree XmlTree
@@ -140,7 +140,7 @@ writeCpx ggs@(gg1,_) cp cs name names = mkelem "Document"
                         [sattr "version" "1.0"]
                         [mkelem "CriticalPairs"
                         [sattr "ID" "I0"]
-                          (writeGts ggs name names : writeCriticalPairAnalysis names (rules gg1) parsedCP parsedCS)]
+                          (writeGts ggs name names : writeCriticalPairAnalysis names (productions gg1) parsedCP parsedCS)]
   where
     parsedCP = map parseCPGraph cp
     parsedCS = map parseCSGraph cs
@@ -152,19 +152,19 @@ writeCpaOptions :: ArrowXml a => a XmlTree XmlTree
 writeCpaOptions = mkelem "cpaOptions" cpaAttributes []
 
 writeCriticalPairAnalysis :: ArrowXml a => [(String,String)] -> [(String,GR.GraphRule b c)] -> [Overlappings] -> [Overlappings] -> [a XmlTree XmlTree]
-writeCriticalPairAnalysis names rules cpOL csOL = writeCpaOptions : conflictContainer ++ dependenceContainer
+writeCriticalPairAnalysis names productions cpOL csOL = writeCpaOptions : conflictContainer ++ dependenceContainer
   where
     conflictContainer = if null cpOL then [] else
-                          [writeConflictContainer "exclude" nacNames rules cpOL,
-                           writeConflictFreeContainer rules cpOL]
+                          [writeConflictContainer "exclude" nacNames productions cpOL,
+                           writeConflictFreeContainer productions cpOL]
     dependenceContainer = if null csOL then [] else
-                           [writeConflictContainer "trigger_switch_dependency" nacNames rules csOL,
-                            writeConflictFreeContainer rules csOL]
+                           [writeConflictContainer "trigger_switch_dependency" nacNames productions csOL,
+                            writeConflictFreeContainer productions csOL]
     nacNames = filter (\(x,_) -> startswith "NAC" x) names
 
 writeConflictContainer :: ArrowXml a => String -> [(String,String)] -> [(String,GR.GraphRule b c)] -> [Overlappings] ->  a XmlTree XmlTree
-writeConflictContainer kind nacNames rules overlappings =
-  mkelem elem [sattr "kind" kind] (writeRuleSets rules ++ writeConflictMatrix nacNames rules overlappings)
+writeConflictContainer kind nacNames productions overlappings =
+  mkelem elem [sattr "kind" kind] (writeRuleSets productions ++ writeConflictMatrix nacNames productions overlappings)
     where
       elem = case kind of
                "exclude"            -> "conflictContainer"
@@ -172,12 +172,12 @@ writeConflictContainer kind nacNames rules overlappings =
                _ -> error $ "Unexpected kind of conflict/dependency: " ++ kind
 
 writeConflictMatrix :: ArrowXml a => [(String,String)] -> [(String,GR.GraphRule b c)] -> [Overlappings] -> [a XmlTree XmlTree]
-writeConflictMatrix nacNames rules overlappings =
+writeConflictMatrix nacNames productions overlappings =
   map (\(name,_) ->
          mkelem "Rule"
            [sattr "R1" name]
            (map (getCPs nacNames) (overlappingsR2 name)))
-      rules
+      productions
     where
       overlappingsR2 r1 = filter (\(n1,_,_) -> n1 == r1) overlappings
 
@@ -190,13 +190,13 @@ getCPs nacNames (n1,n2,overlappings) = if null overlappings then false else true
     true  = mkelem "Rule" (r2 : sattr "bool" "true"  : attribs) $ writeOverlappings nacNames (n1,n2,overlappings)
 
 writeConflictFreeContainer :: ArrowXml a => [(String,GR.GraphRule b c)] -> [Overlappings] -> a XmlTree XmlTree
-writeConflictFreeContainer rules overlappings = mkelem "conflictFreeContainer" [] $ writeConflictFreeMatrix rules overlappings
+writeConflictFreeContainer productions overlappings = mkelem "conflictFreeContainer" [] $ writeConflictFreeMatrix productions overlappings
 
 writeConflictFreeMatrix :: ArrowXml a => [(String,GR.GraphRule b c)] -> [Overlappings] -> [a XmlTree XmlTree]
-writeConflictFreeMatrix rules overlappings =
+writeConflictFreeMatrix productions overlappings =
   map (\(name,_) -> mkelem "Rule"
                             [sattr "R1" name]
-                            (map getCPs (overlappingsR2 name))) rules
+                            (map getCPs (overlappingsR2 name))) productions
     where
       overlappingsR2 r1 = filter (\(n1,_,_) -> n1 == r1) overlappings
       getCPs (_,n2,list) = if null list
@@ -204,13 +204,13 @@ writeConflictFreeMatrix rules overlappings =
                              else mkelem "Rule" [sattr "R2" n2, sattr "bool" "false"] []
 
 writeRuleSets :: ArrowXml a => [(String,GR.GraphRule b c)] -> [a XmlTree XmlTree]
-writeRuleSets rules =
+writeRuleSets productions =
   [mkelem "RuleSet" (somethingRules ++ rulesL) [], mkelem "RuleSet2" (somethingRules ++ rulesL) []]
     where
       somethingRules :: ArrowXml a => [a XmlTree XmlTree]
-      somethingRules = map (\(x,(ruleName,_)) -> sattr ("i" ++ show x) ruleName) (zip [0::Int ..] rules)
+      somethingRules = map (\(x,(ruleName,_)) -> sattr ("i" ++ show x) ruleName) (zip [0::Int ..] productions)
       rulesL :: ArrowXml a => [a XmlTree XmlTree]
-      rulesL = [sattr "size" (show $ length rules)]
+      rulesL = [sattr "size" (show $ length productions)]
 
 writeGrammar :: ArrowXml a => Grammars b c -> [(String,String)] -> [a XmlTree XmlTree]
 writeGrammar (gg1,gg2) names = writeAggProperties ++
@@ -228,14 +228,14 @@ writeInitialGraph initial = writeHostGraph ("Init", initial)
 writeReachableGraphs :: ArrowXml a => Grammar (TypedGraphMorphism b c) -> [a XmlTree XmlTree]
 writeReachableGraphs gg = map writeHostGraph (reachableGraphs gg)
 --    write (name,graph) writeGraph "initial_graph" "HOST" "Init" nodes edges
---    -- Reuses the serialize for rules to serialize the initial graph
+--    -- Reuses the serialize for productions to serialize the initial graph
 --    tgm = idMap initial initial
 --    (_, nodes, edges) = serializeGraph [] [] tgm
 
 writeHostGraph :: ArrowXml a => (String,TypedGraph b c) -> a XmlTree XmlTree
 writeHostGraph (name,graph) = writeGraph ("graph_" ++ name) "HOST" name nodes edges
   where
-    -- Reuses the serialize for rules to serialize the initial graph
+    -- Reuses the serialize for productions to serialize the initial graph
     tgm = idMap graph graph
     (_, nodes, edges) = serializeGraph [] [] tgm
 
@@ -457,7 +457,7 @@ writeEdgeConflict graphId (edgeId, objName, edgeType, source, target) =
     []
 
 writeSndOrderRules :: ArrowXml a => Grammar (RuleMorphism b c) -> [a XmlTree XmlTree]
-writeSndOrderRules grammar = concatMap writeSndOrderRule (rules grammar)
+writeSndOrderRules grammar = concatMap writeSndOrderRule (productions grammar)
 
 writeSndOrderRule :: ArrowXml a => (String, SO.SndOrderRule b c) -> [a XmlTree XmlTree]
 writeSndOrderRule (name, sndOrderRule) =
@@ -497,7 +497,7 @@ writeSndOrderRuleSide :: ArrowXml a => String -> [Mapping] -> [Mapping] -> [Mapp
 writeSndOrderRuleSide name objLeftN objLeftE objRightN objRightE ruleMorphism = writeRule objLeftN objLeftE objRightN objRightE [] (name, codomain ruleMorphism)
 
 writeRules :: ArrowXml a => Grammar (TypedGraphMorphism b c) -> [(String,String)] -> [a XmlTree XmlTree]
-writeRules grammar nacNames = map (writeRule [] [] [] [] nacNames) (rules grammar)
+writeRules grammar nacNames = map (writeRule [] [] [] [] nacNames) (productions grammar)
 
 writeRule :: ArrowXml a => [Mapping] -> [Mapping] -> [Mapping] -> [Mapping] -> [(String,String)] -> (String, GR.GraphRule b c) -> a XmlTree XmlTree
 writeRule objNameLeftN objNameLeftE objNameRightN objNameRightE nacNames (ruleName, rule) =
