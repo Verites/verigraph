@@ -19,9 +19,14 @@ instance FindMorphism (TypedGraphMorphism a b) where
   partialInjectiveMatches = partialInjectiveMatches'
   findCospanCommuter      = findCospanCommuter'
 
+
+type ExpandedEdge = (EdgeId, NodeId, NodeId)
+
 data CospanBuilderState =
   State {
-    unmappedDomainNodes    :: [NodeId]
+    expandedDomainEdges    :: [ExpandedEdge]
+  , expandedCodomainEdges  :: [ExpandedEdge]
+  , unmappedDomainNodes    :: [NodeId]
   , unmappedDomainEdges    :: [EdgeId]
   , availableCodomainNodes :: [NodeId]
   , availableCodomainEdges :: [EdgeId]
@@ -29,48 +34,80 @@ data CospanBuilderState =
   , edgeRelation           :: R.Relation EdgeId
   , finalNodeRelation      :: R.Relation NodeId
   , finalEdgeRelation      :: R.Relation EdgeId
-  } deriving (Show)
+  }
 
 -- | Given two TypedGraphMorphism @f : B -> A@ and @g : C -> A@ it finds a list of Morphisms
--- @hi : B -> C@ shuch that @f . ¬g  = hi@ for all @i@.
+-- @hi : B -> C@ shuch that @¬g . f = hi@ for all @i@.
 findCospanCommuter' :: MorphismType -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
 findCospanCommuter' conf morphismF morphismG
   | codomain morphismF /= codomain morphismG = []
-  | otherwise = findCospanCommuterMorphisms conf initialState morphismF morphismG
-    where
-      nodesFromF = nodeIdsFromDomain morphismF
-      edgesFromF = edgeIdsFromDomain morphismF
-      nodesFromG = nodeIdsFromDomain morphismG
-      edgesFromG = edgeIdsFromDomain morphismG
+  | otherwise =
+  let
+    typedDomainFromF   = domain morphismF
+    untypedDomainFromF = domain typedDomainFromF
+    mappingFromF       = mapping morphismF
 
-      nodeRelationF = GM.nodeRelation $ mapping morphismF
-      edgeRelationF = GM.edgeRelation $ mapping morphismF
-      nodeRelationInvertedG = R.inverseRelation $ GM.nodeRelation $ mapping morphismG
-      edgeRelationInvertedG = R.inverseRelation $ GM.edgeRelation $ mapping morphismG
+    typedDomainFromG   = domain morphismG
+    untypedDomainFromG = domain typedDomainFromG
+    mappingFromG       = mapping morphismG
 
-      composedNodeRelation = R.compose nodeRelationF nodeRelationInvertedG
-      composedEdgeRelation = R.compose edgeRelationF edgeRelationInvertedG
+    nodesIdsFromF = nodeIds untypedDomainFromF
+    edgesIdsFromF = edgeIds untypedDomainFromF
+    nodesIdsFromG = nodeIds untypedDomainFromG
+    edgesIdsFromG = edgeIds untypedDomainFromG
 
-      initialState = State
-                     nodesFromF edgesFromF
-                     nodesFromG edgesFromG
-                     composedNodeRelation composedEdgeRelation
-                     (R.empty nodesFromF nodesFromG) (R.empty edgesFromF edgesFromG)
+    nodeRelationF = GM.nodeRelation mappingFromF
+    edgeRelationF = GM.edgeRelation mappingFromF
+    nodeRelationInvertedG = R.inverseRelation $ GM.nodeRelation mappingFromG
+    edgeRelationInvertedG = R.inverseRelation $ GM.edgeRelation mappingFromG
 
--- | Given a MorphismType and a initial @CospanBuilderState@ with empty final Relations,
--- finds relations @B -> C@ between nodes and edges of @B@ and @C@. (Auxiliary function)
-findCospanCommuterMorphisms :: MorphismType -> CospanBuilderState -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
-findCospanCommuterMorphisms conf state morphismF morphismG =
-  let nodesUpdated = findCospanCommuterNodeRelations conf state
-      edgesUpdated = concatMap (findCospanCommuterEdgeRelations conf) nodesUpdated
+    composedNodeRelation = R.compose nodeRelationF nodeRelationInvertedG
+    composedEdgeRelation = R.compose edgeRelationF edgeRelationInvertedG
 
-      typedDomain = domain morphismF
-      typedCodomain = domain morphismG
-      untypedDomain = domain typedDomain
-      untypedCodomain = domain typedCodomain
+    expandedEdgesFromDomain   = map (\e -> (edgeId e, sourceId e, targetId e)) $ edges untypedDomainFromF
+    expandedEdgesFromCodomain = map (\e -> (edgeId e, sourceId e, targetId e)) $ edges untypedDomainFromG
+
+    initialState = State
+                   expandedEdgesFromDomain expandedEdgesFromCodomain
+                   nodesIdsFromF edgesIdsFromF
+                   nodesIdsFromG edgesIdsFromG
+                   composedNodeRelation composedEdgeRelation
+                   (R.empty nodesIdsFromF nodesIdsFromG) (R.empty edgesIdsFromF edgesIdsFromG)
+
+    edgesMapped = findCospanCommuterEdgeRelations conf initialState
+    finalStates = concatMap (findCospanCommuterNodeRelations conf) edgesMapped
+
+    buildTGMFromState state = buildTypedGraphMorphism typedDomainFromF typedDomainFromG $
+      GM.fromGraphsAndRelations untypedDomainFromF untypedDomainFromG
+      (finalNodeRelation state) (finalEdgeRelation state)
+
   in
-  map (\x ->  buildTypedGraphMorphism typedDomain typedCodomain
-             $ GM.fromGraphsAndRelations untypedDomain untypedCodomain (finalNodeRelation x) (finalEdgeRelation x)) edgesUpdated
+    map buildTGMFromState finalStates
+
+-- | Given a MorphismType and a initial @CospanBuilderState@ with final Node Relations complete,
+-- finds a Relation @B -> C@ between edges of @B@ and @C@. (Auxiliary function)
+findCospanCommuterEdgeRelations :: MorphismType -> CospanBuilderState -> [CospanBuilderState]
+findCospanCommuterEdgeRelations conf state
+  | L.null $ unmappedDomainEdges state =
+    let isoCondition = L.null $ availableCodomainEdges state
+        epiCondition = L.null . R.orphans $ finalEdgeRelation state
+    in case conf of
+         Isomorphism ->
+           if isoCondition then return state else []
+
+         Epimorphism ->
+           if epiCondition then return state else []
+
+         _ -> return state
+
+  | otherwise =
+    do
+      let (edgeOnDomain:_) = unmappedDomainEdges state
+
+      edgeOnCodomain <- R.apply (edgeRelation state) edgeOnDomain
+      updatedState <- updateEdgeState conf edgeOnDomain edgeOnCodomain state
+
+      findCospanCommuterEdgeRelations conf updatedState
 
 -- | Given a MorphismType and a initial @CospanBuilderState@ with empty final Relations,
 -- finds a Relation @B -> C@ between nodes of @B@ and @C@. (Auxiliary function)
@@ -101,16 +138,27 @@ findCospanCommuterNodeRelations conf state
 updateNodeState :: MorphismType -> NodeId -> NodeId -> CospanBuilderState -> [CospanBuilderState]
 updateNodeState conf nodeOnDomain nodeOnCodomain state =
   let
-    monoCondition = nodeOnCodomain`elem` availableCodomainNodes state
+    nodeDomainApplied = R.apply (finalNodeRelation state) nodeOnDomain
 
-    updatedGenericState = state { unmappedDomainNodes = delete nodeOnDomain $ unmappedDomainNodes state
-                                , finalNodeRelation   = R.updateRelation nodeOnDomain nodeOnCodomain (finalNodeRelation state) }
+    monoCondition =
+      nodeOnCodomain `elem` availableCodomainNodes state ||
+      ( not (L.null nodeDomainApplied) &&
+        head (R.apply (finalNodeRelation state) nodeOnDomain) == nodeOnCodomain)
 
-    updatedMonoState = updatedGenericState { availableCodomainNodes = delete nodeOnCodomain $ availableCodomainNodes updatedGenericState }
+    updatedGenericState =
+      state { unmappedDomainNodes = delete nodeOnDomain $ unmappedDomainNodes state
+            , finalNodeRelation   =
+                R.updateRelation nodeOnDomain nodeOnCodomain $ finalNodeRelation state
+            }
+
+    updatedMonoState =
+      updatedGenericState { availableCodomainNodes =
+                              delete nodeOnCodomain $ availableCodomainNodes updatedGenericState
+                          }
   in
     case (conf, monoCondition) of
       (Monomorphism, False) ->
-       []
+        []
 
       (Isomorphism, False) ->
         []
@@ -123,44 +171,39 @@ updateNodeState conf nodeOnDomain nodeOnCodomain state =
 
       _ ->
         return updatedGenericState
-
--- | Given a MorphismType and a initial @CospanBuilderState@ with final Node Relations complete,
--- finds a Relation @B -> C@ between edges of @B@ and @C@. (Auxiliary function)
-findCospanCommuterEdgeRelations :: MorphismType -> CospanBuilderState -> [CospanBuilderState]
-findCospanCommuterEdgeRelations conf state
-  | L.null $ unmappedDomainEdges state =
-    let isoCondition = L.null $ availableCodomainEdges state
-        epiCondition = L.null . R.orphans $ finalEdgeRelation state
-    in case conf of
-         Isomorphism ->
-           if isoCondition then return state else []
-
-         Epimorphism ->
-           if epiCondition then return state else []
-
-         _ -> return state
-
-  | otherwise =
-    do
-      let (edgeOnDomain:_) = unmappedDomainEdges state
-
-      edgeOnCodomain <- R.apply (edgeRelation state) edgeOnDomain
-      updatedState <- updateEdgeState conf edgeOnDomain edgeOnCodomain state
-
-      findCospanCommuterEdgeRelations conf updatedState
 
 -- | Verify if a edge of @B@ can be mapped to a node of @C@, if possible, updates the given @CospanBuilderState@. (Auxiliary function)
 updateEdgeState :: MorphismType -> EdgeId -> EdgeId -> CospanBuilderState -> [CospanBuilderState]
 updateEdgeState conf edgeOnDomain edgeOnCodomain state =
-  let
-    monoCondition = edgeOnCodomain`elem` availableCodomainEdges state
+  do
+    let monoCondition = edgeOnCodomain`elem` availableCodomainEdges state
 
-    updatedGenericState = state { unmappedDomainEdges = delete edgeOnDomain $ unmappedDomainEdges state
-                                , finalEdgeRelation   = R.updateRelation edgeOnDomain edgeOnCodomain (finalEdgeRelation state) }
+        (_, sourceOnDomain, targetOnDomain) =
+          fromJust $ lookupExpandedEdge (expandedDomainEdges state) edgeOnDomain
 
-    updatedMonoState = updatedGenericState { availableCodomainEdges = delete edgeOnCodomain $ availableCodomainEdges updatedGenericState }
+        (_, sourceOnCodomain, targetOnCodomain) =
+          fromJust $ lookupExpandedEdge (expandedCodomainEdges state) edgeOnCodomain
 
-  in
+        lookupExpandedEdge :: [(EdgeId, NodeId, NodeId)] -> EdgeId -> Maybe ExpandedEdge
+        lookupExpandedEdge [] _ = Nothing
+        lookupExpandedEdge ((e,s,t):tl) edgeid = if edgeid == e
+                                                 then Just (e,s,t)
+                                                 else lookupExpandedEdge tl edgeid
+
+    sourceNodeUpdate <- updateNodeState conf sourceOnDomain sourceOnCodomain state
+    targetNodeUpdate <- updateNodeState conf targetOnDomain targetOnCodomain sourceNodeUpdate
+
+    let updatedGenericState =
+          targetNodeUpdate { unmappedDomainEdges = delete edgeOnDomain $ unmappedDomainEdges state
+                , finalEdgeRelation   =
+                    R.updateRelation edgeOnDomain edgeOnCodomain (finalEdgeRelation state)
+                }
+
+        updatedMonoState =
+          updatedGenericState { availableCodomainEdges =
+                                  delete edgeOnCodomain $ availableCodomainEdges updatedGenericState
+                              }
+
     case (conf, monoCondition) of
       (Monomorphism, False) ->
         []
@@ -176,6 +219,7 @@ updateEdgeState conf edgeOnDomain edgeOnCodomain state =
 
       _ ->
         return updatedGenericState
+
 
 -- | Given two lists of TypedGraphMorphism @fi : Ai -> B@ and @gi : Ai -> C@ it induces a Morphism
 -- @h : B -> C@ shuch that @h . fi = gi@ for all @i@. The lists must have the same length and must
