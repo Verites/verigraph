@@ -20,7 +20,7 @@ import           Image.Dot
 import qualified XML.GGXReader            as XML
 import qualified XML.GGXWriter            as GW
 
-data Options = Options
+newtype Options = Options
   { outputFile :: String }
 
 options :: Parser Options

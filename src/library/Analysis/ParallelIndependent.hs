@@ -32,27 +32,22 @@ isIndependent ind algorithm conf p1' p2 = not $ conflict algorithm
 
 -- | Checks independence between transformations via 2 pullbacks
 cond2 :: (AdhesiveHLR m, FindMorphism m) => Production m -> Production m -> (m, m) -> Bool
-cond2 p1 p2 (m1,m2) = Prelude.null (findIso k1k2ToG l1l2ToG)
+cond2 p1 p2 (m1,m2) = Prelude.null (findCospanCommuter Isomorphism k1k2ToG l1l2ToG)
   where
     (_,pb1) = calculatePullback m1 m2
 
     a1 = compose (getLHS p1) m1
     a2 = compose (getLHS p2) m2
     (_,pb2) = calculatePullback a1 a2
-    
+
     k1k2ToG = compose pb2 a1
     l1l2ToG = compose pb1 m1
-
--- naive find ISO is running faster for known cases in this context
-findIso :: FindMorphism m => m -> m -> [m]
---findIso a b = findIsomorphisms (domain a) (domain b)
-findIso a b = findCospanCommuter Isomorphism a b
 
 -- | Checks independence between transformations via 3 pullbacks
 cond1 :: (AdhesiveHLR m, FindMorphism m) => Production m -> Production m -> (m, m) -> Bool
 cond1 p1 p2 (m1,m2) = not (isIsomorphism a && isIsomorphism b)
   where
     (pb2,pb1) = calculatePullback m1 m2
-    
+
     (a,_) = calculatePullback (getLHS p1) pb1
     (b,_) = calculatePullback (getLHS p2) pb2

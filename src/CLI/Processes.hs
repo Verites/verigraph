@@ -4,23 +4,24 @@ module Processes
   , execute
   ) where
 
-import                Abstract.DPO
-import                Abstract.DPO.Process
-import                Abstract.Valid
-import                Analysis.Processes
-import                Control.Monad
-import                Data.Maybe                  (fromJust, isJust)
-import                Data.Monoid                 ((<>))
-import                Data.Set                    (toList)
-import                GlobalOptions
-import                Options.Applicative
-import                TypedGraph.DPO.GraphProcess
-import                TypedGraph.DPO.OccurenceRelation
-import qualified TypedGraph.Graph            as TG
-import qualified XML.GGXReader               as XML
-import qualified XML.GGXWriter               as GW
+import           Control.Monad
+import           Data.Maybe                       (fromJust, isJust)
+import           Data.Monoid                      ((<>))
+import           Data.Set                         (toList)
+import           GlobalOptions
+import           Options.Applicative
 
-data Options = Options
+import           Abstract.DPO
+import           Abstract.DPO.Process
+import           Abstract.Valid
+import           Analysis.Processes
+import           TypedGraph.DPO.GraphProcess
+import           TypedGraph.DPO.OccurenceRelation
+import qualified TypedGraph.Graph                 as TG
+import qualified XML.GGXReader                    as XML
+import qualified XML.GGXWriter                    as GW
+
+newtype Options = Options
   { outputFile     :: String }
 
 options :: Parser Options
@@ -52,7 +53,7 @@ execute globalOpts opts = do
         relation = concreteRelation completeOgg
         rulesRelation = filterRulesOccurrenceRelation relation
         elementsRelation = filterElementsOccurrenceRelation relation
-        unique = (uniqueOrigin newRules)
+        unique = uniqueOrigin newRules
         (rulesNames, elementsNames) = getElements completeOgg
     forM_ (zip sequences newRules) $ \((name, _, _), rules) ->
       when (null rules)

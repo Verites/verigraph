@@ -46,6 +46,7 @@ Run verigraph helper:
 ```bash
   $ verigraph --help
 ```
+
 Some example grammars are provided in the `grammars` directory, try something like:
 
 ```bash
