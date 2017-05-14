@@ -5,8 +5,7 @@ import           Graph.Graph
 import           Graph.GraphMorphism
 import           Math.Combinat.Numbers (bellNumber)
 import           Test.HUnit
-import           TypedGraph.Morphism   hiding (createEdgeOnDomain,
-                                        createNodeOnDomain)
+import           TypedGraph.Morphism   hiding (createEdgeOnDomain, createNodeOnDomain)
 import           Utils
 
 main :: IO ()
@@ -15,21 +14,21 @@ main = runTests tests
 tests =
   test (
       -- Tests if a graph with the same repeated node n times has partitions length equals to the n-th bell number
-        [(map
+        [map
           (\n ->
             ("BellNumber " ++ show n ++ " nodes") ~:
             fromInteger (bellNumber n) ~=?
             length (getPart (graph1 [1..n])))
-          ids)
+          ids
         ]
       ++
       -- Tests if a graph with the same repeated edge n times has partitions length equals to the n-th bell number
-        [(map
+        [map
           (\e ->
             ("BellNumber " ++ show e ++ " edges") ~:
             fromInteger (bellNumber e) ~=?
             length (getPart (graph2 [1..e])))
-          ids)
+          ids
         ]
         )
 
