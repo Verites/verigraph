@@ -1,14 +1,15 @@
 module Graph.GraphSpec where
 
 
-import           Abstract.Valid
-import           Graph.Graph
-import           Graph.QuickCheck
-
+import           Data.Maybe
 import           Test.Hspec
 import           Test.Hspec.QuickCheck
 import           Test.QuickCheck
 import           Test.QuickCheck.Function
+
+import           Abstract.Valid
+import           Graph.Graph
+import           Graph.QuickCheck
 
 
 spec :: Spec
@@ -87,8 +88,7 @@ spec = describe "graph API" $ do
       not (Prelude.null $ nodes graph) ==>
       (`all` nodesInContext graph) $ \(node, ctx) ->
       Prelude.null (incidentEdges ctx) -->
-        lookupNode (nodeId node) (removeNode (nodeId node) graph :: Graph Int Int)
-        == Nothing
+      isNothing $ lookupNode (nodeId node) (removeNode (nodeId node) graph :: Graph Int Int)
 
     prop "removes no edges" $ \graph ->
       not (Prelude.null $ nodes graph) ==>
@@ -105,8 +105,8 @@ spec = describe "graph API" $ do
     prop "node removed" $ \graph ->
       not (Prelude.null $ nodes graph) ==>
       (`all` nodeIds graph) $ \nodeId ->
-        lookupNode nodeId (removeNodeAndIncidentEdges nodeId graph :: Graph Int Int)
-        == Nothing
+        isNothing $ lookupNode nodeId (removeNodeAndIncidentEdges nodeId graph :: Graph Int Int)
+
 
 
   describe "removeEdge" $ do
@@ -117,8 +117,8 @@ spec = describe "graph API" $ do
     prop "edge removed" $ \graph ->
       not (Prelude.null $ edges graph) ==>
       (`all` edgeIds graph) $ \edgeId ->
-        lookupEdge edgeId (removeEdge edgeId graph :: Graph Int Int)
-        == Nothing
+        isNothing $ lookupEdge edgeId (removeEdge edgeId graph :: Graph Int Int)
+
 
 
   describe "updateNodePayload" $
