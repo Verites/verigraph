@@ -10,7 +10,7 @@
 #  - stack
 
 USAGE="Usage:   $0 "
-[ "$1" == "help" ] && echo $USAGE && exit 0
+[ "$1" == "help" ] && echo "$USAGE" && exit 0
 
 #Get the path to the project root
 PROJECT_ROOT_PATH="$(stack path --project-root | tr -d "\n")"

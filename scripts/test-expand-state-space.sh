@@ -11,7 +11,7 @@
 #  - graphviz
 
 USAGE="Usage:   $0 [grammar [depth]]"
-[ "$1" == "help" ] && echo $USAGE && exit 0
+[ "$1" == "help" ] && echo "$USAGE" && exit 0
 
 depth=$2
 [ -z "$depth" ] && depth=5
