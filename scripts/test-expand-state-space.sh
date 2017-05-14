@@ -17,14 +17,13 @@ depth=$2
 [ -z "$depth" ] && depth=5
 
 example=$1
-[ -z "$example" ] && example=grammars/createList.ggx
+[ -z "$example" ] && example="grammars/ADTs/createList.ggx"
 
 stack install
 mkdir -p test-output/
 rm -f test-output/*
-verigraph-mcheck -d$depth -otest-output "$example"
 
-[ "$?" = 0 ] || exit 1
+[ "$(verigraph-mcheck -d$depth -otest-output "$example")" ] || exit 1
 
 for file in test-output/*.dot
 do
