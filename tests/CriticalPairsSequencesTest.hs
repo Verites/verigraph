@@ -184,6 +184,15 @@ testTeseRodrigoDeps dpoConf rules =
         "( 0 0 0 0 0 0 0 0 )\n"++
         "( 0 0 0 0 0 0 0 0 )\n"++
         "( 0 0 1 0 2 0 0 0 )\n"
+    , testCase "Deliver-Delete and Deliver-Dangling" findAllDeliverDeleteAndDeliverDangling $
+        "( 0 0 0 0 1 0 0 0 )\n"++
+        "( 0 0 3 0 0 0 0 0 )\n"++
+        "( 0 0 0 1 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 1 0 0 0 )\n"++
+        "( 0 0 0 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 0 0 0 )\n"++
+        "( 0 0 1 0 1 0 0 0 )\n"
     ]
   where
   testCase name findDependencies expected =
@@ -232,6 +241,12 @@ testSndOrderDeps dpoConf rules =
         "( 0 0 1 0 0 )\n"++
         "( 0 0 1 0 0 )\n"++
         "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"
+    , testCase "Deliver-Delete and Deliver-Dangling" findAllDeliverDeleteAndDeliverDangling $
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 0 0 0 )\n"++
+        "( 0 0 1 0 0 )\n"++
         "( 0 0 0 0 0 )\n"++
         "( 0 0 0 0 0 )\n"
     ]

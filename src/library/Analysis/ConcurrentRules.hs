@@ -10,7 +10,7 @@ import           Abstract.Cardinality
 import qualified Abstract.Cocomplete       as C
 import           Abstract.DPO
 import           Abstract.Valid
-import           Analysis.CriticalSequence (findTriggeringCriticalSequences,
+import           Analysis.CriticalSequence (findTriggeredCriticalSequences,
                                             getCriticalSequenceComatches)
 import           Data.Maybe                (mapMaybe)
 
@@ -58,7 +58,7 @@ epiPairsForConcurrentRule :: (DPO m, EpiPairs m)
   => CRDependencies -> MorphismsConfig -> [Constraint m] -> Production m -> Production m -> [(m, m)]
 -- it only considers triggered dependencies because is the most intuitive and natural behaviour expected until now.
 epiPairsForConcurrentRule OnlyDependency conf constraints c n =
-  let dependencies = map getCriticalSequenceComatches (findTriggeringCriticalSequences conf c n)
+  let dependencies = map getCriticalSequenceComatches (findTriggeredCriticalSequences conf c n)
       validDependency (lp, _) = satisfiesAllConstraints (codomain lp) constraints
   in filter validDependency dependencies
 

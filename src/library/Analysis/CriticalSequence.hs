@@ -8,7 +8,7 @@ module Analysis.CriticalSequence
    getCriticalSequenceType,
 
    -- * Finding Critical Sequences
-   findTriggeringCriticalSequences,
+   findTriggeredCriticalSequences,
    namedCriticalSequences,
    findAllProduceUse,
    findAllRemoveDangling,
@@ -16,7 +16,9 @@ module Analysis.CriticalSequence
    findAllDeliverDelete,
    findAllForbidProduce,
    findAllDeliverDangling,
+   
    findAllProduceUseAndRemoveDangling,
+   findAllDeliverDeleteAndDeliverDangling,
    ) where
 
 import           Abstract.AdhesiveHLR       as RW
@@ -107,21 +109,19 @@ namedCriticalSequences conf rules =
   where
     getCSs (n1,r1) (n2,r2) = (n1, n2, findCriticalSequences conf r1 r2)
 
--- | Given two productions @p1@ and @p2@, finds the Critical sequences in which the application of @p1@
--- enables the application of @p2@
-findTriggeringCriticalSequences :: (EpiPairs m, DPO m) => MorphismsConfig -> Production m -> Production m -> [CriticalSequence m]
-findTriggeringCriticalSequences conf p1 p2 =
+-- | Given two productions @p1@ and @p2@, finds the Critical sequences
+-- in which the application of @p1@ enables the application of @p2@
+findTriggeredCriticalSequences :: (EpiPairs m, DPO m) => MorphismsConfig -> Production m -> Production m -> [CriticalSequence m]
+findTriggeredCriticalSequences conf p1 p2 =
   findAllProduceUseAndRemoveDangling conf p1 p2 ++
   findAllDeleteForbid conf p1 p2
 
--- TODO : verify if this doc is right
--- | Given two productions @p1@ and @p2@, finds all the Critical Sequences of @p1@ and @p2@ in this order
+-- | Given two productions @p1@ and @p2@, it finds all Critical Sequences of @p1@ and @p2@ (in this order)
 findCriticalSequences :: (EpiPairs m, DPO m) => MorphismsConfig -> Production m -> Production m -> [CriticalSequence m]
 findCriticalSequences conf p1 p2 =
   findAllProduceUseAndRemoveDangling conf p1 p2 ++
   findAllDeleteForbid conf p1 p2 ++
-  findAllDeliverDelete conf p1 p2 ++
-  findAllDeliverDangling conf p1 p2 ++
+  findAllDeliverDeleteAndDeliverDangling conf p1 p2 ++
   findAllForbidProduce conf p1 p2
 
 -- ** Triggering Dependencies
@@ -226,7 +226,19 @@ findAllDeliverDangling conf p1 p2 =
     gluing = findPotentialCriticalPairs conf p1' p2
     delDang = filter (\(m1,m2) -> isProduceDangling conf p2 p1' (m2,m1)) gluing
 
--- TODO: DeliverDelete and DeliverDangling together
+-- DeliverDelete and DeliverDangling
+
+-- | Tests DeliverDelete and DeliverDangling for the same overlapping pairs
+findAllDeliverDeleteAndDeliverDangling :: (EpiPairs m, DPO m) => MorphismsConfig -> Production m -> Production m -> [CriticalSequence m]
+findAllDeliverDeleteAndDeliverDangling conf p1 p2 =
+  map categorizeDependency dependencies
+  where
+    p1' = invertProduction conf p1
+    gluing = findPotentialCriticalPairs conf p1' p2
+    dependencies = mapMaybe (\(m1,m2) -> deleteUseDangling conf p2 p1' (m2,m1)) gluing
+    categorizeDependency x = case x of
+      (Left m)  -> CriticalSequence Nothing m Nothing DeliverDelete
+      (Right m) -> CriticalSequence Nothing m Nothing DeliverDangling
 
 -- *** ForbidProduce
 
