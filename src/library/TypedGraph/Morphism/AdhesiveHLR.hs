@@ -1,14 +1,13 @@
 module TypedGraph.Morphism.AdhesiveHLR where
 
+import           Data.Maybe                     (fromJust, mapMaybe)
+
 import           Abstract.AdhesiveHLR
 import           Abstract.Morphism
 import           Graph.Graph                    as G
 import qualified Graph.GraphMorphism            as GM
 import           TypedGraph.Morphism.Cocomplete ()
 import           TypedGraph.Morphism.Core
-
-import           Data.Maybe                     (fromJust, fromMaybe, mapMaybe)
-
 
 instance AdhesiveHLR (TypedGraphMorphism a b) where
 
@@ -54,7 +53,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
       graphA = domain typedGraphA
       graphA' = domain (codomain f)
       edgesOfA = edgesFromDomain f
-      nodesOfA = nodeIdsFromDomain f
+      nodeIdsOfA = nodeIdsFromDomain f
 
       emptyMorphismToA = buildTypedGraphMorphism emptyTypedGraph typedGraphA emptyMapToA
         where
@@ -65,11 +64,12 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
       -- 3. Auxiliary functions
 
       -- It captures all nodes in A that when mapped to A' has an incident edge.
-      danglingNodes = filter checkExistsOrphanIncidentEdge nodesOfA
+      danglingNodes = filter checkExistsOrphanIncidentEdge nodeIdsOfA
         where
-          checkExistsOrphanIncidentEdge n = any (isOrphanEdge f) incEdges
+          checkExistsOrphanIncidentEdge n = any (\(_,e,_) -> isOrphanEdge f (edgeId e)) incEdges
             where
-              incEdges = getIncidentEdges graphA' (applyNodeIdUnsafe f n)
+              Just (_,ctx) = lookupNodeInContext (applyNodeIdUnsafe f n) graphA'
+              incEdges = incidentEdges ctx
 
       -- It captures all nodes in A that are equally mapped by f
       collapsedNodes =
@@ -79,8 +79,8 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
               (\n' ->
                 n/=n' &&
                 (applyNodeIdUnsafe f n == applyNodeIdUnsafe f n')
-              ) nodesOfA
-          ) nodesOfA
+              ) nodeIdsOfA
+          ) nodeIdsOfA
 
       -- It captures all edges in A that are equally mapped by f
       collapsedEdges =
@@ -149,32 +149,30 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
       typedGraphA = domain f
       typedGraphB = domain g
       typedGraphC = codomain f
-      graphB = domain typedGraphB
-      graphA = domain typedGraphA
 
-      nodesInA = nodeIdsFromDomain f
-      nodesInB = nodeIdsFromDomain g
-      edgesInA = edgeIdsFromDomain f
-      edgesInB = edgeIdsFromDomain g
+      nodesInA = nodesFromDomain f
+      nodesInB = nodesFromDomain g
+      edgesInA = edgesFromDomain f
+      edgesInB = edgesFromDomain g
 
       -- Discover the nodes and edges of the X
-      nodesWithoutId = getPairs applyNodeIdUnsafe nodesInA nodesInB nodeIds
+      nodesWithoutId = getPairs applyNodeIdUnsafe nodeId nodesInA nodesInB nodes
       nodesWithId = zip nodesWithoutId ([0..]::[Int])
 
-      egdesWithoutId = getPairs applyEdgeIdUnsafe edgesInA edgesInB edgeIds
+      egdesWithoutId = getPairs applyEdgeIdUnsafe edgeId edgesInA edgesInB edges
       edgesWithId = zip egdesWithoutId ([0..]::[Int])
 
       -- Run the product for all elements that are mapped on the same element in C
-      getPairs apply elemA elemB list = concatMap (uncurry product) comb
+      getPairs apply getId elemA elemB list = concatMap product comb
         where
           comb =
             map
               (\n ->
-                (filter (\n' -> apply f n' == n) elemA,
-                 filter (\n' -> apply g n' == n) elemB))
+                (filter (\n' -> apply f (getId n') == getId n) elemA,
+                 filter (\n' -> apply g (getId n') == getId n) elemB))
               (list (domain typedGraphC))
 
-          product x y = [(a,b) | a <- x, b <- y]
+          product (x,y) = [(a,b) | a <- x, b <- y]
 
       -- Init X, f' and g' as empty
       initX = GM.empty empty typeGraph
@@ -189,8 +187,8 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
       updateNodes ((a,b),newId) (g',f') = (updateG',updateF')
         where
           newNode = NodeId newId
-          updateG' = createNodeOnDomain newNode (nodeTypeInA a) a g'
-          updateF' = createNodeOnDomain newNode (nodeTypeInB b) b f'
+          updateG' = createNodeOnDomain newNode (nodeTypeInA (nodeId a)) (nodeId a) g'
+          updateF' = createNodeOnDomain newNode (nodeTypeInB (nodeId b)) (nodeId b) f'
 
       -- Add an edge on the domain of f' and g'
       updateEdges ((a,b),newId) (g',f') = (updateG',updateF')
@@ -202,21 +200,21 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
           src1 =
             filter
               (\n ->
-                applyNodeIdUnsafe f' n == sourceOfUnsafe graphB b &&
-                applyNodeIdUnsafe g' n == sourceOfUnsafe graphA a)
+                applyNodeIdUnsafe f' n == sourceId b &&
+                applyNodeIdUnsafe g' n == sourceId a)
               (nodeIdsFromDomain f')
           src = if Prelude.null src1 then error "src not found" else head src1
 
           tgt1 =
             filter
               (\n ->
-                applyNodeIdUnsafe f' n == targetOfUnsafe graphB b &&
-                applyNodeIdUnsafe g' n == targetOfUnsafe graphA a)
+                applyNodeIdUnsafe f' n == targetId b &&
+                applyNodeIdUnsafe g' n == targetId a)
               (nodeIdsFromDomain f')
           tgt = if Prelude.null tgt1 then error "tgt not found" else head tgt1
 
-          updateG' = createEdgeOnDomain newEdge src tgt (edgeTypeInA a) a g'
-          updateF' = createEdgeOnDomain newEdge src tgt (edgeTypeInB b) b f'
+          updateG' = createEdgeOnDomain newEdge src tgt (edgeTypeInA (edgeId a)) (edgeId a) g'
+          updateF' = createEdgeOnDomain newEdge src tgt (edgeTypeInB (edgeId b)) (edgeId b) f'
 
 
   hasPushoutComplement (Monomorphism, g) (_, f) =
@@ -267,27 +265,33 @@ notIdentificatedElement l m domain apply e = (length incidentElements <= 1) || n
     eIsDeleted = Nothing `elem` map l' incidentElements
 
 
--- | Given a left-hand-side morphism /l : K -> L/, a match /m : L -> G/, returns @true@ if
--- there aren't dangling edges
+-- | Given a left-hand-side morphism /l : K -> L/, a match /m : L -> G/,
+-- returns @true@ if there are not dangling edges
 satisfiesDanglingCondition :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
-satisfiesDanglingCondition l m = all (==True) (concat incidentDeletedEdges)
-    where
-        lhs = graphDomain m
-        instanceGraph = graphCodomain m
-        checkEdgeDeletion = map (checkDeletion l m applyEdgeId edgeIdsFromDomain)
-        matchedNodes = mapMaybe (applyNodeId m) (nodeIds lhs)
-        deletedNodes = filter (checkDeletion l m applyNodeId nodeIdsFromDomain) matchedNodes
-        incidentEdgesOnDeletedNodes = map (getIncidentEdges instanceGraph) deletedNodes
-        incidentDeletedEdges = map checkEdgeDeletion incidentEdgesOnDeletedNodes
+satisfiesDanglingCondition l m = Prelude.null incidentEdgesNotDeleted
+  where
+    lhs = graphDomain m
+    instanceGraph = graphCodomain m
+    
+    deletedNodes =
+      [(n',ctx) |
+         (n',ctx) <- nodesInContext instanceGraph,
+         any (\n -> applyNodeIdUnsafe m n == nodeId n') (nodeIds lhs),
+         isDeleted l m applyNodeId nodeIdsFromDomain (nodeId n')]
+    
+    incidentEdgesNotDeleted =
+      [edgeId e |
+         ((n1,_),e,(n2,_)) <- edgesInContext instanceGraph,
+         (n,_) <- deletedNodes,
+         nodeId n `elem` [nodeId n1, nodeId n2],
+         not (isDeleted l m applyEdgeId edgeIdsFromDomain (edgeId e))]
 
-
--- | TODO: Find a better name for this function, that was repeated both here and in the GraphRule archive
--- | Given the left-hand-side morphism of a rule /l : K -> L/, a match /m : L -> G/ for this rule, an element __/e/__
+-- | Given the left-hand-side morphism of a rule /l : K -> L/, a match /m : L -> G/ of this rule, an element __/e/__
 -- (that can be either a __/Node/__ or an __/Edge/__) and two functions /apply/ (for applying that element in a TypedGraphMorphism) and
 -- /list/ (to get all the corresponding elements in the domain of m), it returns true if /e/ is deleted by this rule for the given match
-checkDeletion :: Eq t => TypedGraphMorphism a b -> TypedGraphMorphism a b -> (TypedGraphMorphism a b -> t -> Maybe t)
+isDeleted :: Eq t => TypedGraphMorphism a b -> TypedGraphMorphism a b -> (TypedGraphMorphism a b -> t -> Maybe t)
           -> (TypedGraphMorphism a b -> [t]) -> t -> Bool
-checkDeletion l m apply list e = elementInL && not elementInK
+isDeleted l m apply list e = elementInL && not elementInK
   where
     elementInL = any (\x -> apply m x == Just e) (list m)
     kToG = compose l m

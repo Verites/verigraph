@@ -43,6 +43,10 @@ instance Valid (TypedGraphMorphism a b) where
 nodeIdsFromDomain :: TypedGraphMorphism a b -> [NodeId]
 nodeIdsFromDomain = nodeIds . domain . getDomain
 
+-- | Return the nodes in the domain of a given @TypedGraphMorphism@
+nodesFromDomain :: TypedGraphMorphism a b -> [Node (Maybe a)]
+nodesFromDomain = nodes . domain . getDomain
+
 -- | Return the edges ids in the domain of a given @TypedGraphMorphism@
 edgeIdsFromDomain :: TypedGraphMorphism a b -> [EdgeId]
 edgeIdsFromDomain = edgeIds . domain . getDomain
@@ -63,6 +67,10 @@ edgeIdsFromCodomain = edgeIds . domain . getCodomain
 edgesFromCodomain :: TypedGraphMorphism a b -> [Edge (Maybe b)]
 edgesFromCodomain = edges . domain . getCodomain
 
+-- | Given a TypedGraphMorphism @/__t__: G1 -> G2/@ and a node @__n__@ in @G1@, it returns the node in @G2@ to which @__n__@ gets mapped
+applyNode :: TypedGraphMorphism a b -> Node (Maybe a) -> Maybe (Node (Maybe a))
+applyNode tgm = GM.applyNode (mapping tgm)
+
 -- | Given a TypedGraphMorphism @/__t__: G1 -> G2/@ and a nodeId @__n__@ in @G1@, it returns the nodeId in @G2@ to which @__n__@ gets mapped
 applyNodeId :: TypedGraphMorphism a b -> NodeId -> Maybe NodeId
 applyNodeId tgm = GM.applyNodeId (mapping tgm)
@@ -82,6 +90,11 @@ graphDomain = untypedGraph . domain
 -- | Return the codomain graph
 graphCodomain :: TypedGraphMorphism a b -> Graph (Maybe a) (Maybe b)
 graphCodomain = untypedGraph . codomain
+
+-- | Given a @TypedGraphMorphism@ @__t__@and a node @n@ in the domain of @__t__@, return the node in the image
+--of @t@ to which @n@ gets mapped or error in the case of undefined
+applyNodeUnsafe :: TypedGraphMorphism a b -> Node (Maybe a) -> Node (Maybe a)
+applyNodeUnsafe m n = fromMaybe (error "Error, apply node in a non total morphism") $ applyNode m n
 
 -- | Given a @TypedGraphMorphism@ @__t__@and a nodeId @n@ in the domain of @__t__@, return the nodeId in the image
 --of @t@ to which @n@ gets mapped or error in the case of undefined
