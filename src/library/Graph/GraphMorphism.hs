@@ -25,6 +25,8 @@ module Graph.GraphMorphism (
     , createNodeOnDomain
     , createNodeOnCodomain
     -- * Query
+    , applyNode
+    , applyNodeUnsafe
     , applyNodeId
     , applyNodeIdUnsafe
     , applyEdge
@@ -91,6 +93,13 @@ orphanEdges gm = map idToEdge (R.orphans (edgeRelation gm))
 orphanEdgeIds :: GraphMorphism a b -> [G.EdgeId]
 orphanEdgeIds gm = R.orphans (edgeRelation gm)
 
+-- | Return the node to which @ln@ gets mapped.
+applyNode :: GraphMorphism a b -> G.Node a -> Maybe (G.Node a)
+applyNode m ln =
+    case applyNodeId m (nodeId ln) of
+        Just x  -> lookupNode x (codomain m)
+        Nothing -> Nothing
+
 -- | Return the nodeId to which @ln@ gets mapped.
 applyNodeId :: GraphMorphism a b -> G.NodeId -> Maybe G.NodeId
 applyNodeId m ln =
@@ -111,6 +120,10 @@ applyEdgeId m le =
     case R.apply (edgeRelation m) le of
         (x:_) -> Just x
         _     -> Nothing
+
+-- | Return the node to which @le@ gets mapped or error in the case of undefined
+applyNodeUnsafe :: GraphMorphism a b -> G.Node a -> G.Node a
+applyNodeUnsafe m n = fromMaybe (error "Error, apply nodeId in a non total morphism") $ applyNode m n
 
 -- | Return the nodeId to which @le@ gets mapped or error in the case of undefined
 applyNodeIdUnsafe :: GraphMorphism a b -> NodeId -> NodeId

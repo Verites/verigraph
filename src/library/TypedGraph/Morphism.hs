@@ -13,6 +13,8 @@ module TypedGraph.Morphism (
     , graphDomain
     , graphCodomain
     , mapping
+    , applyNode
+    , applyNodeUnsafe
     , applyNodeId
     , applyNodeIdUnsafe
     , applyEdge
