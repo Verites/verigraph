@@ -152,29 +152,29 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
       graphB = domain typedGraphB
       graphA = domain typedGraphA
 
-      nodesInA = nodeIdsFromDomain f
-      nodesInB = nodeIdsFromDomain g
-      edgesInA = edgeIdsFromDomain f
-      edgesInB = edgeIdsFromDomain g
+      nodesInA = nodesFromDomain f
+      nodesInB = nodesFromDomain g
+      edgesInA = edgesFromDomain f
+      edgesInB = edgesFromDomain g
 
       -- Discover the nodes and edges of the X
-      nodesWithoutId = getPairs applyNodeIdUnsafe nodesInA nodesInB nodeIds
+      nodesWithoutId = getPairs applyNodeIdUnsafe nodeId nodesInA nodesInB nodes
       nodesWithId = zip nodesWithoutId ([0..]::[Int])
 
-      egdesWithoutId = getPairs applyEdgeIdUnsafe edgesInA edgesInB edgeIds
+      egdesWithoutId = getPairs applyEdgeIdUnsafe edgeId edgesInA edgesInB edges
       edgesWithId = zip egdesWithoutId ([0..]::[Int])
 
       -- Run the product for all elements that are mapped on the same element in C
-      getPairs apply elemA elemB list = concatMap (uncurry product) comb
+      getPairs apply getId elemA elemB list = concatMap product comb
         where
           comb =
             map
               (\n ->
-                (filter (\n' -> apply f n' == n) elemA,
-                 filter (\n' -> apply g n' == n) elemB))
+                (filter (\n' -> apply f (getId n') == getId n) elemA,
+                 filter (\n' -> apply g (getId n') == getId n) elemB))
               (list (domain typedGraphC))
 
-          product x y = [(a,b) | a <- x, b <- y]
+          product (x,y) = [(a,b) | a <- x, b <- y]
 
       -- Init X, f' and g' as empty
       initX = GM.empty empty typeGraph
@@ -189,8 +189,8 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
       updateNodes ((a,b),newId) (g',f') = (updateG',updateF')
         where
           newNode = NodeId newId
-          updateG' = createNodeOnDomain newNode (nodeTypeInA a) a g'
-          updateF' = createNodeOnDomain newNode (nodeTypeInB b) b f'
+          updateG' = createNodeOnDomain newNode (nodeTypeInA (nodeId a)) (nodeId a) g'
+          updateF' = createNodeOnDomain newNode (nodeTypeInB (nodeId b)) (nodeId b) f'
 
       -- Add an edge on the domain of f' and g'
       updateEdges ((a,b),newId) (g',f') = (updateG',updateF')
@@ -202,21 +202,21 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
           src1 =
             filter
               (\n ->
-                applyNodeIdUnsafe f' n == sourceOfUnsafe graphB b &&
-                applyNodeIdUnsafe g' n == sourceOfUnsafe graphA a)
+                applyNodeIdUnsafe f' n == sourceId b &&
+                applyNodeIdUnsafe g' n == sourceId a)
               (nodeIdsFromDomain f')
           src = if Prelude.null src1 then error "src not found" else head src1
 
           tgt1 =
             filter
               (\n ->
-                applyNodeIdUnsafe f' n == targetOfUnsafe graphB b &&
-                applyNodeIdUnsafe g' n == targetOfUnsafe graphA a)
+                applyNodeIdUnsafe f' n == targetId b &&
+                applyNodeIdUnsafe g' n == targetId a)
               (nodeIdsFromDomain f')
           tgt = if Prelude.null tgt1 then error "tgt not found" else head tgt1
 
-          updateG' = createEdgeOnDomain newEdge src tgt (edgeTypeInA a) a g'
-          updateF' = createEdgeOnDomain newEdge src tgt (edgeTypeInB b) b f'
+          updateG' = createEdgeOnDomain newEdge src tgt (edgeTypeInA (edgeId a)) (edgeId a) g'
+          updateF' = createEdgeOnDomain newEdge src tgt (edgeTypeInB (edgeId b)) (edgeId b) f'
 
 
   hasPushoutComplement (Monomorphism, g) (_, f) =
