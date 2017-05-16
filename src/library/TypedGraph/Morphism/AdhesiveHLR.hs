@@ -1,6 +1,5 @@
 module TypedGraph.Morphism.AdhesiveHLR where
 
-import           Data.List                      (nubBy)
 import           Data.Maybe                     (fromJust, mapMaybe)
 
 import           Abstract.AdhesiveHLR
@@ -54,7 +53,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
       graphA = domain typedGraphA
       graphA' = domain (codomain f)
       edgesOfA = edgesFromDomain f
-      nodesOfA = nodeIdsFromDomain f
+      nodeIdsOfA = nodeIdsFromDomain f
 
       emptyMorphismToA = buildTypedGraphMorphism emptyTypedGraph typedGraphA emptyMapToA
         where
@@ -65,11 +64,12 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
       -- 3. Auxiliary functions
 
       -- It captures all nodes in A that when mapped to A' has an incident edge.
-      danglingNodes = filter checkExistsOrphanIncidentEdge nodesOfA
+      danglingNodes = filter checkExistsOrphanIncidentEdge nodeIdsOfA
         where
-          checkExistsOrphanIncidentEdge n = any (isOrphanEdge f) incEdges
+          checkExistsOrphanIncidentEdge n = any (\(_,e,_) -> isOrphanEdge f (edgeId e)) incEdges
             where
-              incEdges = getIncidentEdges graphA' (applyNodeIdUnsafe f n)
+              Just (_,ctx) = lookupNodeInContext (applyNodeIdUnsafe f n) graphA'
+              incEdges = incidentEdges ctx
 
       -- It captures all nodes in A that are equally mapped by f
       collapsedNodes =
@@ -79,8 +79,8 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
               (\n' ->
                 n/=n' &&
                 (applyNodeIdUnsafe f n == applyNodeIdUnsafe f n')
-              ) nodesOfA
-          ) nodesOfA
+              ) nodeIdsOfA
+          ) nodeIdsOfA
 
       -- It captures all edges in A that are equally mapped by f
       collapsedEdges =
@@ -149,8 +149,6 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
       typedGraphA = domain f
       typedGraphB = domain g
       typedGraphC = codomain f
-      graphB = domain typedGraphB
-      graphA = domain typedGraphA
 
       nodesInA = nodesFromDomain f
       nodesInB = nodesFromDomain g
