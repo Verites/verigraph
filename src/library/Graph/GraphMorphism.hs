@@ -87,7 +87,7 @@ orphanEdges gm = map idToEdge (R.orphans (edgeRelation gm))
     idToEdge id =
       fromMaybe
         (error "orphanEdges: EdgeId is not in graph")
-        (lookupEdge id (domain gm))
+        (lookupEdge id (codomain gm))
 
 -- | Return the orphan edgesIds in a graph morphism
 orphanEdgeIds :: GraphMorphism a b -> [G.EdgeId]
