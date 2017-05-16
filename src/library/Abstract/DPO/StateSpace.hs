@@ -65,7 +65,7 @@ import qualified Logic.Model         as Logic
 -- a single one.
 --
 -- The states are annotated with the set of predicates that hold in them. Predicates
--- are expressed as rules, and a predicate holds in a state if the rule is applicable.
+-- are expressed as productions, and a predicate holds in a state if the production is applicable.
 data StateSpace m = SS
   { states        :: IntMap (State m) -- ^ Obtain the set of (explored) indexed states in a state space.
   , transitions   :: Set (Int, Int) -- ^ Obtain the set of (explored) transitions in a state space.

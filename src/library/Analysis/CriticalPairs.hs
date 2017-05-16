@@ -35,9 +35,9 @@ type NamedRule m = (String, Production m)
 type NamedCriticalPairs m = (String,String,[CriticalPair m])
 
 -- | A Critical Pair is defined as two matches (m1,m2) from the left
--- side of their rules to a same graph.
--- It assumes that the derivation of the rule with match @m1@ causes
--- a conflict with the rule with match @m2@
+-- side of their productions to a same graph.
+-- It assumes that the derivation of the production with match @m1@ causes
+-- a conflict with the production with match @m2@
 --
 -- This diagram shows graphs and morphisms names used in the algorithms below
 --

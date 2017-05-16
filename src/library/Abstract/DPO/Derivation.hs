@@ -22,15 +22,15 @@ data Derivation m = Derivation
   } deriving (Eq, Show, Read)
 
 generateDerivationUnsafe :: (DPO m) => m -> Production m -> Derivation m
-generateDerivationUnsafe match rule = Derivation rule match n k f g
+generateDerivationUnsafe m p = Derivation p m n k f g
   where
-    (k,n,f,g) = calculateDPO match rule
+    (k,n,f,g) = calculateDPO m p
 
 -- | Given a match @m@ and a production @p@, it returns @Just d@, where @d@ is the corresponding Derivation if @m@ satisfies the rewriting conditions, or @Nothing@.
 generateDerivation :: (DPO m) => MorphismsConfig -> m -> Production m -> Maybe (Derivation m)
-generateDerivation conf match rule =
-  if satisfiesRewritingConditions conf rule match then
-     Just (generateDerivationUnsafe match rule)
+generateDerivation conf m p =
+  if satisfiesRewritingConditions conf p m then
+     Just (generateDerivationUnsafe m p)
   else Nothing
 
 getDObjects :: (DPO m) =>  [Derivation m] -> [Obj m]

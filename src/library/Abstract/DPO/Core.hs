@@ -43,7 +43,7 @@ instance (Morphism m, Valid m, Eq (Obj m)) => Valid (Production m) where
       validateNac nac index =
         mconcat
           [ withContext ("NAC #" ++ show index) (validate nac)
-          , ensure (codomain l == domain nac) ("The domain of NAC #" ++ show index ++ " is not the left side of the rule")
+          , ensure (codomain l == domain nac) ("The domain of NAC #" ++ show index ++ " is not the left side of the production")
           ]
 
 
@@ -68,11 +68,10 @@ getRHS = right
 getNACs :: Production m -> [m]
 getNACs = nacs
 
--- TODO: should we use only one name to refer to the rules instead of rules and productions?
 data Grammar m = Grammar {
-   start       :: Obj m
-,  constraints :: [Constraint m]
-,  productions       :: [NamedProduction m]
+   start           :: Obj m
+,  constraints     :: [Constraint m]
+,  productions     :: [NamedProduction m]
 ,  reachableGraphs :: [(String, Obj m)]
 }
 
@@ -87,8 +86,8 @@ instance (Morphism m, Valid m, Valid (Obj m), Eq (Obj m)) => Valid (Grammar m) w
     where
       validateConstraint constraint index =
         mconcat [ withContext ("Constraint #" ++ show index) (validate constraint) ]
-      validateProduction (name, rule) =
-        mconcat [ withContext ("Rule " ++ name) (validate rule)]
+      validateProduction (name, production) =
+        mconcat [ withContext ("Rule " ++ name) (validate production)]
       validateGraph (name, graph) =
         mconcat [ withContext ("Graph " ++ name) (validate graph)]
 
