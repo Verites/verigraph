@@ -45,7 +45,7 @@ sif = flag False True
 sof :: Parser Bool
 sof = flag False True
     ( long "snd-order"
-    <> help "use second-order rules instead first-order")
+    <> help "use second-order productions instead first-order")
 
 execute :: GlobalOptions -> Options -> IO ()
 execute globalOpts opts = do
@@ -63,9 +63,9 @@ execute globalOpts opts = do
         comp = False -- flag to compare if deleteuse and pullbacks are generating the same results
         algorithm =
           if siFlag opts then Sequentially else Parallel
-        --rules = concatMap (replicate 1) $ map snd (rules gg)
-        rules1 = map snd (rules fstOrdGG)
-        rules2 = map snd (rules sndOrdGG)
+        --productions = concatMap (replicate 1) $ map snd (productions gg)
+        rules1 = map snd (productions fstOrdGG)
+        rules2 = map snd (productions sndOrdGG)
         analysisC11 = pairwiseCompareUpperReflected (isIndependent algorithm Cond1 dpoConf) rules1
         analysisPB1 = pairwiseCompareUpperReflected (isIndependent algorithm Cond2 dpoConf) rules1
         analysisDU1 = pairwiseCompareUpperReflected (isIndependent algorithm Cond3 dpoConf) rules1
@@ -81,13 +81,13 @@ execute globalOpts opts = do
 
 
     putStrLn $ "Second-order flag: " ++ show sndOrder
-    putStrLn $ "Length of the set of first-order rules: " ++ show (length rules1)
-    putStrLn $ "Length of the set of second-order rules: " ++ show (length rules2)
+    putStrLn $ "Length of the set of first-order productions: " ++ show (length rules1)
+    putStrLn $ "Length of the set of second-order productions: " ++ show (length rules2)
     putStrLn ""
 
     when comp $ putStrLn $ "Check if pullback and delete-use algorithms result in the same matrix: " ++ show (analysisPB == analysisDU)
 
-    unless comp $ putStrLn ("Matrix of all pairs of rules (True means this pair is "++ show algorithm ++ " Independent):")
+    unless comp $ putStrLn ("Matrix of all pairs of productions (True means this pair is "++ show algorithm ++ " Independent):")
     when (not comp && du) $ print analysisDU
     when (not comp && c1) $ print analysisC1
     when (not comp && not du && not c1) $ print analysisPB

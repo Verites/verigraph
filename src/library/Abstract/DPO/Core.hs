@@ -72,7 +72,7 @@ getNACs = nacs
 data Grammar m = Grammar {
    start       :: Obj m
 ,  constraints :: [Constraint m]
-,  rules       :: [NamedProduction m]
+,  productions       :: [NamedProduction m]
 ,  reachableGraphs :: [(String, Obj m)]
 }
 
@@ -117,7 +117,7 @@ getProduction :: NamedProduction m -> Production m
 getProduction = snd
 
 findProduction :: String -> Grammar m -> Maybe (Production m)
-findProduction name grammar = lookup name (rules grammar)
+findProduction name grammar = lookup name (productions grammar)
 
 
 -- | Class for morphisms whose category is Adhesive-HLR, and which can be

@@ -86,8 +86,8 @@ execute globalOpts opts = do
         secondOrder = sndOrder opts
         writer = defWriterFun essentialCP secondOrder dpoConf action
 
-        namedFstOrdRules = rules fstOrderGG
-        namedSndOrdRules = rules sndOrderGG
+        namedFstOrdRules = productions fstOrderGG
+        namedSndOrdRules = productions sndOrderGG
         fstOrdRules = map snd namedFstOrdRules
         sndOrdRules = map snd namedSndOrdRules
 

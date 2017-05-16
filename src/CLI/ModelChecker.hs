@@ -4,10 +4,10 @@ import           Data.Monoid              ((<>))
 import           GlobalOptions
 import           Options.Applicative
 
-import           Abstract.DPO             hiding (NamedProduction)
+import           Abstract.DPO             as DPO hiding (NamedProduction)
 import           Abstract.DPO.StateSpace  as StateSpace
 import           Abstract.Morphism
-import           Abstract.Valid          
+import           Abstract.Valid
 import qualified Image.Dot                as Dot
 import qualified Logic.Ctl                as Logic
 import qualified Logic.Model              as Logic
@@ -67,7 +67,7 @@ execute (globalOpts, options) =
     let dpoConf = morphismsConf globalOpts
 
     (grammar,_,_) <- XML.readGrammar (inputFile globalOpts) (useConstraints globalOpts) dpoConf
-    ensureValid $ validateNamed (\name -> "Rule '"++name++"'") (rules grammar)
+    ensureValid $ validateNamed (\name -> "Rule '"++name++"'") (DPO.productions grammar)
 
     graphs <- XML.readGraphs (inputFile globalOpts)
     ensureValid $ validateNamed (\name -> "Graph '"++name++"'") graphs
@@ -167,7 +167,7 @@ exploreStateSpace :: MorphismsConfig -> Int -> Grammar (TypedGraphMorphism () ()
 exploreStateSpace conf maxDepth grammar graphs =
   let
     (productions, predicates) =
-      splitPredicates (rules grammar)
+      splitPredicates (DPO.productions grammar)
 
     searchFrom (_, graph) =
       do

@@ -55,10 +55,10 @@ readGrammar fileName useConstraints morphismsConf = do
 
   let (sndOrdRules, fstOrdRules) = L.partition (\((x,_,_,_),_) -> startswith "2rule_" x) parsedRules
       rulesNames = map (\((x,_,_,_),_) -> x) fstOrdRules
-      rules = map (instantiateRule typeGraph) fstOrdRules
+      productions = map (instantiateRule typeGraph) fstOrdRules
 
-  ensureValid $ validateNamed (\name -> "Rule '"++name++"'") (zip rulesNames rules)
-  _ <- (L.null rules && error "No first order rules were found, at least one is needed.") `seq` return ()
+  ensureValid $ validateNamed (\name -> "Rule '"++name++"'") (zip rulesNames productions)
+  _ <- (L.null productions && error "No first order productions were found, at least one is needed.") `seq` return ()
 
   parsedAtomicConstraints <- readAtomicConstraints fileName
   parsedGraphConstraints  <- readGraphConstraints fileName
@@ -69,7 +69,7 @@ readGrammar fileName useConstraints morphismsConf = do
 
   -- gets only the first graph as initial, because verigraph supports only one initial graph per grammar.
   let initGraph = head (map snd parsedGraphs)
-      fstOrderGrammar = grammar initGraph cons (zip rulesNames rules)
+      fstOrderGrammar = grammar initGraph cons (zip rulesNames productions)
 
       sndOrderRules = instantiateSndOrderRules typeGraph sndOrdRules
       emptyRule = emptyGraphRule typeGraph
@@ -108,13 +108,13 @@ minimalSafetyNacsWithLog conf oldGG = (newGG, printNewNacs)
             tamNewNacs = length (getNACs newRule)
             tamNacs = length (getNACs r)
          in ((n, newRule), (n, tamNewNacs - tamNacs))
-        ) (rules oldGG)
-    newGG = oldGG {rules = map fst newNacs}
+        ) (productions oldGG)
+    newGG = oldGG {productions = map fst newNacs}
     printNewNacs = map snd newNacs
 
 printMinimalSafetyNacsLog :: [(String, Int)] -> [String]
 printMinimalSafetyNacsLog printNewNacs =
-    ["Adding minimal safety nacs to second order rules:"]
+    ["Adding minimal safety nacs to second order productions:"]
     ++ map (\(r,n) -> "Rule " ++ r ++ ", added " ++ show n ++ " nacs") printNewNacs
     ++ ["All minimal safety nacs added!"]
 
@@ -169,7 +169,7 @@ expandSequence grammar (name,s,_) = (name, mapMaybe lookupRule . concat $ map ex
   where
     expandSub (i, s) = concat $ replicate i $ concatMap expandItens s
     expandItens (i, r) = replicate i r
-    lookupRule name = L.lookup name (rules grammar)
+    lookupRule name = L.lookup name (productions grammar)
 
 readSequencesWithObjectFlow :: Grammar (TypedGraphMorphism a b) -> String -> IO [(String, [(String, GR.GraphRule a b)], [ObjectFlow (TypedGraphMorphism a b)])]
 readSequencesWithObjectFlow grammar fileName = map (prepareFlows grammar) <$> runX (parseXML fileName >>> parseRuleSequence)
@@ -179,21 +179,21 @@ prepareFlows grammar (name,s,flows) = (name, map fun getAll, objs)
   where
     fun name = (name, fromJust $ lookupRule name)
     getAll = map snd (snd $ head s) -- gets only the first subsequence
-    lookupRule name = L.lookup name (rules grammar)
-    objs = instantiateObjectsFlow (rules grammar) flows
+    lookupRule name = L.lookup name (productions grammar)
+    objs = instantiateObjectsFlow (productions grammar) flows
 
 instantiateObjectsFlow :: [(String, Production (TypedGraphMorphism a b))] -> [ParsedObjectFlow] -> [ObjectFlow (TypedGraphMorphism a b)]
 instantiateObjectsFlow _ [] = []
 instantiateObjectsFlow [] _ = []
-instantiateObjectsFlow rules (o:os) =
+instantiateObjectsFlow productions (o:os) =
   let
     createObject (idx,cons,prod,maps) = ObjectFlow idx prod cons (createSpan prod cons maps)
     createSpan prod cons = instantiateSpan (rightGraph (searchRight prod)) (leftGraph (searchLeft cons))
     leftGraph = codomain . getLHS
     rightGraph = codomain . getRHS
-    searchLeft ruleName = fromJust $ L.lookup ruleName rules
-    searchRight ruleName = fromJust $ L.lookup ruleName rules
-  in createObject o : instantiateObjectsFlow rules os
+    searchLeft ruleName = fromJust $ L.lookup ruleName productions
+    searchRight ruleName = fromJust $ L.lookup ruleName productions
+  in createObject o : instantiateObjectsFlow productions os
 
 
 instantiateTypeGraph :: ParsedTypeGraph -> TypeGraph a b

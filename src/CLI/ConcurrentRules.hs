@@ -71,7 +71,7 @@ execute globalOpts opts = do
       when (null rules)
         (putStrLn $ "No concurrent rules were found for rule sequence '" ++ name ++ "'")
 
-    let gg' = grammar (start gg) [] (rules gg ++ concat newRules)
+    let gg' = grammar (start gg) [] (productions gg ++ concat newRules)
     GW.writeGrammarFile (gg',gg2) ggName names (outputFile opts)
 
 

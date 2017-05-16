@@ -63,14 +63,14 @@ execute globalOpts opts = do
 
     -- It is adding an empty first order rule as possible match target,
     -- it allows the creation from "zero" of a new second order rules.
-    let fstRulesPlusEmpty = addEmptyFstOrderRule (typeGraph fstOrderGG) (rules fstOrderGG)
-        newRules = SO.applySecondOrder (SO.applySndOrderRule dpoConf) fstRulesPlusEmpty (rules sndOrderGG)
-        newGG = fstOrderGG {rules = rules fstOrderGG ++ newRules}
+    let fstRulesPlusEmpty = addEmptyFstOrderRule (typeGraph fstOrderGG) (productions fstOrderGG)
+        newRules = SO.applySecondOrder (SO.applySndOrderRule dpoConf) fstRulesPlusEmpty (productions sndOrderGG)
+        newGG = fstOrderGG {productions = productions fstOrderGG ++ newRules}
         namingContext = makeNamingContext names
 
     putStrLn ""
 
-    let dots = map (uncurry (printSndOrderRule namingContext)) (rules sndOrderGG)
+    let dots = map (uncurry (printSndOrderRule namingContext)) (productions sndOrderGG)
     when printDot $ mapM_ print dots
 
     GW.writeGrammarFile (newGG,sndOrderGG) ggName names (outputFile opts)

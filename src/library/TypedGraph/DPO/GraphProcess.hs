@@ -20,7 +20,7 @@ where
 
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
-import           Abstract.DPO.Process
+import           Abstract.DPO.Process           hiding (productions)
 import           Abstract.Morphism              as M
 import           Analysis.DiagramAlgorithms
 import           Data.List                      as L hiding (union)
@@ -45,7 +45,7 @@ instance GenerateProcess (TypedGraphMorphism a b) where
 
 data DoublyTypedGrammar a b = DoublyTypedGrammar {
   singleTypedGrammar       :: Grammar (TypedGraphMorphism a b) -- ^ The grammar typed over the double type graph
-, originalRulesWithMatches :: [NamedRuleWithMatches (TypedGraphMorphism a b)] -- ^ The rules of the original grammar, together with their matches in the double type graph
+, originalRulesWithMatches :: [NamedRuleWithMatches (TypedGraphMorphism a b)] -- ^ The productions of the original grammar, together with their matches in the double type graph
 , doubleType               :: TypedGraph a b -- ^ The double type graph, typed over the simple type graph
 , originRelation           :: Relation -- ^ The relation that shows the rule that originated each element (node or edge) in the grammar
 , concreteRelation         :: Relation -- ^ The occurrence relation of the grammar (existencial relation + concrete conflicts and dependencies induced by NACs)
@@ -87,11 +87,11 @@ deletionRelation :: DoublyTypedGrammar a b -> Relation
 deletionRelation ogg = S.filter isDeletion (originRelation ogg)
 
 -- | Given an doubly typed grammar, it returns a tuple @(rs,es)@ where @rs@ is the set of rule names in this grammar
--- and @es@ is the set of elements that appear in the rules
+-- and @es@ is the set of elements that appear in the productions
 getElements :: DoublyTypedGrammar a b -> (Set RelationItem, Set RelationItem)
 getElements ogg =
   let
-    (ns,rs) = unzip $ rules (singleTypedGrammar ogg)
+    (ns,rs) = unzip $ productions (singleTypedGrammar ogg)
     ruleNames = S.map Rule (fromList ns)
     elements = L.map getRuleItems rs
   in (ruleNames, unions elements)
@@ -132,7 +132,7 @@ calculateProduceForbids ogg pfs = (S.map toRelation concretePF, S.map toAbstract
     toRelation (i, _) = (Rule (firstRule i), Rule (secondRule i))
     toAbstractRelation (i, c) = (AbstractProduceForbid, toRelation (i, c), (Rule (secondRule i), findRule (deletionRelation ogg) c))
 
--- | Given an doubly typed grammar and an interaction of the types ProduceForbid or DeleteForbid between two rules
+-- | Given an doubly typed grammar and an interaction of the types ProduceForbid or DeleteForbid between two productions
 -- it returns the interaction together with the element that triggered the NAC involved in this conflict or dependency
 findConcreteTrigger :: DoublyTypedGrammar a b -> Interaction -> (Interaction, RelationItem) -- check if the order is correct for produce forbids
 findConcreteTrigger ogg interaction@(Interaction a1 a2 t nacIdx) =
@@ -164,9 +164,9 @@ getTrigger nac =
   in if L.null orphanEdges then Node $ head orphanNodes else Edge $ head orphanEdges
 
 uniqueOrigin :: [NamedProduction (TypedGraphMorphism a b)] -> Bool
-uniqueOrigin rules = not (repeated createdList) && not (repeated deletedList)
+uniqueOrigin productions = not (repeated createdList) && not (repeated deletedList)
   where
-    creationAndDeletion = S.filter isRuleAndElement $ unions $ L.map creationAndDeletionRelation rules
+    creationAndDeletion = S.filter isRuleAndElement $ unions $ L.map creationAndDeletionRelation productions
     isCreated a = case a of
       (Rule _, _) -> True
       _           -> False
@@ -178,11 +178,11 @@ strictRelation :: [NamedProduction (TypedGraphMorphism a b)] -> Relation
 strictRelation = unions . L.map creationAndDeletionRelation
 
 occurrenceRelation :: [NamedProduction (TypedGraphMorphism a b)] -> Relation
-occurrenceRelation rules =
+occurrenceRelation productions =
   let
-    b = strictRelation rules
-    b' = creationAndPreservationRelation rules b
-    b'' = preservationAndDeletionRelation rules b
+    b = strictRelation productions
+    b' = creationAndPreservationRelation productions b
+    b'' = preservationAndDeletionRelation productions b
   in buildTransitivity (unions [b,b',b''])
 
 createdElements :: Relation -> Set RelationItem
@@ -209,7 +209,7 @@ removeElements coreGraph elementsToRemove =
     edges = S.map (\(Edge x) -> x) e
   in S.foldr GM.removeNodeFromDomainForced (S.foldr GM.removeEdgeFromDomain (M.id coreGraph) edges) nodes
 
--- use with the retyped rules
+-- use with the retyped productions
 creationAndDeletionRelation :: NamedProduction (TypedGraphMorphism a b) -> Relation
 creationAndDeletionRelation (name,rule) =
   let
@@ -231,13 +231,13 @@ getRuleItems rule =
    in S.map Node ns `union` S.map Edge es
 
 creationAndPreservationRelation :: [NamedProduction (TypedGraphMorphism a b)] -> Relation -> Relation
-creationAndPreservationRelation rules cdRelation =
+creationAndPreservationRelation productions cdRelation =
   let
     creationCase x = case fst x of
       Rule _ -> True
       _      -> False
     created = S.filter creationCase cdRelation
-    result = L.map (relatedByCreationAndPreservation created) rules
+    result = L.map (relatedByCreationAndPreservation created) productions
   in S.unions result
 
 relatedByCreationAndPreservation :: Relation -> NamedProduction (TypedGraphMorphism a b) -> Relation
@@ -257,13 +257,13 @@ relatedByCreationAndPreservation relation preservingRule
   in if related r nodes edges then singleton (fst r, Rule name) else relatedByCreationAndPreservation rs preservingRule
 
 preservationAndDeletionRelation :: [NamedProduction (TypedGraphMorphism a b)] -> Relation -> Relation
-preservationAndDeletionRelation rules cdRelation =
+preservationAndDeletionRelation productions cdRelation =
   let
     deletionCase x = case snd x of
       Rule _ -> True
       _      -> False
     deleting = S.filter deletionCase cdRelation
-    result = L.map (relatedByPreservationAndDeletion deleting) rules
+    result = L.map (relatedByPreservationAndDeletion deleting) productions
   in S.unions result
 
 type RuleWithMatches a b = (Production (TypedGraphMorphism a b), (TypedGraphMorphism a b, TypedGraphMorphism a b, TypedGraphMorphism a b))
