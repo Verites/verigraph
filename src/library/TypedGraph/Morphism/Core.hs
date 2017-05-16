@@ -43,6 +43,10 @@ instance Valid (TypedGraphMorphism a b) where
 nodeIdsFromDomain :: TypedGraphMorphism a b -> [NodeId]
 nodeIdsFromDomain = nodeIds . domain . getDomain
 
+-- | Return the nodes in the domain of a given @TypedGraphMorphism@
+nodesFromDomain :: TypedGraphMorphism a b -> [Node (Maybe a)]
+nodesFromDomain = nodes . domain . getDomain
+
 -- | Return the edges ids in the domain of a given @TypedGraphMorphism@
 edgeIdsFromDomain :: TypedGraphMorphism a b -> [EdgeId]
 edgeIdsFromDomain = edgeIds . domain . getDomain
