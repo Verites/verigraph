@@ -20,7 +20,7 @@ module TypedGraph.DPO.GraphRule (
     , nullGraphRule
     , buildGraphRule
 
-    , checkDeletion
+    , isDeleted
 ) where
 
 

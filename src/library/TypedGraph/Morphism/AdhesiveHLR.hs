@@ -279,22 +279,21 @@ satisfiesDanglingCondition l m = Prelude.null incidentEdgesNotDeleted
       [(n',ctx) |
          (n',ctx) <- nodesInContext instanceGraph,
          any (\n -> applyNodeIdUnsafe m n == nodeId n') (nodeIds lhs),
-         checkDeletion l m applyNodeId nodeIdsFromDomain (nodeId n')]
+         isDeleted l m applyNodeId nodeIdsFromDomain (nodeId n')]
     
     incidentEdgesNotDeleted =
       [edgeId e |
          ((n1,_),e,(n2,_)) <- edgesInContext instanceGraph,
          (n,_) <- deletedNodes,
          nodeId n `elem` [nodeId n1, nodeId n2],
-         not (checkDeletion l m applyEdgeId edgeIdsFromDomain (edgeId e))]
+         not (isDeleted l m applyEdgeId edgeIdsFromDomain (edgeId e))]
 
--- | TODO: Find a better name for this function, that was repeated both here and in the GraphRule archive
--- | Given the left-hand-side morphism of a rule /l : K -> L/, a match /m : L -> G/ for this rule, an element __/e/__
+-- | Given the left-hand-side morphism of a rule /l : K -> L/, a match /m : L -> G/ of this rule, an element __/e/__
 -- (that can be either a __/Node/__ or an __/Edge/__) and two functions /apply/ (for applying that element in a TypedGraphMorphism) and
 -- /list/ (to get all the corresponding elements in the domain of m), it returns true if /e/ is deleted by this rule for the given match
-checkDeletion :: Eq t => TypedGraphMorphism a b -> TypedGraphMorphism a b -> (TypedGraphMorphism a b -> t -> Maybe t)
+isDeleted :: Eq t => TypedGraphMorphism a b -> TypedGraphMorphism a b -> (TypedGraphMorphism a b -> t -> Maybe t)
           -> (TypedGraphMorphism a b -> [t]) -> t -> Bool
-checkDeletion l m apply list e = elementInL && not elementInK
+isDeleted l m apply list e = elementInL && not elementInK
   where
     elementInL = any (\x -> apply m x == Just e) (list m)
     kToG = compose l m

@@ -165,13 +165,13 @@ instance AdhesiveHLR (RuleMorphism a b) where
 danglingSpan :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
 danglingSpan matchRuleSide matchMorp matchK l k = deletedNodesInK && deletedEdgesInK
   where
-    deletedNodes = filter (checkDeletion l matchMorp applyNodeId nodeIdsFromDomain) (nodeIdsFromCodomain matchMorp)
+    deletedNodes = filter (isDeleted l matchMorp applyNodeId nodeIdsFromDomain) (nodeIdsFromCodomain matchMorp)
     nodesInK = [a | a <- nodeIdsFromDomain matchRuleSide, applyNodeIdUnsafe matchRuleSide a `elem` deletedNodes]
-    deletedNodesInK = all (checkDeletion k matchK applyNodeId nodeIdsFromDomain) nodesInK
+    deletedNodesInK = all (isDeleted k matchK applyNodeId nodeIdsFromDomain) nodesInK
 
-    deletedEdges = filter (checkDeletion l matchMorp applyEdgeId edgeIdsFromDomain) (edgeIdsFromCodomain matchMorp)
+    deletedEdges = filter (isDeleted l matchMorp applyEdgeId edgeIdsFromDomain) (edgeIdsFromCodomain matchMorp)
     edgesInK = [a | a <- edgeIdsFromDomain matchRuleSide, applyEdgeIdUnsafe matchRuleSide a `elem` deletedEdges]
-    deletedEdgesInK = all (checkDeletion k matchK applyEdgeId edgeIdsFromDomain) edgesInK
+    deletedEdgesInK = all (isDeleted k matchK applyEdgeId edgeIdsFromDomain) edgesInK
 
 isOrphanNode :: TypedGraphMorphism a b -> NodeId -> Bool
 isOrphanNode m n = n `elem` orphanTypedNodeIds m

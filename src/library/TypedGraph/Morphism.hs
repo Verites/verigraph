@@ -19,7 +19,7 @@ module TypedGraph.Morphism (
     , applyEdgeId
     , applyEdgeIdUnsafe
     , buildTypedGraphMorphism
-    , checkDeletion
+    , isDeleted
     , removeNodeFromDomain
     , removeEdgeFromDomain
     , removeNodeFromCodomain
@@ -39,7 +39,7 @@ module TypedGraph.Morphism (
     , reflectIdsFromDomains
 ) where
 
-import           TypedGraph.Morphism.AdhesiveHLR  (checkDeletion)
+import           TypedGraph.Morphism.AdhesiveHLR  (isDeleted)
 import           TypedGraph.Morphism.Cocomplete   ()
 import           TypedGraph.Morphism.Core
 import           TypedGraph.Morphism.EpiPairs     ()
