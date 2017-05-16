@@ -1,14 +1,14 @@
 module TypedGraph.Morphism.AdhesiveHLR where
 
+import           Data.List                      (nubBy)
+import           Data.Maybe                     (fromJust, mapMaybe)
+
 import           Abstract.AdhesiveHLR
 import           Abstract.Morphism
 import           Graph.Graph                    as G
 import qualified Graph.GraphMorphism            as GM
 import           TypedGraph.Morphism.Cocomplete ()
 import           TypedGraph.Morphism.Core
-
-import           Data.Maybe                     (fromJust, fromMaybe, mapMaybe)
-
 
 instance AdhesiveHLR (TypedGraphMorphism a b) where
 
@@ -267,19 +267,26 @@ notIdentificatedElement l m domain apply e = (length incidentElements <= 1) || n
     eIsDeleted = Nothing `elem` map l' incidentElements
 
 
--- | Given a left-hand-side morphism /l : K -> L/, a match /m : L -> G/, returns @true@ if
--- there aren't dangling edges
+-- | Given a left-hand-side morphism /l : K -> L/, a match /m : L -> G/,
+-- returns @true@ if there are not dangling edges
 satisfiesDanglingCondition :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
-satisfiesDanglingCondition l m = all (==True) (concat incidentDeletedEdges)
-    where
-        lhs = graphDomain m
-        instanceGraph = graphCodomain m
-        checkEdgeDeletion = map (checkDeletion l m applyEdgeId edgeIdsFromDomain)
-        matchedNodes = mapMaybe (applyNodeId m) (nodeIds lhs)
-        deletedNodes = filter (checkDeletion l m applyNodeId nodeIdsFromDomain) matchedNodes
-        incidentEdgesOnDeletedNodes = map (getIncidentEdges instanceGraph) deletedNodes
-        incidentDeletedEdges = map checkEdgeDeletion incidentEdgesOnDeletedNodes
-
+satisfiesDanglingCondition l m = Prelude.null incidentEdgesNotDeleted
+  where
+    lhs = graphDomain m
+    instanceGraph = graphCodomain m
+    
+    deletedNodes =
+      [(n',ctx) |
+         (n',ctx) <- nodesInContext instanceGraph,
+         any (\n -> applyNodeIdUnsafe m n == nodeId n') (nodeIds lhs),
+         checkDeletion l m applyNodeId nodeIdsFromDomain (nodeId n')]
+    
+    incidentEdgesNotDeleted =
+      [edgeId e |
+         ((n1,_),e,(n2,_)) <- edgesInContext instanceGraph,
+         (n,_) <- deletedNodes,
+         nodeId n `elem` [nodeId n1, nodeId n2],
+         not (checkDeletion l m applyEdgeId edgeIdsFromDomain (edgeId e))]
 
 -- | TODO: Find a better name for this function, that was repeated both here and in the GraphRule archive
 -- | Given the left-hand-side morphism of a rule /l : K -> L/, a match /m : L -> G/ for this rule, an element __/e/__
