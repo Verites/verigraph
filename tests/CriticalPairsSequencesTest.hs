@@ -24,7 +24,8 @@ main = do
     , testTeseRodrigo (MorphismsConfig AnyMatches PartiallyMonomorphicNAC) fstRules
     , testTeseRodrigo (MorphismsConfig AnyMatches MonomorphicNAC) fstRules
     ] ++
-    [testSndOrder (MorphismsConfig AnyMatches MonomorphicNAC) sndRules]
+    [ testSndOrder (MorphismsConfig AnyMatches MonomorphicNAC) sndRules
+    , testSndOrder (MorphismsConfig AnyMatches PartiallyMonomorphicNAC) sndRules]
 
 testTeseRodrigo dpoConf rules =
   "tese rodrigo" ~:
