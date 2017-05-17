@@ -62,9 +62,10 @@ type GraphPartition = ([[Node]],[[Edge]])
 nodeBelongsToEquivalenceClass :: Node -> [Node] -> Bool
 nodeBelongsToEquivalenceClass _ [] = error "error 'nodeBelongsToEquivalenceClass' in GraphPartition"
 nodeBelongsToEquivalenceClass (Node type1 _ _ injectiveNode side1) l@(Node type2 _ _ _ _ : _) =
-  type1 == type2 && (not injectiveNode || not thereIsAnotherInjectiveNode)
+  type1 == type2 && if injectiveNode then not thereIsAnotherSameSideNode else not thereIsAnotherInjectiveNode
   where
     thereIsAnotherInjectiveNode = any (\(Node _ _ _ injectiveNode side2) -> injectiveNode && side1 == side2) l
+    thereIsAnotherSameSideNode = any (\(Node _ _ _ _ side2) -> side1 == side2) l
 
 -- | Checks if two edges are in the same equivalence class
 -- Needs @nodes@ to know if a source or target was collapsed
@@ -74,8 +75,9 @@ edgeBelongsToEquivalenceClass nodes (Edge type1 _ _ s1 t1 injectiveEdge side) l@
   equalTypes && canBeAddedToClass && equivalentSources && equivalentTargets
   where
     equalTypes = type1 == type2
-    canBeAddedToClass = not injectiveEdge || not thereIsAnotherInjectiveEdge
+    canBeAddedToClass = if injectiveEdge then not thereIsAnotherSameSideEdge else not thereIsAnotherInjectiveEdge
     thereIsAnotherInjectiveEdge = any (\(Edge _ _ _ _ _ inj side2) -> inj && side == side2) l
+    thereIsAnotherSameSideEdge = any (\(Edge _ _ _ _ _ _ side2) -> side == side2) l
     nodeNameAndSource node = (nodeName node, nodeFromLeft node)
     source1   = getNode (nodeNameAndSource s1) nodes
     source2   = getNode (nodeNameAndSource s2) nodes
