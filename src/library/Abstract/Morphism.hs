@@ -49,10 +49,12 @@ class Morphism m => FindMorphism m where
   -- not be empty.
   induceSpanMorphism :: [m] -> [m] -> m
 
-  -- TODO: properly explain partial injectivity
   -- TODO: replace by data constructor @PartMono :: m -> MorphismType@?
-  -- | Given a NAC /n : L -> N / and a match /m : L -> G/, finds the morphisms
-  -- from /N/ to /G/ that are injective out of the image of /n/
+  -- | Given a NAC /n : L -> N/ and a match /m : L -> G/, it finds all
+  -- morphisms /q : N -> G/ that are partial injective.
+  --
+  -- A partial injective restriction demands the /q : N -> G/ to be
+  -- non-injective only on /N \\ n(L)/.
   partialInjectiveMatches :: m -> m -> [m]
 
   -- | Given two TypedGraphMorphism @f : B -> A@ and @g : C -> A@ it finds a list of Morphisms
