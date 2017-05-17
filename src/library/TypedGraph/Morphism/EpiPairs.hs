@@ -6,9 +6,7 @@ import qualified Graph.GraphMorphism                             as GM
 import           TypedGraph.Morphism.Core
 import           TypedGraph.Partitions.GraphPartition            (generateGraphPartitions)
 import           TypedGraph.Partitions.GraphPartitionToVerigraph (mountTypedGraphMorphisms)
-import           TypedGraph.Partitions.VerigraphToGraphPartition (createDisjointUnion,
-                                                                  createSatisfyingNacsDisjointUnion)
-
+import           TypedGraph.Partitions.VerigraphToGraphPartition (createDisjointUnion,createSatisfyingNacsDisjointUnion)
 
 instance EpiPairs (TypedGraphMorphism a b) where
   -- | Create all jointly surjective pairs of @m1@ and @m2@
@@ -20,11 +18,12 @@ instance EpiPairs (TypedGraphMorphism a b) where
       part = map (mountTypedGraphMorphisms m1 m2) (generateGraphPartitions (createDisjointUnion (m1,inj) (m2,inj)))
 
   createJointlyEpimorphicPairsFromNAC conf r nac =
-    map (mountTypedGraphMorphisms r (codomain nac))
-        (generateGraphPartitions (createSatisfyingNacsDisjointUnion (r, injectiveMatch) (nac, totalInjectiveNac)))
+    map (mountTypedGraphMorphisms r (codomain nac)) (generateGraphPartitions labeled)
     where
       injectiveMatch = matchRestriction conf == MonoMatches
       totalInjectiveNac = nacSatisfaction conf == MonomorphicNAC
+      
+      labeled = createSatisfyingNacsDisjointUnion (r, injectiveMatch) (nac, totalInjectiveNac)
 
   -- | Create all jointly surjective pairs of @m1@ and @m2@ that commutes,
   -- considering they have same domain
