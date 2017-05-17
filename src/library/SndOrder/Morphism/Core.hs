@@ -31,8 +31,7 @@ import           TypedGraph.Morphism
 -- mappingInterface = mapK
 --
 -- mappingRight = mapR
---
--- TODO: Make polymorphic on the type of morphism?
+
 data RuleMorphism a b =
   RuleMorphism {
     rmDomain         :: Production (TypedGraphMorphism a b)
@@ -101,6 +100,5 @@ satisfiesNACRewriting :: DPO m => m -> m -> Bool
 satisfiesNACRewriting l = satisfiesGluingConditions dpoConf prod
   where
     -- Production just to test satisfiesGluingConditions, note that right side is not used.
-    err = error "satisfiesNACRewriting: this rule right side must not be used"
-    prod = buildProduction l err []
-    dpoConf = MorphismsConfig AnyMatches MonomorphicNAC
+    prod = buildProduction l undefined []
+    dpoConf = MorphismsConfig AnyMatches undefined

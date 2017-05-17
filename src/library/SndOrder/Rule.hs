@@ -7,10 +7,8 @@ module SndOrder.Rule (
 
 import           Abstract.AdhesiveHLR
 import           Abstract.DPO
-
 import           SndOrder.Rule.Core
 import           SndOrder.Rule.DPO
-
 import           TypedGraph.DPO.GraphRule
 
 -- | Receives a function that works with a second order and a first order rule.
