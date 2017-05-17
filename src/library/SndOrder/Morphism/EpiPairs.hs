@@ -41,7 +41,7 @@ instance EpiPairs (RuleMorphism a b) where
 
   createJointlyEpimorphicPairsFromNAC conf ruleR nac = ret
     where
-      createJointly x y = createJointlyEpimorphicPairsFromNAC conf (codomain x) y
+      createJointly x = createJointlyEpimorphicPairsFromNAC conf (codomain x)
       
       nL = mappingLeft nac
       nK = mappingInterface nac

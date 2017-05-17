@@ -26,15 +26,14 @@ main = do
   (gg1c,gg2c,_) <- XML.readGrammar fileName False dpoConf3
   (gg1d,gg2d,_) <- XML.readGrammar fileName False dpoConf4
   
-  runTests $
-    testPartition :
-    testCreateJointlyEpimorphicPairsFromNAC dpoConf1 gg1a gg2a 21 :
-    testCreateJointlyEpimorphicPairsFromNAC dpoConf2 gg1b gg2b 26 :
-    testCreateJointlyEpimorphicPairsFromNAC dpoConf3 gg1c gg2c 34 :
-    testCreateJointlyEpimorphicPairsFromNAC dpoConf4 gg1d gg2d 43 :
-    []
+  runTests
+    [ testPartition
+    , testCreateJointlyEpimorphicPairsFromNAC dpoConf1 gg1a gg2a 21
+    , testCreateJointlyEpimorphicPairsFromNAC dpoConf2 gg1b gg2b 26
+    , testCreateJointlyEpimorphicPairsFromNAC dpoConf3 gg1c gg2c 34
+    , testCreateJointlyEpimorphicPairsFromNAC dpoConf4 gg1d gg2d 43]
 
-testCreateJointlyEpimorphicPairsFromNAC conf gg1 gg2 n = (length epi) ~?= n
+testCreateJointlyEpimorphicPairsFromNAC conf gg1 gg2 n = length epi ~?= n
   where
     r1 = snd (head (productions gg1))
     r2 = snd (head (productions gg2))
