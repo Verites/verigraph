@@ -28,13 +28,6 @@ instance DPO (RuleMorphism a b) where
       ruleWithOnlyMinimalSafetyNacs =
         buildProduction (getLHS rule) (getRHS rule) (minimalSafetyNacs conf rule)
 
-  isPartiallyMonomorphic m l =
-    isPartiallyMonomorphic (mappingLeft m)      (mappingLeft l)      &&
-    isPartiallyMonomorphic (mappingInterface m) (mappingInterface l) &&
-    isPartiallyMonomorphic (mappingRight m)     (mappingRight l)
-
-
-
 ---- Minimal Safety NACs
 
 -- | Configuration for the minimalSafetyNACs algorithms, it defines from

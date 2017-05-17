@@ -131,13 +131,6 @@ class (AdhesiveHLR m, FindMorphism m) => DPO m where
   -- a set of NACs /n'i : R -> N'i/ that is equivalent to the original NAC.
   shiftNacOverProduction :: MorphismsConfig -> Production m -> m -> [m]
 
-  -- TODO : Verify why this function continues to be used
-  -- | Check if the second morphism is monomorphic outside the image of the
-  -- first morphism.
-  isPartiallyMonomorphic :: m -> m -> Bool
---{-# WARNING isPartiallyMonomorphic "Only necessary until 'partialInjectiveMatches' is corrected" #-}
-
-
 -- | Obtain all matches from the production into the given object, even if they
 -- aren't applicable.
 --

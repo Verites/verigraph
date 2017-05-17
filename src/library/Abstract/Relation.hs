@@ -26,7 +26,6 @@ module Abstract.Relation
     -- ** Predicates
     , isFunctional
     , isInjective
-    , isPartialInjective
     , isSurjective
     , isTotal
     ) where
@@ -138,10 +137,6 @@ isFunctional r = all containsOne $ Map.elems (mapping r)
   where
     containsOne [_] = True
     containsOne _   = False
-
--- | Test if @r@ is injective out of domain @list@
-isPartialInjective :: Ord a => [a] -> Relation a -> Bool
-isPartialInjective list r = isInjective (foldr removeFromDomain r list)
 
 -- | Test if @r@ is injective.
 isInjective :: (Ord a) => Relation a -> Bool

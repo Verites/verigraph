@@ -1,7 +1,6 @@
 module TypedGraph.Morphism (
       TypedGraphMorphism
     , idMap
-    , isPartialInjective
     , invert
     , nodesFromDomain
     , nodeIdsFromDomain

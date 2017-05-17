@@ -111,5 +111,3 @@ instance DPO (TypedGraphMorphism a b) where
     buildProduction (getRHS rule) (getLHS rule) (concatMap (shiftNacOverProduction conf rule) (getNACs rule))
 
   shiftNacOverProduction conf rule nac = [calculateComatch nac rule | satisfiesGluingConditions conf rule nac]
-
-  isPartiallyMonomorphic = isPartialInjective

@@ -38,8 +38,6 @@ module Graph.GraphMorphism (
     , orphanNodeIds
     , orphanEdgeIds
     , orphanEdges
-
-    , isPartialInjective
     ) where
 
 import           Control.Arrow
@@ -269,21 +267,6 @@ createNodeOnCodomain n2 gm =
   gm { getCodomain = G.insertNode n2 (codomain gm)
      , nodeRelation = R.insertOnCodomain n2 (nodeRelation gm)
      }
-
--- | Test if a @nac@ is partial injective (injective out of @q@)
-isPartialInjective :: GraphMorphism a b -> GraphMorphism a b -> Bool
-isPartialInjective nac q = disjointCodomain && injective
-  where
-    nodes = mapMaybe (applyNodeId nac) (G.nodeIds (domain nac))
-    nodesI = G.nodeIds (codomain nac) \\ nodes
-    codN = mapMaybe (applyNodeId q)
-    edges = mapMaybe (applyEdgeId nac) (G.edgeIds (domain nac))
-    edgesI = G.edgeIds (codomain nac) \\ edges
-    codE = mapMaybe (applyEdgeId q)
-    disjointNodes = Prelude.null (codN nodes `intersect` codN nodesI)
-    disjointEdges = Prelude.null (codE edges `intersect` codE edgesI)
-    disjointCodomain = disjointNodes && disjointEdges
-    injective = R.isPartialInjective nodes (nodeRelation q) && R.isPartialInjective edges (edgeRelation q)
 
 instance Morphism (GraphMorphism a b) where
     type Obj (GraphMorphism a b) = Graph a b

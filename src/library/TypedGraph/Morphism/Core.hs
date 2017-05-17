@@ -211,10 +211,6 @@ removeEdgeFromCodomain e tgm =
   tgm { getCodomain = GM.removeEdgeFromDomain e (codomain tgm)
       , mapping = GM.removeEdgeFromCodomain e (mapping tgm) }
 
--- | Test if a @nac@ is partial injective (injective out of @m@)
-isPartialInjective :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
-isPartialInjective nac q = GM.isPartialInjective (mapping nac) (mapping q)
-
 -- | Creates a TypedGraphMorphism mapping nodes and edges according to their identifiers.
 idMap :: TypedGraph a b -> TypedGraph a b -> TypedGraphMorphism a b
 idMap gm1 gm2 =
