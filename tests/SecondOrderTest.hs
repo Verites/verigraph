@@ -1,7 +1,6 @@
 import           Abstract.DPO
 import           Abstract.Morphism
 import           Analysis.Interlevel.InterLevelCP
-import           Data.List.Utils                  (countElem)
 import           Data.Maybe                       (fromMaybe)
 import           SndOrder.Morphism
 import           SndOrder.Morphism.NACmanipulation
@@ -9,6 +8,7 @@ import           Test.HUnit
 import           TypedGraph.Graph
 import           TypedGraph.Morphism
 import           Utils
+import           Util.List
 import qualified XML.GGXReader as XML
 
 -- | Checks if the number of minimalSafetyNACs was correctly generated.
@@ -32,8 +32,8 @@ checkDanglingExtension gg1 =
 
     [(_,typeOfMsg),(_,typeOfData)] = typedNodes (codomain left)
 
-    msgsInDang = countElem typeOfMsg (map snd nods)
-    dataInDang = countElem typeOfData (map snd nods)
+    msgsInDang = countElement typeOfMsg (map snd nods)
+    dataInDang = countElement typeOfData (map snd nods)
     nods = typedNodes dangGraph
     edgs = typedEdges dangGraph
 

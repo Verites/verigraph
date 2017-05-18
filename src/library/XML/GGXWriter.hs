@@ -9,7 +9,6 @@ module XML.GGXWriter
    writeSndOderDependenciesFile
  ) where
 
-import           Data.List.Utils                 (startswith)
 import           Data.Maybe
 import           Text.XML.HXT.Core
 
@@ -19,6 +18,7 @@ import           Abstract.Morphism               (codomain)
 import qualified Analysis.CriticalPairs          as CP
 import qualified Analysis.CriticalSequence       as CS
 import qualified Analysis.EssentialCriticalPairs as ECP
+import           Data.List
 import qualified Graph.Graph                     as G
 import           SndOrder.Morphism
 import qualified SndOrder.Rule                   as SO
@@ -160,7 +160,7 @@ writeCriticalPairAnalysis names productions cpOL csOL = writeCpaOptions : confli
     dependenceContainer = if null csOL then [] else
                            [writeConflictContainer "trigger_switch_dependency" nacNames productions csOL,
                             writeConflictFreeContainer productions csOL]
-    nacNames = filter (\(x,_) -> startswith "NAC" x) names
+    nacNames = filter (\(x,_) -> isPrefixOf "NAC" x) names
 
 writeConflictContainer :: ArrowXml a => String -> [(String,String)] -> [(String,GR.GraphRule b c)] -> [Overlappings] ->  a XmlTree XmlTree
 writeConflictContainer kind nacNames productions overlappings =
@@ -220,7 +220,7 @@ writeGrammar (gg1,gg2) names = writeAggProperties ++
                              writeRules gg1 nacNames ++
                              writeSndOrderRules gg2
   where
-    nacNames = filter (\(x,_) -> startswith "NAC" x) names
+    nacNames = filter (\(x,_) -> isPrefixOf "NAC" x) names
 
 writeInitialGraph :: ArrowXml a => TypedGraph b c -> a XmlTree XmlTree
 writeInitialGraph initial = writeHostGraph ("Init", initial)
@@ -537,7 +537,7 @@ writeConditions nacNames ruleName rule =
   mkelem "ApplCondition" [] $ map (writeNac ruleName) (zip (getNacs ruleName rule) (map snd nacsRule++nacsNoName))
     where
       -- filter the name of the nacs of this rule
-      nacsRule = filter (\(x,_) -> startswith ("NAC_"++ruleName) x) nacNames
+      nacsRule = filter (\(x,_) -> isPrefixOf ("NAC_"++ruleName) x) nacNames
       -- in the case of do not find, writes Nac_0,Nac_1,...
       nacsNoName = [a++b | a <- ["Nac_"], b <- map show [0::Int ..]]
 

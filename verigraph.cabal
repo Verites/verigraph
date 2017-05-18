@@ -61,6 +61,8 @@ library
                        TypedGraph.DPO.OccurenceRelation
                        TypedGraph.Graph
                        TypedGraph.Morphism
+                       Util.Closures
+                       Util.List
                        XML.GGXReader
                        XML.GGXWriter
   other-modules:
@@ -89,8 +91,6 @@ library
                        SndOrder.Morphism.FindMorphism
                        SndOrder.Rule.Core
                        SndOrder.Rule.DPO
-                       Util.Closures
-                       Util.List
                        XML.Formulas
                        XML.GGXParseIn
                        XML.GGXParseOut

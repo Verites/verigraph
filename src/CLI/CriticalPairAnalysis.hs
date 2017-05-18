@@ -12,13 +12,13 @@ import           Analysis.EssentialCriticalPairs
 import           Analysis.Interlevel.EvolutionarySpans
 import           Analysis.Interlevel.InterLevelCP
 import           Control.Monad                         (when)
-import           Data.List.Utils
 import           Data.Matrix                           hiding ((<|>))
 import           Data.Monoid                           ((<>))
 import qualified Data.Set                              as Set
 import           GlobalOptions
 import           Options.Applicative
 import           SndOrder.Rule
+import           Util.List
 import qualified XML.GGXReader                         as XML
 import qualified XML.GGXWriter                         as GW
 
@@ -152,7 +152,7 @@ printEvoConflicts = map printOneEvo
                        show (printConf (True,False) (thd e)) ++ ", " ++
                        show (printConf (False,True) (thd e)) ++ ", " ++
                        show (printConf (True,True) (thd e)) ++ ")"
-    printConf str evos = countElem str (map cpe evos)
+    printConf str evos = countElement str (map cpe evos)
 
 printAnalysis :: (EpiPairs m, DPO m) =>
   Bool -> AnalysisType -> MorphismsConfig -> [Production m] -> IO ()

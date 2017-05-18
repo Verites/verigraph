@@ -81,7 +81,7 @@ module Graph.Graph (
 import           Abstract.Cardinality
 import           Abstract.Valid
 import           Data.List
-import           Data.List.Utils
+import           Util.List
 import           Data.Maybe           (fromJust, fromMaybe)
 
 
@@ -353,21 +353,21 @@ fromNodesAndEdges nodes edges =
 -- identifier aready exists, its payload is removed. /O(v)/.
 insertNode :: NodeId -> Graph (Maybe n) e -> Graph (Maybe n) e
 insertNode n (Graph ns es) =
-    Graph (addToAL ns n (Node n Nothing)) es
+    Graph (insertByKey ns n (Node n Nothing)) es
 
 -- | Insert a node with given identifier and payload into a graph. If a node with the given
 -- identifier already exists, its payload is updated. /O(v)/.
 insertNodeWithPayload :: NodeId -> n -> Graph n e -> Graph n e
 insertNodeWithPayload n p (Graph ns es) =
-    Graph (addToAL ns n (Node n p)) es
+    Graph (insertByKey ns n (Node n p)) es
 
 -- | (@insertEdge e src tgt g@) will insert an edge with identifier @e@ from @src@ to @tgt@ in graph
 -- @g@, without payload. If @src@ or @tgt@ are not nodes of @g@, the graph is not modified. If an
 -- edge with identifier @e@ already exists, it is updated. /O(v + e)/.
 insertEdge :: EdgeId -> NodeId -> NodeId -> Graph n (Maybe e) -> Graph n (Maybe e)
 insertEdge e src tgt g@(Graph ns es)
-    | src `elem` keysAL ns && tgt `elem` keysAL ns =
-        Graph ns (addToAL es e (Edge e src tgt Nothing))
+    | src `elem` listKeys ns && tgt `elem` listKeys ns =
+        Graph ns (insertByKey es e (Edge e src tgt Nothing))
     | otherwise = g
 
 -- | (@insertEdgeWithPayload e src tgt p g@) will insert an edge with identifier @e@ from @src@ to
@@ -375,31 +375,31 @@ insertEdge e src tgt g@(Graph ns es)
 -- modified. If an edge with identifier @e@ already exists, it is updated. /O(v + e)/.
 insertEdgeWithPayload :: EdgeId -> NodeId -> NodeId -> e -> Graph n e -> Graph n e
 insertEdgeWithPayload e src tgt p g@(Graph ns es)
-    | src `elem` keysAL ns && tgt `elem` keysAL ns =
-        Graph ns (addToAL es e (Edge e src tgt p))
+    | src `elem` listKeys ns && tgt `elem` listKeys ns =
+        Graph ns (insertByKey es e (Edge e src tgt p))
     | otherwise = g
 
 -- | Removes the given node from the graph, unless it has any incident edges. /O(v + e²)/.
 removeNode :: NodeId -> Graph n e -> Graph n e
 removeNode n g@(Graph ns es)
-    | Prelude.null $ getIncidentEdges g n = Graph (delFromAL ns n) es
+    | Prelude.null $ getIncidentEdges g n = Graph (deleteByKey ns n) es
     | otherwise = g
 
 -- | Removes the given node from the graph, even if it has any incident edges.
 -- It does not verify if the node has incident edges, thus it may generate invalid graphs.
 removeNodeForced :: NodeId -> Graph n e -> Graph n e
-removeNodeForced n (Graph ns es) = Graph (delFromAL ns n) es
+removeNodeForced n (Graph ns es) = Graph (deleteByKey ns n) es
 
 -- | Removes the given node and all incident edges from the graph. /O(v + e)/
 removeNodeAndIncidentEdges :: NodeId -> Graph n e -> Graph n e
 removeNodeAndIncidentEdges nodeId (Graph nodes edges) =
   Graph
-    (delFromAL nodes nodeId)
+    (deleteByKey nodes nodeId)
     (filter (\(_, e) -> sourceId e /= nodeId && targetId e /= nodeId) edges)
 
 -- | Remove the given edge from the graph. /O(e)/.
 removeEdge :: EdgeId -> Graph n e -> Graph n e
-removeEdge e (Graph ns es) = Graph ns (delFromAL es e)
+removeEdge e (Graph ns es) = Graph ns (deleteByKey es e)
 
 -- | Update the node's payload, applying the given function on it. /O(v)/.
 updateNodePayload :: NodeId -> Graph n e -> (n -> n) -> Graph n e
@@ -413,7 +413,7 @@ updateNodePayload nodeId graph@(Graph nodes _) f =
         updatedNode =
           node { nodeInfo = f (nodeInfo node) }
       in
-        graph { nodeMap = addToAL nodes nodeId updatedNode }
+        graph { nodeMap = insertByKey nodes nodeId updatedNode }
 
 
 -- | Update the edge's payload, applying the function on it. /O(e)/.
@@ -429,17 +429,17 @@ updateEdgePayload edgeId graph@(Graph _ edges) f =
           edge { edgeInfo = f (edgeInfo edge) }
 
       in
-        graph { edgeMap = addToAL edges edgeId updatedEdge }
+        graph { edgeMap = insertByKey edges edgeId updatedEdge }
 
 
 -- | List of all node id's from from the graph. /O(v)/.
 nodeIds :: Graph n e -> [NodeId]
-nodeIds (Graph nodes _) = keysAL nodes
+nodeIds (Graph nodes _) = listKeys nodes
 
 
 -- | List of all edge id's from from the graph. /O(e)/.
 edgeIds :: Graph n e -> [EdgeId]
-edgeIds (Graph _ edges) = keysAL edges
+edgeIds (Graph _ edges) = listKeys edges
 
 
 -- | List of all nodes from the graph. /O(v)/.
