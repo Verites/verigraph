@@ -2,7 +2,7 @@ module SndOrder.Morphism.NACmanipulation where
 
 import           Category.AdhesiveHLR
 import           Category.DPO
-import           Category.Morphism
+import           Category.FinitaryCategory
 import           SndOrder.Morphism.Cocomplete ()
 import           TypedGraph.Morphism
 
@@ -32,7 +32,7 @@ deleteStep InitialPushouts modeledNACs concreteNACs =
 verifyIsoBetweenMorphisms :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
 verifyIsoBetweenMorphisms n n' = not $ Prelude.null comb
   where
-    findIso :: FindMorphism m => (t -> Obj m) -> t -> t -> [m]
+    findIso :: FindMorphism morph => (t -> Obj morph) -> t -> t -> [morph]
     findIso f x y = findMorphisms Isomorphism (f x) (f y)
 
     findIsoDom = findIso domain n n'

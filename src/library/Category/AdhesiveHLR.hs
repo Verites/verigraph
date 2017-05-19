@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 
 module Category.AdhesiveHLR
-  ( Morphism(..)
+  ( FinitaryCategory(..)
   , AtomicConstraint (..)
   , buildNamedAtomicConstraint
   , satisfiesAtomicConstraint
@@ -19,16 +19,16 @@ module Category.AdhesiveHLR
   , MorphismsConfig(..)
   ) where
 
+import           Category.AdhesiveHLR.Constraint
 import           Category.Cocomplete
-import           Category.Constraint
-import           Category.Morphism
+import           Category.FinitaryCategory
 
 -- | Type class for morphisms whose category Adhesive and suitable for
 -- High-Level Replacement Systems.
 --
 -- Mainly provides categorical operations that AdhesiveHLR categories
 -- are guaranteed to have.
-class (Cocomplete m) => AdhesiveHLR m where
+class (Cocomplete morph) => AdhesiveHLR morph where
   -- | Calculate the initial pushout of the given morphism.
   --
   -- Given the morphism /f : A -> A'/, returns
@@ -44,7 +44,7 @@ class (Cocomplete m) => AdhesiveHLR m where
   --    A──────▶A'
   --        f
   -- @
-  calculateInitialPushout :: m -> (m, m, m)
+  calculateInitialPushout :: morph -> (morph,morph,morph)
 
   -- | Calculate the pushout between the two given morphisms.
   --
@@ -61,7 +61,7 @@ class (Cocomplete m) => AdhesiveHLR m where
   --    B──────▶D
   --       g'
   -- @
-  calculatePushout :: m -> m -> (m, m)
+  calculatePushout :: morph -> morph -> (morph,morph)
   calculatePushout = Category.Cocomplete.calculatePushout
 
   -- | Checks if the given sequential morphisms have a pushout complement, assuming they satsify
@@ -83,7 +83,7 @@ class (Cocomplete m) => AdhesiveHLR m where
   --
   -- If the types of the morphisms are known, they should be given. The implementation
   -- of this operation may then use them for more efficient calculation.
-  hasPushoutComplement :: (MorphismType, m) -> (MorphismType, m) -> Bool
+  hasPushoutComplement :: (MorphismType, morph) -> (MorphismType, morph) -> Bool
 
 
   -- | Calculate the pushout complement for two sequential morphisms, __assumes it exists__.
@@ -103,7 +103,7 @@ class (Cocomplete m) => AdhesiveHLR m where
   --     X──────▶C
   --        f'
   -- @
-  calculatePushoutComplement :: m -> m -> (m, m)
+  calculatePushoutComplement :: morph -> morph -> (morph,morph)
 
   -- | Calculate the pullback between the two given morphisms.
   --
@@ -120,26 +120,26 @@ class (Cocomplete m) => AdhesiveHLR m where
   --     B──────▶C
   --        g
   -- @
-  calculatePullback :: m -> m -> (m, m)
+  calculatePullback :: morph -> morph -> (morph,morph)
 
-class Morphism m => EpiPairs m where
+class FinitaryCategory morph => EpiPairs morph where
   -- | Create all jointly epimorphic pairs of morphisms from the given objects.
   --
   -- If the first argument is true, only pairs of monomorphisms are created.
   -- Otherwise, pairs of arbitrary morphisms are created.
-  createJointlyEpimorphicPairs :: Bool -> Obj m -> Obj m -> [(m, m)]
+  createJointlyEpimorphicPairs :: Bool -> Obj morph -> Obj morph -> [(morph,morph)]
 
   -- | Create all subobjects from the given object.
   --
   -- If the first argument is true, only identity morphism is created.
   -- Otherwise, arbitrary (epimorphic) morphisms are created.
-  createAllSubobjects :: Bool -> Obj m -> [m]
+  createAllSubobjects :: Bool -> Obj morph -> [morph]
 
   -- | Create a special case of jointly epimorphic pairs, where the second morphism is a Nac.
   -- The pairs generated are dependent of the NAC config.
   --
   -- FIXME: nacs don't belong in this module
-  createJointlyEpimorphicPairsFromNAC :: MorphismsConfig -> Obj m -> m -> [(m, m)]
+  createJointlyEpimorphicPairsFromNAC :: MorphismsConfig -> Obj morph -> morph -> [(morph,morph)]
 
   -- Given the morphisms /f : X -> A/ and /g : X -> B/ with the same domain,
   -- obtain all jointly epimorphic pairs /(f', g')/ such that the following
@@ -156,14 +156,14 @@ class Morphism m => EpiPairs m where
   --
   -- If the first argument is true, only pairs of monomorphisms are created.
   -- Otherwise, pairs of arbitrary morphisms are created.
-  calculateCommutativeSquares :: Bool -> m -> m -> [(m, m)]
+  calculateCommutativeSquares :: Bool -> morph -> morph -> [(morph,morph)]
   calculateCommutativeSquares inj m1 m2 = filt
     where
       allPairs = createJointlyEpimorphicPairs inj (codomain m1) (codomain m2)
       filt = filter (\(x,y) -> compose m1 x == compose m2 y) allPairs
 
   -- Similar to calculateCommutativeSquares but indicating which morphism is injective
-  calculateCommutativeSquaresAlongMonomorphism :: (m,Bool) -> (m,Bool) -> [(m, m)]
+  calculateCommutativeSquaresAlongMonomorphism :: (morph,Bool) -> (morph,Bool) -> [(morph,morph)]
 
 
 -- | Flag indicating what restrictions are required or assumed of matches.

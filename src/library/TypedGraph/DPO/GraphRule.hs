@@ -25,7 +25,7 @@ module TypedGraph.DPO.GraphRule (
 
 
 import           Category.DPO        as DPO
-import           Category.Morphism   as M
+import           Category.FinitaryCategory   as FC
 import           Graph.Graph         as G
 import qualified Graph.GraphMorphism as GM
 import           TypedGraph.Graph    as GM
@@ -73,7 +73,7 @@ buildGraphRule typegraph deleted created (preservedNodes, preservedEdges) nacs =
     -- Creates a typedgraph with the preserved elements and mounts an initial rule with preserves them
     preservedGraph = build (map fst preservedNodes) (map (\(e,s,t,_) -> (e,s,t)) preservedEdges)
     preservedTypeGraph = GM.buildGraphMorphism preservedGraph typegraph preservedNodes (map (\(e,_,_,t) -> (e,t)) preservedEdges)
-    leftAndRightPreserved = M.id preservedTypeGraph
+    leftAndRightPreserved = FC.identity preservedTypeGraph
 
     -- Creates indicated elements on codomain of the initial rule
     addCreated = addElementsOnCodomain leftAndRightPreserved created
@@ -82,7 +82,7 @@ buildGraphRule typegraph deleted created (preservedNodes, preservedEdges) nacs =
     ---- Nacs part
 
     -- Each NAC starts from a "initial" id of L ...
-    idLeft = M.id (codomain addDeleted)
+    idLeft = FC.identity (codomain addDeleted)
     -- and adds all forbidden elements on codomain of this initial
     resultingNacs = map (addElementsOnCodomain idLeft) nacs
 

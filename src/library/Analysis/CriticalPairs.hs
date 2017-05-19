@@ -31,8 +31,8 @@ data CriticalPairType =
   | ProduceDangling
   deriving(Eq,Show)
 
-type NamedRule m = (String, Production m)
-type NamedCriticalPairs m = (String,String,[CriticalPair m])
+type NamedRule morph = (String, Production morph)
+type NamedCriticalPairs morph = (String,String,[CriticalPair morph])
 
 -- | A Critical Pair is defined as two matches (m1,m2) from the left
 -- side of their productions to a same graph.
@@ -63,41 +63,41 @@ type NamedCriticalPairs m = (String,String,[CriticalPair m])
 --
 -- q21 (nacMatch) :: from N2 to P1
 
-data CriticalPair m = CriticalPair {
-    matches   :: (m, m),
-    comatches :: Maybe (m, m),
-    nacMatch  :: Maybe (m, Int), --if it is a ProduceForbid, here is the index of the nac
+data CriticalPair morph = CriticalPair {
+    matches   :: (morph,morph),
+    comatches :: Maybe (morph,morph),
+    nacMatch  :: Maybe (morph, Int), --if it is a ProduceForbid, here is the index of the nac
     cpType    :: CriticalPairType
     } deriving (Eq,Show)
 
 -- | Returns the matches (m1,m2)
-getCriticalPairMatches :: CriticalPair m -> (m, m)
+getCriticalPairMatches :: CriticalPair morph -> (morph,morph)
 getCriticalPairMatches = matches
 
 -- | Returns the comatches (m1',m2')
-getCriticalPairComatches :: CriticalPair m -> Maybe (m, m)
+getCriticalPairComatches :: CriticalPair morph -> Maybe (morph,morph)
 getCriticalPairComatches = comatches
 
 -- | Returns the type of a Critical Pair
-getCriticalPairType :: CriticalPair m -> CriticalPairType
+getCriticalPairType :: CriticalPair morph -> CriticalPairType
 getCriticalPairType = cpType
 
 -- | Returns the nac match of a 'CriticalPair'
-getNacMatchOfCriticalPair :: CriticalPair m -> Maybe m
+getNacMatchOfCriticalPair :: CriticalPair morph -> Maybe morph
 getNacMatchOfCriticalPair criticalPair =
   case nacMatch criticalPair of
     Just (nac,_) -> Just nac
     Nothing      -> Nothing
 
 -- | Returns the nac index of a 'CriticalPair'
-getNacIndexOfCriticalPair :: CriticalPair m -> Maybe Int
+getNacIndexOfCriticalPair :: CriticalPair morph -> Maybe Int
 getNacIndexOfCriticalPair criticalPair =
   case nacMatch criticalPair of
     Just (_,idx) -> Just idx
     Nothing      -> Nothing
 
 -- | Returns the Critical Pairs with rule names
-namedCriticalPairs :: (EpiPairs m, DPO m) => MorphismsConfig -> [NamedRule m] -> [NamedCriticalPairs m]
+namedCriticalPairs :: (EpiPairs morph, DPO morph) => MorphismsConfig -> [NamedRule morph] -> [NamedCriticalPairs morph]
 namedCriticalPairs conf namedRules =
   map (uncurry getCPs) [(a,b) | a <- namedRules, b <- namedRules]
     where
@@ -106,14 +106,14 @@ namedCriticalPairs conf namedRules =
 
 -- TODO: Use this as an auxiliary function to optimize the search for critical pairs
 -- | Returns a list of morphisms from left side of rules to all valid overlapping pairs
-findPotentialCriticalPairs :: (DPO m, EpiPairs m) => MorphismsConfig -> Production m -> Production m -> [(m, m)]
+findPotentialCriticalPairs :: (DPO morph, EpiPairs morph) => MorphismsConfig -> Production morph -> Production morph -> [(morph,morph)]
 findPotentialCriticalPairs conf p1 p2 = satisfyingPairs
   where
     pairs = createJointlyEpimorphicPairsFromCodomains (matchRestriction conf) (getLHS p1) (getLHS p2)
     satisfyingPairs = filter (\(m1,m2) -> satisfyRewritingConditions conf (p1,m1) (p2,m2)) pairs
 
 -- | Finds all Critical Pairs between two given Productions
-findCriticalPairs :: (EpiPairs m, DPO m) => MorphismsConfig -> Production m -> Production m -> [CriticalPair m]
+findCriticalPairs :: (EpiPairs morph, DPO morph) => MorphismsConfig -> Production morph -> Production morph -> [CriticalPair morph]
 findCriticalPairs conf p1 p2 =
   findAllDeleteUseAndProduceDangling conf p1 p2 ++ findAllProduceForbid conf p1 p2
 
@@ -123,7 +123,7 @@ findCriticalPairs conf p1 p2 =
 
 -- | All DeleteUse caused by the derivation of @p1@ before @p2@.
 -- It occurs when @p1@ deletes something used by @p2@.
-findAllDeleteUse :: (EpiPairs m, DPO m) => MorphismsConfig -> Production m -> Production m -> [CriticalPair m]
+findAllDeleteUse :: (EpiPairs morph, DPO morph) => MorphismsConfig -> Production morph -> Production morph -> [CriticalPair morph]
 findAllDeleteUse conf p1 p2 =
   map (\m -> CriticalPair m Nothing Nothing DeleteUse) deleteUsePairs
   where
@@ -134,7 +134,7 @@ findAllDeleteUse conf p1 p2 =
 
 -- | All ProduceDangling caused by the derivation of @p1@ before @p2@.
 -- It occurs when @p1@ creates something that unable @p2@.
-findAllProduceDangling :: (EpiPairs m, DPO m) => MorphismsConfig -> Production m -> Production m -> [CriticalPair m]
+findAllProduceDangling :: (EpiPairs morph, DPO morph) => MorphismsConfig -> Production morph -> Production morph -> [CriticalPair morph]
 findAllProduceDangling conf p1 p2 =
   map (\m -> CriticalPair m Nothing Nothing ProduceDangling) produceDanglingPairs
   where
@@ -145,7 +145,7 @@ findAllProduceDangling conf p1 p2 =
 
 -- | Tests DeleteUse and ProduceDangling for the same pairs,
 -- more efficient than deal separately.
-findAllDeleteUseAndProduceDangling :: (EpiPairs m, DPO m) => MorphismsConfig -> Production m -> Production m -> [CriticalPair m]
+findAllDeleteUseAndProduceDangling :: (EpiPairs morph, DPO morph) => MorphismsConfig -> Production morph -> Production morph -> [CriticalPair morph]
 findAllDeleteUseAndProduceDangling conf p1 p2 =
   map categorizeConflict conflicts
   where
@@ -161,13 +161,13 @@ findAllDeleteUseAndProduceDangling conf p1 p2 =
 --
 -- Rule @p1@ causes a produce-forbid conflict with @p2@ if some
 -- NAC in @p2@ fails to be satisfied after the aplication of @p1@.
-findAllProduceForbid :: (EpiPairs m, DPO m) => MorphismsConfig -> Production m -> Production m -> [CriticalPair m]
+findAllProduceForbid :: (EpiPairs morph, DPO morph) => MorphismsConfig -> Production morph -> Production morph -> [CriticalPair morph]
 findAllProduceForbid conf p1 p2 =
   concatMap (findProduceForbidForNAC conf p1 p2) (zip (getNACs p2) [0..])
 
 -- | Check ProduceForbid for a NAC @n@ in @p2@.
-findProduceForbidForNAC :: (EpiPairs m, DPO m) => MorphismsConfig -> Production m -> Production m -> (m, Int) -> [CriticalPair m]
+findProduceForbidForNAC :: (EpiPairs morph, DPO morph) => MorphismsConfig -> Production morph -> Production morph -> (morph, Int) -> [CriticalPair morph]
 findProduceForbidForNAC conf p1 p2 nac =
   map
-    (\(m,m',nac) -> CriticalPair m (Just m') (Just nac) ProduceForbid)
+    (\(morph,morph',nac) -> CriticalPair morph (Just morph') (Just nac) ProduceForbid)
     (produceForbidOneNac conf p1 p2 nac)

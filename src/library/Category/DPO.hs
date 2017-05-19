@@ -69,7 +69,7 @@ import           Category.DPO.Derivation
 -- TODO: deprecate? why do we need this __here__?
 -- | Check gluing conditions and the NACs satisfaction for a pair of matches
 -- @inj@ only indicates if the match is injective, this function does not checks it
-satisfyRewritingConditions :: DPO m => MorphismsConfig -> (Production m, m) -> (Production m, m) -> Bool
+satisfyRewritingConditions :: DPO morph => MorphismsConfig -> (Production morph,morph) -> (Production morph,morph) -> Bool
 satisfyRewritingConditions conf (l,m1) (r,m2) =
   satisfiesRewritingConditions conf l m1 && satisfiesRewritingConditions conf r m2
 
@@ -77,8 +77,8 @@ satisfyRewritingConditions conf (l,m1) (r,m2) =
 -- | Given a morphism /m : L -> L'/ and a NAC /n : L -> N/, obtains
 -- an equivalent set of NACs /n'i : L' -> N'i/ that is equivalent to the
 -- original NAC.
-nacDownwardShift :: EpiPairs m => MorphismsConfig -> m -> m -> [m]
-nacDownwardShift conf m n = newNacs
+nacDownwardShift :: EpiPairs morph => MorphismsConfig -> morph -> morph -> [morph]
+nacDownwardShift conf morph n = newNacs
   where
-    pairs = calculateCommutativeSquaresAlongMonomorphism (n,True) (m, matchRestriction conf == MonoMatches)
+    pairs = calculateCommutativeSquaresAlongMonomorphism (n,True) (morph, matchRestriction conf == MonoMatches)
     newNacs = map snd pairs

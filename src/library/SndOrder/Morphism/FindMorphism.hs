@@ -1,7 +1,7 @@
 module SndOrder.Morphism.FindMorphism () where
 
 import           Category.DPO
-import           Category.Morphism
+import           Category.FinitaryCategory
 import           TypedGraph.Morphism
 import           SndOrder.Morphism.Core
 

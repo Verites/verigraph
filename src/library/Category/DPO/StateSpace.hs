@@ -51,7 +51,7 @@ import           Data.Set            (Set)
 import qualified Data.Set            as Set
 
 import           Category.DPO        hiding (productions)
-import           Category.Morphism
+import           Category.FinitaryCategory
 import qualified Logic.Model         as Logic
 
 
@@ -66,33 +66,33 @@ import qualified Logic.Model         as Logic
 --
 -- The states are annotated with the set of predicates that hold in them. Predicates
 -- are expressed as productions, and a predicate holds in a state if the production is applicable.
-data StateSpace m = SS
-  { states        :: IntMap (State m) -- ^ Obtain the set of (explored) indexed states in a state space.
+data StateSpace morph = SS
+  { states        :: IntMap (State morph) -- ^ Obtain the set of (explored) indexed states in a state space.
   , transitions   :: Set (Int, Int) -- ^ Obtain the set of (explored) transitions in a state space.
   , uid           :: Int -- ^ Provides an unused state index.
   , morphismsConf :: MorphismsConfig -- ^ Obtain the configuration of DPO semantics for the state space.
-  , productions   :: [Production m] -- ^ Obtain the productions of the HLR system of the state space.
-  , predicates    :: [(String, Production m)] -- ^ Obtain the predicates of the state space.
+  , productions   :: [Production morph] -- ^ Obtain the productions of the HLR system of the state space.
+  , predicates    :: [(String, Production morph)] -- ^ Obtain the predicates of the state space.
   }
 
 
 -- | A state contains the object of the category and the list of predicates that hold in it.
-type State m = (Obj m, [String])
+type State morph = (Obj morph, [String])
 
 
 -- | An empty state space for the HLR system defined by the given productions, with the given
 -- configuration of the DPO semantics.
-empty :: MorphismsConfig -> [Production m] -> [(String, Production m)] -> StateSpace m
+empty :: MorphismsConfig -> [Production morph] -> [(String, Production morph)] -> StateSpace morph
 empty = SS IntMap.empty Set.empty 0
 
 
 -- | Tries to find an isomorphic object in the state space, returning it along with its index.
-searchForState :: forall m. (DPO m) => Obj m -> StateSpace m -> Maybe (Int, State m)
+searchForState :: forall morph. (DPO morph) => Obj morph -> StateSpace morph -> Maybe (Int, State morph)
 searchForState obj space =
   let
     isIso (_, (obj', _)) =
       let
-        isomorphisms = findIsomorphisms obj obj' :: [m]
+        isomorphisms = findIsomorphisms obj obj' :: [morph]
       in
         not (null isomorphisms)
   in
@@ -105,7 +105,7 @@ searchForState obj space =
 
 
 -- | Converts the state space to a transition system that may be used for model checking
-toKripkeStructure :: StateSpace m -> Logic.KripkeStructure String
+toKripkeStructure :: StateSpace morph -> Logic.KripkeStructure String
 toKripkeStructure space =
   let
     convertedStates =
@@ -127,54 +127,54 @@ toKripkeStructure space =
 -- | A monad for exploring the state space of a High-Level Replacement System.
 --
 -- Provides a static configuration of the DPO semantics and a static set of
-newtype StateSpaceBuilder m a = SSB
-  { unSSB :: Monad.State (StateSpace m) a }
+newtype StateSpaceBuilder morph a = SSB
+  { unSSB :: Monad.State (StateSpace morph) a }
   deriving ( Functor, Applicative, Monad
-           , (Monad.MonadState (StateSpace m))
+           , (Monad.MonadState (StateSpace morph))
            )
 
 
 -- | Runs the builder with the given configuration and initial state space.
-runStateSpaceBuilder :: StateSpaceBuilder m a -> StateSpace m -> (a, StateSpace m)
+runStateSpaceBuilder :: StateSpaceBuilder morph a -> StateSpace morph -> (a, StateSpace morph)
 runStateSpaceBuilder =
   Monad.runState . unSSB
 
 
 -- | Runs the builder with the given configuration and state space, providing only
 -- the computed value and ignoring the resulting state space.
-evalStateSpaceBuilder :: StateSpaceBuilder m a -> StateSpace m -> a
+evalStateSpaceBuilder :: StateSpaceBuilder morph a -> StateSpace morph -> a
 evalStateSpaceBuilder  =
   Monad.evalState . unSSB
 
 
 -- | Runs the builder with the given configuration and state space, ignoring
 -- the computed value and providing only the resulting state space.
-execStateSpaceBuilder :: StateSpaceBuilder m a -> StateSpace m -> StateSpace m
+execStateSpaceBuilder :: StateSpaceBuilder morph a -> StateSpace morph -> StateSpace morph
 execStateSpaceBuilder =
   Monad.execState . unSSB
 
 
 -- | Gets the configuration of DPO semantics for this builder.
-getDpoConfig :: StateSpaceBuilder m MorphismsConfig
+getDpoConfig :: StateSpaceBuilder morph MorphismsConfig
 getDpoConfig =
   Monad.gets morphismsConf
 
 
 -- | Gets the productions of the HLR system being explored in this builder.
-getProductions :: StateSpaceBuilder m [Production m]
+getProductions :: StateSpaceBuilder morph [Production morph]
 getProductions =
   Monad.gets productions
 
 
 -- | Gets the productions of the HLR system being explored in this builder.
-getPredicates :: StateSpaceBuilder m [(String, Production m)]
+getPredicates :: StateSpaceBuilder morph [(String, Production morph)]
 getPredicates =
   Monad.gets predicates
 
 
 -- | Adds the given state if an isomorphic one doesn't exist. Returns a tuple @(index, isNew)@,
 -- where @index@ is the index of the state and @isNew@ is true if no isomorphic state existed.
-putState :: (DPO m) => Obj m -> StateSpaceBuilder m (Int, Bool)
+putState :: (DPO morph) => Obj morph -> StateSpaceBuilder morph (Int, Bool)
 putState object =
   do
     maybeIndex <- findIsomorphicState object
@@ -212,14 +212,14 @@ putTransition transition =
 
 
 -- | Tries to find an isomorphic object in the current state space, returning its index.
-findIsomorphicState :: (DPO m) => Obj m -> StateSpaceBuilder m (Maybe (Int, State m))
+findIsomorphicState :: DPO morph => Obj morph -> StateSpaceBuilder morph (Maybe (Int, State morph))
 findIsomorphicState obj =
   Monad.gets (searchForState obj)
 
 
 
 -- | Finds all transformations of the given state with the productions of the HLR system being explored, adding them to the state space. Returns a list of the successor states as @(index, object, isNew)@, where @isNew@ indicates that the state was not present in the state space before.
-expandSuccessors :: forall m. DPO m => (Int, Obj m) -> StateSpaceBuilder m [(Int, Obj m, Bool)]
+expandSuccessors :: forall morph. DPO morph => (Int, Obj morph) -> StateSpaceBuilder morph [(Int, Obj morph, Bool)]
 expandSuccessors (index, object) =
   do
     prods <- getProductions
@@ -239,14 +239,14 @@ expandSuccessors (index, object) =
 
 -- | Runs a depth-first search on the state space, starting on the given object and limiting
 -- the depth to the given number.
-depthSearch :: forall m. DPO m => Int -> Obj m -> StateSpaceBuilder m ()
+depthSearch :: forall morph. DPO morph => Int -> Obj morph -> StateSpaceBuilder morph ()
 depthSearch maxDepth startObject =
   do
     (startIndex, _) <- putState startObject
     go maxDepth (startIndex, startObject)
 
   where
-    go :: Int -> (Int, Obj m) -> StateSpaceBuilder m ()
+    go :: Int -> (Int, Obj morph) -> StateSpaceBuilder morph ()
     go 0 _ =
       return ()
 

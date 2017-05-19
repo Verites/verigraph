@@ -3,7 +3,7 @@ module SndOrder.Morphism.AdhesiveHLR where
 import           Category.AdhesiveHLR
 import           Category.Cocomplete
 import           Category.DPO
-import           Category.Morphism                  ()
+import           Category.FinitaryCategory                  ()
 import           Graph.Graph                        as G
 import qualified Graph.GraphMorphism                as GM
 import           TypedGraph.Morphism
@@ -104,7 +104,7 @@ instance AdhesiveHLR (RuleMorphism a b) where
   --    G◀──────H
   --        l'
   -- @
-  -- calculatePushoutComplement m l = (k,l')
+  -- calculatePushoutComplement morph l = (k,l')
   calculatePushoutComplement (RuleMorphism _ ruleG matchL matchK matchR) (RuleMorphism ruleK ruleL leftL leftK leftR) = (k,l')
      where
        (matchL', leftL') = calculatePushoutComplement matchL leftL

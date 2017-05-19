@@ -3,7 +3,7 @@ module TypedGraph.Morphism.AdhesiveHLR where
 import           Data.Maybe                     (fromJust, mapMaybe)
 
 import           Category.AdhesiveHLR
-import           Category.Morphism
+import           Category.FinitaryCategory
 import           Graph.Graph                    as G
 import qualified Graph.GraphMorphism            as GM
 import           TypedGraph.Morphism.Cocomplete ()
@@ -272,13 +272,13 @@ satisfiesDanglingCondition l m = Prelude.null incidentEdgesNotDeleted
   where
     lhs = graphDomain m
     instanceGraph = graphCodomain m
-    
+
     deletedNodes =
       [(n',ctx) |
          (n',ctx) <- nodesInContext instanceGraph,
          any (\n -> applyNodeIdUnsafe m n == nodeId n') (nodeIds lhs),
          isDeleted l m applyNodeId nodeIdsFromDomain (nodeId n')]
-    
+
     incidentEdgesNotDeleted =
       [edgeId e |
          ((n1,_),e,(n2,_)) <- edgesInContext instanceGraph,

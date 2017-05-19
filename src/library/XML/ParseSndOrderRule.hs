@@ -60,7 +60,7 @@ import           Data.Function       (on)
 import           Data.List           (find, groupBy, intercalate, sortBy, sortOn, (\\))
 import           Data.Maybe          (fromMaybe, mapMaybe)
 
-import           Category.Morphism
+import           Category.FinitaryCategory
 import           Graph.Graph
 import           Graph.GraphMorphism as GM
 import           TypedGraph.Morphism as TGM

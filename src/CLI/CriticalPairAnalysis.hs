@@ -154,8 +154,8 @@ printEvoConflicts = map printOneEvo
                        show (printConf (True,True) (thd e)) ++ ")"
     printConf str evos = countElement str (map cpe evos)
 
-printAnalysis :: (EpiPairs m, DPO m) =>
-  Bool -> AnalysisType -> MorphismsConfig -> [Production m] -> IO ()
+printAnalysis :: (EpiPairs morph, DPO morph) =>
+  Bool -> AnalysisType -> MorphismsConfig -> [Production morph] -> IO ()
 printAnalysis essential action dpoConf rules =
   let essentialConfMatrix = analysisMatrix dpoConf rules
         findAllEssentialDeleteUse findAllEssentialProduceDangling findAllEssentialProduceForbid
@@ -181,10 +181,10 @@ printAnalysis essential action dpoConf rules =
 
 -- Receives functions and theirs names,
 -- and returns they applicated to the rules
-analysisMatrix :: MorphismsConfig -> [Production m]
-  -> (MorphismsConfig -> Production m -> Production m -> [cps])
-  -> (MorphismsConfig -> Production m -> Production m -> [cps])
-  -> (MorphismsConfig -> Production m -> Production m -> [cps])
+analysisMatrix :: MorphismsConfig -> [Production morph]
+  -> (MorphismsConfig -> Production morph -> Production morph -> [cps])
+  -> (MorphismsConfig -> Production morph -> Production morph -> [cps])
+  -> (MorphismsConfig -> Production morph -> Production morph -> [cps])
   -> String -> String -> String -> String
   -> [String]
 analysisMatrix dpoConf rules f1 f2 f3 n1 n2 n3 n4 =

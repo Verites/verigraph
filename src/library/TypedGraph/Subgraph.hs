@@ -1,6 +1,6 @@
 module TypedGraph.Subgraph (subgraphs, inducedSubgraphs) where
 
-import           Category.Morphism
+import           Category.FinitaryCategory
 import           Graph.Graph
 import           Graph.GraphMorphism
 import           TypedGraph.Graph

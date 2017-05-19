@@ -4,7 +4,7 @@ module SndOrder.Morphism.EpiPairs where
 
 import           Category.AdhesiveHLR
 import           Category.DPO
-import           Category.Morphism
+import           Category.FinitaryCategory
 import           TypedGraph.Morphism
 
 import           SndOrder.Morphism.Core
@@ -81,7 +81,7 @@ instance EpiPairs (RuleMorphism a b) where
 
 -- | Generates all (ss1,ss2,m) morphisms that commute with all EpiPairs
 -- of S1 and S2.
--- Morphism m is always monomorphic.
+-- Morphism morph is always monomorphic.
 -- createS must create all ss1 and ss2 from create1 and create2.
 --
 -- @

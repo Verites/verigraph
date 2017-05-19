@@ -230,7 +230,7 @@ newNacsPair sideChoose sndRule =
 getRulesFrom2Rule :: SndOrderRule a b -> (Production (TypedGraphMorphism a b), Production (TypedGraphMorphism a b), Production (TypedGraphMorphism a b))
 getRulesFrom2Rule sndRule = (codomain (getLHS sndRule), domain (getLHS sndRule), codomain (getRHS sndRule))
 
-calculateAllPartitions :: EpiPairs m => Obj m -> [m]
+calculateAllPartitions :: EpiPairs morph => Obj morph -> [morph]
 calculateAllPartitions = createAllSubobjects False
 
 isOrphanNode :: TypedGraphMorphism a b -> NodeId -> Bool

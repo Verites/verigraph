@@ -9,7 +9,7 @@ module XML.GGXParseOut
  ) where
 
 import           Category.DPO
-import qualified Category.Morphism         as M
+import qualified Category.FinitaryCategory         as FC
 import qualified Analysis.CriticalPairs    as CP
 import qualified Analysis.CriticalSequence as CS
 import           Data.Maybe                (fromMaybe, isJust)
@@ -94,7 +94,7 @@ getMappings rule = nodesMorph ++ edgesMorph
   where
     no = Nothing
     invL = invert (GR.getLHS rule)
-    lr = M.compose invL (GR.getRHS rule)
+    lr = FC.compose invL (GR.getRHS rule)
     nodeMap = applyNodeIdUnsafe lr
     nodes = filter (isJust . applyNodeId lr) (nodeIdsFromDomain lr)
     nodesMorph = map (\n -> ("N" ++ show (nodeMap n), no, "N" ++ show n)) nodes
@@ -113,9 +113,9 @@ serializePair m1 m2 = (serializeGraph [] [] m1, getTgmMappings Nothing m1, getTg
 serializeGraph :: [Mapping] -> [Mapping] -> TypedGraphMorphism a b -> ParsedTypedGraph
 serializeGraph objNameNodes objNameEdges morphism = ("", nodes, edges)
   where
-    graph = M.codomain morphism
-    nodes = map (serializeNode (map (\(x,_,y) -> (x,y)) objNameNodes) graph) (G.nodeIds $ M.domain graph)
-    edges = map (serializeEdge (map (\(x,_,y) -> (x,y)) objNameEdges) graph) (G.edges $ M.domain graph)
+    graph = FC.codomain morphism
+    nodes = map (serializeNode (map (\(x,_,y) -> (x,y)) objNameNodes) graph) (G.nodeIds $ FC.domain graph)
+    edges = map (serializeEdge (map (\(x,_,y) -> (x,y)) objNameEdges) graph) (G.edges $ FC.domain graph)
 
 serializeNode :: [(String,String)] -> TypedGraph a b -> G.NodeId -> ParsedTypedNode
 serializeNode objName graph n = ("N" ++ show n,

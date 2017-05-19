@@ -21,7 +21,7 @@ where
 import           Category.AdhesiveHLR
 import           Category.DPO
 import           Category.DPO.Process           hiding (productions)
-import           Category.Morphism              as M
+import           Category.FinitaryCategory              as FC
 import           Analysis.DiagramAlgorithms
 import           Data.List                      as L hiding (union)
 import           Data.Maybe                     (fromJust, fromMaybe, isJust)
@@ -207,7 +207,7 @@ removeElements coreGraph elementsToRemove =
     (n,e) = S.partition isNode elementsToRemove
     nodes = S.map (\(Node x) -> x) n
     edges = S.map (\(Edge x) -> x) e
-  in S.foldr GM.removeNodeFromDomainForced (S.foldr GM.removeEdgeFromDomain (M.id coreGraph) edges) nodes
+  in S.foldr GM.removeNodeFromDomainForced (S.foldr GM.removeEdgeFromDomain (FC.identity coreGraph) edges) nodes
 
 -- use with the retyped productions
 creationAndDeletionRelation :: NamedProduction (TypedGraphMorphism a b) -> Relation

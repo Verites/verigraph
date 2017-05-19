@@ -2,7 +2,7 @@ module Analysis.ParallelIndependent where
 
 import           Category.AdhesiveHLR       as RW
 import           Category.DPO               as RW hiding (calculateComatch)
-import           Category.Morphism
+import           Category.FinitaryCategory
 import           Analysis.DiagramAlgorithms
 import           Analysis.EpimorphicPairs
 
@@ -15,8 +15,8 @@ data IndependenceType = Parallel | Sequentially deriving (Eq, Show)
 
 -- | Checks if two transformations are independent (just delete-use),
 -- works with delete-use or pullback checking.
-isIndependent :: (EpiPairs m, DPO m) =>
-  IndependenceType -> Algorithm -> MorphismsConfig -> Production m -> Production m -> Bool
+isIndependent :: (EpiPairs morph, DPO morph) =>
+  IndependenceType -> Algorithm -> MorphismsConfig -> Production morph -> Production morph -> Bool
 isIndependent ind algorithm conf p1' p2 = not $ conflict algorithm
   where
     p1 = case ind of
@@ -31,7 +31,7 @@ isIndependent ind algorithm conf p1' p2 = not $ conflict algorithm
     conflict Cond3 = any (\(m1,m2) -> isDeleteUse conf p1 (m1,m2) || isDeleteUse conf p2 (m2,m1)) satisfyingPairs
 
 -- | Checks independence between transformations via 2 pullbacks
-cond2 :: (AdhesiveHLR m, FindMorphism m) => Production m -> Production m -> (m, m) -> Bool
+cond2 :: (AdhesiveHLR morph, FindMorphism morph) => Production morph -> Production morph -> (morph,morph) -> Bool
 cond2 p1 p2 (m1,m2) = Prelude.null (findCospanCommuter Isomorphism k1k2ToG l1l2ToG)
   where
     (_,pb1) = calculatePullback m1 m2
@@ -44,7 +44,7 @@ cond2 p1 p2 (m1,m2) = Prelude.null (findCospanCommuter Isomorphism k1k2ToG l1l2T
     l1l2ToG = compose pb1 m1
 
 -- | Checks independence between transformations via 3 pullbacks
-cond1 :: (AdhesiveHLR m, FindMorphism m) => Production m -> Production m -> (m, m) -> Bool
+cond1 :: (AdhesiveHLR morph, FindMorphism morph) => Production morph -> Production morph -> (morph,morph) -> Bool
 cond1 p1 p2 (m1,m2) = not (isIsomorphism a && isIsomorphism b)
   where
     (pb2,pb1) = calculatePullback m1 m2

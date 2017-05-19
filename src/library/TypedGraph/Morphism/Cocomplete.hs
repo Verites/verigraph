@@ -11,7 +11,7 @@ module TypedGraph.Morphism.Cocomplete (
 where
 
 import           Category.Cocomplete
-import           Category.Morphism              as M
+import           Category.FinitaryCategory              as FC
 import qualified Data.List.NonEmpty             as NE
 import           Data.Maybe                     (fromJust)
 import           Data.Set                       as DS

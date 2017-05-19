@@ -31,11 +31,11 @@ library
                        Abstract.Cardinality
                        Category.Cocomplete
                        Category.Complete
-                       Category.Constraint
+                       Category.AdhesiveHLR.Constraint
                        Category.DPO
                        Category.DPO.Process
                        Category.DPO.StateSpace
-                       Category.Morphism
+                       Category.FinitaryCategory
                        Data.Relation
                        Abstract.Valid
                        Analysis.EssentialCriticalPairs

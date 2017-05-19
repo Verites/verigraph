@@ -22,7 +22,7 @@ instance EpiPairs (TypedGraphMorphism a b) where
     where
       injectiveMatch = matchRestriction conf == MonoMatches
       totalInjectiveNac = nacSatisfaction conf == MonomorphicNAC
-      
+
       labeled = createSatisfyingNacsDisjointUnion (r, injectiveMatch) (nac, totalInjectiveNac)
 
   -- | Create all jointly surjective pairs of @m1@ and @m2@ that commutes,

@@ -3,7 +3,7 @@
 module SndOrder.Morphism.Core where
 
 import           Category.DPO
-import           Category.Morphism
+import           Category.FinitaryCategory
 import           Abstract.Valid
 import           TypedGraph.DPO.GraphRule ()
 import           TypedGraph.Morphism
@@ -49,7 +49,7 @@ ruleMorphism :: Production (TypedGraphMorphism a b)
              -> RuleMorphism a b
 ruleMorphism = RuleMorphism
 
-instance Morphism (RuleMorphism a b) where
+instance FinitaryCategory (RuleMorphism a b) where
     type Obj (RuleMorphism a b) = Production (TypedGraphMorphism a b)
 
     domain = rmDomain
@@ -62,7 +62,7 @@ instance Morphism (RuleMorphism a b) where
                      (compose (mappingInterface t1) (mappingInterface t2))
                      (compose (mappingRight t1) (mappingRight t2))
 
-    id t = RuleMorphism t t
+    identity t = RuleMorphism t t
              (idMap (codomain (getLHS t)) (codomain (getLHS t)))
              (idMap (domain (getLHS t)) (domain (getLHS t)))
              (idMap (codomain (getRHS t)) (codomain (getRHS t)))
@@ -96,7 +96,7 @@ instance Valid (RuleMorphism a b) where
         , ensure (compose mapK (getRHS cod) == compose (getRHS dom) mapR) "Right square doesn't commute"
         ]
 
-satisfiesNACRewriting :: DPO m => m -> m -> Bool
+satisfiesNACRewriting :: DPO morph => morph -> morph -> Bool
 satisfiesNACRewriting l = satisfiesGluingConditions dpoConf prod
   where
     -- Production just to test satisfiesGluingConditions, note that right side is not used.

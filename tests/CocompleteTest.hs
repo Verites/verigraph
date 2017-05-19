@@ -3,7 +3,7 @@
 import           Category.AdhesiveHLR
 import           Category.Cocomplete
 import           Category.DPO
-import           Category.Morphism
+import           Category.FinitaryCategory
 import           Data.List.NonEmpty          (fromList)
 import           Data.Maybe                  (fromJust)
 import           Graph.Graph

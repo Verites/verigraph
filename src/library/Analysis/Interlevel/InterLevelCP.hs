@@ -12,7 +12,7 @@ module Analysis.Interlevel.InterLevelCP
 
 import           Category.AdhesiveHLR
 import           Category.DPO
-import           Category.Morphism
+import           Category.FinitaryCategory
 import           Data.List                (nubBy)
 import           Graph.Graph
 import           Graph.GraphMorphism      hiding (createEdgeOnCodomain, createNodeOnCodomain)
@@ -82,14 +82,14 @@ removeDuplicated = nubBy (\x y -> not $ Prelude.null $ find x y)
     find = findMorphisms Isomorphism
 
 -- | For a relevant graph, gets all matches and check conflict
-allILCP :: DPO m => MorphismsConfig -> Production m -> Production m -> m -> m -> Obj m -> [m]
+allILCP :: DPO morph => MorphismsConfig -> Production morph -> Production morph -> morph -> morph -> Obj morph -> [morph]
 allILCP conf p p'' fl gl ax = filter conflicts validMatches
   where
     validMatches = findApplicableMatches conf p ax
     conflicts = ilCP conf fl gl p''
 
 -- | For a m0, checks if exists a conflicting m''0
-ilCP :: DPO m => MorphismsConfig -> m -> m -> Production m -> m -> Bool
+ilCP :: DPO morph => MorphismsConfig -> morph -> morph -> Production morph -> morph -> Bool
 ilCP conf fl gl p'' m0 = Prelude.null validM0''-- or all (==False) (map (\m'' -> satsGluing inj bigL'' m'') validM0'') --thesis def
   where
     matchesM0'' = findApplicableMatches conf p'' (codomain m0)

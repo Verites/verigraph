@@ -7,19 +7,19 @@ module Analysis.EssentialCriticalPairs
 
 import           Category.AdhesiveHLR     as RW
 import           Category.DPO             as RW
-import           Category.Morphism
+import           Category.FinitaryCategory
 import           Analysis.CriticalPairs
 import           Analysis.EpimorphicPairs
 
 ---- Essential Critical Pairs generation.
 -- Warning: this algorithms are in development.
 
-type NamedRule m = (String, Production m)
-type NamedCriticalPairs m = (String,String,[CriticalPair m])
+type NamedRule morph = (String, Production morph)
+type NamedCriticalPairs morph = (String,String,[CriticalPair morph])
 
 -- | Returns the Essential Critical Pairs with rule names
-namedEssentialCriticalPairs :: (EpiPairs m, DPO m) =>
-  MorphismsConfig -> [NamedRule m] -> [NamedCriticalPairs m]
+namedEssentialCriticalPairs :: (EpiPairs morph, DPO morph) =>
+  MorphismsConfig -> [NamedRule morph] -> [NamedCriticalPairs morph]
 namedEssentialCriticalPairs conf namedRules =
   map (uncurry getCPs) [(a,b) | a <- namedRules, b <- namedRules]
     where
@@ -27,16 +27,16 @@ namedEssentialCriticalPairs conf namedRules =
         (n1, n2, findEssentialCriticalPairs conf r1 r2)
 
 -- | Finds all Essential Critical Pairs between two given Productions
-findEssentialCriticalPairs :: (EpiPairs m, DPO m) =>
-  MorphismsConfig -> Production m -> Production m -> [CriticalPair m]
+findEssentialCriticalPairs :: (EpiPairs morph, DPO morph) =>
+  MorphismsConfig -> Production morph -> Production morph -> [CriticalPair morph]
 findEssentialCriticalPairs conf p1 p2 =
   findAllEssentialDeleteUse conf p1 p2 ++
   findAllEssentialProduceDangling conf p1 p2 ++
   findAllEssentialProduceForbid conf p1 p2
 
 -- | Get all essential delete-use and organize them in a list of 'CriticalPair'.
-findAllEssentialDeleteUse :: (EpiPairs m, DPO m) =>
-  MorphismsConfig -> Production m -> Production m -> [CriticalPair m]
+findAllEssentialDeleteUse :: (EpiPairs morph, DPO morph) =>
+  MorphismsConfig -> Production morph -> Production morph -> [CriticalPair morph]
 findAllEssentialDeleteUse conf p1 p2 =
   map (\(_,_,m1,m2) -> CriticalPair (m1,m2) Nothing Nothing DeleteUse) essentialCPs
   where
@@ -47,7 +47,7 @@ findAllEssentialDeleteUse conf p1 p2 =
 
 -- | Generates all "epi" pairs for essential delete-use,
 -- returns part of the initial pushout to avoid recalculations.
-findPotentialEssentialCPs :: (DPO m, EpiPairs m) => MorphismsConfig -> Production m -> Production m -> [(m, m, m, m)]
+findPotentialEssentialCPs :: (DPO morph, EpiPairs morph) => MorphismsConfig -> Production morph -> Production morph -> [(morph,morph, morph,morph)]
 findPotentialEssentialCPs conf p1 p2 = satisfyingPairs
   where
     (_,l1',c) = calculateInitialPushout (getLHS p1)
@@ -67,20 +67,20 @@ findPotentialEssentialCPs conf p1 p2 = satisfyingPairs
 -- pullback of the compose of the c (from the initial pushout) with m1
 -- and m2 is a pushout (guaranteed by the construction of 'findPotentialEssentialCPs')
 -- and does not exist morphism from S1 to B that commutes.
-isEssentialDeleteUse :: DPO m => MorphismsConfig -> (m, m, m, m) -> Bool
+isEssentialDeleteUse :: DPO morph => MorphismsConfig -> (morph,morph, morph,morph) -> Bool
 isEssentialDeleteUse conf (l1',c,m1,m2) = null commuting
   where
     (_,o1) = calculatePullback (compose c m1) m2
     alls1 = findMorphismsFromDomains conf o1 l1'
     commuting = filter (\s1 -> compose s1 l1' == o1) alls1
 
-findMorphismsFromDomains :: FindMorphism m => MorphismsConfig -> m -> m -> [m]
+findMorphismsFromDomains :: FindMorphism morph => MorphismsConfig -> morph -> morph -> [morph]
 findMorphismsFromDomains conf  a b =
   findMorphisms (matchRestrictionToMorphismType $ matchRestriction conf) (domain a) (domain b)
 
 -- Check if it is correct.
-findAllEssentialProduceDangling :: --(DPO m, EpiPairs m) =>
-  MorphismsConfig -> Production m -> Production m -> [CriticalPair m]
+findAllEssentialProduceDangling :: --(DPO morph, EpiPairs morph) =>
+  MorphismsConfig -> Production morph -> Production morph -> [CriticalPair morph]
 --findAllEssentialProduceDangling conf p1 p2 =
 --  filter
 --    (\(CriticalPair (m1,m2) Nothing Nothing ProduceDangling) -> isEssentialDeleteUse conf p2 (m2,m1))
@@ -91,8 +91,8 @@ findAllEssentialProduceDangling _ _ _ = []
 
 -- TODO
 -- Returning all produce forbid for while
-findAllEssentialProduceForbid :: --(DPO m, EpiPairs m) =>
-  MorphismsConfig -> Production m -> Production m -> [CriticalPair m]
+findAllEssentialProduceForbid :: --(DPO morph, EpiPairs morph) =>
+  MorphismsConfig -> Production morph -> Production morph -> [CriticalPair morph]
 --findAllEssentialProduceForbid conf p1 p2 = findAllProduceForbid conf p1 p2
 
 -- Returning empty for while

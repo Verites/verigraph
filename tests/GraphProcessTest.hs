@@ -3,7 +3,7 @@
 import           Category.AdhesiveHLR
 import           Category.DPO
 import           Category.DPO.Process
-import           Category.Morphism
+import           Category.FinitaryCategory
 import           Data.Maybe                  (fromJust)
 import           Graph.Graph
 import           Graph.GraphMorphism
