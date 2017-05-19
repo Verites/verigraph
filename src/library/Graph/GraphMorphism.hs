@@ -42,11 +42,11 @@ module Graph.GraphMorphism (
 
 import           Control.Arrow
 
-import           Category.FinitaryCategory
-import qualified Data.Relation as R
 import           Abstract.Valid
-import           Data.Maybe        (fromMaybe, isNothing)
-import           Graph.Graph       as G
+import           Category.FinitaryCategory
+import           Data.Maybe                (fromMaybe, isNothing)
+import qualified Data.Relation             as R
+import           Graph.Graph               as G
 
 data GraphMorphism a b = GraphMorphism {
                           getDomain    :: Graph a b

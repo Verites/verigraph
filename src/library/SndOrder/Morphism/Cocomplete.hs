@@ -11,7 +11,7 @@ module SndOrder.Morphism.Cocomplete (
 
 import           Category.Cocomplete
 import           Category.DPO
-import           Category.FinitaryCategory                  as FC
+import           Category.FinitaryCategory          as FC
 
 import           TypedGraph.Morphism
 

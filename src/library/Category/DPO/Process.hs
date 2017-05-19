@@ -15,9 +15,9 @@ import           Category.Cocomplete
 import           Category.DPO.Core
 import           Category.DPO.Derivation
 import           Category.FinitaryCategory
-import           Data.List.NonEmpty      (NonEmpty, fromList)
-import           Data.Maybe              (fromJust)
-import qualified Data.Set as S
+import           Data.List.NonEmpty        (NonEmpty, fromList)
+import           Data.Maybe                (fromJust)
+import qualified Data.Set                  as S
 
 data Process morph = Process
   { productions :: [Production morph]

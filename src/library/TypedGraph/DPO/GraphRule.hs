@@ -24,12 +24,12 @@ module TypedGraph.DPO.GraphRule (
 ) where
 
 
-import           Category.DPO        as DPO
-import           Category.FinitaryCategory   as FC
-import           Graph.Graph         as G
-import qualified Graph.GraphMorphism as GM
-import           TypedGraph.Graph    as GM
-import           TypedGraph.Morphism as TGM
+import           Category.DPO              as DPO
+import           Category.FinitaryCategory as FC
+import           Graph.Graph               as G
+import qualified Graph.GraphMorphism       as GM
+import           TypedGraph.Graph          as GM
+import           TypedGraph.Morphism       as TGM
 
 type GraphRule a b = Production (TypedGraphMorphism a b)
 

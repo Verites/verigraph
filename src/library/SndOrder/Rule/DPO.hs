@@ -2,15 +2,15 @@ module SndOrder.Rule.DPO where
 
 import           Data.Maybe               (fromMaybe, mapMaybe)
 
+import           Abstract.Valid
 import           Category.AdhesiveHLR
 import           Category.DPO
-import           Abstract.Valid
 import           Graph.Graph              as G
 import           SndOrder.Morphism        as SO
+import           SndOrder.Rule.Core
 import           TypedGraph.DPO.GraphRule
 import           TypedGraph.Graph
 import           TypedGraph.Morphism
-import           SndOrder.Rule.Core
 
 instance DPO (RuleMorphism a b) where
   invertProduction conf r = addMinimalSafetyNacs conf newRule

@@ -5,11 +5,11 @@ module Analysis.EssentialCriticalPairs
    findAllEssentialProduceDangling
    ) where
 
-import           Category.AdhesiveHLR     as RW
-import           Category.DPO             as RW
-import           Category.FinitaryCategory
 import           Analysis.CriticalPairs
 import           Analysis.EpimorphicPairs
+import           Category.AdhesiveHLR      as RW
+import           Category.DPO              as RW
+import           Category.FinitaryCategory
 
 ---- Essential Critical Pairs generation.
 -- Warning: this algorithms are in development.

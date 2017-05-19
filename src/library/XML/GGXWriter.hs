@@ -12,12 +12,12 @@ module XML.GGXWriter
 import           Data.Maybe
 import           Text.XML.HXT.Core
 
-import           Category.AdhesiveHLR
-import           Category.DPO
-import           Category.FinitaryCategory               (codomain)
 import qualified Analysis.CriticalPairs          as CP
 import qualified Analysis.CriticalSequence       as CS
 import qualified Analysis.EssentialCriticalPairs as ECP
+import           Category.AdhesiveHLR
+import           Category.DPO
+import           Category.FinitaryCategory       (codomain)
 import           Data.List
 import qualified Graph.Graph                     as G
 import           SndOrder.Morphism

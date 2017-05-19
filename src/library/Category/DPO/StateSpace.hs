@@ -44,15 +44,15 @@ module Category.DPO.StateSpace
 
 
 import           Control.Monad
-import qualified Control.Monad.State as Monad
-import           Data.IntMap         (IntMap)
-import qualified Data.IntMap         as IntMap
-import           Data.Set            (Set)
-import qualified Data.Set            as Set
+import qualified Control.Monad.State       as Monad
+import           Data.IntMap               (IntMap)
+import qualified Data.IntMap               as IntMap
+import           Data.Set                  (Set)
+import qualified Data.Set                  as Set
 
-import           Category.DPO        hiding (productions)
+import           Category.DPO              hiding (productions)
 import           Category.FinitaryCategory
-import qualified Logic.Model         as Logic
+import qualified Logic.Model               as Logic
 
 
 

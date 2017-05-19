@@ -3,7 +3,7 @@ module SndOrder.Morphism.AdhesiveHLR where
 import           Category.AdhesiveHLR
 import           Category.Cocomplete
 import           Category.DPO
-import           Category.FinitaryCategory                  ()
+import           Category.FinitaryCategory          ()
 import           Graph.Graph                        as G
 import qualified Graph.GraphMorphism                as GM
 import           TypedGraph.Morphism

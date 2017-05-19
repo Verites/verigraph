@@ -50,6 +50,6 @@ getBottomObjects d =
    in (l d, k d, r d)
 
 getAllBottomObjects :: (DPO morph) => [Derivation morph] -> [Obj morph]
-getAllBottomObjects [] = error "can not return objects of an empty derivation"
-getAllBottomObjects [d] = (\(a,b,c) -> [a,b,c]) $ getBottomObjects d
+getAllBottomObjects []     = error "can not return objects of an empty derivation"
+getAllBottomObjects [d]    = (\(a,b,c) -> [a,b,c]) $ getBottomObjects d
 getAllBottomObjects (d:ds) = (\(a,b,_) -> [a,b]) (getBottomObjects d) ++ getAllBottomObjects ds

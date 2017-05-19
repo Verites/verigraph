@@ -8,8 +8,8 @@ module Category.AdhesiveHLR.Constraint
   , satisfiesAllConstraints
   ) where
 
-import           Category.FinitaryCategory
 import           Abstract.Valid
+import           Category.FinitaryCategory
 
 data AtomicConstraint morph = AtomicConstraint {
         name     :: String,

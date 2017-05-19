@@ -8,10 +8,10 @@ module XML.GGXParseOut
  , getMappings
  ) where
 
-import           Category.DPO
-import qualified Category.FinitaryCategory         as FC
 import qualified Analysis.CriticalPairs    as CP
 import qualified Analysis.CriticalSequence as CS
+import           Category.DPO
+import qualified Category.FinitaryCategory as FC
 import           Data.Maybe                (fromMaybe, isJust)
 import qualified Graph.Graph               as G
 import qualified TypedGraph.DPO.GraphRule  as GR

@@ -1,10 +1,10 @@
 module Analysis.ParallelIndependent where
 
+import           Analysis.DiagramAlgorithms
+import           Analysis.EpimorphicPairs
 import           Category.AdhesiveHLR       as RW
 import           Category.DPO               as RW hiding (calculateComatch)
 import           Category.FinitaryCategory
-import           Analysis.DiagramAlgorithms
-import           Analysis.EpimorphicPairs
 
 -- | Algorithm used to determine independence between two rules
 -- Cond1 -> 3 pullbacks and two iso tests

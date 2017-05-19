@@ -4,7 +4,7 @@ import           Category.FinitaryCategory
 import           Graph.Graph
 import           Graph.GraphMorphism
 import           TypedGraph.Graph
-import           TypedGraph.Morphism hiding (createEdgeOnDomain, createNodeOnDomain)
+import           TypedGraph.Morphism       hiding (createEdgeOnDomain, createNodeOnDomain)
 
 -- | Generates all subgraphs of a typed graph.
 subgraphs :: TypedGraph a b -> [TypedGraph a b]

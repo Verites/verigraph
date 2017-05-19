@@ -21,10 +21,10 @@ module Analysis.CriticalSequence
    findAllDeliverDeleteAndDeliverDangling,
    ) where
 
-import           Category.AdhesiveHLR       as RW
-import           Category.DPO               as RW hiding (calculateComatch)
 import           Analysis.CriticalPairs     (findPotentialCriticalPairs)
 import           Analysis.DiagramAlgorithms
+import           Category.AdhesiveHLR       as RW
+import           Category.DPO               as RW hiding (calculateComatch)
 import           Data.Maybe                 (mapMaybe)
 
 -- | Data representing the type of a 'CriticalPair'

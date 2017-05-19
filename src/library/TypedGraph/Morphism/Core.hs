@@ -1,13 +1,13 @@
 {-# LANGUAGE TypeFamilies #-}
 module TypedGraph.Morphism.Core where
 
-import           Category.FinitaryCategory   as FC
 import           Abstract.Valid
-import           Data.List           (nub)
-import           Data.Maybe          (fromMaybe, isJust)
+import           Category.FinitaryCategory as FC
+import           Data.List                 (nub)
+import           Data.Maybe                (fromMaybe, isJust)
 import           Graph.Graph
-import           Graph.GraphMorphism (GraphMorphism)
-import qualified Graph.GraphMorphism as GM
+import           Graph.GraphMorphism       (GraphMorphism)
+import qualified Graph.GraphMorphism       as GM
 import           TypedGraph.Graph
 
 data TypedGraphMorphism a b = TypedGraphMorphism {

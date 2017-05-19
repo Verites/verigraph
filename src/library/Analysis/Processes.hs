@@ -5,10 +5,10 @@ module Analysis.Processes
   , findConflictsAndDependencies
   ) where
 
+import           Analysis.DiagramAlgorithms
 import           Category.AdhesiveHLR
 import           Category.DPO
 import           Category.DPO.Process
-import           Analysis.DiagramAlgorithms
 import           Data.List                  (partition)
 
 findConflictsAndDependencies :: GenerateProcess morph => [NamedRuleWithMatches morph] -> [Interaction]

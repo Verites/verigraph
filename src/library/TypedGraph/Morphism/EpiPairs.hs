@@ -6,7 +6,8 @@ import qualified Graph.GraphMorphism                             as GM
 import           TypedGraph.Morphism.Core
 import           TypedGraph.Partitions.GraphPartition            (generateGraphPartitions)
 import           TypedGraph.Partitions.GraphPartitionToVerigraph (mountTypedGraphMorphisms)
-import           TypedGraph.Partitions.VerigraphToGraphPartition (createDisjointUnion,createSatisfyingNacsDisjointUnion)
+import           TypedGraph.Partitions.VerigraphToGraphPartition (createDisjointUnion,
+                                                                  createSatisfyingNacsDisjointUnion)
 
 instance EpiPairs (TypedGraphMorphism a b) where
   -- | Create all jointly surjective pairs of @m1@ and @m2@

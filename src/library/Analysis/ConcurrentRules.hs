@@ -5,13 +5,13 @@ module Analysis.ConcurrentRules
   maxConcurrentRules
 ) where
 
-import           Category.AdhesiveHLR
 import           Abstract.Cardinality
-import qualified Category.Cocomplete       as C
-import           Category.DPO
 import           Abstract.Valid
 import           Analysis.CriticalSequence (findTriggeredCriticalSequences,
                                             getCriticalSequenceComatches)
+import           Category.AdhesiveHLR
+import qualified Category.Cocomplete       as C
+import           Category.DPO
 import           Data.Maybe                (mapMaybe)
 
 data CRDependencies = AllOverlapings | OnlyDependency

@@ -12,10 +12,10 @@ module Analysis.Interlevel.EvolutionarySpans
   , cpe
   ) where
 
-import           Category.AdhesiveHLR
-import           Category.DPO
 import           Abstract.Valid
 import           Analysis.DiagramAlgorithms
+import           Category.AdhesiveHLR
+import           Category.DPO
 import           SndOrder.Morphism
 import           SndOrder.Rule
 
@@ -34,7 +34,7 @@ data EvoSpan a b = EvoSpan {
 -- This analysis is supposed to be symmetric, here is considering only this case
 allEvolSpans :: MorphismsConfig -> [(String, SndOrderRule a b)] -> [(String, String, [EvoSpan a b])]
 -- combine rules symmetrically
-allEvolSpans _ [] = []
+allEvolSpans _ []                 = []
 allEvolSpans dpoConf rules@(r:rs) = map (evolSpans dpoConf r) rules ++ allEvolSpans dpoConf rs
 
 -- combine rules asymmetrically
