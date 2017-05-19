@@ -57,14 +57,14 @@ module XML.ParseSndOrderRule (
 
 import           Data.Char           (toLower)
 import           Data.Function       (on)
-import           Data.List           (find, groupBy, sortBy, sortOn, (\\))
+import           Data.List           (find, groupBy, intercalate, sortBy, sortOn, (\\))
 import           Data.Maybe          (fromMaybe, mapMaybe)
-import           Data.String.Utils   (join, split)
 
 import           Abstract.Morphism
 import           Graph.Graph
 import           Graph.GraphMorphism as GM
 import           TypedGraph.Morphism as TGM
+import           Util.List
 import           XML.ParsedTypes
 
 -- | Gets the object name map between the left of two rules
@@ -119,7 +119,7 @@ getSndOrderRuleSide rule@((name,_,_,_),_) = (side, ruleName, rule)
     side = if length splitted < 3
              then error "Error parsing 2rule name"
              else map toLower $ splitted !! 1
-    ruleName = join "_" (tail (tail splitted))
+    ruleName = intercalate "_" (tail (tail splitted))
 
 -- put together rules in the form (left,right,[nacs])
 groupRules :: [SndOrderRuleSide] -> [(SndOrderRuleSide,SndOrderRuleSide,[SndOrderRuleSide])]
@@ -174,7 +174,7 @@ parseNonMonoObjNames (x:xs) = (a,b,newObjName) : parseNonMonoObjNames xs
   where
     (a,b,_) = head x
     allObjNames = map (\(_,_,y) -> y) x
-    newObjName = join "|" allObjNames
+    newObjName = intercalate "|" allObjNames
 
 -- | Given two morphisms with the same domain, maps the codomain of both according to the interface (domain graph)
 -- Used to translate DPO in verigraph to SPO in ggx

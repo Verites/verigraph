@@ -36,9 +36,6 @@ createSatisfyingNacsDisjointUnion (g,injG) (n,injN) = disjointUnionGraphs left r
      (right,_) = graphMorphismToPartitionGraph injectiveN (M.codomain n) False id
      disjointUnionGraphs a b = (nodes a ++ nodes b, edges a ++ edges b)
 
-countIncidentMap :: Eq a => (a -> Maybe a) -> [a] -> a -> Int
-countIncidentMap f l y = length $ filter (\x -> f x == Just y) l
-
 graphMorphismToPartitionGraph :: ([NodeId],[EdgeId]) -> GraphMorphism (Maybe a) (Maybe b) -> Bool -> Int -> (GP.Graph,Int)
 graphMorphismToPartitionGraph inj@(injNodes,_) morfL side id = ((nodes',edges'), nextId)
    where

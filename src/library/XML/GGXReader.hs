@@ -20,7 +20,6 @@ import           Abstract.Valid
 import qualified Data.List                as L
 import qualified Data.Map                 as M
 import           Data.Maybe               (fromJust, fromMaybe, mapMaybe)
-import           Data.String.Utils        (startswith)
 import qualified Graph.Graph              as G
 import           Graph.GraphMorphism      as GM
 import           SndOrder.Morphism
@@ -53,7 +52,7 @@ readGrammar fileName useConstraints morphismsConf = do
   parsedGraphs <- readGraphs fileName
   parsedRules <- readRules fileName
 
-  let (sndOrdRules, fstOrdRules) = L.partition (\((x,_,_,_),_) -> startswith "2rule_" x) parsedRules
+  let (sndOrdRules, fstOrdRules) = L.partition (\((x,_,_,_),_) -> L.isPrefixOf "2rule_" x) parsedRules
       rulesNames = map (\((x,_,_,_),_) -> x) fstOrdRules
       productions = map (instantiateRule typeGraph) fstOrdRules
 
@@ -221,7 +220,7 @@ instantiateAtomicConstraint tg (name, premise, conclusion, maps) = buildNamedAto
     p = instantiateTypedGraph premise tg
     c = instantiateTypedGraph conclusion tg
     m = buildGraphMorphism (domain p) (domain c) (map mapToId mNodes) (map mapToId mEdges)
-    isPositive = not $ startswith "-" name
+    isPositive = not $ L.isPrefixOf "-" name
     mapToId (a,_,b) = (toN b, toN a)
     pNodes = G.nodeIds (domain p)
     (mNodes,mEdges) = L.partition (\(_,_,x) -> G.NodeId (toN x) `elem` pNodes) maps

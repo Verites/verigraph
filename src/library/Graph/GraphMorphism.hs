@@ -45,8 +45,7 @@ import           Control.Arrow
 import           Abstract.Morphism
 import qualified Abstract.Relation as R
 import           Abstract.Valid
-import           Data.List
-import           Data.Maybe        (fromMaybe, isNothing, mapMaybe)
+import           Data.Maybe        (fromMaybe, isNothing)
 import           Graph.Graph       as G
 
 data GraphMorphism a b = GraphMorphism {

@@ -5,9 +5,12 @@ module Util.List
 , listKeys
 , replace
 , repeated
+, split
 )
 
 where
+
+import Data.List (isPrefixOf)
 
 -- TODO: Verify suitability for the use of Data.Sequence
 -- | Replaces the @idx@-th element by @new@ in the list @l@
@@ -37,3 +40,29 @@ deleteByKey l k = filter (\a -> fst a /= k) l
 {- | Given an element @e@ and a list @l@, it returns the number of times that @e@ appears in @l@ -}
 countElement :: Eq a => a -> [a] -> Int
 countElement i = length . filter (i==)
+
+{- | Similar to Data.List.span, but performs the test on the entire remaining list instead of just one element.@-}
+spanList :: ([a] -> Bool) -> [a] -> ([a], [a])
+spanList _ [] = ([],[])
+spanList func list@(x:xs) =
+    if func list
+       then (x:ys,zs)
+       else ([],list)
+    where (ys,zs) = spanList func xs
+
+{- | Similar to Data.List.break, but performs the test on the entire remaining list instead of just one element.-}
+breakList :: ([a] -> Bool) -> [a] -> ([a], [a])
+breakList func = spanList (not . func)
+
+{- | Given a delimiter and a list (or string), split into components.-}
+split :: Eq a => [a] -> [a] -> [[a]]
+split _ [] = []
+split delim str =
+    let (firstline, remainder) = breakList (isPrefixOf delim) str
+        in
+        firstline : case remainder of
+                                   [] -> []
+                                   x -> if x == delim
+                                        then [[]]
+                                        else split delim
+                                                 (drop (length delim) x)
