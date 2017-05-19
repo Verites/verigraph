@@ -69,7 +69,7 @@ library
                        Category.DPO.Derivation
                        Analysis.DiagramAlgorithms
                        Analysis.EpimorphicPairs
-                       Equivalence.EquivalenceClasses
+                       Data.Partition
                        Logic.Ctl.Base
                        Logic.Ctl.Parser
                        Logic.Ctl.Semantics

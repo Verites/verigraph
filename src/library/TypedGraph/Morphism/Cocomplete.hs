@@ -15,7 +15,7 @@ import           Category.Morphism              as M
 import qualified Data.List.NonEmpty             as NE
 import           Data.Maybe                     (fromJust)
 import           Data.Set                       as DS
-import           Equivalence.EquivalenceClasses
+import           Data.Partition
 import           Graph.Graph                    as G
 import qualified Graph.GraphMorphism            as GM
 import           TypedGraph.Graph

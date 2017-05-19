@@ -27,7 +27,7 @@ import           Data.List                      as L hiding (union)
 import           Data.Maybe                     (fromJust, fromMaybe, isJust)
 import           Data.Set                       as S
 import           Data.Tuple                     (swap)
-import           Equivalence.EquivalenceClasses
+import           Data.Partition
 import           Graph.Graph                    (Graph)
 import qualified Graph.GraphMorphism            as GM
 import           TypedGraph.DPO.GraphRule

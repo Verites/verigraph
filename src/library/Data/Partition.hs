@@ -1,4 +1,4 @@
-module Equivalence.EquivalenceClasses
+module Data.Partition
   ( EquivalenceClass
   , Partition
   , discretePartition
@@ -77,34 +77,34 @@ findEquivalenceClass element set
   where
     domain = Set.filter (element `elem`) set
 
-type Relation a = Set (a,a)
+type PairsRelation a = Set (a,a)
 
-elementInImage :: Ord a => Relation a -> a -> Relation a
+elementInImage :: Ord a => PairsRelation a -> a -> PairsRelation a
 elementInImage rel item = Set.filter ((== item) . snd) rel
 
-elementNotInDomain :: Ord a => Relation a -> a -> Relation a
+elementNotInDomain :: Ord a => PairsRelation a -> a -> PairsRelation a
 elementNotInDomain rel item = Set.filter ((/= item) . fst) rel
 
-noIncoming :: Ord a => Relation a -> Set a -> Maybe a
+noIncoming :: Ord a => PairsRelation a -> Set a -> Maybe a
 noIncoming rel = find (null . elementInImage rel)
 
-isCyclic :: Ord a => Relation a -> Bool
+isCyclic :: Ord a => PairsRelation a -> Bool
 isCyclic = not . null . until (\rel -> removeOneItem rel == rel) removeOneItem
   where
     removeOneItem rel = maybe rel (elementNotInDomain rel) . noIncoming rel $ relationDomain rel
     relationDomain = Set.map fst
 
-tsort :: Ord a => Relation a -> Set a -> Maybe [a]
+tsort :: Ord a => PairsRelation a -> Set a -> Maybe [a]
 tsort rel disconnected =
   let
     items = relationElements rel `Set.union` disconnected
   in if isCyclic rel then Nothing
      else Just $ buildOrdering rel items
 
-relationElements :: Ord a => Relation a -> Set a
+relationElements :: Ord a => PairsRelation a -> Set a
 relationElements = foldr (\(x,y) -> Set.insert x . Set.insert y) Set.empty
 
-buildOrdering :: Ord a => Relation a -> Set a -> [a]
+buildOrdering :: Ord a => PairsRelation a -> Set a -> [a]
 buildOrdering relation items = maybe [] addToOrderRemoveFromRelation $ noIncoming relation items
   where
     addToOrderRemoveFromRelation i = i : buildOrdering (elementNotInDomain relation i) (Set.delete i items)

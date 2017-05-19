@@ -25,7 +25,7 @@ module TypedGraph.DPO.OccurenceRelation
 
 where
 
-import           Equivalence.EquivalenceClasses
+import           Data.Partition
 import           Graph.Graph                    (EdgeId, NodeId)
 import           Data.Maybe                     (isJust, isNothing)
 import           Data.Set as S
