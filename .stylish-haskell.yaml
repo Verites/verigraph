@@ -20,8 +20,8 @@ steps:
   # line.
   - simple_align:
       cases: false
-      top_level_patterns: false
-      records: false
+      top_level_patterns: true
+      records: true
 
   # Import cleanup
   - imports:

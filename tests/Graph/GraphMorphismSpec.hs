@@ -5,7 +5,7 @@ import           Test.Hspec.QuickCheck
 import           Test.QuickCheck
 import           Test.QuickCheck.Function
 
-import           Abstract.Morphism
+import           Category.FinitaryCategory
 import           Abstract.Valid
 import           Graph.Graph
 import           Graph.GraphMorphism

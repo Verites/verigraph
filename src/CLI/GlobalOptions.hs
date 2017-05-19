@@ -7,7 +7,7 @@ module GlobalOptions
   , useConstraints
   ) where
 
-import           Abstract.AdhesiveHLR (MatchRestriction (..), MorphismsConfig (..),
+import           Category.AdhesiveHLR (MatchRestriction (..), MorphismsConfig (..),
                                        NacSatisfaction (..))
 import           Data.Monoid          ((<>))
 import           Options.Applicative

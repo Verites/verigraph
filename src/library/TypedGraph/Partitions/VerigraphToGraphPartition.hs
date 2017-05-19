@@ -3,7 +3,7 @@ module TypedGraph.Partitions.VerigraphToGraphPartition (
    createSatisfyingNacsDisjointUnion
    ) where
 
-import qualified Abstract.Morphism                    as M
+import qualified Category.FinitaryCategory            as FC
 import           Graph.Graph                          as G
 import           Graph.GraphMorphism                  as GM
 import           TypedGraph.Graph
@@ -16,8 +16,8 @@ createDisjointUnion (g1,inj1) (g2,inj2) = disjointUnionGraphs left right
    where
      nodes = fst
      edges = snd
-     injective1 = if inj1 then (G.nodeIds (M.domain g1), G.edgeIds (M.domain g1)) else ([],[])
-     injective2 = if inj2 then (G.nodeIds (M.domain g2), G.edgeIds (M.domain g2)) else ([],[])
+     injective1 = if inj1 then (G.nodeIds (FC.domain g1), G.edgeIds (FC.domain g1)) else ([],[])
+     injective2 = if inj2 then (G.nodeIds (FC.domain g2), G.edgeIds (FC.domain g2)) else ([],[])
      (left,id) = graphMorphismToPartitionGraph injective1 g1 True 0
      (right,_) = graphMorphismToPartitionGraph injective2 g2 False id
      disjointUnionGraphs a b = (nodes a ++ nodes b, edges a ++ edges b)
@@ -30,16 +30,16 @@ createSatisfyingNacsDisjointUnion (g,injG) (n,injN) = disjointUnionGraphs left r
      edges = snd
      injNodes = filter (\x -> not (any (\n' -> TGM.applyNodeIdUnsafe n n' == x) (nodeIdsFromDomain n))) (nodeIdsFromCodomain n)
      injEdges = filter (\x -> not (any (\e' -> TGM.applyEdgeIdUnsafe n e' == x) (edgeIdsFromDomain n))) (edgeIdsFromCodomain n)
-     injectiveR = if injG then (G.nodeIds (M.domain g), G.edgeIds (M.domain g)) else ([],[])
+     injectiveR = if injG then (G.nodeIds (FC.domain g), G.edgeIds (FC.domain g)) else ([],[])
      injectiveN = if injN then (nodeIdsFromCodomain n, edgeIdsFromCodomain n) else (injNodes, injEdges)
      (left,id) = graphMorphismToPartitionGraph injectiveR g True 0
-     (right,_) = graphMorphismToPartitionGraph injectiveN (M.codomain n) False id
+     (right,_) = graphMorphismToPartitionGraph injectiveN (FC.codomain n) False id
      disjointUnionGraphs a b = (nodes a ++ nodes b, edges a ++ edges b)
 
 graphMorphismToPartitionGraph :: ([NodeId],[EdgeId]) -> GraphMorphism (Maybe a) (Maybe b) -> Bool -> Int -> (GP.Graph,Int)
 graphMorphismToPartitionGraph inj@(injNodes,_) morfL side id = ((nodes',edges'), nextId)
    where
-      graphL = M.domain morfL
+      graphL = FC.domain morfL
       nodes'   = nodesToPartitionNodes injNodes morfL side id $ nodeIds graphL
       edges'   = edgesToPartitionEdges inj morfL side graphL id $ edges graphL
       nextId = max (length nodes') (length edges')

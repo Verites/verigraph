@@ -1,5 +1,5 @@
-import           Abstract.DPO
-import           Abstract.Morphism
+import           Category.DPO
+import           Category.FinitaryCategory
 import           Analysis.Interlevel.InterLevelCP
 import           Data.Maybe                       (fromMaybe)
 import           SndOrder.Morphism
@@ -120,7 +120,7 @@ checkNacManipulation gg =
     deleteMono = deleteStep Monomorphisms deletion_modeledNACs deletion_concreteNACs
     deleteIPO = deleteStep InitialPushouts deletion_modeledNACs deletion_concreteNACs
 
-getRule :: String -> Grammar m -> Production m
+getRule :: String -> Grammar morph -> Production morph
 getRule str gg =
   fromMaybe
     (error ("secondOrderTest: " ++ str ++ " is not in secondOrderMatchTest.ggx"))

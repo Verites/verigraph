@@ -1,12 +1,13 @@
 module TypedGraph.Morphism.EpiPairs where
 
-import           Abstract.AdhesiveHLR
+import           Category.AdhesiveHLR
 import           Graph.Graph                                     as G
 import qualified Graph.GraphMorphism                             as GM
 import           TypedGraph.Morphism.Core
 import           TypedGraph.Partitions.GraphPartition            (generateGraphPartitions)
 import           TypedGraph.Partitions.GraphPartitionToVerigraph (mountTypedGraphMorphisms)
-import           TypedGraph.Partitions.VerigraphToGraphPartition (createDisjointUnion,createSatisfyingNacsDisjointUnion)
+import           TypedGraph.Partitions.VerigraphToGraphPartition (createDisjointUnion,
+                                                                  createSatisfyingNacsDisjointUnion)
 
 instance EpiPairs (TypedGraphMorphism a b) where
   -- | Create all jointly surjective pairs of @m1@ and @m2@
@@ -22,7 +23,7 @@ instance EpiPairs (TypedGraphMorphism a b) where
     where
       injectiveMatch = matchRestriction conf == MonoMatches
       totalInjectiveNac = nacSatisfaction conf == MonomorphicNAC
-      
+
       labeled = createSatisfyingNacsDisjointUnion (r, injectiveMatch) (nac, totalInjectiveNac)
 
   -- | Create all jointly surjective pairs of @m1@ and @m2@ that commutes,

@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE UndecidableInstances #-}
-module Abstract.DPO.Process
+module Category.DPO.Process
   ( Process(..)
   , GenerateProcess(..)
   , NamedRuleWithMatches
@@ -11,24 +11,24 @@ module Abstract.DPO.Process
   , eliminateSelfConflictsAndDependencies
   ) where
 
-import           Abstract.Cocomplete
-import           Abstract.DPO.Core
-import           Abstract.DPO.Derivation
-import           Abstract.Morphism
-import           Data.List.NonEmpty      (NonEmpty, fromList)
-import           Data.Maybe              (fromJust)
-import qualified Data.Set as S
+import           Category.Cocomplete
+import           Category.DPO.Core
+import           Category.DPO.Derivation
+import           Category.FinitaryCategory
+import           Data.List.NonEmpty        (NonEmpty, fromList)
+import           Data.Maybe                (fromJust)
+import qualified Data.Set                  as S
 
-data Process m = Process
-  { productions :: [Production m]
-  , coreObject  :: Obj m
+data Process morph = Process
+  { productions :: [Production morph]
+  , coreObject  :: Obj morph
   }
 
-instance (Eq m, (Eq (Obj m))) => Eq (Process m) where
+instance (Eq morph, (Eq (Obj morph))) => Eq (Process morph) where
  Process p c == Process p' c' = (p,c) == (p',c')
  Process p c /= Process p' c' = (p,c) /= (p',c')
 
-instance (Show m, (Show (Obj m))) => Show (Process m) where
+instance (Show morph, (Show (Obj morph))) => Show (Process morph) where
   show (Process p c) = "Productions: /n" ++ show p ++
                        "/nCoreObject: /n" ++ show c
 
@@ -48,28 +48,28 @@ filterInducedByNacs conflictsAndDependencies =
 eliminateSelfConflictsAndDependencies :: [Interaction] -> [Interaction]
 eliminateSelfConflictsAndDependencies = filter (\i -> firstRule i /= secondRule i)
 
-class (DPO m) => GenerateProcess m where
+class (DPO morph) => GenerateProcess morph where
 
   -- | Given a pair of morhisms with common codomain, it returns a new pair with morphism also with a
   -- a new codomain that does not contain the elements that were orphans in both original morphisms
-  restrictMorphisms :: (m,m) -> (m,m)
+  restrictMorphisms :: (morph,morph) -> (morph,morph)
 
   -- | Given a morhism, it returns a morphism with a new codomain that is equal to the image of the original
   -- morphism
-  restrictMorphism :: m -> m
+  restrictMorphism :: morph -> morph
 
   -- | Given a Derivation @d@ and a tuple @(p,q,r)@ of Morphisms @p : G -> C@, @q : D -> C@ and
   -- @r : H -> C@, it returns a new Production corresponding to the production in @d@ but
   -- typed over C
-  typing :: (Derivation m, (m,m,m)) ->  Production m
+  typing :: (Derivation morph, (morph,morph,morph)) ->  Production morph
 
   -- | Given a Production @p@ and a tuple @(r,s,t)@ of Morphisms @r : G -> C@, @s : D -> C@ and
   -- @t : H -> C@, it returns a new Production corresponding to the production in @p@ but
   -- typed over C
-  productionTyping :: (Production m, (m,m,m)) ->  Production m
+  productionTyping :: (Production morph, (morph,morph,morph)) ->  Production morph
 
   -- | Given a list of Derivation containing a sequential derivation, returns its corresponding Process
-  calculateProcess :: [Derivation m] -> Process m
+  calculateProcess :: [Derivation morph] -> Process morph
   calculateProcess [] = error "Can not calculate process for empty list of derivations"
   calculateProcess ds =
     let fs = sourcesCoproduct ds
@@ -79,7 +79,7 @@ class (DPO m) => GenerateProcess m where
         hs = reduce $ map (`compose` coEq) gs
      in Process (zipWith (curry typing) ds hs) (codomain coEq)
 
-  calculateRulesColimit :: RuleSequence m -> [NamedRuleWithMatches m]
+  calculateRulesColimit :: RuleSequence morph -> [NamedRuleWithMatches morph]
   calculateRulesColimit (_,g,os) =
     let
       ruleNames = map fst g
@@ -107,7 +107,7 @@ class (DPO m) => GenerateProcess m where
       hs2 = split $ map (`compose` coreGraphMorphism) hm
     in if null os then zip3 ruleNames rs hs1 else zip3 ruleNames rs hs2
 
-  generateGraphProcess :: RuleSequence m -> [(String, Production m)]
+  generateGraphProcess :: RuleSequence morph -> [(String, Production morph)]
   generateGraphProcess (_,g,os) =
     let
       colimit = calculateRulesColimit ("",g,os)
@@ -116,36 +116,36 @@ class (DPO m) => GenerateProcess m where
       forgetRuleName (_,b,c) = (b,c)
     in zip ruleNames newRules
 
-objectFlowCoproduct :: (DPO m) => [ObjectFlow m] -> [m]
+objectFlowCoproduct :: (DPO morph) => [ObjectFlow morph] -> [morph]
 objectFlowCoproduct [] = []
 objectFlowCoproduct flows =
   let
     intersectionObjects = fromList $ map (domain . fst . spanMapping) flows
   in calculateNCoproduct intersectionObjects
 
-getLefts :: [Production m] -> [m]
+getLefts :: [Production morph] -> [morph]
 getLefts = map getLHS
 
-getRights :: [Production m] -> [m]
+getRights :: [Production morph] -> [morph]
 getRights = map getRHS
 
-split :: [m] -> [(m,m,m)]
+split :: [morph] -> [(morph,morph,morph)]
 split []         = []
 split (a:b:c:ds) = (a,b,c) : split ds
 split _          = error "list of morphisms should have length divisible by 3"
 
-type NamedRuleWithMatches m = (String, Production m, (m,m,m))
+type NamedRuleWithMatches morph = (String, Production morph, (morph,morph,morph))
 
-getName :: NamedRuleWithMatches m -> String
+getName :: NamedRuleWithMatches morph -> String
 getName = fst'
 
-getRule :: NamedRuleWithMatches m -> Production m
+getRule :: NamedRuleWithMatches morph -> Production morph
 getRule = snd'
 
-getMatch :: NamedRuleWithMatches m -> m
+getMatch :: NamedRuleWithMatches morph -> morph
 getMatch = fst' . thd'
 
-getComatch :: NamedRuleWithMatches m -> m
+getComatch :: NamedRuleWithMatches morph -> morph
 getComatch = thd' . thd'
 
 fst' :: (a,b,c) -> a
@@ -157,7 +157,7 @@ snd' (_,b,_) = b
 thd' :: (a,b,c) -> c
 thd' (_,_,c) = c
 
-generateMorphismFamilies :: (DPO m) => [Derivation m] -> [m] -> [m] -> (m,m,m)
+generateMorphismFamilies :: (DPO morph) => [Derivation morph] -> [morph] -> [morph] -> (morph,morph,morph)
 generateMorphismFamilies ds fs gs=
   let ls = getLeftBottomMorphisms ds
       rs = getRightBottomMorphisms ds
@@ -169,36 +169,36 @@ generateMorphismFamilies ds fs gs=
       h3 = h $ zipWith compose rs g3s
   in (h1,h2,h3)
 
-ksCoproduct :: (DPO m) => [Production m] -> [m]
+ksCoproduct :: (DPO morph) => [Production morph] -> [morph]
 ksCoproduct = calculateNCoproduct . fromList . getKs
 
-allCoproduct :: (DPO m) => [Production m] -> [m]
+allCoproduct :: (DPO morph) => [Production morph] -> [morph]
 allCoproduct = calculateNCoproduct . fromList . getAllObjects
 
-getKs :: (DPO m) => [Production m] -> [Obj m]
+getKs :: (DPO morph) => [Production morph] -> [Obj morph]
 getKs = map (domain . getLHS)
 
-getAllObjects :: (DPO m) => [Production m] -> [Obj m]
+getAllObjects :: (DPO morph) => [Production morph] -> [Obj morph]
 getAllObjects = foldr (\x -> (++) [(codomain . getLHS) x, (domain . getLHS) x, (codomain . getRHS) x]) []
 
 -- | Given a list of Derivation, it returns all the objects in the bottom part of the
 -- diagrams that are source of at least one Morphism
-getSources :: (DPO m) => [Derivation m] -> NonEmpty (Obj m)
+getSources :: (DPO morph) => [Derivation morph] -> NonEmpty (Obj morph)
 getSources ds = fromList (getDObjects ds)
 
-sourcesCoproduct :: (DPO m) => [Derivation m] -> [m]
+sourcesCoproduct :: (DPO morph) => [Derivation morph] -> [morph]
 sourcesCoproduct = calculateNCoproduct . getSources
 
 -- | Given a list of Derivation, it returns all the objects in the bottom part of the
 -- diagrams
-getAll :: (DPO m) => [Derivation m] -> NonEmpty (Obj m)
+getAll :: (DPO morph) => [Derivation morph] -> NonEmpty (Obj morph)
 getAll ds = fromList $ getAllBottomObjects ds
 
-allObjectsCoproduct :: (DPO m) => [Derivation m] -> [m]
+allObjectsCoproduct :: (DPO morph) => [Derivation morph] -> [morph]
 allObjectsCoproduct = calculateNCoproduct . getAll
 
 -- used to group the morphisms into families
-groupMorphisms :: [(m,m,m)] -> ([m],[m],[m])
+groupMorphisms :: [(morph,morph,morph)] -> ([morph],[morph],[morph])
 groupMorphisms [] = ([],[],[])
 groupMorphisms fs = (f1,f2,f3)
   where
@@ -207,7 +207,7 @@ groupMorphisms fs = (f1,f2,f3)
     f3 = concatMap (\(_,_,c) -> [c]) fs
 
 -- used to separate the list of morphisms in triples for each derivation
-reduce :: [m] -> [(m,m,m)]
+reduce :: [morph] -> [(morph,morph,morph)]
 reduce fs
   | length fs < 3 = []
   | otherwise = (head fs, fs !! 1, fs !! 2) : reduce (rest fs)

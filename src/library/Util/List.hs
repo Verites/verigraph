@@ -10,7 +10,7 @@ module Util.List
 
 where
 
-import Data.List (isPrefixOf)
+import           Data.List (isPrefixOf)
 
 -- TODO: Verify suitability for the use of Data.Sequence
 -- | Replaces the @idx@-th element by @new@ in the list @l@

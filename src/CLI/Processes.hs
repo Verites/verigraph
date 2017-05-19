@@ -12,8 +12,8 @@ import           Data.Set                         (toList)
 import           GlobalOptions
 import           Options.Applicative
 
-import           Abstract.DPO
-import           Abstract.DPO.Process        hiding (productions)
+import           Category.DPO
+import           Category.DPO.Process        hiding (productions)
 import           Abstract.Valid
 import           Analysis.Processes
 import           TypedGraph.DPO.GraphProcess
@@ -86,7 +86,7 @@ execute globalOpts opts = do
           ++ show rulesOrdering ++ "\n}\n"
           ++ "Element Ordering: {"
           ++ show elementsOrdering ++"\n}\n\n"
-          ++ "Set of Abstract Restrictions: {\n"
+          ++ "Set of Category Restrictions: {\n"
           ++ restrictionToString (restrictRelation completeOgg) ++ "\n}"
 
     putStrLn "Tesing Serialization: "

@@ -2,7 +2,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Abstract.Relation
+module Data.Relation
     (
     -- * Types
       Relation
@@ -10,7 +10,7 @@ module Abstract.Relation
     , empty
     -- * Transformation
     , compose
-    , Abstract.Relation.id
+    , Data.Relation.id
     , inverseRelation
     , updateRelation
     , removeFromDomain

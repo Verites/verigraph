@@ -1,13 +1,13 @@
 {-# LANGUAGE TypeFamilies #-}
 module TypedGraph.Morphism.Core where
 
-import           Abstract.Morphism   as M
 import           Abstract.Valid
-import           Data.List           (nub)
-import           Data.Maybe          (fromMaybe, isJust)
+import           Category.FinitaryCategory as FC
+import           Data.List                 (nub)
+import           Data.Maybe                (fromMaybe, isJust)
 import           Graph.Graph
-import           Graph.GraphMorphism (GraphMorphism)
-import qualified Graph.GraphMorphism as GM
+import           Graph.GraphMorphism       (GraphMorphism)
+import qualified Graph.GraphMorphism       as GM
 import           TypedGraph.Graph
 
 data TypedGraphMorphism a b = TypedGraphMorphism {
@@ -20,13 +20,13 @@ data TypedGraphMorphism a b = TypedGraphMorphism {
 buildTypedGraphMorphism :: TypedGraph a b -> TypedGraph a b -> GraphMorphism (Maybe a) (Maybe b) -> TypedGraphMorphism a b
 buildTypedGraphMorphism = TypedGraphMorphism
 
-instance Morphism (TypedGraphMorphism a b) where
+instance FinitaryCategory (TypedGraphMorphism a b) where
     type Obj (TypedGraphMorphism a b) = TypedGraph a b
 
     domain = getDomain
     codomain = getCodomain
     compose t1 t2 = TypedGraphMorphism (domain t1) (codomain t2) $ compose (mapping t1) (mapping t2)
-    id t = TypedGraphMorphism t t (M.id $ domain t)
+    identity t = TypedGraphMorphism t t (FC.identity $ domain t)
     isMonomorphism = isMonomorphism . mapping
     isEpimorphism = isEpimorphism . mapping
     isIsomorphism = isIsomorphism . mapping

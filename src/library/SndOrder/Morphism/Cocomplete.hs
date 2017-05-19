@@ -9,9 +9,9 @@ module SndOrder.Morphism.Cocomplete (
 
 ) where
 
-import           Abstract.Cocomplete
-import           Abstract.DPO
-import           Abstract.Morphism                  as M
+import           Category.Cocomplete
+import           Category.DPO
+import           Category.FinitaryCategory          as FC
 
 import           TypedGraph.Morphism
 
@@ -51,7 +51,7 @@ instance Cocomplete (RuleMorphism a b) where
 
   calculateNCoproduct = error "calculateNCoproduct for Second-order not implemented"
 
-  initialObject morph = buildProduction (M.id initGraph) (M.id initGraph) []
+  initialObject morph = buildProduction (FC.identity initGraph) (FC.identity initGraph) []
     where
       initGraph = initialObject (getLHS (domain morph))
 

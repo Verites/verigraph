@@ -14,9 +14,9 @@ module TypedGraph.Graph
   ) where
 
 import           Abstract.Cardinality
-import           Abstract.Morphism
-import           Data.Maybe           (fromMaybe)
-import           Graph.Graph          as G
+import           Category.FinitaryCategory
+import           Data.Maybe                (fromMaybe)
+import           Graph.Graph               as G
 import           Graph.GraphMorphism
 
 

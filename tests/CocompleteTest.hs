@@ -1,9 +1,9 @@
 -- | Test Suite for GraphProcess Module
 
-import           Abstract.AdhesiveHLR
-import           Abstract.Cocomplete
-import           Abstract.DPO
-import           Abstract.Morphism
+import           Category.AdhesiveHLR
+import           Category.Cocomplete
+import           Category.DPO
+import           Category.FinitaryCategory
 import           Data.List.NonEmpty          (fromList)
 import           Data.Maybe                  (fromJust)
 import           Graph.Graph
@@ -142,7 +142,7 @@ typedMorphismFThree = buildTypedGraphMorphism typedGraphAThree typedGraphBThree 
 typedMorphismGThree = buildTypedGraphMorphism typedGraphAThree typedGraphBThree mappingMorphismGThree
 typedMorphismHThree = buildTypedGraphMorphism typedGraphAThree typedGraphBThree mappingMorphismHThree
 
-testCaseThreePUSHOUT = Abstract.AdhesiveHLR.calculatePushout typedMorphismFThree typedMorphismHThree
+testCaseThreePUSHOUT = Category.AdhesiveHLR.calculatePushout typedMorphismFThree typedMorphismHThree
 
 testCaseThree = calculateCoequalizer typedMorphismFThree typedMorphismGThree
 

@@ -4,8 +4,8 @@ module ApplySndOrderRules
   , execute
   ) where
 
-import           Abstract.AdhesiveHLR
-import           Abstract.DPO
+import           Category.AdhesiveHLR
+import           Category.DPO
 import           Control.Monad            (when)
 import           Graph.Graph              (Graph)
 import qualified SndOrder.Rule            as SO

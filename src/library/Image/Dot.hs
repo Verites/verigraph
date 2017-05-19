@@ -1,16 +1,16 @@
 module Image.Dot where
 
-import           Abstract.DPO.StateSpace
-import           Abstract.Morphism
-import           Graph.Graph              hiding (Node (..))
+import           Category.DPO.StateSpace
+import           Category.FinitaryCategory
+import           Graph.Graph               hiding (Node (..))
 import           SndOrder.Morphism
 import           SndOrder.Rule
 import           TypedGraph.DPO.GraphRule
 import           TypedGraph.Graph
 import           TypedGraph.Morphism
 
-import qualified Data.IntMap              as IntMap
-import qualified Data.Set                 as Set
+import qualified Data.IntMap               as IntMap
+import qualified Data.Set                  as Set
 import           Text.PrettyPrint.Leijen
 
 

@@ -25,11 +25,11 @@ module TypedGraph.DPO.OccurenceRelation
 
 where
 
-import           Equivalence.EquivalenceClasses
-import           Graph.Graph                    (EdgeId, NodeId)
-import           Data.Maybe                     (isJust, isNothing)
-import           Data.Set as S
-import           Util.Closures                  as C
+import           Data.Maybe     (isJust, isNothing)
+import           Data.Partition
+import           Data.Set       as S
+import           Graph.Graph    (EdgeId, NodeId)
+import           Util.Closures  as C
 
 data RelationItem = Node NodeId
                   | Edge EdgeId
@@ -43,16 +43,16 @@ type AbstractRelation = S.Set (AbstractType, (RelationItem, RelationItem), (Rela
 relationToString :: Relation -> String
 relationToString rel = "[" ++ concatSet (toList rel) ++"]"
     where
-      concatSet [] = ""
-      concatSet [x] = format x
+      concatSet []     = ""
+      concatSet [x]    = format x
       concatSet (x:xs) = format x ++ "," ++ concatSet xs
       format (a,b) = "(" ++ show a ++ " < " ++ show b ++")"
 
 restrictionToString :: AbstractRelation -> String
 restrictionToString res = "[" ++ concatSet (toList res) ++"]"
     where
-      concatSet [] = ""
-      concatSet [x] = format x
+      concatSet []     = ""
+      concatSet [x]    = format x
       concatSet (x:xs) = format x ++ ",\n" ++ concatSet xs
       format (t,(a,b),(_,d)) = "(" ++ show t ++ ": " ++ show b ++ " not in between "++ "[" ++ show a ++ " < " ++ show d ++"])"
 

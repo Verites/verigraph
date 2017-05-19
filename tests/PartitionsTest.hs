@@ -4,8 +4,8 @@
 import           Math.Combinat.Numbers (bellNumber)
 import           Test.HUnit
 
-import           Abstract.AdhesiveHLR
-import           Abstract.DPO
+import           Category.AdhesiveHLR
+import           Category.DPO
 import           Analysis.CriticalPairs
 import           Graph.Graph
 import           Graph.GraphMorphism

@@ -1,7 +1,7 @@
 module XML.GGXReader.Span where
 
-import           Abstract.AdhesiveHLR
-import           Abstract.DPO
+import           Category.AdhesiveHLR
+import           Category.DPO
 import           Data.Maybe               (fromMaybe)
 import qualified Graph.Graph              as G
 import           Graph.GraphMorphism      as GM
@@ -65,13 +65,13 @@ instantiateSpan left right mapping = (leftM, rightM)
       where
         edgeIdSrc = G.EdgeId src
         edgeIdTgt = G.EdgeId tgt
-        
+
         edgeSrc = fromMaybe
                     (error "updateEdgeMorphisms: edgeId is not in its graph")
                     (G.lookupEdge edgeIdSrc (domain left))
-        
+
         edgeDom = G.insertEdge edgeIdSrc (G.sourceId edgeSrc) (G.targetId edgeSrc) (domain k)
-        
+
         edgeType = extractEdgeType left edgeIdSrc
         newEdgeK = updateEdges edgeIdSrc edgeType (updateDomain edgeDom k)
         updateEdgesL = updateEdges edgeIdSrc edgeIdSrc (updateDomain edgeDom l)

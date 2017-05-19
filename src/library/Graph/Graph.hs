@@ -81,8 +81,8 @@ module Graph.Graph (
 import           Abstract.Cardinality
 import           Abstract.Valid
 import           Data.List
-import           Util.List
 import           Data.Maybe           (fromJust, fromMaybe)
+import           Util.List
 
 
 -- | Type of node identifiers, which are essentially integers.

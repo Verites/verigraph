@@ -2,15 +2,15 @@ module SndOrder.Rule.DPO where
 
 import           Data.Maybe               (fromMaybe, mapMaybe)
 
-import           Abstract.AdhesiveHLR
-import           Abstract.DPO
 import           Abstract.Valid
+import           Category.AdhesiveHLR
+import           Category.DPO
 import           Graph.Graph              as G
 import           SndOrder.Morphism        as SO
+import           SndOrder.Rule.Core
 import           TypedGraph.DPO.GraphRule
 import           TypedGraph.Graph
 import           TypedGraph.Morphism
-import           SndOrder.Rule.Core
 
 instance DPO (RuleMorphism a b) where
   invertProduction conf r = addMinimalSafetyNacs conf newRule
@@ -230,7 +230,7 @@ newNacsPair sideChoose sndRule =
 getRulesFrom2Rule :: SndOrderRule a b -> (Production (TypedGraphMorphism a b), Production (TypedGraphMorphism a b), Production (TypedGraphMorphism a b))
 getRulesFrom2Rule sndRule = (codomain (getLHS sndRule), domain (getLHS sndRule), codomain (getRHS sndRule))
 
-calculateAllPartitions :: EpiPairs m => Obj m -> [m]
+calculateAllPartitions :: EpiPairs morph => Obj morph -> [morph]
 calculateAllPartitions = createAllSubobjects False
 
 isOrphanNode :: TypedGraphMorphism a b -> NodeId -> Bool

@@ -2,9 +2,9 @@
 
 module SndOrder.Morphism.EpiPairs where
 
-import           Abstract.AdhesiveHLR
-import           Abstract.DPO
-import           Abstract.Morphism
+import           Category.AdhesiveHLR
+import           Category.DPO
+import           Category.FinitaryCategory
 import           TypedGraph.Morphism
 
 import           SndOrder.Morphism.Core
@@ -13,7 +13,7 @@ instance EpiPairs (RuleMorphism a b) where
   createJointlyEpimorphicPairs inj m1 m2 = ret
     where
       createJointly x y = createJointlyEpimorphicPairs inj (codomain x) (codomain y)
-      
+
       leftM1 = getLHS m1
       rightM1 = getRHS m1
       leftM2 = getLHS m2
@@ -42,7 +42,7 @@ instance EpiPairs (RuleMorphism a b) where
   createJointlyEpimorphicPairsFromNAC conf ruleR nac = ret
     where
       createJointly x = createJointlyEpimorphicPairsFromNAC conf (codomain x)
-      
+
       nL = mappingLeft nac
       nK = mappingInterface nac
       nR = mappingRight nac
@@ -50,21 +50,21 @@ instance EpiPairs (RuleMorphism a b) where
       rightR = getRHS ruleR
       rK = domain (getLHS ruleR)
       codNac = codomain nac
-      
+
       interfaceEpiPairs = createJointlyEpimorphicPairsFromNAC conf rK nK
-      
+
       lefts = concatMap
                 (\(kR,kN) ->
                   let ls = createSideRule createJointly kR leftR leftR kN (getLHS codNac) nL
                   in map (\(ll1,ll2,m) -> (kR, kN, ll1, ll2, m)) ls)
                 interfaceEpiPairs
-      
+
       rights = concatMap
                 (\(kR,kN,ll1,ll2,l) ->
                   let rs = createSideRule createJointly kR rightR rightR kN (getRHS codNac) nR
                   in map (\(rr1,rr2,r) -> (kR,kN,ll1,ll2,l,rr1,rr2,r)) rs)
                 lefts
-      
+
       transposeNACs l = map (snd . calculatePushout l)
 
       ret = map (\(k1,k2,ll1,ll2,l,r1,r2,r) ->
@@ -81,7 +81,7 @@ instance EpiPairs (RuleMorphism a b) where
 
 -- | Generates all (ss1,ss2,m) morphisms that commute with all EpiPairs
 -- of S1 and S2.
--- Morphism m is always monomorphic.
+-- Morphism morph is always monomorphic.
 -- createS must create all ss1 and ss2 from create1 and create2.
 --
 -- @

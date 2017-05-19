@@ -1,9 +1,9 @@
 -- | Test Suite for GraphProcess Module
 
-import           Abstract.AdhesiveHLR
-import           Abstract.DPO
-import           Abstract.DPO.Process
-import           Abstract.Morphism
+import           Category.AdhesiveHLR
+import           Category.DPO
+import           Category.DPO.Process
+import           Category.FinitaryCategory
 import           Data.Maybe                  (fromJust)
 import           Graph.Graph
 import           Graph.GraphMorphism

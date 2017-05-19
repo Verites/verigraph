@@ -14,9 +14,9 @@ module XML.GGXReader
    printMinimalSafetyNacsLog
    ) where
 
-import           Abstract.AdhesiveHLR
-import           Abstract.DPO
 import           Abstract.Valid
+import           Category.AdhesiveHLR
+import           Category.DPO
 import qualified Data.List                as L
 import qualified Data.Map                 as M
 import           Data.Maybe               (fromJust, fromMaybe, mapMaybe)

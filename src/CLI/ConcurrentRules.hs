@@ -7,8 +7,8 @@ module ConcurrentRules
 import           Data.Monoid              ((<>))
 import           GlobalOptions
 
-import           Abstract.AdhesiveHLR
-import           Abstract.DPO
+import           Category.AdhesiveHLR
+import           Category.DPO
 import           Analysis.ConcurrentRules
 import           Control.Monad
 import           Options.Applicative

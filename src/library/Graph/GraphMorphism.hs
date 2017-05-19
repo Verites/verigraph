@@ -42,11 +42,11 @@ module Graph.GraphMorphism (
 
 import           Control.Arrow
 
-import           Abstract.Morphism
-import qualified Abstract.Relation as R
 import           Abstract.Valid
-import           Data.Maybe        (fromMaybe, isNothing)
-import           Graph.Graph       as G
+import           Category.FinitaryCategory
+import           Data.Maybe                (fromMaybe, isNothing)
+import qualified Data.Relation             as R
+import           Graph.Graph               as G
 
 data GraphMorphism a b = GraphMorphism {
                           getDomain    :: Graph a b
@@ -120,19 +120,19 @@ applyEdgeId m le =
 
 -- | Return the node to which @le@ gets mapped or error in the case of undefined
 applyNodeUnsafe :: GraphMorphism a b -> G.Node a -> G.Node a
-applyNodeUnsafe m n = fromMaybe (error "Error, apply nodeId in a non total morphism") $ applyNode m n
+applyNodeUnsafe morph n = fromMaybe (error "Error, apply nodeId in a non total morphism") $ applyNode morph n
 
 -- | Return the nodeId to which @le@ gets mapped or error in the case of undefined
 applyNodeIdUnsafe :: GraphMorphism a b -> NodeId -> NodeId
-applyNodeIdUnsafe m n = fromMaybe (error "Error, apply nodeId in a non total morphism") $ applyNodeId m n
+applyNodeIdUnsafe morph n = fromMaybe (error "Error, apply nodeId in a non total morphism") $ applyNodeId morph n
 
 -- | Return the edge to which @le@ gets mapped or error in the case of undefined
 applyEdgeUnsafe :: GraphMorphism a b -> G.Edge b -> G.Edge b
-applyEdgeUnsafe m e = fromMaybe (error "Error, apply edge in a non total morphism") $ applyEdge m e
+applyEdgeUnsafe morph e = fromMaybe (error "Error, apply edge in a non total morphism") $ applyEdge morph e
 
 -- | Return the edgeId to which @le@ gets mapped or error in the case of undefined
 applyEdgeIdUnsafe :: GraphMorphism a b -> EdgeId -> EdgeId
-applyEdgeIdUnsafe m e = fromMaybe (error "Error, apply edgeId in a non total morphism") $ applyEdgeId m e
+applyEdgeIdUnsafe morph e = fromMaybe (error "Error, apply edgeId in a non total morphism") $ applyEdgeId morph e
 
 -- | An empty morphism between two graphs.
 empty :: Graph a b -> Graph a b -> GraphMorphism a b
@@ -267,7 +267,7 @@ createNodeOnCodomain n2 gm =
      , nodeRelation = R.insertOnCodomain n2 (nodeRelation gm)
      }
 
-instance Morphism (GraphMorphism a b) where
+instance FinitaryCategory (GraphMorphism a b) where
     type Obj (GraphMorphism a b) = Graph a b
 
     domain = getDomain
@@ -277,7 +277,7 @@ instance Morphism (GraphMorphism a b) where
                       (codomain m2)
                       (R.compose (nodeRelation m1) (nodeRelation m2))
                       (R.compose (edgeRelation m1) (edgeRelation m2))
-    id g = GraphMorphism g g (R.id $ nodeIds g) (R.id $ edgeIds g)
+    identity g = GraphMorphism g g (R.id $ nodeIds g) (R.id $ edgeIds g)
     isMonomorphism m =
         R.isInjective (nodeRelation m) &&
         R.isInjective (edgeRelation m)

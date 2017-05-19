@@ -18,23 +18,23 @@ module TypedGraph.DPO.GraphProcess
 
 where
 
-import           Abstract.AdhesiveHLR
-import           Abstract.DPO
-import           Abstract.DPO.Process           hiding (productions)
-import           Abstract.Morphism              as M
 import           Analysis.DiagramAlgorithms
-import           Data.List                      as L hiding (union)
-import           Data.Maybe                     (fromJust, fromMaybe, isJust)
-import           Data.Set                       as S
-import           Data.Tuple                     (swap)
-import           Equivalence.EquivalenceClasses
-import           Graph.Graph                    (Graph)
-import qualified Graph.GraphMorphism            as GM
+import           Category.AdhesiveHLR
+import           Category.DPO
+import           Category.DPO.Process             hiding (productions)
+import           Category.FinitaryCategory        as FC
+import           Data.List                        as L hiding (union)
+import           Data.Maybe                       (fromJust, fromMaybe, isJust)
+import           Data.Partition
+import           Data.Set                         as S
+import           Data.Tuple                       (swap)
+import           Graph.Graph                      (Graph)
+import qualified Graph.GraphMorphism              as GM
 import           TypedGraph.DPO.GraphRule
 import           TypedGraph.DPO.OccurenceRelation
 import           TypedGraph.Graph
-import           TypedGraph.Morphism            as TGM
-import           Util.Closures                  as C
+import           TypedGraph.Morphism              as TGM
+import           Util.Closures                    as C
 import           Util.List
 
 instance GenerateProcess (TypedGraphMorphism a b) where
@@ -207,7 +207,7 @@ removeElements coreGraph elementsToRemove =
     (n,e) = S.partition isNode elementsToRemove
     nodes = S.map (\(Node x) -> x) n
     edges = S.map (\(Edge x) -> x) e
-  in S.foldr GM.removeNodeFromDomainForced (S.foldr GM.removeEdgeFromDomain (M.id coreGraph) edges) nodes
+  in S.foldr GM.removeNodeFromDomainForced (S.foldr GM.removeEdgeFromDomain (FC.identity coreGraph) edges) nodes
 
 -- use with the retyped productions
 creationAndDeletionRelation :: NamedProduction (TypedGraphMorphism a b) -> Relation
