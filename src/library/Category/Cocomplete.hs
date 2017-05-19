@@ -3,7 +3,7 @@
 A Cocomplete category is one which has all small colimits. This module provides a signature for
 such colimits and a default implementation of pushouts based on coequalizers and coproducts.
 -}
-module Abstract.Cocomplete (
+module Category.Cocomplete (
 
   Cocomplete(..)
 
@@ -11,7 +11,7 @@ module Abstract.Cocomplete (
 
 where
 
-import           Abstract.Morphism
+import           Category.Morphism
 import           Data.List.NonEmpty
 
 -- | Type class for morphisms whose category is Cocomplete.

@@ -2,9 +2,9 @@
 
 module SndOrder.Morphism.EpiPairs where
 
-import           Abstract.AdhesiveHLR
-import           Abstract.DPO
-import           Abstract.Morphism
+import           Category.AdhesiveHLR
+import           Category.DPO
+import           Category.Morphism
 import           TypedGraph.Morphism
 
 import           SndOrder.Morphism.Core

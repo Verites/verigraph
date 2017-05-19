@@ -1,5 +1,5 @@
 {-# LANGUAGE TypeFamilies #-}
-module Abstract.Morphism where
+module Category.Morphism where
 
 class (Eq m) => Morphism m where
     type Obj m :: *

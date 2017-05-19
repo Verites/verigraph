@@ -42,9 +42,9 @@ module Graph.GraphMorphism (
 
 import           Control.Arrow
 
-import           Abstract.Morphism
-import qualified Abstract.Relation as R
-import           Abstract.Valid
+import           Category.Morphism
+import qualified Category.Relation as R
+import           Category.Valid
 import           Data.Maybe        (fromMaybe, isNothing)
 import           Graph.Graph       as G
 

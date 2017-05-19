@@ -5,9 +5,9 @@ module Analysis.Processes
   , findConflictsAndDependencies
   ) where
 
-import           Abstract.AdhesiveHLR
-import           Abstract.DPO
-import           Abstract.DPO.Process
+import           Category.AdhesiveHLR
+import           Category.DPO
+import           Category.DPO.Process
 import           Analysis.DiagramAlgorithms
 import           Data.List                  (partition)
 

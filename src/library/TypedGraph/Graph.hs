@@ -13,8 +13,8 @@ module TypedGraph.Graph
   , untypedEdges
   ) where
 
-import           Abstract.Cardinality
-import           Abstract.Morphism
+import           Category.Cardinality
+import           Category.Morphism
 import           Data.Maybe           (fromMaybe)
 import           Graph.Graph          as G
 import           Graph.GraphMorphism

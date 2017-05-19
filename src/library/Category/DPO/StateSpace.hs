@@ -12,7 +12,7 @@ exploration.
 
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Abstract.DPO.StateSpace
+module Category.DPO.StateSpace
   (
   -- * State spaces
     StateSpace
@@ -50,8 +50,8 @@ import qualified Data.IntMap         as IntMap
 import           Data.Set            (Set)
 import qualified Data.Set            as Set
 
-import           Abstract.DPO        hiding (productions)
-import           Abstract.Morphism
+import           Category.DPO        hiding (productions)
+import           Category.Morphism
 import qualified Logic.Model         as Logic
 
 

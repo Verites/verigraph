@@ -18,10 +18,10 @@ module TypedGraph.DPO.GraphProcess
 
 where
 
-import           Abstract.AdhesiveHLR
-import           Abstract.DPO
-import           Abstract.DPO.Process           hiding (productions)
-import           Abstract.Morphism              as M
+import           Category.AdhesiveHLR
+import           Category.DPO
+import           Category.DPO.Process           hiding (productions)
+import           Category.Morphism              as M
 import           Analysis.DiagramAlgorithms
 import           Data.List                      as L hiding (union)
 import           Data.Maybe                     (fromJust, fromMaybe, isJust)

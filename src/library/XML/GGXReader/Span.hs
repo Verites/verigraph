@@ -1,7 +1,7 @@
 module XML.GGXReader.Span where
 
-import           Abstract.AdhesiveHLR
-import           Abstract.DPO
+import           Category.AdhesiveHLR
+import           Category.DPO
 import           Data.Maybe               (fromMaybe)
 import qualified Graph.Graph              as G
 import           Graph.GraphMorphism      as GM

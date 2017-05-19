@@ -4,10 +4,10 @@ import           Data.Monoid              ((<>))
 import           GlobalOptions
 import           Options.Applicative
 
-import           Abstract.DPO             as DPO hiding (NamedProduction)
-import           Abstract.DPO.StateSpace  as StateSpace
-import           Abstract.Morphism
-import           Abstract.Valid
+import           Category.DPO             as DPO hiding (NamedProduction)
+import           Category.DPO.StateSpace  as StateSpace
+import           Category.Morphism
+import           Category.Valid
 import qualified Image.Dot                as Dot
 import qualified Logic.Ctl                as Logic
 import qualified Logic.Model              as Logic

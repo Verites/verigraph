@@ -8,8 +8,8 @@ module XML.GGXParseOut
  , getMappings
  ) where
 
-import           Abstract.DPO
-import qualified Abstract.Morphism         as M
+import           Category.DPO
+import qualified Category.Morphism         as M
 import qualified Analysis.CriticalPairs    as CP
 import qualified Analysis.CriticalSequence as CS
 import           Data.Maybe                (fromMaybe, isJust)

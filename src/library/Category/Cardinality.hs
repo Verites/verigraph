@@ -1,4 +1,4 @@
-module Abstract.Cardinality (
+module Category.Cardinality (
 
   Cardinality(..)
 

@@ -1,4 +1,4 @@
-module Abstract.DPO.Derivation
+module Category.DPO.Derivation
 ( Derivation(..)
 , generateDerivation
 , getDObjects
@@ -9,8 +9,8 @@ module Abstract.DPO.Derivation
 
 where
 
-import           Abstract.AdhesiveHLR
-import           Abstract.DPO.Core
+import           Category.AdhesiveHLR
+import           Category.DPO.Core
 
 data Derivation m = Derivation
   { production :: Production m

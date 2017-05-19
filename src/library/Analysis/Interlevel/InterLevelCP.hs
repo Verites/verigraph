@@ -10,9 +10,9 @@ module Analysis.Interlevel.InterLevelCP
     danglingExtension
   ) where
 
-import           Abstract.AdhesiveHLR
-import           Abstract.DPO
-import           Abstract.Morphism
+import           Category.AdhesiveHLR
+import           Category.DPO
+import           Category.Morphism
 import           Data.List                (nubBy)
 import           Graph.Graph
 import           Graph.GraphMorphism      hiding (createEdgeOnCodomain, createNodeOnCodomain)

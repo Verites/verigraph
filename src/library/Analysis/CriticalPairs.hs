@@ -17,8 +17,8 @@ module Analysis.CriticalPairs
    findAllDeleteUseAndProduceDangling
    ) where
 
-import           Abstract.AdhesiveHLR       as RW
-import           Abstract.DPO               as RW hiding (calculateComatch)
+import           Category.AdhesiveHLR       as RW
+import           Category.DPO               as RW hiding (calculateComatch)
 import           Analysis.DiagramAlgorithms
 import           Analysis.EpimorphicPairs
 import           Data.Maybe                 (mapMaybe)

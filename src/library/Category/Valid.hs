@@ -1,4 +1,4 @@
-module Abstract.Valid
+module Category.Valid
   ( Valid(..)
   , ValidationResult
   , ensure

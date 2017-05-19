@@ -1,7 +1,7 @@
 module Image.Dot where
 
-import           Abstract.DPO.StateSpace
-import           Abstract.Morphism
+import           Category.DPO.StateSpace
+import           Category.Morphism
 import           Graph.Graph              hiding (Node (..))
 import           SndOrder.Morphism
 import           SndOrder.Rule

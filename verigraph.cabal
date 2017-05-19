@@ -27,17 +27,17 @@ library
                        set-monad >= 0.2,
                        split >= 0.2,
                        wl-pprint >=1.2 && <1.3
-  exposed-modules:     Abstract.AdhesiveHLR
-                       Abstract.Cardinality
-                       Abstract.Cocomplete
-                       Abstract.Complete
-                       Abstract.Constraint
-                       Abstract.DPO
-                       Abstract.DPO.Process
-                       Abstract.DPO.StateSpace
-                       Abstract.Morphism
-                       Abstract.Relation
-                       Abstract.Valid
+  exposed-modules:     Category.AdhesiveHLR
+                       Category.Cardinality
+                       Category.Cocomplete
+                       Category.Complete
+                       Category.Constraint
+                       Category.DPO
+                       Category.DPO.Process
+                       Category.DPO.StateSpace
+                       Category.Morphism
+                       Category.Relation
+                       Category.Valid
                        Analysis.EssentialCriticalPairs
                        Analysis.ConcurrentRules
                        Analysis.CriticalPairs
@@ -65,8 +65,8 @@ library
                        XML.GGXReader
                        XML.GGXWriter
   other-modules:
-                       Abstract.DPO.Core
-                       Abstract.DPO.Derivation
+                       Category.DPO.Core
+                       Category.DPO.Derivation
                        Analysis.DiagramAlgorithms
                        Analysis.EpimorphicPairs
                        Equivalence.EquivalenceClasses

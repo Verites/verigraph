@@ -12,9 +12,9 @@ module XML.GGXWriter
 import           Data.Maybe
 import           Text.XML.HXT.Core
 
-import           Abstract.AdhesiveHLR
-import           Abstract.DPO
-import           Abstract.Morphism               (codomain)
+import           Category.AdhesiveHLR
+import           Category.DPO
+import           Category.Morphism               (codomain)
 import qualified Analysis.CriticalPairs          as CP
 import qualified Analysis.CriticalSequence       as CS
 import qualified Analysis.EssentialCriticalPairs as ECP

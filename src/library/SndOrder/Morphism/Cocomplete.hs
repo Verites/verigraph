@@ -9,9 +9,9 @@ module SndOrder.Morphism.Cocomplete (
 
 ) where
 
-import           Abstract.Cocomplete
-import           Abstract.DPO
-import           Abstract.Morphism                  as M
+import           Category.Cocomplete
+import           Category.DPO
+import           Category.Morphism                  as M
 
 import           TypedGraph.Morphism
 

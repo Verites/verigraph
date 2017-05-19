@@ -5,11 +5,11 @@ module Analysis.ConcurrentRules
   maxConcurrentRules
 ) where
 
-import           Abstract.AdhesiveHLR
-import           Abstract.Cardinality
-import qualified Abstract.Cocomplete       as C
-import           Abstract.DPO
-import           Abstract.Valid
+import           Category.AdhesiveHLR
+import           Category.Cardinality
+import qualified Category.Cocomplete       as C
+import           Category.DPO
+import           Category.Valid
 import           Analysis.CriticalSequence (findTriggeredCriticalSequences,
                                             getCriticalSequenceComatches)
 import           Data.Maybe                (mapMaybe)

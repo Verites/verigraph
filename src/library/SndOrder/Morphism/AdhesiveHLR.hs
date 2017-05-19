@@ -1,9 +1,9 @@
 module SndOrder.Morphism.AdhesiveHLR where
 
-import           Abstract.AdhesiveHLR
-import           Abstract.Cocomplete
-import           Abstract.DPO
-import           Abstract.Morphism                  ()
+import           Category.AdhesiveHLR
+import           Category.Cocomplete
+import           Category.DPO
+import           Category.Morphism                  ()
 import           Graph.Graph                        as G
 import qualified Graph.GraphMorphism                as GM
 import           TypedGraph.Morphism
@@ -32,14 +32,14 @@ instance AdhesiveHLR (RuleMorphism a b) where
   calculatePushout f@(RuleMorphism _ ruleD _ _ _) g@(RuleMorphism _ ruleR _ _ _) = (f',g')
     where
       (RuleMorphism _ preRuleP f'L f'K f'R,RuleMorphism _ _ g'L g'K g'R) =
-        Abstract.Cocomplete.calculatePushout f g
+        Category.Cocomplete.calculatePushout f g
 
       ruleP = buildProduction (getLHS preRuleP) (getRHS preRuleP) nacsToAdd
 
       f' = RuleMorphism ruleR ruleP f'L f'K f'R
       g' = RuleMorphism ruleD ruleP g'L g'K g'R
 
-      transposedNACs = map (\nac -> fst (Abstract.Cocomplete.calculatePushout nac g'L)) (getNACs ruleD)
+      transposedNACs = map (\nac -> fst (Category.Cocomplete.calculatePushout nac g'L)) (getNACs ruleD)
 
       createdNACs = createStep ShiftNACs f'L (getNACs ruleR)
 

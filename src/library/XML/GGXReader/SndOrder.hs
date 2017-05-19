@@ -1,7 +1,7 @@
 module XML.GGXReader.SndOrder (instantiateSndOrderRules) where
 
-import           Abstract.DPO
-import           Abstract.Morphism
+import           Category.DPO
+import           Category.Morphism
 import qualified Graph.Graph              as G
 import           Graph.GraphMorphism      as GM
 import           SndOrder.Morphism

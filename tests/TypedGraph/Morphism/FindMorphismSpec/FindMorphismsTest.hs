@@ -1,7 +1,7 @@
 module TypedGraph.Morphism.FindMorphismSpec.FindMorphismsTest (findMorphismsTest) where
 
-import           Abstract.Morphism
-import qualified Abstract.Relation   as R
+import           Category.Morphism
+import qualified Category.Relation   as R
 import           Data.List
 import qualified Data.Map            as M
 import           Graph.Graph

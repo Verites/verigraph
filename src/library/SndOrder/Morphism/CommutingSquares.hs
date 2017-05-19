@@ -4,7 +4,7 @@ module SndOrder.Morphism.CommutingSquares (
   , commutingMorphismSameCodomain
   ) where
 
-import           Abstract.Morphism
+import           Category.Morphism
 import           TypedGraph.Morphism
 
 ---- All functions in this file search the unique morphism in some diagram.

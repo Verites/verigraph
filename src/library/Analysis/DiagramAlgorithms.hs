@@ -37,9 +37,9 @@ module Analysis.DiagramAlgorithms (
   , findAllPossibleH21
   ) where
 
-import           Abstract.AdhesiveHLR
-import           Abstract.DPO
-import           Abstract.Morphism
+import           Category.AdhesiveHLR
+import           Category.DPO
+import           Category.Morphism
 import           Control.Applicative
 import           Control.Monad
 

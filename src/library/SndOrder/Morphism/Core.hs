@@ -2,9 +2,9 @@
 
 module SndOrder.Morphism.Core where
 
-import           Abstract.DPO
-import           Abstract.Morphism
-import           Abstract.Valid
+import           Category.DPO
+import           Category.Morphism
+import           Category.Valid
 import           TypedGraph.DPO.GraphRule ()
 import           TypedGraph.Morphism
 

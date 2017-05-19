@@ -1,4 +1,4 @@
-module Abstract.Constraint
+module Category.Constraint
   ( AtomicConstraint (..)
   , buildNamedAtomicConstraint
   , satisfiesAtomicConstraint
@@ -8,8 +8,8 @@ module Abstract.Constraint
   , satisfiesAllConstraints
   ) where
 
-import           Abstract.Morphism
-import           Abstract.Valid
+import           Category.Morphism
+import           Category.Valid
 
 data AtomicConstraint m = AtomicConstraint {
         name     :: String,

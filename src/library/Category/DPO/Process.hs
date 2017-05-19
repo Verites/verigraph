@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE UndecidableInstances #-}
-module Abstract.DPO.Process
+module Category.DPO.Process
   ( Process(..)
   , GenerateProcess(..)
   , NamedRuleWithMatches
@@ -11,10 +11,10 @@ module Abstract.DPO.Process
   , eliminateSelfConflictsAndDependencies
   ) where
 
-import           Abstract.Cocomplete
-import           Abstract.DPO.Core
-import           Abstract.DPO.Derivation
-import           Abstract.Morphism
+import           Category.Cocomplete
+import           Category.DPO.Core
+import           Category.DPO.Derivation
+import           Category.Morphism
 import           Data.List.NonEmpty      (NonEmpty, fromList)
 import           Data.Maybe              (fromJust)
 import qualified Data.Set as S

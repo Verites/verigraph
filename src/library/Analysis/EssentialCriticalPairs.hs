@@ -5,9 +5,9 @@ module Analysis.EssentialCriticalPairs
    findAllEssentialProduceDangling
    ) where
 
-import           Abstract.AdhesiveHLR     as RW
-import           Abstract.DPO             as RW
-import           Abstract.Morphism
+import           Category.AdhesiveHLR     as RW
+import           Category.DPO             as RW
+import           Category.Morphism
 import           Analysis.CriticalPairs
 import           Analysis.EpimorphicPairs
 

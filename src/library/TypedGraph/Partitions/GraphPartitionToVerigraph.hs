@@ -4,7 +4,7 @@ module TypedGraph.Partitions.GraphPartitionToVerigraph (
 
 {-Converts from GraphPartition to Verigraph structures-}
 
-import           Abstract.Morphism
+import           Category.Morphism
 import qualified Graph.Graph                          as G
 import qualified Graph.GraphMorphism                  as GM
 import           TypedGraph.Graph
