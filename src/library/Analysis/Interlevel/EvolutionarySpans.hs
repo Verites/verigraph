@@ -14,7 +14,7 @@ module Analysis.Interlevel.EvolutionarySpans
 
 import           Category.AdhesiveHLR
 import           Category.DPO
-import           Category.Valid
+import           Abstract.Valid
 import           Analysis.DiagramAlgorithms
 import           SndOrder.Morphism
 import           SndOrder.Rule

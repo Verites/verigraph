@@ -2,7 +2,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Category.Relation
+module Data.Relation
     (
     -- * Types
       Relation
@@ -10,7 +10,7 @@ module Category.Relation
     , empty
     -- * Transformation
     , compose
-    , Category.Relation.id
+    , Data.Relation.id
     , inverseRelation
     , updateRelation
     , removeFromDomain

@@ -16,7 +16,7 @@ where
 
 import           Category.AdhesiveHLR
 import           Category.Morphism
-import           Category.Valid
+import           Abstract.Valid
 
 
 

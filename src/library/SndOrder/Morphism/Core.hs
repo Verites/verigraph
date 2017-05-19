@@ -4,7 +4,7 @@ module SndOrder.Morphism.Core where
 
 import           Category.DPO
 import           Category.Morphism
-import           Category.Valid
+import           Abstract.Valid
 import           TypedGraph.DPO.GraphRule ()
 import           TypedGraph.Morphism
 

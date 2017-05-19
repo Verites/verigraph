@@ -6,10 +6,10 @@ module Analysis.ConcurrentRules
 ) where
 
 import           Category.AdhesiveHLR
-import           Category.Cardinality
+import           Abstract.Cardinality
 import qualified Category.Cocomplete       as C
 import           Category.DPO
-import           Category.Valid
+import           Abstract.Valid
 import           Analysis.CriticalSequence (findTriggeredCriticalSequences,
                                             getCriticalSequenceComatches)
 import           Data.Maybe                (mapMaybe)

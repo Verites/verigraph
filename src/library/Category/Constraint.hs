@@ -9,7 +9,7 @@ module Category.Constraint
   ) where
 
 import           Category.Morphism
-import           Category.Valid
+import           Abstract.Valid
 
 data AtomicConstraint m = AtomicConstraint {
         name     :: String,

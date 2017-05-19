@@ -2,7 +2,7 @@
 module TypedGraph.Morphism.Core where
 
 import           Category.Morphism   as M
-import           Category.Valid
+import           Abstract.Valid
 import           Data.List           (nub)
 import           Data.Maybe          (fromMaybe, isJust)
 import           Graph.Graph

@@ -7,7 +7,7 @@ import           Options.Applicative
 import           Category.DPO             as DPO hiding (NamedProduction)
 import           Category.DPO.StateSpace  as StateSpace
 import           Category.Morphism
-import           Category.Valid
+import           Abstract.Valid
 import qualified Image.Dot                as Dot
 import qualified Logic.Ctl                as Logic
 import qualified Logic.Model              as Logic

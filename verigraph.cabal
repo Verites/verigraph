@@ -28,7 +28,7 @@ library
                        split >= 0.2,
                        wl-pprint >=1.2 && <1.3
   exposed-modules:     Category.AdhesiveHLR
-                       Category.Cardinality
+                       Abstract.Cardinality
                        Category.Cocomplete
                        Category.Complete
                        Category.Constraint
@@ -36,8 +36,8 @@ library
                        Category.DPO.Process
                        Category.DPO.StateSpace
                        Category.Morphism
-                       Category.Relation
-                       Category.Valid
+                       Data.Relation
+                       Abstract.Valid
                        Analysis.EssentialCriticalPairs
                        Analysis.ConcurrentRules
                        Analysis.CriticalPairs

@@ -4,7 +4,7 @@ import           Data.Maybe               (fromMaybe, mapMaybe)
 
 import           Category.AdhesiveHLR
 import           Category.DPO
-import           Category.Valid
+import           Abstract.Valid
 import           Graph.Graph              as G
 import           SndOrder.Morphism        as SO
 import           TypedGraph.DPO.GraphRule
