@@ -1,4 +1,4 @@
-module Category.Complete (
+module Abstract.Category.Complete (
 
   Complete(..)
 
@@ -6,7 +6,7 @@ module Category.Complete (
 
 where
 
-import           Category.FinitaryCategory
+import           Abstract.Category.FinitaryCategory
 import           Data.List.NonEmpty
 
 -- | Type class for morphisms whose category is Complete.

@@ -1,6 +1,6 @@
 module TypedGraph.Morphism.FindMorphismSpec.FindCospanCommuterTest (findCospanCommuterTest) where
 
-import           Category.FinitaryCategory
+import           Abstract.Category.FinitaryCategory
 import           Object.Graph
 import qualified Morphism.Graph as GM
 import           Test.Hspec

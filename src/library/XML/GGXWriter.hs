@@ -15,9 +15,9 @@ import           Text.XML.HXT.Core
 import qualified Analysis.CriticalPairs          as CP
 import qualified Analysis.CriticalSequence       as CS
 import qualified Analysis.EssentialCriticalPairs as ECP
-import           Category.AdhesiveHLR
-import           Category.DPO
-import           Category.FinitaryCategory       (codomain)
+import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category.DPO
+import           Abstract.Category.FinitaryCategory       (codomain)
 import           Data.List
 import qualified Object.Graph                     as G
 import           SndOrder.Morphism

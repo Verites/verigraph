@@ -15,8 +15,8 @@ module XML.GGXReader
    ) where
 
 import           Abstract.Valid
-import           Category.AdhesiveHLR
-import           Category.DPO
+import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category.DPO
 import qualified Data.List                as L
 import qualified Data.Map                 as M
 import           Data.Maybe               (fromJust, fromMaybe, mapMaybe)

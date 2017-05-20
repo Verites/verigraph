@@ -10,8 +10,8 @@ module TypedGraph.Morphism.Cocomplete (
 
 where
 
-import           Category.Cocomplete
-import           Category.FinitaryCategory as FC
+import           Abstract.Category.Cocomplete
+import           Abstract.Category.FinitaryCategory as FC
 import qualified Data.List.NonEmpty        as NE
 import           Data.Maybe                (fromJust)
 import           Data.Partition

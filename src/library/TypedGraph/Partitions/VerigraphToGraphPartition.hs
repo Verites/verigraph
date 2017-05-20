@@ -3,7 +3,7 @@ module TypedGraph.Partitions.VerigraphToGraphPartition (
    createSatisfyingNacsDisjointUnion
    ) where
 
-import qualified Category.FinitaryCategory            as FC
+import qualified Abstract.Category.FinitaryCategory            as FC
 import           Object.Graph                          as G
 import           Morphism.Graph                  as GM
 import           Object.TypedGraph

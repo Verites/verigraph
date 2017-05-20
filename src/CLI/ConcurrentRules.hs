@@ -8,8 +8,8 @@ import           Data.Monoid              ((<>))
 import           GlobalOptions
 
 import           Analysis.ConcurrentRules
-import           Category.AdhesiveHLR
-import           Category.DPO
+import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category.DPO
 import           Control.Monad
 import           Options.Applicative
 import           TypedGraph.DPO.GraphRule

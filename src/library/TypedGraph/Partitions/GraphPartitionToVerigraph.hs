@@ -4,7 +4,7 @@ module TypedGraph.Partitions.GraphPartitionToVerigraph
 
 {-Converts from GraphPartition to Verigraph structures-}
 -- TODO: break this module in two, one for graphs and other for typed graphs? 
-import           Category.FinitaryCategory
+import           Abstract.Category.FinitaryCategory
 import qualified Object.Graph                          as G
 import qualified Morphism.Graph                  as GM
 import           Object.TypedGraph

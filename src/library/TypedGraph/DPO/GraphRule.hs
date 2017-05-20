@@ -24,8 +24,8 @@ module TypedGraph.DPO.GraphRule (
 ) where
 
 
-import           Category.DPO              as DPO
-import           Category.FinitaryCategory as FC
+import           Abstract.Category.DPO              as DPO
+import           Abstract.Category.FinitaryCategory as FC
 import           Object.Graph               as G
 import qualified Morphism.Graph       as GM
 import           Object.TypedGraph          as GM

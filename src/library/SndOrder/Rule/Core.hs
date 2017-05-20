@@ -1,6 +1,6 @@
 module SndOrder.Rule.Core where
 
-import           Category.DPO
+import           Abstract.Category.DPO
 import           SndOrder.Morphism as SO
 
 -- | A second order rule:

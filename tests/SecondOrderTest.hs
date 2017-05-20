@@ -1,5 +1,5 @@
-import           Category.DPO
-import           Category.FinitaryCategory
+import           Abstract.Category.DPO
+import           Abstract.Category.FinitaryCategory
 import           Analysis.Interlevel.InterLevelCP
 import           Data.Maybe                       (fromMaybe)
 import           SndOrder.Morphism

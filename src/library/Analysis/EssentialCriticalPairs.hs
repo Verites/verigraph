@@ -7,9 +7,9 @@ module Analysis.EssentialCriticalPairs
 
 import           Analysis.CriticalPairs
 import           Analysis.EpimorphicPairs
-import           Category.AdhesiveHLR      as RW
-import           Category.DPO              as RW
-import           Category.FinitaryCategory
+import           Abstract.Category.AdhesiveHLR      as RW
+import           Abstract.Category.DPO              as RW
+import           Abstract.Category.FinitaryCategory
 
 ---- Essential Critical Pairs generation.
 -- Warning: this algorithms are in development.

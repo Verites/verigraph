@@ -1,4 +1,4 @@
-module Category.AdhesiveHLR.Constraint
+module Abstract.Category.AdhesiveHLR.Constraint
   ( AtomicConstraint (..)
   , buildNamedAtomicConstraint
   , satisfiesAtomicConstraint
@@ -9,7 +9,7 @@ module Category.AdhesiveHLR.Constraint
   ) where
 
 import           Abstract.Valid
-import           Category.FinitaryCategory
+import           Abstract.Category.FinitaryCategory
 
 data AtomicConstraint morph = AtomicConstraint {
         name     :: String,

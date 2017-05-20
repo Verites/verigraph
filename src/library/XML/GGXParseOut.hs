@@ -10,9 +10,9 @@ module XML.GGXParseOut
 
 import qualified Analysis.CriticalPairs    as CP
 import qualified Analysis.CriticalSequence as CS
-import           Category.DPO
-import           Category.FinitaryCategory ((<&>))
-import qualified Category.FinitaryCategory as FC hiding ((<&>))
+import           Abstract.Category.DPO
+import           Abstract.Category.FinitaryCategory ((<&>))
+import qualified Abstract.Category.FinitaryCategory as FC hiding ((<&>))
 import           Data.Maybe                (fromMaybe, isJust)
 import qualified Object.Graph               as G
 import qualified TypedGraph.DPO.GraphRule  as GR

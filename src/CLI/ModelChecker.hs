@@ -5,9 +5,9 @@ import           GlobalOptions
 import           Options.Applicative
 
 import           Abstract.Valid
-import           Category.DPO              as DPO hiding (NamedProduction)
-import           Category.DPO.StateSpace   as StateSpace
-import           Category.FinitaryCategory
+import           Abstract.Category.DPO              as DPO hiding (NamedProduction)
+import           Abstract.Category.DPO.StateSpace   as StateSpace
+import           Abstract.Category.FinitaryCategory
 import qualified Image.Dot                 as Dot
 import qualified Logic.Ctl                 as Logic
 import qualified Logic.Model               as Logic

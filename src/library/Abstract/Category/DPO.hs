@@ -4,7 +4,7 @@
 
 -- | Provides definitions for the Double-Pushout approach to
 -- High-Level Rewriting Systems.
-module Category.DPO
+module Abstract.Category.DPO
   ( Production
   , buildProduction
   , getLHS
@@ -62,9 +62,9 @@ module Category.DPO
   , nacDownwardShift
   ) where
 
-import           Category.AdhesiveHLR
-import           Category.DPO.Core
-import           Category.DPO.Derivation
+import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category.DPO.Core
+import           Abstract.Category.DPO.Derivation
 
 -- TODO: deprecate? why do we need this __here__?
 -- | Check gluing conditions and the NACs satisfaction for a pair of matches

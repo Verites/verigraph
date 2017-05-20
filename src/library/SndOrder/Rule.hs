@@ -5,8 +5,8 @@ module SndOrder.Rule (
   , applySecondOrder
   ) where
 
-import           Category.AdhesiveHLR
-import           Category.DPO
+import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category.DPO
 import           SndOrder.Rule.Core
 import           SndOrder.Rule.DPO
 import           TypedGraph.DPO.GraphRule

@@ -19,8 +19,8 @@ module Analysis.CriticalPairs
 
 import           Analysis.DiagramAlgorithms
 import           Analysis.EpimorphicPairs
-import           Category.AdhesiveHLR       as RW
-import           Category.DPO               as RW hiding (calculateComatch)
+import           Abstract.Category.AdhesiveHLR       as RW
+import           Abstract.Category.DPO               as RW hiding (calculateComatch)
 import           Data.Maybe                 (mapMaybe)
 
 -- | Data representing the type of a 'CriticalPair'

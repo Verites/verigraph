@@ -9,9 +9,9 @@ module SndOrder.Morphism.Cocomplete (
 
 ) where
 
-import           Category.Cocomplete
-import           Category.DPO
-import           Category.FinitaryCategory          as FC
+import           Abstract.Category.Cocomplete
+import           Abstract.Category.DPO
+import           Abstract.Category.FinitaryCategory          as FC
 
 import           TypedGraph.Morphism
 

@@ -3,8 +3,8 @@ module SndOrder.Rule.DPO where
 import           Data.Maybe               (fromMaybe, mapMaybe)
 
 import           Abstract.Valid
-import           Category.AdhesiveHLR
-import           Category.DPO
+import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category.DPO
 import           Object.Graph              as G
 import           SndOrder.Morphism        as SO
 import           SndOrder.Rule.Core

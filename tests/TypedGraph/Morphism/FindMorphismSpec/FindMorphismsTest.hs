@@ -1,6 +1,6 @@
 module TypedGraph.Morphism.FindMorphismSpec.FindMorphismsTest (findMorphismsTest) where
 
-import           Category.FinitaryCategory
+import           Abstract.Category.FinitaryCategory
 import qualified Data.Relation   as R
 import           Data.List
 import qualified Data.Map            as M

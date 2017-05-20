@@ -2,7 +2,8 @@
 module TypedGraph.Morphism.Core where
 
 import           Abstract.Valid
-import           Category.FinitaryCategory as FC
+import           Abstract.Category.FinitaryCategory as FC
+import           Category.Graph ()
 import           Data.List                 (nub)
 import           Data.Maybe                (fromMaybe, isJust)
 import           Object.Graph

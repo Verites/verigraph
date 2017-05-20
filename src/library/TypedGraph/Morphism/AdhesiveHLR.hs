@@ -2,8 +2,8 @@ module TypedGraph.Morphism.AdhesiveHLR where
 
 import           Data.Maybe                     (fromJust, mapMaybe)
 
-import           Category.AdhesiveHLR
-import           Category.FinitaryCategory
+import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category.FinitaryCategory
 import           Object.Graph                    as G
 import qualified Morphism.Graph            as GM
 import           TypedGraph.Morphism.Cocomplete ()

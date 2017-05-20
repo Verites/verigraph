@@ -14,8 +14,8 @@ import           Options.Applicative
 
 import           Abstract.Valid
 import           Analysis.Processes
-import           Category.DPO
-import           Category.DPO.Process             hiding (productions)
+import           Abstract.Category.DPO
+import           Abstract.Category.DPO.Process             hiding (productions)
 import           TypedGraph.DPO.GraphProcess
 import           TypedGraph.DPO.OccurenceRelation
 import qualified Object.TypedGraph                 as TG

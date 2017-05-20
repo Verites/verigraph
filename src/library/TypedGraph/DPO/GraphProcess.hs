@@ -19,10 +19,10 @@ module TypedGraph.DPO.GraphProcess
 where
 
 import           Analysis.DiagramAlgorithms
-import           Category.AdhesiveHLR
-import           Category.DPO
-import           Category.DPO.Process             hiding (productions)
-import           Category.FinitaryCategory        as FC
+import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category.DPO
+import           Abstract.Category.DPO.Process             hiding (productions)
+import           Abstract.Category.FinitaryCategory        as FC
 import           Data.List                        as L hiding (union)
 import           Data.Maybe                       (fromJust, fromMaybe, isJust)
 import           Data.Partition

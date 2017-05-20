@@ -3,8 +3,8 @@
 module SndOrder.Morphism.Core where
 
 import           Abstract.Valid
-import           Category.DPO
-import           Category.FinitaryCategory
+import           Abstract.Category.DPO
+import           Abstract.Category.FinitaryCategory
 import           TypedGraph.DPO.GraphRule  ()
 import           TypedGraph.Morphism
 

@@ -1,8 +1,8 @@
 module SndOrder.Morphism.NACmanipulation where
 
-import           Category.AdhesiveHLR
-import           Category.DPO
-import           Category.FinitaryCategory
+import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category.DPO
+import           Abstract.Category.FinitaryCategory
 import           SndOrder.Morphism.Cocomplete ()
 import           TypedGraph.Morphism
 

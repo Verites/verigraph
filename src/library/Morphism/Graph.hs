@@ -2,7 +2,7 @@
 
 module Morphism.Graph (
     -- * Types
-      GraphMorphism
+      GraphMorphism(..)
     -- * Construction
     , Morphism.Graph.empty
     , buildGraphMorphism
@@ -33,8 +33,6 @@ module Morphism.Graph (
     , applyEdgeUnsafe
     , applyEdgeId
     , applyEdgeIdUnsafe
-    , nodeRelation
-    , edgeRelation
     , orphanNodeIds
     , orphanEdgeIds
     , orphanEdges
@@ -43,28 +41,27 @@ module Morphism.Graph (
 import           Control.Arrow
 
 import           Abstract.Valid
-import           Category.FinitaryCategory
 import           Data.Maybe                (fromMaybe, isNothing)
 import qualified Data.Relation             as R
 import           Object.Graph               as G
 
 data GraphMorphism a b = GraphMorphism {
-    getDomain    :: Graph a b
-  , getCodomain  :: Graph a b
+    domainGraph    :: Graph a b
+  , codomainGraph  :: Graph a b
   , nodeRelation :: R.Relation G.NodeId
   , edgeRelation :: R.Relation G.EdgeId
 }
 
 instance Eq (GraphMorphism a b) where
-    m1 == m2 = domain m1 == domain m2 &&
-               codomain m1 == codomain m2 &&
+    m1 == m2 = domainGraph m1 == domainGraph m2 &&
+               codomainGraph m1 == codomainGraph m2 &&
                nodeRelation m1 == nodeRelation m2 &&
                edgeRelation m1 == edgeRelation m2
 
 instance Show (GraphMorphism a b) where
     show m =
-      "\nNode mappings: \n" ++ concatMap showNode (G.nodeIds $ getDomain m)
-      ++ "\nEdge mappings: \n" ++ concatMap showEdge (G.edges $ getDomain m)
+      "\nNode mappings: \n" ++ concatMap showNode (G.nodeIds $ domainGraph m)
+      ++ "\nEdge mappings: \n" ++ concatMap showEdge (G.edges $ domainGraph m)
      where
        showNode n =
          show n ++ " --> " ++ show (applyNodeId m n) ++ "\n"
@@ -84,7 +81,7 @@ orphanEdges gm = map idToEdge (R.orphans (edgeRelation gm))
     idToEdge id =
       fromMaybe
         (error "orphanEdges: EdgeId is not in graph")
-        (lookupEdge id (codomain gm))
+        (lookupEdge id (codomainGraph gm))
 
 -- | Return the orphan edgesIds in a graph morphism
 orphanEdgeIds :: GraphMorphism a b -> [G.EdgeId]
@@ -94,7 +91,7 @@ orphanEdgeIds gm = R.orphans (edgeRelation gm)
 applyNode :: GraphMorphism a b -> G.Node a -> Maybe (G.Node a)
 applyNode m ln =
     case applyNodeId m (nodeId ln) of
-        Just x  -> lookupNode x (codomain m)
+        Just x  -> lookupNode x (codomainGraph m)
         Nothing -> Nothing
 
 -- | Return the nodeId to which @ln@ gets mapped.
@@ -108,7 +105,7 @@ applyNodeId m ln =
 applyEdge :: GraphMorphism a b -> G.Edge b -> Maybe (G.Edge b)
 applyEdge m le =
     case applyEdgeId m (edgeId le) of
-        Just x  -> lookupEdge x (codomain m)
+        Just x  -> lookupEdge x (codomainGraph m)
         Nothing -> Nothing
 
 -- | Return the edgeId to which @le@ gets mapped.
@@ -155,11 +152,11 @@ invertGraphMorphism (GraphMorphism dom cod nm em) =
 
 -- | Set a new codomain.
 updateCodomain :: Graph a b -> GraphMorphism a b -> GraphMorphism a b
-updateCodomain g gm = gm { getCodomain = g }
+updateCodomain g gm = gm { codomainGraph = g }
 
 -- | Set a new domain.
 updateDomain :: Graph a b -> GraphMorphism a b -> GraphMorphism a b
-updateDomain g gm = gm { getDomain = g }
+updateDomain g gm = gm { domainGraph = g }
 
 -- | Add a mapping between both nodes into the morphism. If @ln@ is already
 -- mapped, or neither nodes are in their respective graphs, return the original
@@ -184,14 +181,14 @@ updateEdges le ge morphism@(GraphMorphism l g nm em)
 -- | Remove an edge from the domain of the morphism
 removeEdgeFromDomain :: G.EdgeId -> GraphMorphism a b -> GraphMorphism a b
 removeEdgeFromDomain e gm =
-  gm { getDomain = removeEdge e (domain gm)
+  gm { domainGraph = removeEdge e (domainGraph gm)
      , edgeRelation = R.removeFromDomain e (edgeRelation gm)
      }
 
 -- | Remove an edge from the codomain of the morphism
 removeEdgeFromCodomain :: G.EdgeId -> GraphMorphism a b -> GraphMorphism a b
 removeEdgeFromCodomain e gm =
-  gm { getCodomain = G.removeEdge e (codomain gm)
+  gm { codomainGraph = G.removeEdge e (codomainGraph gm)
      , edgeRelation = R.removeFromCodomain e (edgeRelation gm)
      }
 
@@ -200,16 +197,16 @@ removeEdgeFromCodomain e gm =
 removeNodeFromDomain :: G.NodeId -> GraphMorphism a b -> GraphMorphism a b
 removeNodeFromDomain n gm = if currentDomain == updatedDomain then gm else updatedGM
   where
-    currentDomain = domain gm
+    currentDomain = domainGraph gm
     updatedDomain = removeNode n currentDomain
-    updatedGM = gm { getDomain = updatedDomain
+    updatedGM = gm { domainGraph = updatedDomain
                    , nodeRelation = R.removeFromDomain n $ nodeRelation gm }
 
 -- | Remove a node from the domain of the morphism
 -- It does not verify if the node has incident edges, thus it may generate invalid graph morphisms.
 removeNodeFromDomainForced :: G.NodeId -> GraphMorphism a b -> GraphMorphism a b
 removeNodeFromDomainForced n gm =
-  gm { getDomain = removeNodeForced n (domain gm)
+  gm { domainGraph = removeNodeForced n (domainGraph gm)
      , nodeRelation = R.removeFromDomain n (nodeRelation gm) }
 
 -- | Remove a node from the codomain of the morphism
@@ -217,16 +214,16 @@ removeNodeFromDomainForced n gm =
 removeNodeFromCodomain :: G.NodeId -> GraphMorphism a b -> GraphMorphism a b
 removeNodeFromCodomain n gm =  if currentCodomain == updatedCodomain then gm else updatedGM
   where
-    currentCodomain = codomain gm
+    currentCodomain = codomainGraph gm
     updatedCodomain = removeNode n currentCodomain
-    updatedGM = gm { getCodomain = updatedCodomain
+    updatedGM = gm { codomainGraph = updatedCodomain
                    , nodeRelation = R.removeFromCodomain n $ nodeRelation gm }
 
 -- | Inserts nodes in a graph morphism, if the nodes do not exist, they are created
 updateNodeRelation :: G.NodeId -> G.NodeId -> GraphMorphism (Maybe a) b -> GraphMorphism (Maybe a) b
 updateNodeRelation n1 n2 gm =
-  gm { getDomain = G.insertNode n1 (domain gm)
-     , getCodomain = G.insertNode n2 (codomain gm)
+  gm { domainGraph = G.insertNode n1 (domainGraph gm)
+     , codomainGraph = G.insertNode n2 (codomainGraph gm)
      , nodeRelation = R.updateRelation n1 n2 (nodeRelation gm)
      }
 
@@ -239,7 +236,7 @@ updateEdgeRelation e1 e2 gm =
 --   It assumes s1, t1, e2 already exist, and that e1 does not exist.
 createEdgeOnDomain :: G.EdgeId -> G.NodeId -> G.NodeId -> G.EdgeId -> GraphMorphism a (Maybe b) -> GraphMorphism a (Maybe b)
 createEdgeOnDomain e1 s1 t1 e2 gm =
-  gm { getDomain = G.insertEdge e1 s1 t1 (domain gm)
+  gm { domainGraph = G.insertEdge e1 s1 t1 (domainGraph gm)
      , edgeRelation = R.updateRelation e1 e2 (edgeRelation gm)
      }
 
@@ -247,7 +244,7 @@ createEdgeOnDomain e1 s1 t1 e2 gm =
 --   It assumes that s2,t2 exist, and that e2 does not exist
 createEdgeOnCodomain :: G.EdgeId -> G.NodeId -> G.NodeId -> GraphMorphism a (Maybe b) -> GraphMorphism a (Maybe b)
 createEdgeOnCodomain e2 s2 t2 gm =
-  gm { getCodomain = G.insertEdge e2 s2 t2 (codomain gm)
+  gm { codomainGraph = G.insertEdge e2 s2 t2 (codomainGraph gm)
      , edgeRelation = R.insertOnCodomain e2 (edgeRelation gm)
      }
 
@@ -255,7 +252,7 @@ createEdgeOnCodomain e2 s2 t2 gm =
 --   It assumes s1, t1, e2 already exist, and that e1 does not exist.
 createNodeOnDomain :: G.NodeId -> G.NodeId -> GraphMorphism (Maybe a) b -> GraphMorphism (Maybe a) b
 createNodeOnDomain n1 n2 gm =
-  gm { getDomain = G.insertNode n1 (domain gm)
+  gm { domainGraph = G.insertNode n1 (domainGraph gm)
      , nodeRelation = R.updateRelation n1 n2 (nodeRelation gm)
      }
 
@@ -263,29 +260,9 @@ createNodeOnDomain n1 n2 gm =
 --   It assumes that s2,t2 exist, and that e2 does not exist
 createNodeOnCodomain :: G.NodeId -> GraphMorphism (Maybe a) b -> GraphMorphism (Maybe a) b
 createNodeOnCodomain n2 gm =
-  gm { getCodomain = G.insertNode n2 (codomain gm)
+  gm { codomainGraph = G.insertNode n2 (codomainGraph gm)
      , nodeRelation = R.insertOnCodomain n2 (nodeRelation gm)
      }
-
-instance FinitaryCategory (GraphMorphism a b) where
-    type Obj (GraphMorphism a b) = Graph a b
-
-    domain = getDomain
-    codomain = getCodomain
-    m2 <&> m1 = GraphMorphism (domain m1)
-                  (codomain m2)
-                  (R.compose (nodeRelation m1) (nodeRelation m2))
-                  (R.compose (edgeRelation m1) (edgeRelation m2))
-
-    identity g = GraphMorphism g g (R.id $ nodeIds g) (R.id $ edgeIds g)
-    isMonomorphism m =
-        R.isInjective (nodeRelation m) &&
-        R.isInjective (edgeRelation m)
-    isEpimorphism m =
-        R.isSurjective (nodeRelation m) &&
-        R.isSurjective (edgeRelation m)
-    isIsomorphism m =
-        isMonomorphism m && isEpimorphism m
 
 
 instance Valid (GraphMorphism a b) where

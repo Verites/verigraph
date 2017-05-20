@@ -1,6 +1,6 @@
 module TypedGraph.Morphism.EpiPairs where
 
-import           Category.AdhesiveHLR
+import           Abstract.Category.AdhesiveHLR
 import           Object.Graph                                     as G
 import qualified Morphism.Graph                             as GM
 import           TypedGraph.Morphism.Core

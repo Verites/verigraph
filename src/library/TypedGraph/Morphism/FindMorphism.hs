@@ -1,8 +1,8 @@
 module TypedGraph.Morphism.FindMorphism () where
 
 
-import           Category.AdhesiveHLR
-import           Category.FinitaryCategory as FC
+import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category.FinitaryCategory as FC
 import qualified Data.Relation             as R
 import           Object.Graph               as G
 import qualified Morphism.Graph       as GM
