@@ -272,11 +272,11 @@ instance FinitaryCategory (GraphMorphism a b) where
 
     domain = getDomain
     codomain = getCodomain
-    compose m1 m2 =
-        GraphMorphism (domain m1)
-                      (codomain m2)
-                      (R.compose (nodeRelation m1) (nodeRelation m2))
-                      (R.compose (edgeRelation m1) (edgeRelation m2))
+    m2 <&> m1 = GraphMorphism (domain m1)
+                  (codomain m2)
+                  (R.compose (nodeRelation m1) (nodeRelation m2))
+                  (R.compose (edgeRelation m1) (edgeRelation m2))
+
     identity g = GraphMorphism g g (R.id $ nodeIds g) (R.id $ edgeIds g)
     isMonomorphism m =
         R.isInjective (nodeRelation m) &&
@@ -286,7 +286,6 @@ instance FinitaryCategory (GraphMorphism a b) where
         R.isSurjective (edgeRelation m)
     isIsomorphism m =
         isMonomorphism m && isEpimorphism m
-
 
 
 instance Valid (GraphMorphism a b) where

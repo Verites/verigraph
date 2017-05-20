@@ -222,4 +222,4 @@ genericCommuter conf morphismOne morphismTwo = filterCommuters $
     Isomorphism -> findIsomorphisms (domain morphismOne) (domain morphismTwo)
     GenericMorphism -> findAllMorphisms (domain morphismOne) (domain morphismTwo)
   where
-    filterCommuters = filter (\x -> morphismOne == compose x morphismTwo)
+    filterCommuters = filter (\x -> morphismOne == morphismTwo <&> x)

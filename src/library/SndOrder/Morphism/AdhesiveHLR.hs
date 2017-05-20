@@ -81,8 +81,8 @@ instance AdhesiveHLR (RuleMorphism a b) where
       prebR = foldr (\n -> createNodeOnDomain n (nodeTypesInAR n) n) initBR nodesBR
       bR = foldr (\e -> createEdgeOnDomain (edgeId e) (sourceId e) (targetId e) (edgeTypesInAR (edgeId e)) (edgeId e)) prebR edgesBR
 
-      l = searchMorphism (compose bK (getLHS fA)) bL
-      r = searchMorphism (compose bK (getRHS fA)) bR
+      l = searchMorphism (getLHS fA <&> bK) bL
+      r = searchMorphism (getRHS fA <&> bK) bR
       searchMorphism a b = commutingMorphism a b a b
 
       ruleB = buildProduction l r []
@@ -111,11 +111,11 @@ instance AdhesiveHLR (RuleMorphism a b) where
        (matchK', leftK') = calculatePushoutComplement matchK leftK
        (matchR', leftR') = calculatePushoutComplement matchR leftR
        leftH = commutingMorphismSameCodomain
-             (compose leftK' (getLHS ruleG)) leftL'
-             matchK' (compose (getLHS ruleK) matchL')
+             (getLHS ruleG <&> leftK') leftL'
+             matchK' (matchL' <&> getLHS ruleK)
        rightH = commutingMorphismSameCodomain
-             (compose leftK' (getRHS ruleG)) leftR'
-             matchK' (compose (getRHS ruleK) matchR')
+             (getRHS ruleG <&> leftK') leftR'
+             matchK' (matchR' <&> getRHS ruleK)
 
        notDeletedNACs = deleteStep InitialPushouts (getNACs ruleL) (getNACs ruleG)
 
@@ -143,12 +143,12 @@ instance AdhesiveHLR (RuleMorphism a b) where
       (f'R, g'R) = calculatePullback fR gR
 
       l = commutingMorphism
-            (compose f'K (getLHS gB)) f'L
-            (compose g'K (getLHS fA)) g'L
+            (getLHS gB <&> f'K) f'L
+            (getLHS fA <&> g'K) g'L
 
       r = commutingMorphism
-            (compose f'K (getRHS gB)) f'R
-            (compose g'K (getRHS fA)) g'R
+            (getRHS gB <&> f'K) f'R
+            (getRHS fA <&> g'K) g'R
 
       x = buildProduction l r []
       f' = RuleMorphism x gB f'L f'K f'R

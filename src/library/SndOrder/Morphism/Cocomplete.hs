@@ -28,8 +28,8 @@ instance Cocomplete (RuleMorphism a b) where
       eqK = coequalizerTGM fK gK
       eqR = coequalizerTGM fR gR
 
-      l = commutingMorphismSameDomain eqK (compose (getLHS ruleB) eqL) eqK (compose (getLHS ruleB) eqL)
-      r = commutingMorphismSameDomain eqK (compose (getRHS ruleB) eqR) eqK (compose (getRHS ruleB) eqR)
+      l = commutingMorphismSameDomain eqK (eqL <&> getLHS ruleB) eqK (eqL <&> getLHS ruleB)
+      r = commutingMorphismSameDomain eqK (eqR <&> getRHS ruleB) eqK (eqR <&> getRHS ruleB)
 
       coequalizerRule = buildProduction l r []
 
@@ -41,8 +41,8 @@ instance Cocomplete (RuleMorphism a b) where
       (k1,k2) = coproductDom (getLHS rule1) (getLHS rule2)
       (r1,r2) = coproductCod (getRHS rule1) (getRHS rule2)
 
-      l = commutingMorphismSameDomain k1 (compose (getLHS rule1) l1) k2 (compose (getLHS rule2) l2)
-      r = commutingMorphismSameDomain k1 (compose (getRHS rule1) r1) k2 (compose (getRHS rule2) r2)
+      l = commutingMorphismSameDomain k1 (l1 <&> getLHS rule1) k2 (l2 <&> getLHS rule2)
+      r = commutingMorphismSameDomain k1 (r1 <&> getRHS rule1) k2 (r2 <&> getRHS rule2)
 
       coproductRule = buildProduction l r []
 

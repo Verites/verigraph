@@ -106,5 +106,5 @@ createSideRule createS k1 sideM1 create1 k2 sideM2 create2 = d
     a = createS create1 create2
     b = concatMap (\(ss1,ss2) -> sequence [[ss1],[ss2], findMonomorphisms (codomain k1) (codomain ss1)]) a
     c = map (\(x:y:z:_) -> (x,y,z)) b
-    d = filter (\(ss1,ss2,m) -> compose sideM1 ss1 == compose k1 m &&
-                                compose sideM2 ss2 == compose k2 m) c
+    d = filter (\(ss1,ss2,m) -> ss1 <&> sideM1 == m <&> k1 &&
+                                ss2 <&> sideM2 == m <&> k2) c

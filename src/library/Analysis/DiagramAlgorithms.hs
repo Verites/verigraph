@@ -67,7 +67,7 @@ getH21fromRewriting conf p1 m1 m2 = (h21,h21_e1)
     (k1,d1) = calculatePushoutComplement m1 (getLHS p1)
     (_,e1) = calculatePushout k1 (getRHS p1)
     h21 = findAllPossibleH21 conf m2 d1
-    h21_e1 = compose (head h21) e1 --h21 is unique if it exists
+    h21_e1 = e1 <&> head h21 --h21 is unique if it exists
 
 -- | Rule @p1@ is in a produce-dangling conflict with @p2@ if @p1@
 -- produces something that disables @p2@.
@@ -90,7 +90,7 @@ isDeleteForbid conf p1 p2 (m1',m2) =
     (k1,e1) = calculatePushoutComplement m1' (getRHS p1)
     h21 = findAllPossibleH21 conf m2 e1
     (_,d1) = calculatePushout k1 (getLHS p1)
-    h21_d1 = compose (head h21) d1
+    h21_d1 = d1 <&> head h21
   in validRewriting && not (null h21) && satisfiesGluingConditions conf p2 h21_d1 && not (satisfiesNACs conf p2 h21_d1)
 
 -- | Given the morphisms @m2: L2 -> G@ and @d1 : D1 -> G@, finds all possible @h21 : L2 -> D1@
@@ -135,16 +135,16 @@ produceForbidOneNac conf p1 p2 (n2,idx) = do
 
   -- Look for morphisms /h21 : L2 -> D1/
   let h21Candidates = findMorphisms' conf (domain n2) (codomain k1)
-      composeNQ21 = compose n2 q21
+      composeNQ21 = q21 <&> n2
 
-  case filter (\h21 -> compose h21 e1 == composeNQ21) h21Candidates of
+  case filter (\h21 -> e1 <&> h21 == composeNQ21) h21Candidates of
     [] ->
       -- No proper h21, so no produce-forbid conflict
       empty
 
     [h21] -> do
-      let m2 = compose h21 d1
-          m2' = compose h21 e1
+      let m2 = d1 <&> h21
+          m2' = e1 <&> h21
       guard (satisfiesRewritingConditions conf p2 m2)
 
       -- There is h21 and the match m2 is valid, so there is a conflict

@@ -25,18 +25,19 @@ instance FinitaryCategory (TypedGraphMorphism a b) where
 
     domain = getDomain
     codomain = getCodomain
-    compose t1 t2 = TypedGraphMorphism (domain t1) (codomain t2) $ compose (mapping t1) (mapping t2)
+    t2 <&> t1 = TypedGraphMorphism (domain t1) (codomain t2) $ mapping t2 <&> mapping t1
     identity t = TypedGraphMorphism t t (FC.identity $ domain t)
     isMonomorphism = isMonomorphism . mapping
     isEpimorphism = isEpimorphism . mapping
     isIsomorphism = isIsomorphism . mapping
+
 
 instance Valid (TypedGraphMorphism a b) where
     validate (TypedGraphMorphism dom cod m) =
       mconcat
         [ withContext "domain" (validate dom)
         , withContext "codomain" (validate cod)
-        , ensure (dom == compose m cod) "Morphism doesn't preserve typing"
+        , ensure (dom == cod <&> m) "Morphism doesn't preserve typing"
         ]
 
 -- | Return the nodes ids in the domain of a given @TypedGraphMorphism@
@@ -283,4 +284,4 @@ reflectIdsFromDomains (m,e) =
     initial = buildTypedGraphMorphism typedG typedG' (GM.empty (domain typedG) (domain typedG'))
 
     h' = foldr (uncurry updateEdgeRelation) (foldr (uncurry untypedUpdateNodeRelation) initial nodeRelation) edgeRelation
-   in (compose m h', compose e h')
+   in (h' <&> m, h' <&> e)

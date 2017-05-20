@@ -1,13 +1,21 @@
 {-# LANGUAGE TypeFamilies #-}
 module Category.FinitaryCategory where
 
+{- | Defines finitary categories and the basic operations they have-}
 class (Eq morph) => FinitaryCategory morph where
+    {- | Defines the object of the category in terms of its morphism -}
     type Obj morph :: *
-    -- | Apply the first argument first (compose f g = g . f)
-    compose  :: morph -> morph -> morph
-    domain   :: morph -> Obj morph
-    codomain :: morph -> Obj morph
+    {- | Morphism composition operator. Given two morphisms @f:A─>B@, and @g:B─>C@, it composes the morphisms returnig a
+          morphism @h:A->C@. The order of arguments is the same as in function composition
+          i.e.: @g \<&\> f@ = @g . f@ -}
+    (<&>)    :: morph -> morph -> morph
+    {- | Given an object @A@, it returns an identity morphism @id:A─>A@ -}
     identity :: Obj morph -> morph
+    {- | Given a morphism @f:A─>B@ it returns the object @A@-}
+    domain   :: morph -> Obj morph
+    {- | Given a morphism @f:A─>B@ it returns the object @B@-}
+    codomain :: morph -> Obj morph
+
     isMonomorphism :: morph -> Bool
     isEpimorphism  :: morph -> Bool
     isIsomorphism  :: morph -> Bool

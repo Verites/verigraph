@@ -220,8 +220,8 @@ newNacsPair sideChoose sndRule =
         nLeft = SO.ruleMorphism ruleL ruleNacLeft e mapK mapR
         nRight = SO.ruleMorphism ruleL ruleNacRight mapL mapK e
 
-        ruleNacLeft = buildProduction (compose (getLHS ruleL) e) (getRHS ruleL) []
-        ruleNacRight = buildProduction (getLHS ruleL) (compose (getRHS ruleL) e) []
+        ruleNacLeft = buildProduction (e <&> getLHS ruleL) (getRHS ruleL) []
+        ruleNacRight = buildProduction (getLHS ruleL) (e <&> getRHS ruleL) []
 
         mapL = idMap (codomain (getLHS ruleL)) (codomain (getLHS ruleL))
         mapK = idMap (domain (getLHS ruleL)) (domain (getLHS ruleL))

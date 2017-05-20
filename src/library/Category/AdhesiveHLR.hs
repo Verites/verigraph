@@ -160,7 +160,7 @@ class FinitaryCategory morph => EpiPairs morph where
   calculateCommutativeSquares inj m1 m2 = filt
     where
       allPairs = createJointlyEpimorphicPairs inj (codomain m1) (codomain m2)
-      filt = filter (\(x,y) -> compose m1 x == compose m2 y) allPairs
+      filt = filter (\(x,y) -> x <&> m1 == y <&> m2) allPairs
 
   -- Similar to calculateCommutativeSquares but indicating which morphism is injective
   calculateCommutativeSquaresAlongMonomorphism :: (morph,Bool) -> (morph,Bool) -> [(morph,morph)]

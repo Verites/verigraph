@@ -12,10 +12,10 @@ import           Data.Set                         (toList)
 import           GlobalOptions
 import           Options.Applicative
 
-import           Category.DPO
-import           Category.DPO.Process        hiding (productions)
 import           Abstract.Valid
 import           Analysis.Processes
+import           Category.DPO
+import           Category.DPO.Process             hiding (productions)
 import           TypedGraph.DPO.GraphProcess
 import           TypedGraph.DPO.OccurenceRelation
 import qualified TypedGraph.Graph                 as TG
