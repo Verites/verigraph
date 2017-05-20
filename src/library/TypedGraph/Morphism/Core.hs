@@ -6,8 +6,8 @@ import           Category.FinitaryCategory as FC
 import           Data.List                 (nub)
 import           Data.Maybe                (fromMaybe, isJust)
 import           Object.Graph
-import           Graph.GraphMorphism       (GraphMorphism)
-import qualified Graph.GraphMorphism       as GM
+import           Morphism.Graph       (GraphMorphism)
+import qualified Morphism.Graph       as GM
 import           Object.TypedGraph
 
 data TypedGraphMorphism a b = TypedGraphMorphism {

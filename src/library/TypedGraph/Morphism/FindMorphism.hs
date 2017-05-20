@@ -5,7 +5,7 @@ import           Category.AdhesiveHLR
 import           Category.FinitaryCategory as FC
 import qualified Data.Relation             as R
 import           Object.Graph               as G
-import qualified Graph.GraphMorphism       as GM
+import qualified Morphism.Graph       as GM
 import           Object.TypedGraph
 import           TypedGraph.Morphism.Core
 

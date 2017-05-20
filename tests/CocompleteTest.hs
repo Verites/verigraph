@@ -2,12 +2,9 @@
 
 import           Category.AdhesiveHLR
 import           Category.Cocomplete
-import           Category.DPO
-import           Category.FinitaryCategory
 import           Data.List.NonEmpty          (fromList)
-import           Data.Maybe                  (fromJust)
 import           Object.Graph
-import           Graph.GraphMorphism
+import           Morphism.Graph
 import           Test.HUnit
 import           TypedGraph.DPO.GraphProcess ()
 import           TypedGraph.Morphism

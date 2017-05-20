@@ -29,7 +29,7 @@ import           Data.Partition
 import           Data.Set                         as S
 import           Data.Tuple                       (swap)
 import           Object.Graph                      (Graph)
-import qualified Graph.GraphMorphism              as GM
+import qualified Morphism.Graph              as GM
 import           TypedGraph.DPO.GraphRule
 import           TypedGraph.DPO.OccurenceRelation
 import           Object.TypedGraph

@@ -3,7 +3,7 @@ module XML.GGXReader.SndOrder (instantiateSndOrderRules) where
 import           Category.DPO
 import           Category.FinitaryCategory
 import qualified Object.Graph               as G
-import           Graph.GraphMorphism       as GM
+import           Morphism.Graph       as GM
 import           SndOrder.Morphism
 import           TypedGraph.DPO.GraphRule  as GR
 import           Object.TypedGraph

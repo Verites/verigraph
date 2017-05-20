@@ -8,7 +8,7 @@ import           Test.QuickCheck.Function
 import           Category.FinitaryCategory
 import           Abstract.Valid
 import           Object.Graph
-import           Graph.GraphMorphism
+import           Morphism.Graph
 
 
 spec :: Spec

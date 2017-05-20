@@ -2,7 +2,7 @@ module TypedGraph.Morphism.FindMorphismSpec.FindCospanCommuterTest (findCospanCo
 
 import           Category.FinitaryCategory
 import           Object.Graph
-import qualified Graph.GraphMorphism as GM
+import qualified Morphism.Graph as GM
 import           Test.Hspec
 import qualified TypedGraph.Morphism as TGM
 

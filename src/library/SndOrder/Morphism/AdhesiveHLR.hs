@@ -5,7 +5,7 @@ import           Category.Cocomplete
 import           Category.DPO
 import           Category.FinitaryCategory          ()
 import           Object.Graph                        as G
-import qualified Graph.GraphMorphism                as GM
+import qualified Morphism.Graph                as GM
 import           TypedGraph.Morphism
 
 import           SndOrder.Morphism.Cocomplete       ()

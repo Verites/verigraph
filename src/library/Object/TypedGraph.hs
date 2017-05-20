@@ -17,7 +17,7 @@ import           Abstract.Cardinality
 import           Category.FinitaryCategory
 import           Data.Maybe                (fromMaybe)
 import           Object.Graph               as G
-import           Graph.GraphMorphism
+import           Morphism.Graph
 
 
 -- | A typed graph is a morphism whose codomain is the type graph.

@@ -1,12 +1,12 @@
-module TypedGraph.Partitions.GraphPartitionToVerigraph (
-   mountTypedGraphMorphisms
-   ) where
+module TypedGraph.Partitions.GraphPartitionToVerigraph
+( mountTypedGraphMorphisms
+) where
 
 {-Converts from GraphPartition to Verigraph structures-}
-
+-- TODO: break this module in two, one for graphs and other for typed graphs? 
 import           Category.FinitaryCategory
 import qualified Object.Graph                          as G
-import qualified Graph.GraphMorphism                  as GM
+import qualified Morphism.Graph                  as GM
 import           Object.TypedGraph
 import qualified TypedGraph.Morphism.Core             as TGM
 import           TypedGraph.Partitions.GraphPartition as GP

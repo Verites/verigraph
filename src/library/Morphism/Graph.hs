@@ -1,10 +1,10 @@
 {-# LANGUAGE TypeFamilies #-}
 
-module Graph.GraphMorphism (
+module Morphism.Graph (
     -- * Types
       GraphMorphism
     -- * Construction
-    , Graph.GraphMorphism.empty
+    , Morphism.Graph.empty
     , buildGraphMorphism
     , fromGraphsAndRelations
     -- * Transformation
@@ -49,11 +49,11 @@ import qualified Data.Relation             as R
 import           Object.Graph               as G
 
 data GraphMorphism a b = GraphMorphism {
-                          getDomain    :: Graph a b
-                        , getCodomain  :: Graph a b
-                        , nodeRelation :: R.Relation G.NodeId
-                        , edgeRelation :: R.Relation G.EdgeId
-                    }
+    getDomain    :: Graph a b
+  , getCodomain  :: Graph a b
+  , nodeRelation :: R.Relation G.NodeId
+  , edgeRelation :: R.Relation G.EdgeId
+}
 
 instance Eq (GraphMorphism a b) where
     m1 == m2 = domain m1 == domain m2 &&
@@ -142,7 +142,7 @@ empty gA gB = GraphMorphism gA gB (R.empty (nodeIds gA) (nodeIds gB)) (R.empty (
 buildGraphMorphism :: Graph a b -> Graph a b -> [(Int,Int)] -> [(Int,Int)] -> GraphMorphism a b
 buildGraphMorphism gA gB n = foldr (uncurry updateEdges . (EdgeId *** EdgeId)) g
     where
-        g = foldr (uncurry updateNodes . (NodeId *** NodeId)) (Graph.GraphMorphism.empty gA gB) n
+        g = foldr (uncurry updateNodes . (NodeId *** NodeId)) (Morphism.Graph.empty gA gB) n
 
 -- | Constructs a @GraphMorphism@ from two Graphs, a node relation and a edge relation.
 fromGraphsAndRelations :: Graph a b -> Graph a b -> R.Relation NodeId -> R.Relation EdgeId -> GraphMorphism a b

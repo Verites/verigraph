@@ -48,7 +48,7 @@ library
                        Analysis.Interlevel.InterLevelCP
                        Image.Dot
                        Object.Graph
-                       Graph.GraphMorphism
+                       Morphism.Graph
                        Object.Graph.QuickCheck
                        Logic.Model
                        Logic.Ctl

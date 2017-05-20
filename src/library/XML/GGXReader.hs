@@ -21,7 +21,7 @@ import qualified Data.List                as L
 import qualified Data.Map                 as M
 import           Data.Maybe               (fromJust, fromMaybe, mapMaybe)
 import qualified Object.Graph              as G
-import           Graph.GraphMorphism      as GM
+import           Morphism.Graph      as GM
 import           SndOrder.Morphism
 import           SndOrder.Rule
 import           Text.XML.HXT.Core

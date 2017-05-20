@@ -27,7 +27,7 @@ module TypedGraph.DPO.GraphRule (
 import           Category.DPO              as DPO
 import           Category.FinitaryCategory as FC
 import           Object.Graph               as G
-import qualified Graph.GraphMorphism       as GM
+import qualified Morphism.Graph       as GM
 import           Object.TypedGraph          as GM
 import           TypedGraph.Morphism       as TGM
 
@@ -105,6 +105,7 @@ nullGraphRule rule = null l && null k && null r
     k = domain $ getLHS rule
     r = codomain $ getRHS rule
 
+-- TODO: this probably shouldn't be here
 instance DPO (TypedGraphMorphism a b) where
 
   invertProduction conf rule =

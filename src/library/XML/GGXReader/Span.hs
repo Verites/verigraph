@@ -4,7 +4,7 @@ import           Category.AdhesiveHLR
 import           Category.DPO
 import           Data.Maybe               (fromMaybe)
 import qualified Object.Graph              as G
-import           Graph.GraphMorphism      as GM
+import           Morphism.Graph      as GM
 import           TypedGraph.DPO.GraphRule as GR
 import           Object.TypedGraph
 import           TypedGraph.Morphism
