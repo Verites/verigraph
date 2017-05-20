@@ -1,27 +1,27 @@
 module Main (main) where
 
-import           Data.Monoid              ((<>))
+import           Data.Monoid               ((<>))
 import           GlobalOptions
 import           Options.Applicative
 
-import           Category.DPO             as DPO hiding (NamedProduction)
-import           Category.DPO.StateSpace  as StateSpace
-import           Category.FinitaryCategory
 import           Abstract.Valid
-import qualified Image.Dot                as Dot
-import qualified Logic.Ctl                as Logic
-import qualified Logic.Model              as Logic
+import           Category.DPO              as DPO hiding (NamedProduction)
+import           Category.DPO.StateSpace   as StateSpace
+import           Category.FinitaryCategory
+import qualified Image.Dot                 as Dot
+import qualified Logic.Ctl                 as Logic
+import qualified Logic.Model               as Logic
 import           TypedGraph.DPO.GraphRule
 import           TypedGraph.Graph
 import           TypedGraph.Morphism
-import qualified XML.GGXReader            as XML
+import qualified XML.GGXReader             as XML
 
 import           Control.Monad
-import qualified Data.IntMap              as IntMap
-import qualified Data.List                as List
+import qualified Data.IntMap               as IntMap
+import qualified Data.List                 as List
 import           System.Exit
 import           System.IO
-import           Text.PrettyPrint.Leijen  (hPutDoc)
+import           Text.PrettyPrint.Leijen   (hPutDoc)
 
 
 main :: IO ()
