@@ -24,7 +24,7 @@ import           SndOrder.Morphism
 import qualified SndOrder.Rule                   as SO
 import           TypedGraph.DPO.GraphProcess     ()
 import qualified TypedGraph.DPO.GraphRule        as GR
-import           TypedGraph.Graph                (TypedGraph)
+import           Object.TypedGraph                (TypedGraph)
 import           TypedGraph.Morphism
 import           XML.GGXParseOut
 import           XML.ParsedTypes

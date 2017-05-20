@@ -18,7 +18,7 @@ import           Data.Partition
 import           Data.Set                  as DS
 import           Object.Graph               as G
 import qualified Graph.GraphMorphism       as GM
-import           TypedGraph.Graph
+import           Object.TypedGraph
 import           TypedGraph.Morphism.Core
 
 type TypedNode = (NodeId,NodeId)

@@ -8,7 +8,7 @@ import           Data.Maybe                (fromMaybe, isJust)
 import           Object.Graph
 import           Graph.GraphMorphism       (GraphMorphism)
 import qualified Graph.GraphMorphism       as GM
-import           TypedGraph.Graph
+import           Object.TypedGraph
 
 data TypedGraphMorphism a b = TypedGraphMorphism {
                               getDomain   :: TypedGraph a b

@@ -6,7 +6,7 @@ import qualified Object.Graph               as G
 import           Graph.GraphMorphism       as GM
 import           SndOrder.Morphism
 import           TypedGraph.DPO.GraphRule  as GR
-import           TypedGraph.Graph
+import           Object.TypedGraph
 import           TypedGraph.Morphism
 import           XML.GGXReader.Span
 import           XML.ParsedTypes

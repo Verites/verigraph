@@ -28,7 +28,7 @@ import           Category.DPO              as DPO
 import           Category.FinitaryCategory as FC
 import           Object.Graph               as G
 import qualified Graph.GraphMorphism       as GM
-import           TypedGraph.Graph          as GM
+import           Object.TypedGraph          as GM
 import           TypedGraph.Morphism       as TGM
 
 type GraphRule a b = Production (TypedGraphMorphism a b)

@@ -1,10 +1,10 @@
-module TypedGraph.Graph
+module Object.TypedGraph
   ( TypedGraph
   , untypedGraph
   , extractNodeType
   , extractEdgeType
   , typeGraph
-  , TypedGraph.Graph.null
+  , Object.TypedGraph.null
   , newTypedNodes
   , newTypedEdges
   , typedNodes

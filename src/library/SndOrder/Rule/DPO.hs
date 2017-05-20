@@ -9,7 +9,7 @@ import           Object.Graph              as G
 import           SndOrder.Morphism        as SO
 import           SndOrder.Rule.Core
 import           TypedGraph.DPO.GraphRule
-import           TypedGraph.Graph
+import           Object.TypedGraph
 import           TypedGraph.Morphism
 
 instance DPO (RuleMorphism a b) where

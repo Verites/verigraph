@@ -18,9 +18,9 @@ import           Graph.GraphMorphism       hiding (createEdgeOnCodomain, createN
 import           SndOrder.Morphism
 import           SndOrder.Rule
 import           TypedGraph.DPO.GraphRule
-import           TypedGraph.Graph
+import           Object.TypedGraph
 import           TypedGraph.Morphism
-import           TypedGraph.Subgraph
+import           Object.TypedGraph.Subgraph
 
 
 data InterLevelCP a b = InterLevelCP {

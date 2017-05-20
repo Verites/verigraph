@@ -1,9 +1,9 @@
-module TypedGraph.Subgraph (subgraphs, inducedSubgraphs) where
+module Object.TypedGraph.Subgraph (subgraphs, inducedSubgraphs) where
 
 import           Category.FinitaryCategory
 import           Object.Graph
 import           Graph.GraphMorphism
-import           TypedGraph.Graph
+import           Object.TypedGraph
 import           TypedGraph.Morphism       hiding (createEdgeOnDomain, createNodeOnDomain)
 
 -- | Generates all subgraphs of a typed graph.

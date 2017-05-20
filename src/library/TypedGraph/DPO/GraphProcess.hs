@@ -32,7 +32,7 @@ import           Object.Graph                      (Graph)
 import qualified Graph.GraphMorphism              as GM
 import           TypedGraph.DPO.GraphRule
 import           TypedGraph.DPO.OccurenceRelation
-import           TypedGraph.Graph
+import           Object.TypedGraph
 import           TypedGraph.Morphism              as TGM
 import           Util.Closures                    as C
 import           Util.List

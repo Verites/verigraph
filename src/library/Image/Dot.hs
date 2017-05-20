@@ -6,7 +6,7 @@ import           Object.Graph               hiding (Node (..))
 import           SndOrder.Morphism
 import           SndOrder.Rule
 import           TypedGraph.DPO.GraphRule
-import           TypedGraph.Graph
+import           Object.TypedGraph
 import           TypedGraph.Morphism
 
 import qualified Data.IntMap               as IntMap

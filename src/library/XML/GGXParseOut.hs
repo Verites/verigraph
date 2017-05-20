@@ -16,7 +16,7 @@ import qualified Category.FinitaryCategory as FC hiding ((<&>))
 import           Data.Maybe                (fromMaybe, isJust)
 import qualified Object.Graph               as G
 import qualified TypedGraph.DPO.GraphRule  as GR
-import           TypedGraph.Graph
+import           Object.TypedGraph
 import           TypedGraph.Morphism
 import           XML.ParsedTypes
 

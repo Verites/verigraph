@@ -6,7 +6,7 @@ import           Data.Maybe               (fromMaybe)
 import qualified Object.Graph              as G
 import           Graph.GraphMorphism      as GM
 import           TypedGraph.DPO.GraphRule as GR
-import           TypedGraph.Graph
+import           Object.TypedGraph
 import           TypedGraph.Morphism
 import           XML.ParsedTypes
 import           XML.Utilities

@@ -58,7 +58,7 @@ library
                        TypedGraph.DPO.GraphProcess
                        TypedGraph.DPO.GraphRule
                        TypedGraph.DPO.OccurenceRelation
-                       TypedGraph.Graph
+                       Object.TypedGraph
                        TypedGraph.Morphism
                        Util.Closures
                        Util.List
@@ -81,7 +81,7 @@ library
                        TypedGraph.Partitions.GraphPartitionToVerigraph
                        TypedGraph.Partitions.GraphPartition
                        TypedGraph.Partitions.VerigraphToGraphPartition
-                       TypedGraph.Subgraph
+                       Object.TypedGraph.Subgraph
                        SndOrder.Morphism.AdhesiveHLR
                        SndOrder.Morphism.Cocomplete
                        SndOrder.Morphism.CommutingSquares
