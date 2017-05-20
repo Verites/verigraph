@@ -19,7 +19,7 @@ import           Category.AdhesiveHLR
 import           Category.DPO
 import           Category.FinitaryCategory       (codomain)
 import           Data.List
-import qualified Graph.Graph                     as G
+import qualified Object.Graph                     as G
 import           SndOrder.Morphism
 import qualified SndOrder.Rule                   as SO
 import           TypedGraph.DPO.GraphProcess     ()

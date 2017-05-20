@@ -3,7 +3,7 @@ module XML.GGXReader.Span where
 import           Category.AdhesiveHLR
 import           Category.DPO
 import           Data.Maybe               (fromMaybe)
-import qualified Graph.Graph              as G
+import qualified Object.Graph              as G
 import           Graph.GraphMorphism      as GM
 import           TypedGraph.DPO.GraphRule as GR
 import           TypedGraph.Graph

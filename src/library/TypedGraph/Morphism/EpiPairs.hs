@@ -1,7 +1,7 @@
 module TypedGraph.Morphism.EpiPairs where
 
 import           Category.AdhesiveHLR
-import           Graph.Graph                                     as G
+import           Object.Graph                                     as G
 import qualified Graph.GraphMorphism                             as GM
 import           TypedGraph.Morphism.Core
 import           TypedGraph.Partitions.GraphPartition            (generateGraphPartitions)

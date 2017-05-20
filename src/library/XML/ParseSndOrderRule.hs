@@ -61,7 +61,7 @@ import           Data.List                 (find, groupBy, intercalate, sortBy, 
 import           Data.Maybe                (fromMaybe, mapMaybe)
 
 import           Category.FinitaryCategory
-import           Graph.Graph
+import           Object.Graph
 import           Graph.GraphMorphism       as GM
 import           TypedGraph.Morphism       as TGM
 import           Util.List

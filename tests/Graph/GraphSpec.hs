@@ -8,8 +8,8 @@ import           Test.QuickCheck
 import           Test.QuickCheck.Function
 
 import           Abstract.Valid
-import           Graph.Graph
-import           Graph.QuickCheck
+import           Object.Graph
+import           Object.Graph.QuickCheck
 
 
 spec :: Spec

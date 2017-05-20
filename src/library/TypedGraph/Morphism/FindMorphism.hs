@@ -4,7 +4,7 @@ module TypedGraph.Morphism.FindMorphism () where
 import           Category.AdhesiveHLR
 import           Category.FinitaryCategory as FC
 import qualified Data.Relation             as R
-import           Graph.Graph               as G
+import           Object.Graph               as G
 import qualified Graph.GraphMorphism       as GM
 import           TypedGraph.Graph
 import           TypedGraph.Morphism.Core

@@ -4,7 +4,7 @@ import           Data.Maybe                     (fromJust, mapMaybe)
 
 import           Category.AdhesiveHLR
 import           Category.FinitaryCategory
-import           Graph.Graph                    as G
+import           Object.Graph                    as G
 import qualified Graph.GraphMorphism            as GM
 import           TypedGraph.Morphism.Cocomplete ()
 import           TypedGraph.Morphism.Core

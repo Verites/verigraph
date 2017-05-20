@@ -5,7 +5,7 @@ import           Category.DPO
 import           Category.DPO.Process
 import           Category.FinitaryCategory
 import           Data.Maybe                  (fromJust)
-import           Graph.Graph
+import           Object.Graph
 import           Graph.GraphMorphism
 import           Test.HUnit
 import           TypedGraph.DPO.GraphProcess ()

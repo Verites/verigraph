@@ -13,7 +13,7 @@ import           Category.AdhesiveHLR
 import           Category.DPO
 import           Category.FinitaryCategory
 import           Data.List                 (nubBy)
-import           Graph.Graph
+import           Object.Graph
 import           Graph.GraphMorphism       hiding (createEdgeOnCodomain, createNodeOnCodomain)
 import           SndOrder.Morphism
 import           SndOrder.Rule

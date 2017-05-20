@@ -28,7 +28,7 @@ import           Data.Maybe                       (fromJust, fromMaybe, isJust)
 import           Data.Partition
 import           Data.Set                         as S
 import           Data.Tuple                       (swap)
-import           Graph.Graph                      (Graph)
+import           Object.Graph                      (Graph)
 import qualified Graph.GraphMorphism              as GM
 import           TypedGraph.DPO.GraphRule
 import           TypedGraph.DPO.OccurenceRelation

@@ -26,7 +26,7 @@ module TypedGraph.DPO.GraphRule (
 
 import           Category.DPO              as DPO
 import           Category.FinitaryCategory as FC
-import           Graph.Graph               as G
+import           Object.Graph               as G
 import qualified Graph.GraphMorphism       as GM
 import           TypedGraph.Graph          as GM
 import           TypedGraph.Morphism       as TGM

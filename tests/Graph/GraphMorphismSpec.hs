@@ -7,7 +7,7 @@ import           Test.QuickCheck.Function
 
 import           Category.FinitaryCategory
 import           Abstract.Valid
-import           Graph.Graph
+import           Object.Graph
 import           Graph.GraphMorphism
 
 

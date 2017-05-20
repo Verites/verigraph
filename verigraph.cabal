@@ -47,9 +47,9 @@ library
                        Analysis.Interlevel.EvolutionarySpans
                        Analysis.Interlevel.InterLevelCP
                        Image.Dot
-                       Graph.Graph
+                       Object.Graph
                        Graph.GraphMorphism
-                       Graph.QuickCheck
+                       Object.Graph.QuickCheck
                        Logic.Model
                        Logic.Ctl
                        SndOrder.Morphism

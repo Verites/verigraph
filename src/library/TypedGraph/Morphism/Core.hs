@@ -5,7 +5,7 @@ import           Abstract.Valid
 import           Category.FinitaryCategory as FC
 import           Data.List                 (nub)
 import           Data.Maybe                (fromMaybe, isJust)
-import           Graph.Graph
+import           Object.Graph
 import           Graph.GraphMorphism       (GraphMorphism)
 import qualified Graph.GraphMorphism       as GM
 import           TypedGraph.Graph

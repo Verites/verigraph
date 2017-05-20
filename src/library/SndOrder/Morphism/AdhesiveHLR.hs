@@ -4,7 +4,7 @@ import           Category.AdhesiveHLR
 import           Category.Cocomplete
 import           Category.DPO
 import           Category.FinitaryCategory          ()
-import           Graph.Graph                        as G
+import           Object.Graph                        as G
 import qualified Graph.GraphMorphism                as GM
 import           TypedGraph.Morphism
 

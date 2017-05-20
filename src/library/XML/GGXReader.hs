@@ -20,7 +20,7 @@ import           Category.DPO
 import qualified Data.List                as L
 import qualified Data.Map                 as M
 import           Data.Maybe               (fromJust, fromMaybe, mapMaybe)
-import qualified Graph.Graph              as G
+import qualified Object.Graph              as G
 import           Graph.GraphMorphism      as GM
 import           SndOrder.Morphism
 import           SndOrder.Rule

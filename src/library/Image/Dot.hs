@@ -2,7 +2,7 @@ module Image.Dot where
 
 import           Category.DPO.StateSpace
 import           Category.FinitaryCategory
-import           Graph.Graph               hiding (Node (..))
+import           Object.Graph               hiding (Node (..))
 import           SndOrder.Morphism
 import           SndOrder.Rule
 import           TypedGraph.DPO.GraphRule

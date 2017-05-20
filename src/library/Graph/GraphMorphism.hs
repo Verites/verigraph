@@ -46,7 +46,7 @@ import           Abstract.Valid
 import           Category.FinitaryCategory
 import           Data.Maybe                (fromMaybe, isNothing)
 import qualified Data.Relation             as R
-import           Graph.Graph               as G
+import           Object.Graph               as G
 
 data GraphMorphism a b = GraphMorphism {
                           getDomain    :: Graph a b

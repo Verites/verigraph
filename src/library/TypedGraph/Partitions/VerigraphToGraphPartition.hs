@@ -4,7 +4,7 @@ module TypedGraph.Partitions.VerigraphToGraphPartition (
    ) where
 
 import qualified Category.FinitaryCategory            as FC
-import           Graph.Graph                          as G
+import           Object.Graph                          as G
 import           Graph.GraphMorphism                  as GM
 import           TypedGraph.Graph
 import           TypedGraph.Morphism.Core             as TGM

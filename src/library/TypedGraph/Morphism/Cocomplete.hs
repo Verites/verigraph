@@ -16,7 +16,7 @@ import qualified Data.List.NonEmpty        as NE
 import           Data.Maybe                (fromJust)
 import           Data.Partition
 import           Data.Set                  as DS
-import           Graph.Graph               as G
+import           Object.Graph               as G
 import qualified Graph.GraphMorphism       as GM
 import           TypedGraph.Graph
 import           TypedGraph.Morphism.Core

@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -fno-warn-missing-fields #-}
-
 module XML.Formulas
 ( Formula(..)
 ,  parseFormula
