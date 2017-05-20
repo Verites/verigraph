@@ -37,7 +37,7 @@ verifyIsoBetweenMorphisms n n' = not $ Prelude.null comb
 
     findIsoDom = findIso domain n n'
     findIsoCod = findIso codomain n n'
-    comb = [(d,c) | d <- findIsoDom, c <- findIsoCod, compose d n' == compose n c]
+    comb = [(d,c) | d <- findIsoDom, c <- findIsoCod, n' <&> d == c <&> n]
 
 -- | Auxiliar structure and function to create first-order NACs
 data CreateScheme = DisableCreate | Pushout | ShiftNACs

@@ -76,7 +76,7 @@ class (DPO morph) => GenerateProcess morph where
         gs = allObjectsCoproduct ds
         (h1,h2,h3) = generateMorphismFamilies ds fs gs
         coEq = calculateNCoequalizer $ fromList [h1,h2,h3]
-        hs = reduce $ map (`compose` coEq) gs
+        hs = reduce $ map (coEq <&> ) gs
      in Process (zipWith (curry typing) ds hs) (codomain coEq)
 
   calculateRulesColimit :: RuleSequence morph -> [NamedRuleWithMatches morph]
@@ -92,19 +92,19 @@ class (DPO morph) => GenerateProcess morph where
       h2 = h g2s
       h3 = h $ zipWith compose (getRights rs) g3s
       coEq = calculateNCoequalizer $ fromList [h1,h2,h3]
-      hm = map (`compose` coEq) gs
+      hm = map (coEq <&> ) gs
       hs1 = split hm -- colimit of the rules themselves
 
 
       -- colimit (based on coequalizers) with object flows
       partial = zip ruleNames hs1
-      leftIOs = map (\o -> compose (snd $ spanMapping o) (fst' $ fromJust (lookup (consumer o) partial))) os
-      rightIOs = map (\o -> compose (fst $ spanMapping o) (thd' $ fromJust (lookup (producer o) partial))) os
+      leftIOs  = map (\o -> fst' (fromJust (lookup (consumer o) partial)) <&> snd (spanMapping o)) os
+      rightIOs = map (\o -> thd' (fromJust (lookup (producer o) partial)) <&> fst (spanMapping o)) os
       objCop = objectFlowCoproduct os
       leftFamily = induceSpanMorphism objCop leftIOs
       rightFamily = induceSpanMorphism objCop rightIOs
       coreGraphMorphism = calculateCoequalizer leftFamily rightFamily
-      hs2 = split $ map (`compose` coreGraphMorphism) hm
+      hs2 = split $ map (coreGraphMorphism <&>) hm
     in if null os then zip3 ruleNames rs hs1 else zip3 ruleNames rs hs2
 
   generateGraphProcess :: RuleSequence morph -> [(String, Production morph)]
@@ -156,6 +156,8 @@ snd' (_,b,_) = b
 
 thd' :: (a,b,c) -> c
 thd' (_,_,c) = c
+
+compose a b = b <&> a
 
 generateMorphismFamilies :: (DPO morph) => [Derivation morph] -> [morph] -> [morph] -> (morph,morph,morph)
 generateMorphismFamilies ds fs gs=

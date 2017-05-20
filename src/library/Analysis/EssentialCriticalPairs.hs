@@ -56,7 +56,7 @@ findPotentialEssentialCPs conf p1 p2 = satisfyingPairs
       map
         (\(e1,e2) ->
           let (m1,d1') = calculatePushout e1 c
-              m2 = compose e2 d1'
+              m2 = d1' <&> e2
            in (l1', c, m1, m2)
         )
       pairs
@@ -64,15 +64,15 @@ findPotentialEssentialCPs conf p1 p2 = satisfyingPairs
 
 -- | A pair of monomorphic matches (with precalcultated initial pushout (l1',c) elements)
 -- is an essential delete use when the
--- pullback of the compose of the c (from the initial pushout) with m1
+-- pullback of the composition of the c (from the initial pushout) with m1
 -- and m2 is a pushout (guaranteed by the construction of 'findPotentialEssentialCPs')
 -- and does not exist morphism from S1 to B that commutes.
 isEssentialDeleteUse :: DPO morph => MorphismsConfig -> (morph,morph, morph,morph) -> Bool
 isEssentialDeleteUse conf (l1',c,m1,m2) = null commuting
   where
-    (_,o1) = calculatePullback (compose c m1) m2
+    (_,o1) = calculatePullback (m1 <&> c) m2
     alls1 = findMorphismsFromDomains conf o1 l1'
-    commuting = filter (\s1 -> compose s1 l1' == o1) alls1
+    commuting = filter (\s1 -> l1' <&> s1 == o1) alls1
 
 findMorphismsFromDomains :: FindMorphism morph => MorphismsConfig -> morph -> morph -> [morph]
 findMorphismsFromDomains conf  a b =

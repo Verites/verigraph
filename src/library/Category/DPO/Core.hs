@@ -204,7 +204,7 @@ satisfiesSingleNac conf match nac =
           PartiallyMonomorphicNAC ->
             partialInjectiveMatches nac match
       commutes nacMatch =
-        compose nac nacMatch == match
+        nacMatch <&> nac == match
   in not $ any commutes nacMatches
 
 -- | Given a match and a production, calculate the calculateComatch for the

@@ -35,4 +35,4 @@ instance EpiPairs (TypedGraphMorphism a b) where
       codomain2 = codomain m2
       allPairs = map (mountTypedGraphMorphisms codomain1 codomain2)
                      (generateGraphPartitions (createDisjointUnion (codomain1,inj1) (codomain2,inj2)))
-      commutativePairs = filter (\(x,y) -> compose m1 x == compose m2 y) allPairs
+      commutativePairs = filter (\(x,y) -> x <&> m1 == y <&> m2) allPairs

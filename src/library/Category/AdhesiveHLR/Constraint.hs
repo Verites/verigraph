@@ -36,8 +36,8 @@ satisfiesAtomicConstraint object constraint = Prelude.null ps || allPremisesAreS
     ps = findMonomorphisms (premise constraint) object
     qs = findMonomorphisms (conclusion constraint) object
     a = morphism constraint
-    positiveSatisfaction = all (\p ->       any (\q -> compose a q == p) qs) ps
-    negativeSatisfaction = all (\p -> not $ any (\q -> compose a q == p) qs) ps
+    positiveSatisfaction = all (\p ->       any (\q -> q <&> a == p) qs) ps
+    negativeSatisfaction = all (\p -> not $ any (\q -> q <&> a == p) qs) ps
     allPremisesAreSatisfied = if positive constraint then positiveSatisfaction else negativeSatisfaction
 
 -- | Given an object @G@ and a list of AtomicConstraints @a : P -> C@, check whether @G@ satisfies the all them

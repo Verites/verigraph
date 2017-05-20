@@ -36,12 +36,12 @@ cond2 p1 p2 (m1,m2) = Prelude.null (findCospanCommuter Isomorphism k1k2ToG l1l2T
   where
     (_,pb1) = calculatePullback m1 m2
 
-    a1 = compose (getLHS p1) m1
-    a2 = compose (getLHS p2) m2
+    a1 = m1 <&> getLHS p1
+    a2 = m2 <&> getLHS p2
     (_,pb2) = calculatePullback a1 a2
 
-    k1k2ToG = compose pb2 a1
-    l1l2ToG = compose pb1 m1
+    k1k2ToG = a1 <&> pb2
+    l1l2ToG = m1 <&> pb1
 
 -- | Checks independence between transformations via 3 pullbacks
 cond1 :: (AdhesiveHLR morph, FindMorphism morph) => Production morph -> Production morph -> (morph,morph) -> Bool

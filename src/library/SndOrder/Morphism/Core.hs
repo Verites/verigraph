@@ -54,13 +54,11 @@ instance FinitaryCategory (RuleMorphism a b) where
 
     domain = rmDomain
     codomain = rmCodomain
-
-    compose t1 t2 =
-        RuleMorphism (domain t1)
-                     (codomain t2)
-                     (compose (mappingLeft t1) (mappingLeft t2))
-                     (compose (mappingInterface t1) (mappingInterface t2))
-                     (compose (mappingRight t1) (mappingRight t2))
+    t2 <&> t1 = RuleMorphism (domain t1)
+                 (codomain t2)
+                 (mappingLeft t2 <&> mappingLeft t1)
+                 (mappingInterface t2 <&> mappingInterface t1)
+                 (mappingRight t2 <&> mappingRight t1)
 
     identity t = RuleMorphism t t
              (idMap (codomain (getLHS t)) (codomain (getLHS t)))
@@ -81,8 +79,8 @@ instance FinitaryCategory (RuleMorphism a b) where
       isIsomorphism mapL &&
       isIsomorphism mapK &&
       isIsomorphism mapR &&
-      compose (getLHS dom) mapL == compose mapK (getLHS cod) &&
-      compose (getRHS dom) mapR == compose mapK (getRHS cod)
+      mapL <&> getLHS dom == getLHS cod <&> mapK &&
+      mapR <&> getRHS dom == getRHS cod <&> mapK
 
 instance Valid (RuleMorphism a b) where
     validate (RuleMorphism dom cod mapL mapK mapR) =
@@ -92,8 +90,8 @@ instance Valid (RuleMorphism a b) where
         , withContext "left-hand graph morphism" (validate mapL)
         , withContext "interface graph morphism" (validate mapK)
         , withContext "right-hand graph morphism" (validate mapR)
-        , ensure (compose mapK (getLHS cod) == compose (getLHS dom) mapL) "Left square doesn't commute"
-        , ensure (compose mapK (getRHS cod) == compose (getRHS dom) mapR) "Right square doesn't commute"
+        , ensure (getLHS cod <&> mapK == mapL <&> getLHS dom) "Left square doesn't commute"
+        , ensure (getRHS cod <&> mapK == mapR <&> getRHS dom) "Right square doesn't commute"
         ]
 
 satisfiesNACRewriting :: DPO morph => morph -> morph -> Bool

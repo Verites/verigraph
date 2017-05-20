@@ -41,7 +41,7 @@ commutingMorphism :: TypedGraphMorphism a b -> TypedGraphMorphism a b
 commutingMorphism a1 b1 a2 b2 = buildTypedGraphMorphism (domain a1) (domain b1) select
   where
     mats = findMonomorphisms (domain a1) (domain b1)
-    filt = filter (\m -> compose m b1 == a1 && compose m b2 == a2) mats
+    filt = filter (\m -> b1 <&> m == a1 && b2 <&> m == a2) mats
     select = mapping $ output "commutingMorphism" filt
 
 -- | Given the morphisms /k1 : X -> Y/, /s1 : X -> Z/,
@@ -63,7 +63,7 @@ commutingMorphismSameDomain :: TypedGraphMorphism a b -> TypedGraphMorphism a b
 commutingMorphismSameDomain k1 s1 k2 s2 = buildTypedGraphMorphism (codomain k1) (codomain s1) select
   where
     mats = findMonomorphisms (codomain k1) (codomain s1)
-    filt = filter (\m -> compose k1 m == s1 && compose k2 m == s2) mats
+    filt = filter (\m -> m <&> k1 == s1 && m <&> k2 == s2) mats
     select = mapping $ output "commutingMorphismSameDomain" filt
 
 -- | Given the morphisms /k1 : Y -> X/, /s1 : Z -> X/,
@@ -85,5 +85,5 @@ commutingMorphismSameCodomain :: TypedGraphMorphism a b -> TypedGraphMorphism a 
 commutingMorphismSameCodomain k1 s1 k2 s2 = buildTypedGraphMorphism (domain k1) (domain s1) select
   where
     mats = findMonomorphisms (domain k1) (domain s1)
-    filt = filter (\m -> compose m s1 == k1 && compose k2 m == s2) mats
+    filt = filter (\m -> s1 <&> m == k1 && m <&> k2 == s2) mats
     select = mapping $ output "commutingMorphismSameCodomain" filt

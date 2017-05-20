@@ -11,7 +11,8 @@ module XML.GGXParseOut
 import qualified Analysis.CriticalPairs    as CP
 import qualified Analysis.CriticalSequence as CS
 import           Category.DPO
-import qualified Category.FinitaryCategory as FC
+import           Category.FinitaryCategory ((<&>))
+import qualified Category.FinitaryCategory as FC hiding ((<&>))
 import           Data.Maybe                (fromMaybe, isJust)
 import qualified Graph.Graph               as G
 import qualified TypedGraph.DPO.GraphRule  as GR
@@ -94,7 +95,7 @@ getMappings rule = nodesMorph ++ edgesMorph
   where
     no = Nothing
     invL = invert (GR.getLHS rule)
-    lr = FC.compose invL (GR.getRHS rule)
+    lr = (GR.getRHS rule) <&> invL
     nodeMap = applyNodeIdUnsafe lr
     nodes = filter (isJust . applyNodeId lr) (nodeIdsFromDomain lr)
     nodesMorph = map (\n -> ("N" ++ show (nodeMap n), no, "N" ++ show n)) nodes

@@ -1,7 +1,6 @@
 {-|
 Module      : InterLevelCP
 Description : Implements the inter-level critical pairs
-Stability   : development
 -}
 
 module Analysis.Interlevel.InterLevelCP
@@ -66,8 +65,8 @@ interLevelConflictOneMatch conf sndRule match = m0s
     fl = mappingLeft l'
     gl = mappingLeft r'
 
-    danglingExtFl = compose fl (danglingExtension bigL)
-    danglingExtGl = compose gl (danglingExtension bigL'')
+    danglingExtFl = danglingExtension bigL <&> fl
+    danglingExtGl = danglingExtension bigL'' <&> gl
 
     relevantGraphs = map codomain axs
     axs = relevantMatches conf danglingExtFl danglingExtGl
@@ -95,7 +94,7 @@ ilCP conf fl gl p'' m0 = Prelude.null validM0''-- or all (==False) (map (\m'' ->
     matchesM0'' = findApplicableMatches conf p'' (codomain m0)
     validMatch = satisfiesRewritingConditions conf p''
 
-    commutes m0'' = compose fl m0 == compose gl m0''
+    commutes m0'' = m0 <&> fl == m0'' <&> gl
 
     --paper definition
     --validM0'' = filter (\m0'' -> not ((validMatch m0'') && (commutes m0''))) matchesM0''
