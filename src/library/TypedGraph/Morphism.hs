@@ -41,7 +41,7 @@ module TypedGraph.Morphism (
     , reflectIdsFromDomains
 ) where
 
-import           TypedGraph.Morphism.AdhesiveHLR  (isDeleted)
+import           Category.TypedGraph.AdhesiveHLR  (isDeleted)
 import           Category.TypedGraph.Cocomplete   ()
 import           Data.TypedGraph.Morphism
 import           TypedGraph.Morphism.EpiPairs     ()

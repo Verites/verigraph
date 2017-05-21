@@ -1,4 +1,4 @@
-module TypedGraph.Morphism.AdhesiveHLR where
+module Category.TypedGraph.AdhesiveHLR where
 
 import           Data.Maybe                     (fromJust, mapMaybe)
 
