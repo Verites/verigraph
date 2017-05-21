@@ -48,9 +48,9 @@ library
                        Category.Graph
                        Data.Relation
                        Image.Dot
-                       Object.Graph
-                       Object.Graph.QuickCheck
-                       Object.TypedGraph
+                       Data.Graphs
+                       Data.Graphs.QuickCheck
+                       Data.TypedGraph
                        Morphism.Graph
                        Logic.Model
                        Logic.Ctl
@@ -82,7 +82,7 @@ library
                        TypedGraph.Partitions.GraphPartitionToVerigraph
                        TypedGraph.Partitions.GraphPartition
                        TypedGraph.Partitions.VerigraphToGraphPartition
-                       Object.TypedGraph.Subgraph
+                       Data.TypedGraph.Subgraph
                        SndOrder.Morphism.AdhesiveHLR
                        SndOrder.Morphism.Cocomplete
                        SndOrder.Morphism.CommutingSquares

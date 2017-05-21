@@ -2,11 +2,11 @@ module XML.GGXReader.SndOrder (instantiateSndOrderRules) where
 
 import           Abstract.Category.DPO
 import           Abstract.Category.FinitaryCategory
-import qualified Object.Graph               as G
+import qualified Data.Graphs               as G
 import           Morphism.Graph       as GM
 import           SndOrder.Morphism
 import           TypedGraph.DPO.GraphRule  as GR
-import           Object.TypedGraph
+import           Data.TypedGraph
 import           TypedGraph.Morphism
 import           XML.GGXReader.Span
 import           XML.ParsedTypes

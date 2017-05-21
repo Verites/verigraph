@@ -5,7 +5,7 @@ import           Data.Maybe                       (fromMaybe)
 import           SndOrder.Morphism
 import           SndOrder.Morphism.NACmanipulation
 import           Test.HUnit
-import           Object.TypedGraph
+import           Data.TypedGraph
 import           TypedGraph.Morphism
 import           Utils
 import           Util.List

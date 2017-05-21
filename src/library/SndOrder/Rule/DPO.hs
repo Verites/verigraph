@@ -5,11 +5,11 @@ import           Data.Maybe               (fromMaybe, mapMaybe)
 import           Abstract.Valid
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.DPO
-import           Object.Graph              as G
+import           Data.Graphs              as G
 import           SndOrder.Morphism        as SO
 import           SndOrder.Rule.Core
 import           TypedGraph.DPO.GraphRule
-import           Object.TypedGraph
+import           Data.TypedGraph
 import           TypedGraph.Morphism
 
 instance DPO (RuleMorphism a b) where

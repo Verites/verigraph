@@ -43,7 +43,7 @@ import           Control.Arrow
 import           Abstract.Valid
 import           Data.Maybe                (fromMaybe, isNothing)
 import qualified Data.Relation             as R
-import           Object.Graph               as G
+import           Data.Graphs               as G
 
 data GraphMorphism a b = GraphMorphism {
     domainGraph    :: Graph a b

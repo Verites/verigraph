@@ -3,7 +3,7 @@
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.Cocomplete
 import           Data.List.NonEmpty          (fromList)
-import           Object.Graph
+import           Data.Graphs
 import           Morphism.Graph
 import           Test.HUnit
 import           TypedGraph.DPO.GraphProcess ()

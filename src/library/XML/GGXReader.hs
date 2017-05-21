@@ -20,13 +20,13 @@ import           Abstract.Category.DPO
 import qualified Data.List                as L
 import qualified Data.Map                 as M
 import           Data.Maybe               (fromJust, fromMaybe, mapMaybe)
-import qualified Object.Graph              as G
+import qualified Data.Graphs              as G
 import           Morphism.Graph      as GM
 import           SndOrder.Morphism
 import           SndOrder.Rule
 import           Text.XML.HXT.Core
 import           TypedGraph.DPO.GraphRule as GR
-import           Object.TypedGraph
+import           Data.TypedGraph
 import           TypedGraph.Morphism
 import qualified XML.Formulas             as F
 import           XML.GGXParseIn

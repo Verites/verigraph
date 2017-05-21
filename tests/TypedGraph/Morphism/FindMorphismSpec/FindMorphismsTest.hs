@@ -4,7 +4,7 @@ import           Abstract.Category.FinitaryCategory
 import qualified Data.Relation   as R
 import           Data.List
 import qualified Data.Map            as M
-import           Object.Graph
+import           Data.Graphs
 import qualified Morphism.Graph as GM
 import           Test.Hspec
 import qualified TypedGraph.Morphism as TGM

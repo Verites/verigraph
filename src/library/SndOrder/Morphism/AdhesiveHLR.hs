@@ -4,7 +4,7 @@ import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.Cocomplete
 import           Abstract.Category.DPO
 import           Abstract.Category.FinitaryCategory          ()
-import           Object.Graph                        as G
+import           Data.Graphs                        as G
 import qualified Morphism.Graph                as GM
 import           TypedGraph.Morphism
 

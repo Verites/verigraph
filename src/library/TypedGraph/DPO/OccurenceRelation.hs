@@ -28,7 +28,7 @@ where
 import           Data.Maybe     (isJust, isNothing)
 import           Data.Partition
 import           Data.Set       as S
-import           Object.Graph    (EdgeId, NodeId)
+import           Data.Graphs    (EdgeId, NodeId)
 import           Util.Closures  as C
 
 data RelationItem = Node NodeId

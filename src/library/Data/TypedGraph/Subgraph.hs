@@ -1,9 +1,9 @@
-module Object.TypedGraph.Subgraph (subgraphs, inducedSubgraphs) where
+module Data.TypedGraph.Subgraph (subgraphs, inducedSubgraphs) where
 
 import           Abstract.Category.FinitaryCategory
-import           Object.Graph
+import           Data.Graphs
 import           Morphism.Graph
-import           Object.TypedGraph
+import           Data.TypedGraph
 import           TypedGraph.Morphism       hiding (createEdgeOnDomain, createNodeOnDomain)
 
 -- | Generates all subgraphs of a typed graph.
@@ -11,7 +11,7 @@ subgraphs :: TypedGraph a b -> [TypedGraph a b]
 subgraphs g = subEdges
   where
     graph = domain g
-    emptyGraph = Morphism.Graph.empty Object.Graph.empty (codomain g)
+    emptyGraph = Morphism.Graph.empty Data.Graphs.empty (codomain g)
 
     listNodesToAdd = [(n, extractNodeType g n) | n <- nodeIds graph]
 

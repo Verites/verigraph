@@ -1,10 +1,10 @@
-module Object.TypedGraph
+module Data.TypedGraph
   ( TypedGraph
   , untypedGraph
   , extractNodeType
   , extractEdgeType
   , typeGraph
-  , Object.TypedGraph.null
+  , Data.TypedGraph.null
   , newTypedNodes
   , newTypedEdges
   , typedNodes
@@ -16,7 +16,7 @@ module Object.TypedGraph
 import           Abstract.Cardinality
 import           Abstract.Category.FinitaryCategory
 import           Data.Maybe                (fromMaybe)
-import           Object.Graph               as G
+import           Data.Graphs               as G
 import           Morphism.Graph
 
 

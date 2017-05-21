@@ -2,11 +2,11 @@ module Image.Dot where
 
 import           Abstract.Category.DPO.StateSpace
 import           Abstract.Category.FinitaryCategory
-import           Object.Graph               hiding (Node (..))
+import           Data.Graphs               hiding (Node (..))
 import           SndOrder.Morphism
 import           SndOrder.Rule
 import           TypedGraph.DPO.GraphRule
-import           Object.TypedGraph
+import           Data.TypedGraph
 import           TypedGraph.Morphism
 
 import qualified Data.IntMap               as IntMap

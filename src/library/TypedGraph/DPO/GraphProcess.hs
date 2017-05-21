@@ -28,11 +28,11 @@ import           Data.Maybe                       (fromJust, fromMaybe, isJust)
 import           Data.Partition
 import           Data.Set                         as S
 import           Data.Tuple                       (swap)
-import           Object.Graph                      (Graph)
+import           Data.Graphs                      (Graph)
 import qualified Morphism.Graph              as GM
 import           TypedGraph.DPO.GraphRule
 import           TypedGraph.DPO.OccurenceRelation
-import           Object.TypedGraph
+import           Data.TypedGraph
 import           TypedGraph.Morphism              as TGM
 import           Util.Closures                    as C
 import           Util.List

@@ -1,6 +1,6 @@
-module Object.Graph.QuickCheck where
+module Data.Graphs.QuickCheck where
 
-import           Object.Graph
+import           Data.Graphs
 
 import           Test.QuickCheck.Arbitrary
 import           Test.QuickCheck.Gen

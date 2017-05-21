@@ -1,3 +1,4 @@
+
 module ApplySndOrderRules
   ( Options
   , options
@@ -7,7 +8,7 @@ module ApplySndOrderRules
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.DPO
 import           Control.Monad            (when)
-import           Object.Graph              (Graph)
+import           Data.Graphs              (Graph)
 import qualified SndOrder.Rule            as SO
 import qualified TypedGraph.DPO.GraphRule as GR
 import           TypedGraph.Morphism

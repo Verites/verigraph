@@ -4,9 +4,9 @@ module TypedGraph.Partitions.VerigraphToGraphPartition (
    ) where
 
 import qualified Abstract.Category.FinitaryCategory            as FC
-import           Object.Graph                          as G
+import           Data.Graphs                          as G
 import           Morphism.Graph                  as GM
-import           Object.TypedGraph
+import           Data.TypedGraph
 import           TypedGraph.Morphism.Core             as TGM
 import qualified TypedGraph.Partitions.GraphPartition as GP
 

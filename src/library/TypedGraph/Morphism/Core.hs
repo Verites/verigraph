@@ -6,10 +6,10 @@ import           Abstract.Category.FinitaryCategory as FC
 import           Category.Graph ()
 import           Data.List                 (nub)
 import           Data.Maybe                (fromMaybe, isJust)
-import           Object.Graph
+import           Data.Graphs
 import           Morphism.Graph       (GraphMorphism)
 import qualified Morphism.Graph       as GM
-import           Object.TypedGraph
+import           Data.TypedGraph
 
 data TypedGraphMorphism a b = TypedGraphMorphism {
                               getDomain   :: TypedGraph a b

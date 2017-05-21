@@ -16,9 +16,9 @@ import qualified Data.List.NonEmpty        as NE
 import           Data.Maybe                (fromJust)
 import           Data.Partition
 import           Data.Set                  as DS
-import           Object.Graph               as G
+import           Data.Graphs               as G
 import qualified Morphism.Graph       as GM
-import           Object.TypedGraph
+import           Data.TypedGraph
 import           TypedGraph.Morphism.Core
 
 type TypedNode = (NodeId,NodeId)

@@ -26,9 +26,9 @@ module TypedGraph.DPO.GraphRule (
 
 import           Abstract.Category.DPO              as DPO
 import           Abstract.Category.FinitaryCategory as FC
-import           Object.Graph               as G
+import           Data.Graphs               as G
 import qualified Morphism.Graph       as GM
-import           Object.TypedGraph          as GM
+import           Data.TypedGraph          as GM
 import           TypedGraph.Morphism       as TGM
 
 type GraphRule a b = Production (TypedGraphMorphism a b)
