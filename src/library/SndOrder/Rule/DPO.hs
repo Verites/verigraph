@@ -6,11 +6,12 @@ import           Abstract.Valid
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.DPO
 import           Data.Graphs              as G
+import           Data.TypedGraph.Morphism
 import           SndOrder.Morphism        as SO
 import           SndOrder.Rule.Core
 import           TypedGraph.DPO.GraphRule
 import           Data.TypedGraph
-import           TypedGraph.Morphism
+
 
 instance DPO (RuleMorphism a b) where
   invertProduction conf r = addMinimalSafetyNacs conf newRule

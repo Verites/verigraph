@@ -2,7 +2,7 @@
 
 module Category.TypedGraph
 (
-
+  TypedGraphMorphism ()
 ) where
 
 import Abstract.Category.FinitaryCategory

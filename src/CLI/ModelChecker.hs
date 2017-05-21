@@ -13,7 +13,8 @@ import qualified Logic.Ctl                 as Logic
 import qualified Logic.Model               as Logic
 import           TypedGraph.DPO.GraphRule
 import           Data.TypedGraph
-import           TypedGraph.Morphism
+import           Data.TypedGraph.Morphism
+
 import qualified XML.GGXReader             as XML
 
 import           Control.Monad

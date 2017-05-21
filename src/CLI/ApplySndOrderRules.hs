@@ -9,9 +9,10 @@ import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.DPO
 import           Control.Monad            (when)
 import           Data.Graphs              (Graph)
+import           Data.TypedGraph.Morphism
 import qualified SndOrder.Rule            as SO
 import qualified TypedGraph.DPO.GraphRule as GR
-import           TypedGraph.Morphism
+
 
 import           Data.Monoid              ((<>))
 import           GlobalOptions

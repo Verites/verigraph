@@ -4,9 +4,11 @@ import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.Cocomplete
 import           Abstract.Category.DPO
 import           Abstract.Category.FinitaryCategory          ()
+import           Category.TypedGraph.AdhesiveHLR    hiding (isOrphanEdge) -- TODO: this function shouldn't be in this module
 import           Data.Graphs                        as G
 import qualified Data.Graphs.Morphism                as GM
-import           TypedGraph.Morphism
+import           Data.TypedGraph.Morphism
+
 
 import           SndOrder.Morphism.Cocomplete       ()
 import           SndOrder.Morphism.CommutingSquares

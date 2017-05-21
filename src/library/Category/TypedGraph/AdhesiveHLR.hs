@@ -224,7 +224,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
   hasPushoutComplement (_, g) (_, f) =
     satisfiesDanglingCondition f g && satisfiesIdentificationCondition f g
 
-
+-- TODO: it looks like the function below shouldn't be in the module
 generateNewNodeInstances :: TypedGraphMorphism a b -> [(NodeId, NodeId)] -> TypedGraphMorphism a b
 generateNewNodeInstances gf =
   foldr (\(a,b) tgm -> let tp = fromJust $ GM.applyNodeId (domain gf) a

@@ -88,9 +88,9 @@ class (DPO morph) => GenerateProcess morph where
       gs = allCoproduct rs
       h = induceSpanMorphism fs
       (g1s, g2s, g3s) = groupMorphisms $ split gs
-      h1 = h $ zipWith compose (getLefts rs) g1s
+      h1 = h $ zipWith invertedCompose (getLefts rs) g1s
       h2 = h g2s
-      h3 = h $ zipWith compose (getRights rs) g3s
+      h3 = h $ zipWith invertedCompose (getRights rs) g3s
       coEq = calculateNCoequalizer $ fromList [h1,h2,h3]
       hm = map (coEq <&> ) gs
       hs1 = split hm -- colimit of the rules themselves
@@ -157,7 +157,8 @@ snd' (_,b,_) = b
 thd' :: (a,b,c) -> c
 thd' (_,_,c) = c
 
-compose a b = b <&> a
+invertedCompose :: FinitaryCategory morph => morph -> morph -> morph
+invertedCompose a b = b <&> a
 
 generateMorphismFamilies :: (DPO morph) => [Derivation morph] -> [morph] -> [morph] -> (morph,morph,morph)
 generateMorphismFamilies ds fs gs=
@@ -166,9 +167,9 @@ generateMorphismFamilies ds fs gs=
       gs' = reduce gs
       (g1s, g2s, g3s) = groupMorphisms gs'
       h = induceSpanMorphism fs
-      h1 = h $ zipWith compose ls g1s
+      h1 = h $ zipWith invertedCompose ls g1s
       h2 = h g2s
-      h3 = h $ zipWith compose rs g3s
+      h3 = h $ zipWith invertedCompose rs g3s
   in (h1,h2,h3)
 
 ksCoproduct :: (DPO morph) => [Production morph] -> [morph]

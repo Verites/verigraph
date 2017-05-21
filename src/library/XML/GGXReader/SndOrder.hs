@@ -7,7 +7,8 @@ import           Data.Graphs.Morphism       as GM
 import           SndOrder.Morphism
 import           TypedGraph.DPO.GraphRule  as GR
 import           Data.TypedGraph
-import           TypedGraph.Morphism
+import           Data.TypedGraph.Morphism
+
 import           XML.GGXReader.Span
 import           XML.ParsedTypes
 import qualified XML.ParseSndOrderRule     as SO

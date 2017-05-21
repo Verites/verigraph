@@ -3,11 +3,12 @@ module Image.Dot where
 import           Abstract.Category.DPO.StateSpace
 import           Abstract.Category.FinitaryCategory
 import           Data.Graphs               hiding (Node (..))
+import           Data.TypedGraph.Morphism
 import           SndOrder.Morphism
 import           SndOrder.Rule
 import           TypedGraph.DPO.GraphRule
 import           Data.TypedGraph
-import           TypedGraph.Morphism
+
 
 import qualified Data.IntMap               as IntMap
 import qualified Data.Set                  as Set

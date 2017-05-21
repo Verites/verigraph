@@ -27,13 +27,14 @@ import           Data.List                        as L hiding (union)
 import           Data.Maybe                       (fromJust, fromMaybe, isJust)
 import           Data.Partition
 import           Data.Set                         as S
+import           Data.TypedGraph.Morphism         as TGM
 import           Data.Tuple                       (swap)
 import           Data.Graphs                      (Graph)
 import qualified Data.Graphs.Morphism              as GM
 import           TypedGraph.DPO.GraphRule
 import           TypedGraph.DPO.OccurenceRelation
 import           Data.TypedGraph
-import           TypedGraph.Morphism              as TGM
+
 import           Util.Closures                    as C
 import           Util.List
 

@@ -5,9 +5,10 @@ import           Abstract.Category.DPO
 import           Data.Maybe               (fromMaybe)
 import qualified Data.Graphs              as G
 import           Data.Graphs.Morphism      as GM
+import           Data.TypedGraph.Morphism
 import           TypedGraph.DPO.GraphRule as GR
 import           Data.TypedGraph
-import           TypedGraph.Morphism
+
 import           XML.ParsedTypes
 import           XML.Utilities
 

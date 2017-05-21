@@ -5,9 +5,10 @@ import           Abstract.Category.Cocomplete
 import           Data.List.NonEmpty          (fromList)
 import           Data.Graphs
 import           Data.Graphs.Morphism
+import           Data.TypedGraph.Morphism
 import           Test.HUnit
 import           TypedGraph.DPO.GraphProcess ()
-import           TypedGraph.Morphism
+
 import           Utils
 
 

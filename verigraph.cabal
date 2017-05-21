@@ -47,11 +47,13 @@ library
                        Analysis.Interlevel.InterLevelCP
                        Category.Graph
                        Category.TypedGraph
+                       Category.TypedGraph.FindMorphism
                        Data.Relation
                        Image.Dot
                        Data.Graphs
                        Data.Graphs.QuickCheck
                        Data.TypedGraph
+                       Data.TypedGraph.Morphism
                        Data.Graphs.Morphism
                        Logic.Model
                        Logic.Ctl
@@ -61,7 +63,6 @@ library
                        TypedGraph.DPO.GraphProcess
                        TypedGraph.DPO.GraphRule
                        TypedGraph.DPO.OccurenceRelation
-                       TypedGraph.Morphism
                        Util.Closures
                        Util.List
                        XML.GGXReader
@@ -77,9 +78,7 @@ library
                        Logic.Ctl.Semantics
                        Category.TypedGraph.AdhesiveHLR
                        Category.TypedGraph.Cocomplete
-                       Data.TypedGraph.Morphism
                        Category.TypedGraph.EpiPairs
-                       Category.TypedGraph.FindMorphism
                        TypedGraph.Partitions.GraphPartitionToVerigraph
                        TypedGraph.Partitions.GraphPartition
                        TypedGraph.Partitions.VerigraphToGraphPartition

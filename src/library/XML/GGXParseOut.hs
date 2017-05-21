@@ -15,9 +15,10 @@ import           Abstract.Category.FinitaryCategory ((<&>))
 import qualified Abstract.Category.FinitaryCategory as FC hiding ((<&>))
 import           Data.Maybe                (fromMaybe, isJust)
 import qualified Data.Graphs               as G
+import           Data.TypedGraph.Morphism
 import qualified TypedGraph.DPO.GraphRule  as GR
 import           Data.TypedGraph
-import           TypedGraph.Morphism
+
 import           XML.ParsedTypes
 
 parseCPGraph :: (String,String,[CP.CriticalPair (TypedGraphMorphism a b)]) -> Overlappings

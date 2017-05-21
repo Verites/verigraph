@@ -22,12 +22,13 @@ import qualified Data.Map                 as M
 import           Data.Maybe               (fromJust, fromMaybe, mapMaybe)
 import qualified Data.Graphs              as G
 import           Data.Graphs.Morphism      as GM
+import           Data.TypedGraph.Morphism
 import           SndOrder.Morphism
 import           SndOrder.Rule
 import           Text.XML.HXT.Core
 import           TypedGraph.DPO.GraphRule as GR
 import           Data.TypedGraph
-import           TypedGraph.Morphism
+
 import qualified XML.Formulas             as F
 import           XML.GGXParseIn
 import           XML.GGXReader.SndOrder

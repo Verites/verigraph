@@ -2,8 +2,10 @@ module SndOrder.Morphism.FindMorphism () where
 
 import           Abstract.Category.DPO
 import           Abstract.Category.FinitaryCategory
+import           Category.TypedGraph (TypedGraphMorphism)
+import           Category.TypedGraph.FindMorphism ()
 import           SndOrder.Morphism.Core
-import           TypedGraph.Morphism
+
 
 instance FindMorphism (RuleMorphism a b) where
   -- | A match between two first-order rules (desconsidering the NACs)

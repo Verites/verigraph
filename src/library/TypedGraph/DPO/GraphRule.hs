@@ -23,13 +23,15 @@ module TypedGraph.DPO.GraphRule (
     , isDeleted
 ) where
 
-
 import           Abstract.Category.DPO              as DPO
 import           Abstract.Category.FinitaryCategory as FC
+import           Category.TypedGraph                ()
+import           Category.TypedGraph.AdhesiveHLR
+import           Category.TypedGraph.FindMorphism   ()
 import           Data.Graphs               as G
 import qualified Data.Graphs.Morphism       as GM
 import           Data.TypedGraph          as GM
-import           TypedGraph.Morphism       as TGM
+import           Data.TypedGraph.Morphism as TGM
 
 type GraphRule a b = Production (TypedGraphMorphism a b)
 

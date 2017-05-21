@@ -20,12 +20,13 @@ import           Abstract.Category.DPO
 import           Abstract.Category.FinitaryCategory       (codomain)
 import           Data.List
 import qualified Data.Graphs                     as G
+import           Data.TypedGraph.Morphism
 import           SndOrder.Morphism
 import qualified SndOrder.Rule                   as SO
 import           TypedGraph.DPO.GraphProcess     ()
 import qualified TypedGraph.DPO.GraphRule        as GR
 import           Data.TypedGraph                (TypedGraph)
-import           TypedGraph.Morphism
+
 import           XML.GGXParseOut
 import           XML.ParsedTypes
 import           XML.ParseSndOrderRule
