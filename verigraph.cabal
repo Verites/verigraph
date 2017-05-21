@@ -76,7 +76,7 @@ library
                        Logic.Ctl.Parser
                        Logic.Ctl.Semantics
                        TypedGraph.Morphism.AdhesiveHLR
-                       TypedGraph.Morphism.Cocomplete
+                       Category.TypedGraph.Cocomplete
                        Data.TypedGraph.Morphism
                        TypedGraph.Morphism.EpiPairs
                        TypedGraph.Morphism.FindMorphism

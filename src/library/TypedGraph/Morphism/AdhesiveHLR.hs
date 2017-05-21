@@ -6,7 +6,7 @@ import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.FinitaryCategory
 import           Data.Graphs                    as G
 import qualified Data.Graphs.Morphism            as GM
-import           TypedGraph.Morphism.Cocomplete ()
+import           Category.TypedGraph.Cocomplete ()
 import           Data.TypedGraph.Morphism
 
 instance AdhesiveHLR (TypedGraphMorphism a b) where

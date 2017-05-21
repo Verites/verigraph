@@ -1,4 +1,4 @@
-module TypedGraph.Morphism.Cocomplete (
+module Category.TypedGraph.Cocomplete (
 
   calculateCoequalizer,
   calculateNCoequalizer,

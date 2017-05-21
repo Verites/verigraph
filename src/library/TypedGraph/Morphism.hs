@@ -42,7 +42,7 @@ module TypedGraph.Morphism (
 ) where
 
 import           TypedGraph.Morphism.AdhesiveHLR  (isDeleted)
-import           TypedGraph.Morphism.Cocomplete   ()
+import           Category.TypedGraph.Cocomplete   ()
 import           Data.TypedGraph.Morphism
 import           TypedGraph.Morphism.EpiPairs     ()
 import           TypedGraph.Morphism.FindMorphism ()
