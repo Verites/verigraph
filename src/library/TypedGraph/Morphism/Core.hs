@@ -7,15 +7,15 @@ import           Category.Graph ()
 import           Data.List                 (nub)
 import           Data.Maybe                (fromMaybe, isJust)
 import           Data.Graphs
-import           Morphism.Graph       (GraphMorphism)
-import qualified Morphism.Graph       as GM
+import           Data.Graphs.Morphism       (GraphMorphism)
+import qualified Data.Graphs.Morphism       as GM
 import           Data.TypedGraph
 
 data TypedGraphMorphism a b = TypedGraphMorphism {
-                              getDomain   :: TypedGraph a b
-                            , getCodomain :: TypedGraph a b
-                            , mapping     :: GraphMorphism (Maybe a) (Maybe b)
-                         } deriving (Eq, Show)
+    getDomain   :: TypedGraph a b
+  , getCodomain :: TypedGraph a b
+  , mapping     :: GraphMorphism (Maybe a) (Maybe b)
+} deriving (Eq, Show)
 
 -- | Given two @TypedGraph@s @G1@ and @G2@ and a simple @GraphMorphism@ between them, it returns a @TypedGraphMorphism@ from @G1@ to @G2@
 buildTypedGraphMorphism :: TypedGraph a b -> TypedGraph a b -> GraphMorphism (Maybe a) (Maybe b) -> TypedGraphMorphism a b

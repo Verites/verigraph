@@ -62,7 +62,7 @@ import           Data.Maybe                (fromMaybe, mapMaybe)
 
 import           Abstract.Category.FinitaryCategory
 import           Data.Graphs
-import           Morphism.Graph       as GM
+import           Data.Graphs.Morphism       as GM
 import           TypedGraph.Morphism       as TGM
 import           Util.List
 import           XML.ParsedTypes

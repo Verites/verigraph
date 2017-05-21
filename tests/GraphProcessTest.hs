@@ -6,7 +6,7 @@ import           Abstract.Category.DPO.Process
 import           Abstract.Category.FinitaryCategory
 import           Data.Maybe                  (fromJust)
 import           Data.Graphs
-import           Morphism.Graph
+import           Data.Graphs.Morphism
 import           Test.HUnit
 import           TypedGraph.DPO.GraphProcess ()
 import           TypedGraph.Morphism

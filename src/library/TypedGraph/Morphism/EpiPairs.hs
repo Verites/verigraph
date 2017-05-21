@@ -2,7 +2,7 @@ module TypedGraph.Morphism.EpiPairs where
 
 import           Abstract.Category.AdhesiveHLR
 import           Data.Graphs                                     as G
-import qualified Morphism.Graph                             as GM
+import qualified Data.Graphs.Morphism                             as GM
 import           TypedGraph.Morphism.Core
 import           TypedGraph.Partitions.GraphPartition            (generateGraphPartitions)
 import           TypedGraph.Partitions.GraphPartitionToVerigraph (mountTypedGraphMorphisms)

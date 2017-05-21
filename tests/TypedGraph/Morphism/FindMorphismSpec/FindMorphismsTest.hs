@@ -5,7 +5,7 @@ import qualified Data.Relation   as R
 import           Data.List
 import qualified Data.Map            as M
 import           Data.Graphs
-import qualified Morphism.Graph as GM
+import qualified Data.Graphs.Morphism as GM
 import           Test.Hspec
 import qualified TypedGraph.Morphism as TGM
 

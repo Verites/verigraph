@@ -1,10 +1,10 @@
 {-# LANGUAGE TypeFamilies #-}
 
-module Morphism.Graph (
+module Data.Graphs.Morphism (
     -- * Types
       GraphMorphism(..)
     -- * Construction
-    , Morphism.Graph.empty
+    , Data.Graphs.Morphism.empty
     , buildGraphMorphism
     , fromGraphsAndRelations
     -- * Transformation
@@ -139,7 +139,7 @@ empty gA gB = GraphMorphism gA gB (R.empty (nodeIds gA) (nodeIds gB)) (R.empty (
 buildGraphMorphism :: Graph a b -> Graph a b -> [(Int,Int)] -> [(Int,Int)] -> GraphMorphism a b
 buildGraphMorphism gA gB n = foldr (uncurry updateEdges . (EdgeId *** EdgeId)) g
     where
-        g = foldr (uncurry updateNodes . (NodeId *** NodeId)) (Morphism.Graph.empty gA gB) n
+        g = foldr (uncurry updateNodes . (NodeId *** NodeId)) (Data.Graphs.Morphism.empty gA gB) n
 
 -- | Constructs a @GraphMorphism@ from two Graphs, a node relation and a edge relation.
 fromGraphsAndRelations :: Graph a b -> Graph a b -> R.Relation NodeId -> R.Relation EdgeId -> GraphMorphism a b

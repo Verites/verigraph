@@ -13,7 +13,7 @@ import           Abstract.Category.DPO
 import           Abstract.Category.FinitaryCategory
 import           Data.List                 (nubBy)
 import           Data.Graphs
-import           Morphism.Graph       hiding (createEdgeOnCodomain, createNodeOnCodomain)
+import           Data.Graphs.Morphism       hiding (createEdgeOnCodomain, createNodeOnCodomain)
 import           SndOrder.Morphism
 import           SndOrder.Rule
 import           TypedGraph.DPO.GraphRule

@@ -14,10 +14,9 @@ module Data.TypedGraph
   ) where
 
 import           Abstract.Cardinality
-import           Abstract.Category.FinitaryCategory
 import           Data.Maybe                (fromMaybe)
 import           Data.Graphs               as G
-import           Morphism.Graph
+import           Data.Graphs.Morphism
 
 
 -- | A typed graph is a morphism whose codomain is the type graph.

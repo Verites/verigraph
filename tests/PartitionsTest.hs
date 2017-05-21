@@ -8,7 +8,7 @@ import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.DPO
 import           Analysis.CriticalPairs
 import           Data.Graphs
-import           Morphism.Graph
+import           Data.Graphs.Morphism
 import           SndOrder.Morphism
 import           TypedGraph.Morphism   hiding (createEdgeOnDomain, createNodeOnDomain)
 import           Utils
@@ -92,11 +92,11 @@ ids = [1..limitBellNumber]
 typegraph = insertEdge (EdgeId 0) (NodeId 0) (NodeId 0) (insertNode (NodeId 0) Data.Graphs.empty)
 
 --graph1: typed graph with 'limitBellNumber' nodes of same type
-initGraph1 = Morphism.Graph.empty Data.Graphs.empty typegraph
+initGraph1 = Data.Graphs.Morphism.empty Data.Graphs.empty typegraph
 graph1 = foldr (\n -> createNodeOnDomain (NodeId n) (NodeId 0)) initGraph1
 
 --graph2: typed graph with 'limitBellNumber' edges of same type with the same source and target
-initGraph2 = Morphism.Graph.empty (insertNode (NodeId 0) Data.Graphs.empty) typegraph
+initGraph2 = Data.Graphs.Morphism.empty (insertNode (NodeId 0) Data.Graphs.empty) typegraph
 graph2 = foldr
            (\e -> createEdgeOnDomain (EdgeId e) (NodeId 0) (NodeId 0) (EdgeId 0))
            (updateNodes (NodeId 0) (NodeId 0) initGraph2)

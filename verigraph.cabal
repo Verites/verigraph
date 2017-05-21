@@ -51,7 +51,7 @@ library
                        Data.Graphs
                        Data.Graphs.QuickCheck
                        Data.TypedGraph
-                       Morphism.Graph
+                       Data.Graphs.Morphism
                        Logic.Model
                        Logic.Ctl
                        SndOrder.Morphism
