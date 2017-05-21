@@ -78,8 +78,8 @@ library
                        Category.TypedGraph.AdhesiveHLR
                        Category.TypedGraph.Cocomplete
                        Data.TypedGraph.Morphism
-                       TypedGraph.Morphism.EpiPairs
-                       TypedGraph.Morphism.FindMorphism
+                       Category.TypedGraph.EpiPairs
+                       Category.TypedGraph.FindMorphism
                        TypedGraph.Partitions.GraphPartitionToVerigraph
                        TypedGraph.Partitions.GraphPartition
                        TypedGraph.Partitions.VerigraphToGraphPartition

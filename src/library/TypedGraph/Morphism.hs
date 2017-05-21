@@ -44,5 +44,5 @@ module TypedGraph.Morphism (
 import           Category.TypedGraph.AdhesiveHLR  (isDeleted)
 import           Category.TypedGraph.Cocomplete   ()
 import           Data.TypedGraph.Morphism
-import           TypedGraph.Morphism.EpiPairs     ()
-import           TypedGraph.Morphism.FindMorphism ()
+import           Category.TypedGraph.EpiPairs     ()
+import           Category.TypedGraph.FindMorphism ()

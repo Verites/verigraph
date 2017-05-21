@@ -1,4 +1,4 @@
-module TypedGraph.Morphism.EpiPairs where
+module Category.TypedGraph.EpiPairs where
 
 import           Abstract.Category.AdhesiveHLR
 import           Category.TypedGraph                             ()
