@@ -55,15 +55,16 @@ module XML.ParseSndOrderRule (
   , getObjectNameMorphism
   ) where
 
-import           Data.Char                 (toLower)
-import           Data.Function             (on)
-import           Data.List                 (find, groupBy, intercalate, sortBy, sortOn, (\\))
-import           Data.Maybe                (fromMaybe, mapMaybe)
+import           Data.Char                          (toLower)
+import           Data.Function                      (on)
+import           Data.List                          (find, groupBy, intercalate, sortBy, sortOn,
+                                                     (\\))
+import           Data.Maybe                         (fromMaybe, mapMaybe)
 
 import           Abstract.Category.FinitaryCategory
 import           Data.Graphs
-import           Data.Graphs.Morphism       as GM
-import           Data.TypedGraph.Morphism   as TGM
+import           Data.Graphs.Morphism               as GM
+import           Data.TypedGraph.Morphism           as TGM
 import           Util.List
 import           XML.ParsedTypes
 

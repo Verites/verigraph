@@ -14,9 +14,9 @@ module Abstract.Category.DPO.Core
 
 where
 
-import           Abstract.Valid
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.FinitaryCategory
+import           Abstract.Valid
 
 
 

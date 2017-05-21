@@ -2,12 +2,12 @@ module XML.GGXReader.Span where
 
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.DPO
-import           Data.Maybe               (fromMaybe)
-import qualified Data.Graphs              as G
-import           Data.Graphs.Morphism      as GM
-import           Data.TypedGraph.Morphism
-import           TypedGraph.DPO.GraphRule as GR
+import qualified Data.Graphs                   as G
+import           Data.Graphs.Morphism          as GM
+import           Data.Maybe                    (fromMaybe)
 import           Data.TypedGraph
+import           Data.TypedGraph.Morphism
+import           TypedGraph.DPO.GraphRule      as GR
 
 import           XML.ParsedTypes
 import           XML.Utilities

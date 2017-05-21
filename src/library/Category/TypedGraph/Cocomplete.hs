@@ -12,13 +12,13 @@ where
 
 import           Abstract.Category.Cocomplete
 import           Abstract.Category.FinitaryCategory as FC
-import           Category.TypedGraph       ()
-import qualified Data.List.NonEmpty        as NE
-import           Data.Maybe                (fromJust)
+import           Category.TypedGraph                ()
+import           Data.Graphs                        as G
+import qualified Data.Graphs.Morphism               as GM
+import qualified Data.List.NonEmpty                 as NE
+import           Data.Maybe                         (fromJust)
 import           Data.Partition
-import           Data.Set                  as DS
-import           Data.Graphs               as G
-import qualified Data.Graphs.Morphism       as GM
+import           Data.Set                           as DS
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
 

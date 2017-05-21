@@ -2,18 +2,18 @@
 module Data.TypedGraph.Morphism where
 
 import           Abstract.Valid
-import           Category.Graph ()
-import           Data.List                 (nub)
-import           Data.Maybe                (fromMaybe, isJust)
+import           Category.Graph       ()
 import           Data.Graphs
-import           Data.Graphs.Morphism       (GraphMorphism)
-import qualified Data.Graphs.Morphism       as GM
-import           Data.TypedGraph            as TG
+import           Data.Graphs.Morphism (GraphMorphism)
+import qualified Data.Graphs.Morphism as GM
+import           Data.List            (nub)
+import           Data.Maybe           (fromMaybe, isJust)
+import           Data.TypedGraph      as TG
 
 data TypedGraphMorphism a b = TypedGraphMorphism {
     domainGraph   :: TypedGraph a b
   , codomainGraph :: TypedGraph a b
-  , mapping     :: GraphMorphism (Maybe a) (Maybe b)
+  , mapping       :: GraphMorphism (Maybe a) (Maybe b)
 } deriving (Eq, Show)
 
 compose :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b

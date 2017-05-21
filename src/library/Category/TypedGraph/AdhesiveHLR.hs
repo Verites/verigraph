@@ -1,12 +1,12 @@
 module Category.TypedGraph.AdhesiveHLR where
 
-import           Data.Maybe                     (fromJust, mapMaybe)
+import           Data.Maybe                         (fromJust, mapMaybe)
 
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.FinitaryCategory
-import           Data.Graphs                    as G
-import qualified Data.Graphs.Morphism            as GM
-import           Category.TypedGraph.Cocomplete ()
+import           Category.TypedGraph.Cocomplete     ()
+import           Data.Graphs                        as G
+import qualified Data.Graphs.Morphism               as GM
 import           Data.TypedGraph.Morphism
 
 instance AdhesiveHLR (TypedGraphMorphism a b) where

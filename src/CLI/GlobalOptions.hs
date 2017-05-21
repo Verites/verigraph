@@ -8,8 +8,8 @@ module GlobalOptions
   ) where
 
 import           Abstract.Category.AdhesiveHLR (MatchRestriction (..), MorphismsConfig (..),
-                                       NacSatisfaction (..))
-import           Data.Monoid          ((<>))
+                                                NacSatisfaction (..))
+import           Data.Monoid                   ((<>))
 import           Options.Applicative
 
 data GlobalOptions = GOpts

@@ -12,10 +12,10 @@ module Analysis.Interlevel.EvolutionarySpans
   , cpe
   ) where
 
-import           Abstract.Valid
-import           Analysis.DiagramAlgorithms
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.DPO
+import           Abstract.Valid
+import           Analysis.DiagramAlgorithms
 import           SndOrder.Morphism
 import           SndOrder.Rule
 

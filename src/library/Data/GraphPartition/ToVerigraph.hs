@@ -4,11 +4,11 @@ module Data.GraphPartition.ToVerigraph
 
 {-Converts from GraphPartition to Verigraph structures-}
 -- TODO: break this module in two, one for graphs and other for typed graphs?
-import qualified Data.Graphs                          as G
-import qualified Data.Graphs.Morphism                  as GM
-import           Data.TypedGraph                      as TG
-import qualified Data.TypedGraph.Morphism             as TGM
-import           Data.GraphPartition as GP
+import           Data.GraphPartition      as GP
+import qualified Data.Graphs              as G
+import qualified Data.Graphs.Morphism     as GM
+import           Data.TypedGraph          as TG
+import qualified Data.TypedGraph.Morphism as TGM
 
 -- | For two typed graphs and a EpiPair (in GraphPartition format) return two TypedGraphMorphism for the graph in verigraph format
 mountTypedGraphMorphisms :: TypedGraph a b -> TypedGraph a b -> GP.GraphPartition -> (TGM.TypedGraphMorphism a b, TGM.TypedGraphMorphism a b)

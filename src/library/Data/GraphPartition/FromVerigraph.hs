@@ -3,11 +3,11 @@ module Data.GraphPartition.FromVerigraph (
    createSatisfyingNacsDisjointUnion
    ) where
 
-import           Data.Graphs                          as G
-import           Data.Graphs.Morphism                  as GM
+import qualified Data.GraphPartition      as GP
+import           Data.Graphs              as G
+import           Data.Graphs.Morphism     as GM
 import           Data.TypedGraph
-import           Data.TypedGraph.Morphism             as TGM
-import qualified Data.GraphPartition as GP
+import           Data.TypedGraph.Morphism as TGM
 
 -- | Creates the disjoint union of two verigraph graphs in 'GraphPartition' format
 createDisjointUnion :: (TypedGraph a b,Bool) -> (TypedGraph a b,Bool) -> GP.Graph

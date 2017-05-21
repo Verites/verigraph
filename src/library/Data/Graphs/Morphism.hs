@@ -42,15 +42,15 @@ module Data.Graphs.Morphism (
 import           Control.Arrow
 
 import           Abstract.Valid
-import           Data.Maybe                (fromMaybe, isNothing)
-import qualified Data.Relation             as R
-import           Data.Graphs               as G
+import           Data.Graphs    as G
+import           Data.Maybe     (fromMaybe, isNothing)
+import qualified Data.Relation  as R
 
 data GraphMorphism a b = GraphMorphism {
-    domainGraph    :: Graph a b
-  , codomainGraph  :: Graph a b
-  , nodeRelation :: R.Relation G.NodeId
-  , edgeRelation :: R.Relation G.EdgeId
+    domainGraph   :: Graph a b
+  , codomainGraph :: Graph a b
+  , nodeRelation  :: R.Relation G.NodeId
+  , edgeRelation  :: R.Relation G.EdgeId
 }
 
 compose :: GraphMorphism a b -> GraphMorphism a b -> GraphMorphism a b

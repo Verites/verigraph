@@ -5,9 +5,9 @@ module Category.TypedGraph
   TypedGraphMorphism ()
 ) where
 
-import Abstract.Category.FinitaryCategory
-import Data.TypedGraph
-import Data.TypedGraph.Morphism
+import           Abstract.Category.FinitaryCategory
+import           Data.TypedGraph
+import           Data.TypedGraph.Morphism
 
 instance FinitaryCategory (TypedGraphMorphism a b) where
     type Obj (TypedGraphMorphism a b) = TypedGraph a b

@@ -6,9 +6,9 @@ module Category.Graph
 
 
 import           Abstract.Category.FinitaryCategory
-import qualified Data.Relation             as R
+import           Data.Graphs                        as G
 import           Data.Graphs.Morphism
-import           Data.Graphs               as G
+import qualified Data.Relation                      as R
 
 instance FinitaryCategory (GraphMorphism a b) where
     type Obj (GraphMorphism a b) = Graph a b

@@ -2,16 +2,16 @@ module XML.GGXReader.SndOrder (instantiateSndOrderRules) where
 
 import           Abstract.Category.DPO
 import           Abstract.Category.FinitaryCategory
-import qualified Data.Graphs               as G
-import           Data.Graphs.Morphism       as GM
-import           SndOrder.Morphism
-import           TypedGraph.DPO.GraphRule  as GR
+import qualified Data.Graphs                        as G
+import           Data.Graphs.Morphism               as GM
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
+import           SndOrder.Morphism
+import           TypedGraph.DPO.GraphRule           as GR
 
 import           XML.GGXReader.Span
 import           XML.ParsedTypes
-import qualified XML.ParseSndOrderRule     as SO
+import qualified XML.ParseSndOrderRule              as SO
 import           XML.Utilities
 
 instantiateSndOrderRules :: G.Graph (Maybe a) (Maybe b) -> [RuleWithNacs] -> [(String, Production (RuleMorphism a b))]

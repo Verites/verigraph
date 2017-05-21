@@ -2,8 +2,8 @@ module SndOrder.Morphism.FindMorphism () where
 
 import           Abstract.Category.DPO
 import           Abstract.Category.FinitaryCategory
-import           Category.TypedGraph (TypedGraphMorphism)
-import           Category.TypedGraph.FindMorphism ()
+import           Category.TypedGraph                (TypedGraphMorphism)
+import           Category.TypedGraph.FindMorphism   ()
 import           SndOrder.Morphism.Core
 
 
