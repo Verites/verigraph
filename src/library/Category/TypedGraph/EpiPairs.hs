@@ -6,8 +6,8 @@ import           Data.Graphs                                     as G
 import qualified Data.Graphs.Morphism                            as GM
 import           Data.TypedGraph.Morphism
 import           Data.GraphPartition            (generateGraphPartitions)
-import           Data.GraphPartition.GraphPartitionToVerigraph (mountTypedGraphMorphisms)
-import           Data.GraphPartition.VerigraphToGraphPartition (createDisjointUnion,
+import           Data.GraphPartition.ToVerigraph (mountTypedGraphMorphisms)
+import           Data.GraphPartition.FromVerigraph (createDisjointUnion,
                                                                   createSatisfyingNacsDisjointUnion)
 
 instance EpiPairs (TypedGraphMorphism a b) where

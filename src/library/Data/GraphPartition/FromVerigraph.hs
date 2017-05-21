@@ -1,4 +1,4 @@
-module Data.GraphPartition.VerigraphToGraphPartition (
+module Data.GraphPartition.FromVerigraph (
    createDisjointUnion,
    createSatisfyingNacsDisjointUnion
    ) where

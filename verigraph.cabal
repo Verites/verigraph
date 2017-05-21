@@ -80,8 +80,8 @@ library
                        Category.TypedGraph.Cocomplete
                        Category.TypedGraph.EpiPairs
                        Data.GraphPartition
-                       Data.GraphPartition.GraphPartitionToVerigraph
-                       Data.GraphPartition.VerigraphToGraphPartition
+                       Data.GraphPartition.ToVerigraph
+                       Data.GraphPartition.FromVerigraph
                        Data.TypedGraph.Subgraph
                        SndOrder.Morphism.AdhesiveHLR
                        SndOrder.Morphism.Cocomplete
