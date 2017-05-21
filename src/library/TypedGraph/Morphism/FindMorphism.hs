@@ -7,7 +7,7 @@ import qualified Data.Relation             as R
 import           Data.Graphs               as G
 import qualified Data.Graphs.Morphism       as GM
 import           Data.TypedGraph
-import           TypedGraph.Morphism.Core
+import           Data.TypedGraph.Morphism
 
 import           Control.Arrow
 import           Data.List                 as L

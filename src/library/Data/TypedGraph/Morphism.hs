@@ -1,5 +1,5 @@
 {-# LANGUAGE TypeFamilies #-}
-module TypedGraph.Morphism.Core where
+module Data.TypedGraph.Morphism where
 
 import           Abstract.Valid
 import           Abstract.Category.FinitaryCategory as FC

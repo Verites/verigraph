@@ -19,7 +19,7 @@ import           Data.Set                  as DS
 import           Data.Graphs               as G
 import qualified Data.Graphs.Morphism       as GM
 import           Data.TypedGraph
-import           TypedGraph.Morphism.Core
+import           Data.TypedGraph.Morphism
 
 type TypedNode = (NodeId,NodeId)
 type TypedEdge = (EdgeId, NodeId, NodeId, EdgeId)

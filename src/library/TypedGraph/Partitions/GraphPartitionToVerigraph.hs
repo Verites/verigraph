@@ -8,7 +8,7 @@ import           Abstract.Category.FinitaryCategory
 import qualified Data.Graphs                          as G
 import qualified Data.Graphs.Morphism                  as GM
 import           Data.TypedGraph
-import qualified TypedGraph.Morphism.Core             as TGM
+import qualified Data.TypedGraph.Morphism             as TGM
 import           TypedGraph.Partitions.GraphPartition as GP
 
 -- | For two typed graphs and a EpiPair (in GraphPartition format) return two TypedGraphMorphism for the graph in verigraph format

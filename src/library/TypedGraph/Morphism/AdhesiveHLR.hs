@@ -7,7 +7,7 @@ import           Abstract.Category.FinitaryCategory
 import           Data.Graphs                    as G
 import qualified Data.Graphs.Morphism            as GM
 import           TypedGraph.Morphism.Cocomplete ()
-import           TypedGraph.Morphism.Core
+import           Data.TypedGraph.Morphism
 
 instance AdhesiveHLR (TypedGraphMorphism a b) where
 

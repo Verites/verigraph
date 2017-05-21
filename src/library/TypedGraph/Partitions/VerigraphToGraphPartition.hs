@@ -7,7 +7,7 @@ import qualified Abstract.Category.FinitaryCategory            as FC
 import           Data.Graphs                          as G
 import           Data.Graphs.Morphism                  as GM
 import           Data.TypedGraph
-import           TypedGraph.Morphism.Core             as TGM
+import           Data.TypedGraph.Morphism             as TGM
 import qualified TypedGraph.Partitions.GraphPartition as GP
 
 -- | Creates the disjoint union of two verigraph graphs in 'GraphPartition' format
