@@ -33,7 +33,7 @@ createSatisfyingNacsDisjointUnion (g,injG) (n,injN) = disjointUnionGraphs left r
      injectiveR = if injG then (G.nodeIds (FC.domain g), G.edgeIds (FC.domain g)) else ([],[])
      injectiveN = if injN then (nodeIdsFromCodomain n, edgeIdsFromCodomain n) else (injNodes, injEdges)
      (left,id) = graphMorphismToPartitionGraph injectiveR g True 0
-     (right,_) = graphMorphismToPartitionGraph injectiveN (FC.codomain n) False id
+     (right,_) = graphMorphismToPartitionGraph injectiveN (TGM.codomainGraph n) False id
      disjointUnionGraphs a b = (nodes a ++ nodes b, edges a ++ edges b)
 
 graphMorphismToPartitionGraph :: ([NodeId],[EdgeId]) -> GraphMorphism (Maybe a) (Maybe b) -> Bool -> Int -> (GP.Graph,Int)

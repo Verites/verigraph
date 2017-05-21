@@ -12,26 +12,17 @@ import qualified Data.Graphs.Morphism       as GM
 import           Data.TypedGraph
 
 data TypedGraphMorphism a b = TypedGraphMorphism {
-    getDomain   :: TypedGraph a b
-  , getCodomain :: TypedGraph a b
+    domainGraph   :: TypedGraph a b
+  , codomainGraph :: TypedGraph a b
   , mapping     :: GraphMorphism (Maybe a) (Maybe b)
 } deriving (Eq, Show)
+
+compose :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+compose t2 t1 = TypedGraphMorphism (domainGraph t1) (codomainGraph t2) $ GM.compose (mapping t2) (mapping t1)
 
 -- | Given two @TypedGraph@s @G1@ and @G2@ and a simple @GraphMorphism@ between them, it returns a @TypedGraphMorphism@ from @G1@ to @G2@
 buildTypedGraphMorphism :: TypedGraph a b -> TypedGraph a b -> GraphMorphism (Maybe a) (Maybe b) -> TypedGraphMorphism a b
 buildTypedGraphMorphism = TypedGraphMorphism
-
-instance FinitaryCategory (TypedGraphMorphism a b) where
-    type Obj (TypedGraphMorphism a b) = TypedGraph a b
-
-    domain = getDomain
-    codomain = getCodomain
-    t2 <&> t1 = TypedGraphMorphism (domain t1) (codomain t2) $ mapping t2 <&> mapping t1
-    identity t = TypedGraphMorphism t t (FC.identity $ domain t)
-    isMonomorphism = isMonomorphism . mapping
-    isEpimorphism = isEpimorphism . mapping
-    isIsomorphism = isIsomorphism . mapping
-
 
 instance Valid (TypedGraphMorphism a b) where
     validate (TypedGraphMorphism dom cod m) =
@@ -41,33 +32,34 @@ instance Valid (TypedGraphMorphism a b) where
         , ensure (dom == cod <&> m) "Morphism doesn't preserve typing"
         ]
 
+-- TODO: refactor these fucntion to avoid duplication, probably with untypedGraph
 -- | Return the nodes ids in the domain of a given @TypedGraphMorphism@
 nodeIdsFromDomain :: TypedGraphMorphism a b -> [NodeId]
-nodeIdsFromDomain = nodeIds . domain . getDomain
+nodeIdsFromDomain = nodeIds . GM.domainGraph . domainGraph
 
 -- | Return the nodes in the domain of a given @TypedGraphMorphism@
 nodesFromDomain :: TypedGraphMorphism a b -> [Node (Maybe a)]
-nodesFromDomain = nodes . domain . getDomain
+nodesFromDomain = nodes . GM.domainGraph . domainGraph
 
 -- | Return the edges ids in the domain of a given @TypedGraphMorphism@
 edgeIdsFromDomain :: TypedGraphMorphism a b -> [EdgeId]
-edgeIdsFromDomain = edgeIds . domain . getDomain
+edgeIdsFromDomain = edgeIds . GM.domainGraph . domainGraph
 
 -- | Return the edges in the domain of a given @TypedGraphMorphism@
 edgesFromDomain :: TypedGraphMorphism a b -> [Edge (Maybe b)]
-edgesFromDomain = edges . domain . getDomain
+edgesFromDomain = edges . GM.domainGraph . domainGraph
 
 -- | Return the nodes ids in the codomain of a given @TypedGraphMorphism@
 nodeIdsFromCodomain :: TypedGraphMorphism a b -> [NodeId]
-nodeIdsFromCodomain = nodeIds . domain . getCodomain
+nodeIdsFromCodomain = nodeIds . GM.domainGraph . codomainGraph
 
 -- | Return the edges ids in the codomain of a given @TypedGraphMorphism@
 edgeIdsFromCodomain :: TypedGraphMorphism a b -> [EdgeId]
-edgeIdsFromCodomain = edgeIds . domain . getCodomain
+edgeIdsFromCodomain = edgeIds . GM.domainGraph . codomainGraph
 
 -- | Return the edges in the codomain of a given @TypedGraphMorphism@
 edgesFromCodomain :: TypedGraphMorphism a b -> [Edge (Maybe b)]
-edgesFromCodomain = edges . domain . getCodomain
+edgesFromCodomain = edges . GM.domainGraph . codomainGraph
 
 -- | Given a TypedGraphMorphism @/__t__: G1 -> G2/@ and a node @__n__@ in @G1@, it returns the node in @G2@ to which @__n__@ gets mapped
 applyNode :: TypedGraphMorphism a b -> Node (Maybe a) -> Maybe (Node (Maybe a))
@@ -87,11 +79,11 @@ applyEdgeId tgm = GM.applyEdgeId (mapping tgm)
 
 -- | Return the domain graph
 graphDomain :: TypedGraphMorphism a b -> Graph (Maybe a) (Maybe b)
-graphDomain = untypedGraph . domain
+graphDomain = untypedGraph . domainGraph
 
 -- | Return the codomain graph
 graphCodomain :: TypedGraphMorphism a b -> Graph (Maybe a) (Maybe b)
-graphCodomain = untypedGraph . codomain
+graphCodomain = untypedGraph . codomainGraph
 
 -- | Given a @TypedGraphMorphism@ @__t__@and a node @n@ in the domain of @__t__@, return the node in the image
 --of @t@ to which @n@ gets mapped or error in the case of undefined
@@ -128,8 +120,8 @@ orphanTypedEdges tgm = GM.orphanEdges (mapping tgm)
 -- | Invert a typed graph morphism
 invert :: TypedGraphMorphism a b -> TypedGraphMorphism a b
 invert tgm =
-  TypedGraphMorphism { getDomain = codomain tgm
-                     , getCodomain = domain tgm
+  TypedGraphMorphism { domainGraph = codomainGraph tgm
+                     , codomainGraph = domainGraph tgm
                      , mapping = GM.invertGraphMorphism (mapping tgm)
                      }
 
@@ -137,7 +129,7 @@ invert tgm =
 --   It assumes s1, t1, e2, tp already exist, and that e1 does not exist.
 createEdgeOnDomain :: EdgeId -> NodeId -> NodeId -> EdgeId -> EdgeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 createEdgeOnDomain e1 s1 t1 tp e2 tgm =
-  tgm { getDomain = GM.createEdgeOnDomain e1 s1 t1 tp (domain tgm)
+  tgm { domainGraph = GM.createEdgeOnDomain e1 s1 t1 tp (domainGraph tgm)
       , mapping = GM.createEdgeOnDomain e1 s1 t1 e2 (mapping tgm)
       }
 
@@ -145,7 +137,7 @@ createEdgeOnDomain e1 s1 t1 tp e2 tgm =
 --   It assumes s2, t2, tp already exist, and that e2 does not exist.
 createEdgeOnCodomain :: EdgeId -> NodeId -> NodeId -> EdgeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 createEdgeOnCodomain e2 s2 t2 tp tgm =
-  tgm { getCodomain = GM.createEdgeOnDomain e2 s2 t2 tp (codomain tgm)
+  tgm { codomainGraph = GM.createEdgeOnDomain e2 s2 t2 tp (codomainGraph tgm)
       , mapping = GM.createEdgeOnCodomain e2 s2 t2 (mapping tgm)
       }
 
@@ -153,7 +145,7 @@ createEdgeOnCodomain e2 s2 t2 tp tgm =
 --   It assumes n2 and tp already exist, and that n1 does not exist.
 createNodeOnDomain :: NodeId -> NodeId -> NodeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 createNodeOnDomain n1 tp n2 tgm =
-  tgm { getDomain = GM.createNodeOnDomain n1 tp (domain tgm)
+  tgm { domainGraph = GM.createNodeOnDomain n1 tp (domainGraph tgm)
       , mapping = GM.createNodeOnDomain n1 n2 (mapping tgm)
       }
 
@@ -161,23 +153,23 @@ createNodeOnDomain n1 tp n2 tgm =
 --   It assumes tp already exist, and that n2 does not exist.
 createNodeOnCodomain :: NodeId -> NodeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 createNodeOnCodomain n2 tp tgm =
-  tgm { getCodomain = GM.createNodeOnDomain n2 tp (codomain tgm)
+  tgm { codomainGraph = GM.createNodeOnDomain n2 tp (codomainGraph tgm)
       , mapping = GM.createNodeOnCodomain n2 (mapping tgm)
       }
 
 -- | updates a typed graph morphism, mapping node n1 to node n2. It assumes both nodes already exist.
 updateNodeRelation :: NodeId -> NodeId -> NodeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 updateNodeRelation n1 n2 tp tgm =
-  TypedGraphMorphism { getDomain = GM.updateNodeRelation n1 tp (domain tgm)
-                     , getCodomain = GM.updateNodeRelation n2 tp (codomain tgm)
+  TypedGraphMorphism { domainGraph = GM.updateNodeRelation n1 tp (domainGraph tgm)
+                     , codomainGraph = GM.updateNodeRelation n2 tp (codomainGraph tgm)
                      , mapping = GM.updateNodeRelation n1 n2 (mapping tgm)
                      }
 
 -- | updates a typed graph morphism, mapping node n1 to node n2. It assumes both nodes already exist and are of the same type.
 untypedUpdateNodeRelation :: NodeId -> NodeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 untypedUpdateNodeRelation n1 n2 tgm =
-  TypedGraphMorphism { getDomain = domain tgm
-                     , getCodomain = codomain tgm
+  TypedGraphMorphism { domainGraph = domainGraph tgm
+                     , codomainGraph = codomainGraph tgm
                      , mapping = GM.updateNodeRelation n1 n2 (mapping tgm)
                      }
 
@@ -189,28 +181,28 @@ updateEdgeRelation e1 e2 tgm =
 -- | Remove a node from the domain of a typed graph morphism
 removeNodeFromDomain :: NodeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 removeNodeFromDomain n tgm =
-  tgm { getDomain = GM.removeNodeFromDomain n (domain tgm)
+  tgm { domainGraph = GM.removeNodeFromDomain n (domainGraph tgm)
       , mapping = GM.removeNodeFromDomain n (mapping tgm)
       }
 
 -- | Remove an edge from the domain of a typed graph morphism
 removeEdgeFromDomain :: EdgeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 removeEdgeFromDomain e tgm =
-  tgm { getDomain = GM.removeEdgeFromDomain e (domain tgm)
+  tgm { domainGraph = GM.removeEdgeFromDomain e (domainGraph tgm)
       , mapping = GM.removeEdgeFromDomain e (mapping tgm)
       }
 
 -- | Remove a node from the codomain of a typed graph morphism
 removeNodeFromCodomain :: NodeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 removeNodeFromCodomain n tgm =
-  tgm { getCodomain = GM.removeNodeFromDomain n (codomain tgm)
+  tgm { codomainGraph = GM.removeNodeFromDomain n (codomainGraph tgm)
       , mapping = GM.removeNodeFromCodomain n (mapping tgm)
       }
 
 -- | Remove an edge from the domain of a typed graph morphism
 removeEdgeFromCodomain :: EdgeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 removeEdgeFromCodomain e tgm =
-  tgm { getCodomain = GM.removeEdgeFromDomain e (codomain tgm)
+  tgm { codomainGraph = GM.removeEdgeFromDomain e (codomainGraph tgm)
       , mapping = GM.removeEdgeFromCodomain e (mapping tgm) }
 
 -- | Creates a TypedGraphMorphism mapping nodes and edges according to their identifiers.
@@ -227,8 +219,8 @@ idMap gm1 gm2 =
 reflectIdsFromTypeGraph :: TypedGraphMorphism a b -> TypedGraphMorphism a b
 reflectIdsFromTypeGraph tgm =
   let
-    gmDomain = domain tgm
-    gmCodomain = codomain tgm
+    gmDomain = domainGraph tgm
+    gmCodomain = codomainGraph tgm
 
     newNodes gm = map (GM.applyNodeIdUnsafe gm) (nodeIds (domain gm))
     newEdges gm = map (\x -> (GM.applyEdgeIdUnsafe gm (edgeId x), GM.applyNodeIdUnsafe gm (sourceId x), GM.applyNodeIdUnsafe gm (targetId x))) (edges $ domain gm)
@@ -244,8 +236,8 @@ reflectIdsFromTypeGraph tgm =
 reflectIdsFromCodomain :: TypedGraphMorphism a b -> TypedGraphMorphism a b
 reflectIdsFromCodomain tgm =
   let
-    typedA = domain tgm
-    typedB = codomain tgm
+    typedA = domainGraph tgm
+    typedB = codomainGraph tgm
     typeGraph = codomain typedA
     typedB' = GM.empty empty typeGraph
     nodes = nodeIdsFromDomain tgm
@@ -263,10 +255,10 @@ reflectIdsFromCodomain tgm =
 reflectIdsFromDomains :: (TypedGraphMorphism a b, TypedGraphMorphism a b) -> (TypedGraphMorphism a b, TypedGraphMorphism a b)
 reflectIdsFromDomains (m,e) =
   let
-    typedL = domain m
-    typedD = domain e
-    typedG = codomain m
-    typeGraph = codomain typedL
+    typedL = domainGraph m
+    typedD = domainGraph e
+    typedG = codomainGraph m
+    typeGraph = GM.codomainGraph typedL
     m' = invert m
     e' = invert e
 
@@ -285,4 +277,4 @@ reflectIdsFromDomains (m,e) =
     initial = buildTypedGraphMorphism typedG typedG' (GM.empty (domain typedG) (domain typedG'))
 
     h' = foldr (uncurry updateEdgeRelation) (foldr (uncurry untypedUpdateNodeRelation) initial nodeRelation) edgeRelation
-   in (h' <&> m, h' <&> e)
+   in (compose h' m, compose h' e)

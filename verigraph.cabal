@@ -46,6 +46,7 @@ library
                        Analysis.Interlevel.EvolutionarySpans
                        Analysis.Interlevel.InterLevelCP
                        Category.Graph
+                       Category.TypedGraph
                        Data.Relation
                        Image.Dot
                        Data.Graphs

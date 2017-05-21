@@ -3,6 +3,7 @@
 module Data.Graphs.Morphism (
     -- * Types
       GraphMorphism(..)
+    , compose
     -- * Construction
     , Data.Graphs.Morphism.empty
     , buildGraphMorphism
@@ -51,6 +52,12 @@ data GraphMorphism a b = GraphMorphism {
   , nodeRelation :: R.Relation G.NodeId
   , edgeRelation :: R.Relation G.EdgeId
 }
+
+compose :: GraphMorphism a b -> GraphMorphism a b -> GraphMorphism a b
+compose m2 m1 = GraphMorphism (domainGraph m1)
+              (codomainGraph m2)
+              (R.compose (nodeRelation m1) (nodeRelation m2))
+              (R.compose (edgeRelation m1) (edgeRelation m2))
 
 instance Eq (GraphMorphism a b) where
     m1 == m2 = domainGraph m1 == domainGraph m2 &&
