@@ -1,4 +1,4 @@
-module TypedGraph.Partitions.GraphPartition (
+module Data.GraphPartition (
    Node (..),
    Edge (..),
    Graph,
