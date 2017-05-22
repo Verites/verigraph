@@ -27,42 +27,42 @@ library
                        set-monad >= 0.2,
                        split >= 0.2,
                        wl-pprint >=1.2 && <1.3
-  exposed-modules:     Abstract.Category.AdhesiveHLR
-                       Abstract.Cardinality
+  exposed-modules:     Abstract.Cardinality
+                       Abstract.Category.AdhesiveHLR
+                       Abstract.Category.AdhesiveHLR.Constraint
                        Abstract.Category.Cocomplete
                        Abstract.Category.Complete
-                       Abstract.Category.AdhesiveHLR.Constraint
                        Abstract.Category.DPO
                        Abstract.Category.DPO.Process
                        Abstract.Category.DPO.StateSpace
                        Abstract.Category.FinitaryCategory
                        Abstract.Valid
-                       Analysis.EssentialCriticalPairs
                        Analysis.ConcurrentRules
                        Analysis.CriticalPairs
                        Analysis.CriticalSequence
-                       Analysis.ParallelIndependent
-                       Analysis.Processes
+                       Analysis.EssentialCriticalPairs
                        Analysis.Interlevel.EvolutionarySpans
                        Analysis.Interlevel.InterLevelCP
+                       Analysis.ParallelIndependent
+                       Analysis.Processes
                        Category.Graph
                        Category.TypedGraph
                        Category.TypedGraph.FindMorphism
-                       Data.Relation
-                       Image.Dot
                        Data.Graphs
+                       Data.Graphs.Morphism
                        Data.Graphs.QuickCheck
+                       Data.Relation
                        Data.TypedGraph
                        Data.TypedGraph.Morphism
-                       Data.Graphs.Morphism
+                       Image.Dot
                        Logic.Model
                        Logic.Ctl
                        SndOrder.Morphism
                        SndOrder.Morphism.NACmanipulation
                        SndOrder.Rule
+                       TypedGraph.DPO.OccurenceRelation
                        TypedGraph.DPO.GraphProcess
                        TypedGraph.DPO.GraphRule
-                       TypedGraph.DPO.OccurenceRelation
                        Util.Closures
                        Util.List
                        XML.GGXReader
@@ -80,8 +80,8 @@ library
                        Category.TypedGraph.Cocomplete
                        Category.TypedGraph.EpiPairs
                        Data.GraphPartition
-                       Data.GraphPartition.ToVerigraph
                        Data.GraphPartition.FromVerigraph
+                       Data.GraphPartition.ToVerigraph
                        Data.TypedGraph.Subgraph
                        SndOrder.Morphism.AdhesiveHLR
                        SndOrder.Morphism.Cocomplete
