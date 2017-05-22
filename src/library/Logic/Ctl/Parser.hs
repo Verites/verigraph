@@ -1,11 +1,12 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 module Logic.Ctl.Parser (parseExpr) where
 
-import Data.Functor.Identity
-import Text.Parsec
-import qualified Text.Parsec.Token as P
+import           Data.Functor.Identity
+import           Text.Parsec
+import qualified Text.Parsec.Token     as P
 
-import Logic.Ctl.Base
+import           Logic.Ctl.Base
 
 
 type Parser a = Parsec String () a
