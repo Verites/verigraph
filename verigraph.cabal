@@ -79,9 +79,12 @@ library
                        Category.TypedGraph.AdhesiveHLR
                        Category.TypedGraph.Cocomplete
                        Category.TypedGraph.EpiPairs
-                       Data.GraphPartition
-                       Data.GraphPartition.FromVerigraph
-                       Data.GraphPartition.ToVerigraph
+                       Data.Partitions
+                       Data.Partitions.FromVerigraph
+                       Data.Partitions.Generator
+                       Data.Partitions.ToVerigraph
+                       Data.Partitions.Types
+                       Data.Partitions.Util
                        Data.TypedGraph.Subgraph
                        SndOrder.Morphism.AdhesiveHLR
                        SndOrder.Morphism.Cocomplete

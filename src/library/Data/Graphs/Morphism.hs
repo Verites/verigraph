@@ -286,7 +286,7 @@ instance Valid (GraphMorphism a b) where
       where
         incidencePreserved =
           all
-            (\(Edge e domSrc domTgt _) ->
-                (G.sourceOf cod =<< applyEdgeId morphism e) == applyNodeId morphism domSrc
-                  && (G.targetOf cod =<< applyEdgeId morphism e) == applyNodeId morphism domTgt)
+            (\e@(Edge _ domSrc domTgt _) ->
+                (Just . sourceId =<< applyEdge morphism e) == applyNodeId morphism domSrc
+             && (Just . targetId =<< applyEdge morphism e) == applyNodeId morphism domTgt)
             (G.edges dom)
