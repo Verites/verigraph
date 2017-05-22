@@ -1,11 +1,11 @@
-import           Abstract.Category.AdhesiveHLR      (EpiPairs)
+import           Abstract.Category.AdhesiveHLR (EpiPairs)
 import           Abstract.Category.DPO
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
-import           Data.Matrix               hiding ((<|>))
+import           Data.Matrix                   hiding ((<|>))
 import           Test.HUnit
 import           Utils
-import qualified XML.GGXReader             as XML
+import qualified XML.GGXReader                 as XML
 
 main :: IO ()
 main = do

@@ -1,11 +1,11 @@
 module TypedGraph.Morphism.FindMorphismSpec.FindCospanCommuterTest (findCospanCommuterTest) where
 
 import           Abstract.Category.FinitaryCategory
-import           Category.TypedGraph.FindMorphism ()
+import           Category.TypedGraph.FindMorphism   ()
 import           Data.Graphs
-import qualified Data.Graphs.Morphism as GM
+import qualified Data.Graphs.Morphism               as GM
+import qualified Data.TypedGraph.Morphism           as TGM
 import           Test.Hspec
-import qualified Data.TypedGraph.Morphism as TGM
 
 type TGM a b = TGM.TypedGraphMorphism a b
 type GM a b = GM.GraphMorphism (Maybe a) (Maybe b)

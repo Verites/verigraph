@@ -1,4 +1,4 @@
-import           Abstract.Category.AdhesiveHLR            (EpiPairs)
+import           Abstract.Category.AdhesiveHLR   (EpiPairs)
 import           Abstract.Category.DPO
 import           Analysis.EssentialCriticalPairs
 import           Data.Matrix                     hiding ((<|>))

@@ -1,16 +1,16 @@
 import           Abstract.Category.DPO
 import           Abstract.Category.FinitaryCategory
 import           Analysis.Interlevel.InterLevelCP
-import           Data.Maybe                       (fromMaybe)
+import           Data.Maybe                         (fromMaybe)
+import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
 import           SndOrder.Morphism
 import           SndOrder.Morphism.NACmanipulation
 import           Test.HUnit
-import           Data.TypedGraph
 
-import           Utils
 import           Util.List
-import qualified XML.GGXReader as XML
+import           Utils
+import qualified XML.GGXReader                      as XML
 
 -- | Checks if the number of minimalSafetyNACs was correctly generated.
 checkMinimalSafetyNACs log n = [all (== n) list ~?= True]
