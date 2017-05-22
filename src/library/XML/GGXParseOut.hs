@@ -96,7 +96,7 @@ getMappings rule = nodesMorph ++ edgesMorph
   where
     no = Nothing
     invL = invert (GR.getLHS rule)
-    lr = (GR.getRHS rule) <&> invL
+    lr = GR.getRHS rule <&> invL
     nodeMap = applyNodeIdUnsafe lr
     nodes = filter (isJust . applyNodeId lr) (nodeIdsFromDomain lr)
     nodesMorph = map (\n -> ("N" ++ show (nodeMap n), no, "N" ++ show n)) nodes
