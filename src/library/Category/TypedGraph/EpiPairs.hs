@@ -1,23 +1,28 @@
 module Category.TypedGraph.EpiPairs where
 
 import           Abstract.Category.AdhesiveHLR
-import           Category.TypedGraph               ()
-import           Data.GraphPartition               (generateGraphPartitions)
-import           Data.GraphPartition.FromVerigraph (createDisjointUnion,
-                                                    createSatisfyingNacsDisjointUnion)
-import           Data.GraphPartition.ToVerigraph   (mountTypedGraphMorphisms)
-import           Data.Graphs                       as G
-import qualified Data.Graphs.Morphism              as GM
+import           Category.TypedGraph           ()
+import           Data.Partitions               (generateGraphPartitions)
+import           Data.Partitions.ToVerigraph   (mountTypedGraphMorphisms)
+import           Data.Partitions.FromVerigraph (createDisjointUnion,
+                                                createSatisfyingNacsDisjointUnion)
+import           Data.Graphs                   as G
+import qualified Data.Graphs.Morphism          as GM
 import           Data.TypedGraph.Morphism
 
 instance EpiPairs (TypedGraphMorphism a b) where
   -- | Create all jointly surjective pairs of @m1@ and @m2@
-  createJointlyEpimorphicPairs inj m1 m2 = map (mountTypedGraphMorphisms m1 m2) (generateGraphPartitions (createDisjointUnion (m1,inj) (m2,inj)))
+  createJointlyEpimorphicPairs inj m1 m2 =
+    map
+      (mountTypedGraphMorphisms m1 m2)
+      (generateGraphPartitions (createDisjointUnion (m1,inj) (m2,inj)))
 
   createAllSubobjects inj m1 = map fst part
     where
       m2 = GM.buildGraphMorphism G.empty G.empty [] []
-      part = map (mountTypedGraphMorphisms m1 m2) (generateGraphPartitions (createDisjointUnion (m1,inj) (m2,inj)))
+      part = map
+               (mountTypedGraphMorphisms m1 m2)
+               (generateGraphPartitions (createDisjointUnion (m1,inj) (m2,inj)))
 
   createJointlyEpimorphicPairsFromNAC conf r nac =
     map (mountTypedGraphMorphisms r (codomain nac)) (generateGraphPartitions labeled)
