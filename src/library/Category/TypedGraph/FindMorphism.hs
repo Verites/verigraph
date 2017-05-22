@@ -1,16 +1,17 @@
-module TypedGraph.Morphism.FindMorphism () where
+module Category.TypedGraph.FindMorphism () where
 
 
-import           Category.AdhesiveHLR
-import           Category.FinitaryCategory as FC
-import qualified Data.Relation             as R
-import           Graph.Graph               as G
-import qualified Graph.GraphMorphism       as GM
-import           TypedGraph.Graph
-import           TypedGraph.Morphism.Core
+import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category.FinitaryCategory as FC
+import           Category.TypedGraph                ()
+import           Data.Graphs                        as G
+import qualified Data.Graphs.Morphism               as GM
+import qualified Data.Relation                      as R
+import           Data.TypedGraph
+import           Data.TypedGraph.Morphism
 
 import           Control.Arrow
-import           Data.List                 as L
+import           Data.List                          as L
 import           Data.Maybe
 
 instance FindMorphism (TypedGraphMorphism a b) where

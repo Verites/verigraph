@@ -1,13 +1,14 @@
 module XML.GGXReader.Span where
 
-import           Category.AdhesiveHLR
-import           Category.DPO
-import           Data.Maybe               (fromMaybe)
-import qualified Graph.Graph              as G
-import           Graph.GraphMorphism      as GM
-import           TypedGraph.DPO.GraphRule as GR
-import           TypedGraph.Graph
-import           TypedGraph.Morphism
+import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category.DPO
+import qualified Data.Graphs                   as G
+import           Data.Graphs.Morphism          as GM
+import           Data.Maybe                    (fromMaybe)
+import           Data.TypedGraph
+import           Data.TypedGraph.Morphism
+import           TypedGraph.DPO.GraphRule      as GR
+
 import           XML.ParsedTypes
 import           XML.Utilities
 

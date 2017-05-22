@@ -1,13 +1,13 @@
-module TypedGraph.Morphism.AdhesiveHLR where
+module Category.TypedGraph.AdhesiveHLR where
 
-import           Data.Maybe                     (fromJust, mapMaybe)
+import           Data.Maybe                         (fromJust, mapMaybe)
 
-import           Category.AdhesiveHLR
-import           Category.FinitaryCategory
-import           Graph.Graph                    as G
-import qualified Graph.GraphMorphism            as GM
-import           TypedGraph.Morphism.Cocomplete ()
-import           TypedGraph.Morphism.Core
+import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category.FinitaryCategory
+import           Category.TypedGraph.Cocomplete     ()
+import           Data.Graphs                        as G
+import qualified Data.Graphs.Morphism               as GM
+import           Data.TypedGraph.Morphism
 
 instance AdhesiveHLR (TypedGraphMorphism a b) where
 
@@ -224,7 +224,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
   hasPushoutComplement (_, g) (_, f) =
     satisfiesDanglingCondition f g && satisfiesIdentificationCondition f g
 
-
+-- TODO: it looks like the function below shouldn't be in the module
 generateNewNodeInstances :: TypedGraphMorphism a b -> [(NodeId, NodeId)] -> TypedGraphMorphism a b
 generateNewNodeInstances gf =
   foldr (\(a,b) tgm -> let tp = fromJust $ GM.applyNodeId (domain gf) a

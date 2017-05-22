@@ -1,4 +1,4 @@
-module TypedGraph.Partitions.GraphPartition (
+module Data.GraphPartition (
    Node (..),
    Edge (..),
    Graph,
@@ -127,7 +127,7 @@ backtracking equivalenceChecker toAdd eqClass =
 
 -- | Returns the node that this @p@ was collapsed in partitions
 -- Used to compare if an edge can be mixed with another
--- GraphPartitionToVerigraph use to discover source and target of edges
+-- ToVerigraph use to discover source and target of edges
 getNode :: (Int,Bool) -> [[Node]] -> Node
 getNode _ [] = error "error when generating overlapping pairs (getNode)"
 getNode p@(name,source) (x:xs) =

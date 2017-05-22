@@ -25,10 +25,10 @@ module TypedGraph.DPO.OccurenceRelation
 
 where
 
+import           Data.Graphs    (EdgeId, NodeId)
 import           Data.Maybe     (isJust, isNothing)
 import           Data.Partition
 import           Data.Set       as S
-import           Graph.Graph    (EdgeId, NodeId)
 import           Util.Closures  as C
 
 data RelationItem = Node NodeId

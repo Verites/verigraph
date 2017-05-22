@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module Category.AdhesiveHLR
+module Abstract.Category.AdhesiveHLR
   ( FinitaryCategory(..)
   , AtomicConstraint (..)
   , buildNamedAtomicConstraint
@@ -19,9 +19,9 @@ module Category.AdhesiveHLR
   , MorphismsConfig(..)
   ) where
 
-import           Category.AdhesiveHLR.Constraint
-import           Category.Cocomplete
-import           Category.FinitaryCategory
+import           Abstract.Category.AdhesiveHLR.Constraint
+import           Abstract.Category.Cocomplete
+import           Abstract.Category.FinitaryCategory
 
 -- | Type class for morphisms whose category Adhesive and suitable for
 -- High-Level Replacement Systems.
@@ -62,7 +62,7 @@ class (Cocomplete morph) => AdhesiveHLR morph where
   --       g'
   -- @
   calculatePushout :: morph -> morph -> (morph,morph)
-  calculatePushout = Category.Cocomplete.calculatePushout
+  calculatePushout = Abstract.Category.Cocomplete.calculatePushout
 
   -- | Checks if the given sequential morphisms have a pushout complement, assuming they satsify
   -- the given restriction.

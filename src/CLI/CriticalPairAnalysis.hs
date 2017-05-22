@@ -4,13 +4,13 @@ module CriticalPairAnalysis
   , execute
   ) where
 
+import           Abstract.Category.AdhesiveHLR         (EpiPairs)
+import           Abstract.Category.DPO
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
 import           Analysis.EssentialCriticalPairs
 import           Analysis.Interlevel.EvolutionarySpans
 import           Analysis.Interlevel.InterLevelCP
-import           Category.AdhesiveHLR                  (EpiPairs)
-import           Category.DPO
 import           Control.Monad                         (when)
 import           Data.Matrix                           hiding ((<|>))
 import           Data.Monoid                           ((<>))

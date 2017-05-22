@@ -2,11 +2,12 @@
 
 module SndOrder.Morphism.Core where
 
+import           Abstract.Category.DPO
+import           Abstract.Category.FinitaryCategory
 import           Abstract.Valid
-import           Category.DPO
-import           Category.FinitaryCategory
-import           TypedGraph.DPO.GraphRule  ()
-import           TypedGraph.Morphism
+import           Data.TypedGraph.Morphism
+import           TypedGraph.DPO.GraphRule           ()
+
 
 -- | A morphism between two first order rules.
 --

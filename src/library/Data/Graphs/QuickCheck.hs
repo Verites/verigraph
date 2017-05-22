@@ -1,10 +1,9 @@
-module Graph.QuickCheck where
+module Data.Graphs.QuickCheck where
 
-import           Graph.Graph
+import           Data.Graphs
 
 import           Test.QuickCheck.Arbitrary
 import           Test.QuickCheck.Gen
-
 
 
 instance Arbitrary NodeId where

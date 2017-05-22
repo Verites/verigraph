@@ -8,16 +8,17 @@ module XML.GGXParseOut
  , getMappings
  ) where
 
-import qualified Analysis.CriticalPairs    as CP
-import qualified Analysis.CriticalSequence as CS
-import           Category.DPO
-import           Category.FinitaryCategory ((<&>))
-import qualified Category.FinitaryCategory as FC hiding ((<&>))
-import           Data.Maybe                (fromMaybe, isJust)
-import qualified Graph.Graph               as G
-import qualified TypedGraph.DPO.GraphRule  as GR
-import           TypedGraph.Graph
-import           TypedGraph.Morphism
+import           Abstract.Category.DPO
+import           Abstract.Category.FinitaryCategory ((<&>))
+import qualified Abstract.Category.FinitaryCategory as FC hiding ((<&>))
+import qualified Analysis.CriticalPairs             as CP
+import qualified Analysis.CriticalSequence          as CS
+import qualified Data.Graphs                        as G
+import           Data.Maybe                         (fromMaybe, isJust)
+import           Data.TypedGraph
+import           Data.TypedGraph.Morphism
+import qualified TypedGraph.DPO.GraphRule           as GR
+
 import           XML.ParsedTypes
 
 parseCPGraph :: (String,String,[CP.CriticalPair (TypedGraphMorphism a b)]) -> Overlappings

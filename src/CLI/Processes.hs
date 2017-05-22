@@ -12,13 +12,13 @@ import           Data.Set                         (toList)
 import           GlobalOptions
 import           Options.Applicative
 
+import           Abstract.Category.DPO
+import           Abstract.Category.DPO.Process    hiding (productions)
 import           Abstract.Valid
 import           Analysis.Processes
-import           Category.DPO
-import           Category.DPO.Process             hiding (productions)
+import qualified Data.TypedGraph                  as TG
 import           TypedGraph.DPO.GraphProcess
 import           TypedGraph.DPO.OccurenceRelation
-import qualified TypedGraph.Graph                 as TG
 import qualified XML.GGXReader                    as XML
 import qualified XML.GGXWriter                    as GW
 

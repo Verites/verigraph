@@ -1,24 +1,26 @@
+
 module ApplySndOrderRules
   ( Options
   , options
   , execute
   ) where
 
-import           Category.AdhesiveHLR
-import           Category.DPO
-import           Control.Monad            (when)
-import           Graph.Graph              (Graph)
-import qualified SndOrder.Rule            as SO
-import qualified TypedGraph.DPO.GraphRule as GR
-import           TypedGraph.Morphism
+import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category.DPO
+import           Control.Monad                 (when)
+import           Data.Graphs                   (Graph)
+import           Data.TypedGraph.Morphism
+import qualified SndOrder.Rule                 as SO
+import qualified TypedGraph.DPO.GraphRule      as GR
 
-import           Data.Monoid              ((<>))
+
+import           Data.Monoid                   ((<>))
 import           GlobalOptions
 import           Options.Applicative
 
 import           Image.Dot
-import qualified XML.GGXReader            as XML
-import qualified XML.GGXWriter            as GW
+import qualified XML.GGXReader                 as XML
+import qualified XML.GGXWriter                 as GW
 
 newtype Options = Options
   { outputFile :: String }

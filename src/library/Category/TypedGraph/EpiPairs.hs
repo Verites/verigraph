@@ -1,13 +1,14 @@
-module TypedGraph.Morphism.EpiPairs where
+module Category.TypedGraph.EpiPairs where
 
-import           Category.AdhesiveHLR
-import           Graph.Graph                                     as G
-import qualified Graph.GraphMorphism                             as GM
-import           TypedGraph.Morphism.Core
-import           TypedGraph.Partitions.GraphPartition            (generateGraphPartitions)
-import           TypedGraph.Partitions.GraphPartitionToVerigraph (mountTypedGraphMorphisms)
-import           TypedGraph.Partitions.VerigraphToGraphPartition (createDisjointUnion,
-                                                                  createSatisfyingNacsDisjointUnion)
+import           Abstract.Category.AdhesiveHLR
+import           Category.TypedGraph               ()
+import           Data.GraphPartition               (generateGraphPartitions)
+import           Data.GraphPartition.FromVerigraph (createDisjointUnion,
+                                                    createSatisfyingNacsDisjointUnion)
+import           Data.GraphPartition.ToVerigraph   (mountTypedGraphMorphisms)
+import           Data.Graphs                       as G
+import qualified Data.Graphs.Morphism              as GM
+import           Data.TypedGraph.Morphism
 
 instance EpiPairs (TypedGraphMorphism a b) where
   -- | Create all jointly surjective pairs of @m1@ and @m2@

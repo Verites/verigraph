@@ -1,4 +1,4 @@
-module Category.DPO.Derivation
+module Abstract.Category.DPO.Derivation
 ( Derivation(..)
 , generateDerivation
 , getDObjects
@@ -9,8 +9,8 @@ module Category.DPO.Derivation
 
 where
 
-import           Category.AdhesiveHLR
-import           Category.DPO.Core
+import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category.DPO.Core
 
 data Derivation morph = Derivation
   { production :: Production morph

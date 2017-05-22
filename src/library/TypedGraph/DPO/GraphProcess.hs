@@ -18,23 +18,24 @@ module TypedGraph.DPO.GraphProcess
 
 where
 
+import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category.DPO
+import           Abstract.Category.DPO.Process      hiding (productions)
+import           Abstract.Category.FinitaryCategory as FC
 import           Analysis.DiagramAlgorithms
-import           Category.AdhesiveHLR
-import           Category.DPO
-import           Category.DPO.Process             hiding (productions)
-import           Category.FinitaryCategory        as FC
-import           Data.List                        as L hiding (union)
-import           Data.Maybe                       (fromJust, fromMaybe, isJust)
+import           Data.Graphs                        (Graph)
+import qualified Data.Graphs.Morphism               as GM
+import           Data.List                          as L hiding (union)
+import           Data.Maybe                         (fromJust, fromMaybe, isJust)
 import           Data.Partition
-import           Data.Set                         as S
-import           Data.Tuple                       (swap)
-import           Graph.Graph                      (Graph)
-import qualified Graph.GraphMorphism              as GM
+import           Data.Set                           as S
+import           Data.Tuple                         (swap)
+import           Data.TypedGraph
+import           Data.TypedGraph.Morphism           as TGM
 import           TypedGraph.DPO.GraphRule
 import           TypedGraph.DPO.OccurenceRelation
-import           TypedGraph.Graph
-import           TypedGraph.Morphism              as TGM
-import           Util.Closures                    as C
+
+import           Util.Closures                      as C
 import           Util.List
 
 instance GenerateProcess (TypedGraphMorphism a b) where

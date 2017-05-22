@@ -1,13 +1,14 @@
 module TypedGraph.Morphism.FindMorphismSpec.FindMorphismsTest (findMorphismsTest) where
 
-import           Category.FinitaryCategory
+import           Abstract.Category.FinitaryCategory
+import           Category.TypedGraph.FindMorphism
 import qualified Data.Relation   as R
 import           Data.List
 import qualified Data.Map            as M
-import           Graph.Graph
-import qualified Graph.GraphMorphism as GM
+import           Data.Graphs
+import qualified Data.Graphs.Morphism as GM
 import           Test.Hspec
-import qualified TypedGraph.Morphism as TGM
+import qualified Data.TypedGraph.Morphism as TGM
 
 type TGM a b = TGM.TypedGraphMorphism a b
 type GM a b = GM.GraphMorphism (Maybe a) (Maybe b)

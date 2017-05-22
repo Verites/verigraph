@@ -23,13 +23,15 @@ module TypedGraph.DPO.GraphRule (
     , isDeleted
 ) where
 
-
-import           Category.DPO              as DPO
-import           Category.FinitaryCategory as FC
-import           Graph.Graph               as G
-import qualified Graph.GraphMorphism       as GM
-import           TypedGraph.Graph          as GM
-import           TypedGraph.Morphism       as TGM
+import           Abstract.Category.DPO              as DPO
+import           Abstract.Category.FinitaryCategory as FC
+import           Category.TypedGraph                ()
+import           Category.TypedGraph.AdhesiveHLR
+import           Category.TypedGraph.FindMorphism   ()
+import           Data.Graphs                        as G
+import qualified Data.Graphs.Morphism               as GM
+import           Data.TypedGraph                    as GM
+import           Data.TypedGraph.Morphism           as TGM
 
 type GraphRule a b = Production (TypedGraphMorphism a b)
 
@@ -105,6 +107,7 @@ nullGraphRule rule = null l && null k && null r
     k = domain $ getLHS rule
     r = codomain $ getRHS rule
 
+-- TODO: this probably shouldn't be here
 instance DPO (TypedGraphMorphism a b) where
 
   invertProduction conf rule =

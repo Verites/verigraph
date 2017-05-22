@@ -1,5 +1,5 @@
 {-# LANGUAGE TypeFamilies #-}
-module Category.FinitaryCategory where
+module Abstract.Category.FinitaryCategory where
 
 {- | Defines finitary categories and the basic operations they have-}
 class (Eq morph) => FinitaryCategory morph where

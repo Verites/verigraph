@@ -7,7 +7,7 @@ Operation comments contain the operation time complexity in the Big-O notation
 <http://en.wikipedia.org/wiki/Big_O_notation>, denoting by /v/ the number of nodes in a graph, and
 by /e/ the number of edges in a graph.
 -}
-module Graph.Graph (
+module Data.Graphs (
     -- * Graph Type
       Graph(..)
     , NodeId (..)
@@ -29,7 +29,7 @@ module Graph.Graph (
     -- $neighbours
 
     -- * Query
-    , Graph.Graph.null
+    , Data.Graphs.null
     , isNodeOf
     , isEdgeOf
     , lookupNode

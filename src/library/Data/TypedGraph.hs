@@ -1,10 +1,10 @@
-module TypedGraph.Graph
+module Data.TypedGraph
   ( TypedGraph
   , untypedGraph
   , extractNodeType
   , extractEdgeType
   , typeGraph
-  , TypedGraph.Graph.null
+  , Data.TypedGraph.null
   , newTypedNodes
   , newTypedEdges
   , typedNodes
@@ -14,25 +14,24 @@ module TypedGraph.Graph
   ) where
 
 import           Abstract.Cardinality
-import           Category.FinitaryCategory
-import           Data.Maybe                (fromMaybe)
-import           Graph.Graph               as G
-import           Graph.GraphMorphism
+import           Data.Graphs          as G
+import           Data.Graphs.Morphism
+import           Data.Maybe           (fromMaybe)
 
 
 -- | A typed graph is a morphism whose codomain is the type graph.
 type TypedGraph a b = GraphMorphism (Maybe a) (Maybe b)
 
 instance Cardinality (GraphMorphism a b) where
-  cardinality = cardinality . domain
+  cardinality = cardinality . domainGraph
 
 -- | Obtain the untyped version of the typed graph
 untypedGraph :: TypedGraph a b -> Graph (Maybe a) (Maybe b)
-untypedGraph = domain
+untypedGraph = domainGraph
 
 -- | Obtain the type graph from a typed graph
 typeGraph :: TypedGraph a b -> Graph (Maybe a) (Maybe b)
-typeGraph = codomain
+typeGraph = codomainGraph
 
 -- | Test if the typed graph is empty
 null :: TypedGraph a b -> Bool

@@ -2,25 +2,26 @@
 Module      : InterLevelCP
 Description : Implements the inter-level critical pairs
 -}
-
 module Analysis.Interlevel.InterLevelCP
   ( interLevelCP,
     InterLevelCP(..),
     danglingExtension
   ) where
 
-import           Category.AdhesiveHLR
-import           Category.DPO
-import           Category.FinitaryCategory
-import           Data.List                 (nubBy)
-import           Graph.Graph
-import           Graph.GraphMorphism       hiding (createEdgeOnCodomain, createNodeOnCodomain)
+import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category.DPO
+import           Abstract.Category.FinitaryCategory
+import           Data.Graphs
+import           Data.Graphs.Morphism               hiding (createEdgeOnCodomain,
+                                                     createNodeOnCodomain)
+import           Data.List                          (nubBy)
+import           Data.TypedGraph
+import           Data.TypedGraph.Morphism
 import           SndOrder.Morphism
 import           SndOrder.Rule
 import           TypedGraph.DPO.GraphRule
-import           TypedGraph.Graph
-import           TypedGraph.Morphism
-import           TypedGraph.Subgraph
+
+import           Data.TypedGraph.Subgraph
 
 
 data InterLevelCP a b = InterLevelCP {

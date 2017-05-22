@@ -1,17 +1,16 @@
-module TypedGraph.Subgraph (subgraphs, inducedSubgraphs) where
+module Data.TypedGraph.Subgraph (subgraphs, inducedSubgraphs) where
 
-import           Category.FinitaryCategory
-import           Graph.Graph
-import           Graph.GraphMorphism
-import           TypedGraph.Graph
-import           TypedGraph.Morphism       hiding (createEdgeOnDomain, createNodeOnDomain)
+import           Data.Graphs
+import           Data.Graphs.Morphism
+import           Data.TypedGraph
+import           Data.TypedGraph.Morphism as TGM hiding (createEdgeOnDomain, createNodeOnDomain)
 
 -- | Generates all subgraphs of a typed graph.
 subgraphs :: TypedGraph a b -> [TypedGraph a b]
 subgraphs g = subEdges
   where
-    graph = domain g
-    emptyGraph = Graph.GraphMorphism.empty Graph.Graph.empty (codomain g)
+    graph = untypedGraph g
+    emptyGraph = Data.Graphs.Morphism.empty Data.Graphs.empty (typeGraph g)
 
     listNodesToAdd = [(n, extractNodeType g n) | n <- nodeIds graph]
 
@@ -27,13 +26,13 @@ subgraphs g = subEdges
 -- | Considering /m : X -> Y/,
 -- generates all subgraphs of /Y/ containing the graph /X/ via m.
 inducedSubgraphs :: TypedGraphMorphism a b -> [TypedGraphMorphism a b]
-inducedSubgraphs m = map (idMap (domain m)) subEdges
+inducedSubgraphs m = map (idMap (TGM.domainGraph m)) subEdges
   where
-    g = codomain m
+    g = TGM.codomainGraph m
 
     listNodesToAdd = [(n, extractNodeType g n) | n <- orphanTypedNodeIds m]
 
-    subNodes = decisionTreeNodes listNodesToAdd (domain m)
+    subNodes = decisionTreeNodes listNodesToAdd (TGM.domainGraph m)
 
 
     listEdgesToAdd = [(edgeId e,
@@ -56,5 +55,5 @@ decisionTreeEdges ((e,s,t,tp):es) g = decisionTreeEdges es g ++
   if isNodeOf graph s && isNodeOf graph t
     then decisionTreeEdges es added else []
   where
-    graph = domain g
+    graph = untypedGraph g
     added = createEdgeOnDomain e s t tp g

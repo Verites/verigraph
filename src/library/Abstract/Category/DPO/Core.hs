@@ -10,13 +10,13 @@ alongside their constructors and manipulators.
 Also, this module has the functions to deal with Productions applicability, nacs satisfactions
 and the DPO rewritting.
 -}
-module Category.DPO.Core
+module Abstract.Category.DPO.Core
 
 where
 
+import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category.FinitaryCategory
 import           Abstract.Valid
-import           Category.AdhesiveHLR
-import           Category.FinitaryCategory
 
 
 

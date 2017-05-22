@@ -1,10 +1,12 @@
 module SndOrder.Morphism.NACmanipulation where
 
-import           Category.AdhesiveHLR
-import           Category.DPO
-import           Category.FinitaryCategory
-import           SndOrder.Morphism.Cocomplete ()
-import           TypedGraph.Morphism
+import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category.DPO
+import           Abstract.Category.FinitaryCategory
+import           Category.TypedGraph.EpiPairs       ()
+import           Data.TypedGraph.Morphism
+import           SndOrder.Morphism.Cocomplete       ()
+
 
 -- | Auxiliar structure and function to delete first-order NACs
 data DeleteScheme = DisableDelete | Monomorphisms | InitialPushouts

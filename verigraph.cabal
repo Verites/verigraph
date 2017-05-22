@@ -27,16 +27,15 @@ library
                        set-monad >= 0.2,
                        split >= 0.2,
                        wl-pprint >=1.2 && <1.3
-  exposed-modules:     Category.AdhesiveHLR
+  exposed-modules:     Abstract.Category.AdhesiveHLR
                        Abstract.Cardinality
-                       Category.Cocomplete
-                       Category.Complete
-                       Category.AdhesiveHLR.Constraint
-                       Category.DPO
-                       Category.DPO.Process
-                       Category.DPO.StateSpace
-                       Category.FinitaryCategory
-                       Data.Relation
+                       Abstract.Category.Cocomplete
+                       Abstract.Category.Complete
+                       Abstract.Category.AdhesiveHLR.Constraint
+                       Abstract.Category.DPO
+                       Abstract.Category.DPO.Process
+                       Abstract.Category.DPO.StateSpace
+                       Abstract.Category.FinitaryCategory
                        Abstract.Valid
                        Analysis.EssentialCriticalPairs
                        Analysis.ConcurrentRules
@@ -46,10 +45,16 @@ library
                        Analysis.Processes
                        Analysis.Interlevel.EvolutionarySpans
                        Analysis.Interlevel.InterLevelCP
+                       Category.Graph
+                       Category.TypedGraph
+                       Category.TypedGraph.FindMorphism
+                       Data.Relation
                        Image.Dot
-                       Graph.Graph
-                       Graph.GraphMorphism
-                       Graph.QuickCheck
+                       Data.Graphs
+                       Data.Graphs.QuickCheck
+                       Data.TypedGraph
+                       Data.TypedGraph.Morphism
+                       Data.Graphs.Morphism
                        Logic.Model
                        Logic.Ctl
                        SndOrder.Morphism
@@ -58,30 +63,26 @@ library
                        TypedGraph.DPO.GraphProcess
                        TypedGraph.DPO.GraphRule
                        TypedGraph.DPO.OccurenceRelation
-                       TypedGraph.Graph
-                       TypedGraph.Morphism
                        Util.Closures
                        Util.List
                        XML.GGXReader
                        XML.GGXWriter
   other-modules:
-                       Category.DPO.Core
-                       Category.DPO.Derivation
+                       Abstract.Category.DPO.Core
+                       Abstract.Category.DPO.Derivation
                        Analysis.DiagramAlgorithms
                        Analysis.EpimorphicPairs
                        Data.Partition
                        Logic.Ctl.Base
                        Logic.Ctl.Parser
                        Logic.Ctl.Semantics
-                       TypedGraph.Morphism.AdhesiveHLR
-                       TypedGraph.Morphism.Cocomplete
-                       TypedGraph.Morphism.Core
-                       TypedGraph.Morphism.EpiPairs
-                       TypedGraph.Morphism.FindMorphism
-                       TypedGraph.Partitions.GraphPartitionToVerigraph
-                       TypedGraph.Partitions.GraphPartition
-                       TypedGraph.Partitions.VerigraphToGraphPartition
-                       TypedGraph.Subgraph
+                       Category.TypedGraph.AdhesiveHLR
+                       Category.TypedGraph.Cocomplete
+                       Category.TypedGraph.EpiPairs
+                       Data.GraphPartition
+                       Data.GraphPartition.ToVerigraph
+                       Data.GraphPartition.FromVerigraph
+                       Data.TypedGraph.Subgraph
                        SndOrder.Morphism.AdhesiveHLR
                        SndOrder.Morphism.Cocomplete
                        SndOrder.Morphism.CommutingSquares

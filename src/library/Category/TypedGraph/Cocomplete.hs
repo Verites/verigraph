@@ -1,4 +1,4 @@
-module TypedGraph.Morphism.Cocomplete (
+module Category.TypedGraph.Cocomplete (
 
   calculateCoequalizer,
   calculateNCoequalizer,
@@ -10,16 +10,17 @@ module TypedGraph.Morphism.Cocomplete (
 
 where
 
-import           Category.Cocomplete
-import           Category.FinitaryCategory as FC
-import qualified Data.List.NonEmpty        as NE
-import           Data.Maybe                (fromJust)
+import           Abstract.Category.Cocomplete
+import           Abstract.Category.FinitaryCategory as FC
+import           Category.TypedGraph                ()
+import           Data.Graphs                        as G
+import qualified Data.Graphs.Morphism               as GM
+import qualified Data.List.NonEmpty                 as NE
+import           Data.Maybe                         (fromJust)
 import           Data.Partition
-import           Data.Set                  as DS
-import           Graph.Graph               as G
-import qualified Graph.GraphMorphism       as GM
-import           TypedGraph.Graph
-import           TypedGraph.Morphism.Core
+import           Data.Set                           as DS
+import           Data.TypedGraph
+import           Data.TypedGraph.Morphism
 
 type TypedNode = (NodeId,NodeId)
 type TypedEdge = (EdgeId, NodeId, NodeId, EdgeId)
@@ -33,12 +34,12 @@ instance Cocomplete (TypedGraphMorphism a b) where
   initialObject = initialObject'
 
 initialObject' :: TypedGraphMorphism a b -> TypedGraph a b
-initialObject' tgm = GM.empty G.empty (typeGraph (domain tgm))
+initialObject' tgm = GM.empty G.empty (typeGraph (domainGraph tgm))
 
 calculateCoequalizer' :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 calculateCoequalizer' f g = initCoequalizerMorphism b nodeEquivalences edgeEquivalences
   where
-    b = getCodomain f
+    b = codomainGraph f
     nodeEquivalences = createNodeEquivalences f g
     edgeEquivalences = createEdgeEquivalences f g
 
@@ -46,7 +47,7 @@ calculateNCoequalizer' :: NE.NonEmpty (TypedGraphMorphism a b) -> TypedGraphMorp
 calculateNCoequalizer' fs' = initCoequalizerMorphism b nodeEquivalences edgeEquivalences
   where
     fs = NE.toList fs'
-    b = getCodomain $ head fs
+    b = codomainGraph $ head fs
     nodeEquivalences = createNodeNEquivalences fs
     edgeEquivalences = createEdgeNEquivalences fs
 
@@ -126,9 +127,9 @@ createNodeNEquivalences fs = nodesOnX
   where
     representant = head fs
     equivalentNodes (n,nt) = fromList $ Prelude.map (\f -> (fromJust $ applyNodeId f n,nt)) fs
-    nodesFromA = typedNodes (getDomain representant)
+    nodesFromA = typedNodes (domainGraph representant)
     nodesToGluingOnB = fmap equivalentNodes nodesFromA
-    initialNodesOnX = discretePartition (typedNodes (getCodomain representant))
+    initialNodesOnX = discretePartition (typedNodes (codomainGraph representant))
     nodesOnX = mergeSets nodesToGluingOnB initialNodesOnX
 
 createEdgeNEquivalences :: [TypedGraphMorphism a b] -> Set (EquivalenceClass TypedEdge)
@@ -136,18 +137,18 @@ createEdgeNEquivalences fs = edgesOnX
   where
     representant = head fs
     equivalentEdges (e,s,t,et) = fromList $ Prelude.map (\f -> (fromJust $ applyEdgeId f e, fromJust $ applyNodeId f s, fromJust $ applyNodeId f t,et)) fs
-    edgesFromA = typedEdges (getDomain representant)
+    edgesFromA = typedEdges (domainGraph representant)
     edgesToGluingOnB = fmap equivalentEdges edgesFromA
-    initialEdgesOnX = discretePartition (typedEdges (getCodomain representant))
+    initialEdgesOnX = discretePartition (typedEdges (codomainGraph representant))
     edgesOnX = mergeSets edgesToGluingOnB initialEdgesOnX
 
 createNodeEquivalences :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Set (EquivalenceClass TypedNode)
 createNodeEquivalences f g = nodesOnX
   where
     equivalentNodes (n,nt) = ((fromJust $ applyNodeId f n,nt), (fromJust $ applyNodeId g n,nt))
-    nodesFromA = typedNodes (getDomain f)
+    nodesFromA = typedNodes (domainGraph f)
     nodesToGluingOnB = fmap equivalentNodes nodesFromA
-    initialNodesOnX = discretePartition (typedNodes (getCodomain f))
+    initialNodesOnX = discretePartition (typedNodes (codomainGraph f))
     nodesOnX = mergePairs nodesToGluingOnB initialNodesOnX
 
 createEdgeEquivalences :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Set (EquivalenceClass TypedEdge)
@@ -157,9 +158,9 @@ createEdgeEquivalences f g = edgesOnX
       ((fromJust $ applyEdgeId f e, mapByF s, mapByF t,et), (fromJust $ applyEdgeId g e,mapByG s,mapByG t,et))
     mapByF = fromJust . applyNodeId f
     mapByG = fromJust . applyNodeId g
-    edgesFromA = typedEdges (getDomain f)
+    edgesFromA = typedEdges (domainGraph f)
     edgesToGluingOnB = fmap equivalentEdges edgesFromA
-    initialEdgesOnX = discretePartition (typedEdges (getCodomain f))
+    initialEdgesOnX = discretePartition (typedEdges (codomainGraph f))
     edgesOnX = mergePairs edgesToGluingOnB initialEdgesOnX
 
 addNode :: EquivalenceClass TypedNode -> TypedGraphMorphism a b -> TypedGraphMorphism a b

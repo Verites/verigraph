@@ -5,10 +5,10 @@ import           Test.Hspec.QuickCheck
 import           Test.QuickCheck
 import           Test.QuickCheck.Function
 
-import           Category.FinitaryCategory
+import           Abstract.Category.FinitaryCategory
 import           Abstract.Valid
-import           Graph.Graph
-import           Graph.GraphMorphism
+import           Data.Graphs
+import           Data.Graphs.Morphism
 
 
 spec :: Spec

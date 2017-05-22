@@ -12,20 +12,21 @@ module XML.GGXWriter
 import           Data.Maybe
 import           Text.XML.HXT.Core
 
-import qualified Analysis.CriticalPairs          as CP
-import qualified Analysis.CriticalSequence       as CS
-import qualified Analysis.EssentialCriticalPairs as ECP
-import           Category.AdhesiveHLR
-import           Category.DPO
-import           Category.FinitaryCategory       (codomain)
+import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category.DPO
+import           Abstract.Category.FinitaryCategory (codomain)
+import qualified Analysis.CriticalPairs             as CP
+import qualified Analysis.CriticalSequence          as CS
+import qualified Analysis.EssentialCriticalPairs    as ECP
+import qualified Data.Graphs                        as G
 import           Data.List
-import qualified Graph.Graph                     as G
+import           Data.TypedGraph                    (TypedGraph)
+import           Data.TypedGraph.Morphism
 import           SndOrder.Morphism
-import qualified SndOrder.Rule                   as SO
-import           TypedGraph.DPO.GraphProcess     ()
-import qualified TypedGraph.DPO.GraphRule        as GR
-import           TypedGraph.Graph                (TypedGraph)
-import           TypedGraph.Morphism
+import qualified SndOrder.Rule                      as SO
+import           TypedGraph.DPO.GraphProcess        ()
+import qualified TypedGraph.DPO.GraphRule           as GR
+
 import           XML.GGXParseOut
 import           XML.ParsedTypes
 import           XML.ParseSndOrderRule

@@ -1,11 +1,14 @@
+-- TODO: this module does not look like it is directly related to 2nd Order
 module SndOrder.Morphism.CommutingSquares (
     commutingMorphism
   , commutingMorphismSameDomain
   , commutingMorphismSameCodomain
   ) where
 
-import           Category.FinitaryCategory
-import           TypedGraph.Morphism
+import           Abstract.Category.FinitaryCategory
+import           Category.TypedGraph                ()
+import           Category.TypedGraph.FindMorphism   ()
+import           Data.TypedGraph.Morphism
 
 ---- All functions in this file search the unique morphism in some diagram.
 -- Since it is for build productions, we consider only monomorphic morphisms.

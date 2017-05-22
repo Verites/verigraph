@@ -1,21 +1,20 @@
-module TypedGraph.Partitions.GraphPartitionToVerigraph (
-   mountTypedGraphMorphisms
-   ) where
+module Data.GraphPartition.ToVerigraph
+( mountTypedGraphMorphisms
+) where
 
 {-Converts from GraphPartition to Verigraph structures-}
-
-import           Category.FinitaryCategory
-import qualified Graph.Graph                          as G
-import qualified Graph.GraphMorphism                  as GM
-import           TypedGraph.Graph
-import qualified TypedGraph.Morphism.Core             as TGM
-import           TypedGraph.Partitions.GraphPartition as GP
+-- TODO: break this module in two, one for graphs and other for typed graphs?
+import           Data.GraphPartition      as GP
+import qualified Data.Graphs              as G
+import qualified Data.Graphs.Morphism     as GM
+import           Data.TypedGraph          as TG
+import qualified Data.TypedGraph.Morphism as TGM
 
 -- | For two typed graphs and a EpiPair (in GraphPartition format) return two TypedGraphMorphism for the graph in verigraph format
 mountTypedGraphMorphisms :: TypedGraph a b -> TypedGraph a b -> GP.GraphPartition -> (TGM.TypedGraphMorphism a b, TGM.TypedGraphMorphism a b)
 mountTypedGraphMorphisms tg1 tg2 graphPartition = (mountTGM True tg1, mountTGM False tg2)
   where
-    typeGraph = codomain tg1
+    typeGraph = TG.typeGraph tg1
     typedGraph = mountTypedGraph graphPartition typeGraph
     mountTGM side match = TGM.buildTypedGraphMorphism match typedGraph (mountMapping side graphPartition match)
 
@@ -36,11 +35,11 @@ mountTypedGraph graphPartition typeGraph = GM.buildGraphMorphism graph typeGraph
     graph = mountGraph graphPartition
 
 mountMapping :: Bool -> GP.GraphPartition -> GM.GraphMorphism (Maybe a) (Maybe b) -> GM.GraphMorphism (Maybe a) (Maybe b)
-mountMapping side g@(nodes,edges) m = GM.buildGraphMorphism (domain m) (mountGraph g) nods edgs
+mountMapping side g@(nodes,edges) m = GM.buildGraphMorphism (GM.domainGraph m) (mountGraph g) nods edgs
   where
-    nods = map (\(G.NodeId n) -> (n, nodeId n)) (G.nodeIds (domain m))
+    nods = map (\(G.NodeId n) -> (n, nodeId n)) (G.nodeIds (GM.domainGraph m))
     nodeId n = GP.nodeId $ head $ getListContainingNode (side,n) nodes
-    edgs = map (\(G.EdgeId e) -> (e, edgeId e)) (G.edgeIds (domain m))
+    edgs = map (\(G.EdgeId e) -> (e, edgeId e)) (G.edgeIds (GM.domainGraph m))
     edgeId e = GP.edgeId $ head $ getListContainingEdge (side,e) edges
 
 -- | Returns the list which Node is in [[Node]]

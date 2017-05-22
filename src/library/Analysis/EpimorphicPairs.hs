@@ -2,7 +2,7 @@ module Analysis.EpimorphicPairs (
   createJointlyEpimorphicPairsFromCodomains
 ) where
 
-import           Category.AdhesiveHLR
+import           Abstract.Category.AdhesiveHLR
 
 -- | Create all jointly epimorphic pairs of morphisms from the codomains of
 -- the given morphisms.

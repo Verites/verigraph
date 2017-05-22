@@ -6,13 +6,13 @@ module Analysis.ConcurrentRules
 ) where
 
 import           Abstract.Cardinality
+import           Abstract.Category.AdhesiveHLR
+import qualified Abstract.Category.Cocomplete  as C
+import           Abstract.Category.DPO
 import           Abstract.Valid
-import           Analysis.CriticalSequence (findTriggeredCriticalSequences,
-                                            getCriticalSequenceComatches)
-import           Category.AdhesiveHLR
-import qualified Category.Cocomplete       as C
-import           Category.DPO
-import           Data.Maybe                (mapMaybe)
+import           Analysis.CriticalSequence     (findTriggeredCriticalSequences,
+                                                getCriticalSequenceComatches)
+import           Data.Maybe                    (mapMaybe)
 
 data CRDependencies = AllOverlapings | OnlyDependency
 
