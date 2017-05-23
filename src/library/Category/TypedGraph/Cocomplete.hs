@@ -33,8 +33,8 @@ instance Cocomplete (TypedGraphMorphism a b) where
   calculateNCoproduct = calculateNCoproduct'
   initialObject = initialObject'
 
-initialObject' :: TypedGraphMorphism a b -> TypedGraph a b
-initialObject' tgm = GM.empty G.empty (typeGraph (domainGraph tgm))
+initialObject' :: TypedGraphMorphism a b -> TypedGraph (Maybe a) (Maybe b)
+initialObject' tgm = TypedGraph (GM.empty G.empty (typeGraph (domainGraph tgm)))
 
 calculateCoequalizer' :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 calculateCoequalizer' f g = initCoequalizerMorphism b nodeEquivalences edgeEquivalences
@@ -54,15 +54,16 @@ calculateNCoequalizer' fs' = initCoequalizerMorphism b nodeEquivalences edgeEqui
 -- | Given a typed graph @B@ and the sets @Ne@ and @Ee@ of node and edge equivalences
 -- it returns the the skeleton of the coequalizer morphism @h : B -> X@, consisting of
 -- the typed graphs @B@ and @X@ but without the morphisms between them
-initCoequalizerMorphism :: TypedGraph a b -> Set (EquivalenceClass TypedNode) -> Set (EquivalenceClass TypedEdge) -> TypedGraphMorphism a b
+initCoequalizerMorphism :: TypedGraph (Maybe a) (Maybe b) -> Set (EquivalenceClass TypedNode) -> Set (EquivalenceClass TypedEdge) -> TypedGraphMorphism a b
 initCoequalizerMorphism b nodeEquivalences edgeEquivalences = addEdges
   where
-    x = GM.empty G.empty (typeGraph b)
-    h = buildTypedGraphMorphism b x (GM.empty (domain b) (domain x))
+    x = TypedGraph (GM.empty G.empty (typeGraph b))
+    h = buildTypedGraphMorphism b x (GM.empty (untypedGraph b) (untypedGraph x))
     addNodes = DS.foldr addNode h nodeEquivalences
     addEdges = DS.foldr addEdge addNodes edgeEquivalences
 
-calculateCoproduct' :: TypedGraph a b -> TypedGraph a b -> (TypedGraphMorphism a b, TypedGraphMorphism a b)
+calculateCoproduct' :: TypedGraph (Maybe a) (Maybe b) -> TypedGraph (Maybe a) (Maybe b)
+                    -> (TypedGraphMorphism a b, TypedGraphMorphism a b)
 calculateCoproduct' a b = (ha',hb')
   where
     coproductObject = Prelude.foldr calculateCoproductObject emptyObject maps
@@ -74,19 +75,18 @@ calculateCoproduct' a b = (ha',hb')
     labels = relablingFunctions [a,b] (0,0) []
     maps = zip [a,b] labels
 
-calculateNCoproduct' :: NE.NonEmpty (TypedGraph a b) -> [TypedGraphMorphism a b]
+calculateNCoproduct' :: NE.NonEmpty (TypedGraph (Maybe a) (Maybe b)) -> [TypedGraphMorphism a b]
 calculateNCoproduct' gs' = zipWith addCoproductMorphisms maps allMorphisms
   where
     gs = NE.toList gs'
     tg = typeGraph (head gs)
-    emptyObject = GM.empty G.empty tg
-    coproductObject = Prelude.foldr calculateCoproductObject emptyObject maps
+    coproductObject = Prelude.foldr calculateCoproductObject (emptyTypedGraph tg) maps
     buildMorphism graph = buildTypedGraphMorphism graph coproductObject (GM.empty (domain graph) (domain coproductObject))
     allMorphisms = Prelude.map buildMorphism gs
     labels = relablingFunctions gs (0,0) []
     maps = zip gs labels
 
-addCoproductMorphisms :: (TypedGraph a b, RelabelFunction) -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+addCoproductMorphisms :: (TypedGraph (Maybe a) (Maybe b), RelabelFunction) -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 addCoproductMorphisms (original, relabel) morph = addEdges
   where
     addNodes = Prelude.foldr updateN morph graphNodes
@@ -98,7 +98,8 @@ addCoproductMorphisms (original, relabel) morph = addEdges
     updateN (n1,t) = updateNodeRelation n1 (nodeName n1) t
     updateE (e1,_,_,_) = updateEdgeRelation e1 (edgeName e1)
 
-calculateCoproductObject :: (TypedGraph a b, RelabelFunction) -> TypedGraph a b -> TypedGraph a b
+calculateCoproductObject :: (TypedGraph (Maybe a) (Maybe b), RelabelFunction)
+                          -> TypedGraph (Maybe a) (Maybe b) -> TypedGraph (Maybe a) (Maybe b)
 calculateCoproductObject (original,relabel) target = addEdges
   where
     addNodes = Prelude.foldr createNewNode target newNodes
@@ -112,7 +113,7 @@ calculateCoproductObject (original,relabel) target = addEdges
     newEdge (e,s,t,et) = (snd relabel e, fst relabel s, fst relabel t, et)
     createNewEdge (e,s,t,et) = GM.createEdgeOnDomain e s t et
 
-relablingFunctions :: [TypedGraph a b] -> (NodeId, EdgeId) -> [RelabelFunction] -> [RelabelFunction]
+relablingFunctions :: [TypedGraph (Maybe a) (Maybe b)] -> (NodeId, EdgeId) -> [RelabelFunction] -> [RelabelFunction]
 relablingFunctions [] _ functions = functions
 relablingFunctions (g:gs) (nodeSeed, edgeSeed) functions =
   relablingFunctions gs (nextNode g + nodeSeed, nextEdge g + edgeSeed) (functions ++ [((+) nodeSeed, (+) edgeSeed)])
