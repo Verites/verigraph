@@ -9,5 +9,5 @@ module SndOrder.Morphism (
 import           Category.TypedGraphRule.AdhesiveHLR  ()
 import           Category.TypedGraphRule.Cocomplete   ()
 import           SndOrder.Morphism.Core
-import           SndOrder.Morphism.EpiPairs     ()
+import           Category.TypedGraphRule.EpiPairs     ()
 import           SndOrder.Morphism.FindMorphism ()

@@ -1,6 +1,6 @@
 {-# LANGUAGE TypeFamilies #-}
 
-module SndOrder.Morphism.EpiPairs where
+module Category.TypedGraphRule.EpiPairs where
 
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Rewriting.DPO

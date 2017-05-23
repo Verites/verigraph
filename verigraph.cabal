@@ -91,7 +91,7 @@ library
                        Category.TypedGraphRule.Cocomplete
                        SndOrder.Morphism.CommutingSquares
                        SndOrder.Morphism.Core
-                       SndOrder.Morphism.EpiPairs
+                       Category.TypedGraphRule.EpiPairs
                        SndOrder.Morphism.FindMorphism
                        SndOrder.Rule.Core
                        SndOrder.Rule.DPO
