@@ -42,9 +42,9 @@ module Data.Graphs.Morphism (
 import           Control.Arrow
 
 import           Base.Valid
-import           Data.Graphs    as G
-import           Data.Maybe     (fromMaybe, isNothing)
-import qualified Data.Relation  as R
+import           Data.Graphs   as G
+import           Data.Maybe    (fromMaybe, isNothing)
+import qualified Data.Relation as R
 
 data GraphMorphism a b = GraphMorphism {
     domainGraph   :: Graph a b

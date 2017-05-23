@@ -14,8 +14,8 @@ module Analysis.Interlevel.EvolutionarySpans
 
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Rewriting.DPO
-import           Base.Valid
 import           Analysis.DiagramAlgorithms
+import           Base.Valid
 import           Category.TypedGraphRule
 import           Category.TypedGraphRule.EpiPairs ()
 import           Rewriting.DPO.TypedGraphRule

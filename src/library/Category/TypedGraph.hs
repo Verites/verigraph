@@ -2,10 +2,11 @@
 
 module Category.TypedGraph
 (
-  TypedGraphMorphism ()
+  TypedGraphMorphism
 ) where
 
 import           Abstract.Category.FinitaryCategory
+import           Category.Graph                     ()
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
 

@@ -26,7 +26,7 @@ import           Data.TypedGraph                       (TypedGraph)
 import           Data.TypedGraph.Morphism
 import qualified Rewriting.DPO.TypedGraph              as GR
 import           Rewriting.DPO.TypedGraph.GraphProcess ()
-import qualified Rewriting.DPO.TypedGraphRule                         as SO
+import qualified Rewriting.DPO.TypedGraphRule          as SO
 
 import           XML.GGXParseOut
 import           XML.ParsedTypes

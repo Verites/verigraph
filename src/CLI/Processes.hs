@@ -14,8 +14,8 @@ import           Options.Applicative
 
 import           Abstract.Rewriting.DPO
 import           Abstract.Rewriting.DPO.Process                           hiding (productions)
-import           Base.Valid
 import           Analysis.Processes
+import           Base.Valid
 import qualified Data.TypedGraph                                          as TG
 import           Rewriting.DPO.TypedGraph.GraphProcess
 import           Rewriting.DPO.TypedGraph.GraphProcess.OccurrenceRelation

@@ -12,7 +12,7 @@ module Category.TypedGraphRule.Cocomplete (
 import           Abstract.Category.Cocomplete
 import           Abstract.Category.FinitaryCategory   as FC
 import           Abstract.Rewriting.DPO
-import           Category.TypedGraph.Cocomplete ()
+import           Category.TypedGraph.Cocomplete       ()
 import           Category.TypedGraph.CommutingSquares
 import           Category.TypedGraphRule
 import           Data.TypedGraph.Morphism

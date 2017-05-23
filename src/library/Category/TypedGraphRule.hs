@@ -9,7 +9,7 @@ module Category.TypedGraphRule
 import           Abstract.Category.FinitaryCategory
 import           Abstract.Rewriting.DPO
 import           Base.Valid
-import           Category.TypedGraph
+import           Category.TypedGraph                ()
 import           Data.TypedGraph.Morphism
 
 -- | A morphism between two first order rules.
