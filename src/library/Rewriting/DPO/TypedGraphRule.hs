@@ -4,7 +4,7 @@ import           Data.Maybe                           (fromMaybe, mapMaybe)
 
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Rewriting.DPO
-import           Abstract.Valid
+import           Base.Valid
 import           Category.TypedGraphRule
 import qualified Category.TypedGraphRule.AdhesiveHLR  as SO ()
 import           Category.TypedGraphRule.FindMorphism ()

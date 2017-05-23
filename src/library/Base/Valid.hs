@@ -1,4 +1,4 @@
-module Abstract.Valid
+module Base.Valid
   ( Valid(..)
   , ValidationResult
   , ensure

@@ -78,8 +78,8 @@ module Data.Graphs (
     , newEdges
 ) where
 
-import           Abstract.Cardinality
-import           Abstract.Valid
+import           Base.Cardinality
+import           Base.Valid
 import           Data.List
 import           Data.Maybe           (fromJust, fromMaybe)
 import           Util.List

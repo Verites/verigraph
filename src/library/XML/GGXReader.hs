@@ -16,7 +16,7 @@ module XML.GGXReader
 
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Rewriting.DPO
-import           Abstract.Valid
+import           Base.Valid
 import           Category.TypedGraphRule
 import qualified Data.Graphs                   as G
 import           Data.Graphs.Morphism          as GM

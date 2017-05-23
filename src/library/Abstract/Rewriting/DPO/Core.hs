@@ -16,7 +16,7 @@ where
 
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.FinitaryCategory
-import           Abstract.Valid
+import           Base.Valid
 
 
 

@@ -8,7 +8,7 @@ module Category.TypedGraphRule
 
 import           Abstract.Category.FinitaryCategory
 import           Abstract.Rewriting.DPO
-import           Abstract.Valid
+import           Base.Valid
 import           Category.TypedGraph
 import           Data.TypedGraph.Morphism
 

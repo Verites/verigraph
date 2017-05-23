@@ -41,7 +41,7 @@ module Data.Graphs.Morphism (
 
 import           Control.Arrow
 
-import           Abstract.Valid
+import           Base.Valid
 import           Data.Graphs    as G
 import           Data.Maybe     (fromMaybe, isNothing)
 import qualified Data.Relation  as R

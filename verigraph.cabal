@@ -27,7 +27,7 @@ library
                        set-monad >= 0.2,
                        split >= 0.2,
                        wl-pprint >=1.2 && <1.3
-  exposed-modules:     Abstract.Cardinality
+  exposed-modules:     Base.Cardinality
                        Abstract.Category.AdhesiveHLR
                        Abstract.Category.AdhesiveHLR.Constraint
                        Abstract.Category.Cocomplete
@@ -36,7 +36,7 @@ library
                        Abstract.Rewriting.DPO.Process
                        Abstract.Rewriting.DPO.StateSpace
                        Abstract.Category.FinitaryCategory
-                       Abstract.Valid
+                       Base.Valid
                        Analysis.ConcurrentRules
                        Analysis.CriticalPairs
                        Analysis.CriticalSequence

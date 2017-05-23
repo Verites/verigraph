@@ -7,7 +7,7 @@ import           Options.Applicative
 import           Abstract.Category.FinitaryCategory
 import           Abstract.Rewriting.DPO             as DPO hiding (NamedProduction)
 import           Abstract.Rewriting.DPO.StateSpace  as StateSpace
-import           Abstract.Valid
+import           Base.Valid
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
 import qualified Image.Dot                          as Dot
