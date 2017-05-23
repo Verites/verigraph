@@ -60,7 +60,7 @@ library
                        SndOrder.Morphism
                        SndOrder.Morphism.NACmanipulation
                        SndOrder.Rule
-                       Rewriting.TypedGraph.DPO.OccurenceRelation
+                       Rewriting.TypedGraph.DPO.GraphProcess.OccurrenceRelation
                        Rewriting.TypedGraph.DPO.GraphProcess
                        Rewriting.TypedGraph.DPO
                        Util.Closures

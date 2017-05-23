@@ -1,5 +1,5 @@
 {-# LANGUAGE TypeSynonymInstances #-}
-module Rewriting.TypedGraph.DPO.OccurenceRelation
+module Rewriting.TypedGraph.DPO.GraphProcess.OccurrenceRelation
 
 ( RelationItem(..)
 , Relation

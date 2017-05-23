@@ -33,7 +33,7 @@ import           Data.Tuple                         (swap)
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism           as TGM
 import           Rewriting.TypedGraph.DPO
-import           Rewriting.TypedGraph.DPO.OccurenceRelation
+import           Rewriting.TypedGraph.DPO.GraphProcess.OccurrenceRelation
 
 import           Util.Closures                      as C
 import           Util.List
