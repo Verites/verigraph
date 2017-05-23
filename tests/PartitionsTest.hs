@@ -4,11 +4,11 @@
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Rewriting.DPO
 import           Analysis.CriticalPairs
+import           Category.TypedGraphRule
 import           Data.Graphs
 import           Data.Graphs.Morphism
 import           Data.TypedGraph.Morphism
 import           Math.Combinat.Numbers         (bellNumber)
-import           SndOrder.Morphism.Core
 import           Test.HUnit
 import           Utils
 import qualified XML.GGXReader                 as XML

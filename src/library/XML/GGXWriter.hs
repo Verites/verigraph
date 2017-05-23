@@ -18,6 +18,7 @@ import           Abstract.Rewriting.DPO
 import qualified Analysis.CriticalPairs                as CP
 import qualified Analysis.CriticalSequence             as CS
 import qualified Analysis.EssentialCriticalPairs       as ECP
+import           Category.TypedGraphRule
 import           Category.TypedGraphRule.EpiPairs      ()
 import qualified Data.Graphs                           as G
 import           Data.List
@@ -25,7 +26,6 @@ import           Data.TypedGraph                       (TypedGraph)
 import           Data.TypedGraph.Morphism
 import qualified Rewriting.DPO.TypedGraph              as GR
 import           Rewriting.DPO.TypedGraph.GraphProcess ()
-import           SndOrder.Morphism.Core
 import qualified Rewriting.DPO.TypedGraphRule                         as SO
 
 import           XML.GGXParseOut

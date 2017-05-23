@@ -17,6 +17,7 @@ module XML.GGXReader
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Rewriting.DPO
 import           Abstract.Valid
+import           Category.TypedGraphRule
 import qualified Data.Graphs                   as G
 import           Data.Graphs.Morphism          as GM
 import qualified Data.List                     as L
@@ -25,10 +26,8 @@ import           Data.Maybe                    (fromJust, fromMaybe, mapMaybe)
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
 import           Rewriting.DPO.TypedGraph      as GR
-import           SndOrder.Morphism.Core
 import           Rewriting.DPO.TypedGraphRule
 import           Text.XML.HXT.Core
-
 import qualified XML.Formulas                  as F
 import           XML.GGXParseIn
 import           XML.GGXReader.SndOrder

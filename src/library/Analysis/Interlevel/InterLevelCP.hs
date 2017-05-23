@@ -11,6 +11,7 @@ module Analysis.Interlevel.InterLevelCP
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.FinitaryCategory
 import           Abstract.Rewriting.DPO
+import           Category.TypedGraphRule
 import           Data.Graphs
 import           Data.Graphs.Morphism               hiding (createEdgeOnCodomain,
                                                      createNodeOnCodomain)
@@ -19,7 +20,6 @@ import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
 import           Data.TypedGraph.Subgraph
 import           Rewriting.DPO.TypedGraph
-import           SndOrder.Morphism.Core
 import           Rewriting.DPO.TypedGraphRule
 
 

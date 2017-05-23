@@ -4,7 +4,7 @@ import           Abstract.Category.FinitaryCategory
 import           Abstract.Rewriting.DPO
 import           Category.TypedGraph                (TypedGraphMorphism)
 import           Category.TypedGraph.FindMorphism   ()
-import           Category.TypedGraphRule            ()
+import           Category.TypedGraphRule            
 import           SndOrder.Morphism.Core
 
 

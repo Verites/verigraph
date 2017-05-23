@@ -60,7 +60,7 @@ library
                        Logic.Model
                        Logic.Ctl
                        SndOrder.Morphism.Core
-                       SndOrder.Morphism.NACmanipulation
+                       Rewriting.DPO.TypedGraphRule.NacManipulation
                        Rewriting.DPO.TypedGraphRule
                        Rewriting.DPO.TypedGraph.GraphProcess.OccurrenceRelation
                        Rewriting.DPO.TypedGraph.GraphProcess

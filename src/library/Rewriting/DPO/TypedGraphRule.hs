@@ -5,13 +5,13 @@ import           Data.Maybe                           (fromMaybe, mapMaybe)
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Rewriting.DPO
 import           Abstract.Valid
+import           Category.TypedGraphRule
 import qualified Category.TypedGraphRule.AdhesiveHLR  as SO ()
 import           Category.TypedGraphRule.FindMorphism ()
 import           Data.Graphs                          as G
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
 import           Rewriting.DPO.TypedGraph
-import           SndOrder.Morphism.Core
 
 -- | A second order rule:
 --

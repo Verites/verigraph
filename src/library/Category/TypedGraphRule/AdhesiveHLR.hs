@@ -6,12 +6,13 @@ import           Abstract.Category.FinitaryCategory   ()
 import           Abstract.Rewriting.DPO
 import           Category.TypedGraph.AdhesiveHLR      hiding (isOrphanEdge)
 import           Category.TypedGraph.CommutingSquares
+import           Category.TypedGraphRule
 import           Category.TypedGraphRule.Cocomplete   ()
 import           Data.Graphs                          as G
 import qualified Data.Graphs.Morphism                 as GM
 import           Data.TypedGraph.Morphism
-import           SndOrder.Morphism.Core
-import           SndOrder.Morphism.NACmanipulation
+import           Rewriting.DPO.TypedGraph             ()
+import           Rewriting.DPO.TypedGraphRule.NacManipulation
 
 instance AdhesiveHLR (RuleMorphism a b) where
 
