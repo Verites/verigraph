@@ -1,4 +1,4 @@
-module SndOrder.Rule.DPO where
+module Rewriting.DPO.TypedGraphRule where
 
 import           Data.Maybe                           (fromMaybe, mapMaybe)
 
@@ -12,8 +12,43 @@ import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
 import           Rewriting.DPO.TypedGraph
 import           SndOrder.Morphism.Core
-import           SndOrder.Rule.Core
 
+-- | A second order rule:
+--
+-- @
+--         nl       nr
+--     NL◀─────\<NK\>─────▶NR
+--      ▲        ▲        ▲
+--   nacL\\    nacK\\    nacR\\
+--        \\        \\        \\
+--         \\   ll   \\   lr   \\
+--         LL◀─────\<LK\>─────▶LR
+--         ▲        ▲        ▲
+--    leftL│   leftK│   leftR│
+--         │        │        │
+--         │    kl  │    kr  │
+--         KL◀─────\<KK\>─────▶KR
+--         │        │        │
+--   rightL│  rightK│  rightR│
+--         │        │        │
+--         ▼    rl  ▼    rr  ▼
+--         RL◀─────\<RK\>─────▶RR
+-- @
+--
+-- domain rule = (ll,lr)
+--
+-- interface rule = (kl,kr)
+--
+-- codomain rule (rl,rr)
+--
+-- nac rule = (nl,nr)
+--
+-- nacs = set of: domain rule, nac rule, nacL, nacK, nacR
+--
+-- left = domain rule, interface rule, leftL, leftK, leftR
+--
+-- right = interface rule, codomain rule, rightL, rightK, rightR
+type SndOrderRule a b = Production (RuleMorphism a b)
 
 instance DPO (RuleMorphism a b) where
   invertProduction conf r = addMinimalSafetyNacs conf newRule

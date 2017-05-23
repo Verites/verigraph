@@ -8,8 +8,8 @@ module SndOrder.Rule (
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Rewriting.DPO
 import           Rewriting.DPO.TypedGraph
-import           SndOrder.Rule.Core
-import           SndOrder.Rule.DPO
+import           Rewriting.DPO.TypedGraphRule
+import           Rewriting.DPO.TypedGraphRule
 
 -- | Receives a function that works with a second order and a first order rule.
 -- Apply this function on all possible combinations of rules.

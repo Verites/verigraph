@@ -92,8 +92,8 @@ library
                        Category.TypedGraphRule.Cocomplete
                        Category.TypedGraph.CommutingSquares
                        Category.TypedGraphRule.FindMorphism
-                       SndOrder.Rule.Core
-                       SndOrder.Rule.DPO
+                       Rewriting.DPO.TypedGraphRule
+                       Rewriting.DPO.TypedGraphRule
                        XML.Formulas
                        XML.GGXParseIn
                        XML.GGXParseOut
