@@ -1,15 +1,15 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 
-import           Math.Combinat.Numbers         (bellNumber)
-import           Test.HUnit
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Rewriting.DPO
 import           Analysis.CriticalPairs
 import           Data.Graphs
 import           Data.Graphs.Morphism
 import           Data.TypedGraph.Morphism
+import           Math.Combinat.Numbers         (bellNumber)
 import           SndOrder.Morphism.Core
+import           Test.HUnit
 import           Utils
 import qualified XML.GGXReader                 as XML
 

@@ -1,16 +1,16 @@
 module SndOrder.Rule.DPO where
 
-import           Data.Maybe                    (fromMaybe, mapMaybe)
+import           Data.Maybe                           (fromMaybe, mapMaybe)
 
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Rewriting.DPO
 import           Abstract.Valid
-import           Data.Graphs                   as G
+import qualified Category.TypedGraphRule.AdhesiveHLR  as SO ()
+import           Category.TypedGraphRule.FindMorphism ()
+import           Data.Graphs                          as G
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
 import           Rewriting.TypedGraph.DPO
-import           Category.TypedGraphRule.FindMorphism ()
-import qualified Category.TypedGraphRule.AdhesiveHLR as SO ()
 import           SndOrder.Morphism.Core
 import           SndOrder.Rule.Core
 
