@@ -10,7 +10,7 @@ import qualified Data.Graphs.Morphism               as GM
 import           Data.TypedGraph.Morphism
 
 
-import           SndOrder.Morphism.Cocomplete       ()
+import           Category.TypedGraphRule.Cocomplete       ()
 import           SndOrder.Morphism.CommutingSquares
 import           SndOrder.Morphism.Core
 import           SndOrder.Morphism.NACmanipulation

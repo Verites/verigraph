@@ -88,7 +88,7 @@ library
                        Data.TypedGraph.Partition.Types
                        Data.TypedGraph.Partition.Util
                        Category.TypedGraphRule.AdhesiveHLR
-                       SndOrder.Morphism.Cocomplete
+                       Category.TypedGraphRule.Cocomplete
                        SndOrder.Morphism.CommutingSquares
                        SndOrder.Morphism.Core
                        SndOrder.Morphism.EpiPairs

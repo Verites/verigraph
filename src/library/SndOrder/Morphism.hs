@@ -7,7 +7,7 @@ module SndOrder.Morphism (
   ) where
 
 import           Category.TypedGraphRule.AdhesiveHLR  ()
-import           SndOrder.Morphism.Cocomplete   ()
+import           Category.TypedGraphRule.Cocomplete   ()
 import           SndOrder.Morphism.Core
 import           SndOrder.Morphism.EpiPairs     ()
 import           SndOrder.Morphism.FindMorphism ()

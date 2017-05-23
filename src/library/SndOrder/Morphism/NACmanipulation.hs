@@ -5,7 +5,7 @@ import           Abstract.Rewriting.DPO
 import           Abstract.Category.FinitaryCategory
 import           Category.TypedGraph.EpiPairs       ()
 import           Data.TypedGraph.Morphism
-import           SndOrder.Morphism.Cocomplete       ()
+import           Category.TypedGraphRule.Cocomplete       ()
 
 
 -- | Auxiliar structure and function to delete first-order NACs
