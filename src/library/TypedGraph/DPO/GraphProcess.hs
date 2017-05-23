@@ -19,8 +19,8 @@ module TypedGraph.DPO.GraphProcess
 where
 
 import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.DPO
-import           Abstract.Category.DPO.Process      hiding (productions)
+import           Abstract.Rewriting.DPO
+import           Abstract.Rewriting.DPO.Process      hiding (productions)
 import           Abstract.Category.FinitaryCategory as FC
 import           Analysis.DiagramAlgorithms
 import           Data.Graphs                        (Graph)

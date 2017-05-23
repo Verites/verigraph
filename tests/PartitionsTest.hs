@@ -5,7 +5,7 @@ import           Math.Combinat.Numbers         (bellNumber)
 import           Test.HUnit
 
 import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.DPO
+import           Abstract.Rewriting.DPO
 import           Analysis.CriticalPairs
 import           Data.Graphs
 import           Data.Graphs.Morphism

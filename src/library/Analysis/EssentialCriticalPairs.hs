@@ -6,7 +6,7 @@ module Analysis.EssentialCriticalPairs
    ) where
 
 import           Abstract.Category.AdhesiveHLR      as RW
-import           Abstract.Category.DPO              as RW
+import           Abstract.Rewriting.DPO              as RW
 import           Abstract.Category.FinitaryCategory
 import           Analysis.CriticalPairs
 import           Analysis.EpimorphicPairs

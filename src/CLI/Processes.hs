@@ -12,8 +12,8 @@ import           Data.Set                         (toList)
 import           GlobalOptions
 import           Options.Applicative
 
-import           Abstract.Category.DPO
-import           Abstract.Category.DPO.Process    hiding (productions)
+import           Abstract.Rewriting.DPO
+import           Abstract.Rewriting.DPO.Process    hiding (productions)
 import           Abstract.Valid
 import           Analysis.Processes
 import qualified Data.TypedGraph                  as TG

@@ -8,7 +8,7 @@ import           Data.Monoid                   ((<>))
 import           GlobalOptions
 
 import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.DPO
+import           Abstract.Rewriting.DPO
 import           Analysis.ConcurrentRules
 import           Control.Monad
 import           Data.TypedGraph.Morphism

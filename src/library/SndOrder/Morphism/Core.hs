@@ -2,7 +2,7 @@
 
 module SndOrder.Morphism.Core where
 
-import           Abstract.Category.DPO
+import           Abstract.Rewriting.DPO
 import           Abstract.Category.FinitaryCategory
 import           Abstract.Valid
 import           Data.TypedGraph.Morphism

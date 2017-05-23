@@ -8,7 +8,7 @@ module XML.GGXParseOut
  , getMappings
  ) where
 
-import           Abstract.Category.DPO
+import           Abstract.Rewriting.DPO
 import           Abstract.Category.FinitaryCategory ((<&>))
 import qualified Abstract.Category.FinitaryCategory as FC hiding ((<&>))
 import qualified Analysis.CriticalPairs             as CP

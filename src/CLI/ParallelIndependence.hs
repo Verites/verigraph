@@ -4,7 +4,7 @@ module ParallelIndependence
   , execute
   ) where
 
-import           Abstract.Category.DPO
+import           Abstract.Rewriting.DPO
 import           Analysis.ParallelIndependent
 import           Control.Monad                (unless, when)
 import           Data.Matrix                  hiding ((<|>))

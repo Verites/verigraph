@@ -3,7 +3,7 @@
 module SndOrder.Morphism.EpiPairs where
 
 import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.DPO
+import           Abstract.Rewriting.DPO
 import           Abstract.Category.FinitaryCategory
 import           Category.TypedGraph.EpiPairs       ()
 import           Data.TypedGraph.Morphism

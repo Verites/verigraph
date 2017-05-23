@@ -1,4 +1,4 @@
-import           Abstract.Category.DPO
+import           Abstract.Rewriting.DPO
 import           Abstract.Category.FinitaryCategory
 import           Analysis.Interlevel.InterLevelCP
 import           Data.Maybe                         (fromMaybe)

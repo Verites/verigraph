@@ -1,6 +1,6 @@
 module Image.Dot where
 
-import           Abstract.Category.DPO.StateSpace
+import           Abstract.Rewriting.DPO.StateSpace
 import           Abstract.Category.FinitaryCategory
 import           Data.Graphs                        hiding (Node (..))
 import           Data.TypedGraph

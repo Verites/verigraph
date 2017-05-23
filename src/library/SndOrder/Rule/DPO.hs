@@ -3,7 +3,7 @@ module SndOrder.Rule.DPO where
 import           Data.Maybe                    (fromMaybe, mapMaybe)
 
 import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.DPO
+import           Abstract.Rewriting.DPO
 import           Abstract.Valid
 import           Data.Graphs                   as G
 import           Data.TypedGraph

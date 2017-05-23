@@ -9,7 +9,7 @@ module Analysis.Interlevel.InterLevelCP
   ) where
 
 import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.DPO
+import           Abstract.Rewriting.DPO
 import           Abstract.Category.FinitaryCategory
 import           Data.Graphs
 import           Data.Graphs.Morphism               hiding (createEdgeOnCodomain,

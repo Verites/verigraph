@@ -10,7 +10,7 @@ alongside their constructors and manipulators.
 Also, this module has the functions to deal with Productions applicability, nacs satisfactions
 and the DPO rewritting.
 -}
-module Abstract.Category.DPO.Core
+module Abstract.Rewriting.DPO.Core
 
 where
 

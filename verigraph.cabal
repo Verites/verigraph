@@ -32,9 +32,9 @@ library
                        Abstract.Category.AdhesiveHLR.Constraint
                        Abstract.Category.Cocomplete
                        Abstract.Category.Complete
-                       Abstract.Category.DPO
-                       Abstract.Category.DPO.Process
-                       Abstract.Category.DPO.StateSpace
+                       Abstract.Rewriting.DPO
+                       Abstract.Rewriting.DPO.Process
+                       Abstract.Rewriting.DPO.StateSpace
                        Abstract.Category.FinitaryCategory
                        Abstract.Valid
                        Analysis.ConcurrentRules
@@ -68,8 +68,8 @@ library
                        XML.GGXReader
                        XML.GGXWriter
   other-modules:
-                       Abstract.Category.DPO.Core
-                       Abstract.Category.DPO.Derivation
+                       Abstract.Rewriting.DPO.Core
+                       Abstract.Rewriting.DPO.Derivation
                        Analysis.DiagramAlgorithms
                        Analysis.EpimorphicPairs
                        Data.Partition

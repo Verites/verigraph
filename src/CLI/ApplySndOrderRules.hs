@@ -6,7 +6,7 @@ module ApplySndOrderRules
   ) where
 
 import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.DPO
+import           Abstract.Rewriting.DPO
 import           Control.Monad                 (when)
 import           Data.Graphs                   (Graph)
 import           Data.TypedGraph.Morphism

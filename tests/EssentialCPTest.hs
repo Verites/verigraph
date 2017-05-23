@@ -1,5 +1,5 @@
 import           Abstract.Category.AdhesiveHLR   (EpiPairs)
-import           Abstract.Category.DPO
+import           Abstract.Rewriting.DPO
 import           Analysis.EssentialCriticalPairs
 import           Data.Matrix                     hiding ((<|>))
 import           Test.HUnit

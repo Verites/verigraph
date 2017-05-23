@@ -38,7 +38,7 @@ module Analysis.DiagramAlgorithms (
   ) where
 
 import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.DPO
+import           Abstract.Rewriting.DPO
 import           Abstract.Category.FinitaryCategory
 import           Control.Applicative
 import           Control.Monad

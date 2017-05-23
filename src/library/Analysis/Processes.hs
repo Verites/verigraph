@@ -6,8 +6,8 @@ module Analysis.Processes
   ) where
 
 import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.DPO
-import           Abstract.Category.DPO.Process
+import           Abstract.Rewriting.DPO
+import           Abstract.Rewriting.DPO.Process
 import           Analysis.DiagramAlgorithms
 import           Data.List                     (partition)
 

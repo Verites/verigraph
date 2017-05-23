@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE UndecidableInstances #-}
-module Abstract.Category.DPO.Process
+module Abstract.Rewriting.DPO.Process
   ( Process(..)
   , GenerateProcess(..)
   , NamedRuleWithMatches
@@ -12,8 +12,8 @@ module Abstract.Category.DPO.Process
   ) where
 
 import           Abstract.Category.Cocomplete
-import           Abstract.Category.DPO.Core
-import           Abstract.Category.DPO.Derivation
+import           Abstract.Rewriting.DPO.Core
+import           Abstract.Rewriting.DPO.Derivation
 import           Abstract.Category.FinitaryCategory
 import           Data.List.NonEmpty                 (NonEmpty, fromList)
 import           Data.Maybe                         (fromJust)

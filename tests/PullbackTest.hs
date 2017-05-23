@@ -1,7 +1,7 @@
 import           Data.Matrix                  hiding ((<|>))
 import           Test.HUnit
 
-import           Abstract.Category.DPO
+import           Abstract.Rewriting.DPO
 import           Analysis.ParallelIndependent
 import qualified XML.GGXReader                as XML
 

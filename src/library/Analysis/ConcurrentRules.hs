@@ -8,7 +8,7 @@ module Analysis.ConcurrentRules
 import           Abstract.Cardinality
 import           Abstract.Category.AdhesiveHLR
 import qualified Abstract.Category.Cocomplete  as C
-import           Abstract.Category.DPO
+import           Abstract.Rewriting.DPO
 import           Abstract.Valid
 import           Analysis.CriticalSequence     (findTriggeredCriticalSequences,
                                                 getCriticalSequenceComatches)

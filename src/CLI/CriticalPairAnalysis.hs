@@ -5,7 +5,7 @@ module CriticalPairAnalysis
   ) where
 
 import           Abstract.Category.AdhesiveHLR         (EpiPairs)
-import           Abstract.Category.DPO
+import           Abstract.Rewriting.DPO
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
 import           Analysis.EssentialCriticalPairs

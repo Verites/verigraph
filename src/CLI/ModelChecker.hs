@@ -4,8 +4,8 @@ import           Data.Monoid                        ((<>))
 import           GlobalOptions
 import           Options.Applicative
 
-import           Abstract.Category.DPO              as DPO hiding (NamedProduction)
-import           Abstract.Category.DPO.StateSpace   as StateSpace
+import           Abstract.Rewriting.DPO              as DPO hiding (NamedProduction)
+import           Abstract.Rewriting.DPO.StateSpace   as StateSpace
 import           Abstract.Category.FinitaryCategory
 import           Abstract.Valid
 import           Data.TypedGraph

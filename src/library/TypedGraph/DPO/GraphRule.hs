@@ -23,7 +23,7 @@ module TypedGraph.DPO.GraphRule (
     , isDeleted
 ) where
 
-import           Abstract.Category.DPO              as DPO
+import           Abstract.Rewriting.DPO              as DPO
 import           Abstract.Category.FinitaryCategory as FC
 import           Category.TypedGraph                ()
 import           Category.TypedGraph.AdhesiveHLR

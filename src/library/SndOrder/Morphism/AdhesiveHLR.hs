@@ -2,7 +2,7 @@ module SndOrder.Morphism.AdhesiveHLR where
 
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.Cocomplete
-import           Abstract.Category.DPO
+import           Abstract.Rewriting.DPO
 import           Abstract.Category.FinitaryCategory ()
 import           Category.TypedGraph.AdhesiveHLR    hiding (isOrphanEdge)
 import           Data.Graphs                        as G

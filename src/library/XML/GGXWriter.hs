@@ -13,7 +13,7 @@ import           Data.Maybe
 import           Text.XML.HXT.Core
 
 import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.DPO
+import           Abstract.Rewriting.DPO
 import           Abstract.Category.FinitaryCategory (codomain)
 import qualified Analysis.CriticalPairs             as CP
 import qualified Analysis.CriticalSequence          as CS

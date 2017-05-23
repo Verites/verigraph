@@ -10,7 +10,7 @@ module SndOrder.Morphism.Cocomplete (
 ) where
 
 import           Abstract.Category.Cocomplete
-import           Abstract.Category.DPO
+import           Abstract.Rewriting.DPO
 import           Abstract.Category.FinitaryCategory as FC
 import           Data.TypedGraph.Morphism
 import           SndOrder.Morphism.CommutingSquares
