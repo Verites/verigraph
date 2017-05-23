@@ -12,6 +12,7 @@ module SndOrder.Morphism.Cocomplete (
 import           Abstract.Category.Cocomplete
 import           Abstract.Rewriting.DPO
 import           Abstract.Category.FinitaryCategory as FC
+import           Category.TypedGraphRule
 import           Data.TypedGraph.Morphism
 import           SndOrder.Morphism.CommutingSquares
 import           SndOrder.Morphism.Core

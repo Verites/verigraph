@@ -4,7 +4,7 @@ synopsis:            Software specification and verification tool based on graph
 -- description:
 license:             Apache-2.0
 license-file:        LICENSE
-author:              Verites - Grupo de Verificação, Validação e Teste de Sistemas Computacionais 
+author:              Verites - Grupo de Verificação, Validação e Teste de Sistemas Computacionais
 maintainer:          rma@inf.ufrgs.br
 -- copyright:
 category:            Data
@@ -48,6 +48,7 @@ library
                        Category.Graph
                        Category.TypedGraph
                        Category.TypedGraph.FindMorphism
+                       Category.TypedGraphRule
                        Data.Graphs
                        Data.Graphs.Morphism
                        Data.Graphs.QuickCheck

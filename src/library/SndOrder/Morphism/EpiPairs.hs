@@ -6,6 +6,7 @@ import           Abstract.Category.AdhesiveHLR
 import           Abstract.Rewriting.DPO
 import           Abstract.Category.FinitaryCategory
 import           Category.TypedGraph.EpiPairs       ()
+import           Category.TypedGraphRule
 import           Data.TypedGraph.Morphism
 
 import           SndOrder.Morphism.Core
