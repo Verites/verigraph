@@ -59,7 +59,6 @@ library
                        Image.Dot
                        Logic.Model
                        Logic.Ctl
-                       SndOrder.Morphism.Core
                        Rewriting.DPO.TypedGraphRule.NacManipulation
                        Rewriting.DPO.TypedGraphRule
                        Rewriting.DPO.TypedGraph.GraphProcess.OccurrenceRelation
