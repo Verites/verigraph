@@ -90,7 +90,7 @@ library
                        Data.TypedGraph.Partition.Util
                        Category.TypedGraphRule.AdhesiveHLR
                        Category.TypedGraphRule.Cocomplete
-                       SndOrder.Morphism.CommutingSquares
+                       Category.TypedGraph.CommutingSquares
                        Category.TypedGraphRule.FindMorphism
                        SndOrder.Rule.Core
                        SndOrder.Rule.DPO

@@ -14,7 +14,7 @@ import           Abstract.Category.FinitaryCategory as FC
 import           Abstract.Rewriting.DPO
 import           Category.TypedGraphRule            ()
 import           Data.TypedGraph.Morphism
-import           SndOrder.Morphism.CommutingSquares
+import           Category.TypedGraph.CommutingSquares
 import           SndOrder.Morphism.Core
 
 instance Cocomplete (RuleMorphism a b) where
