@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-module Rewriting.TypedGraph.DPO (
+module Rewriting.DPO.TypedGraph (
     -- * Types
       GraphRule
     , getLHS

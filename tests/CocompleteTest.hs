@@ -6,7 +6,7 @@ import           Data.Graphs
 import           Data.Graphs.Morphism
 import           Data.List.NonEmpty                    (fromList)
 import           Data.TypedGraph.Morphism
-import           Rewriting.TypedGraph.DPO.GraphProcess ()
+import           Rewriting.DPO.TypedGraph.GraphProcess ()
 import           Test.HUnit
 
 import           Utils

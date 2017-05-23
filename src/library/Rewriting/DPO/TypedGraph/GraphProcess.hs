@@ -1,6 +1,6 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Rewriting.TypedGraph.DPO.GraphProcess
+module Rewriting.DPO.TypedGraph.GraphProcess
 
 ( DoublyTypedGrammar (..)
 , occurrenceRelation
@@ -33,8 +33,8 @@ import           Data.Set                                                 as S
 import           Data.Tuple                                               (swap)
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism                                 as TGM
-import           Rewriting.TypedGraph.DPO
-import           Rewriting.TypedGraph.DPO.GraphProcess.OccurrenceRelation
+import           Rewriting.DPO.TypedGraph
+import           Rewriting.DPO.TypedGraph.GraphProcess.OccurrenceRelation
 
 import           Util.Closures                                            as C
 import           Util.List

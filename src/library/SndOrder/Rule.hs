@@ -7,7 +7,7 @@ module SndOrder.Rule (
 
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Rewriting.DPO
-import           Rewriting.TypedGraph.DPO
+import           Rewriting.DPO.TypedGraph
 import           SndOrder.Rule.Core
 import           SndOrder.Rule.DPO
 

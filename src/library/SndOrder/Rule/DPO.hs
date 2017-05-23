@@ -10,7 +10,7 @@ import           Category.TypedGraphRule.FindMorphism ()
 import           Data.Graphs                          as G
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
-import           Rewriting.TypedGraph.DPO
+import           Rewriting.DPO.TypedGraph
 import           SndOrder.Morphism.Core
 import           SndOrder.Rule.Core
 

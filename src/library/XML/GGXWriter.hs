@@ -23,8 +23,8 @@ import qualified Data.Graphs                           as G
 import           Data.List
 import           Data.TypedGraph                       (TypedGraph)
 import           Data.TypedGraph.Morphism
-import qualified Rewriting.TypedGraph.DPO              as GR
-import           Rewriting.TypedGraph.DPO.GraphProcess ()
+import qualified Rewriting.DPO.TypedGraph              as GR
+import           Rewriting.DPO.TypedGraph.GraphProcess ()
 import           SndOrder.Morphism.Core
 import qualified SndOrder.Rule                         as SO
 

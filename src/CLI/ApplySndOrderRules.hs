@@ -10,7 +10,7 @@ import           Abstract.Rewriting.DPO
 import           Control.Monad                 (when)
 import           Data.Graphs                   (Graph)
 import           Data.TypedGraph.Morphism
-import qualified Rewriting.TypedGraph.DPO      as GR
+import qualified Rewriting.DPO.TypedGraph      as GR
 import qualified SndOrder.Rule                 as SO
 
 

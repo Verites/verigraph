@@ -6,7 +6,7 @@ import qualified Data.Graphs                        as G
 import           Data.Graphs.Morphism               as GM
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
-import           Rewriting.TypedGraph.DPO           as GR
+import           Rewriting.DPO.TypedGraph           as GR
 import           SndOrder.Morphism.Core
 import           XML.GGXReader.Span
 import           XML.ParsedTypes

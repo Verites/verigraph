@@ -11,7 +11,7 @@ import           Abstract.Category.FinitaryCategory
 import           Abstract.Rewriting.DPO
 import           Abstract.Valid
 import           Data.TypedGraph.Morphism
-import           Rewriting.TypedGraph.DPO           ()
+import           Rewriting.DPO.TypedGraph           ()
 
 
 -- | A morphism between two first order rules.

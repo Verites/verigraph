@@ -18,7 +18,7 @@ import           Data.List                          (nubBy)
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
 import           Data.TypedGraph.Subgraph
-import           Rewriting.TypedGraph.DPO
+import           Rewriting.DPO.TypedGraph
 import           SndOrder.Morphism.Core
 import           SndOrder.Rule
 
