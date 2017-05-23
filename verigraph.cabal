@@ -92,7 +92,7 @@ library
                        SndOrder.Morphism.CommutingSquares
                        SndOrder.Morphism.Core
                        Category.TypedGraphRule.EpiPairs
-                       SndOrder.Morphism.FindMorphism
+                       Category.TypedGraphRule.FindMorphism
                        SndOrder.Rule.Core
                        SndOrder.Rule.DPO
                        XML.Formulas

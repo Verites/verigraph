@@ -1,4 +1,4 @@
-module SndOrder.Morphism.FindMorphism () where
+module Category.TypedGraphRule.FindMorphism () where
 
 import           Abstract.Rewriting.DPO
 import           Abstract.Category.FinitaryCategory

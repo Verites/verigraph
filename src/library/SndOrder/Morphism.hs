@@ -10,4 +10,4 @@ import           Category.TypedGraphRule.AdhesiveHLR  ()
 import           Category.TypedGraphRule.Cocomplete   ()
 import           SndOrder.Morphism.Core
 import           Category.TypedGraphRule.EpiPairs     ()
-import           SndOrder.Morphism.FindMorphism ()
+import           Category.TypedGraphRule.FindMorphism ()
