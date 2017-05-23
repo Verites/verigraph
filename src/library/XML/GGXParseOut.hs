@@ -17,7 +17,7 @@ import qualified Data.Graphs                        as G
 import           Data.Maybe                         (fromMaybe, isJust)
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
-import qualified Rewriting.TypedGraph.DPO.GraphRule           as GR
+import qualified Rewriting.TypedGraph.DPO           as GR
 
 import           XML.ParsedTypes
 

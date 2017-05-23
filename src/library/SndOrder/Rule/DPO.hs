@@ -10,7 +10,7 @@ import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
 import           SndOrder.Morphism             as SO
 import           SndOrder.Rule.Core
-import           Rewriting.TypedGraph.DPO.GraphRule
+import           Rewriting.TypedGraph.DPO
 
 
 instance DPO (RuleMorphism a b) where

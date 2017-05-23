@@ -11,7 +11,7 @@ import           Control.Monad                 (when)
 import           Data.Graphs                   (Graph)
 import           Data.TypedGraph.Morphism
 import qualified SndOrder.Rule                 as SO
-import qualified Rewriting.TypedGraph.DPO.GraphRule      as GR
+import qualified Rewriting.TypedGraph.DPO      as GR
 
 
 import           Data.Monoid                   ((<>))

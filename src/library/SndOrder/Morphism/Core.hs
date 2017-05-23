@@ -6,7 +6,7 @@ import           Abstract.Rewriting.DPO
 import           Abstract.Category.FinitaryCategory
 import           Abstract.Valid
 import           Data.TypedGraph.Morphism
-import           Rewriting.TypedGraph.DPO.GraphRule           ()
+import           Rewriting.TypedGraph.DPO           ()
 
 
 -- | A morphism between two first order rules.

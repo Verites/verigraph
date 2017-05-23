@@ -13,7 +13,7 @@ import           Analysis.ConcurrentRules
 import           Control.Monad
 import           Data.TypedGraph.Morphism
 import           Options.Applicative
-import           Rewriting.TypedGraph.DPO.GraphRule
+import           Rewriting.TypedGraph.DPO
 
 import qualified XML.GGXReader                 as XML
 import qualified XML.GGXWriter                 as GW

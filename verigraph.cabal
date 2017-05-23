@@ -62,7 +62,7 @@ library
                        SndOrder.Rule
                        Rewriting.TypedGraph.DPO.OccurenceRelation
                        Rewriting.TypedGraph.DPO.GraphProcess
-                       Rewriting.TypedGraph.DPO.GraphRule
+                       Rewriting.TypedGraph.DPO
                        Util.Closures
                        Util.List
                        XML.GGXReader

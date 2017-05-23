@@ -9,7 +9,7 @@ import           Abstract.Category.AdhesiveHLR
 import           Abstract.Rewriting.DPO
 import           SndOrder.Rule.Core
 import           SndOrder.Rule.DPO
-import           Rewriting.TypedGraph.DPO.GraphRule
+import           Rewriting.TypedGraph.DPO
 
 -- | Receives a function that works with a second order and a first order rule.
 -- Apply this function on all possible combinations of rules.
