@@ -19,7 +19,7 @@ import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
 import           SndOrder.Morphism
 import           SndOrder.Rule
-import           TypedGraph.DPO.GraphRule
+import           Rewriting.TypedGraph.DPO.GraphRule
 
 import           Data.TypedGraph.Subgraph
 

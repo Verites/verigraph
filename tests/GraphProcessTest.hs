@@ -9,7 +9,7 @@ import           Data.Graphs.Morphism
 import           Data.Maybe                         (fromJust)
 import           Data.TypedGraph.Morphism
 import           Test.HUnit
-import           TypedGraph.DPO.GraphProcess        ()
+import           Rewriting.TypedGraph.DPO.GraphProcess        ()
 
 import           Utils
 

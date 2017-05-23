@@ -7,7 +7,7 @@ import           Data.Graphs.Morphism          as GM
 import           Data.Maybe                    (fromMaybe)
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
-import           TypedGraph.DPO.GraphRule      as GR
+import           Rewriting.TypedGraph.DPO.GraphRule      as GR
 
 import           XML.ParsedTypes
 import           XML.Utilities

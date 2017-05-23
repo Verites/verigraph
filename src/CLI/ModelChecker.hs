@@ -13,7 +13,7 @@ import           Data.TypedGraph.Morphism
 import qualified Image.Dot                          as Dot
 import qualified Logic.Ctl                          as Logic
 import qualified Logic.Model                        as Logic
-import           TypedGraph.DPO.GraphRule
+import           Rewriting.TypedGraph.DPO.GraphRule
 
 import qualified XML.GGXReader                      as XML
 

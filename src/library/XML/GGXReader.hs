@@ -27,7 +27,7 @@ import           Data.TypedGraph.Morphism
 import           SndOrder.Morphism
 import           SndOrder.Rule
 import           Text.XML.HXT.Core
-import           TypedGraph.DPO.GraphRule      as GR
+import           Rewriting.TypedGraph.DPO.GraphRule      as GR
 
 import qualified XML.Formulas                  as F
 import           XML.GGXParseIn

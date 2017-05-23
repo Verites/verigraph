@@ -17,8 +17,8 @@ import           Abstract.Rewriting.DPO.Process    hiding (productions)
 import           Abstract.Valid
 import           Analysis.Processes
 import qualified Data.TypedGraph                  as TG
-import           TypedGraph.DPO.GraphProcess
-import           TypedGraph.DPO.OccurenceRelation
+import           Rewriting.TypedGraph.DPO.GraphProcess
+import           Rewriting.TypedGraph.DPO.OccurenceRelation
 import qualified XML.GGXReader                    as XML
 import qualified XML.GGXWriter                    as GW
 
