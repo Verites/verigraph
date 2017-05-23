@@ -2,14 +2,14 @@
 Description : Partitions generator util functions.
 Maintainer  : Andrei Costa <acosta@inf.ufrgs.br>
 -}
-module Data.Partitions.Util
+module Data.TypedGraph.Partition.Util
   ( nodeNameAndSource
   , getNode
   , getListContainingNode
   , getListContainingEdge
   ) where
 
-import           Data.Partitions.Types
+import           Data.TypedGraph.Partition.Types
 
 nodeNameAndSource :: Node -> (Bool,Int)
 nodeNameAndSource node = (nodeFromLeft node, nodeName node)

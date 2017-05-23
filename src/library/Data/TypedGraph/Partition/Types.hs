@@ -2,7 +2,7 @@
 Description : Partitions generator types.
 Maintainer  : Andrei Costa <acosta@inf.ufrgs.br>
 -}
-module Data.Partitions.Types
+module Data.TypedGraph.Partition.Types
   ( Node (..)
   , Edge (..)
   , Graph

@@ -2,16 +2,16 @@
 Description : This module converts Verigraph into Partitions structures.
 Maintainer  : Andrei Costa <acosta@inf.ufrgs.br>
 -}
-module Data.Partitions.FromVerigraph
+module Data.TypedGraph.Partition.FromVerigraph
   ( createDisjointUnion,
     createSatisfyingNacsDisjointUnion
   ) where
 
-import           Data.Graphs              as G
-import           Data.Graphs.Morphism     as GM
-import qualified Data.Partitions.Types    as GP
+import           Data.Graphs                     as G
+import           Data.Graphs.Morphism            as GM
 import           Data.TypedGraph
-import           Data.TypedGraph.Morphism as TGM
+import qualified Data.TypedGraph.Partition.Types as GP
+import           Data.TypedGraph.Morphism        as TGM
 
 -- | The starting integer id for the generated elements. 
 startId :: Int

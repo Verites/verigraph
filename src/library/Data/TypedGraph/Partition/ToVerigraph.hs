@@ -2,18 +2,18 @@
 Description : This module converts Partitions into Verigraph structures.
 Maintainer  : Andrei Costa <acosta@inf.ufrgs.br>
 -}
-module Data.Partitions.ToVerigraph
+module Data.TypedGraph.Partition.ToVerigraph
   ( mountTypedGraphMorphisms
   ) where
 
 {-Converts from GraphPartition to Verigraph structures-}
 -- TODO: break this module in two, one for graphs and other for typed graphs?
-import qualified Data.Graphs              as G
-import qualified Data.Graphs.Morphism     as GM
-import           Data.Partitions.Types    as GP
-import           Data.Partitions.Util     as GP
-import           Data.TypedGraph          as TG
-import qualified Data.TypedGraph.Morphism as TGM
+import qualified Data.Graphs                     as G
+import qualified Data.Graphs.Morphism            as GM
+import           Data.TypedGraph                 as TG
+import           Data.TypedGraph.Partition.Types as GP
+import           Data.TypedGraph.Partition.Util  as GP
+import qualified Data.TypedGraph.Morphism        as TGM
 
 -- | For two typed graphs and a EpiPair (in Generator format) it returns
 -- a pair of TypedGraphMorphism to the epi graph in the verigraph format.

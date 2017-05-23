@@ -7,13 +7,13 @@ in such a way that every element is included in one and only one of the subsets.
 A partition of a typed graph is an extension of the sets, where nodes can
 be combined by their types and edges by their types and source/target nodes.
 -}
-module Data.Partitions
+module Data.TypedGraph.Partition
   ( generateGraphPartitions
   ) where
 
-import           Data.Partitions.Generator
-import           Data.Partitions.Types
-import           Data.Partitions.Util
+import           Data.TypedGraph.Partition.Generator
+import           Data.TypedGraph.Partition.Types
+import           Data.TypedGraph.Partition.Util
 
 -- | Checks if a node belongs to an equivalence class
 nodeBelongsToEquivalenceClass :: Node -> [Node] -> Bool

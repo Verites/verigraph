@@ -79,13 +79,13 @@ library
                        Category.TypedGraph.AdhesiveHLR
                        Category.TypedGraph.Cocomplete
                        Category.TypedGraph.EpiPairs
-                       Data.Partitions
-                       Data.Partitions.FromVerigraph
-                       Data.Partitions.Generator
-                       Data.Partitions.ToVerigraph
-                       Data.Partitions.Types
-                       Data.Partitions.Util
                        Data.TypedGraph.Subgraph
+                       Data.TypedGraph.Partition
+                       Data.TypedGraph.Partition.FromVerigraph
+                       Data.TypedGraph.Partition.Generator
+                       Data.TypedGraph.Partition.ToVerigraph
+                       Data.TypedGraph.Partition.Types
+                       Data.TypedGraph.Partition.Util
                        SndOrder.Morphism.AdhesiveHLR
                        SndOrder.Morphism.Cocomplete
                        SndOrder.Morphism.CommutingSquares

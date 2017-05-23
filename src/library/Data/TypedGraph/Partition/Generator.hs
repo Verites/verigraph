@@ -2,11 +2,11 @@
 Description : Generic partitions generator.
 Maintainer  : Andrei Costa <acosta@inf.ufrgs.br>
 -}
-module Data.Partitions.Generator
+module Data.TypedGraph.Partition.Generator
   ( generatePartitions
   ) where
 
-import           Util.List (replace)
+import Util.List (replace)
 
 -- | Interface function to run the algorithm that generates the partitions
 generatePartitions :: (a -> [a] -> Bool) -> [a] -> [[[a]]]

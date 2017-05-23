@@ -1,13 +1,12 @@
 module Category.TypedGraph.EpiPairs where
 
 import           Abstract.Category.AdhesiveHLR
-import           Category.TypedGraph           ()
-import           Data.Partitions               (generateGraphPartitions)
-import           Data.Partitions.ToVerigraph   (mountTypedGraphMorphisms)
-import           Data.Partitions.FromVerigraph (createDisjointUnion,
-                                                createSatisfyingNacsDisjointUnion)
-import           Data.Graphs                   as G
-import qualified Data.Graphs.Morphism          as GM
+import           Category.TypedGraph                     ()
+import           Data.Graphs                             as G
+import qualified Data.Graphs.Morphism                    as GM
+import           Data.TypedGraph.Partition               (generateGraphPartitions)
+import           Data.TypedGraph.Partition.ToVerigraph   (mountTypedGraphMorphisms)
+import           Data.TypedGraph.Partition.FromVerigraph (createDisjointUnion,createSatisfyingNacsDisjointUnion)
 import           Data.TypedGraph.Morphism
 
 instance EpiPairs (TypedGraphMorphism a b) where
