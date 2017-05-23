@@ -3,14 +3,13 @@
 
 import           Math.Combinat.Numbers         (bellNumber)
 import           Test.HUnit
-
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Rewriting.DPO
 import           Analysis.CriticalPairs
 import           Data.Graphs
 import           Data.Graphs.Morphism
 import           Data.TypedGraph.Morphism
-import           SndOrder.Morphism             hiding (createEdgeOnDomain, createNodeOnDomain)
+import           SndOrder.Morphism.Core
 import           Utils
 import qualified XML.GGXReader                 as XML
 

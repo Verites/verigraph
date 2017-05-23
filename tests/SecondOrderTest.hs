@@ -4,7 +4,7 @@ import           Analysis.Interlevel.InterLevelCP
 import           Data.Maybe                         (fromMaybe)
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
-import           SndOrder.Morphism
+import           SndOrder.Morphism.Core
 import           SndOrder.Morphism.NACmanipulation
 import           Test.HUnit
 

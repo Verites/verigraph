@@ -6,7 +6,7 @@ import           Data.Graphs                        hiding (Node (..))
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
 import           Rewriting.TypedGraph.DPO
-import           SndOrder.Morphism
+import           SndOrder.Morphism.Core
 import           SndOrder.Rule
 
 

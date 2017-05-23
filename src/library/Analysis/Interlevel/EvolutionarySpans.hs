@@ -16,7 +16,8 @@ import           Abstract.Category.AdhesiveHLR
 import           Abstract.Rewriting.DPO
 import           Abstract.Valid
 import           Analysis.DiagramAlgorithms
-import           SndOrder.Morphism
+import           Category.TypedGraphRule.EpiPairs ()
+import           SndOrder.Morphism.Core
 import           SndOrder.Rule
 
 -- | All actual possible kinds of Evolutionary Spans, it indicates the

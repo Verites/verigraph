@@ -49,6 +49,7 @@ library
                        Category.TypedGraph
                        Category.TypedGraph.FindMorphism
                        Category.TypedGraphRule
+                       Category.TypedGraphRule.EpiPairs
                        Data.Graphs
                        Data.Graphs.Morphism
                        Data.Graphs.QuickCheck
@@ -58,7 +59,7 @@ library
                        Image.Dot
                        Logic.Model
                        Logic.Ctl
-                       SndOrder.Morphism
+                       SndOrder.Morphism.Core
                        SndOrder.Morphism.NACmanipulation
                        SndOrder.Rule
                        Rewriting.TypedGraph.DPO.GraphProcess.OccurrenceRelation
@@ -90,8 +91,6 @@ library
                        Category.TypedGraphRule.AdhesiveHLR
                        Category.TypedGraphRule.Cocomplete
                        SndOrder.Morphism.CommutingSquares
-                       SndOrder.Morphism.Core
-                       Category.TypedGraphRule.EpiPairs
                        Category.TypedGraphRule.FindMorphism
                        SndOrder.Rule.Core
                        SndOrder.Rule.DPO

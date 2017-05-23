@@ -1,6 +1,6 @@
-import           Abstract.Category.AdhesiveHLR   (EpiPairs)
 import           Abstract.Rewriting.DPO
 import           Analysis.EssentialCriticalPairs
+import           Category.TypedGraphRule.EpiPairs ()
 import           Data.Matrix                     hiding ((<|>))
 import           Test.HUnit
 import           Utils

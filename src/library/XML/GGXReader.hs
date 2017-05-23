@@ -25,7 +25,7 @@ import           Data.Maybe                    (fromJust, fromMaybe, mapMaybe)
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
 import           Rewriting.TypedGraph.DPO      as GR
-import           SndOrder.Morphism
+import           SndOrder.Morphism.Core
 import           SndOrder.Rule
 import           Text.XML.HXT.Core
 

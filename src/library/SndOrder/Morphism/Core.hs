@@ -1,6 +1,11 @@
 {-# LANGUAGE TypeFamilies #-}
 
-module SndOrder.Morphism.Core where
+module SndOrder.Morphism.Core (
+  RuleMorphism(..)
+, ruleMorphism
+, satisfiesNACRewriting
+)
+where
 
 import           Abstract.Category.FinitaryCategory
 import           Abstract.Rewriting.DPO

@@ -9,7 +9,9 @@ import           Data.Graphs                   as G
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
 import           Rewriting.TypedGraph.DPO
-import           SndOrder.Morphism             as SO
+import           Category.TypedGraphRule.FindMorphism ()
+import qualified Category.TypedGraphRule.AdhesiveHLR as SO ()
+import           SndOrder.Morphism.Core
 import           SndOrder.Rule.Core
 
 
@@ -62,13 +64,13 @@ minimalSafetyNacs conf sndRule =
 -- | Generate NACs that forbid deleting elements in L or R but not in K,
 -- It discovers how situations must have a NAC and function createNacProb creates them.
 -- Insert NACs to avoid condition (a) in Thm 70 (rodrigo machado phd thesis, 2012)
-newNacsProb :: Side -> SndOrderRule a b -> [SO.RuleMorphism a b]
+newNacsProb :: Side -> SndOrderRule a b -> [RuleMorphism a b]
 newNacsProb side sndRule = nacNodes ++ nacEdges
   where
     (mapSide, getSide) =
       case side of
-        LeftSide  -> (SO.mappingLeft, getLHS)
-        RightSide -> (SO.mappingRight, getRHS)
+        LeftSide  -> (mappingLeft, getLHS)
+        RightSide -> (mappingRight, getRHS)
 
     (ruleL, ruleK, ruleR) = getRulesFrom2Rule sndRule
 
@@ -95,8 +97,8 @@ newNacsProb side sndRule = nacNodes ++ nacEdges
     nacEdges = map (createNacProb side ruleL . Edge_) edgeProb
 
 -- | Auxiliar function that creates concrectly the NACs for newNacsProb
-createNacProb :: Side -> GraphRule a b -> NodeOrEdge (Maybe b) -> SO.RuleMorphism a b
-createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
+createNacProb :: Side -> GraphRule a b -> NodeOrEdge (Maybe b) -> RuleMorphism a b
+createNacProb sideChoose ruleL x = ruleMorphism ruleL nacRule mapL mapK mapR
   where
     l = getLHS ruleL
     r = getRHS ruleL
@@ -173,7 +175,7 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
 
 -- | Generate NACs that forbid non monomorphic rule generation.
 -- Insert NACs to avoid condition (b) in Thm 70 (rodrigo machado phd thesis, 2012)
-newNacsPair :: Side -> SndOrderRule a b -> [SO.RuleMorphism a b]
+newNacsPair :: Side -> SndOrderRule a b -> [RuleMorphism a b]
 newNacsPair sideChoose sndRule =
   mapMaybe createNac retNodes ++ mapMaybe createNac retEdges
   where
@@ -184,8 +186,8 @@ newNacsPair sideChoose sndRule =
 
     (mapping, getSide) =
       case sideChoose of
-        LeftSide  -> (SO.mappingLeft, getLHS)
-        RightSide -> (SO.mappingRight, getRHS)
+        LeftSide  -> (mappingLeft, getLHS)
+        RightSide -> (mappingRight, getRHS)
 
     fl = mapping (getLHS sndRule)
     gl = mapping (getRHS sndRule)
@@ -218,8 +220,8 @@ newNacsPair sideChoose sndRule =
               LeftSide  -> nLeft
               RightSide -> nRight
 
-        nLeft = SO.ruleMorphism ruleL ruleNacLeft e mapK mapR
-        nRight = SO.ruleMorphism ruleL ruleNacRight mapL mapK e
+        nLeft = ruleMorphism ruleL ruleNacLeft e mapK mapR
+        nRight = ruleMorphism ruleL ruleNacRight mapL mapK e
 
         ruleNacLeft = buildProduction (e <&> getLHS ruleL) (getRHS ruleL) []
         ruleNacRight = buildProduction (getLHS ruleL) (e <&> getRHS ruleL) []

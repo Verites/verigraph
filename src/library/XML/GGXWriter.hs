@@ -18,13 +18,14 @@ import           Abstract.Rewriting.DPO
 import qualified Analysis.CriticalPairs                as CP
 import qualified Analysis.CriticalSequence             as CS
 import qualified Analysis.EssentialCriticalPairs       as ECP
+import           Category.TypedGraphRule.EpiPairs      ()
 import qualified Data.Graphs                           as G
 import           Data.List
 import           Data.TypedGraph                       (TypedGraph)
 import           Data.TypedGraph.Morphism
 import qualified Rewriting.TypedGraph.DPO              as GR
 import           Rewriting.TypedGraph.DPO.GraphProcess ()
-import           SndOrder.Morphism
+import           SndOrder.Morphism.Core
 import qualified SndOrder.Rule                         as SO
 
 import           XML.GGXParseOut

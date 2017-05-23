@@ -1,7 +1,7 @@
 module SndOrder.Rule.Core where
 
 import           Abstract.Rewriting.DPO
-import           SndOrder.Morphism      as SO
+import           SndOrder.Morphism.Core
 
 -- | A second order rule:
 --
