@@ -1,4 +1,4 @@
-module SndOrder.Morphism.AdhesiveHLR where
+module Category.TypedGraphRule.AdhesiveHLR where
 
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.Cocomplete

@@ -6,7 +6,7 @@ module SndOrder.Morphism (
   , mappingRight
   ) where
 
-import           SndOrder.Morphism.AdhesiveHLR  ()
+import           Category.TypedGraphRule.AdhesiveHLR  ()
 import           SndOrder.Morphism.Cocomplete   ()
 import           SndOrder.Morphism.Core
 import           SndOrder.Morphism.EpiPairs     ()
