@@ -3,6 +3,7 @@
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.FinitaryCategory
 import           Abstract.Rewriting.DPO
+import           Abstract.Rewriting.DPO.Derivation
 import           Abstract.Rewriting.DPO.Process
 import           Data.Graphs
 import           Data.Graphs.Morphism
@@ -10,7 +11,6 @@ import           Data.Maybe                            (fromJust)
 import           Data.TypedGraph.Morphism
 import           Rewriting.DPO.TypedGraph.GraphProcess ()
 import           Test.HUnit
-
 import           Utils
 
 

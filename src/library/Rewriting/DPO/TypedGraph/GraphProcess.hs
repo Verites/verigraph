@@ -21,6 +21,7 @@ where
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.FinitaryCategory                       as FC
 import           Abstract.Rewriting.DPO
+import           Abstract.Rewriting.DPO.Derivation
 import           Abstract.Rewriting.DPO.Process                           hiding (productions)
 import           Analysis.DiagramAlgorithms
 import           Data.Graphs                                              (Graph)
@@ -35,7 +36,6 @@ import           Data.TypedGraph
 import           Data.TypedGraph.Morphism                                 as TGM
 import           Rewriting.DPO.TypedGraph
 import           Rewriting.DPO.TypedGraph.GraphProcess.OccurrenceRelation
-
 import           Util.Closures                                            as C
 import           Util.List
 
