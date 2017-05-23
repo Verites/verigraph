@@ -18,7 +18,7 @@ import           Abstract.Valid
 import           Analysis.DiagramAlgorithms
 import           Category.TypedGraphRule.EpiPairs ()
 import           SndOrder.Morphism.Core
-import           SndOrder.Rule
+import           Rewriting.DPO.TypedGraphRule
 
 -- | All actual possible kinds of Evolutionary Spans, it indicates the
 -- conflict existence on an overlap situation before and after evolution

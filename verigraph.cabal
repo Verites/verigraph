@@ -61,7 +61,7 @@ library
                        Logic.Ctl
                        SndOrder.Morphism.Core
                        SndOrder.Morphism.NACmanipulation
-                       SndOrder.Rule
+                       Rewriting.DPO.TypedGraphRule
                        Rewriting.DPO.TypedGraph.GraphProcess.OccurrenceRelation
                        Rewriting.DPO.TypedGraph.GraphProcess
                        Rewriting.DPO.TypedGraph
@@ -92,8 +92,6 @@ library
                        Category.TypedGraphRule.Cocomplete
                        Category.TypedGraph.CommutingSquares
                        Category.TypedGraphRule.FindMorphism
-                       Rewriting.DPO.TypedGraphRule
-                       Rewriting.DPO.TypedGraphRule
                        XML.Formulas
                        XML.GGXParseIn
                        XML.GGXParseOut

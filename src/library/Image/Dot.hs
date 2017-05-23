@@ -7,7 +7,7 @@ import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
 import           Rewriting.DPO.TypedGraph
 import           SndOrder.Morphism.Core
-import           SndOrder.Rule
+import           Rewriting.DPO.TypedGraphRule
 
 
 import qualified Data.IntMap                        as IntMap

@@ -20,7 +20,7 @@ import           Data.TypedGraph.Morphism
 import           Data.TypedGraph.Subgraph
 import           Rewriting.DPO.TypedGraph
 import           SndOrder.Morphism.Core
-import           SndOrder.Rule
+import           Rewriting.DPO.TypedGraphRule
 
 
 data InterLevelCP a b = InterLevelCP {
