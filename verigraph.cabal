@@ -33,6 +33,7 @@ library
                        Abstract.Category.Cocomplete
                        Abstract.Category.Complete
                        Abstract.Rewriting.DPO
+                       Abstract.Rewriting.DPO.Derivation
                        Abstract.Rewriting.DPO.Process
                        Abstract.Rewriting.DPO.StateSpace
                        Abstract.Category.FinitaryCategory
@@ -69,8 +70,6 @@ library
                        XML.GGXReader
                        XML.GGXWriter
   other-modules:
-                       Abstract.Rewriting.DPO.Core
-                       Abstract.Rewriting.DPO.Derivation
                        Analysis.DiagramAlgorithms
                        Analysis.EpimorphicPairs
                        Data.Partition

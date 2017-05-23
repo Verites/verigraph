@@ -10,7 +10,7 @@ module Abstract.Rewriting.DPO.Derivation
 where
 
 import           Abstract.Category.AdhesiveHLR
-import           Abstract.Rewriting.DPO.Core
+import           Abstract.Rewriting.DPO
 
 data Derivation morph = Derivation
   { production :: Production morph

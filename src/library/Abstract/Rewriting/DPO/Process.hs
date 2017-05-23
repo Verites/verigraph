@@ -13,7 +13,7 @@ module Abstract.Rewriting.DPO.Process
 
 import           Abstract.Category.Cocomplete
 import           Abstract.Category.FinitaryCategory
-import           Abstract.Rewriting.DPO.Core
+import           Abstract.Rewriting.DPO
 import           Abstract.Rewriting.DPO.Derivation
 import           Data.List.NonEmpty                 (NonEmpty, fromList)
 import           Data.Maybe                         (fromJust)
