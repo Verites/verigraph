@@ -22,7 +22,7 @@ module Analysis.CriticalSequence
    ) where
 
 import           Abstract.Category.AdhesiveHLR as RW
-import           Abstract.Category.DPO         as RW hiding (calculateComatch)
+import           Abstract.Rewriting.DPO        as RW hiding (calculateComatch)
 import           Analysis.CriticalPairs        (findPotentialCriticalPairs)
 import           Analysis.DiagramAlgorithms
 import           Data.Maybe                    (mapMaybe)

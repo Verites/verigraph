@@ -6,10 +6,10 @@ module Analysis.Processes
   ) where
 
 import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.DPO
-import           Abstract.Category.DPO.Process
+import           Abstract.Rewriting.DPO
+import           Abstract.Rewriting.DPO.Process
 import           Analysis.DiagramAlgorithms
-import           Data.List                     (partition)
+import           Data.List                      (partition)
 
 findConflictsAndDependencies :: GenerateProcess morph => [NamedRuleWithMatches morph] -> [Interaction]
 findConflictsAndDependencies rulesWithMatches = findConflicts pairs ++ findDependencies pairs --concatMap createCritical pairs

@@ -4,14 +4,15 @@ module ParallelIndependence
   , execute
   ) where
 
-import           Abstract.Category.DPO
+import           Abstract.Rewriting.DPO
 import           Analysis.ParallelIndependent
-import           Control.Monad                (unless, when)
-import           Data.Matrix                  hiding ((<|>))
-import           Data.Monoid                  ((<>))
+import           Category.TypedGraphRule.EpiPairs ()
+import           Control.Monad                    (unless, when)
+import           Data.Matrix                      hiding ((<|>))
+import           Data.Monoid                      ((<>))
 import           GlobalOptions
 import           Options.Applicative
-import qualified XML.GGXReader                as XML
+import qualified XML.GGXReader                    as XML
 
 data Options = Options
   { duFlag :: Bool

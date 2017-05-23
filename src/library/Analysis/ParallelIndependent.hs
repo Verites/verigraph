@@ -1,8 +1,8 @@
 module Analysis.ParallelIndependent where
 
 import           Abstract.Category.AdhesiveHLR      as RW
-import           Abstract.Category.DPO              as RW hiding (calculateComatch)
 import           Abstract.Category.FinitaryCategory
+import           Abstract.Rewriting.DPO             as RW hiding (calculateComatch)
 import           Analysis.DiagramAlgorithms
 import           Analysis.EpimorphicPairs
 

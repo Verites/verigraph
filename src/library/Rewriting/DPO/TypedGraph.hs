@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 
-module TypedGraph.DPO.GraphRule (
+module Rewriting.DPO.TypedGraph (
     -- * Types
       GraphRule
     , getLHS
@@ -23,8 +23,8 @@ module TypedGraph.DPO.GraphRule (
     , isDeleted
 ) where
 
-import           Abstract.Category.DPO              as DPO
 import           Abstract.Category.FinitaryCategory as FC
+import           Abstract.Rewriting.DPO             as DPO
 import           Category.TypedGraph                ()
 import           Category.TypedGraph.AdhesiveHLR
 import           Category.TypedGraph.FindMorphism   ()

@@ -1,4 +1,4 @@
-module Abstract.Cardinality (
+module Base.Cardinality (
 
   Cardinality(..)
 

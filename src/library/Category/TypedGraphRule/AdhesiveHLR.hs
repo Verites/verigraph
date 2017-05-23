@@ -1,19 +1,18 @@
-module SndOrder.Morphism.AdhesiveHLR where
+module Category.TypedGraphRule.AdhesiveHLR where
 
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.Cocomplete
-import           Abstract.Category.DPO
-import           Abstract.Category.FinitaryCategory ()
-import           Category.TypedGraph.AdhesiveHLR    hiding (isOrphanEdge)
-import           Data.Graphs                        as G
-import qualified Data.Graphs.Morphism               as GM
+import           Abstract.Category.FinitaryCategory   ()
+import           Abstract.Rewriting.DPO
+import           Category.TypedGraph.AdhesiveHLR      hiding (isOrphanEdge)
+import           Category.TypedGraph.CommutingSquares
+import           Category.TypedGraphRule
+import           Category.TypedGraphRule.Cocomplete   ()
+import           Data.Graphs                          as G
+import qualified Data.Graphs.Morphism                 as GM
 import           Data.TypedGraph.Morphism
-
-
-import           SndOrder.Morphism.Cocomplete       ()
-import           SndOrder.Morphism.CommutingSquares
-import           SndOrder.Morphism.Core
-import           SndOrder.Morphism.NACmanipulation
+import           Rewriting.DPO.TypedGraph             ()
+import           Rewriting.DPO.TypedGraphRule.NacManipulation
 
 instance AdhesiveHLR (RuleMorphism a b) where
 

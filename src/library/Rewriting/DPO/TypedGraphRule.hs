@@ -1,17 +1,54 @@
-module SndOrder.Rule.DPO where
+module Rewriting.DPO.TypedGraphRule where
 
-import           Data.Maybe                    (fromMaybe, mapMaybe)
+import           Data.Maybe                           (fromMaybe, mapMaybe)
 
 import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.DPO
-import           Abstract.Valid
-import           Data.Graphs                   as G
+import           Abstract.Rewriting.DPO
+import           Base.Valid
+import           Category.TypedGraphRule
+import qualified Category.TypedGraphRule.AdhesiveHLR  as SO ()
+import           Category.TypedGraphRule.FindMorphism ()
+import           Data.Graphs                          as G
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
-import           SndOrder.Morphism             as SO
-import           SndOrder.Rule.Core
-import           TypedGraph.DPO.GraphRule
+import           Rewriting.DPO.TypedGraph
 
+-- | A second order rule:
+--
+-- @
+--         nl       nr
+--     NL◀─────\<NK\>─────▶NR
+--      ▲        ▲        ▲
+--   nacL\\    nacK\\    nacR\\
+--        \\        \\        \\
+--         \\   ll   \\   lr   \\
+--         LL◀─────\<LK\>─────▶LR
+--         ▲        ▲        ▲
+--    leftL│   leftK│   leftR│
+--         │        │        │
+--         │    kl  │    kr  │
+--         KL◀─────\<KK\>─────▶KR
+--         │        │        │
+--   rightL│  rightK│  rightR│
+--         │        │        │
+--         ▼    rl  ▼    rr  ▼
+--         RL◀─────\<RK\>─────▶RR
+-- @
+--
+-- domain rule = (ll,lr)
+--
+-- interface rule = (kl,kr)
+--
+-- codomain rule (rl,rr)
+--
+-- nac rule = (nl,nr)
+--
+-- nacs = set of: domain rule, nac rule, nacL, nacK, nacR
+--
+-- left = domain rule, interface rule, leftL, leftK, leftR
+--
+-- right = interface rule, codomain rule, rightL, rightK, rightR
+type SndOrderRule a b = Production (RuleMorphism a b)
 
 instance DPO (RuleMorphism a b) where
   invertProduction conf r = addMinimalSafetyNacs conf newRule
@@ -62,13 +99,13 @@ minimalSafetyNacs conf sndRule =
 -- | Generate NACs that forbid deleting elements in L or R but not in K,
 -- It discovers how situations must have a NAC and function createNacProb creates them.
 -- Insert NACs to avoid condition (a) in Thm 70 (rodrigo machado phd thesis, 2012)
-newNacsProb :: Side -> SndOrderRule a b -> [SO.RuleMorphism a b]
+newNacsProb :: Side -> SndOrderRule a b -> [RuleMorphism a b]
 newNacsProb side sndRule = nacNodes ++ nacEdges
   where
     (mapSide, getSide) =
       case side of
-        LeftSide  -> (SO.mappingLeft, getLHS)
-        RightSide -> (SO.mappingRight, getRHS)
+        LeftSide  -> (mappingLeft, getLHS)
+        RightSide -> (mappingRight, getRHS)
 
     (ruleL, ruleK, ruleR) = getRulesFrom2Rule sndRule
 
@@ -95,8 +132,8 @@ newNacsProb side sndRule = nacNodes ++ nacEdges
     nacEdges = map (createNacProb side ruleL . Edge_) edgeProb
 
 -- | Auxiliar function that creates concrectly the NACs for newNacsProb
-createNacProb :: Side -> GraphRule a b -> NodeOrEdge (Maybe b) -> SO.RuleMorphism a b
-createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
+createNacProb :: Side -> GraphRule a b -> NodeOrEdge (Maybe b) -> RuleMorphism a b
+createNacProb sideChoose ruleL x = ruleMorphism ruleL nacRule mapL mapK mapR
   where
     l = getLHS ruleL
     r = getRHS ruleL
@@ -173,7 +210,7 @@ createNacProb sideChoose ruleL x = SO.ruleMorphism ruleL nacRule mapL mapK mapR
 
 -- | Generate NACs that forbid non monomorphic rule generation.
 -- Insert NACs to avoid condition (b) in Thm 70 (rodrigo machado phd thesis, 2012)
-newNacsPair :: Side -> SndOrderRule a b -> [SO.RuleMorphism a b]
+newNacsPair :: Side -> SndOrderRule a b -> [RuleMorphism a b]
 newNacsPair sideChoose sndRule =
   mapMaybe createNac retNodes ++ mapMaybe createNac retEdges
   where
@@ -184,8 +221,8 @@ newNacsPair sideChoose sndRule =
 
     (mapping, getSide) =
       case sideChoose of
-        LeftSide  -> (SO.mappingLeft, getLHS)
-        RightSide -> (SO.mappingRight, getRHS)
+        LeftSide  -> (mappingLeft, getLHS)
+        RightSide -> (mappingRight, getRHS)
 
     fl = mapping (getLHS sndRule)
     gl = mapping (getRHS sndRule)
@@ -218,8 +255,8 @@ newNacsPair sideChoose sndRule =
               LeftSide  -> nLeft
               RightSide -> nRight
 
-        nLeft = SO.ruleMorphism ruleL ruleNacLeft e mapK mapR
-        nRight = SO.ruleMorphism ruleL ruleNacRight mapL mapK e
+        nLeft = ruleMorphism ruleL ruleNacLeft e mapK mapR
+        nRight = ruleMorphism ruleL ruleNacRight mapL mapK e
 
         ruleNacLeft = buildProduction (e <&> getLHS ruleL) (getRHS ruleL) []
         ruleNacRight = buildProduction (getLHS ruleL) (e <&> getRHS ruleL) []
@@ -239,3 +276,20 @@ isOrphanNode m n = n `elem` orphanTypedNodeIds m
 
 isOrphanEdge :: TypedGraphMorphism a b -> EdgeId -> Bool
 isOrphanEdge m n = n `elem` orphanTypedEdgeIds m
+
+-- | Receives a function that works with a second order and a first order rule.
+-- Apply this function on all possible combinations of rules.
+applySecondOrder ::
+     ((String, SndOrderRule a b) -> (String, GraphRule a b) -> [t])
+  -> [(String, GraphRule a b)] -> [(String, SndOrderRule a b)] -> [t]
+applySecondOrder f fstRules = concatMap (\r -> concatMap (f r) fstRules)
+
+-- | Applies a named second order rule to a named first order rule with all possible matches,
+-- and generates named first order rules as result.
+applySndOrderRule :: MorphismsConfig -> (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String, GraphRule a b)]
+applySndOrderRule conf (sndName,sndRule) (fstName,fstRule) =
+  let
+    matches = findApplicableMatches conf sndRule fstRule
+    newRules = map (`rewrite` sndRule) matches
+    newNames = map (\number -> fstName ++ "_" ++ sndName ++ "_" ++ show number) ([0..] :: [Int])
+  in zip newNames newRules

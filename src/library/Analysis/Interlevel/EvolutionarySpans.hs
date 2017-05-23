@@ -13,11 +13,12 @@ module Analysis.Interlevel.EvolutionarySpans
   ) where
 
 import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.DPO
-import           Abstract.Valid
+import           Abstract.Rewriting.DPO
+import           Base.Valid
 import           Analysis.DiagramAlgorithms
-import           SndOrder.Morphism
-import           SndOrder.Rule
+import           Category.TypedGraphRule
+import           Category.TypedGraphRule.EpiPairs ()
+import           Rewriting.DPO.TypedGraphRule
 
 -- | All actual possible kinds of Evolutionary Spans, it indicates the
 -- conflict existence on an overlap situation before and after evolution

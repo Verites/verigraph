@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module SndOrder.Morphism.Cocomplete (
+module Category.TypedGraphRule.Cocomplete (
 
   calculateCoequalizer,
   calculateCoproduct,
@@ -10,11 +10,12 @@ module SndOrder.Morphism.Cocomplete (
 ) where
 
 import           Abstract.Category.Cocomplete
-import           Abstract.Category.DPO
-import           Abstract.Category.FinitaryCategory as FC
+import           Abstract.Category.FinitaryCategory   as FC
+import           Abstract.Rewriting.DPO
+import           Category.TypedGraph.Cocomplete ()
+import           Category.TypedGraph.CommutingSquares
+import           Category.TypedGraphRule
 import           Data.TypedGraph.Morphism
-import           SndOrder.Morphism.CommutingSquares
-import           SndOrder.Morphism.Core
 
 instance Cocomplete (RuleMorphism a b) where
 

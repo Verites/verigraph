@@ -1,14 +1,14 @@
 {-# LANGUAGE TypeFamilies #-}
 
-module SndOrder.Morphism.EpiPairs where
+module Category.TypedGraphRule.EpiPairs where
 
 import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.DPO
 import           Abstract.Category.FinitaryCategory
+import           Abstract.Rewriting.DPO
 import           Category.TypedGraph.EpiPairs       ()
+import           Category.TypedGraphRule
+import           Category.TypedGraphRule.AdhesiveHLR ()
 import           Data.TypedGraph.Morphism
-
-import           SndOrder.Morphism.Core
 
 instance EpiPairs (RuleMorphism a b) where
   createJointlyEpimorphicPairs inj m1 m2 = ret

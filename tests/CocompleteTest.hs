@@ -4,10 +4,10 @@ import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.Cocomplete
 import           Data.Graphs
 import           Data.Graphs.Morphism
-import           Data.List.NonEmpty            (fromList)
+import           Data.List.NonEmpty                    (fromList)
 import           Data.TypedGraph.Morphism
+import           Rewriting.DPO.TypedGraph.GraphProcess ()
 import           Test.HUnit
-import           TypedGraph.DPO.GraphProcess   ()
 
 import           Utils
 

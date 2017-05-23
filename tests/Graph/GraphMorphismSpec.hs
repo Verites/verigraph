@@ -6,7 +6,7 @@ import           Test.QuickCheck
 import           Test.QuickCheck.Function
 
 import           Abstract.Category.FinitaryCategory
-import           Abstract.Valid
+import           Base.Valid
 import           Data.Graphs
 import           Data.Graphs.Morphism
 

@@ -1,13 +1,12 @@
-import           Abstract.Category.DPO
 import           Abstract.Category.FinitaryCategory
+import           Abstract.Rewriting.DPO
 import           Analysis.Interlevel.InterLevelCP
+import           Category.TypedGraphRule
 import           Data.Maybe                         (fromMaybe)
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
-import           SndOrder.Morphism
-import           SndOrder.Morphism.NACmanipulation
+import           Rewriting.DPO.TypedGraphRule.NacManipulation
 import           Test.HUnit
-
 import           Util.List
 import           Utils
 import qualified XML.GGXReader                      as XML

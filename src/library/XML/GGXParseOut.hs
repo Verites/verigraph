@@ -8,16 +8,16 @@ module XML.GGXParseOut
  , getMappings
  ) where
 
-import           Abstract.Category.DPO
 import           Abstract.Category.FinitaryCategory ((<&>))
 import qualified Abstract.Category.FinitaryCategory as FC hiding ((<&>))
+import           Abstract.Rewriting.DPO
 import qualified Analysis.CriticalPairs             as CP
 import qualified Analysis.CriticalSequence          as CS
 import qualified Data.Graphs                        as G
 import           Data.Maybe                         (fromMaybe, isJust)
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
-import qualified TypedGraph.DPO.GraphRule           as GR
+import qualified Rewriting.DPO.TypedGraph           as GR
 
 import           XML.ParsedTypes
 

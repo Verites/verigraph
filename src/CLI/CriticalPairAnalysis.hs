@@ -5,7 +5,7 @@ module CriticalPairAnalysis
   ) where
 
 import           Abstract.Category.AdhesiveHLR         (EpiPairs)
-import           Abstract.Category.DPO
+import           Abstract.Rewriting.DPO
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
 import           Analysis.EssentialCriticalPairs
@@ -17,7 +17,7 @@ import           Data.Monoid                           ((<>))
 import qualified Data.Set                              as Set
 import           GlobalOptions
 import           Options.Applicative
-import           SndOrder.Rule
+import           Rewriting.DPO.TypedGraphRule
 import           Util.List
 import qualified XML.GGXReader                         as XML
 import qualified XML.GGXWriter                         as GW

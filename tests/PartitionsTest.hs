@@ -1,16 +1,15 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 
-import           Math.Combinat.Numbers         (bellNumber)
-import           Test.HUnit
-
 import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.DPO
+import           Abstract.Rewriting.DPO
 import           Analysis.CriticalPairs
+import           Category.TypedGraphRule
 import           Data.Graphs
 import           Data.Graphs.Morphism
 import           Data.TypedGraph.Morphism
-import           SndOrder.Morphism             hiding (createEdgeOnDomain, createNodeOnDomain)
+import           Math.Combinat.Numbers         (bellNumber)
+import           Test.HUnit
 import           Utils
 import qualified XML.GGXReader                 as XML
 

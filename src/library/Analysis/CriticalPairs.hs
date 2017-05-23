@@ -18,7 +18,7 @@ module Analysis.CriticalPairs
    ) where
 
 import           Abstract.Category.AdhesiveHLR as RW
-import           Abstract.Category.DPO         as RW hiding (calculateComatch)
+import           Abstract.Rewriting.DPO        as RW hiding (calculateComatch)
 import           Analysis.DiagramAlgorithms
 import           Analysis.EpimorphicPairs
 import           Data.Maybe                    (mapMaybe)

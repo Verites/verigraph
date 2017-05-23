@@ -13,19 +13,20 @@ import           Data.Maybe
 import           Text.XML.HXT.Core
 
 import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.DPO
-import           Abstract.Category.FinitaryCategory (codomain)
-import qualified Analysis.CriticalPairs             as CP
-import qualified Analysis.CriticalSequence          as CS
-import qualified Analysis.EssentialCriticalPairs    as ECP
-import qualified Data.Graphs                        as G
+import           Abstract.Category.FinitaryCategory    (codomain)
+import           Abstract.Rewriting.DPO
+import qualified Analysis.CriticalPairs                as CP
+import qualified Analysis.CriticalSequence             as CS
+import qualified Analysis.EssentialCriticalPairs       as ECP
+import           Category.TypedGraphRule
+import           Category.TypedGraphRule.EpiPairs      ()
+import qualified Data.Graphs                           as G
 import           Data.List
-import           Data.TypedGraph                    (TypedGraph)
+import           Data.TypedGraph                       (TypedGraph)
 import           Data.TypedGraph.Morphism
-import           SndOrder.Morphism
-import qualified SndOrder.Rule                      as SO
-import           TypedGraph.DPO.GraphProcess        ()
-import qualified TypedGraph.DPO.GraphRule           as GR
+import qualified Rewriting.DPO.TypedGraph              as GR
+import           Rewriting.DPO.TypedGraph.GraphProcess ()
+import qualified Rewriting.DPO.TypedGraphRule                         as SO
 
 import           XML.GGXParseOut
 import           XML.ParsedTypes

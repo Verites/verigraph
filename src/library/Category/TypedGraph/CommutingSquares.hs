@@ -1,5 +1,4 @@
--- TODO: this module does not look like it is directly related to 2nd Order
-module SndOrder.Morphism.CommutingSquares (
+module Category.TypedGraph.CommutingSquares (
     commutingMorphism
   , commutingMorphismSameDomain
   , commutingMorphismSameCodomain

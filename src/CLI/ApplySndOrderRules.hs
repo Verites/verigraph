@@ -6,12 +6,12 @@ module ApplySndOrderRules
   ) where
 
 import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.DPO
+import           Abstract.Rewriting.DPO
 import           Control.Monad                 (when)
 import           Data.Graphs                   (Graph)
 import           Data.TypedGraph.Morphism
-import qualified SndOrder.Rule                 as SO
-import qualified TypedGraph.DPO.GraphRule      as GR
+import qualified Rewriting.DPO.TypedGraph      as GR
+import qualified Rewriting.DPO.TypedGraphRule                 as SO
 
 
 import           Data.Monoid                   ((<>))

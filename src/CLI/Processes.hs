@@ -6,21 +6,21 @@ module Processes
 
 
 import           Control.Monad
-import           Data.Maybe                       (fromJust, isJust)
-import           Data.Monoid                      ((<>))
-import           Data.Set                         (toList)
+import           Data.Maybe                                               (fromJust, isJust)
+import           Data.Monoid                                              ((<>))
+import           Data.Set                                                 (toList)
 import           GlobalOptions
 import           Options.Applicative
 
-import           Abstract.Category.DPO
-import           Abstract.Category.DPO.Process    hiding (productions)
-import           Abstract.Valid
+import           Abstract.Rewriting.DPO
+import           Abstract.Rewriting.DPO.Process                           hiding (productions)
+import           Base.Valid
 import           Analysis.Processes
-import qualified Data.TypedGraph                  as TG
-import           TypedGraph.DPO.GraphProcess
-import           TypedGraph.DPO.OccurenceRelation
-import qualified XML.GGXReader                    as XML
-import qualified XML.GGXWriter                    as GW
+import qualified Data.TypedGraph                                          as TG
+import           Rewriting.DPO.TypedGraph.GraphProcess
+import           Rewriting.DPO.TypedGraph.GraphProcess.OccurrenceRelation
+import qualified XML.GGXReader                                            as XML
+import qualified XML.GGXWriter                                            as GW
 
 newtype Options = Options
   { outputFile     :: String }
@@ -89,13 +89,13 @@ execute globalOpts opts = do
           ++ "Set of Category Restrictions: {\n"
           ++ restrictionToString (restrictRelation completeOgg) ++ "\n}"
 
-    putStrLn "Tesing Serialization: "
+    putStrLn "Testing Serialization: "
     if unique
       then putStrLn "[OK] Unique creations and deletions"
       else putStrLn "[FAIL] At least one element is created or deleted for more than one rule"
 
     if isValid (initialGraph completeOgg)
-      then putStrLn "[OK] Inital graph is valid"
+      then putStrLn "[OK] Initial graph is valid"
       else putStrLn $ "[FAIL] Initial graph is not valid: \n"
                     ++ fromJust (errorMessages $ validate $ initialGraph completeOgg)
                     ++ "\n" ++ show (initialGraph completeOgg)
@@ -107,12 +107,12 @@ execute globalOpts opts = do
                     ++ "\n" ++ show (finalGraph completeOgg)
 
     if isJust rulesOrdering
-      then putStrLn "[OK] Concrete occurence relation is a total order"
-      else putStrLn "[FAIL] Concrete occurrence relation is no a total order"
+      then putStrLn "[OK] Concrete occurrence relation is a total order"
+      else putStrLn "[FAIL] Concrete occurrence relation is not a total order"
 
     if isJust elementsOrdering
       then putStrLn "[OK] Concrete elements relation is a total order"
-      else putStrLn "[FAIL] Concrete elements relation is no a total order"
+      else putStrLn "[FAIL] Concrete elements relation is not a total order"
 
     if emptyRestrictions completeOgg
       then putStrLn "[OK] There are no abstract restrictions"

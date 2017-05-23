@@ -1,13 +1,16 @@
 {-# LANGUAGE TypeFamilies #-}
 
-module SndOrder.Morphism.Core where
+module Category.TypedGraphRule
+(  RuleMorphism(..)
+,  ruleMorphism
+,  satisfiesNACRewriting
+) where
 
-import           Abstract.Category.DPO
 import           Abstract.Category.FinitaryCategory
-import           Abstract.Valid
+import           Abstract.Rewriting.DPO
+import           Base.Valid
+import           Category.TypedGraph
 import           Data.TypedGraph.Morphism
-import           TypedGraph.DPO.GraphRule           ()
-
 
 -- | A morphism between two first order rules.
 --
@@ -50,6 +53,25 @@ ruleMorphism :: Production (TypedGraphMorphism a b)
              -> RuleMorphism a b
 ruleMorphism = RuleMorphism
 
+instance Valid (RuleMorphism a b) where
+    validate (RuleMorphism dom cod mapL mapK mapR) =
+      mconcat
+        [ withContext "domain" (validate dom)
+        , withContext "codomain" (validate cod)
+        , withContext "left-hand graph morphism" (validate mapL)
+        , withContext "interface graph morphism" (validate mapK)
+        , withContext "right-hand graph morphism" (validate mapR)
+        , ensure (getLHS cod <&> mapK == mapL <&> getLHS dom) "Left square doesn't commute"
+        , ensure (getRHS cod <&> mapK == mapR <&> getRHS dom) "Right square doesn't commute"
+        ]
+
+satisfiesNACRewriting :: DPO morph => morph -> morph -> Bool
+satisfiesNACRewriting l = satisfiesGluingConditions dpoConf prod
+  where
+    -- Production just to test satisfiesGluingConditions, note that right side is not used.
+    prod = buildProduction l undefined []
+    dpoConf = MorphismsConfig AnyMatches undefined
+
 instance FinitaryCategory (RuleMorphism a b) where
     type Obj (RuleMorphism a b) = Production (TypedGraphMorphism a b)
 
@@ -82,22 +104,3 @@ instance FinitaryCategory (RuleMorphism a b) where
       isIsomorphism mapR &&
       mapL <&> getLHS dom == getLHS cod <&> mapK &&
       mapR <&> getRHS dom == getRHS cod <&> mapK
-
-instance Valid (RuleMorphism a b) where
-    validate (RuleMorphism dom cod mapL mapK mapR) =
-      mconcat
-        [ withContext "domain" (validate dom)
-        , withContext "codomain" (validate cod)
-        , withContext "left-hand graph morphism" (validate mapL)
-        , withContext "interface graph morphism" (validate mapK)
-        , withContext "right-hand graph morphism" (validate mapR)
-        , ensure (getLHS cod <&> mapK == mapL <&> getLHS dom) "Left square doesn't commute"
-        , ensure (getRHS cod <&> mapK == mapR <&> getRHS dom) "Right square doesn't commute"
-        ]
-
-satisfiesNACRewriting :: DPO morph => morph -> morph -> Bool
-satisfiesNACRewriting l = satisfiesGluingConditions dpoConf prod
-  where
-    -- Production just to test satisfiesGluingConditions, note that right side is not used.
-    prod = buildProduction l undefined []
-    dpoConf = MorphismsConfig AnyMatches undefined

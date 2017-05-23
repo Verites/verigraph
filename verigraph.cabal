@@ -4,7 +4,7 @@ synopsis:            Software specification and verification tool based on graph
 -- description:
 license:             Apache-2.0
 license-file:        LICENSE
-author:              Verites - Grupo de Verificação, Validação e Teste de Sistemas Computacionais 
+author:              Verites - Grupo de Verificação, Validação e Teste de Sistemas Computacionais
 maintainer:          rma@inf.ufrgs.br
 -- copyright:
 category:            Data
@@ -27,16 +27,16 @@ library
                        set-monad >= 0.2,
                        split >= 0.2,
                        wl-pprint >=1.2 && <1.3
-  exposed-modules:     Abstract.Cardinality
+  exposed-modules:     Base.Cardinality
                        Abstract.Category.AdhesiveHLR
                        Abstract.Category.AdhesiveHLR.Constraint
                        Abstract.Category.Cocomplete
                        Abstract.Category.Complete
-                       Abstract.Category.DPO
-                       Abstract.Category.DPO.Process
-                       Abstract.Category.DPO.StateSpace
+                       Abstract.Rewriting.DPO
+                       Abstract.Rewriting.DPO.Process
+                       Abstract.Rewriting.DPO.StateSpace
                        Abstract.Category.FinitaryCategory
-                       Abstract.Valid
+                       Base.Valid
                        Analysis.ConcurrentRules
                        Analysis.CriticalPairs
                        Analysis.CriticalSequence
@@ -48,6 +48,8 @@ library
                        Category.Graph
                        Category.TypedGraph
                        Category.TypedGraph.FindMorphism
+                       Category.TypedGraphRule
+                       Category.TypedGraphRule.EpiPairs
                        Data.Graphs
                        Data.Graphs.Morphism
                        Data.Graphs.QuickCheck
@@ -57,19 +59,18 @@ library
                        Image.Dot
                        Logic.Model
                        Logic.Ctl
-                       SndOrder.Morphism
-                       SndOrder.Morphism.NACmanipulation
-                       SndOrder.Rule
-                       TypedGraph.DPO.OccurenceRelation
-                       TypedGraph.DPO.GraphProcess
-                       TypedGraph.DPO.GraphRule
+                       Rewriting.DPO.TypedGraphRule.NacManipulation
+                       Rewriting.DPO.TypedGraphRule
+                       Rewriting.DPO.TypedGraph.GraphProcess.OccurrenceRelation
+                       Rewriting.DPO.TypedGraph.GraphProcess
+                       Rewriting.DPO.TypedGraph
                        Util.Closures
                        Util.List
                        XML.GGXReader
                        XML.GGXWriter
   other-modules:
-                       Abstract.Category.DPO.Core
-                       Abstract.Category.DPO.Derivation
+                       Abstract.Rewriting.DPO.Core
+                       Abstract.Rewriting.DPO.Derivation
                        Analysis.DiagramAlgorithms
                        Analysis.EpimorphicPairs
                        Data.Partition
@@ -86,14 +87,10 @@ library
                        Data.TypedGraph.Partition.ToVerigraph
                        Data.TypedGraph.Partition.Types
                        Data.TypedGraph.Partition.Util
-                       SndOrder.Morphism.AdhesiveHLR
-                       SndOrder.Morphism.Cocomplete
-                       SndOrder.Morphism.CommutingSquares
-                       SndOrder.Morphism.Core
-                       SndOrder.Morphism.EpiPairs
-                       SndOrder.Morphism.FindMorphism
-                       SndOrder.Rule.Core
-                       SndOrder.Rule.DPO
+                       Category.TypedGraphRule.AdhesiveHLR
+                       Category.TypedGraphRule.Cocomplete
+                       Category.TypedGraph.CommutingSquares
+                       Category.TypedGraphRule.FindMorphism
                        XML.Formulas
                        XML.GGXParseIn
                        XML.GGXParseOut

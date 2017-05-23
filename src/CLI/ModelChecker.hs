@@ -4,16 +4,16 @@ import           Data.Monoid                        ((<>))
 import           GlobalOptions
 import           Options.Applicative
 
-import           Abstract.Category.DPO              as DPO hiding (NamedProduction)
-import           Abstract.Category.DPO.StateSpace   as StateSpace
 import           Abstract.Category.FinitaryCategory
-import           Abstract.Valid
+import           Abstract.Rewriting.DPO             as DPO hiding (NamedProduction)
+import           Abstract.Rewriting.DPO.StateSpace  as StateSpace
+import           Base.Valid
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
 import qualified Image.Dot                          as Dot
 import qualified Logic.Ctl                          as Logic
 import qualified Logic.Model                        as Logic
-import           TypedGraph.DPO.GraphRule
+import           Rewriting.DPO.TypedGraph
 
 import qualified XML.GGXReader                      as XML
 

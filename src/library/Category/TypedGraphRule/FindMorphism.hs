@@ -1,10 +1,10 @@
-module SndOrder.Morphism.FindMorphism () where
+module Category.TypedGraphRule.FindMorphism () where
 
-import           Abstract.Category.DPO
 import           Abstract.Category.FinitaryCategory
+import           Abstract.Rewriting.DPO
 import           Category.TypedGraph                (TypedGraphMorphism)
 import           Category.TypedGraph.FindMorphism   ()
-import           SndOrder.Morphism.Core
+import           Category.TypedGraphRule
 
 
 instance FindMorphism (RuleMorphism a b) where

@@ -7,7 +7,7 @@ import           Test.Hspec.QuickCheck
 import           Test.QuickCheck
 import           Test.QuickCheck.Function
 
-import           Abstract.Valid
+import           Base.Valid
 import           Data.Graphs
 import           Data.Graphs.QuickCheck
 

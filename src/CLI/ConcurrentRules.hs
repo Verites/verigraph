@@ -8,12 +8,12 @@ import           Data.Monoid                   ((<>))
 import           GlobalOptions
 
 import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.DPO
+import           Abstract.Rewriting.DPO
 import           Analysis.ConcurrentRules
 import           Control.Monad
 import           Data.TypedGraph.Morphism
 import           Options.Applicative
-import           TypedGraph.DPO.GraphRule
+import           Rewriting.DPO.TypedGraph
 
 import qualified XML.GGXReader                 as XML
 import qualified XML.GGXWriter                 as GW

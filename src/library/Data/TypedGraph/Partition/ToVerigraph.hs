@@ -11,9 +11,9 @@ module Data.TypedGraph.Partition.ToVerigraph
 import qualified Data.Graphs                     as G
 import qualified Data.Graphs.Morphism            as GM
 import           Data.TypedGraph                 as TG
+import qualified Data.TypedGraph.Morphism        as TGM
 import           Data.TypedGraph.Partition.Types as GP
 import           Data.TypedGraph.Partition.Util  as GP
-import qualified Data.TypedGraph.Morphism        as TGM
 
 -- | For two typed graphs and a EpiPair (in Generator format) it returns
 -- a pair of TypedGraphMorphism to the epi graph in the verigraph format.

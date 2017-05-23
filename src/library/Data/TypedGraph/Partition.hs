@@ -48,6 +48,6 @@ generateGraphPartitions (nodes,edges) = concatMap runEdges nodeEquivalences
   where
     nodeEquivalences = generatePartitions nodeBelongsToEquivalenceClass nodes
     edgeEquivalences x = generatePartitions (edgeBelongsToEquivalenceClass x) edges
-    
+
     runEdges nodeEqs =
       zip (replicate (length (edgeEquivalences nodeEqs)) nodeEqs) (edgeEquivalences nodeEqs)

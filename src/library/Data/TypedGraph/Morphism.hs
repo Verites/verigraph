@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeFamilies #-}
 module Data.TypedGraph.Morphism where
 
-import           Abstract.Valid
+import           Base.Valid
 import           Category.Graph       ()
 import           Data.Graphs
 import           Data.Graphs.Morphism (GraphMorphism)
