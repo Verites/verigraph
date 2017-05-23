@@ -23,8 +23,8 @@ module Rewriting.TypedGraph.DPO (
     , isDeleted
 ) where
 
-import           Abstract.Rewriting.DPO              as DPO
 import           Abstract.Category.FinitaryCategory as FC
+import           Abstract.Rewriting.DPO             as DPO
 import           Category.TypedGraph                ()
 import           Category.TypedGraph.AdhesiveHLR
 import           Category.TypedGraph.FindMorphism   ()

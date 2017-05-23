@@ -50,8 +50,8 @@ import qualified Data.IntMap                        as IntMap
 import           Data.Set                           (Set)
 import qualified Data.Set                           as Set
 
-import           Abstract.Rewriting.DPO              hiding (productions)
 import           Abstract.Category.FinitaryCategory
+import           Abstract.Rewriting.DPO             hiding (productions)
 import qualified Logic.Model                        as Logic
 
 

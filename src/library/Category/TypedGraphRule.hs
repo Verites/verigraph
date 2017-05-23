@@ -5,10 +5,10 @@ module Category.TypedGraphRule
 
 ) where
 
-import Abstract.Category.FinitaryCategory
-import Abstract.Rewriting.DPO
-import Data.TypedGraph.Morphism
-import SndOrder.Morphism.Core
+import           Abstract.Category.FinitaryCategory
+import           Abstract.Rewriting.DPO
+import           Data.TypedGraph.Morphism
+import           SndOrder.Morphism.Core
 
 instance FinitaryCategory (RuleMorphism a b) where
     type Obj (RuleMorphism a b) = Production (TypedGraphMorphism a b)

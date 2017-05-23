@@ -6,21 +6,21 @@ module Processes
 
 
 import           Control.Monad
-import           Data.Maybe                       (fromJust, isJust)
-import           Data.Monoid                      ((<>))
-import           Data.Set                         (toList)
+import           Data.Maybe                                               (fromJust, isJust)
+import           Data.Monoid                                              ((<>))
+import           Data.Set                                                 (toList)
 import           GlobalOptions
 import           Options.Applicative
 
 import           Abstract.Rewriting.DPO
-import           Abstract.Rewriting.DPO.Process    hiding (productions)
+import           Abstract.Rewriting.DPO.Process                           hiding (productions)
 import           Abstract.Valid
 import           Analysis.Processes
-import qualified Data.TypedGraph                  as TG
+import qualified Data.TypedGraph                                          as TG
 import           Rewriting.TypedGraph.DPO.GraphProcess
 import           Rewriting.TypedGraph.DPO.GraphProcess.OccurrenceRelation
-import qualified XML.GGXReader                    as XML
-import qualified XML.GGXWriter                    as GW
+import qualified XML.GGXReader                                            as XML
+import qualified XML.GGXWriter                                            as GW
 
 newtype Options = Options
   { outputFile     :: String }

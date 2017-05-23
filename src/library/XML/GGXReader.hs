@@ -24,10 +24,10 @@ import qualified Data.Map                      as M
 import           Data.Maybe                    (fromJust, fromMaybe, mapMaybe)
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
+import           Rewriting.TypedGraph.DPO      as GR
 import           SndOrder.Morphism
 import           SndOrder.Rule
 import           Text.XML.HXT.Core
-import           Rewriting.TypedGraph.DPO      as GR
 
 import qualified XML.Formulas                  as F
 import           XML.GGXParseIn

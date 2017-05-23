@@ -2,15 +2,13 @@ module Category.TypedGraphRule.AdhesiveHLR where
 
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.Cocomplete
-import           Abstract.Rewriting.DPO
 import           Abstract.Category.FinitaryCategory ()
+import           Abstract.Rewriting.DPO
 import           Category.TypedGraph.AdhesiveHLR    hiding (isOrphanEdge)
+import           Category.TypedGraphRule.Cocomplete ()
 import           Data.Graphs                        as G
 import qualified Data.Graphs.Morphism               as GM
 import           Data.TypedGraph.Morphism
-
-
-import           Category.TypedGraphRule.Cocomplete       ()
 import           SndOrder.Morphism.CommutingSquares
 import           SndOrder.Morphism.Core
 import           SndOrder.Morphism.NACmanipulation

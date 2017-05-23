@@ -1,13 +1,13 @@
 module Image.Dot where
 
-import           Abstract.Rewriting.DPO.StateSpace
 import           Abstract.Category.FinitaryCategory
+import           Abstract.Rewriting.DPO.StateSpace
 import           Data.Graphs                        hiding (Node (..))
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
+import           Rewriting.TypedGraph.DPO
 import           SndOrder.Morphism
 import           SndOrder.Rule
-import           Rewriting.TypedGraph.DPO
 
 
 import qualified Data.IntMap                        as IntMap

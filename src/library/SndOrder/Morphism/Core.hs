@@ -2,8 +2,8 @@
 
 module SndOrder.Morphism.Core where
 
-import           Abstract.Rewriting.DPO
 import           Abstract.Category.FinitaryCategory
+import           Abstract.Rewriting.DPO
 import           Abstract.Valid
 import           Data.TypedGraph.Morphism
 import           Rewriting.TypedGraph.DPO           ()

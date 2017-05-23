@@ -3,12 +3,11 @@
 module Category.TypedGraphRule.EpiPairs where
 
 import           Abstract.Category.AdhesiveHLR
-import           Abstract.Rewriting.DPO
 import           Abstract.Category.FinitaryCategory
+import           Abstract.Rewriting.DPO
 import           Category.TypedGraph.EpiPairs       ()
 import           Category.TypedGraphRule
 import           Data.TypedGraph.Morphism
-
 import           SndOrder.Morphism.Core
 
 instance EpiPairs (RuleMorphism a b) where

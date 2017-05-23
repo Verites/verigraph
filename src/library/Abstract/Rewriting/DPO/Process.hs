@@ -12,9 +12,9 @@ module Abstract.Rewriting.DPO.Process
   ) where
 
 import           Abstract.Category.Cocomplete
+import           Abstract.Category.FinitaryCategory
 import           Abstract.Rewriting.DPO.Core
 import           Abstract.Rewriting.DPO.Derivation
-import           Abstract.Category.FinitaryCategory
 import           Data.List.NonEmpty                 (NonEmpty, fromList)
 import           Data.Maybe                         (fromJust)
 import qualified Data.Set                           as S

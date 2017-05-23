@@ -10,10 +10,10 @@ module Data.TypedGraph.Partition.FromVerigraph
 import           Data.Graphs                     as G
 import           Data.Graphs.Morphism            as GM
 import           Data.TypedGraph
-import qualified Data.TypedGraph.Partition.Types as GP
 import           Data.TypedGraph.Morphism        as TGM
+import qualified Data.TypedGraph.Partition.Types as GP
 
--- | The starting integer id for the generated elements. 
+-- | The starting integer id for the generated elements.
 startId :: Int
 startId = 0
 

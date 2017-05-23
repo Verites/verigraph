@@ -38,8 +38,8 @@ module Analysis.DiagramAlgorithms (
   ) where
 
 import           Abstract.Category.AdhesiveHLR
-import           Abstract.Rewriting.DPO
 import           Abstract.Category.FinitaryCategory
+import           Abstract.Rewriting.DPO
 import           Control.Applicative
 import           Control.Monad
 

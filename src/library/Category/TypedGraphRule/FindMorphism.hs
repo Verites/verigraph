@@ -1,7 +1,7 @@
 module Category.TypedGraphRule.FindMorphism () where
 
-import           Abstract.Rewriting.DPO
 import           Abstract.Category.FinitaryCategory
+import           Abstract.Rewriting.DPO
 import           Category.TypedGraph                (TypedGraphMorphism)
 import           Category.TypedGraph.FindMorphism   ()
 import           Category.TypedGraphRule            ()

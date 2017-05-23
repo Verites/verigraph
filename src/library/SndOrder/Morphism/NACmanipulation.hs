@@ -1,11 +1,11 @@
 module SndOrder.Morphism.NACmanipulation where
 
 import           Abstract.Category.AdhesiveHLR
-import           Abstract.Rewriting.DPO
 import           Abstract.Category.FinitaryCategory
+import           Abstract.Rewriting.DPO
 import           Category.TypedGraph.EpiPairs       ()
+import           Category.TypedGraphRule.Cocomplete ()
 import           Data.TypedGraph.Morphism
-import           Category.TypedGraphRule.Cocomplete       ()
 
 
 -- | Auxiliar structure and function to delete first-order NACs

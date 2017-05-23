@@ -1,5 +1,5 @@
-import           Abstract.Rewriting.DPO
 import           Abstract.Category.FinitaryCategory
+import           Abstract.Rewriting.DPO
 import           Analysis.Interlevel.InterLevelCP
 import           Data.Maybe                         (fromMaybe)
 import           Data.TypedGraph

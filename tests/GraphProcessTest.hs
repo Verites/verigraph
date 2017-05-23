@@ -1,15 +1,15 @@
 -- | Test Suite for GraphProcess Module
 
 import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category.FinitaryCategory
 import           Abstract.Rewriting.DPO
 import           Abstract.Rewriting.DPO.Process
-import           Abstract.Category.FinitaryCategory
 import           Data.Graphs
 import           Data.Graphs.Morphism
-import           Data.Maybe                         (fromJust)
+import           Data.Maybe                            (fromJust)
 import           Data.TypedGraph.Morphism
+import           Rewriting.TypedGraph.DPO.GraphProcess ()
 import           Test.HUnit
-import           Rewriting.TypedGraph.DPO.GraphProcess        ()
 
 import           Utils
 

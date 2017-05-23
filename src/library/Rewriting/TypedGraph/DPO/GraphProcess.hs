@@ -19,23 +19,24 @@ module Rewriting.TypedGraph.DPO.GraphProcess
 where
 
 import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category.FinitaryCategory                       as FC
 import           Abstract.Rewriting.DPO
-import           Abstract.Rewriting.DPO.Process      hiding (productions)
-import           Abstract.Category.FinitaryCategory as FC
+import           Abstract.Rewriting.DPO.Process                           hiding (productions)
 import           Analysis.DiagramAlgorithms
-import           Data.Graphs                        (Graph)
-import qualified Data.Graphs.Morphism               as GM
-import           Data.List                          as L hiding (union)
-import           Data.Maybe                         (fromJust, fromMaybe, isJust)
+import           Data.Graphs                                              (Graph)
+import qualified Data.Graphs.Morphism                                     as GM
+import           Data.List                                                as L hiding (union)
+import           Data.Maybe                                               (fromJust, fromMaybe,
+                                                                           isJust)
 import           Data.Partition
-import           Data.Set                           as S
-import           Data.Tuple                         (swap)
+import           Data.Set                                                 as S
+import           Data.Tuple                                               (swap)
 import           Data.TypedGraph
-import           Data.TypedGraph.Morphism           as TGM
+import           Data.TypedGraph.Morphism                                 as TGM
 import           Rewriting.TypedGraph.DPO
 import           Rewriting.TypedGraph.DPO.GraphProcess.OccurrenceRelation
 
-import           Util.Closures                      as C
+import           Util.Closures                                            as C
 import           Util.List
 
 instance GenerateProcess (TypedGraphMorphism a b) where
