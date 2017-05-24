@@ -9,8 +9,8 @@ module Category.TypedGraphRule
 import           Abstract.Category.FinitaryCategory
 import           Abstract.Rewriting.DPO
 import           Base.Valid
-import           Category.TypedGraph                ()
-import           Data.TypedGraph.Morphism
+import           Category.TypedGraph
+import           Rewriting.DPO.TypedGraph
 
 -- | A morphism between two first order rules.
 --
@@ -38,19 +38,15 @@ import           Data.TypedGraph.Morphism
 
 data RuleMorphism a b =
   RuleMorphism {
-    rmDomain         :: Production (TypedGraphMorphism a b)
-  , rmCodomain       :: Production (TypedGraphMorphism a b)
+    rmDomain         :: TypedGraphRule a b
+  , rmCodomain       :: TypedGraphRule a b
   , mappingLeft      :: TypedGraphMorphism a b
   , mappingInterface :: TypedGraphMorphism a b
   , mappingRight     :: TypedGraphMorphism a b
   } deriving (Eq, Show)
 
-ruleMorphism :: Production (TypedGraphMorphism a b)
-             -> Production (TypedGraphMorphism a b)
-             -> TypedGraphMorphism a b
-             -> TypedGraphMorphism a b
-             -> TypedGraphMorphism a b
-             -> RuleMorphism a b
+ruleMorphism :: TypedGraphRule a b -> TypedGraphRule a b -> TypedGraphMorphism a b
+             -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> RuleMorphism a b
 ruleMorphism = RuleMorphism
 
 instance Valid (RuleMorphism a b) where
@@ -84,9 +80,9 @@ instance FinitaryCategory (RuleMorphism a b) where
                  (mappingRight t2 <&> mappingRight t1)
 
     identity t = RuleMorphism t t
-             (idMap (codomain (getLHS t)) (codomain (getLHS t)))
-             (idMap (domain (getLHS t)) (domain (getLHS t)))
-             (idMap (codomain (getRHS t)) (codomain (getRHS t)))
+             (identity $ codomain (getLHS t))
+             (identity $   domain (getLHS t))
+             (identity $ codomain (getRHS t))
 
     isMonomorphism rm =
       isMonomorphism (mappingLeft rm) &&
