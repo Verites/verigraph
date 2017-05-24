@@ -6,7 +6,6 @@ module Analysis.ConcurrentRules
 ) where
 
 import           Abstract.Category.AdhesiveHLR
-import qualified Abstract.Category.Cocomplete  as C
 import           Abstract.Rewriting.DPO
 import           Analysis.CriticalSequence     (findTriggeredCriticalSequences,
                                                 getCriticalSequenceComatches)
@@ -75,8 +74,8 @@ concurrentRuleForPair conf constraints c n pair = if invalidSides then Nothing e
   where
     pocC = calculatePushoutComplement (fst pair) (getRHS c)
     pocN = calculatePushoutComplement (snd pair) (getLHS n)
-    poC = C.calculatePushout (fst pocC) (getLHS c)
-    poN = C.calculatePushout (fst pocN) (getRHS n)
+    poC = calculatePushout (fst pocC) (getLHS c)
+    poN = calculatePushout (fst pocN) (getRHS n)
     pb = calculatePullback (snd pocC) (snd pocN)
     l = snd poC <&> fst pb
     r = snd poN <&> snd pb
