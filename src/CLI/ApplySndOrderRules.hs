@@ -34,7 +34,7 @@ options = Options
     <> action "file"
     <> help "GGX file that will be written, adding the new rules to the original graph grammar")
 
-addEmptyFstOrderRule :: Graph (Maybe a) (Maybe b) -> [(String,GR.GraphRule a b)] -> [(String,GR.GraphRule a b)]
+addEmptyFstOrderRule :: Graph (Maybe a) (Maybe b) -> [(String,GR.TypedGraphRule a b)] -> [(String,GR.TypedGraphRule a b)]
 addEmptyFstOrderRule typegraph fstRules =
   if any (GR.nullGraphRule . snd) fstRules then
     fstRules

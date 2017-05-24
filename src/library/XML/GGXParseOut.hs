@@ -72,13 +72,13 @@ getTgmMappings prefix tgm = nodesMorph ++ edgesMorph
     nodesMorph = map (\n -> ("N" ++ show (nodeMap n), prefix, "N" ++ show n)) (nodeIdsFromDomain tgm)
     edgesMorph = map (\e -> ("E" ++ show (edgeMap e), prefix, "E" ++ show e)) (edgeIdsFromDomain tgm)
 
-getLHS :: [Mapping] -> [Mapping] -> GR.GraphRule a b -> ParsedTypedGraph
+getLHS :: [Mapping] -> [Mapping] -> GR.TypedGraphRule a b -> ParsedTypedGraph
 getLHS objNameN objNameE rule = serializeGraph objNameN objNameE $ GR.getLHS rule
 
-getRHS :: [Mapping] -> [Mapping] -> GR.GraphRule a b -> ParsedTypedGraph
+getRHS :: [Mapping] -> [Mapping] -> GR.TypedGraphRule a b -> ParsedTypedGraph
 getRHS objNameN objNameE rule = serializeGraph objNameN objNameE $ GR.getRHS rule
 
-getNacs :: String -> GR.GraphRule a b -> [(ParsedTypedGraph,[Mapping])]
+getNacs :: String -> GR.TypedGraphRule a b -> [(ParsedTypedGraph,[Mapping])]
 getNacs ruleName rule = map getNac nacsWithIds
   where
     zipIds = zip ([0..]::[Int]) (getNACs rule)
@@ -91,7 +91,7 @@ getNac (nacId,nac) = (graph, mappings)
     graph = (nacId, n, e)
     mappings = getTgmMappings Nothing nac
 
-getMappings :: GR.GraphRule a b -> [Mapping]
+getMappings :: GR.TypedGraphRule a b -> [Mapping]
 getMappings rule = nodesMorph ++ edgesMorph
   where
     no = Nothing

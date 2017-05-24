@@ -1,7 +1,8 @@
 {-# LANGUAGE TypeFamilies #-}
 
 module Category.Graph
-(
+(  Graph
+,  GraphMorphism
 ) where
 
 

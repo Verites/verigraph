@@ -157,9 +157,9 @@ drawStateSpace dir namingContext stateSpace =
   where
     fileFor name = dir ++ "/" ++ name ++ ".dot"
 
-type NamedProduction = (String, GraphRule () ())
+type NamedProduction = (String, TypedGraphRule () ())
 
-type NamedPredicate = (String, GraphRule () ())
+type NamedPredicate = (String, TypedGraphRule () ())
 
 type Space = StateSpace (TypedGraphMorphism () ())
 
@@ -187,7 +187,7 @@ exploreStateSpace conf maxDepth grammar graphs =
 
 -- | Separates the rules that change nothing (which are considered predicates)
 -- from those that have some effect (which are considered productions).
-splitPredicates :: [(String, GraphRule () ())] -> ([NamedProduction], [NamedPredicate])
+splitPredicates :: [(String, TypedGraphRule () ())] -> ([NamedProduction], [NamedPredicate])
 splitPredicates [] =
   ([], [])
 

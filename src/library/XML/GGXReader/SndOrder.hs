@@ -30,7 +30,7 @@ instantiateSndOrderRule typegraph (l@(_,nameL,leftL),r@(_,_,rightR), n) = (nameL
     nacsRules = map (instantiateRule typegraph . (\(_,_,(x,_)) -> (x,[]))) n
     nacs = map (instantiateSndOrderNac (l,ruleLeft)) (zip n nacsRules)
 
-instantiateSndOrderNac :: (SndOrderRuleSide, GraphRule a b) -> (SndOrderRuleSide, GraphRule a b) -> RuleMorphism a b
+instantiateSndOrderNac :: (SndOrderRuleSide, TypedGraphRule a b) -> (SndOrderRuleSide, TypedGraphRule a b) -> RuleMorphism a b
 instantiateSndOrderNac (parsedLeft, l) (n, nacRule) = ruleMorphism l nacRule nacL nacK nacR
   where
     mapL = SO.getLeftObjNameMapping parsedLeft n
@@ -50,8 +50,8 @@ instantiateNacMorphisms graphL graphN mapping = buildTypedGraphMorphism graphL g
              mapElements
              mapElements
 
-instantiateRuleMorphisms :: (SndOrderRuleSide, GraphRule a b)
-                         -> (SndOrderRuleSide, GraphRule a b)
+instantiateRuleMorphisms :: (SndOrderRuleSide, TypedGraphRule a b)
+                         -> (SndOrderRuleSide, TypedGraphRule a b)
                          -> (RuleMorphism a b , RuleMorphism a b)
 instantiateRuleMorphisms (parsedLeft, l) (parsedRight, r) =
   (ruleMorphism ruleK l leftKtoLeftL interfaceKtoL rightKtoRightL,

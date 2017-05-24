@@ -29,7 +29,7 @@ data InterLevelCP a b = InterLevelCP {
   } deriving (Eq,Show)
 
 -- | Matches the second order rule with the first order, and calls theirs critical pairs
-interLevelCP :: MorphismsConfig -> (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String,String,Int,InterLevelCP a b)]
+interLevelCP :: MorphismsConfig -> (String, SndOrderRule a b) -> (String, TypedGraphRule a b) -> [(String,String,Int,InterLevelCP a b)]
 interLevelCP conf (sndName, sndRule) (fstName, fstRule) =
   map (\((x,y,z),w) -> (x,y,z,w)) unformattedConflicts
 

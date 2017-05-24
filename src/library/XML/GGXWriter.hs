@@ -153,7 +153,7 @@ writeGts grammars name names = mkelem "GraphTransformationSystem" (sattr "name" 
 writeCpaOptions :: ArrowXml a => a XmlTree XmlTree
 writeCpaOptions = mkelem "cpaOptions" cpaAttributes []
 
-writeCriticalPairAnalysis :: ArrowXml a => [(String,String)] -> [(String,GR.GraphRule b c)] -> [Overlappings] -> [Overlappings] -> [a XmlTree XmlTree]
+writeCriticalPairAnalysis :: ArrowXml a => [(String,String)] -> [(String,GR.TypedGraphRule b c)] -> [Overlappings] -> [Overlappings] -> [a XmlTree XmlTree]
 writeCriticalPairAnalysis names productions cpOL csOL = writeCpaOptions : conflictContainer ++ dependenceContainer
   where
     conflictContainer = if null cpOL then [] else
@@ -164,7 +164,7 @@ writeCriticalPairAnalysis names productions cpOL csOL = writeCpaOptions : confli
                             writeConflictFreeContainer productions csOL]
     nacNames = filter (\(x,_) -> isPrefixOf "NAC" x) names
 
-writeConflictContainer :: ArrowXml a => String -> [(String,String)] -> [(String,GR.GraphRule b c)] -> [Overlappings] ->  a XmlTree XmlTree
+writeConflictContainer :: ArrowXml a => String -> [(String,String)] -> [(String,GR.TypedGraphRule b c)] -> [Overlappings] ->  a XmlTree XmlTree
 writeConflictContainer kind nacNames productions overlappings =
   mkelem elem [sattr "kind" kind] (writeRuleSets productions ++ writeConflictMatrix nacNames productions overlappings)
     where
@@ -173,7 +173,7 @@ writeConflictContainer kind nacNames productions overlappings =
                "trigger_switch_dependency" -> "dependencyContainer"
                _ -> error $ "Unexpected kind of conflict/dependency: " ++ kind
 
-writeConflictMatrix :: ArrowXml a => [(String,String)] -> [(String,GR.GraphRule b c)] -> [Overlappings] -> [a XmlTree XmlTree]
+writeConflictMatrix :: ArrowXml a => [(String,String)] -> [(String,GR.TypedGraphRule b c)] -> [Overlappings] -> [a XmlTree XmlTree]
 writeConflictMatrix nacNames productions overlappings =
   map (\(name,_) ->
          mkelem "Rule"
@@ -191,10 +191,10 @@ getCPs nacNames (n1,n2,overlappings) = if null overlappings then false else true
     false = mkelem "Rule" (r2 : sattr "bool" "false" : attribs) []
     true  = mkelem "Rule" (r2 : sattr "bool" "true"  : attribs) $ writeOverlappings nacNames (n1,n2,overlappings)
 
-writeConflictFreeContainer :: ArrowXml a => [(String,GR.GraphRule b c)] -> [Overlappings] -> a XmlTree XmlTree
+writeConflictFreeContainer :: ArrowXml a => [(String,GR.TypedGraphRule b c)] -> [Overlappings] -> a XmlTree XmlTree
 writeConflictFreeContainer productions overlappings = mkelem "conflictFreeContainer" [] $ writeConflictFreeMatrix productions overlappings
 
-writeConflictFreeMatrix :: ArrowXml a => [(String,GR.GraphRule b c)] -> [Overlappings] -> [a XmlTree XmlTree]
+writeConflictFreeMatrix :: ArrowXml a => [(String,GR.TypedGraphRule b c)] -> [Overlappings] -> [a XmlTree XmlTree]
 writeConflictFreeMatrix productions overlappings =
   map (\(name,_) -> mkelem "Rule"
                             [sattr "R1" name]
@@ -205,7 +205,7 @@ writeConflictFreeMatrix productions overlappings =
                              then mkelem "Rule" [sattr "R2" n2, sattr "bool" "true"] []
                              else mkelem "Rule" [sattr "R2" n2, sattr "bool" "false"] []
 
-writeRuleSets :: ArrowXml a => [(String,GR.GraphRule b c)] -> [a XmlTree XmlTree]
+writeRuleSets :: ArrowXml a => [(String,GR.TypedGraphRule b c)] -> [a XmlTree XmlTree]
 writeRuleSets productions =
   [mkelem "RuleSet" (somethingRules ++ rulesL) [], mkelem "RuleSet2" (somethingRules ++ rulesL) []]
     where
@@ -501,7 +501,7 @@ writeSndOrderRuleSide name objLeftN objLeftE objRightN objRightE ruleMorphism = 
 writeRules :: ArrowXml a => Grammar (TypedGraphMorphism b c) -> [(String,String)] -> [a XmlTree XmlTree]
 writeRules grammar nacNames = map (writeRule [] [] [] [] nacNames) (productions grammar)
 
-writeRule :: ArrowXml a => [Mapping] -> [Mapping] -> [Mapping] -> [Mapping] -> [(String,String)] -> (String, GR.GraphRule b c) -> a XmlTree XmlTree
+writeRule :: ArrowXml a => [Mapping] -> [Mapping] -> [Mapping] -> [Mapping] -> [(String,String)] -> (String, GR.TypedGraphRule b c) -> a XmlTree XmlTree
 writeRule objNameLeftN objNameLeftE objNameRightN objNameRightE nacNames (ruleName, rule) =
   mkelem "Rule"
     [sattr "ID" ruleName, sattr "formula" "true", sattr "name" ruleName]
@@ -534,7 +534,7 @@ writeMappings = map writeMapping
 writeMapping :: ArrowXml a => (String, String) -> a XmlTree XmlTree
 writeMapping (image, orig) = mkelem "Mapping" [sattr "image" image, sattr "orig" orig] []
 
-writeConditions :: ArrowXml a => [(String, String)] -> String -> GR.GraphRule b c -> a XmlTree XmlTree
+writeConditions :: ArrowXml a => [(String, String)] -> String -> GR.TypedGraphRule b c -> a XmlTree XmlTree
 writeConditions nacNames ruleName rule =
   mkelem "ApplCondition" [] $ map (writeNac ruleName) (zip (getNacs ruleName rule) (map snd nacsRule++nacsNoName))
     where

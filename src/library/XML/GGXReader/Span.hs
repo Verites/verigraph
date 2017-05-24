@@ -14,7 +14,7 @@ import           XML.Utilities
 
 type TypeGraph a b = G.Graph (Maybe a) (Maybe b)
 
-instantiateRule :: TypeGraph a b -> RuleWithNacs -> GraphRule a b
+instantiateRule :: TypeGraph a b -> RuleWithNacs -> TypedGraphRule a b
 instantiateRule typeGraph ((_, lhs, rhs, mappings), nacs) = buildProduction lhsTgm rhsTgm nacsTgm
   where
     lm = instantiateTypedGraph lhs typeGraph

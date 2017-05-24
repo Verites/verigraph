@@ -1,9 +1,9 @@
 {-# LANGUAGE TypeFamilies #-}
 
 module Category.TypedGraph
-(
-  TypedGraphMorphism
-) where
+(  TypedGraph
+,  TypedGraphMorphism
+)  where
 
 import           Abstract.Category.FinitaryCategory
 import           Category.Graph                     ()

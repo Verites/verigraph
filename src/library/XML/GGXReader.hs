@@ -160,20 +160,20 @@ readGraphs fileName =
 readRules :: String -> IO[RuleWithNacs]
 readRules fileName = runX (parseXML fileName >>> parseRule)
 
-readSequences :: Grammar (TypedGraphMorphism a b) -> String -> IO [(String, [GR.GraphRule a b])]
+readSequences :: Grammar (TypedGraphMorphism a b) -> String -> IO [(String, [GR.TypedGraphRule a b])]
 readSequences grammar fileName = map (expandSequence grammar) <$> runX (parseXML fileName >>> parseRuleSequence)
 
-expandSequence :: Grammar (TypedGraphMorphism a b) -> Sequence -> (String, [GR.GraphRule a b])
+expandSequence :: Grammar (TypedGraphMorphism a b) -> Sequence -> (String, [GR.TypedGraphRule a b])
 expandSequence grammar (name,s,_) = (name, mapMaybe lookupRule . concat $ map expandSub s)
   where
     expandSub (i, s) = concat $ replicate i $ concatMap expandItens s
     expandItens (i, r) = replicate i r
     lookupRule name = L.lookup name (productions grammar)
 
-readSequencesWithObjectFlow :: Grammar (TypedGraphMorphism a b) -> String -> IO [(String, [(String, GR.GraphRule a b)], [ObjectFlow (TypedGraphMorphism a b)])]
+readSequencesWithObjectFlow :: Grammar (TypedGraphMorphism a b) -> String -> IO [(String, [(String, GR.TypedGraphRule a b)], [ObjectFlow (TypedGraphMorphism a b)])]
 readSequencesWithObjectFlow grammar fileName = map (prepareFlows grammar) <$> runX (parseXML fileName >>> parseRuleSequence)
 
-prepareFlows :: Grammar (TypedGraphMorphism a b) -> Sequence -> (String, [(String, GR.GraphRule a b)], [ObjectFlow (TypedGraphMorphism a b)])
+prepareFlows :: Grammar (TypedGraphMorphism a b) -> Sequence -> (String, [(String, GR.TypedGraphRule a b)], [ObjectFlow (TypedGraphMorphism a b)])
 prepareFlows grammar (name,s,flows) = (name, map fun getAll, objs)
   where
     fun name = (name, fromJust $ lookupRule name)

@@ -132,7 +132,7 @@ newNacsProb side sndRule = nacNodes ++ nacEdges
     nacEdges = map (createNacProb side ruleL . Edge_) edgeProb
 
 -- | Auxiliar function that creates concrectly the NACs for newNacsProb
-createNacProb :: Side -> GraphRule a b -> NodeOrEdge (Maybe b) -> RuleMorphism a b
+createNacProb :: Side -> TypedGraphRule a b -> NodeOrEdge (Maybe b) -> RuleMorphism a b
 createNacProb sideChoose ruleL x = ruleMorphism ruleL nacRule mapL mapK mapR
   where
     l = getLHS ruleL
@@ -280,13 +280,13 @@ isOrphanEdge m n = n `elem` orphanTypedEdgeIds m
 -- | Receives a function that works with a second order and a first order rule.
 -- Apply this function on all possible combinations of rules.
 applySecondOrder ::
-     ((String, SndOrderRule a b) -> (String, GraphRule a b) -> [t])
-  -> [(String, GraphRule a b)] -> [(String, SndOrderRule a b)] -> [t]
+     ((String, SndOrderRule a b) -> (String, TypedGraphRule a b) -> [t])
+  -> [(String, TypedGraphRule a b)] -> [(String, SndOrderRule a b)] -> [t]
 applySecondOrder f fstRules = concatMap (\r -> concatMap (f r) fstRules)
 
 -- | Applies a named second order rule to a named first order rule with all possible matches,
 -- and generates named first order rules as result.
-applySndOrderRule :: MorphismsConfig -> (String, SndOrderRule a b) -> (String, GraphRule a b) -> [(String, GraphRule a b)]
+applySndOrderRule :: MorphismsConfig -> (String, SndOrderRule a b) -> (String, TypedGraphRule a b) -> [(String, TypedGraphRule a b)]
 applySndOrderRule conf (sndName,sndRule) (fstName,fstRule) =
   let
     matches = findApplicableMatches conf sndRule fstRule

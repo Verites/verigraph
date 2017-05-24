@@ -149,7 +149,7 @@ printTypedGraphMorphism context morphismName morphism =
       printEdge (text "src" <> nodeId src) (text "tgt" <> nodeId tgt) [text "style=dotted"]
 
 -- | Create a dotfile representation of the given graph rule
-printGraphRule :: NamingContext -> String -> GraphRule a b -> Doc
+printGraphRule :: NamingContext -> String -> TypedGraphRule a b -> Doc
 printGraphRule context ruleName rule =
   printDigraph
     ruleName
@@ -169,7 +169,7 @@ printGraphRule context ruleName rule =
     mapNode True idSrc idTgt (src, tgt) =
       printEdge (text idTgt <> nodeId tgt) (text idSrc <> nodeId src) [text "dir=back,style=dotted"]
 
-printSubGraphRule :: NamingContext -> String -> GraphRule a b -> Doc
+printSubGraphRule :: NamingContext -> String -> TypedGraphRule a b -> Doc
 printSubGraphRule context ruleName rule =
   printSubgraph
     ruleName
@@ -189,7 +189,7 @@ printSubGraphRule context ruleName rule =
     mapNode True idSrc idTgt (src, tgt) =
       printEdge (text idTgt <> nodeId tgt) (text idSrc <> nodeId src) [text "dir=back,style=dotted"]
 
-printGraphRuleCore :: NamingContext -> String -> String -> String -> GraphRule a b -> [Doc]
+printGraphRuleCore :: NamingContext -> String -> String -> String -> TypedGraphRule a b -> [Doc]
 printGraphRuleCore context leftName interfaceName rightName rule =
   [ printSubTypedGraph context leftName (codomain (getLHS rule))
   , printSubTypedGraph context interfaceName (domain (getLHS rule))
