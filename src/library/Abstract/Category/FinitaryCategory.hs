@@ -36,22 +36,6 @@ class FinitaryCategory morph => FindMorphism morph where
   -- m : A -> B in which morph is of the type t
   findMorphisms :: MorphismType -> Obj morph -> Obj morph -> [morph]
 
-  -- | Given two objects A and B, finds all monomorphisms from A to B
-  findMonomorphisms :: Obj morph -> Obj morph -> [morph]
-  findMonomorphisms = findMorphisms Monomorphism
-
-  -- | Given two objects A and B, finds all epimorphisms from A to B
-  findEpimorphisms :: Obj morph -> Obj morph -> [morph]
-  findEpimorphisms = findMorphisms Epimorphism
-
-  -- | Given two objects A and B, finds all isomorphisms from A to B
-  findIsomorphisms :: Obj morph -> Obj morph -> [morph]
-  findIsomorphisms = findMorphisms Isomorphism
-
-  -- | Given two objects A and B, finds all morphisms from A to B
-  findAllMorphisms :: Obj morph -> Obj morph -> [morph]
-  findAllMorphisms = findMorphisms GenericMorphism
-
   -- | Given two lists of TypedGraphMorphism @fi : Ai -> B@ and @gi : Ai -> C@ it induces a Morphism
   -- @h : B -> C@ shuch that @h . fi = gi@ for all @i@. The lists must have the same length and must
   -- not be empty.
@@ -68,3 +52,20 @@ class FinitaryCategory morph => FindMorphism morph where
   -- | Given two TypedGraphMorphism @f : B -> A@ and @g : C -> A@ it finds a list of Morphisms
   -- @hi : B -> C@ shuch that @f . ¬g  = hi@ for all @i@.
   findCospanCommuter :: MorphismType -> morph -> morph -> [morph]
+
+
+-- | Given two objects A and B, finds all monomorphisms from A to B
+findMonomorphisms :: FindMorphism morph => Obj morph -> Obj morph -> [morph]
+findMonomorphisms = findMorphisms Monomorphism
+
+-- | Given two objects A and B, finds all epimorphisms from A to B
+findEpimorphisms :: FindMorphism morph => Obj morph -> Obj morph -> [morph]
+findEpimorphisms = findMorphisms Epimorphism
+
+-- | Given two objects A and B, finds all isomorphisms from A to B
+findIsomorphisms :: FindMorphism morph => Obj morph -> Obj morph -> [morph]
+findIsomorphisms = findMorphisms Isomorphism
+
+-- | Given two objects A and B, finds all morphisms from A to B
+findAllMorphisms :: FindMorphism morph => Obj morph -> Obj morph -> [morph]
+findAllMorphisms = findMorphisms GenericMorphism
