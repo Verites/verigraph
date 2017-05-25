@@ -69,7 +69,7 @@ satisfiesNACRewriting l = satisfiesGluingConditions dpoConf prod
     dpoConf = MorphismsConfig AnyMatches undefined
 
 instance FinitaryCategory (RuleMorphism a b) where
-    type Obj (RuleMorphism a b) = Production (TypedGraphMorphism a b)
+    type Obj (RuleMorphism a b) = TypedGraphRule a b
 
     domain = rmDomain
     codomain = rmCodomain

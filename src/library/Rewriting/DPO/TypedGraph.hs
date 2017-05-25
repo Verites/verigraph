@@ -3,6 +3,7 @@
 module Rewriting.DPO.TypedGraph
 (-- * Types
   TypedGraphRule
+, NamedTypedGraphRule
 , getLHS
 , getRHS
 , getNACs
@@ -31,6 +32,7 @@ import           Data.TypedGraph                    as GM
 import           Data.TypedGraph.Morphism           as TGM
 
 type TypedGraphRule a b = Production (TypedGraphMorphism a b)
+type NamedTypedGraphRule a b = NamedProduction (TypedGraphMorphism a b)
 
 -- | Return the nodes deleted by a rule
 deletedNodes :: TypedGraphRule a b -> [G.NodeId]
@@ -55,7 +57,7 @@ preservedEdges :: TypedGraphRule a b -> [G.EdgeId]
 preservedEdges = edgeIdsFromDomain . getLHS
 
 -- | Returns an empty TypedGraphRule
-emptyGraphRule :: Graph (Maybe a) (Maybe b) -> Production (TypedGraphMorphism a b)
+emptyGraphRule :: Graph (Maybe a) (Maybe b) -> TypedGraphRule a b
 emptyGraphRule typegraph = emptyRule
   where
     emptyGraph = empty

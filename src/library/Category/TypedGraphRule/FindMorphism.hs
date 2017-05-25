@@ -5,6 +5,7 @@ import           Abstract.Rewriting.DPO
 import           Category.TypedGraph                (TypedGraphMorphism)
 import           Category.TypedGraph.FindMorphism   ()
 import           Category.TypedGraphRule
+import           Rewriting.DPO.TypedGraph
 
 
 instance FindMorphism (RuleMorphism a b) where
@@ -38,7 +39,7 @@ leftPartInj nac match mapK = map (\m -> (m, mapK)) commuting
     matchesL = partialInjectiveMatches (mappingLeft nac) (mappingLeft match)
     commuting = filter (\m -> m <&> getLHS (codomain nac) == getLHS (codomain match) <&> mapK) matchesL
 
-leftM :: MorphismType -> Production (TypedGraphMorphism a b) -> Production (TypedGraphMorphism a b) -> TypedGraphMorphism a b -> [(TypedGraphMorphism a b, TypedGraphMorphism a b)]
+leftM :: MorphismType -> TypedGraphRule a b -> TypedGraphRule a b -> TypedGraphMorphism a b -> [(TypedGraphMorphism a b, TypedGraphMorphism a b)]
 leftM prop l g mapK = map (\m -> (m, mapK)) commuting
   where
     matchesL = findMorphisms prop (codomain (getLHS l)) (codomain (getLHS g))
@@ -48,23 +49,24 @@ leftM prop l g mapK = map (\m -> (m, mapK)) commuting
 -- They receive a pair of left and interface morphisms between rules and
 -- add all right morphisms where they respect a valid rule
 
-rightPartInj :: RuleMorphism a b -> RuleMorphism a b -> (TypedGraphMorphism a b, TypedGraphMorphism a b) -> [(TypedGraphMorphism a b, TypedGraphMorphism a b, TypedGraphMorphism a b)]
+rightPartInj :: RuleMorphism a b -> RuleMorphism a b
+             -> (TypedGraphMorphism a b, TypedGraphMorphism a b)
+             -> [(TypedGraphMorphism a b, TypedGraphMorphism a b, TypedGraphMorphism a b)]
 rightPartInj nac match (mapL,mapK) = map (\m -> (mapL, mapK, m)) commuting
   where
     matchesR = partialInjectiveMatches (mappingRight nac) (mappingRight match)
     commuting = filter (\m -> m <&> getRHS (codomain nac) == getRHS (codomain match) <&> mapK) matchesR
 
-rightM :: MorphismType -> Production (TypedGraphMorphism a b) -> Production (TypedGraphMorphism a b) -> (TypedGraphMorphism a b, TypedGraphMorphism a b) -> [(TypedGraphMorphism a b, TypedGraphMorphism a b, TypedGraphMorphism a b)]
+rightM :: MorphismType -> TypedGraphRule a b -> TypedGraphRule a b
+        -> (TypedGraphMorphism a b, TypedGraphMorphism a b)
+        -> [(TypedGraphMorphism a b, TypedGraphMorphism a b, TypedGraphMorphism a b)]
 rightM prop l g (mapL,mapK) = map (\m -> (mapL, mapK, m)) commuting
   where
     matchesR = findMorphisms prop (codomain (getRHS l)) (codomain (getRHS g))
     commuting = filter (\m -> m <&> getRHS l == getRHS g <&> mapK) matchesR
 
 -- kind of curry for three arguments
-buildPair :: Production (TypedGraphMorphism a b)
-        -> Production (TypedGraphMorphism a b)
-        -> (TypedGraphMorphism a b,
-            TypedGraphMorphism a b,
-            TypedGraphMorphism a b)
-        -> RuleMorphism a b
+buildPair :: TypedGraphRule a b -> TypedGraphRule a b
+          -> (TypedGraphMorphism a b, TypedGraphMorphism a b, TypedGraphMorphism a b)
+          -> RuleMorphism a b
 buildPair l g (m1,m2,m3) = ruleMorphism l g m1 m2 m3

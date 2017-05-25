@@ -165,7 +165,7 @@ getTrigger nac =
     orphanEdges = orphanTypedEdgeIds nac
   in if L.null orphanEdges then Node $ head orphanNodes else Edge $ head orphanEdges
 
-uniqueOrigin :: [NamedProduction (TypedGraphMorphism a b)] -> Bool
+uniqueOrigin :: [NamedTypedGraphRule a b] -> Bool
 uniqueOrigin productions = not (repeated createdList) && not (repeated deletedList)
   where
     creationAndDeletion = S.filter isRuleAndElement $ unions $ L.map creationAndDeletionRelation productions
@@ -176,10 +176,10 @@ uniqueOrigin productions = not (repeated createdList) && not (repeated deletedLi
     createdList = S.toList $ S.map snd created
     deletedList = S.toList $ S.map fst deleted
 
-strictRelation :: [NamedProduction (TypedGraphMorphism a b)] -> Relation
+strictRelation :: [NamedTypedGraphRule a b] -> Relation
 strictRelation = unions . L.map creationAndDeletionRelation
 
-occurrenceRelation :: [NamedProduction (TypedGraphMorphism a b)] -> Relation
+occurrenceRelation :: [NamedTypedGraphRule a b] -> Relation
 occurrenceRelation productions =
   let
     b = strictRelation productions
@@ -212,7 +212,7 @@ removeElements coreGraph elementsToRemove =
   in S.foldr GM.removeNodeFromDomainForced (S.foldr GM.removeEdgeFromDomain (FC.identity coreGraph) edges) nodes
 
 -- use with the retyped productions
-creationAndDeletionRelation :: NamedProduction (TypedGraphMorphism a b) -> Relation
+creationAndDeletionRelation :: NamedTypedGraphRule a b -> Relation
 creationAndDeletionRelation (name,rule) =
   let
     ln = deletedNodes rule
@@ -225,14 +225,14 @@ creationAndDeletionRelation (name,rule) =
                    ++ [(Rule name, Node a) | a <- rn] ++ [(Rule name, Edge a) | a <- re]
   in S.fromList $ nodesAndEdges ++ elementsAndRule
 
-getRuleItems :: Production (TypedGraphMorphism a b) -> Set RelationItem
+getRuleItems :: TypedGraphRule a b -> Set RelationItem
 getRuleItems rule =
   let
     ns = fromList (deletedNodes rule ++ preservedNodes rule ++ createdNodes rule)
     es = fromList (deletedEdges rule ++ preservedEdges rule ++ createdEdges rule)
    in S.map Node ns `union` S.map Edge es
 
-creationAndPreservationRelation :: [NamedProduction (TypedGraphMorphism a b)] -> Relation -> Relation
+creationAndPreservationRelation :: [NamedTypedGraphRule a b] -> Relation -> Relation
 creationAndPreservationRelation productions cdRelation =
   let
     creationCase x = case fst x of
@@ -242,7 +242,7 @@ creationAndPreservationRelation productions cdRelation =
     result = L.map (relatedByCreationAndPreservation created) productions
   in S.unions result
 
-relatedByCreationAndPreservation :: Relation -> NamedProduction (TypedGraphMorphism a b) -> Relation
+relatedByCreationAndPreservation :: Relation -> NamedTypedGraphRule a b -> Relation
 relatedByCreationAndPreservation relation preservingRule
   | S.null relation = S.empty
   | otherwise =
@@ -258,7 +258,7 @@ relatedByCreationAndPreservation relation preservingRule
                                 _      -> False
   in if related r nodes edges then singleton (fst r, Rule name) else relatedByCreationAndPreservation rs preservingRule
 
-preservationAndDeletionRelation :: [NamedProduction (TypedGraphMorphism a b)] -> Relation -> Relation
+preservationAndDeletionRelation :: [NamedTypedGraphRule a b] -> Relation -> Relation
 preservationAndDeletionRelation productions cdRelation =
   let
     deletionCase x = case snd x of
@@ -268,7 +268,7 @@ preservationAndDeletionRelation productions cdRelation =
     result = L.map (relatedByPreservationAndDeletion deleting) productions
   in S.unions result
 
-type RuleWithMatches a b = (Production (TypedGraphMorphism a b), (TypedGraphMorphism a b, TypedGraphMorphism a b, TypedGraphMorphism a b))
+type RuleWithMatches a b = (TypedGraphRule a b, (TypedGraphMorphism a b, TypedGraphMorphism a b, TypedGraphMorphism a b))
 
 getUnderlyingDerivation :: RuleWithMatches a b -> TypedGraphMorphism a b -> Derivation (TypedGraphMorphism a b)
 getUnderlyingDerivation (p1,(m1,_,_)) comatch =
@@ -320,7 +320,7 @@ findH21 m2 d1 =
     h21 = findAllPossibleH21 conf m2 d1
   in if Prelude.null h21 then error "morphism h21 not found" else head h21
 
-relatedByPreservationAndDeletion :: Relation -> NamedProduction (TypedGraphMorphism a b) -> Relation
+relatedByPreservationAndDeletion :: Relation -> NamedTypedGraphRule a b -> Relation
 relatedByPreservationAndDeletion relation namedRule
   | S.null relation = S.empty
   | otherwise =
@@ -336,7 +336,7 @@ relatedByPreservationAndDeletion relation namedRule
                                 _      -> False
   in if related r nodes edges then singleton (Rule name, snd r) else relatedByPreservationAndDeletion rs namedRule
 
-retypeProduction :: (Derivation (TypedGraphMorphism a b), (TypedGraphMorphism a b,TypedGraphMorphism a b,TypedGraphMorphism a b)) ->  Production (TypedGraphMorphism a b)
+retypeProduction :: (Derivation (TypedGraphMorphism a b), (TypedGraphMorphism a b,TypedGraphMorphism a b,TypedGraphMorphism a b)) ->  TypedGraphRule a b
 retypeProduction (derivation, (g1,_,g3)) = newProduction
   where
     p = production derivation
@@ -353,7 +353,7 @@ retypeProduction (derivation, (g1,_,g3)) = newProduction
     newR = buildTypedGraphMorphism newKType newRType mappingR
     newProduction = buildProduction newL newR []
 
-retype :: (Production (TypedGraphMorphism a b), (TypedGraphMorphism a b,TypedGraphMorphism a b,TypedGraphMorphism a b)) ->  Production (TypedGraphMorphism a b)
+retype :: (TypedGraphRule a b, (TypedGraphMorphism a b,TypedGraphMorphism a b,TypedGraphMorphism a b)) ->  TypedGraphRule a b
 retype (p, (g1,g2,g3)) = newProduction
   where
     oldL = getLHS p

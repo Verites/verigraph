@@ -265,7 +265,7 @@ newNacsPair sideChoose sndRule =
         mapK = idMap (domain (getLHS ruleL)) (domain (getLHS ruleL))
         mapR = idMap (codomain (getRHS ruleL)) (codomain (getRHS ruleL))
 
-getRulesFrom2Rule :: SndOrderRule a b -> (Production (TypedGraphMorphism a b), Production (TypedGraphMorphism a b), Production (TypedGraphMorphism a b))
+getRulesFrom2Rule :: SndOrderRule a b -> (TypedGraphRule a b, TypedGraphRule a b, Production (TypedGraphMorphism a b))
 getRulesFrom2Rule sndRule = (codomain (getLHS sndRule), domain (getLHS sndRule), codomain (getRHS sndRule))
 
 calculateAllPartitions :: EpiPairs morph => Obj morph -> [morph]
