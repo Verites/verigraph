@@ -1,6 +1,5 @@
 module Data.GraphsSpec where
 
-
 import           Data.Maybe
 import           Test.Hspec
 import           Test.Hspec.QuickCheck
@@ -16,25 +15,16 @@ spec :: Spec
 spec = do
 
   describe "empty" $
-
-    it "is valid" $
-      empty `shouldSatisfy` isValid
-
+    it "is valid" $ empty `shouldSatisfy` isValid
 
   describe "build" $
-
-    prop "is always valid" $ \nodes edges ->
-      isValid (build nodes edges)
-
+    prop "is always valid" $ \nodes edges -> isValid (build nodes edges)
 
   describe "fromNodesAndEdges" $
-
     prop "is always valid" $ \nodes edges ->
       isValid (fromNodesAndEdges nodes edges :: Graph Int Int)
 
-
   describe "insertNode" $ do
-
     prop "preserves validity" $ \graph nodeId ->
       isValid (insertNode nodeId graph :: Graph (Maybe Int) Int)
 
@@ -42,9 +32,7 @@ spec = do
       lookupNode nodeId (insertNode nodeId graph :: Graph (Maybe Int) Int)
       == Just (Node nodeId Nothing)
 
-
   describe "insertNodeWithPayload" $ do
-
     prop "preserves validity" $ \graph nodeId payload ->
       isValid (insertNodeWithPayload nodeId payload graph :: Graph Int Int)
 
@@ -52,9 +40,7 @@ spec = do
       lookupNode nodeId (insertNodeWithPayload nodeId payload graph :: Graph Int Int)
       == Just (Node nodeId payload)
 
-
   describe "insertEdge" $ do
-
     prop "preserves validity" $ \graph edgeId srcId tgtId ->
       isValid (insertEdge edgeId srcId tgtId graph :: Graph Int (Maybe Int))
 
@@ -67,7 +53,6 @@ spec = do
 
 
   describe "insertEdgeWithPayload" $ do
-
     prop "preserves validity" $ \graph edgeId srcId tgtId payload ->
       isValid (insertEdgeWithPayload edgeId srcId tgtId payload graph :: Graph Int Int)
 
@@ -80,7 +65,6 @@ spec = do
 
 
   describe "removeNode" $ do
-
     prop "preserves validity" $ \graph nodeId ->
       isValid (removeNode nodeId graph :: Graph Int Int)
 
@@ -96,9 +80,7 @@ spec = do
         edges (removeNode nodeId graph :: Graph Int Int)
         == edges graph
 
-
   describe "removeNodeAndIncidentEdges" $ do
-
     prop "preserves validity" $ \graph nodeId ->
       isValid (removeNodeAndIncidentEdges nodeId graph :: Graph Int Int)
 
@@ -107,10 +89,7 @@ spec = do
       (`all` nodeIds graph) $ \nodeId ->
         isNothing $ lookupNode nodeId (removeNodeAndIncidentEdges nodeId graph :: Graph Int Int)
 
-
-
   describe "removeEdge" $ do
-
     prop "preserves validity" $ \graph edgeId ->
       isValid (removeEdge edgeId graph :: Graph Int Int)
 
@@ -119,10 +98,7 @@ spec = do
       (`all` edgeIds graph) $ \edgeId ->
         isNothing $ lookupEdge edgeId (removeEdge edgeId graph :: Graph Int Int)
 
-
-
   describe "updateNodePayload" $
-
     prop "payload changed" $ \graph f ->
       not (Prelude.null $ nodes graph) ==>
       (`all` nodeIds graph) $ \nodeId ->
@@ -132,9 +108,7 @@ spec = do
           (nodeInfo <$> lookupNode nodeId graph')
           == (apply f . nodeInfo <$> lookupNode nodeId graph)
 
-
   describe "updateEdgePayload" $
-
     prop "payload changed" $ \graph f ->
       not (Prelude.null $ edges graph) ==>
       (`all` edgeIds graph) $ \edgeId ->

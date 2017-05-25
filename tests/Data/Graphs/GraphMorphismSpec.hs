@@ -15,7 +15,6 @@ spec :: Spec
 spec = do
 
   describe "removeNodeFromDomain" $ do
-
     it "Should not remove node with incident edges" $ do
       removeNodeFromDomain 1 g1 `shouldBe` g1
       removeNodeFromDomain 2 g1 `shouldBe` g1
@@ -25,7 +24,6 @@ spec = do
       removeNodeFromDomain 4 g1 `shouldBe` g3
 
   describe "removeNodeFromCodomain" $ do
-
     it "Should not remove node with incident edges" $ do
       removeNodeFromCodomain 1 g1 `shouldBe` g1
       removeNodeFromCodomain 2 g1 `shouldBe` g1
