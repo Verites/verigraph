@@ -1,4 +1,4 @@
-module Graph.GraphSpec where
+module Data.GraphsSpec where
 
 
 import           Data.Maybe
@@ -13,7 +13,7 @@ import           Data.Graphs.QuickCheck
 
 
 spec :: Spec
-spec = describe "graph API" $ do
+spec = do
 
   describe "empty" $
 

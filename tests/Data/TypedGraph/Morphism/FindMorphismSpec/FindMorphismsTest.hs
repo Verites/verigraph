@@ -1,4 +1,4 @@
-module TypedGraph.Morphism.FindMorphismSpec.FindMorphismsTest (findMorphismsTest) where
+module Data.TypedGraph.Morphism.FindMorphismSpec.FindMorphismsTest (findMorphismsTest) where
 
 import           Abstract.Category.FinitaryCategory
 import           Category.TypedGraph.FindMorphism

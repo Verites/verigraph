@@ -1,4 +1,4 @@
-module Graph.GraphMorphismSpec where
+module Data.Graphs.GraphMorphismSpec where
 
 import           Test.Hspec
 import           Test.Hspec.QuickCheck
@@ -12,7 +12,7 @@ import           Data.Graphs.Morphism
 
 
 spec :: Spec
-spec = describe "Graph Morphism API" $ do
+spec = do
 
   describe "removeNodeFromDomain" $ do
 

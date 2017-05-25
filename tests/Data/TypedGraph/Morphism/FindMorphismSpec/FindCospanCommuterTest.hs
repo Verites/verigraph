@@ -1,4 +1,4 @@
-module TypedGraph.Morphism.FindMorphismSpec.FindCospanCommuterTest (findCospanCommuterTest) where
+module Data.TypedGraph.Morphism.FindMorphismSpec.FindCospanCommuterTest (findCospanCommuterTest) where
 
 import           Abstract.Category.FinitaryCategory
 import           Category.TypedGraph.FindMorphism   ()
