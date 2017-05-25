@@ -1,5 +1,6 @@
 dist/
 doc/
+.idea/
 org/
 tmp/
 .stack-work/
