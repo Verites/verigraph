@@ -2,7 +2,7 @@
 module Data.TypedGraph.Morphism where
 
 import           Base.Valid
-import           Data.Graphs
+import           Data.Graphs as G
 import           Data.Graphs.Morphism (GraphMorphism)
 import qualified Data.Graphs.Morphism as GM
 import           Data.List            (nub)
@@ -223,8 +223,8 @@ reflectIdsFromTypeGraph tgm =
     newNodes gm = map (GM.applyNodeIdUnsafe gm) (nodeIds (untypedGraph gm))
     newEdges gm = map (\x -> (GM.applyEdgeIdUnsafe gm (edgeId x), GM.applyNodeIdUnsafe gm (sourceId x), GM.applyNodeIdUnsafe gm (targetId x))) (edges $ untypedGraph gm)
 
-    newDomain = foldr (\(e,s,t) -> GM.createEdgeOnDomain e s t e) (foldr (\x -> GM.createNodeOnDomain x x) (GM.empty empty (untypedGraph gmDomain)) (newNodes gmDomain)) (newEdges gmDomain)
-    newCodomain = foldr (\(e,s,t) -> GM.createEdgeOnDomain e s t e) (foldr (\x -> GM.createNodeOnDomain x x) (GM.empty empty (untypedGraph gmCodomain)) (newNodes gmCodomain)) (newEdges gmCodomain)
+    newDomain = foldr (\(e,s,t) -> GM.createEdgeOnDomain e s t e) (foldr (\x -> GM.createNodeOnDomain x x) (GM.empty G.empty (untypedGraph gmDomain)) (newNodes gmDomain)) (newEdges gmDomain)
+    newCodomain = foldr (\(e,s,t) -> GM.createEdgeOnDomain e s t e) (foldr (\x -> GM.createNodeOnDomain x x) (GM.empty G.empty (untypedGraph gmCodomain)) (newNodes gmCodomain)) (newEdges gmCodomain)
 
     newMaps = GM.buildGraphMorphism (untypedGraph newDomain) (untypedGraph newCodomain) (map (\(NodeId x) -> (x,x)) (nodeIds $ untypedGraph newDomain)) (map (\(EdgeId x) -> (x,x)) (edgeIds $ untypedGraph newDomain))
   in buildTypedGraphMorphism newDomain newCodomain newMaps
@@ -237,7 +237,7 @@ reflectIdsFromCodomain tgm =
     typedA = domainGraph tgm
     typedB = codomainGraph tgm
     typeGraph = TG.typeGraph typedA
-    typedB' = GM.empty empty typeGraph
+    typedB' = GM.empty G.empty typeGraph
     nodes = nodeIdsFromDomain tgm
     edges = edgesFromDomain tgm
     initial = buildTypedGraphMorphism typedB' typedB (GM.empty (untypedGraph typedB') (untypedGraph typedB))
@@ -264,7 +264,7 @@ reflectIdsFromDomains (m,e) =
     newEdges = nub (typedEdges typedL ++ typedEdges typedD)
 
     typedG' = foldr (\(e,s,ta,ty) -> GM.createEdgeOnDomain e s ta ty)
-                      (foldr (uncurry GM.createNodeOnDomain) (GM.empty empty typeGraph) newNodes)
+                      (foldr (uncurry GM.createNodeOnDomain) (GM.empty G.empty typeGraph) newNodes)
                     newEdges
     nodeR n = if isJust (applyNodeId m' n) then (n, applyNodeIdUnsafe m' n) else (n, applyNodeIdUnsafe e' n)
     edgeR e = if isJust (applyEdgeId m' e) then (e, applyEdgeIdUnsafe m' e) else (e, applyEdgeIdUnsafe e' e)

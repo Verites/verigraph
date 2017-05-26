@@ -11,11 +11,14 @@ module Data.TypedGraph
   , typedEdges
   , untypedNodes
   , untypedEdges
+  , Data.TypedGraph.empty
+  , Data.TypedGraph.sourceOf
+  , Data.TypedGraph.targetOf
   ) where
 
 import           Base.Cardinality
 import           Data.Graphs          as G
-import           Data.Graphs.Morphism
+import           Data.Graphs.Morphism as GM
 import           Data.Maybe           (fromMaybe)
 
 
@@ -32,6 +35,15 @@ untypedGraph = domainGraph
 -- | Obtain the type graph from a typed graph
 typeGraph :: TypedGraph a b -> Graph (Maybe a) (Maybe b)
 typeGraph = codomainGraph
+
+empty :: Graph (Maybe a) (Maybe b) -> TypedGraph a b
+empty = GM.empty G.empty
+
+sourceOf :: TypedGraph a b -> EdgeId -> NodeId
+sourceOf g = G.sourceOfUnsafe (untypedGraph g)
+
+targetOf :: TypedGraph a b -> EdgeId -> NodeId
+targetOf g = G.targetOfUnsafe (untypedGraph g)
 
 -- | Test if the typed graph is empty
 null :: TypedGraph a b -> Bool
