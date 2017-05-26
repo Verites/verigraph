@@ -33,15 +33,13 @@ library
                        Abstract.Category.AdhesiveHLR.Constraint
                        Abstract.Category.Cocomplete
                        Abstract.Category.Complete
+                       Abstract.Category.FinalPullbackComplement
+                       Abstract.Category.FinitaryCategory
                        Abstract.Category.JointlyEpimorphisms
                        Abstract.Rewriting.DPO
                        Abstract.Rewriting.DPO.Derivation
                        Abstract.Rewriting.DPO.Process
                        Abstract.Rewriting.DPO.StateSpace
-                       Abstract.Category.FinitaryCategory
-                       Base.Cardinality
-                       Base.Isomorphic
-                       Base.Valid
                        Analysis.ConcurrentRules
                        Analysis.CriticalPairs
                        Analysis.CriticalSequence
@@ -50,8 +48,12 @@ library
                        Analysis.Interlevel.InterLevelCP
                        Analysis.ParallelIndependent
                        Analysis.Processes
+                       Base.Cardinality
+                       Base.Isomorphic
+                       Base.Valid
                        Category.Graph
                        Category.TypedGraph
+                       Category.TypedGraph.FinalPullbackComplement
                        Category.TypedGraph.FindMorphism
                        Category.TypedGraphRule
                        Category.TypedGraphRule.JointlyEpimorphisms
@@ -78,23 +80,23 @@ library
                        XML.GPRReader.GXLReader
   other-modules:
                        Abstract.Rewriting.DPO.DiagramAlgorithms
-                       Logic.Ctl.Base
-                       Logic.Ctl.Parser
-                       Logic.Ctl.Semantics
                        Category.TypedGraph.AdhesiveHLR
                        Category.TypedGraph.Cocomplete
+                       Category.TypedGraph.CommutingSquares
                        Category.TypedGraph.JointlyEpimorphisms
-                       Data.TypedGraph.Subgraph
+                       Category.TypedGraphRule.AdhesiveHLR
+                       Category.TypedGraphRule.Cocomplete
+                       Category.TypedGraphRule.FindMorphism
                        Data.TypedGraph.Partition
                        Data.TypedGraph.Partition.FromVerigraph
                        Data.TypedGraph.Partition.Generator
                        Data.TypedGraph.Partition.ToVerigraph
                        Data.TypedGraph.Partition.Types
                        Data.TypedGraph.Partition.Util
-                       Category.TypedGraphRule.AdhesiveHLR
-                       Category.TypedGraphRule.Cocomplete
-                       Category.TypedGraph.CommutingSquares
-                       Category.TypedGraphRule.FindMorphism
+                       Data.TypedGraph.Subgraph
+                       Logic.Ctl.Base
+                       Logic.Ctl.Parser
+                       Logic.Ctl.Semantics
                        XML.Formulas
                        XML.GGXParseIn
                        XML.GGXParseOut
@@ -107,7 +109,6 @@ library
                        XML.ParseSndOrderRule
                        XML.Utilities
                        XML.XMLUtilities
-
 
 executable verigraph
   default-language:    Haskell2010
