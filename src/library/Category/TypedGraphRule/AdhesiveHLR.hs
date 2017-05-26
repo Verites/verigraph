@@ -8,6 +8,7 @@ import           Category.TypedGraph.AdhesiveHLR              hiding (isOrphanEd
 import           Category.TypedGraph.CommutingSquares
 import           Category.TypedGraphRule
 import           Category.TypedGraphRule.Cocomplete           ()
+import           Category.TypedGraphRule.Complete           ()
 import           Data.Graphs                                  as G
 import qualified Data.Graphs.Morphism                         as GM
 import           Data.TypedGraph.Morphism
@@ -128,39 +129,13 @@ instance AdhesiveHLR (RuleMorphism a b) where
        k = RuleMorphism ruleK ruleH matchL' matchK' matchR'
        l' = RuleMorphism ruleH ruleG leftL' leftK' leftR'
 
-  -- @
-  --        g'
-  --     X──────▶A
-  --     │       │
-  --  f' │       │ f
-  --     ▼       ▼
-  --     B──────▶C
-  --        g
-  -- @
-  calculatePullback (RuleMorphism fA _ fL fK fR) (RuleMorphism gB _ gL gK gR) = (f',g')
-    where
-      (f'L, g'L) = calculatePullback fL gL
-      (f'K, g'K) = calculatePullback fK gK
-      (f'R, g'R) = calculatePullback fR gR
-
-      l = commutingMorphism
-            (getLHS gB <&> f'K) f'L
-            (getLHS fA <&> g'K) g'L
-
-      r = commutingMorphism
-            (getRHS gB <&> f'K) f'R
-            (getRHS fA <&> g'K) g'R
-
-      x = buildProduction l r []
-      f' = RuleMorphism x gB f'L f'K f'R
-      g' = RuleMorphism x fA g'L g'K g'R
-
   hasPushoutComplement (restrictionG, g) (restrictionF, f) =
     hasPushoutComplement (restrictionG, mappingLeft g) (restrictionF, mappingLeft f)
     && hasPushoutComplement (restrictionG, mappingRight g) (restrictionF, mappingRight f)
     && hasPushoutComplement (restrictionG, mappingInterface g) (restrictionF, mappingInterface f)
     && danglingSpan (getLHS $ codomain g) (mappingLeft g) (mappingInterface g) (mappingLeft f) (mappingInterface f)
     && danglingSpan (getRHS $ codomain g) (mappingRight g) (mappingInterface g) (mappingRight f) (mappingInterface f)
+
 
 -- | A gluing condition for pushout complements of rule morphisms
 danglingSpan :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool

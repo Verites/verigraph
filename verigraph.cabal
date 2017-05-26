@@ -90,6 +90,8 @@ library
                        Category.TypedGraphRule.Cocomplete
                        Category.TypedGraph.CommutingSquares
                        Category.TypedGraphRule.FindMorphism
+                       Category.TypedGraph.Complete
+                       Category.TypedGraphRule.Complete
                        XML.Formulas
                        XML.GGXParseIn
                        XML.GGXParseOut

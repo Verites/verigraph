@@ -35,13 +35,11 @@ class (FinitaryCategory morph) => Complete morph where
   finalObject :: morph -> Obj morph
 
   calculatePullback :: morph -> morph -> (morph,morph)
-  calculatePullback f g = (f',g')
+  calculatePullback f g = (g' <&> h,f' <&> h)
     where
-      a = domain f
-      b = domain g
-      (a',b') = calculateProduct a b
-      a'f = f <&> a'
-      b'g = g <&> b'
-      h = calculateEqualizer a'f b'g
-      f' = b' <&> h
-      g' = a' <&> h
+      b = domain f
+      c = domain g
+      (g',f') = calculateProduct b c
+      fg' = f <&> g'
+      gf' = g <&> f'
+      h = calculateEqualizer fg' gf'

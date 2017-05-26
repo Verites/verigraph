@@ -56,9 +56,9 @@ instantiateSpan left right mapping = (leftM, rightM)
     edgesRight = G.edgeIds (domain right)
 
     typegraph = codomain left
-    initK = empty G.empty typegraph
-    initL = empty G.empty (domain left)
-    initR = empty G.empty (domain right)
+    initK = GM.empty G.empty typegraph
+    initL = GM.empty G.empty (domain left)
+    initR = GM.empty G.empty (domain right)
 
     updateEdgeMorphisms (k,l,r) (tgt,src)
       | edgeIdSrc `elem` edgesLeft && edgeIdTgt `elem` edgesRight = (newEdgeK, updateEdgesL, updateEdgesR)

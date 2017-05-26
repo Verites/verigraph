@@ -419,8 +419,8 @@
                         <Mapping image="I84" orig="I77"/>
                         <Mapping image="I85" orig="I78"/>
                         <Mapping image="I88" orig="I81"/>
-                        <Mapping image="I87" orig="I80"/>
                         <Mapping image="I86" orig="I79"/>
+                        <Mapping image="I87" orig="I80"/>
                     </Morphism>
                 </Conclusion>
             </Graphconstraint_Atomic>
@@ -502,8 +502,8 @@
                         <Mapping image="I100" orig="I93"/>
                         <Mapping image="I101" orig="I94"/>
                         <Mapping image="I102" orig="I95"/>
-                        <Mapping image="I103" orig="I96"/>
                         <Mapping image="I104" orig="I97"/>
+                        <Mapping image="I103" orig="I96"/>
                     </Morphism>
                 </Conclusion>
             </Graphconstraint_Atomic>
@@ -707,8 +707,8 @@
                         <Mapping image="I141" orig="I135"/>
                         <Mapping image="I142" orig="I136"/>
                         <Mapping image="I143" orig="I137"/>
-                        <Mapping image="I145" orig="I139"/>
                         <Mapping image="I144" orig="I138"/>
+                        <Mapping image="I145" orig="I139"/>
                     </Morphism>
                 </Conclusion>
             </Graphconstraint_Atomic>
@@ -788,7 +788,7 @@
                 </Conclusion>
             </Graphconstraint_Atomic>
             <Formula ID="I165" comment="" enabled="true"
-                f="(!( 9 &amp; ( 1 | 2 ) ))" name="Constraint">
+                f="( ( ( ( 1 &amp; 2 ) &amp; ( 3 &amp; 4 ) ) &amp; ( ( 5 &amp; 6 ) &amp; ( 7 &amp; 8 ) ) ) &amp; ( ( ( 9 &amp; 10 ) &amp; ( 11 &amp; 12 ) ) &amp; 13 ) )" name="Constraint">
                 <Layer Layer="" Size="0"/>
                 <Priority Priority="" Size="0"/>
             </Formula>
@@ -962,8 +962,8 @@
                 <Mapping image="I203" orig="I197"/>
                 <Mapping image="I204" orig="I198"/>
                 <Mapping image="I205" orig="I199"/>
-                <Mapping image="I206" orig="I200"/>
                 <Mapping image="I207" orig="I201"/>
+                <Mapping image="I206" orig="I200"/>
             </Morphism>
             <ApplCondition>
                 <NAC>
@@ -1003,8 +1003,8 @@
                         <Mapping image="I210" orig="I197"/>
                         <Mapping image="I211" orig="I198"/>
                         <Mapping image="I212" orig="I199"/>
-                        <Mapping image="I213" orig="I200"/>
                         <Mapping image="I214" orig="I201"/>
+                        <Mapping image="I213" orig="I200"/>
                     </Morphism>
                 </NAC>
             </ApplCondition>
@@ -1239,8 +1239,8 @@
                         <Mapping image="I258" orig="I236"/>
                         <Mapping image="I259" orig="I237"/>
                         <Mapping image="I260" orig="I238"/>
-                        <Mapping image="I262" orig="I239"/>
                         <Mapping image="I265" orig="I242"/>
+                        <Mapping image="I262" orig="I239"/>
                         <Mapping image="I263" orig="I240"/>
                         <Mapping image="I264" orig="I241"/>
                     </Morphism>
@@ -1323,9 +1323,9 @@
                 <Mapping image="I280" orig="I271"/>
                 <Mapping image="I281" orig="I272"/>
                 <Mapping image="I282" orig="I273"/>
-                <Mapping image="I286" orig="I277"/>
                 <Mapping image="I284" orig="I275"/>
                 <Mapping image="I285" orig="I276"/>
+                <Mapping image="I286" orig="I277"/>
             </Morphism>
             <ApplCondition>
                 <NAC>
@@ -1397,9 +1397,9 @@
                         <Mapping image="I290" orig="I272"/>
                         <Mapping image="I291" orig="I273"/>
                         <Mapping image="I292" orig="I274"/>
-                        <Mapping image="I297" orig="I277"/>
                         <Mapping image="I295" orig="I275"/>
                         <Mapping image="I296" orig="I276"/>
+                        <Mapping image="I297" orig="I277"/>
                     </Morphism>
                 </NAC>
                 <NAC>
@@ -1466,9 +1466,9 @@
                         <Mapping image="I303" orig="I272"/>
                         <Mapping image="I304" orig="I273"/>
                         <Mapping image="I305" orig="I274"/>
-                        <Mapping image="I309" orig="I277"/>
                         <Mapping image="I307" orig="I275"/>
                         <Mapping image="I308" orig="I276"/>
+                        <Mapping image="I309" orig="I277"/>
                     </Morphism>
                 </NAC>
             </ApplCondition>
@@ -1564,8 +1564,8 @@
                 <Mapping image="I330" orig="I319"/>
                 <Mapping image="I331" orig="I320"/>
                 <Mapping image="I334" orig="I324"/>
-                <Mapping image="I333" orig="I323"/>
                 <Mapping image="I332" orig="I322"/>
+                <Mapping image="I333" orig="I323"/>
             </Morphism>
             <ApplCondition>
                 <NAC>
@@ -1644,9 +1644,9 @@
                         <Mapping image="I341" orig="I319"/>
                         <Mapping image="I342" orig="I320"/>
                         <Mapping image="I348" orig="I324"/>
-                        <Mapping image="I347" orig="I323"/>
-                        <Mapping image="I343" orig="I321"/>
                         <Mapping image="I346" orig="I322"/>
+                        <Mapping image="I343" orig="I321"/>
+                        <Mapping image="I347" orig="I323"/>
                     </Morphism>
                 </NAC>
             </ApplCondition>
@@ -1834,9 +1834,9 @@
                         <Mapping image="I381" orig="I367"/>
                         <Mapping image="I382" orig="I368"/>
                         <Mapping image="I383" orig="I369"/>
-                        <Mapping image="I386" orig="I371"/>
-                        <Mapping image="I387" orig="I372"/>
                         <Mapping image="I385" orig="I370"/>
+                        <Mapping image="I387" orig="I372"/>
+                        <Mapping image="I386" orig="I371"/>
                     </Morphism>
                 </NAC>
             </ApplCondition>

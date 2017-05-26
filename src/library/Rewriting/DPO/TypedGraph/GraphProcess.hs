@@ -68,7 +68,7 @@ emptyRestrictions = S.null . restrictRelation
 
 -- | Given a rule sequence, it calculates its underlying doubly-typed graph grammar
 generateDoublyTypedGrammar :: RuleSequence (TypedGraphMorphism a b) -> DoublyTypedGrammar a b
-generateDoublyTypedGrammar sequence = DoublyTypedGrammar singleGrammar originalRulesWithMatches doubleType cdRelation relation empty
+generateDoublyTypedGrammar sequence = DoublyTypedGrammar singleGrammar originalRulesWithMatches doubleType cdRelation relation S.empty
   where
     originalRulesWithMatches = calculateRulesColimit sequence -- TODO: unify this two functions
     newRules = generateGraphProcess sequence

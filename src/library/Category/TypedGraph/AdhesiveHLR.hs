@@ -5,6 +5,7 @@ import           Data.Maybe                         (fromJust, mapMaybe)
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.FinitaryCategory
 import           Category.TypedGraph.Cocomplete     ()
+import           Category.TypedGraph.Complete       ()
 import           Data.Graphs                        as G
 import qualified Data.Graphs.Morphism               as GM
 import           Data.TypedGraph.Morphism
@@ -138,7 +139,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
   -- the elements of X.
   -- It creates an empty X, and morphisms f' and g', and adds each pair
   -- identifing them with ids.
-  calculatePullback f g = (f'',g'')
+  {-calculatePullback f g = (f'',g'')
     where
       -- This first part just defines the names for the structures
       nodeTypeInB = GM.applyNodeIdUnsafe typedGraphB
@@ -215,7 +216,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
 
           updateG' = createEdgeOnDomain newEdge src tgt (edgeTypeInA (edgeId a)) (edgeId a) g'
           updateF' = createEdgeOnDomain newEdge src tgt (edgeTypeInB (edgeId b)) (edgeId b) f'
-
+-}
 
   hasPushoutComplement (Monomorphism, g) (_, f) =
     satisfiesDanglingCondition f g

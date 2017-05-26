@@ -28,7 +28,7 @@ import           Category.TypedGraph.AdhesiveHLR
 import           Category.TypedGraph.FindMorphism   ()
 import           Data.Graphs                        as G
 import qualified Data.Graphs.Morphism               as GM
-import           Data.TypedGraph                    as GM
+import           Data.TypedGraph                    as TG
 import           Data.TypedGraph.Morphism           as TGM
 
 type TypedGraphRule a b = Production (TypedGraphMorphism a b)
@@ -60,7 +60,7 @@ preservedEdges = edgeIdsFromDomain . getLHS
 emptyGraphRule :: Graph (Maybe a) (Maybe b) -> TypedGraphRule a b
 emptyGraphRule typegraph = emptyRule
   where
-    emptyGraph = empty
+    emptyGraph = G.empty
     emptyGM = GM.empty emptyGraph typegraph
     emptyTGM = idMap emptyGM emptyGM
     emptyRule = buildProduction emptyTGM emptyTGM []

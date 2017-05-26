@@ -21,6 +21,7 @@ module Abstract.Category.AdhesiveHLR
 
 import           Abstract.Category.AdhesiveHLR.Constraint
 import           Abstract.Category.Cocomplete
+import           Abstract.Category.Complete
 import           Abstract.Category.FinitaryCategory
 
 -- | Type class for morphisms whose category Adhesive and suitable for
@@ -28,7 +29,7 @@ import           Abstract.Category.FinitaryCategory
 --
 -- Mainly provides categorical operations that AdhesiveHLR categories
 -- are guaranteed to have.
-class (Cocomplete morph) => AdhesiveHLR morph where
+class (Cocomplete morph, Complete morph) => AdhesiveHLR morph where
   -- | Calculate the initial pushout of the given morphism.
   --
   -- Given the morphism /f : A -> A'/, returns
@@ -121,6 +122,7 @@ class (Cocomplete morph) => AdhesiveHLR morph where
   --        g
   -- @
   calculatePullback :: morph -> morph -> (morph,morph)
+  calculatePullback = Abstract.Category.Complete.calculatePullback
 
 class FinitaryCategory morph => EpiPairs morph where
   -- | Create all jointly epimorphic pairs of morphisms from the given objects.

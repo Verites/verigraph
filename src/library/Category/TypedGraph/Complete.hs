@@ -1,6 +1,8 @@
 module Category.TypedGraph.Complete where
 
+import Abstract.Category.FinitaryCategory
 import Abstract.Category.Complete
+import Base.Valid
 import Category.TypedGraph
 import Data.List
 import qualified Data.Set as S
@@ -16,6 +18,17 @@ instance Complete (TypedGraphMorphism a b) where
   calculateNEqualizer = error "not implemented yet"
   calculateNProduct = error "not implemented yet"
   finalObject = error "not implemented yet"
+  calculatePullback = calculatePullback'
+
+calculatePullback' :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> (TypedGraphMorphism a b,TypedGraphMorphism a b)
+calculatePullback' f g = if (isValid $ g' <&> h) then (g' <&> h,f' <&> h) else error ""
+  where
+    b = domain f
+    c = domain g
+    (g',f') = calculateProduct b c
+    fg' = f <&> g'
+    gf' = g <&> f'
+    h = calculateEqualizer fg' gf'
 
 calculateEqualizer' :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 calculateEqualizer' f g = idMap typedX typedA
