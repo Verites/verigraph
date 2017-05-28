@@ -6,7 +6,6 @@ import           Test.Hspec
 import           Abstract.Rewriting.DPO
 import           Analysis.EssentialCriticalPairs
 import           Category.TypedGraphRule.EpiPairs ()
-import           Utils
 import qualified XML.GGXReader                    as XML
 
 fileName1 = "tests/grammars/elevator.ggx"
@@ -15,9 +14,7 @@ dpoConf = MorphismsConfig MonoMatches PartiallyMonomorphicNAC
 testCase findEssentialCP rules expected = expected `shouldBe` show (pairwise (findEssentialCP dpoConf) rules)
 
 spec :: Spec
-spec = do
-  context "Essential Critical Pairs Test"
-    ecpaTest
+spec = context "Essential Critical Pairs Test" ecpaTest
 
 ecpaTest :: Spec
 ecpaTest = do
@@ -34,26 +31,24 @@ ecpaTest = do
       testSndOrderConflicts sndRules
 
 testSndOrderConflicts rules =
-  do
-    testCase findAllEssentialDeleteUse rules $
-        "( 0 0 0 0 0 )\n"++
-        "( 0 0 0 0 0 )\n"++
-        "( 0 0 2 0 0 )\n"++
-        "( 0 0 0 1 0 )\n"++
-        "( 0 0 0 0 1 )\n"
+  testCase findAllEssentialDeleteUse rules $
+    "( 0 0 0 0 0 )\n"++
+    "( 0 0 0 0 0 )\n"++
+    "( 0 0 2 0 0 )\n"++
+    "( 0 0 0 1 0 )\n"++
+    "( 0 0 0 0 1 )\n"
 
 testElevatorConflicts rules =
-  do
-    testCase findAllEssentialDeleteUse rules $
-        "( 1 1 0 0 1 0 1 0 0 )\n"++
-        "( 0 0 0 0 0 0 0 0 0 )\n"++
-        "( 0 0 0 0 0 0 0 0 0 )\n"++
-        "( 0 0 0 0 0 0 0 0 0 )\n"++
-        "( 0 0 0 0 1 1 1 0 0 )\n"++
-        "( 0 0 0 0 0 1 1 0 1 )\n"++
-        "( 0 0 0 0 1 0 1 0 0 )\n"++
-        "( 0 0 0 0 0 0 0 0 0 )\n"++
-        "( 0 0 0 0 1 1 1 0 4 )\n"
+  testCase findAllEssentialDeleteUse rules $
+    "( 1 1 0 0 1 0 1 0 0 )\n"++
+    "( 0 0 0 0 0 0 0 0 0 )\n"++
+    "( 0 0 0 0 0 0 0 0 0 )\n"++
+    "( 0 0 0 0 0 0 0 0 0 )\n"++
+    "( 0 0 0 0 1 1 1 0 0 )\n"++
+    "( 0 0 0 0 0 1 1 0 1 )\n"++
+    "( 0 0 0 0 1 0 1 0 0 )\n"++
+    "( 0 0 0 0 0 0 0 0 0 )\n"++
+    "( 0 0 0 0 1 1 1 0 4 )\n"
 
 pairwise :: (a -> a -> [b]) -> [a] -> Matrix Int
 pairwise f items =

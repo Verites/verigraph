@@ -11,25 +11,23 @@ dpoConf1 = MorphismsConfig MonoMatches MonomorphicNAC
 dpoConf2 = MorphismsConfig AnyMatches MonomorphicNAC
 
 spec :: Spec
-spec = do
-  context "Second-Order Minimal Safety NACs Test"
-    msnTest
+spec = context "Second-Order Minimal Safety NACs Test" msnTest
 
 msnTest :: Spec
-msnTest = do
-    it "Minimal Safety NACs amount is correct" $ do
-      (_,_,log1) <- XML.readGrammar fileName1 False dpoConf1
-      (_,_,log2) <- XML.readGrammar fileName1 False dpoConf2
-      (_,_,log3) <- XML.readGrammar fileName2 False dpoConf1
-      (_,_,log4) <- XML.readGrammar fileName2 False dpoConf2
+msnTest =
+  it "Minimal Safety NACs amount is correct" $
+    do (_,_,log1) <- XML.readGrammar fileName1 False dpoConf1
+       (_,_,log2) <- XML.readGrammar fileName1 False dpoConf2
+       (_,_,log3) <- XML.readGrammar fileName2 False dpoConf1
+       (_,_,log4) <- XML.readGrammar fileName2 False dpoConf2
       
-      checkMinimalSafetyNACs log1 2
-      checkMinimalSafetyNACs log2 9
-      checkMinimalSafetyNACs log3 0
-      checkMinimalSafetyNACs log4 0
+       checkMinimalSafetyNACs log1 2
+       checkMinimalSafetyNACs log2 9
+       checkMinimalSafetyNACs log3 0
+       checkMinimalSafetyNACs log4 0
 
 -- | Checks if the number of minimalSafetyNACs was correctly generated.
 checkMinimalSafetyNACs log n =
   do
     let list = map snd log
-    list `shouldMatchList` (replicate (length list) n)
+    list `shouldMatchList` replicate (length list) n

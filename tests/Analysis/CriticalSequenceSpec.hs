@@ -6,7 +6,6 @@ import           Test.Hspec
 import           Abstract.Rewriting.DPO
 import           Analysis.CriticalSequence
 import           Category.TypedGraphRule.EpiPairs
-import           Utils
 import qualified XML.GGXReader                    as XML
 
 fileName1 = "tests/grammars/teseRodrigo.ggx"
@@ -15,9 +14,7 @@ dpoConf = MorphismsConfig AnyMatches PartiallyMonomorphicNAC
 testCase findDependencies rules expected = expected `shouldBe` show (pairwise (findDependencies dpoConf) rules)
 
 spec :: Spec
-spec = do
-  context "Critical Sequences Test"
-    csaTest
+spec = context "Critical Sequences Test" csaTest
 
 csaTest :: Spec
 csaTest = do

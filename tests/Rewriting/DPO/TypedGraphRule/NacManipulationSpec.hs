@@ -13,16 +13,13 @@ fileName = "tests/grammars/NacManipulation.ggx"
 dpoConf = MorphismsConfig MonoMatches MonomorphicNAC
 
 spec :: Spec
-spec = do
-  context "NAC Manipulation Test"
-    nacmanipTest
+spec = context "NAC Manipulation Test" nacmanipTest
 
 nacmanipTest :: Spec
-nacmanipTest = do
-    it "create/delete the expected number of NACs" $ do
-      (gg,_,_) <- XML.readGrammar fileName False dpoConf
-      
-      checkNacManipulation gg
+nacmanipTest =
+  it "create/delete the expected number of NACs" $
+    do (gg,_,_) <- XML.readGrammar fileName False dpoConf
+       checkNacManipulation gg
 
 -- | Checks if the NAC manipulations functions create/delete the
 -- expected number of NACs

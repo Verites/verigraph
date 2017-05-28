@@ -17,9 +17,7 @@ dpoConf1 = MorphismsConfig MonoMatches MonomorphicNAC
 dpoConf2 = MorphismsConfig AnyMatches MonomorphicNAC
 
 spec :: Spec
-spec = do
-  context "Inter-level Critical Pairs Test"
-    dangextTest
+spec = context "Inter-level Critical Pairs Test" dangextTest
 
 dangextTest :: Spec
 dangextTest = do

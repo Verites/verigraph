@@ -6,7 +6,6 @@ import           Test.Hspec
 import           Abstract.Rewriting.DPO
 import           Analysis.CriticalPairs
 import           Category.TypedGraphRule.EpiPairs
-import           Utils
 import qualified XML.GGXReader                    as XML
 
 fileName1 = "tests/grammars/teseRodrigo.ggx"
@@ -15,9 +14,7 @@ dpoConf = MorphismsConfig MonoMatches PartiallyMonomorphicNAC
 testCase findConflicts rules expected = expected `shouldBe` show (pairwise (findConflicts dpoConf) rules)
 
 spec :: Spec
-spec = do
-  context "Critical Pairs Test"
-    cpaTest
+spec = context "Critical Pairs Test" cpaTest
 
 cpaTest :: Spec
 cpaTest = do
