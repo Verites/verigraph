@@ -10,6 +10,7 @@ module Data.Partition
   , addToPartition
   , mergePairs
   , mergeSets
+  , partitionToSurjection
   , getElem
   , getTail
   , tsort
@@ -106,6 +107,18 @@ mergeSets :: (Ord a, Show a) => [Set a] -> Partition a -> Partition a
 mergeSets toBeGlued partition = foldl' (flip merge) partition toBeGlued
   where
     merge eq s = mergeNEquivalences eq s `Set.union` diffNEquivalences eq s
+
+
+-- | Obtain a surjective mapping that maps every element of the partitioned set to the
+-- representative of its equivalence class, given a function to select representatives.
+partitionToSurjection :: Ord a => Partition a -> (EquivalenceClass a -> b) -> Map a b
+partitionToSurjection partition pickRepresentative =
+  Map.fromList
+    [ (element, representative)
+        | equivalenceClass <- Set.toList partition
+        , let representative = pickRepresentative equivalenceClass
+        , element <- Set.toList equivalenceClass
+    ]
 
 diffNEquivalences :: (Ord a, Show a) => Set a -> Partition a -> Partition a
 diffNEquivalences eq set = actualDiff allSubSets
