@@ -37,6 +37,7 @@ library
                        Abstract.Rewriting.DPO.StateSpace
                        Abstract.Category.FinitaryCategory
                        Base.Cardinality
+                       Base.Isomorphic
                        Base.Valid
                        Analysis.ConcurrentRules
                        Analysis.CriticalPairs
