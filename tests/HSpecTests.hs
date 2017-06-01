@@ -1,1 +1,2 @@
-{-# OPTIONS_GHC -F -pgmF hspec-discover #-}
+-- file test/Spec.hs
+{-# OPTIONS_GHC -F -pgmF hspec-discover -optF --module-name=HSpecTests #-}
