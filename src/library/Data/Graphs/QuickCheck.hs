@@ -1,9 +1,10 @@
 module Data.Graphs.QuickCheck where
 
-import           Data.Graphs
-
+import           Control.Arrow
 import           Test.QuickCheck.Arbitrary
 import           Test.QuickCheck.Gen
+
+import           Data.Graphs
 
 
 instance Arbitrary NodeId where
@@ -25,15 +26,7 @@ instance (Arbitrary e) => Arbitrary (Edge e) where
 
 
 instance (Arbitrary n, Arbitrary e) => Arbitrary (Graph n e) where
-  arbitrary =
-    sized $ \size ->
-      let
-        nodeSizePeriod = 10
-        numNodes = size `div` nodeSizePeriod
-        edgeIncrement = (numNodes * numNodes) `div` nodeSizePeriod
-        numEdges = (size `mod` nodeSizePeriod) * edgeIncrement
-      in randomGraph arbitrary arbitrary numNodes numEdges
-
+  arbitrary = sized (randomSizedGraph arbitrary arbitrary)
   shrink = shrinkGraph
 
 
@@ -114,6 +107,43 @@ randomGraph randomNodePayload randomEdgePayload numNodes numEdges =
     randomNode n = Node n <$> randomNodePayload
     randomEdge e = Edge e <$> elements nodeIds <*> elements nodeIds <*> randomEdgePayload
   in fromNodesAndEdges <$> mapM randomNode nodeIds <*> mapM randomEdge edgeIds
+
+-- | Given generators for payloads, the number of nodes and a size parameter, generates a random
+-- graph.
+randomSizedGraph :: Gen n -> Gen e -> Int -> Gen (Graph n e)
+randomSizedGraph randomNodePayload randomEdgePayload size = do
+  (numNodes, numEdges) <- numNodesAndEdgesFor size
+  randomGraph randomNodePayload randomEdgePayload numNodes numEdges
+
+-- | Defines how the number of nodes in a random graph grows with the QuickCheck size parameter.
+-- Essentially, the number of nodes is about @size / nodeSizePeriod@.
+nodeSizePeriod :: Double
+nodeSizePeriod = 10
+
+-- | Given a size parameter, returns the number of nodes and edges, respectively, for a random
+-- graph.
+numNodesAndEdgesFor :: Int -> Gen (Int, Int)
+numNodesAndEdgesFor =
+    fmap (round *** round) . numNodesAndEdgesFor' . fromIntegral
+  where
+    numNodesAndEdgesFor' size = do
+      let (maxNumNodes, maxNumEdges) = upperBoundsFor' size
+      numNodes <- choose (maxNumNodes * 0.2, maxNumNodes)
+      let maxNumEdges' = if maxNumNodes < 1 then 0 else maxNumEdges * (numNodes / maxNumNodes)
+      numEdges <- choose (maxNumEdges' * 0.2, maxNumEdges')
+      return (numNodes, numEdges)
+
+    upperBoundsFor' :: Double -> (Double, Double)
+    upperBoundsFor' size
+      | size <= 0 = (0, 0)
+      | size <= 3 = (1, size - 1)
+      | size <= 7 = (2, (size - 3) * 2)
+      | otherwise =
+        let size' = size - 7
+            numNodes = fromIntegral (floor $ (size' / nodeSizePeriod) + 3 :: Int)
+            edgeIncrement = (numNodes * numNodes * 1.1) / nodeSizePeriod
+        in
+          (numNodes, (size' - (numNodes - 3) * nodeSizePeriod) * edgeIncrement)
 
 -- | Produces all immediate shrinks of the given graph. Each shrink step may remove a single node
 -- (along with all its incident edges) or a single edge.
