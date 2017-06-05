@@ -36,7 +36,7 @@ install:
 
 script:
 # Build the package, its tests, and its docs and run the tests
-- stack --no-terminal test --haddock --no-haddock-deps --coverage --test-arguments '+RTS -N -RTS'
+- stack --no-terminal test --haddock --no-haddock-deps --coverage 
 
 # Send results and notify
 
