@@ -216,7 +216,7 @@ findApplicableMatches conf production obj =
 --
 -- Note: this doesn't test whether the match is for the actual production,
 -- nor if the match satisfies all application conditions.
-calculateDPO :: AdhesiveHLR morph => morph -> Production morph -> (morph,morph, morph,morph)
+calculateDPO :: DPO morph => morph -> Production morph -> (morph,morph, morph,morph)
 calculateDPO m (Production l r _) =
   let (k, f) = calculatePushoutComplement m l
       (n, g) = calculatePushout k r
@@ -271,13 +271,13 @@ satisfiesSingleNac conf match nac =
 --
 -- Note: this doesn't test whether the match is for the actual production,
 -- nor if the match satisfies all application conditions.
-calculateComatch :: AdhesiveHLR morph => morph -> Production morph -> morph
+calculateComatch :: DPO morph => morph -> Production morph -> morph
 calculateComatch morph prod = let (_,m',_,_) = calculateDPO morph prod in m'
 
 -- | Given a match and a production, obtain the rewritten object.
 --
 -- @rewrite match production@ is equivalent to @'codomain' ('calculateComatch' match production)@
-rewrite :: AdhesiveHLR morph => morph -> Production morph -> Obj morph
+rewrite :: DPO morph => morph -> Production morph -> Obj morph
 rewrite morph prod =
   codomain (calculateComatch morph prod)
 
