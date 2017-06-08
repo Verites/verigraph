@@ -72,7 +72,6 @@ library
                        XML.GGXWriter
   other-modules:
                        Abstract.Rewriting.DPO.DiagramAlgorithms
-                       Analysis.EpimorphicPairs
                        Data.Partition
                        Logic.Ctl.Base
                        Logic.Ctl.Parser

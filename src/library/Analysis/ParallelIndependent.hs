@@ -4,7 +4,6 @@ import           Abstract.Category.AdhesiveHLR      as RW
 import           Abstract.Category.FinitaryCategory
 import           Abstract.Rewriting.DPO             as RW hiding (calculateComatch)
 import           Abstract.Rewriting.DPO.DiagramAlgorithms
-import           Analysis.EpimorphicPairs
 
 -- | Algorithm used to determine independence between two rules
 -- Cond1 -> 3 pullbacks and two iso tests

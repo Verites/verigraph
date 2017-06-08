@@ -9,7 +9,6 @@ import           Abstract.Category.AdhesiveHLR      as RW
 import           Abstract.Category.FinitaryCategory
 import           Abstract.Rewriting.DPO             as RW
 import           Analysis.CriticalPairs
-import           Analysis.EpimorphicPairs
 
 -- TODO: Conclude this implementation or extract it to an experimental branch until it is ready
 ---- Essential Critical Pairs generation.

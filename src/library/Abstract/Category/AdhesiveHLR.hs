@@ -11,6 +11,7 @@ module Abstract.Category.AdhesiveHLR
   , satisfiesConstraint
   , satisfiesAllConstraints
   , EpiPairs(..)
+  , createJointlyEpimorphicPairsFromCodomains
   , AdhesiveHLR(..)
 
   , MatchRestriction(..)
@@ -164,6 +165,14 @@ class FinitaryCategory morph => EpiPairs morph where
 
   -- Similar to calculateCommutativeSquares but indicating which morphism is injective
   calculateCommutativeSquaresAlongMonomorphism :: (morph,Bool) -> (morph,Bool) -> [(morph,morph)]
+
+-- | Create all jointly epimorphic pairs of morphisms from the codomains of
+-- the given morphisms.
+-- The flag indicates only monomorphic morphisms.
+createJointlyEpimorphicPairsFromCodomains :: (EpiPairs morph) => MatchRestriction -> morph
+                                          -> morph -> [(morph,morph)]
+createJointlyEpimorphicPairsFromCodomains inj m1 m2 =
+  createJointlyEpimorphicPairs (inj == MonoMatches) (codomain m1) (codomain m2)
 
 
 -- | Flag indicating what restrictions are required or assumed of matches.
