@@ -1,7 +1,6 @@
 {-|
 Module      : DiagramAlgorithms
 Description : Implements diagram-based algorithms
-Stability   : stable
 
 This diagram shows objects and morphisms names used in the algorithms below:
 
@@ -26,7 +25,7 @@ prod1 = l1 r1 {n1}
 prod2 = l2 r2 {n2}
 -}
 
-module Analysis.DiagramAlgorithms (
+module Abstract.Rewriting.DPO.DiagramAlgorithms (
     isDeleteUse
   , isProduceDangling
   , isProduceForbid

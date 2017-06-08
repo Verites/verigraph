@@ -3,7 +3,7 @@ module Analysis.ParallelIndependent where
 import           Abstract.Category.AdhesiveHLR      as RW
 import           Abstract.Category.FinitaryCategory
 import           Abstract.Rewriting.DPO             as RW hiding (calculateComatch)
-import           Analysis.DiagramAlgorithms
+import           Abstract.Rewriting.DPO.DiagramAlgorithms
 import           Analysis.EpimorphicPairs
 
 -- | Algorithm used to determine independence between two rules

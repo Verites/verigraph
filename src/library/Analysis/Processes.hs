@@ -8,7 +8,7 @@ module Analysis.Processes
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Rewriting.DPO
 import           Abstract.Rewriting.DPO.Process
-import           Analysis.DiagramAlgorithms
+import           Abstract.Rewriting.DPO.DiagramAlgorithms
 import           Data.List                      (partition)
 
 findConflictsAndDependencies :: GenerateProcess morph => [NamedRuleWithMatches morph] -> [Interaction]

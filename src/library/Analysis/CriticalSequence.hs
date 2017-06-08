@@ -24,7 +24,7 @@ module Analysis.CriticalSequence
 import           Abstract.Category.AdhesiveHLR as RW
 import           Abstract.Rewriting.DPO        as RW hiding (calculateComatch)
 import           Analysis.CriticalPairs        (findPotentialCriticalPairs)
-import           Analysis.DiagramAlgorithms
+import           Abstract.Rewriting.DPO.DiagramAlgorithms
 import           Data.Maybe                    (mapMaybe)
 
 -- | Data representing the type of a 'CriticalPair'

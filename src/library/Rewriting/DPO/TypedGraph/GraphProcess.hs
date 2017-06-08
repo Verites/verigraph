@@ -23,7 +23,7 @@ import           Abstract.Category.FinitaryCategory                       as FC
 import           Abstract.Rewriting.DPO
 import           Abstract.Rewriting.DPO.Derivation
 import           Abstract.Rewriting.DPO.Process                           hiding (productions)
-import           Analysis.DiagramAlgorithms
+import           Abstract.Rewriting.DPO.DiagramAlgorithms
 import           Data.Graphs                                              (Graph)
 import qualified Data.Graphs.Morphism                                     as GM
 import           Data.List                                                as L hiding (union)
