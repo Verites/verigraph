@@ -6,7 +6,7 @@ module ParallelIndependence
 
 import           Abstract.Rewriting.DPO
 import           Analysis.ParallelIndependent
-import           Category.TypedGraphRule.EpiPairs ()
+import           Category.TypedGraphRule.JointlyEpimorphisms ()
 import           Control.Monad                    (unless, when)
 import           Data.Matrix                      hiding ((<|>))
 import           Data.Monoid                      ((<>))

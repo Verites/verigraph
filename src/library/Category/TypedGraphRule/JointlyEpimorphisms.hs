@@ -1,16 +1,17 @@
 {-# LANGUAGE TypeFamilies #-}
 
-module Category.TypedGraphRule.EpiPairs where
+module Category.TypedGraphRule.JointlyEpimorphisms where
 
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.FinitaryCategory
+import           Abstract.Category.JointlyEpimorphisms
 import           Abstract.Rewriting.DPO
-import           Category.TypedGraph.EpiPairs        ()
+import           Category.TypedGraph.JointlyEpimorphisms ()
 import           Category.TypedGraphRule
 import           Category.TypedGraphRule.AdhesiveHLR ()
 import           Data.TypedGraph.Morphism
 
-instance EpiPairs (RuleMorphism a b) where
+instance JointlyEpimorphisms (RuleMorphism a b) where
   createJointlyEpimorphicPairs inj m1 m2 = ret
     where
       createJointly x y = createJointlyEpimorphicPairs inj (codomain x) (codomain y)
@@ -80,7 +81,7 @@ instance EpiPairs (RuleMorphism a b) where
       satsM2 = if inj2 then isMonomorphism else const True
       filt = filter (\(m1,m2) -> satsM1 m1 && satsM2 m2) allCommutingPairs
 
--- | Generates all (ss1,ss2,m) morphisms that commute with all EpiPairs
+-- | Generates all (ss1,ss2,m) morphisms that commute with all JointlyEpimorphisms
 -- of S1 and S2.
 -- Morphism morph is always monomorphic.
 -- createS must create all ss1 and ss2 from create1 and create2.

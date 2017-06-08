@@ -4,7 +4,7 @@ module CriticalPairAnalysis
   , execute
   ) where
 
-import           Abstract.Category.AdhesiveHLR         (EpiPairs)
+import           Abstract.Category.JointlyEpimorphisms
 import           Abstract.Rewriting.DPO
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
@@ -154,7 +154,7 @@ printEvoConflicts = map printOneEvo
                        show (printConf (True,True) (thd e)) ++ ")"
     printConf str evos = countElement str (map cpe evos)
 
-printAnalysis :: (EpiPairs morph, DPO morph) =>
+printAnalysis :: (JointlyEpimorphisms morph, DPO morph) =>
   Bool -> AnalysisType -> MorphismsConfig -> [Production morph] -> IO ()
 printAnalysis essential action dpoConf rules =
   let essentialConfMatrix = analysisMatrix dpoConf rules

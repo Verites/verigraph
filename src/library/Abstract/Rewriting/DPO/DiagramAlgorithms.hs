@@ -38,6 +38,7 @@ module Abstract.Rewriting.DPO.DiagramAlgorithms (
 
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.FinitaryCategory
+import           Abstract.Category.JointlyEpimorphisms
 import           Abstract.Rewriting.DPO
 import           Control.Applicative
 import           Control.Monad
@@ -119,7 +120,7 @@ deleteUseDangling conf p1 p2 (m1,m2) =
 -- produces something that enables some nac of @p2@.
 --
 -- Checks produce-forbid for a NAC @n@ in @p2@
-produceForbidOneNac :: (EpiPairs morph, DPO morph) => MorphismsConfig -> Production morph
+produceForbidOneNac :: (JointlyEpimorphisms morph, DPO morph) => MorphismsConfig -> Production morph
                     -> Production morph -> (morph, Int) -> [((morph,morph), (morph,morph), (morph,Int))]
 produceForbidOneNac conf p1 p2 (n2,idx) = do
   let p1' = invertProduction conf p1

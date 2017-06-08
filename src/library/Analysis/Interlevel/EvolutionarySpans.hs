@@ -13,11 +13,12 @@ module Analysis.Interlevel.EvolutionarySpans
   ) where
 
 import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category.JointlyEpimorphisms
 import           Abstract.Rewriting.DPO
 import           Abstract.Rewriting.DPO.DiagramAlgorithms
 import           Base.Valid
 import           Category.TypedGraphRule
-import           Category.TypedGraphRule.EpiPairs ()
+import           Category.TypedGraphRule.JointlyEpimorphisms ()
 import           Rewriting.DPO.TypedGraphRule
 
 -- | All actual possible kinds of Evolutionary Spans, it indicates the

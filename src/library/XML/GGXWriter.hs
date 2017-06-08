@@ -19,7 +19,7 @@ import qualified Analysis.CriticalPairs                as CP
 import qualified Analysis.CriticalSequence             as CS
 import qualified Analysis.EssentialCriticalPairs       as ECP
 import           Category.TypedGraphRule
-import           Category.TypedGraphRule.EpiPairs      ()
+import           Category.TypedGraphRule.JointlyEpimorphisms ()
 import qualified Data.Graphs                           as G
 import           Data.List
 import           Data.TypedGraph                       (TypedGraph)

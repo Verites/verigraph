@@ -4,7 +4,7 @@ import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.FinitaryCategory
 import           Abstract.Rewriting.DPO
 import           Category.TypedGraph.AdhesiveHLR    ()
-import           Category.TypedGraph.EpiPairs       ()
+import           Category.TypedGraph.JointlyEpimorphisms ()
 import           Category.TypedGraphRule.Cocomplete ()
 import           Data.TypedGraph.Morphism
 

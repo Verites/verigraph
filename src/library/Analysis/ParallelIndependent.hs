@@ -1,8 +1,9 @@
 module Analysis.ParallelIndependent where
 
-import           Abstract.Category.AdhesiveHLR      as RW
+import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.FinitaryCategory
-import           Abstract.Rewriting.DPO             as RW hiding (calculateComatch)
+import           Abstract.Category.JointlyEpimorphisms
+import           Abstract.Rewriting.DPO
 import           Abstract.Rewriting.DPO.DiagramAlgorithms
 
 -- | Algorithm used to determine independence between two rules
@@ -14,7 +15,7 @@ data IndependenceType = Parallel | Sequentially deriving (Eq, Show)
 
 -- | Checks if two transformations are independent (just delete-use),
 -- works with delete-use or pullback checking.
-isIndependent :: (EpiPairs morph, DPO morph) =>
+isIndependent :: (JointlyEpimorphisms morph, DPO morph) =>
   IndependenceType -> Algorithm -> MorphismsConfig -> Production morph -> Production morph -> Bool
 isIndependent ind algorithm conf p1' p2 = not $ conflict algorithm
   where

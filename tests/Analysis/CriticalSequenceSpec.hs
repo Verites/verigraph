@@ -5,7 +5,7 @@ import           Test.Hspec
 
 import           Abstract.Rewriting.DPO
 import           Analysis.CriticalSequence
-import           Category.TypedGraphRule.EpiPairs
+import           Category.TypedGraphRule.JointlyEpimorphisms
 import qualified XML.GGXReader                    as XML
 
 fileName1 = "tests/grammars/teseRodrigo.ggx"
@@ -21,13 +21,13 @@ csaTest = do
     it "first-order" $ do
       (gg1,_,_) <- XML.readGrammar fileName1 False dpoConf
       let fstRules = map snd (productions gg1)
-      
+
       testTeseRodrigoDependencies fstRules
-    
+
     it "second-order" $ do
       (_,gg2,_) <- XML.readGrammar fileName2 False dpoConf
       let sndRules = map snd (productions gg2)
-      
+
       testSndOrderDependencies sndRules
 
 testTeseRodrigoDependencies rules =

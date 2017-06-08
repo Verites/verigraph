@@ -1,6 +1,7 @@
-module Category.TypedGraph.EpiPairs where
+module Category.TypedGraph.JointlyEpimorphisms where
 
 import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category.JointlyEpimorphisms
 import           Category.TypedGraph                     ()
 import           Data.Graphs                             as G
 import qualified Data.Graphs.Morphism                    as GM
@@ -10,7 +11,7 @@ import           Data.TypedGraph.Partition.FromVerigraph (createDisjointUnion,
                                                           createSatisfyingNacsDisjointUnion)
 import           Data.TypedGraph.Partition.ToVerigraph   (mountTypedGraphMorphisms)
 
-instance EpiPairs (TypedGraphMorphism a b) where
+instance JointlyEpimorphisms (TypedGraphMorphism a b) where
   -- | Create all jointly surjective pairs of @m1@ and @m2@
   createJointlyEpimorphicPairs inj m1 m2 =
     map

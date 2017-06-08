@@ -61,6 +61,7 @@ module Abstract.Rewriting.DPO
 
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.FinitaryCategory
+import           Abstract.Category.JointlyEpimorphisms
 import           Base.Valid
 
 
@@ -295,7 +296,7 @@ satisfyRewritingConditions conf (l,m1) (r,m2) =
 -- | Given a morphism /m : L -> L'/ and a NAC /n : L -> N/, obtains
 -- an equivalent set of NACs /n'i : L' -> N'i/ that is equivalent to the
 -- original NAC.
-nacDownwardShift :: EpiPairs morph => MorphismsConfig -> morph -> morph -> [morph]
+nacDownwardShift :: JointlyEpimorphisms morph => MorphismsConfig -> morph -> morph -> [morph]
 nacDownwardShift conf morph n = newNacs
   where
     pairs = calculateCommutativeSquaresAlongMonomorphism (n,True) (morph, matchRestriction conf == MonoMatches)

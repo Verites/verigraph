@@ -10,6 +10,7 @@ module Analysis.Interlevel.InterLevelCP
 
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.FinitaryCategory
+import           Abstract.Category.JointlyEpimorphisms
 import           Abstract.Rewriting.DPO
 import           Category.TypedGraphRule
 import           Data.Graphs

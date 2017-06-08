@@ -31,6 +31,7 @@ library
                        Abstract.Category.AdhesiveHLR.Constraint
                        Abstract.Category.Cocomplete
                        Abstract.Category.Complete
+                       Abstract.Category.JointlyEpimorphisms
                        Abstract.Rewriting.DPO
                        Abstract.Rewriting.DPO.Derivation
                        Abstract.Rewriting.DPO.Process
@@ -51,7 +52,7 @@ library
                        Category.TypedGraph
                        Category.TypedGraph.FindMorphism
                        Category.TypedGraphRule
-                       Category.TypedGraphRule.EpiPairs
+                       Category.TypedGraphRule.JointlyEpimorphisms
                        Data.Graphs
                        Data.Graphs.Morphism
                        Data.Graphs.QuickCheck
@@ -78,7 +79,7 @@ library
                        Logic.Ctl.Semantics
                        Category.TypedGraph.AdhesiveHLR
                        Category.TypedGraph.Cocomplete
-                       Category.TypedGraph.EpiPairs
+                       Category.TypedGraph.JointlyEpimorphisms
                        Data.TypedGraph.Subgraph
                        Data.TypedGraph.Partition
                        Data.TypedGraph.Partition.FromVerigraph
