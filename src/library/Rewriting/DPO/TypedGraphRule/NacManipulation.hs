@@ -3,9 +3,9 @@ module Rewriting.DPO.TypedGraphRule.NacManipulation where
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.FinitaryCategory
 import           Abstract.Rewriting.DPO
-import           Category.TypedGraph.AdhesiveHLR    ()
+import           Category.TypedGraph.AdhesiveHLR         ()
 import           Category.TypedGraph.JointlyEpimorphisms ()
-import           Category.TypedGraphRule.Cocomplete ()
+import           Category.TypedGraphRule.Cocomplete      ()
 import           Data.TypedGraph.Morphism
 
 

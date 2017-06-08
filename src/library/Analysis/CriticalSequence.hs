@@ -23,10 +23,10 @@ module Analysis.CriticalSequence
 
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.JointlyEpimorphisms
-import           Abstract.Rewriting.DPO        hiding (calculateComatch)
-import           Analysis.CriticalPairs        (findPotentialCriticalPairs)
+import           Abstract.Rewriting.DPO                   hiding (calculateComatch)
 import           Abstract.Rewriting.DPO.DiagramAlgorithms
-import           Data.Maybe                    (mapMaybe)
+import           Analysis.CriticalPairs                   (findPotentialCriticalPairs)
+import           Data.Maybe                               (mapMaybe)
 
 -- | Data representing the type of a 'CriticalPair'
 data CriticalSequenceType =

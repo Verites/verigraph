@@ -22,8 +22,8 @@ import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.FinitaryCategory                       as FC
 import           Abstract.Rewriting.DPO
 import           Abstract.Rewriting.DPO.Derivation
-import           Abstract.Rewriting.DPO.Process                           hiding (productions)
 import           Abstract.Rewriting.DPO.DiagramAlgorithms
+import           Abstract.Rewriting.DPO.Process                           hiding (productions)
 import           Data.Graphs                                              (Graph)
 import qualified Data.Graphs.Morphism                                     as GM
 import           Data.List                                                as L hiding (union)

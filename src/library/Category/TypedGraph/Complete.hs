@@ -1,10 +1,11 @@
 module Category.TypedGraph.Complete where
 
-import Abstract.Category.Complete
-import Category.TypedGraph
-import Data.List
-import Data.Graphs.Morphism as GM hiding (domainGraph, applyEdgeIdUnsafe, applyNodeIdUnsafe)
-import Data.TypedGraph.Morphism hiding (removeNodeFromDomain, removeEdgeFromDomain)
+import           Abstract.Category.Complete
+import           Category.TypedGraph
+import           Data.Graphs.Morphism       as GM hiding (applyEdgeIdUnsafe, applyNodeIdUnsafe,
+                                                   domainGraph)
+import           Data.List
+import           Data.TypedGraph.Morphism   hiding (removeEdgeFromDomain, removeNodeFromDomain)
 
 
 instance Complete (TypedGraphMorphism a b) where

@@ -7,12 +7,12 @@ module ParallelIndependence
 import           Abstract.Rewriting.DPO
 import           Analysis.ParallelIndependent
 import           Category.TypedGraphRule.JointlyEpimorphisms ()
-import           Control.Monad                    (unless, when)
-import           Data.Matrix                      hiding ((<|>))
-import           Data.Monoid                      ((<>))
+import           Control.Monad                               (unless, when)
+import           Data.Matrix                                 hiding ((<|>))
+import           Data.Monoid                                 ((<>))
 import           GlobalOptions
 import           Options.Applicative
-import qualified XML.GGXReader                    as XML
+import qualified XML.GGXReader                               as XML
 
 data Options = Options
   { duFlag :: Bool

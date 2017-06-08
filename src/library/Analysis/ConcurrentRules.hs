@@ -8,11 +8,11 @@ module Analysis.ConcurrentRules
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.JointlyEpimorphisms
 import           Abstract.Rewriting.DPO
-import           Analysis.CriticalSequence     (findTriggeredCriticalSequences,
-                                                getCriticalSequenceComatches)
+import           Analysis.CriticalSequence             (findTriggeredCriticalSequences,
+                                                        getCriticalSequenceComatches)
 import           Base.Cardinality
 import           Base.Valid
-import           Data.Maybe                    (mapMaybe)
+import           Data.Maybe                            (mapMaybe)
 
 data CRDependencies = AllOverlapings | OnlyDependency
 

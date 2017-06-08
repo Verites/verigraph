@@ -8,7 +8,7 @@ import           Abstract.Category.JointlyEpimorphisms
 import           Abstract.Rewriting.DPO
 import           Category.TypedGraph.JointlyEpimorphisms ()
 import           Category.TypedGraphRule
-import           Category.TypedGraphRule.AdhesiveHLR ()
+import           Category.TypedGraphRule.AdhesiveHLR     ()
 import           Data.TypedGraph.Morphism
 
 instance JointlyEpimorphisms (RuleMorphism a b) where

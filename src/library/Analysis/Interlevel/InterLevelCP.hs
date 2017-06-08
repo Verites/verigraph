@@ -14,9 +14,9 @@ import           Abstract.Category.JointlyEpimorphisms
 import           Abstract.Rewriting.DPO
 import           Category.TypedGraphRule
 import           Data.Graphs
-import           Data.Graphs.Morphism               hiding (createEdgeOnCodomain,
-                                                     createNodeOnCodomain)
-import           Data.List                          (nubBy)
+import           Data.Graphs.Morphism                  hiding (createEdgeOnCodomain,
+                                                        createNodeOnCodomain)
+import           Data.List                             (nubBy)
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
 import           Data.TypedGraph.Subgraph

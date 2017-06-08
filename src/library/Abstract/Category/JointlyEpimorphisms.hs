@@ -3,8 +3,8 @@ module Abstract.Category.JointlyEpimorphisms
 , createJointlyEpimorphicPairsFromCodomains
 ) where
 
-import Abstract.Category.FinitaryCategory
-import Abstract.Category.AdhesiveHLR
+import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category.FinitaryCategory
 
 class FinitaryCategory morph => JointlyEpimorphisms morph where
   -- | Create all jointly epimorphic pairs of morphisms from the given objects.
