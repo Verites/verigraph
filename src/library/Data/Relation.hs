@@ -66,7 +66,7 @@ empty dom cod = Relation  orderedDomain orderedCodomain emptyMap
 -- | The identity relation on @dom@.
 id :: Ord a => [a] -> Relation a
 id dom = Relation d d idMap
-    where
+  where
     d = sort $ nub dom
     idMap = foldr (\x acc -> Map.insert x [x] acc) Map.empty dom
 
@@ -77,8 +77,7 @@ orphans r = (L.\\) (codomain r) (image r)
 -- | Add a mapping between @x@ and @y@ to the relation. If @x@ already exists,
 -- @y@ is joined to the corresponding elements.
 updateRelation :: Ord a => a -> a -> Relation a -> Relation a
-updateRelation x y (Relation dom cod m) =
-    Relation ([x] `union` dom) ([y] `union` cod) (Map.insertWith insertUniquely x [y] m)
+updateRelation x y (Relation dom cod m) = Relation ([x] `union` dom) ([y] `union` cod) (Map.insertWith insertUniquely x [y] m)
   where
     insertUniquely y y'
         | null $ y `L.intersect` y' = y ++ y'
@@ -86,8 +85,7 @@ updateRelation x y (Relation dom cod m) =
 
 -- | The inverse relation.
 inverseRelation :: (Ord a) => Relation a -> Relation a
-inverseRelation (Relation dom cod m) =
-    Relation cod dom m'
+inverseRelation (Relation dom cod m) = Relation cod dom m'
   where
     m' = Map.foldWithKey
         (\x ys m -> foldr (\y mp -> Map.insertWith (++) y [x] mp) m ys)
@@ -102,30 +100,28 @@ apply (Relation _ _ m) x =
 
 -- | Compose @r1@ and @r2@.
 compose :: (Ord a) => Relation a -> Relation a -> Relation a
-compose r1@(Relation dom _ _) r2@(Relation _ cod' _) =
-    Relation dom cod' m''
+compose r1@(Relation dom _ _) r2@(Relation _ cod' _) = Relation dom cod' m''
   where
-    m'' =
-        foldr
-            (\a m -> let im = do
-                              b <- apply r1 a
-                              apply r2 b
-                     in Map.insert a im m)
-            Map.empty
-            $ listDomain r1
+    m'' = foldr (intermidiaryCompose r1 r2) Map.empty $ listDomain r1
+
+intermidiaryCompose :: Ord a => Relation a -> Relation a -> a -> Map.Map a [a] -> Map.Map a [a]
+intermidiaryCompose r1 r2 a m =
+  let im = do
+            b <- apply r1 a
+            apply r2 b
+  in Map.insert a im m
 
 -- | Remove an element from the domain of the relation
 removeFromDomain :: Ord a => a -> Relation a -> Relation a
 removeFromDomain x r = r { domain = L.delete x (domain r)
-                  , mapping = Map.delete x (mapping r)
-                  }
-
+                         , mapping = Map.delete x (mapping r)
+                         }
 
 -- | Remove an element from the codomain of the relation
 removeFromCodomain :: Ord a => a -> Relation a -> Relation a
 removeFromCodomain x r = r { codomain = L.delete x (codomain r)
-                  , mapping = Map.map (L.delete x) (mapping r)
-                  }
+                           , mapping = Map.map (L.delete x) (mapping r)
+                           }
 
 -- | Insert an element on the codomain of the relation
 insertOnCodomain :: Ord a => a -> Relation a -> Relation a
@@ -148,5 +144,4 @@ isSurjective = isTotal . inverseRelation
 
 -- | Test if @r@ is total.
 isTotal :: (Ord a) => Relation a -> Bool
-isTotal r =
-    sort (domain r) == sort (listDomain r)
+isTotal r = sort (domain r) == sort (listDomain r)
