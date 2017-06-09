@@ -286,6 +286,7 @@ satisfiesDanglingCondition l m = Prelude.null incidentEdgesNotDeleted
          nodeId n `elem` [nodeId n1, nodeId n2],
          not (isDeleted l m applyEdgeId edgeIdsFromDomain (edgeId e))]
 
+-- TODO: this function should not be here in this module
 -- | Given the left-hand-side morphism of a rule /l : K -> L/, a match /m : L -> G/ of this rule, an element __/e/__
 -- (that can be either a __/Node/__ or an __/Edge/__) and two functions /apply/ (for applying that element in a TypedGraphMorphism) and
 -- /list/ (to get all the corresponding elements in the domain of m), it returns true if /e/ is deleted by this rule for the given match
@@ -297,5 +298,6 @@ isDeleted l m apply list e = elementInL && not elementInK
     kToG = m <&> l
     elementInK = any (\x -> apply kToG x == Just e) (list kToG)
 
+-- TODO: this function should not be here in this module
 isOrphanEdge :: TypedGraphMorphism a b -> EdgeId -> Bool
 isOrphanEdge m n = n `elem` orphanTypedEdgeIds m
