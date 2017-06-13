@@ -18,12 +18,12 @@ instance JointlyEpimorphisms (TypedGraphMorphism a b) where
       (mountTypedGraphMorphisms m1 m2)
       (generateGraphPartitions (createDisjointUnion (m1,inj) (m2,inj)))
 
-  createAllSubobjects inj m1 = map fst part
+  createAllQuotients m1 = map fst part
     where
       m2 = GM.buildGraphMorphism G.empty G.empty [] []
       part = map
                (mountTypedGraphMorphisms m1 m2)
-               (generateGraphPartitions (createDisjointUnion (m1,inj) (m2,inj)))
+               (generateGraphPartitions (createDisjointUnion (m1,False) (m2,False)))
 
   createJointlyEpimorphicPairsFromNAC conf r nac =
     map (mountTypedGraphMorphisms r (codomain nac)) (generateGraphPartitions labeled)

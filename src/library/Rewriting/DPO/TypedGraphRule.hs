@@ -270,7 +270,7 @@ getRulesFrom2Rule :: SndOrderRule a b -> (TypedGraphRule a b, TypedGraphRule a b
 getRulesFrom2Rule sndRule = (codomain (getLHS sndRule), domain (getLHS sndRule), codomain (getRHS sndRule))
 
 calculateAllPartitions :: JointlyEpimorphisms morph => Obj morph -> [morph]
-calculateAllPartitions = createAllSubobjects False
+calculateAllPartitions = createAllQuotients
 
 isOrphanNode :: TypedGraphMorphism a b -> NodeId -> Bool
 isOrphanNode m n = n `elem` orphanTypedNodeIds m

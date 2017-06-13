@@ -12,11 +12,9 @@ class FinitaryCategory morph => JointlyEpimorphisms morph where
   -- Otherwise, pairs of arbitrary morphisms are created.
   createJointlyEpimorphicPairs :: Bool -> Obj morph -> Obj morph -> [(morph,morph)]
 
-  -- | Create all subobjects from the given object.
-  --
-  -- If the first argument is true, only identity morphism is created.
-  -- Otherwise, arbitrary (epimorphic) morphisms are created.
-  createAllSubobjects :: Bool -> Obj morph -> [morph]
+  -- | Create all quotients of the given object, i.e. all (up to isomorphism) epimorphisms having
+  -- the given object as domain.
+  createAllQuotients :: Obj morph -> [morph]
 
   -- | Create a special case of jointly epimorphic pairs, where the second morphism is a Nac.
   -- The pairs generated are dependent of the NAC config.

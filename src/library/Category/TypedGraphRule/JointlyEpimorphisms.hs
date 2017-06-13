@@ -39,7 +39,7 @@ instance JointlyEpimorphisms (RuleMorphism a b) where
                    in (ruleMorphism m1 rule ll1 k1 r1,
                        ruleMorphism m2 rule ll2 k2 r2)) rights
 
-  createAllSubobjects _ _ = error "CreateAllSubobjects for RuleMorphism: Not implemented"
+  createAllQuotients _ = error "createAllQuotients for RuleMorphism: Not implemented"
 
   createJointlyEpimorphicPairsFromNAC conf ruleR nac = ret
     where

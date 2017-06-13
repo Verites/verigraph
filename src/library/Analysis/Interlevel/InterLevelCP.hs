@@ -103,9 +103,11 @@ ilCP conf fl gl p'' m0 = Prelude.null validM0''-- or all (==False) (map (\m'' ->
 
 relevantMatches :: MorphismsConfig -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
 --relevantMatches inj dangFl dangGl = concatMap (\ax -> partitions inj (codomain ax)) axs
-relevantMatches conf dangFl dangGl = concatMap (createAllSubobjects matchInjective) allSubgraphs
+relevantMatches conf dangFl dangGl = concatMap createQuotients allSubgraphs
   where
-    matchInjective = matchRestriction conf == MonoMatches
+    createQuotients
+      | matchRestriction conf == MonoMatches = \g -> [identity g]
+      | otherwise = createAllQuotients
     (_,al) = calculatePushout dangFl dangGl
     --axs = induzedSubgraphs al
     allSubgraphs = subgraphs (codomain al)

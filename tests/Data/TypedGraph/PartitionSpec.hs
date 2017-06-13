@@ -3,7 +3,7 @@
 
 module Data.TypedGraph.PartitionSpec where
 
-import           Math.Combinat.Numbers         (bellNumber)
+import           Math.Combinat.Numbers                 (bellNumber)
 import           Test.Hspec
 
 import           Abstract.Category.AdhesiveHLR
@@ -14,7 +14,7 @@ import           Category.TypedGraphRule
 import           Data.Graphs
 import           Data.Graphs.Morphism
 import           Data.TypedGraph.Morphism
-import qualified XML.GGXReader                 as XML
+import qualified XML.GGXReader                         as XML
 
 fileName1 = "tests/grammars/sndOrderEpi.ggx"
 fileName2 = "tests/grammars/partialInjectivity.ggx"
@@ -83,7 +83,7 @@ testPartition =
   mapM_ (\e -> fromInteger (bellNumber e) `shouldBe` length (getPart (graph2 [1..e]))) ids
 
 getPart :: GraphMorphism (Maybe a) (Maybe b) -> [TypedGraphMorphism a b]
-getPart = createAllSubobjects False
+getPart = createAllQuotients
 
 limitBellNumber = 8
 ids = [1..limitBellNumber]
