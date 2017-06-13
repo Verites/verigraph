@@ -1,3 +1,4 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-|
 An implementation of labeled directed graphs, allowing multiple parallel edges.
 
@@ -88,47 +89,24 @@ import           Util.List
 -- | Type of node identifiers, which are essentially integers.
 newtype NodeId =
   NodeId Int
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Num, Real, Integral)
 
 
 -- | Type of edge identifiers, which are essentially integers.
 newtype EdgeId
   = EdgeId Int
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Num, Real, Integral)
 
 
 instance Show NodeId where
     show (NodeId i) = show i
 
-
 instance Show EdgeId where
     show (EdgeId i) = show i
-
-
-instance Num NodeId where
-  (NodeId x)  +  (NodeId y) = NodeId (x+y)
-  (NodeId x)  *  (NodeId y) = NodeId (x*y)
-  (NodeId x)  -  (NodeId y) = NodeId (x-y)
-  negate (NodeId x) = NodeId (negate x)
-  signum (NodeId x) = NodeId (signum x)
-  fromInteger x       = NodeId $ fromIntegral x
-  abs (NodeId x)    = NodeId (abs x)
-
 
 instance Enum NodeId where
   toEnum = NodeId
   fromEnum (NodeId x) = x
-
-
-instance Num EdgeId where
-  (EdgeId x)  +  (EdgeId y) = EdgeId (x+y)
-  (EdgeId x)  *  (EdgeId y) = EdgeId (x*y)
-  (EdgeId x)  -  (EdgeId y) = EdgeId (x-y)
-  negate (EdgeId x) = EdgeId (negate x)
-  signum (EdgeId x) = EdgeId (signum x)
-  fromInteger x       = EdgeId $ fromIntegral x
-  abs (EdgeId x)    = EdgeId (abs x)
-
 
 instance Enum EdgeId where
   toEnum = EdgeId
