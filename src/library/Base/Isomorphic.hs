@@ -18,7 +18,12 @@ infix 4 ~=
 
 
 instance Iso a => Iso [a] where
-  xs ~= ys = and $ zipWith (~=) xs ys
+  [] ~= [] = True
+  [] ~= _ = False
+  _ ~= [] = False
+  (x:xs) ~= ys = case break (~=x) ys of
+    (_, []) -> False
+    (ys1, _:ys2) -> xs ~= (ys1++ys2)
 
 instance Iso a => Iso (Maybe a) where
   Nothing ~= Nothing = True
