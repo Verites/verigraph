@@ -56,6 +56,7 @@ library
                        Data.Graphs
                        Data.Graphs.Morphism
                        Data.Graphs.QuickCheck
+                       Data.Partition
                        Data.Relation
                        Data.TypedGraph
                        Data.TypedGraph.Morphism
@@ -73,7 +74,6 @@ library
                        XML.GGXWriter
   other-modules:
                        Abstract.Rewriting.DPO.DiagramAlgorithms
-                       Data.Partition
                        Logic.Ctl.Base
                        Logic.Ctl.Parser
                        Logic.Ctl.Semantics

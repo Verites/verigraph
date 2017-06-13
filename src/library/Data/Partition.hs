@@ -2,6 +2,9 @@ module Data.Partition
   ( EquivalenceClass
   , Partition
   , discretePartition
+  , allPartitionsOf
+  , allRefinementsOf
+  , addToPartition
   , mergePairs
   , mergeSets
   , getElem
@@ -24,6 +27,37 @@ type Partition a = Set (EquivalenceClass a)
 -- partition, each element has its own equivalence class.
 discretePartition :: (Ord a) => [a] -> Partition a
 discretePartition = Set.fromList . map Set.singleton
+
+-- | Create all partitions of the given set with a naive algorithm.
+allPartitionsOf :: Ord a => [a] -> [Partition a]
+allPartitionsOf []     = [Set.empty]
+allPartitionsOf [x]    = [Set.singleton (Set.singleton x)]
+allPartitionsOf (x:xs) = concatMap (addToPartition x) (allPartitionsOf xs)
+
+-- | Insert an element that was not a member of the original set into the partition. It may be inserted
+-- into any existing block or as its own separate block.
+addToPartition :: Ord a => a -> Partition a -> [Partition a]
+addToPartition element partition =
+  [ Set.fromList (insertAtBlock i element blocks) | i <- [0 .. length blocks] ]
+  where
+    blocks = Set.toList partition
+    insertAtBlock _ x []     = [Set.singleton x]
+    insertAtBlock 0 x (b:bs) = Set.insert x b : bs
+    insertAtBlock i x (b:bs) = b : insertAtBlock (i-1) x bs
+
+
+-- | Create all refinements of the given partition, i.e. all partitions with more distinctions but
+-- no more identifications, or all ways to partition each block of the original partition.
+allRefinementsOf :: Ord a => Partition a -> [Partition a]
+allRefinementsOf partition = do
+  let partitionsByBlock = [ allPartitionsOf (Set.toList block) | block <- Set.toList partition ]
+  disjointPartitions <- naryProduct partitionsByBlock
+  return (Set.unions disjointPartitions)
+
+-- | Calculates the cartesion product of @n@ lists, interpreting them as sets.
+naryProduct :: [[a]] -> [[a]]
+naryProduct []     = [[]]
+naryProduct (l:ls) = [ element : tuple | tuple <- naryProduct ls, element <- l]
 
 -- | Given a list of pairs of elements that should belong to the same equivalence class, "collapse"
 -- the necessary equivalence classes of the partition.
