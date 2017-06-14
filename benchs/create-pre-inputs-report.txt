@@ -1,0 +1,23 @@
+Elevator:
+        Epi Pairs (Generic):     9137 pairs generated.
+        Epi Pairs (Mono):        1654 pairs generated.
+        Matches Pairs (Generic):  143 pairs generated.
+        Matches Pairs (Mono):     109 pairs generated.
+
+Guideline1:
+        Epi Pairs (Generic):     295 pairs generated.
+        Epi Pairs (Mono):        295 pairs generated.
+        Matches Pairs (Generic): 155 pairs generated.
+        Matches Pairs (Mono):    155 pairs generated.
+
+Guideline2:     
+        Epi Pairs (Generic):     2444 pairs generated.
+        Epi Pairs (Mono):        2035 pairs generated.
+        Matches Pairs (Generic):  164 pairs generated.
+        Matches Pairs (Mono):     164 pairs generated.
+
+Guideline3:
+        Epi Pairs (Generic):     3710 pairs generated.
+        Epi Pairs (Mono):        3275 pairs generated.
+        Matches Pairs (Generic): 4174 pairs generated.
+        Matches Pairs (Mono):    3832 pairs generated.
