@@ -67,7 +67,9 @@ and .cpx files with the Graph Grammars and their analysis.
 
 ## Contributing
 
-Everyone interacting in Verigraph and/or its tutorials, sub-projects' codebases, issue trackers, chat rooms, and mailing lists is expected to follow the [Contributor Covenant Code of Conduct](CODE_OF_CONDCUT.md).
+We encourage you to contribute to Verigraph. Please check out the [Contributing guidelines](CONTRIBUTING.md) about how to proceed.
+
+Everyone interacting in Verigraph and/or its tutorials, sub-projects' codebases and issue trackers is expected to follow the [Contributor Covenant Code of Conduct](CODE_OF_CONDCUT.md).
 
 ## License
 
