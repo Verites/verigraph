@@ -26,6 +26,8 @@ library
                        semigroups >= 0.18,
                        set-monad >= 0.2,
                        split >= 0.2,
+                       directory >= 1.3,
+                       filepath >= 1.4,
                        wl-pprint >=1.2 && <1.3
   exposed-modules:     Abstract.Category.AdhesiveHLR
                        Abstract.Category.AdhesiveHLR.Constraint
@@ -72,6 +74,7 @@ library
                        Util.List
                        XML.GGXReader
                        XML.GGXWriter
+                       XML.GPSReader.GTXLReader
   other-modules:
                        Abstract.Rewriting.DPO.DiagramAlgorithms
                        Logic.Ctl.Base
@@ -96,6 +99,7 @@ library
                        XML.GGXParseOut
                        XML.GGXReader.SndOrder
                        XML.GGXReader.Span
+                       XML.GPSReader.GTXLParseIn
                        XML.ParsedTypes
                        XML.ParseSndOrderRule
                        XML.Utilities
