@@ -60,7 +60,15 @@ session by running the following command.
   $ source <(verigraph --bash-completion-script "$(which verigraph)")
 ```
 
-## Modeling and Visualization
+## Modelling and Visualization
 
 We use [AGG](http://www.user.tu-berlin.de/o.runge/agg/) to read and write the .ggx
-and .cpx files with the Graph Grammars and their analysis
+and .cpx files with the Graph Grammars and their analysis.
+
+## Contributing
+
+Everyone interacting in Verigraph and/or its tutorials, sub-projects' codebases, issue trackers, chat rooms, and mailing lists is expected to follow the [Contributor Covenant Code of Conduct](CODE_OF_CONDCUT.md).
+
+## License
+
+Verigraph is released under the [Apache 2.0 License](LICENSE)
