@@ -465,7 +465,7 @@ updateEdgesMapping e1 e2 edgesT tgm =
   do
     let (d, c, m) = decomposeTypedGraphMorphism tgm
     if extractEdgeType d e1 == extractEdgeType c e2 &&
-       ((isNothing (applyEdgeId tgm e1) && (not . isNothing $ lookupEdgeById edgesT e2)) || applyEdgeId tgm e1 == Just e2)
+       ((isNothing (applyEdgeId tgm e1) && isJust (lookupEdgeById edgesT e2)) || applyEdgeId tgm e1 == Just e2)
     then Just $ buildTypedGraphMorphism d c (GM.updateEdges e1 e2 m)
     else Nothing
 
