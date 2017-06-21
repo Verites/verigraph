@@ -2,60 +2,58 @@
 
 module XML.GPSReader.GTXLParseIn where
 
-import qualified Data.List                     as L
-import qualified Data.Map                      as M
-import           Data.Maybe                    (fromJust, fromMaybe, mapMaybe)
 import           Data.Tree.NTree.TypeDefs
-import           System.Directory
-import           System.FilePath
 import           Text.XML.HXT.Core
+import           System.FilePath
 
-import           Abstract.Category.AdhesiveHLR
-import           Abstract.Rewriting.DPO
-import           Base.Valid
-import           Category.TypedGraphRule
-import qualified Data.Graphs                   as G
-import           Data.Graphs.Morphism          as GM
-import           Data.TypedGraph
-import           Data.TypedGraph.Morphism
-import           Rewriting.DPO.TypedGraph      as GR
-import           Rewriting.DPO.TypedGraphRule
-import qualified XML.Formulas                  as F
-import           XML.GGXParseIn
-import           XML.GGXReader.SndOrder
-import           XML.GGXReader.Span
-import           XML.ParsedTypes
-import           XML.Utilities
 import           XML.XMLUtilities
 
-readGPR fileName = do
-  [rule] <- readRule fileName  
-  return (fileName,rule)
+type Label = String
+type RuleName = String
+type Node = String
+type Id = Int
+type Edge = (Node,Node,Label)
+type NodeWithId = (Node, Id)
+type EdgeWithId = (Edge, Id)
+type RuleGraph = ([NodeWithId], [EdgeWithId])
+type NamedRuleGraph = (RuleName,RuleGraph)
 
-readRule fileName = runX (parseXML fileName >>> parseGPRRule)
+-- | Parses a Groove Production Rule (.gpr)
+parseGPR :: String -> IO NamedRuleGraph
+parseGPR pathName = do
+  [rule] <- parseRule pathName
+  let ruleName = dropExtension (takeFileName pathName)
+  return (ruleName,rule)
 
+parseRule :: String -> IO [RuleGraph]
+parseRule fileName = runX (parseXML fileName >>> parseGPRRule)
+
+parseGPRRule :: IOSLA (XIOState ()) (Data.Tree.NTree.TypeDefs.NTree XNode) RuleGraph
 parseGPRRule = atTag "gxl" >>> atTag "graph" >>>
   proc graph -> do
     nodes <- listA parseGPRNode -< graph
     edges <- listA parseGPREdge -< graph
-    let nodesId = zip nodes [0..]
-    let edgesId = zip edges [0..]
+    let nodesId = zip nodes ([0..]::[Int])
+    let edgesId = zip edges ([0..]::[Int])
     returnA -< (nodesId,edgesId)
 
+parseGPRNode :: IOSLA (XIOState ()) (NTree XNode) Node
 parseGPRNode = atTag "node" >>>
   proc nodes -> do
     x <- getAttrValue "id" -< nodes
     returnA -< x
 
+parseGPREdge :: IOSLA (XIOState ()) (NTree XNode) Edge
 parseGPREdge = atTag "edge" >>>
   proc edges -> do
     from <- getAttrValue "from" -< edges
     to <- getAttrValue "to" -< edges
-    labels <- listA parseGPREdgeLabel -< edges
-    returnA -< (from,to,labels)
+    label <- parseGPREdgeLabel -< edges
+    returnA -< (from,to,label)
 
+parseGPREdgeLabel :: IOSLA (XIOState ()) (NTree XNode) Label
 parseGPREdgeLabel = atTag "attr" >>>
   proc attrs -> do
-    _  <- isA (\str -> not (str == "layout")) <<< getAttrValue "name" -< attrs
+    _  <- isA (/= "layout") <<< getAttrValue "name" -< attrs
     string <- (getChildren >>> hasName "string" /> getText) -< attrs
     returnA -< string
