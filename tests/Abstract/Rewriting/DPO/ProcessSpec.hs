@@ -1,27 +1,25 @@
--- | Test Suite for GraphProcess Module
+-- | Test Suite for Process Module
+module Abstract.Rewriting.DPO.ProcessSpec where
 
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.FinitaryCategory
 import           Abstract.Rewriting.DPO
 import           Abstract.Rewriting.DPO.Derivation
 import           Abstract.Rewriting.DPO.Process
+import           Data.TypedGraph.Morphism
+import           Rewriting.DPO.TypedGraph.GraphProcess ()
+import           Utils
+
 import           Data.Graphs
 import           Data.Graphs.Morphism
 import           Data.Maybe                            (fromJust)
-import           Data.TypedGraph.Morphism
-import           Rewriting.DPO.TypedGraph.GraphProcess ()
-import           Test.HUnit
-import           Utils
+import           Test.Hspec
 
-
-
-
-main :: IO()
-main = runTests ("Test with rules" ~: productionsTests)
-
-productionsTests :: Test
-productionsTests = test [  "Process From Derivations" ~: processFromDerivations ~=?processFromDerivationsResult
-                        ]
+spec :: Spec
+spec = do
+  context "Process From Derivations" $
+    it "Produces the expected values" $ do
+      processFromDerivations `shouldBe` processFromDerivationsResult
 
 
 -- | Process test with rules FROM: MACHADO, Rodrigo. 2012
