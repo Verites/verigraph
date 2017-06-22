@@ -1,8 +1,9 @@
-module XML.GPSReader.GTXLReader where
+module XML.GPSReader.GTXLReader (readGrammar) where
 
 import qualified Data.List                     as L
 import           System.Directory
 import           System.FilePath
+import           System.IO
 
 import           Base.Valid
 
@@ -13,38 +14,56 @@ import           Rewriting.DPO.TypedGraph      as GR
 import           XML.GPSReader.GTXLParseIn
 import           XML.GPSReader.GTXLPreProcessing
 
-readGrammar :: String -> IO ()
+readGrammar :: String -> IO (Grammar (TypedGraphMorphism a b))
 readGrammar fileName = do
   print fileName
   files <- getDirectoryContents fileName
   
-  --let stateNames = filter (\name -> takeExtension name == ".gst") files
-  let ruleNames = filter (\name -> takeExtension name == ".gpr") files
-      typeGraphName = head (filter (\name -> takeExtension name == ".gty") files)
-      
-      rulePathNames = map (\n -> fileName ++ "/" ++ n) ruleNames
-      typeGraphPathName = fileName ++ "/" ++ typeGraphName
-      
+  -- system.properties file
+  let systemPropertiesFile = "system.properties" --head (filter (\name -> takeExtension name == ".properties") files)
+      systemPropertiesPath = fileName ++ "/" ++ systemPropertiesFile
+  
+  handleProperties <- openFile systemPropertiesPath ReadMode
+  systemProperties <- hGetContents handleProperties
+  
+  let typeGraphName = getOption systemProperties "typeGraph="
+      stateGraphName = getOption systemProperties "startGraph="
+  
+  -- type graph
+  let typeGraphPathName = fileName ++ "/" ++ typeGraphName ++ ".gty"
+  
   parsedTypeGraph <- parseGPR typeGraphPathName
   
-  let toProcess = snd . snd
-      processedTypes = processTypeGraph (toProcess parsedTypeGraph)      
+  let typesWithId = processTypeGraph parsedTypeGraph      
       typeGraph = instatiateTypeGraph parsedTypeGraph
-      
-  --print processedTypes
-
+  
+  -- initial state, it uses the rule parser to get the initial state
+  let stateGraphPathName = fileName ++ "/" ++ stateGraphName ++ ".gst"
+  stateGraph <- parseGPR stateGraphPathName
+  let (_,state) = instatiateOneRule typeGraph typesWithId stateGraph
+      initialState = domainGraph (getLHS state)
+    
+  -- rules
+  let ruleNames = filter (\name -> takeExtension name == ".gpr") files
+      rulePathNames = map ((fileName ++ "/") ++) ruleNames
   parsedRules <- mapM parseGPR rulePathNames
   
-  --print parsedRules
+  let rules = instatiateRules typeGraph typesWithId parsedRules
   
-  let rules = map (instatiateOneRule typeGraph processedTypes) parsedRules
-  --print (rules!!1)
-  --print typeGraph
+  ensureValid $ validateNamed (\name -> "Rule '"++name++"'") rules
+  _ <- (L.null rules && error "No first order productions were found, at least one is needed.") `seq` return ()
   
-  print rules
-  print (map (Base.Valid.isValid . snd) rules)
-  
-  return ()
+  return (grammar initialState [] rules)
+
+-- Auxiliary function to read a text file with grammar properties 
+getOption :: String -> String -> String
+getOption systemProperties string = tail (L.dropWhile (/= '=') unique)
+  where
+    inLines = lines systemProperties
+    names = filter (L.isPrefixOf string) inLines
+    unique = case names of
+               []    -> error ("error, '" ++ string ++ "' not found")
+               ptg:_ -> ptg
 
 instatiateTypeGraph :: NamedRuleGraph -> G.Graph (Maybe a) (Maybe b)
 instatiateTypeGraph (_,(_,types)) = G.build nodesToBuild edgesToBuild
@@ -53,18 +72,24 @@ instatiateTypeGraph (_,(_,types)) = G.build nodesToBuild edgesToBuild
     nodesToBuild = map snd nodes
     edgesToBuild = map (\((src,tgt,_),id) -> (id, getNodeType nodes src, getNodeType nodes tgt)) edges
 
-getNodeType :: [EdgeWithId] -> String -> Id
+getNodeType :: [EdgeWithId] -> Node -> Id
 getNodeType nodes node = head [id | ((name,_,_),id) <- nodes, node == name]
 
-instatiateOneRule :: G.Graph (Maybe a) (Maybe b) -> ([NodeWithId],[NodeWithId]) -> NamedRuleGraph -> (RuleName, TypedGraphRule a b)
+instatiateRules :: G.Graph (Maybe a) (Maybe b) -> GraphTypes -> [NamedRuleGraph] -> [(RuleName, TypedGraphRule a b)]
+instatiateRules typeGraph typesWithId = map (instatiateOneRule typeGraph typesWithId)
+
+instatiateOneRule :: G.Graph (Maybe a) (Maybe b) -> GraphTypes -> NamedRuleGraph -> (RuleName, TypedGraphRule a b)
 instatiateOneRule typeGraph (nodeTypes,edgeTypes) rule = (fst rule, instatiateRule typeGraph processedNodes processedEdges)
   where
     (nodes,edges) = snd rule
     (selfLoopEdges,directedEdges) = L.partition (\((from,to,_),_) -> from == to) edges
     (typingEdges,ruleEdges) = L.partition (\((_,_,label),_) -> L.isPrefixOf "type:" label) selfLoopEdges
+    (creDelEdges,preservationSelfLoopEdges) =
+      L.partition (\((_,_,label),_) -> (any (`L.isPrefixOf` label) ["new:","del:","not:"])) ruleEdges
+    edgesToAdd = directedEdges ++ preservationSelfLoopEdges
     
-    processedNodes = processNodes nodeTypes nodes ruleEdges typingEdges
-    processedEdges = processEdges edgeTypes nodes directedEdges
+    processedNodes = processNodes nodeTypes nodes creDelEdges typingEdges
+    processedEdges = processEdges edgeTypes nodes edgesToAdd
 
 instatiateRule :: G.Graph (Maybe a) (Maybe b) -> [ProcessedNode] -> [ProcessedEdge] -> TypedGraphRule a b
 instatiateRule typeGraph nodes = instatiateRuleEdges (instatiateRuleNodes typeGraph nodes)
@@ -87,21 +112,21 @@ instatiateRuleEdges init ((e,src,tgt,etype,cond):edges) = action cond (instatiat
     action Deletion = addsDeletionEdge e src tgt etype
     action Forbidden = Prelude.id
 
-addsDeletionNode :: Id -> Id -> TypedGraphRule a b -> TypedGraphRule a b
+addsDeletionNode :: NodeId -> NodeTypeId -> TypedGraphRule a b -> TypedGraphRule a b
 addsDeletionNode nodeId ntype r =
   buildProduction
     (TGM.createNodeOnCodomain (G.NodeId nodeId) (G.NodeId ntype) (getLHS r))
     (getRHS r)
     (getNACs r)
 
-addsCreationNode :: Id -> Id -> TypedGraphRule a b -> TypedGraphRule a b
+addsCreationNode :: NodeId -> NodeTypeId -> TypedGraphRule a b -> TypedGraphRule a b
 addsCreationNode nodeId ntype r =
   buildProduction
     (getLHS r)
     (TGM.createNodeOnCodomain (G.NodeId nodeId) (G.NodeId ntype) (getRHS r))
     (getNACs r)
 
-addsPreservationNode :: Id -> Id -> TypedGraphRule a b -> TypedGraphRule a b
+addsPreservationNode :: NodeId -> NodeTypeId -> TypedGraphRule a b -> TypedGraphRule a b
 addsPreservationNode nodeId ntype r =
   buildProduction
     (TGM.createNodeOnCodomain (G.NodeId nodeId) (G.NodeId ntype)
@@ -110,21 +135,21 @@ addsPreservationNode nodeId ntype r =
       (TGM.createNodeOnDomain (G.NodeId nodeId) (G.NodeId ntype) (G.NodeId nodeId) (getRHS r)))
     (getNACs r)
 
-addsDeletionEdge :: Id -> Id -> Id -> Id -> TypedGraphRule a b -> TypedGraphRule a b
+addsDeletionEdge :: EdgeId -> NodeId -> NodeId -> EdgeTypeId -> TypedGraphRule a b -> TypedGraphRule a b
 addsDeletionEdge edgeId src tgt etype r =
   buildProduction
     (TGM.createEdgeOnCodomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype) (getLHS r))
     (getRHS r)
     (getNACs r)
 
-addsCreationEdge :: Id -> Id -> Id -> Id -> TypedGraphRule a b -> TypedGraphRule a b
+addsCreationEdge :: EdgeId -> NodeId -> NodeId -> EdgeTypeId -> TypedGraphRule a b -> TypedGraphRule a b
 addsCreationEdge edgeId src tgt etype r =
   buildProduction
     (getLHS r)
     (TGM.createEdgeOnCodomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype) (getRHS r))
     (getNACs r)
 
-addsPreservationEdge :: Id -> Id -> Id -> Id -> TypedGraphRule a b -> TypedGraphRule a b
+addsPreservationEdge :: EdgeId -> NodeId -> NodeId -> EdgeTypeId -> TypedGraphRule a b -> TypedGraphRule a b
 addsPreservationEdge edgeId src tgt etype r =
   buildProduction
     (TGM.createEdgeOnCodomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype)

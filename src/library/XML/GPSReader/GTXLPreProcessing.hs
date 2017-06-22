@@ -7,27 +7,46 @@ import           XML.GPSReader.GTXLParseIn
 
 data ElementCondition = Creation | Deletion | Preservation | Forbidden deriving(Eq,Show)
 
-type ProcessedNode = (Id,Id,ElementCondition)
-type ProcessedEdge = (Id,Id,Id,Id,ElementCondition)
+type NodeId = Id
+type NodeTypeId = Id
+type EdgeId = Id
+type EdgeTypeId = Id
+
+type ProcessedNode = (NodeId,NodeTypeId,ElementCondition)
+type ProcessedEdge = (EdgeTypeId,NodeId,NodeId,EdgeTypeId,ElementCondition)
+
+type NodeType = String
+type EdgeType = String
+type NodeWithTypeId = (NodeType,Id)
+type EdgeWithTypeId = (EdgeType,Id)
+type GraphTypes = ([NodeWithTypeId],[EdgeWithTypeId])
 
 getNodeId :: [NodeWithId] -> Node -> Id
 getNodeId nodes node =
-  fromIntegral
-    (fromMaybe (error ("error\n" ++ show nodes ++" <-> " ++ show node))
-    (lookup node nodes))
+  fromMaybe
+    (error ("getNodeId error: " ++ show node ++ " -> " ++ show nodes))
+    (lookup node nodes)
 
-processTypeGraph :: [EdgeWithId] -> ([(String,Id)],[(String,Id)])
-processTypeGraph [] = ([],[])
-processTypeGraph (((_,_,label),id):edges) =
+normalizeLabel :: Label -> Label
+normalizeLabel label = if ':' `elem` label then tail (dropWhile (/= ':') label) else label
+
+-- process type graph
+processTypeGraph :: NamedRuleGraph -> GraphTypes
+processTypeGraph (_,(_,edges)) = processTypeGraphEdges edges
+
+processTypeGraphEdges :: [EdgeWithId] -> GraphTypes
+processTypeGraphEdges [] = ([],[])
+processTypeGraphEdges (((_,_,label),id):edges) =
   (if "type:" `isPrefixOf` label
     then addFst (normalizeLabel label,id)
     else addSnd (label,id)
   )
-  (processTypeGraph edges)
+  (processTypeGraphEdges edges)
   where
     addFst z (x,y) = (z:x,y)
     addSnd z (x,y) = (x,z:y)
 
+-- process rule graphs
 processEdges :: [NodeWithId] -> [NodeWithId] -> [EdgeWithId] -> [ProcessedEdge]
 processEdges _ _ [] = []
 processEdges types nodes (((from,to,label),id):directedEdges) =
@@ -59,7 +78,7 @@ processCreatedDeletedNodes types nodes typingEdges (((node,_,label),_):ruleEdges
     verify "new:" = Creation
     verify "del:" = Deletion
     verify "not:" = Forbidden
-    verify msg = error (show msg) 
+    verify msg = error ("processCreatedDeletedNodes: verify " ++ show msg) 
 
 processPreservedNodes :: [NodeWithId] -> [NodeWithId] -> [EdgeWithId] -> [EdgeWithId] -> [ProcessedNode]
 processPreservedNodes _ _ _ [] = []
@@ -71,6 +90,3 @@ processPreservedNodes types nodes ruleEdges (((node,_,label),_):typingEdges) =
     nodeId = getNodeId nodes node
     nodeType = getNodeId types (normalizeLabel label)
     nodeWasCreatedDeleted = Prelude.not (Prelude.null [x | x@((n2,_,_),_) <- ruleEdges, n2 == node])
-
-normalizeLabel :: String -> String
-normalizeLabel label = if ':' `elem` label then tail (dropWhile (/= ':') label) else label
