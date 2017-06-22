@@ -21,9 +21,9 @@ engines:
 ratings:
   paths:
   - "**.hs"
+  - "**.md"
   - "**.sh"
 
 exclude_paths:
   - "**.ggx"
   - "**.png"
-  - "**.md"
