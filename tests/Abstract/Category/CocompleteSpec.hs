@@ -1,5 +1,7 @@
 -- | Test Suite for GraphProcess Module
 
+module Abstract.Category.CocompleteSpec where
+
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.Cocomplete
 import           Data.Graphs
@@ -7,61 +9,75 @@ import           Data.Graphs.Morphism
 import           Data.List.NonEmpty                    (fromList)
 import           Data.TypedGraph.Morphism
 import           Rewriting.DPO.TypedGraph.GraphProcess ()
-import           Test.HUnit
 
-import           Utils
-
+import           Test.Hspec
 
 
+spec :: Spec
+spec = do
+  context "Tests of Coequalizer" $
+    it "Produces the expected result"
+      coequalizerTests
 
-main :: IO()
-main = do
-  runTests ("Tests of Coequalizer" ~: coequalizerTests)
-  runTests ("Tests of Pushout" ~: pushoutTest)
-  runTests ("Tests of N-Coequalizer" ~: nCoequalizerTests)
+  context "Tests of Pushout" $
+    it "Produces the expected result"
+      pushoutTests
 
-coequalizerTests :: Test
-coequalizerTests = test [ "Test Case One" ~: testCaseOne  ~=?
-                           buildTypedGraphMorphism typedGraphBOne typedGraphBOne
-                           (buildGraphMorphism graphBOne graphBOne [(50,50),(60,60),(70,70),(80,80)] [])
+  context "Tests of N-Coequalizer" $
+    it "Produces the expected result"
+      nCoequalizerTests
 
-                        , "Test Case Two" ~: testCaseTwo  ~=?
-                          buildTypedGraphMorphism typedGraphBTwo typedGraphBTwo
-                          (buildGraphMorphism graphBTwo graphBTwo [(50,50),(60,60),(70,70)] [(200,200),(300,300)])
+coequalizerTests :: Expectation
+coequalizerTests = do
+  testCaseOne
+    `shouldBe`
+    buildTypedGraphMorphism typedGraphBOne typedGraphBOne
+    (buildGraphMorphism graphBOne graphBOne [(50,50),(60,60),(70,70),(80,80)] [])
 
-                        , "Test Case Three" ~: testCaseThree  ~=?
-                          buildTypedGraphMorphism typedGraphBThree typedGraphXThree
-                          (buildGraphMorphism graphBThree graphXThree [(80,50),(70,50),( 60,50),(50,50)] [(200,200),(300,300),(400,400)])
+  testCaseTwo
+    `shouldBe`
+    buildTypedGraphMorphism typedGraphBTwo typedGraphBTwo
+    (buildGraphMorphism graphBTwo graphBTwo [(50,50),(60,60),(70,70)] [(200,200),(300,300)])
 
-                        , "Test Case Four" ~: testCaseFour  ~=?
-                          buildTypedGraphMorphism typedGraphBFour typedGraphXFour
-                          (buildGraphMorphism graphBFour graphXFour [(50,50),(60,60)][(500,500),(600,500)])
+  testCaseThree
+    `shouldBe`
+    buildTypedGraphMorphism typedGraphBThree typedGraphXThree
+    (buildGraphMorphism graphBThree graphXThree [(80,50),(70,50),( 60,50),(50,50)] [(200,200),(300,300),(400,400)])
 
-                        ]
+  testCaseFour
+    `shouldBe`
+    buildTypedGraphMorphism typedGraphBFour typedGraphXFour
+    (buildGraphMorphism graphBFour graphXFour [(50,50),(60,60)][(500,500),(600,500)])
 
-pushoutTest :: Test
-pushoutTest = test [ "Test Case Three (Pushout)" ~: testCaseThreePUSHOUT  ~=? pushoutResultThree ]
+pushoutTests :: Expectation
+pushoutTests =
+  testCaseThreePUSHOUT
+    `shouldBe`
+    pushoutResultThree
 
-nCoequalizerTests :: Test
-nCoequalizerTests = test [ "Test Case Five "  ~: testCaseFive  ~=?
-                           buildTypedGraphMorphism typedGraphBFive typedGraphXFive
-                           (buildGraphMorphism graphBFive graphXFive [(80,50),(70,50),(60,50),(50,50)] [])
+nCoequalizerTests :: Expectation
+nCoequalizerTests = do
+  testCaseFive
+    `shouldBe`
+    buildTypedGraphMorphism typedGraphBFive typedGraphXFive
+    (buildGraphMorphism graphBFive graphXFive [(80,50),(70,50),(60,50),(50,50)] [])
 
-                         --Same result as test one
-                         , "Test Case Six" ~: testCaseSix  ~=?
-                           buildTypedGraphMorphism typedGraphBOne typedGraphBOne
-                           (buildGraphMorphism graphBOne graphBOne [(50,50),(60,60),(70,70),(80,80)] [])
+  --Same result as test one
+  testCaseSix
+    `shouldBe`
+    buildTypedGraphMorphism typedGraphBOne typedGraphBOne
+    (buildGraphMorphism graphBOne graphBOne [(50,50),(60,60),(70,70),(80,80)] [])
 
-                         --Same result as test two
-                         , "Test Case Seven" ~: testCaseSeven  ~=?
-                           buildTypedGraphMorphism typedGraphBTwo typedGraphBTwo
-                           (buildGraphMorphism graphBTwo graphBTwo [(50,50),(60,60),(70,70)] [(200,200),(300,300)])
+  --Same result as test two
+  testCaseSeven
+    `shouldBe`
+    buildTypedGraphMorphism typedGraphBTwo typedGraphBTwo
+    (buildGraphMorphism graphBTwo graphBTwo [(50,50),(60,60),(70,70)] [(200,200),(300,300)])
 
-                         , "Test Case Eight" ~: testCaseEight  ~=?
-                         buildTypedGraphMorphism typedGraphBEight typedGraphBEight
-                         (buildGraphMorphism graphBEight graphBEight [(50,50),(60,60),(70,70),(80,80)] [(500,500),(600,600),(700,700)])
-
-                         ]
+  testCaseEight
+    `shouldBe`
+    buildTypedGraphMorphism typedGraphBEight typedGraphBEight
+    (buildGraphMorphism graphBEight graphBEight [(50,50),(60,60),(70,70),(80,80)] [(500,500),(600,600),(700,700)])
 
 -- | COEQUALIZER TESTS
 
