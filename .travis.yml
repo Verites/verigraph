@@ -30,6 +30,9 @@ install:
 - stack -j 2 --no-terminal --install-ghc test --only-dependencies
 
 script:
+#Clean package to force a full build and avoid hpc report conflicts
+- stack -j 2 --no-terminal clean
+
 # Build the package, its tests, coverage reports and run the tests
 - stack -j 2 --no-terminal test --coverage
 
