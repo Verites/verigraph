@@ -1,11 +1,12 @@
 # This is a simple Travis configuration to verigraph repository.
-#
 # Based in example files from https://docs.haskellstack.org/en/stable/travis_ci/
 
-
 # Build enviroment setup
-# Use new container infrastructure to enable caching
+# Use container infrastructure to enable caching
 sudo: false
+
+# Use the trusty CI Enviroment
+dist: trusty
 
 # Do not choose a language; we provide our own build tools.
 language: generic
@@ -14,12 +15,6 @@ language: generic
 cache:
   directories:
   - $HOME/.stack
-
-# Ensure necessary system libraries are present
-addons:
-  apt:
-    packages:
-      - libgmp-dev
 
 before_install:
 # Download and unpack the stack executable
@@ -32,11 +27,14 @@ before_install:
 # Verigraph build
 install:
 # Build dependencies
-- stack --no-terminal --install-ghc test --only-dependencies
+- stack -j 2 --no-terminal --install-ghc test --only-dependencies
 
 script:
-# Build the package, its tests, and its docs and run the tests
-- stack --no-terminal test --haddock --no-haddock-deps --coverage 
+#Clean package to force a full build and avoid hpc report conflicts
+- stack -j 2 --no-terminal clean
+
+# Build the package, its tests, coverage reports and run the tests
+- stack -j 2 --no-terminal test --coverage
 
 # Send results and notify
 
@@ -52,4 +50,6 @@ notifications:
       secure: "Mj6F0EJzgCPriMUi/HMS+aV2NARAQGJt51cf8a9tIBG416ahz1IidSakkI0oHpXaUacNQ4a5yuoXjfsfLEar6+N3PoURIDMMhbGFvrpNlLLK+AO//XAfJmyv/FsZQsSABPamCa81N1swtwn9D1Jd9myULzT9dPop0Mj2Tsobs8qtGSFMONiuml05MGJ0PSFn54cHst9bSC3+MHdqnCbt6b8nPEg+zQRaiIOljI3jr9AJfT5Fa7WHpFQurC+pHzASqn/ybS73//eb9ldrH9CIPoeOxE0DpIPZrlJA6r94gVdhR3AB0QI9Wt/zV3nehgXndkkG7USe4fvWExBubSDZDMmvndEXUDRGlCOtcgEfFjEP9vWQXTYb4Y9hARuIg1TJHP6JXc/YgsXc/MaMmJAeYnV+tAlqheWXpDya5TGuErksgT2ik8JHWmRrR29BOwcpW+s7iNt4RqIfOjTKXaio0zT/OQHh4e1teHKZRDKaRrc36THFWAshthuyIOq6Xt6PiOA47DWNwMvN8dDP15AIU/7vQfLLiMt5Xdzvakfnm/Utkn61kzlg9a7kyOVUzfppLJf9PSbtrJIB1U5xO4r5RqaklqFEA1j0RRady/NCYY684JCrKU8qeE7yIkHkOR3AlwnXWGiqJbDnPbRQZQgvQogZ+vFH23mTpi2Tal6q9B4="
     on_success: never
     on_failure: change
-    on_start:   never
+    on_error: change
+    on_cancel: never
+    on_start: never
