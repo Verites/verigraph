@@ -42,7 +42,7 @@ script:
 
 after_script:
 #Send coverage data to coveralls.io
-- shc combined all
+- shc verigraph HSpecTests
 
 notifications:
   email: false

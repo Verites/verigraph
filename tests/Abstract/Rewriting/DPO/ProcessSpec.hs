@@ -8,7 +8,6 @@ import           Abstract.Rewriting.DPO.Derivation
 import           Abstract.Rewriting.DPO.Process
 import           Data.TypedGraph.Morphism
 import           Rewriting.DPO.TypedGraph.GraphProcess ()
-import           Utils
 
 import           Data.Graphs
 import           Data.Graphs.Morphism
