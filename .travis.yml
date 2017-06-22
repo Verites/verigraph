@@ -1,11 +1,12 @@
 # This is a simple Travis configuration to verigraph repository.
-#
 # Based in example files from https://docs.haskellstack.org/en/stable/travis_ci/
 
-
 # Build enviroment setup
-# Use new container infrastructure to enable caching
+# Use container infrastructure to enable caching
 sudo: false
+
+# Use the trusty CI Enviroment
+dist: trusty
 
 # Do not choose a language; we provide our own build tools.
 language: generic
