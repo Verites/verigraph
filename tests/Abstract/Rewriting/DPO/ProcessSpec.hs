@@ -15,9 +15,9 @@ import           Data.Maybe                            (fromJust)
 import           Test.Hspec
 
 spec :: Spec
-spec = do
+spec =
   context "Process From Derivations" $
-    it "Produces the expected values" $ do
+    it "Produces the expected values" $
       processFromDerivations `shouldBe` processFromDerivationsResult
 
 
