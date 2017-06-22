@@ -18,10 +18,10 @@ governed by our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## 1. Where do I go from here?
 
-If you've noticed a bug or have a question, 
-[search the issue tracker](https://github.com/Verites/verigraph/issues?q=something) to see if
-someone else in the community has already created a ticket. If not, go ahead and
-[make one](https://github.com/Verites/verigraph/issues/new).
+If you've noticed a bug or have a question,
+[search the issue tracker](https://github.com/Verites/verigraph/issues?q=something)
+to see if someone else in the community has already created a ticket.
+If not, go ahead a[make one](https://github.com/Verites/verigraph/issues/new).
 
 ## 2. Fork & create a branch
 
@@ -47,18 +47,15 @@ stack build
 
 ## 4. Did you find a bug?
 
-
 * **Ensure the bug was not already reported** by searching on GitHub under
-[Issues](https://github.com/Verites/verigraph/issues).
-
+  [Issues](https://github.com/Verites/verigraph/issues).
 
 * If you're unable to find an open issue addressing the problem,
-[open a new one](https://github.com/Verites/verigraph/issues/new).
-Be sure to include a **title and clear description**, as much relevant
-information as possible,
-and a **code sample** or an **executable test case** demonstrating the expected
-behavior that is not occurring.
-
+  [open a new one](https://github.com/Verites/verigraph/issues/new).
+  Be sure to include a **title and clear description**, as much relevant
+  information as possible,
+  and a **code sample** or an **executable test case** demonstrating the expected
+  behavior that is not occurring.
 
 ## 5. Implement your fix or feature
 
