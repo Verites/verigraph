@@ -21,6 +21,9 @@ type NodeWithTypeId = (NodeType,Id)
 type EdgeWithTypeId = (EdgeType,Id)
 type GraphTypes = ([NodeWithTypeId],[EdgeWithTypeId])
 
+specialWords :: [String]
+specialWords = ["new:","del:","not:"]
+
 getNodeId :: [NodeWithId] -> Node -> Id
 getNodeId nodes node =
   fromMaybe
@@ -46,47 +49,52 @@ processTypeGraphEdges (((_,_,label),id):edges) =
     addFst z (x,y) = (z:x,y)
     addSnd z (x,y) = (x,z:y)
 
--- process rule graphs
-processEdges :: [NodeWithId] -> [NodeWithId] -> [EdgeWithId] -> [ProcessedEdge]
-processEdges _ _ [] = []
-processEdges types nodes (((from,to,label),id):directedEdges) =
-  (id, sourceId, targetId, edgeType, verify label) : processEdges types nodes directedEdges
+processRuleGraph :: GraphTypes -> NamedRuleGraph -> ([ProcessedNode],[ProcessedEdge])
+processRuleGraph (nodeTypes,edgeTypes) rule = (processedNodes, processedEdges)
   where
-    sourceId = getNodeId nodes from
-    targetId = getNodeId nodes to
-    edgeType = getNodeId types (normalizeLabel label)
-    verify ('n':'e':'w':':':_) = Creation
-    verify ('d':'e':'l':':':_) = Deletion
-    verify ('n':'o':'t':':':_) = Forbidden
-    verify _ = Preservation
-
-processNodes :: [NodeWithId] -> [NodeWithId] -> [EdgeWithId] -> [EdgeWithId] -> [ProcessedNode]
-processNodes types nodes ruleEdges typingEdges =
-  processCreatedDeletedNodes types nodes typingEdges ruleEdges ++
-  processPreservedNodes types nodes ruleEdges typingEdges
-
-processCreatedDeletedNodes :: [NodeWithId] -> [NodeWithId] -> [EdgeWithId] -> [EdgeWithId] -> [ProcessedNode]
-processCreatedDeletedNodes _ _ _ [] = []
-processCreatedDeletedNodes types nodes typingEdges (((node,_,label),_):ruleEdges) =
-  (nodeId, nodeType, verify label) : processCreatedDeletedNodes types nodes typingEdges ruleEdges
-  where
-    ((n2,_,l2),_) = head [x | x@((n,_,l),_) <- typingEdges, "type:" `isPrefixOf` l, n == node]
+    (nodes,edges) = snd rule
+    (typeYes,typeNo) = partition (\((_,_,label),_) -> isPrefixOf "type:" label) edges
+    (nonPreservNodes,edgs) = partition (\((_,_,label),_) -> (label `elem` specialWords)) typeNo
     
-    nodeId = getNodeId nodes n2
-    nodeType = getNodeId types (normalizeLabel l2)
-    
-    verify "new:" = Creation
-    verify "del:" = Deletion
-    verify "not:" = Forbidden
-    verify msg = error ("processCreatedDeletedNodes: verify " ++ show msg) 
+    processedNodes = processNodes nodeTypes typeYes nonPreservNodes nodes
+    processedEdges = processEdges edgeTypes nodes nonPreservNodes edgs
 
-processPreservedNodes :: [NodeWithId] -> [NodeWithId] -> [EdgeWithId] -> [EdgeWithId] -> [ProcessedNode]
-processPreservedNodes _ _ _ [] = []
-processPreservedNodes types nodes ruleEdges (((node,_,label),_):typingEdges) =
-  if nodeWasCreatedDeleted
-    then processPreservedNodes types nodes ruleEdges typingEdges
-    else (nodeId, nodeType, Preservation) : processPreservedNodes types nodes ruleEdges typingEdges
+processEdges :: [EdgeWithTypeId] -> [NodeWithId] -> [EdgeWithId] -> [EdgeWithId] -> [ProcessedEdge]
+processEdges _ _ _ [] = []
+processEdges edgeTypes nodes nonPreservNodes (((nsrc,ntgt,label),id):edges) =
+  (id, srcId, tgtId, edgeType, cond) : processEdges edgeTypes nodes nonPreservNodes edges
   where
-    nodeId = getNodeId nodes node
-    nodeType = getNodeId types (normalizeLabel label)
-    nodeWasCreatedDeleted = Prelude.not (Prelude.null [x | x@((n2,_,_),_) <- ruleEdges, n2 == node])
+    (srcId:_) = [idn_ | (n,idn_) <- nodes, n == nsrc]
+    (tgtId:_) = [idn_ | (n,idn_) <- nodes, n == ntgt]
+    
+    (edgeType:_) = [ide_ | (e,ide_) <- edgeTypes, e == normalizeLabel label]
+    
+    cond = if ':' `elem` label
+             then (if takeWhile (':' /=) label == "del" then Deletion else Creation)
+             else checkNacSrcTgt
+    
+    checkNacSrcTgt
+      | srctgtForbidn = Forbidden
+      | srctgtDeleted = Deletion
+      | srctgtCreated = Creation
+      | otherwise = Preservation
+    
+    srctgtForbidn = not (null [lbl | ((node,_,lbl),_) <- nonPreservNodes, lbl == "not:", node == nsrc || node == ntgt])
+    srctgtDeleted = not (null [lbl | ((node,_,lbl),_) <- nonPreservNodes, lbl == "del:", node == nsrc || node == ntgt])
+    srctgtCreated = not (null [lbl | ((node,_,lbl),_) <- nonPreservNodes, lbl == "new:", node == nsrc || node == ntgt])
+
+processNodes :: [NodeWithTypeId] -> [EdgeWithId] -> [EdgeWithId] -> [NodeWithId] -> [ProcessedNode]
+processNodes _ _ _ [] = []
+processNodes types typeYes nonPreservNodes ((node,id):nodes) =
+  (id, nodeType, cond) : processNodes types typeYes nonPreservNodes nodes
+  where
+    (nodeTypeLabel:_) = [lbl | ((n,_,lbl),_) <- typeYes, n == node]
+    (nodeType:_) = [idt | (name,idt) <- types, name == normalizeLabel nodeTypeLabel]
+    
+    c = [c_ | ((nt_,_,c_),_) <- nonPreservNodes, nt_ == node]
+    cond
+      | null c = Preservation
+      | head c == "del:" = Deletion
+      | head c == "new:" = Creation
+      | head c == "not:" = Forbidden
+      | otherwise = error ("processNodes: " ++ show c)
