@@ -9,6 +9,7 @@
 
 Software specification and verification tool based on graph rewriting.
 
+[![Version](https://img.shields.io/github/release/Verites/verigraph.svg)](https://github.com/Verites/verigraph/releases/latest)
 [![DOI](https://zenodo.org/badge/22760294.svg)](https://zenodo.org/badge/latestdoi/22760294)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/Verites/verigraph/blob/master/LICENSE)
 
