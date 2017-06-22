@@ -16,7 +16,9 @@ import           Abstract.Rewriting.DPO
 import           Abstract.Rewriting.DPO.Process                           hiding (productions)
 import           Analysis.Processes
 import           Base.Valid
+import           Category.TypedGraphRule
 import qualified Data.TypedGraph                                          as TG
+import           Data.TypedGraph.Morphism
 import           Rewriting.DPO.TypedGraph.GraphProcess
 import           Rewriting.DPO.TypedGraph.GraphProcess.OccurrenceRelation
 import qualified XML.GGXReader                                            as XML
@@ -49,12 +51,14 @@ execute globalOpts opts = do
 sequenceName :: (String, r, o) -> String
 sequenceName (a,_,_ ) = a
 
+mainFunction :: Options -> RuleSequence (TypedGraphMorphism a b) -> Grammar (RuleMorphism a b)
+                      -> String -> [(String, String)] -> IO ()
 mainFunction opts sq gg2 ggName names = do
-  let colimit = calculateRulesColimit $ sq
+  let colimit = calculateRulesColimit sq
       conflictsAndDependencies = findConflictsAndDependencies colimit
       inducedByNacs = filterInducedByNacs (eliminateSelfConflictsAndDependencies conflictsAndDependencies)
       sqName = sequenceName sq
-      ogg = generateDoublyTypedGrammar $ sq
+      ogg = generateDoublyTypedGrammar sq
       sgg = singleTypedGrammar ogg
       completeOgg = calculateNacRelations ogg inducedByNacs
       newRules = productions . singleTypedGrammar $ ogg
