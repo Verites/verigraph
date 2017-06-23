@@ -17,7 +17,7 @@ import           XML.GPSReader.GTXLPreProcessing
 
 readGrammar :: String -> IO (Grammar (TypedGraphMorphism a b))
 readGrammar fileName = do
-  print fileName
+  --print fileName
   files <- getDirectoryContents fileName
   
   -- system.properties file
