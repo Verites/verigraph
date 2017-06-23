@@ -41,8 +41,8 @@ readGrammar fileName = do
   -- initial state, it uses the rule parser to get the initial state
   let stateGraphPathName = fileName ++ "/" ++ stateGraphName ++ ".gst"
   stateGraph <- parseGPR stateGraphPathName
-  let (_,state) = instatiateOneRule typeGraph typesWithId stateGraph
-      initialState = domainGraph (getLHS state)
+  let (_,stateRule) = instatiateOneRule typeGraph typesWithId stateGraph
+      initialState = domainGraph (getLHS stateRule)
   
   -- rules
   let ruleNames = filter (\name -> takeExtension name == ".gpr") files
@@ -50,8 +50,6 @@ readGrammar fileName = do
   parsedRules <- mapM parseGPR rulePathNames
   
   let rules = instatiateRules typeGraph typesWithId parsedRules
-  
-  print rules
   
   ensureValid $ validateNamed (\name -> "Rule '"++name++"'") rules
   _ <- (L.null rules && error "No first order productions were found, at least one is needed.") `seq` return ()
@@ -68,20 +66,18 @@ getOption systemProperties string = tail (L.dropWhile (/= '=') unique)
                []    -> error ("error, '" ++ string ++ "' not found")
                ptg:_ -> ptg
 
-instatiateTypeGraph :: NamedRuleGraph -> G.Graph (Maybe a) (Maybe b)
-instatiateTypeGraph (_,(_,types)) = G.build nodesToBuild edgesToBuild
+instatiateTypeGraph :: ParsedRuleGraph -> G.Graph (Maybe n) (Maybe e)
+instatiateTypeGraph (_,(nodes,types)) = G.build nodesToBuild edgesToBuild
   where
-    (nodes,edges) = L.partition (\((_,_,label),_) -> L.isPrefixOf "type:" label) types
+    (_,edges) = L.partition (\((_,_,label),_) -> L.isPrefixOf "type:" label) types
     nodesToBuild = map snd nodes
-    edgesToBuild = map (\((src,tgt,_),id) -> (id, getNodeType nodes src, getNodeType nodes tgt)) edges
+    edgesToBuild = map (\((src,tgt,_),id) -> (id, idt src, idt tgt)) edges
+    idt name = head [nid | (node,nid) <- nodes, node == name]
 
-getNodeType :: [EdgeWithId] -> Node -> Id
-getNodeType nodes node = head [id | ((name,_,_),id) <- nodes, node == name]
-
-instatiateRules :: G.Graph (Maybe a) (Maybe b) -> GraphTypes -> [NamedRuleGraph] -> [(RuleName, TypedGraphRule a b)]
+instatiateRules :: G.Graph (Maybe a) (Maybe b) -> ProcessedTypeGraph -> [ParsedRuleGraph] -> [(String, TypedGraphRule a b)]
 instatiateRules typeGraph typesWithId = map (instatiateOneRule typeGraph typesWithId)
 
-instatiateOneRule :: G.Graph (Maybe a) (Maybe b) -> GraphTypes -> NamedRuleGraph -> (RuleName, TypedGraphRule a b)
+instatiateOneRule :: G.Graph (Maybe a) (Maybe b) -> ProcessedTypeGraph -> ParsedRuleGraph -> (String, TypedGraphRule a b)
 instatiateOneRule typeGraph types rule = (fst rule, instatiateRule typeGraph processedNodes processedEdges)
   where
     (processedNodes,processedEdges) = processRuleGraph types rule
@@ -119,9 +115,9 @@ addsDeletionNode nodeId ntype r =
     (TGM.createNodeOnCodomain (G.NodeId nodeId) (G.NodeId ntype) (getLHS r))
     (getRHS r)
     (map
-      (\n -> TGM.createNodeOnCodomain (G.NodeId nodeId) (G.NodeId ntype)
-               (TGM.createNodeOnDomain (G.NodeId nodeId) (G.NodeId ntype) (G.NodeId nodeId) n))
-      (getNACs r))
+      (TGM.createNodeOnCodomain (G.NodeId nodeId) (G.NodeId ntype) .
+        TGM.createNodeOnDomain (G.NodeId nodeId) (G.NodeId ntype) (G.NodeId nodeId))
+    (getNACs r))
 
 addsForbiddenNode :: NodeId -> NodeTypeId -> TypedGraphRule a b -> TypedGraphRule a b
 addsForbiddenNode nodeId ntype r =
@@ -145,8 +141,8 @@ addsPreservationNode nodeId ntype r =
     (TGM.createNodeOnCodomain (G.NodeId nodeId) (G.NodeId ntype)
       (TGM.createNodeOnDomain (G.NodeId nodeId) (G.NodeId ntype) (G.NodeId nodeId) (getRHS r)))
     (map
-      (\n -> TGM.createNodeOnCodomain (G.NodeId nodeId) (G.NodeId ntype)
-               (TGM.createNodeOnDomain (G.NodeId nodeId) (G.NodeId ntype) (G.NodeId nodeId) n))
+      (TGM.createNodeOnCodomain (G.NodeId nodeId) (G.NodeId ntype) .
+         TGM.createNodeOnDomain (G.NodeId nodeId) (G.NodeId ntype) (G.NodeId nodeId))
       (getNACs r))
 
 addsDeletionEdge :: EdgeId -> NodeId -> NodeId -> EdgeTypeId -> TypedGraphRule a b -> TypedGraphRule a b
@@ -155,8 +151,8 @@ addsDeletionEdge edgeId src tgt etype r =
     (TGM.createEdgeOnCodomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype) (getLHS r))
     (getRHS r)
     (map
-      (\n -> TGM.createEdgeOnCodomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype)
-               (TGM.createEdgeOnDomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype) (G.EdgeId edgeId) n))
+      (TGM.createEdgeOnCodomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype) .
+        TGM.createEdgeOnDomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype) (G.EdgeId edgeId))
       (getNACs r))
 
 addsForbiddenEdge :: EdgeId -> NodeId -> NodeId -> EdgeTypeId -> TypedGraphRule a b -> TypedGraphRule a b
@@ -181,6 +177,6 @@ addsPreservationEdge edgeId src tgt etype r =
     (TGM.createEdgeOnCodomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype)
       (TGM.createEdgeOnDomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype) (G.EdgeId edgeId) (getRHS r)))
     (map
-      (\n -> TGM.createEdgeOnCodomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype)
-               (TGM.createEdgeOnDomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype) (G.EdgeId edgeId) n))
+      (TGM.createEdgeOnCodomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype) .
+        TGM.createEdgeOnDomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype) (G.EdgeId edgeId))
       (getNACs r))

@@ -12,19 +12,24 @@ type NodeTypeId = Id
 type EdgeId = Id
 type EdgeTypeId = Id
 
-type ProcessedNode = (NodeId,NodeTypeId,ElementCondition)
-type ProcessedEdge = (EdgeTypeId,NodeId,NodeId,EdgeTypeId,ElementCondition)
-
 type NodeType = String
 type EdgeType = String
 type NodeWithTypeId = (NodeType,Id)
-type EdgeWithTypeId = (EdgeType,Id)
-type GraphTypes = ([NodeWithTypeId],[EdgeWithTypeId])
+
+-- rule types
+type ProcessedNode = (NodeId,NodeTypeId,ElementCondition)
+type ProcessedEdge = (EdgeTypeId,NodeId,NodeId,EdgeTypeId,ElementCondition)
+type ProcessedRuleGraph = ([ProcessedNode],[ProcessedEdge])
+
+-- type graph types
+type TypeGraphNode = NodeWithTypeId
+type TypeGraphEdge = (Id, Id, Label, EdgeTypeId)
+type ProcessedTypeGraph = ([TypeGraphNode],[TypeGraphEdge])
 
 specialWords :: [String]
 specialWords = ["new:","del:","not:"]
 
-getNodeId :: [NodeWithId] -> Node -> Id
+getNodeId :: [ParsedNode] -> Node -> Id
 getNodeId nodes node =
   fromMaybe
     (error ("getNodeId error: " ++ show node ++ " -> " ++ show nodes))
@@ -34,61 +39,71 @@ normalizeLabel :: Label -> Label
 normalizeLabel label = if ':' `elem` label then tail (dropWhile (/= ':') label) else label
 
 -- process type graph
-processTypeGraph :: NamedRuleGraph -> GraphTypes
-processTypeGraph (_,(_,edges)) = processTypeGraphEdges edges
+processTypeGraph :: ParsedRuleGraph -> ProcessedTypeGraph
+processTypeGraph (_,(nodes,edges)) = processTypeGraphEdges nodes edges
 
-processTypeGraphEdges :: [EdgeWithId] -> GraphTypes
-processTypeGraphEdges [] = ([],[])
-processTypeGraphEdges (((_,_,label),id):edges) =
+processTypeGraphEdges :: [ParsedNode] -> [ParsedEdge] -> ProcessedTypeGraph
+processTypeGraphEdges _ [] = ([],[])
+processTypeGraphEdges nodes (((src,tgt,label),id):edges) =
   (if "type:" `isPrefixOf` label
-    then addFst (normalizeLabel label,id)
-    else addSnd (label,id)
+    then addFst (normalizeLabel label, idt src)
+    else addSnd (idt src, idt tgt, label, id)
   )
-  (processTypeGraphEdges edges)
+  (processTypeGraphEdges nodes edges)
   where
     addFst z (x,y) = (z:x,y)
     addSnd z (x,y) = (x,z:y)
+    idt name = head [nid | (node,nid) <- nodes, node == name]
 
-processRuleGraph :: GraphTypes -> NamedRuleGraph -> ([ProcessedNode],[ProcessedEdge])
-processRuleGraph (nodeTypes,edgeTypes) rule = (processedNodes, processedEdges)
+processRuleGraph :: ProcessedTypeGraph -> ParsedRuleGraph -> ProcessedRuleGraph
+processRuleGraph tg@(nodeTypes,_) rule = (processedNodes, processedEdges)
   where
     (nodes,edges) = snd rule
-    (typeYes,typeNo) = partition (\((_,_,label),_) -> isPrefixOf "type:" label) edges
+    (ruleTyping,typeNo) = partition (\((_,_,label),_) -> isPrefixOf "type:" label) edges
     (nonPreservNodes,edgs) = partition (\((_,_,label),_) -> (label `elem` specialWords)) typeNo
     
-    processedNodes = processNodes nodeTypes typeYes nonPreservNodes nodes
-    processedEdges = processEdges edgeTypes nodes nonPreservNodes edgs
+    processedNodes = processNodes nodeTypes ruleTyping nonPreservNodes nodes
+    processedEdges = processEdges tg ruleTyping nodes nonPreservNodes edgs
 
-processEdges :: [EdgeWithTypeId] -> [NodeWithId] -> [EdgeWithId] -> [EdgeWithId] -> [ProcessedEdge]
-processEdges _ _ _ [] = []
-processEdges edgeTypes nodes nonPreservNodes (((nsrc,ntgt,label),id):edges) =
-  (id, srcId, tgtId, edgeType, cond) : processEdges edgeTypes nodes nonPreservNodes edges
+processEdges :: ProcessedTypeGraph -> [ParsedEdge] -> [NodeWithTypeId] -> [ParsedEdge] -> [ParsedEdge] -> [ProcessedEdge]
+processEdges _ _ _ _ [] = []
+processEdges (nodeTypes,edgeTypes) ruleTyping nodes nonPreservNodes (((nsrc,ntgt,label),id):edges) =
+  (id, idt nsrc, idt ntgt, edgeType, edgeCondition) : processEdges (nodeTypes,edgeTypes) ruleTyping nodes nonPreservNodes edges
   where
-    (srcId:_) = [idn_ | (n,idn_) <- nodes, n == nsrc]
-    (tgtId:_) = [idn_ | (n,idn_) <- nodes, n == ntgt]
+    idt name = head [idn_ | (n,idn_) <- nodes, n == name]
     
-    (edgeType:_) = [ide_ | (e,ide_) <- edgeTypes, e == normalizeLabel label]
+    (edgeType:_) = [ide_ |
+                     (src_,tgt_,lbl_,ide_) <- edgeTypes,
+                     src_ == getTypeLabel nsrc,
+                     tgt_ == getTypeLabel ntgt,
+                     lbl_ == normalizeLabel label]
     
-    cond = if ':' `elem` label
-             then (if takeWhile (':' /=) label == "del" then Deletion else Creation)
-             else checkNacSrcTgt
+    getTypeLabel name = head [idt | (lbl,idt) <- nodeTypes, lbl == typeName]
+      where
+        typeName = head [normalizeLabel lbl | ((n,_,lbl),_) <- ruleTyping, n == name]
+    
+    edgeCondition
+      | ':' `elem` label =
+        case takeWhile (':' /=) label of
+          "del" -> Deletion
+          "new" -> Creation
+          _      -> error "processEdges: edgeCondition invalid"
+      | otherwise        = checkNacSrcTgt
     
     checkNacSrcTgt
-      | srctgtForbidn = Forbidden
-      | srctgtDeleted = Deletion
-      | srctgtCreated = Creation
+      | srctgtCondition "not:" = Forbidden
+      | srctgtCondition "del:" = Deletion
+      | srctgtCondition "new:" = Creation
       | otherwise = Preservation
     
-    srctgtForbidn = not (null [lbl | ((node,_,lbl),_) <- nonPreservNodes, lbl == "not:", node == nsrc || node == ntgt])
-    srctgtDeleted = not (null [lbl | ((node,_,lbl),_) <- nonPreservNodes, lbl == "del:", node == nsrc || node == ntgt])
-    srctgtCreated = not (null [lbl | ((node,_,lbl),_) <- nonPreservNodes, lbl == "new:", node == nsrc || node == ntgt])
+    srctgtCondition str = not (null [lbl | ((node,_,lbl),_) <- nonPreservNodes, lbl == str, node == nsrc || node == ntgt])
 
-processNodes :: [NodeWithTypeId] -> [EdgeWithId] -> [EdgeWithId] -> [NodeWithId] -> [ProcessedNode]
+processNodes :: [NodeWithTypeId] -> [ParsedEdge] -> [ParsedEdge] -> [ParsedNode] -> [ProcessedNode]
 processNodes _ _ _ [] = []
-processNodes types typeYes nonPreservNodes ((node,id):nodes) =
-  (id, nodeType, cond) : processNodes types typeYes nonPreservNodes nodes
+processNodes types ruleTyping nonPreservNodes ((node,id):nodes) =
+  (id, nodeType, cond) : processNodes types ruleTyping nonPreservNodes nodes
   where
-    (nodeTypeLabel:_) = [lbl | ((n,_,lbl),_) <- typeYes, n == node]
+    (nodeTypeLabel:_) = [lbl | ((n,_,lbl),_) <- ruleTyping, n == node]
     (nodeType:_) = [idt | (name,idt) <- types, name == normalizeLabel nodeTypeLabel]
     
     c = [c_ | ((nt_,_,c_),_) <- nonPreservNodes, nt_ == node]

@@ -13,13 +13,13 @@ type RuleName = String
 type Node = String
 type Id = Int
 type Edge = (Node,Node,Label)
-type NodeWithId = (Node, Id)
-type EdgeWithId = (Edge, Id)
-type RuleGraph = ([NodeWithId], [EdgeWithId])
-type NamedRuleGraph = (RuleName,RuleGraph)
+type ParsedNode = (Node, Id)
+type ParsedEdge = (Edge, Id)
+type RuleGraph = ([ParsedNode], [ParsedEdge])
+type ParsedRuleGraph = (RuleName,RuleGraph)
 
 -- | Parses a Groove Production Rule (.gpr)
-parseGPR :: String -> IO NamedRuleGraph
+parseGPR :: String -> IO ParsedRuleGraph
 parseGPR pathName = do
   [rule] <- parseRule pathName
   let ruleName = dropExtension (takeFileName pathName)
