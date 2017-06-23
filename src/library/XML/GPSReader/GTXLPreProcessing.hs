@@ -1,11 +1,22 @@
-module XML.GPSReader.GTXLPreProcessing where
+module XML.GPSReader.GTXLPreProcessing
+  ( processTypeGraph
+  , processRuleGraph
+  , ElementCondition (..)
+  , NodeId
+  , NodeTypeId
+  , EdgeId
+  , EdgeTypeId
+  , EdgeType
+  , ProcessedNode
+  , ProcessedEdge
+  , ProcessedTypeGraph
+  ) where
 
-import           Data.List
-import           Data.Maybe                    (fromMaybe)
+import           Data.List                 (isPrefixOf, partition)
 
 import           XML.GPSReader.GTXLParseIn
 
-data ElementCondition = Creation | Deletion | Preservation | Forbidden deriving(Eq,Show)
+data ElementCondition = Creation | Deletion | Preservation | Forbidden
 
 type NodeId = Id
 type NodeTypeId = Id
@@ -26,14 +37,11 @@ type TypeGraphNode = NodeWithTypeId
 type TypeGraphEdge = (Id, Id, Label, EdgeTypeId)
 type ProcessedTypeGraph = ([TypeGraphNode],[TypeGraphEdge])
 
-specialWords :: [String]
-specialWords = ["new:","del:","not:"]
+specialLabels :: [String]
+specialLabels = ["new:","del:","not:"]
 
-getNodeId :: [ParsedNode] -> Node -> Id
-getNodeId nodes node =
-  fromMaybe
-    (error ("getNodeId error: " ++ show node ++ " -> " ++ show nodes))
-    (lookup node nodes)
+ignoredLabels :: [String]
+ignoredLabels = ["use:"]
 
 normalizeLabel :: Label -> Label
 normalizeLabel label = if ':' `elem` label then tail (dropWhile (/= ':') label) else label
@@ -43,32 +51,46 @@ processTypeGraph :: ParsedRuleGraph -> ProcessedTypeGraph
 processTypeGraph (_,(nodes,edges)) = processTypeGraphEdges nodes edges
 
 processTypeGraphEdges :: [ParsedNode] -> [ParsedEdge] -> ProcessedTypeGraph
-processTypeGraphEdges _ [] = ([],[])
-processTypeGraphEdges nodes (((src,tgt,label),id):edges) =
-  (if "type:" `isPrefixOf` label
+processTypeGraphEdges nodes = foldr (processTypeGraphEdge nodes) ([],[])
+
+processTypeGraphEdge :: [ParsedNode] -> ParsedEdge -> ProcessedTypeGraph -> ProcessedTypeGraph
+processTypeGraphEdge nodes ((src,tgt,label),id) =
+  if "type:" `isPrefixOf` label
     then addFst (normalizeLabel label, idt src)
     else addSnd (idt src, idt tgt, label, id)
-  )
-  (processTypeGraphEdges nodes edges)
   where
     addFst z (x,y) = (z:x,y)
     addSnd z (x,y) = (x,z:y)
     idt name = head [nid | (node,nid) <- nodes, node == name]
 
 processRuleGraph :: ProcessedTypeGraph -> ParsedRuleGraph -> ProcessedRuleGraph
-processRuleGraph tg@(nodeTypes,_) rule = (processedNodes, processedEdges)
+processRuleGraph tg@(nodeTypes,_) rule = (processedNodes,processedEdges)
   where
     (nodes,edges) = snd rule
-    (ruleTyping,typeNo) = partition (\((_,_,label),_) -> isPrefixOf "type:" label) edges
-    (nonPreservNodes,edgs) = partition (\((_,_,label),_) -> (label `elem` specialWords)) typeNo
+    
+    removedIgnoredLabels = map adjustIgnoredLabels (filter removeIgnoredLabels edges)
+    
+    (ruleTyping,typeNo) = partition (\((_,_,label),_) -> isPrefixOf "type:" label) removedIgnoredLabels
+    (nonPreservNodes,edgs) = partition (\((_,_,label),_) -> (label `elem` specialLabels)) typeNo
     
     processedNodes = processNodes nodeTypes ruleTyping nonPreservNodes nodes
     processedEdges = processEdges tg ruleTyping nodes nonPreservNodes edgs
 
+removeIgnoredLabels :: ParsedEdge -> Bool
+removeIgnoredLabels ((_,_,label),_) = label `notElem` ignoredLabels
+
+adjustIgnoredLabels :: ParsedEdge -> ParsedEdge
+adjustIgnoredLabels e@((src,tgt,label),id) =
+  if any (`isPrefixOf` label) ignoredLabels
+    then ((src, tgt, normalizeLabel label), id)
+    else e
+
 processEdges :: ProcessedTypeGraph -> [ParsedEdge] -> [NodeWithTypeId] -> [ParsedEdge] -> [ParsedEdge] -> [ProcessedEdge]
-processEdges _ _ _ _ [] = []
-processEdges (nodeTypes,edgeTypes) ruleTyping nodes nonPreservNodes (((nsrc,ntgt,label),id):edges) =
-  (id, idt nsrc, idt ntgt, edgeType, edgeCondition) : processEdges (nodeTypes,edgeTypes) ruleTyping nodes nonPreservNodes edges
+processEdges tg ruleTyping nodes nonPreservNodes = map (processEdge tg ruleTyping nodes nonPreservNodes)
+
+processEdge :: ProcessedTypeGraph -> [ParsedEdge] -> [NodeWithTypeId] -> [ParsedEdge] -> ParsedEdge -> ProcessedEdge
+processEdge (nodeTypes,edgeTypes) ruleTyping nodes nonPreservNodes ((nsrc,ntgt,label),id) =
+  (id, idt nsrc, idt ntgt, edgeType, edgeCondition)
   where
     idt name = head [idn_ | (n,idn_) <- nodes, n == name]
     
@@ -99,9 +121,10 @@ processEdges (nodeTypes,edgeTypes) ruleTyping nodes nonPreservNodes (((nsrc,ntgt
     srctgtCondition str = not (null [lbl | ((node,_,lbl),_) <- nonPreservNodes, lbl == str, node == nsrc || node == ntgt])
 
 processNodes :: [NodeWithTypeId] -> [ParsedEdge] -> [ParsedEdge] -> [ParsedNode] -> [ProcessedNode]
-processNodes _ _ _ [] = []
-processNodes types ruleTyping nonPreservNodes ((node,id):nodes) =
-  (id, nodeType, cond) : processNodes types ruleTyping nonPreservNodes nodes
+processNodes types ruleTyping nonPreservNodes = map (processNode types ruleTyping nonPreservNodes)
+
+processNode :: [NodeWithTypeId] -> [ParsedEdge] -> [ParsedEdge] -> ParsedNode -> ProcessedNode
+processNode types ruleTyping nonPreservNodes (node,id) = (id, nodeType, cond)
   where
     (nodeTypeLabel:_) = [lbl | ((n,_,lbl),_) <- ruleTyping, n == node]
     (nodeType:_) = [idt | (name,idt) <- types, name == normalizeLabel nodeTypeLabel]

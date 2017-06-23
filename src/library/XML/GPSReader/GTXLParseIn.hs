@@ -1,10 +1,19 @@
 {-# LANGUAGE Arrows #-}
 
-module XML.GPSReader.GTXLParseIn where
+module XML.GPSReader.GTXLParseIn
+  ( parseGPR
+  , Label
+  , Node
+  , Id
+  , ParsedNode
+  , ParsedEdge
+  , RuleGraph
+  , ParsedRuleGraph
+  ) where
 
 import           Data.Tree.NTree.TypeDefs
 import           Text.XML.HXT.Core
-import           System.FilePath
+import           System.FilePath          (dropExtension, takeFileName)
 
 import           XML.XMLUtilities
 

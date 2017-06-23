@@ -19,6 +19,8 @@ library
   other-extensions:    TypeFamilies, MultiParamTypeClasses, FlexibleContexts
   build-depends:       base >=4.8 && <4.10,
                        containers >=0.4 && <0.6,
+                       directory >= 1.3,
+                       filepath >= 1.4,
                        hxt >=9.3.1.15 && <9.4,
                        mtl >=2.2 && <2.3,
                        parsec >=3.1 && <3.2,
@@ -26,8 +28,6 @@ library
                        semigroups >= 0.18,
                        set-monad >= 0.2,
                        split >= 0.2,
-                       directory >= 1.3,
-                       filepath >= 1.4,
                        wl-pprint >=1.2 && <1.3
   exposed-modules:     Abstract.Category.AdhesiveHLR
                        Abstract.Category.AdhesiveHLR.Constraint
