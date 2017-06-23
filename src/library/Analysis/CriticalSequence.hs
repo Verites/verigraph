@@ -9,6 +9,7 @@ module Analysis.CriticalSequence
 
    -- * Finding Critical Sequences
    findTriggeredCriticalSequences,
+   findCriticalSequences,
    namedCriticalSequences,
    findAllProduceUse,
    findAllRemoveDangling,
