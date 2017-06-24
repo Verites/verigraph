@@ -1,4 +1,4 @@
-module XML.GPSReader.GTXLReaderSpec where
+module XML.GPRReader.GXLReaderSpec where
 
 import           Data.List
 import           Data.Matrix                      hiding ((<|>))
@@ -9,7 +9,7 @@ import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
 import           Category.TypedGraphRule.JointlyEpimorphisms
 import qualified XML.GGXReader                    as XML
-import qualified XML.GPSReader.GTXLReader         as GPS
+import qualified XML.GPRReader.GXLReader          as GPR
 
 fileName1 = "tests/grammars/pacman2.ggx"
 fileName2 = "tests/grammars/pacman.gps"
@@ -17,21 +17,21 @@ fileName2 = "tests/grammars/pacman.gps"
 dpoConf = MorphismsConfig AnyMatches MonomorphicNAC
 
 spec :: Spec
-spec = context "GPS Reader Test" gpsTest
+spec = context "GPR Reader Test" gprTest
 
-gpsTest :: Spec
-gpsTest = do
-    it "Pacman grammar CPA analysis must be equal on GGX and GPS files" $ do
+gprTest :: Spec
+gprTest = do
+    it "Pacman grammar CPA analysis must be equal on GGX and GPR files" $ do
       (ggGGX,_,_) <- XML.readGrammar fileName1 False dpoConf
-      (ggGPS,_) <- GPS.readGrammar fileName2
+      (ggGPR,_) <- GPR.readGrammar fileName2
       
       let rulesGGX = map snd (sortRules (productions ggGGX))
-          rulesGPS = map snd (sortRules (productions ggGPS))
+          rulesGPR = map snd (sortRules (productions ggGPR))
           
           sortRules = sortBy (\(a,_) (b,_) -> compare a b)
       
-      (pairwise (findCriticalPairs dpoConf) rulesGPS) `shouldBe` pairwise (findCriticalPairs dpoConf) rulesGGX
-      (pairwise (findCriticalSequences dpoConf) rulesGPS) `shouldBe` pairwise (findCriticalSequences dpoConf) rulesGGX
+      (pairwise (findCriticalPairs dpoConf) rulesGPR) `shouldBe` pairwise (findCriticalPairs dpoConf) rulesGGX
+      (pairwise (findCriticalSequences dpoConf) rulesGPR) `shouldBe` pairwise (findCriticalSequences dpoConf) rulesGGX
 
 pairwise :: (a -> a -> [b]) -> [a] -> Matrix Int
 pairwise f items =

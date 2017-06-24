@@ -1,25 +1,19 @@
-{-# LANGUAGE TypeFamilies #-}
-
 module Main (main) where
 
-import           Data.Monoid                        ((<>))
-import           GlobalOptions
+import           Data.Matrix                           hiding ((<|>))
+import           Data.Monoid                           ((<>))
 import           Options.Applicative
 
+import           Abstract.Category.FinitaryCategory
 import           Abstract.Category.JointlyEpimorphisms
-import           Abstract.Rewriting.DPO
+import           Abstract.Rewriting.DPO                as DPO
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
 import           Analysis.EssentialCriticalPairs
-import           Control.Monad                         (when)
-import           Data.Matrix                           hiding ((<|>))
-
-import           Abstract.Category.FinitaryCategory
-import           Abstract.Rewriting.DPO             as DPO hiding (NamedProduction)
+import           GlobalOptions
 import           Rewriting.DPO.TypedGraph
-
-import qualified XML.GPSReader.GTXLReader           as GPS
-import qualified XML.GGXWriter                      as GW
+import qualified XML.GPRReader.GXLReader               as GPR
+import qualified XML.GGXWriter                         as GW
 
 data AnalysisType = Conflicts | Dependencies | None deriving (Eq)
 
@@ -35,10 +29,10 @@ main =
 
 
 data Options = Options
-  { outputFile    :: Maybe String
+  { outputFile        :: Maybe String
   , criticalPairs     :: Bool
-  , essentialFlag :: Bool
   , criticalSequences :: Bool
+  , essentialFlag     :: Bool
   }
 
 options :: Parser Options
@@ -54,11 +48,11 @@ options = Options
     ( long "cpa"
     <> help "Runs the Critical Pairs analysis")
   <*> flag False True
-    ( long "essential"
-    <> help "Compute the Essential Critical Pairs analysis (Warning: not fully supported yet)")
-  <*> flag False True
     ( long "csa"
     <> help "Runs the Critical Sequences analysis")
+  <*> flag False True
+    ( long "essential"
+    <> help "Compute the Essential Critical Pairs analysis (Warning: not fully supported yet)")
 
 allOptions :: Parser (GlobalOptions, Options)
 allOptions =
@@ -69,14 +63,17 @@ allOptions =
 execute :: (GlobalOptions, Options) -> IO ()
 execute (globalOpts, options) =
   do
-    (fstOrderGrammar,names) <- GPS.readGrammar (inputFile globalOpts)
+    (fstOrderGrammar,names) <- GPR.readGrammar (inputFile globalOpts)
     
-    let ggName = GPS.readGGName (inputFile globalOpts)
+    putStrLn "Loading the graph grammar..."
+    putStrLn ""
+    
+    let ggName = GPR.readGGName (inputFile globalOpts)
         dpoConf = morphismsConf globalOpts
         action
-          | criticalPairs options = Conflicts
+          | criticalPairs options     = Conflicts
           | criticalSequences options = Dependencies
-          | otherwise = None
+          | otherwise                 = None
         
         essentialCP = essentialFlag options
         writer = defWriterFun essentialCP dpoConf action
@@ -84,6 +81,7 @@ execute (globalOpts, options) =
         namedRules = DPO.productions fstOrderGrammar
         rules = map snd namedRules
         
+        -- creates an empty second-order grammar for the writer function
         typeGraph = codomain (codomain (getLHS (head rules)))
         emptySndOrderGrammar = grammar (emptyGraphRule typeGraph) [] []
         
@@ -94,6 +92,9 @@ execute (globalOpts, options) =
           putStrLn "Warning: exporting conflicts/dependencies to .cpx not fully supported."
           writer (fstOrderGrammar,emptySndOrderGrammar) ggName names file
       Nothing -> analysis
+    
+    putStrLn ""
+    putStrLn "Bye!"
     
     return ()
 
@@ -116,11 +117,11 @@ printAnalysis essential action dpoConf rules =
   in mapM_
        putStrLn $
        (case (essential, action) of
-         (True, Conflicts)  -> essentialConfMatrix
+         (True , Conflicts) -> essentialConfMatrix
          (False, Conflicts) -> confMatrix
+         (_,  Dependencies) -> depMatrix
          _             -> []
        )
-       ++ (if action == Dependencies then depMatrix else [])
 
 -- Receives functions and theirs names,
 -- and returns they applicated to the rules

@@ -1,4 +1,4 @@
-module XML.GPSReader.GTXLPreProcessing
+module XML.GPRReader.GXLPreProcessing
   ( processTypeGraph
   , processRuleGraph
   , ElementCondition (..)
@@ -14,7 +14,7 @@ module XML.GPSReader.GTXLPreProcessing
 
 import           Data.List                 (isPrefixOf, partition)
 
-import           XML.GPSReader.GTXLParseIn
+import           XML.GPRReader.GXLParseIn
 
 data ElementCondition = Creation | Deletion | Preservation | Forbidden
 
@@ -109,7 +109,8 @@ processEdge (nodeTypes,edgeTypes) ruleTyping nodes nonPreservNodes ((nsrc,ntgt,l
         case takeWhile (':' /=) label of
           "del" -> Deletion
           "new" -> Creation
-          _      -> error "processEdges: edgeCondition invalid"
+          "not" -> Forbidden
+          msg   -> error ("processEdges: edgeCondition invalid (" ++ msg ++ ")")
       | otherwise        = checkNacSrcTgt
     
     checkNacSrcTgt

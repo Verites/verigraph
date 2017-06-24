@@ -1,6 +1,6 @@
 {-# LANGUAGE Arrows #-}
 
-module XML.GPSReader.GTXLParseIn
+module XML.GPRReader.GXLParseIn
   ( parseGPR
   , Label
   , Node
