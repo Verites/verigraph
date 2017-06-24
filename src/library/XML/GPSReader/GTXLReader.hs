@@ -1,4 +1,4 @@
-module XML.GPSReader.GTXLReader (readGrammar) where
+module XML.GPSReader.GTXLReader (readGrammar, readGGName) where
 
 import qualified Data.List                     as L
 import           System.Directory
@@ -15,9 +15,17 @@ import           Rewriting.DPO.TypedGraph      as GR
 import           XML.GPSReader.GTXLParseIn
 import           XML.GPSReader.GTXLPreProcessing
 
-readGrammar :: String -> IO (Grammar (TypedGraphMorphism a b))
+readGGName :: String -> String
+readGGName = removeExtension. removePath . removeLastSlash
+  where
+    removeExtension = takeWhile (/= '.')
+    removePath str = reverse (takeWhile (/= '/') (reverse str))
+    removeLastSlash str = if last str == '/' then init str else str
+
+type Names = [(String,String)]
+
+readGrammar :: String -> IO (Grammar (TypedGraphMorphism a b), Names)
 readGrammar fileName = do
-  --print fileName
   files <- getDirectoryContents fileName
   
   -- system.properties file
@@ -54,7 +62,16 @@ readGrammar fileName = do
   ensureValid $ validateNamed (\name -> "Rule '"++name++"'") rules
   _ <- (L.null rules && error "No first order productions were found, at least one is needed.") `seq` return ()
   
-  return (grammar initialState [] rules)
+  let instatiatedGrammar = grammar initialState [] rules
+      preparedNames = prepareNames typesWithId
+  
+  return (instatiatedGrammar, preparedNames)
+
+prepareNames :: ProcessedTypeGraph -> Names
+prepareNames (nodes,edges) = preparedNodes ++ preparedEdges
+  where
+    preparedNodes = map (\(lbl,id) -> ("I" ++ show id, lbl ++ "%:RECT:java.awt.Color[r=0,g=0,b=0]:[NODE]:")) nodes
+    preparedEdges = map (\(src,tgt,lbl,id) -> ("I" ++ show id, lbl ++ "(" ++ show src ++ "_" ++ show tgt ++ ")%:SOLID_LINE:java.awt.Color[r=0,g=0,b=0]:[EDGE]:")) edges
 
 -- Auxiliary function to read a text file with grammar properties 
 getOption :: String -> String -> String

@@ -23,7 +23,7 @@ gpsTest :: Spec
 gpsTest = do
     it "Pacman grammar CPA analysis must be equal on GGX and GPS files" $ do
       (ggGGX,_,_) <- XML.readGrammar fileName1 False dpoConf
-      ggGPS <- GPS.readGrammar fileName2
+      (ggGPS,_) <- GPS.readGrammar fileName2
       
       let rulesGGX = map snd (sortRules (productions ggGGX))
           rulesGPS = map snd (sortRules (productions ggGPS))
