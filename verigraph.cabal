@@ -150,3 +150,24 @@ test-suite HSpecTests
                        hspec >=2.4,
                        hspec-discover >=2.4,
                        HUnit >=1.3.1.2
+
+  other-modules:       Abstract.Category.CocompleteSpec
+                       Abstract.Rewriting.DPO.ProcessSpec
+                       Analysis.CriticalPairsSpec
+                       Analysis.CriticalSequenceSpec
+                       Analysis.EssentialCriticalPairsSpec
+                       Analysis.Interlevel.InterLevelCPSpec
+                       Analysis.ParallelIndependentSpec
+                       Data.Graphs.GraphMorphismSpec
+                       Data.GraphsSpec
+                       Data.PartitionSpec
+                       Data.TypedGraph.Morphism.FindMorphismSpec
+                       Data.TypedGraph.Morphism.FindMorphismSpec.FindCospanCommuterTest
+                       Data.TypedGraph.Morphism.FindMorphismSpec.FindMorphismsTest
+                       Data.TypedGraph.PartitionSpec
+                       HSpecTests
+                       Logic.Ctl.ModelCheckerSpec
+                       Logic.Ctl.ParserSpec
+                       Logic.Ctl.TestUtils
+                       Rewriting.DPO.TypedGraphRule.NacManipulationSpec
+                       Rewriting.DPO.TypedGraphRuleSpec

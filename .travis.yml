@@ -31,10 +31,10 @@ install:
 
 script:
 #Clean package to force a full build and avoid hpc report conflicts
-- stack -j 2 --no-terminal clean
+- stack -j 2 --no-terminal clean --full
 
 # Build the package, its tests, coverage reports and run the tests
-- stack -j 2 --no-terminal test --coverage
+- stack -j 2 --no-terminal test --haddock --no-haddock-deps --coverage
 
 # Send results and notify
 
