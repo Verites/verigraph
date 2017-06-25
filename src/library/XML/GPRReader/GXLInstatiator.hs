@@ -1,7 +1,7 @@
 module XML.GPRReader.GXLInstatiator
   ( instatiateTypeGraph
-  , instatiateOneRule
   , instatiateRules
+  , instatiateRule
   ) where
 
 import qualified Data.List                          as L
@@ -23,19 +23,21 @@ instatiateTypeGraph (_,(nodes,types)) = G.build nodesToBuild edgesToBuild
     idt name = head [nid | (node,nid) <- nodes, node == name]
 
 instatiateRules :: G.Graph (Maybe a) (Maybe b) -> ProcessedTypeGraph -> [ParsedRuleGraph] -> [(String, TypedGraphRule a b)]
-instatiateRules typeGraph typesWithId = map (instatiateOneRule typeGraph typesWithId)
+instatiateRules typeGraph typesWithId = map (instatiateRule typeGraph typesWithId)
 
-instatiateOneRule :: G.Graph (Maybe a) (Maybe b) -> ProcessedTypeGraph -> ParsedRuleGraph -> (String, TypedGraphRule a b)
-instatiateOneRule typeGraph types rule = (fst rule, ruleWithNacs)
+instatiateRule :: G.Graph (Maybe a) (Maybe b) -> ProcessedTypeGraph -> ParsedRuleGraph -> (String, TypedGraphRule a b)
+instatiateRule typeGraph types rule = error (show (processedNodes,processedEdges)) --(fst rule, ruleWithNacs)
   where
     (processedNodes,processedEdges) = processRuleGraph types rule
     
-    (forbiddenNodes,nodesWithoutNac) = L.partition (\(_,_,cond) -> cond `notElem` [Preservation,Creation,Deletion]) processedNodes
-    (forbiddenEdges,edgesWithoutNac) = L.partition (\(_,_,_,_,cond) -> cond == ForbiddenEdge) processedEdges
+    (forbiddenNodes,nodesWithoutNac) =
+      L.partition (\(_,_,cond) -> cond `notElem` [Preservation,Creation,Deletion]) processedNodes
+    (forbiddenEdges,edgesWithoutNac) =
+      L.partition (\(_,_,_,_,cond) -> cond == ForbiddenEdge) processedEdges
     
     groupNodesByNac =
       L.groupBy
-        ((\(_,_,ForbiddenNode x) (_,_,ForbiddenNode y) -> x == y))
+        (\(_,_,ForbiddenNode x) (_,_,ForbiddenNode y) -> x == y)
         (L.sortBy (\(_,_,ForbiddenNode x) (_,_,ForbiddenNode y) -> compare x y) forbiddenNodes)
     
     ruleWithoutNacs = instatiateRuleEdges (instatiateRuleNodes typeGraph nodesWithoutNac) edgesWithoutNac
@@ -47,19 +49,19 @@ instatiateOneRule typeGraph types rule = (fst rule, ruleWithNacs)
     ruleWithNacs = buildProduction (getLHS ruleWithoutNacs) (getRHS ruleWithoutNacs) (nacs ++ lastNacs)
 
 instatiateNacNodes :: Production (TypedGraphMorphism a b) -> [ProcessedNode] -> TypedGraphMorphism a b
-instatiateNacNodes r nodes =
-  foldr (\(n,ntype,_) -> TGM.createNodeOnCodomain (G.NodeId n) (G.NodeId ntype)) isoL nodes
+instatiateNacNodes r =
+  foldr (\(n,ntype,_) -> TGM.createNodeOnCodomain (G.NodeId n) (G.NodeId ntype)) isoL
   where
     typeGraphL = codomainGraph (getLHS r)
     isoL = identity typeGraphL
 
 instatiateNacEdges :: [ProcessedEdge] -> [TypedGraphMorphism a b] -> [TypedGraphMorphism a b]
 instatiateNacEdges _ [] = []
-instatiateNacEdges edges (n:nacs) = (foldr insertEdge n edges) : (instatiateNacEdges edges nacs)
+instatiateNacEdges edges (n:nacs) = foldr insertEdge n edges : instatiateNacEdges edges nacs
   where    
     insertEdge (e,src,tgt,tp,_) n =
-      if ((G.NodeId src) `elem` nodeIdsFromCodomain n && (G.NodeId tgt) `elem` nodeIdsFromCodomain n) &&
-         ((G.NodeId src) `notElem` nodeIdsFromDomain n || (G.NodeId tgt) `notElem` nodeIdsFromDomain n)
+      if (G.NodeId src `elem` nodeIdsFromCodomain n && G.NodeId tgt `elem` nodeIdsFromCodomain n) &&
+         (G.NodeId src `notElem` nodeIdsFromDomain n || G.NodeId tgt `notElem` nodeIdsFromDomain n)
         then TGM.createEdgeOnCodomain (G.EdgeId e) (G.NodeId src) (G.NodeId tgt) (G.EdgeId tp) n
         else n
 
@@ -70,9 +72,8 @@ instatiateLonelyNacEdges edges l = concatMap insertEdge edges
     isoL = identity typeGraphL
     
     insertEdge (e,src,tgt,tp,_) =
-      if ((G.NodeId src) `elem` nodeIdsFromCodomain l && (G.NodeId tgt) `elem` nodeIdsFromCodomain l)
-        then [TGM.createEdgeOnCodomain (G.EdgeId e) (G.NodeId src) (G.NodeId tgt) (G.EdgeId tp) isoL]
-        else []
+      [createEdgeOnCodomain (G.EdgeId e) (G.NodeId src) (G.NodeId tgt) (G.EdgeId tp) isoL |
+        G.NodeId src `elem` nodeIdsFromCodomain l && G.NodeId tgt `elem` nodeIdsFromCodomain l]
 
 instatiateRuleNodes :: G.Graph (Maybe a) (Maybe b) -> [ProcessedNode] -> TypedGraphRule a b
 instatiateRuleNodes typeGraph [] = emptyGraphRule typeGraph

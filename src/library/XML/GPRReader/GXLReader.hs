@@ -39,7 +39,7 @@ readGrammar fileName = do
   -- initial state, it uses the rule parser to get the initial state
   let stateGraphPathName = fileName ++ "/" ++ stateGraphName ++ ".gst"
   stateGraph <- parseGPR stateGraphPathName
-  let (_,stateRule) = instatiateOneRule typeGraph typesWithId stateGraph
+  let (_,stateRule) = instatiateRule typeGraph typesWithId stateGraph
       initialState = domainGraph (getLHS stateRule)
   
   -- rules

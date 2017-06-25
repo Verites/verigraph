@@ -81,7 +81,7 @@ processRuleGraph tg@(nodeTypes,_) rule = (processedNodes,processedEdges)
 
 removeIgnoredLabels :: ParsedEdge -> Bool
 removeIgnoredLabels ((_,_,label),_) =
-  label `notElem` ignoredLabels && all (\lbl -> not (isPrefixOf lbl label)) deletedLabels
+  label `notElem` ignoredLabels && all (\lbl -> not (lbl `isPrefixOf` label)) deletedLabels
 
 adjustIgnoredLabels :: ParsedEdge -> ParsedEdge
 adjustIgnoredLabels e@((src,tgt,label),id) =
@@ -126,7 +126,7 @@ processEdge (nodeTypes,edgeTypes) ruleTyping nodes nonPreservNodes ((nsrc,ntgt,l
     srctgtCondition str = not (null [lbl | ((node,_,lbl),_) <- nonPreservNodes, lbl == str, node == nsrc || node == ntgt])
 
 processNodes :: [NodeWithTypeId] -> [ParsedEdge] -> [ParsedEdge] -> [ParsedEdge] -> [ParsedNode] -> [ProcessedNode]
-processNodes types ruleTyping nonPreservNodes edgs nods = map (processNode types ruleTyping nonPreservNodes edgs) nods
+processNodes types ruleTyping nonPreservNodes edgs = map (processNode types ruleTyping nonPreservNodes edgs)
 
 processNode :: [NodeWithTypeId] -> [ParsedEdge] -> [ParsedEdge] -> [ParsedEdge] -> ParsedNode -> ProcessedNode
 processNode types ruleTyping nonPreservNodes edges (node,id) =
@@ -149,10 +149,9 @@ processNode types ruleTyping nonPreservNodes edges (node,id) =
 
 findNacNodes :: [Node] -> [ParsedEdge] -> Node -> [Node]
 findNacNodes allNodesOfAllNacs edges node =
-  (if node `elem` allNodesOfAllNacs
-     then node : restOfSearch
-     else []
-  )
+  if node `elem` allNodesOfAllNacs
+    then node : restOfSearch
+    else []
   where
     restOfSearch =
       concatMap
