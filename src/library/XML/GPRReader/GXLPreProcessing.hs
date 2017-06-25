@@ -43,6 +43,9 @@ specialLabels = ["new:","del:","not:"]
 ignoredLabels :: [String]
 ignoredLabels = ["use:"]
 
+deletedLabels :: [String]
+deletedLabels = ["rem:"]
+
 normalizeLabel :: Label -> Label
 normalizeLabel label = if ':' `elem` label then tail (dropWhile (/= ':') label) else label
 
@@ -77,7 +80,8 @@ processRuleGraph tg@(nodeTypes,_) rule = (processedNodes,processedEdges)
     processedEdges = processEdges tg ruleTyping nodes nonPreservNodes edgs
 
 removeIgnoredLabels :: ParsedEdge -> Bool
-removeIgnoredLabels ((_,_,label),_) = label `notElem` ignoredLabels
+removeIgnoredLabels ((_,_,label),_) =
+  label `notElem` ignoredLabels && all (\lbl -> not (isPrefixOf lbl label)) deletedLabels
 
 adjustIgnoredLabels :: ParsedEdge -> ParsedEdge
 adjustIgnoredLabels e@((src,tgt,label),id) =
