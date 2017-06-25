@@ -115,7 +115,7 @@ printAnalysis essential action dpoConf rules =
         findAllDeliverDelete findAllDeliverDangling findAllForbidProduce
         "Deliver-Delete" "Deliver-Dangling" "Forbid-Produce" "Irreversible Dependencies"
   in mapM_
-       putStrLn $
+       putStrLn
        (case (essential, action) of
          (True , Conflicts) -> essentialConfMatrix
          (False, Conflicts) -> confMatrix

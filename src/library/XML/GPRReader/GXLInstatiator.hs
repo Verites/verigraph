@@ -32,8 +32,13 @@ instatiateRule typeGraph types rule = (fst rule, ruleWithNacs)
     
     (forbiddenNodes,nodesWithoutNac) =
       L.partition (\(_,_,cond) -> cond `notElem` [Preservation,Creation,Deletion]) processedNodes
+    
     (forbiddenEdges,edgesWithoutNac) =
       L.partition (\(_,_,_,_,cond) -> cond == ForbiddenEdge) processedEdges
+    
+    (nacsWithOnlyOneEdge,edgesInNacsWithNodes) =
+      L.partition (\(_,src,tgt,_,_) -> G.NodeId src `elem` nodesL && G.NodeId tgt `elem` nodesL) forbiddenEdges
+    nodesL = nodeIdsFromCodomain (getLHS ruleWithoutNacs)
     
     groupNodesByNac =
       L.groupBy
@@ -43,37 +48,33 @@ instatiateRule typeGraph types rule = (fst rule, ruleWithNacs)
     ruleWithoutNacs = instatiateRuleEdges (instatiateRuleNodes typeGraph nodesWithoutNac) edgesWithoutNac
     
     nacsWithOnlyNodes = map (instatiateNacNodes ruleWithoutNacs) groupNodesByNac
-    nacs = instatiateNacEdges forbiddenEdges nacsWithOnlyNodes
-    lastNacs = instatiateLonelyNacEdges forbiddenEdges (getLHS ruleWithoutNacs)
+    nacs1 = instatiateNacEdges edgesInNacsWithNodes nacsWithOnlyNodes
+    nacs2 = instatiateLonelyNacEdges (getLHS ruleWithoutNacs) nacsWithOnlyOneEdge
     
-    ruleWithNacs = buildProduction (getLHS ruleWithoutNacs) (getRHS ruleWithoutNacs) (nacs ++ lastNacs)
+    ruleWithNacs = buildProduction (getLHS ruleWithoutNacs) (getRHS ruleWithoutNacs) (nacs1 ++ nacs2)
 
 instatiateNacNodes :: Production (TypedGraphMorphism a b) -> [ProcessedNode] -> TypedGraphMorphism a b
 instatiateNacNodes r =
   foldr (\(n,ntype,_) -> TGM.createNodeOnCodomain (G.NodeId n) (G.NodeId ntype)) isoL
   where
-    typeGraphL = codomainGraph (getLHS r)
-    isoL = identity typeGraphL
+    isoL = identity (codomainGraph (getLHS r))
 
 instatiateNacEdges :: [ProcessedEdge] -> [TypedGraphMorphism a b] -> [TypedGraphMorphism a b]
 instatiateNacEdges _ [] = []
 instatiateNacEdges edges (n:nacs) = foldr insertEdge n edges : instatiateNacEdges edges nacs
   where    
     insertEdge (e,src,tgt,tp,_) n =
-      if (G.NodeId src `elem` nodeIdsFromCodomain n && G.NodeId tgt `elem` nodeIdsFromCodomain n) &&
-         (G.NodeId src `notElem` nodeIdsFromDomain n || G.NodeId tgt `notElem` nodeIdsFromDomain n)
+      if G.NodeId src `elem` nodeIdsFromCodomain n && G.NodeId tgt `elem` nodeIdsFromCodomain n
         then TGM.createEdgeOnCodomain (G.EdgeId e) (G.NodeId src) (G.NodeId tgt) (G.EdgeId tp) n
         else n
 
-instatiateLonelyNacEdges :: [ProcessedEdge] -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
-instatiateLonelyNacEdges edges l = concatMap insertEdge edges
+instatiateLonelyNacEdges :: TypedGraphMorphism a b -> [ProcessedEdge] -> [TypedGraphMorphism a b]
+instatiateLonelyNacEdges l = map insertEdge
   where
-    typeGraphL = codomainGraph l
-    isoL = identity typeGraphL
+    isoL = identity (codomainGraph l)
     
     insertEdge (e,src,tgt,tp,_) =
-      [createEdgeOnCodomain (G.EdgeId e) (G.NodeId src) (G.NodeId tgt) (G.EdgeId tp) isoL |
-        G.NodeId src `elem` nodeIdsFromCodomain l && G.NodeId tgt `elem` nodeIdsFromCodomain l]
+      createEdgeOnCodomain (G.EdgeId e) (G.NodeId src) (G.NodeId tgt) (G.EdgeId tp) isoL
 
 instatiateRuleNodes :: G.Graph (Maybe a) (Maybe b) -> [ProcessedNode] -> TypedGraphRule a b
 instatiateRuleNodes typeGraph [] = emptyGraphRule typeGraph
@@ -82,7 +83,6 @@ instatiateRuleNodes typeGraph ((n,ntype,cond):nodes) = action cond (instatiateRu
     action Preservation = addsPreservationNode n ntype
     action Creation = addsCreationNode n ntype
     action Deletion = addsDeletionNode n ntype
-    --action (ForbiddenNode _) = addsForbiddenNode n ntype
     action _ = error "instatiateRuleNodes: it's not supposed to be here"
 
 instatiateRuleEdges :: TypedGraphRule a b -> [ProcessedEdge] -> TypedGraphRule a b
@@ -92,7 +92,6 @@ instatiateRuleEdges init ((e,src,tgt,etype,cond):edges) = action cond (instatiat
     action Preservation = addsPreservationEdge e src tgt etype
     action Creation = addsCreationEdge e src tgt etype
     action Deletion = addsDeletionEdge e src tgt etype
-    --action ForbiddenEdge = addsForbiddenEdge e src tgt etype
     action _ = error "instatiateRuleEdges: it's not supposed to be here"
 
 addsDeletionNode :: NodeId -> NodeTypeId -> TypedGraphRule a b -> TypedGraphRule a b
@@ -100,17 +99,14 @@ addsDeletionNode nodeId ntype r =
   buildProduction
     (TGM.createNodeOnCodomain (G.NodeId nodeId) (G.NodeId ntype) (getLHS r))
     (getRHS r)
-    (map
-      (TGM.createNodeOnCodomain (G.NodeId nodeId) (G.NodeId ntype) .
-        TGM.createNodeOnDomain (G.NodeId nodeId) (G.NodeId ntype) (G.NodeId nodeId))
-    (getNACs r))
+    []
 
 addsCreationNode :: NodeId -> NodeTypeId -> TypedGraphRule a b -> TypedGraphRule a b
 addsCreationNode nodeId ntype r =
   buildProduction
     (getLHS r)
     (TGM.createNodeOnCodomain (G.NodeId nodeId) (G.NodeId ntype) (getRHS r))
-    (getNACs r)
+    []
 
 addsPreservationNode :: NodeId -> NodeTypeId -> TypedGraphRule a b -> TypedGraphRule a b
 addsPreservationNode nodeId ntype r =
@@ -119,27 +115,21 @@ addsPreservationNode nodeId ntype r =
       (TGM.createNodeOnDomain (G.NodeId nodeId) (G.NodeId ntype) (G.NodeId nodeId) (getLHS r)))
     (TGM.createNodeOnCodomain (G.NodeId nodeId) (G.NodeId ntype)
       (TGM.createNodeOnDomain (G.NodeId nodeId) (G.NodeId ntype) (G.NodeId nodeId) (getRHS r)))
-    (map
-      (TGM.createNodeOnCodomain (G.NodeId nodeId) (G.NodeId ntype) .
-         TGM.createNodeOnDomain (G.NodeId nodeId) (G.NodeId ntype) (G.NodeId nodeId))
-      (getNACs r))
+    []
 
 addsDeletionEdge :: EdgeId -> NodeId -> NodeId -> EdgeTypeId -> TypedGraphRule a b -> TypedGraphRule a b
 addsDeletionEdge edgeId src tgt etype r =
   buildProduction
     (TGM.createEdgeOnCodomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype) (getLHS r))
     (getRHS r)
-    (map
-      (TGM.createEdgeOnCodomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype) .
-        TGM.createEdgeOnDomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype) (G.EdgeId edgeId))
-      (getNACs r))
+    []
 
 addsCreationEdge :: EdgeId -> NodeId -> NodeId -> EdgeTypeId -> TypedGraphRule a b -> TypedGraphRule a b
 addsCreationEdge edgeId src tgt etype r =
   buildProduction
     (getLHS r)
     (TGM.createEdgeOnCodomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype) (getRHS r))
-    (getNACs r)
+    []
 
 addsPreservationEdge :: EdgeId -> NodeId -> NodeId -> EdgeTypeId -> TypedGraphRule a b -> TypedGraphRule a b
 addsPreservationEdge edgeId src tgt etype r =
@@ -148,7 +138,4 @@ addsPreservationEdge edgeId src tgt etype r =
       (TGM.createEdgeOnDomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype) (G.EdgeId edgeId) (getLHS r)))
     (TGM.createEdgeOnCodomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype)
       (TGM.createEdgeOnDomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype) (G.EdgeId edgeId) (getRHS r)))
-    (map
-      (TGM.createEdgeOnCodomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype) .
-        TGM.createEdgeOnDomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype) (G.EdgeId edgeId))
-      (getNACs r))
+    []
