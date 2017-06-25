@@ -26,7 +26,7 @@ instatiateRules :: G.Graph (Maybe a) (Maybe b) -> ProcessedTypeGraph -> [ParsedR
 instatiateRules typeGraph typesWithId = map (instatiateRule typeGraph typesWithId)
 
 instatiateRule :: G.Graph (Maybe a) (Maybe b) -> ProcessedTypeGraph -> ParsedRuleGraph -> (String, TypedGraphRule a b)
-instatiateRule typeGraph types rule = error (show (processedNodes,processedEdges)) --(fst rule, ruleWithNacs)
+instatiateRule typeGraph types rule = (fst rule, ruleWithNacs)
   where
     (processedNodes,processedEdges) = processRuleGraph types rule
     

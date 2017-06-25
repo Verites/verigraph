@@ -15,6 +15,8 @@ fileName1 = "tests/grammars/pacman2.ggx"
 fileName2 = "tests/grammars/pacman.gps"
 fileName3 = "tests/grammars/mutex2.ggx"
 fileName4 = "tests/grammars/mutex.gps"
+fileName5 = "tests/grammars/elevator.ggx"
+fileName6 = "tests/grammars/elevator.gps"
 
 dpoConf = MorphismsConfig AnyMatches MonomorphicNAC
 
@@ -23,29 +25,37 @@ spec = context "GPR Reader Test - CPA/CSA analysis is equal on GGX and GPR files
 
 gprTest :: Spec
 gprTest = do
-    it "Pacman grammar" $ do
-      (ggGGX,_,_) <- XML.readGrammar fileName1 False dpoConf
-      (ggGPR,_) <- GPR.readGrammar fileName2
+  let sortRules = sortBy (\(a,_) (b,_) -> compare a b)
+    
+  it "Pacman grammar" $ do
+    (ggGGX,_,_) <- XML.readGrammar fileName1 False dpoConf
+    (ggGPR,_) <- GPR.readGrammar fileName2
       
-      let rulesGGX = map snd (sortRules (productions ggGGX))
-          rulesGPR = map snd (sortRules (productions ggGPR))
-          
-          sortRules = sortBy (\(a,_) (b,_) -> compare a b)
-      
-      (pairwise (findCriticalPairs dpoConf) rulesGPR) `shouldBe` pairwise (findCriticalPairs dpoConf) rulesGGX
-      (pairwise (findCriticalSequences dpoConf) rulesGPR) `shouldBe` pairwise (findCriticalSequences dpoConf) rulesGGX
+    let rulesGGX = map snd (sortRules (productions ggGGX))
+        rulesGPR = map snd (sortRules (productions ggGPR))
+    
+    (pairwise (findCriticalPairs dpoConf) rulesGPR) `shouldBe` pairwise (findCriticalPairs dpoConf) rulesGGX
+    (pairwise (findCriticalSequences dpoConf) rulesGPR) `shouldBe` pairwise (findCriticalSequences dpoConf) rulesGGX
 
-    it "Mutex grammar" $ do
-      (ggGGX,_,_) <- XML.readGrammar fileName3 False dpoConf
-      (ggGPR,_) <- GPR.readGrammar fileName4
+  it "Mutex grammar" $ do
+    (ggGGX,_,_) <- XML.readGrammar fileName3 False dpoConf
+    (ggGPR,_) <- GPR.readGrammar fileName4
       
-      let rulesGGX = map snd (sortRules (productions ggGGX))
-          rulesGPR = map snd (sortRules (productions ggGPR))
-          
-          sortRules = sortBy (\(a,_) (b,_) -> compare a b)
+    let rulesGGX = map snd (sortRules (productions ggGGX))
+        rulesGPR = map snd (sortRules (productions ggGPR))
       
-      (pairwise (findCriticalPairs dpoConf) rulesGPR) `shouldBe` pairwise (findCriticalPairs dpoConf) rulesGGX
-      (pairwise (findCriticalSequences dpoConf) rulesGPR) `shouldBe` pairwise (findCriticalSequences dpoConf) rulesGGX
+    (pairwise (findCriticalPairs dpoConf) rulesGPR) `shouldBe` pairwise (findCriticalPairs dpoConf) rulesGGX
+    (pairwise (findCriticalSequences dpoConf) rulesGPR) `shouldBe` pairwise (findCriticalSequences dpoConf) rulesGGX
+
+  it "Elevator grammar" $ do
+    (ggGGX,_,_) <- XML.readGrammar fileName5 False dpoConf
+    (ggGPR,_) <- GPR.readGrammar fileName6
+      
+    let rulesGGX = map snd (sortRules (productions ggGGX))
+        rulesGPR = map snd (sortRules (productions ggGPR))
+      
+    (pairwise (findCriticalPairs dpoConf) rulesGPR) `shouldBe` pairwise (findCriticalPairs dpoConf) rulesGGX
+    (pairwise (findCriticalSequences dpoConf) rulesGPR) `shouldBe` pairwise (findCriticalSequences dpoConf) rulesGGX
 
 pairwise :: (a -> a -> [b]) -> [a] -> Matrix Int
 pairwise f items =
