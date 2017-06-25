@@ -418,9 +418,9 @@
                         <Mapping image="I83" orig="I76"/>
                         <Mapping image="I84" orig="I77"/>
                         <Mapping image="I85" orig="I78"/>
-                        <Mapping image="I88" orig="I81"/>
-                        <Mapping image="I86" orig="I79"/>
                         <Mapping image="I87" orig="I80"/>
+                        <Mapping image="I86" orig="I79"/>
+                        <Mapping image="I88" orig="I81"/>
                     </Morphism>
                 </Conclusion>
             </Graphconstraint_Atomic>
@@ -501,8 +501,8 @@
                         <Mapping image="I99" orig="I92"/>
                         <Mapping image="I100" orig="I93"/>
                         <Mapping image="I101" orig="I94"/>
-                        <Mapping image="I103" orig="I96"/>
                         <Mapping image="I102" orig="I95"/>
+                        <Mapping image="I103" orig="I96"/>
                         <Mapping image="I104" orig="I97"/>
                     </Morphism>
                 </Conclusion>
@@ -707,8 +707,8 @@
                         <Mapping image="I141" orig="I135"/>
                         <Mapping image="I142" orig="I136"/>
                         <Mapping image="I143" orig="I137"/>
-                        <Mapping image="I145" orig="I139"/>
                         <Mapping image="I144" orig="I138"/>
+                        <Mapping image="I145" orig="I139"/>
                     </Morphism>
                 </Conclusion>
             </Graphconstraint_Atomic>
@@ -962,8 +962,8 @@
                 <Mapping image="I203" orig="I197"/>
                 <Mapping image="I204" orig="I198"/>
                 <Mapping image="I205" orig="I199"/>
-                <Mapping image="I206" orig="I200"/>
                 <Mapping image="I207" orig="I201"/>
+                <Mapping image="I206" orig="I200"/>
             </Morphism>
             <ApplCondition>
                 <NAC>
@@ -1003,8 +1003,8 @@
                         <Mapping image="I210" orig="I197"/>
                         <Mapping image="I211" orig="I198"/>
                         <Mapping image="I212" orig="I199"/>
-                        <Mapping image="I213" orig="I200"/>
                         <Mapping image="I214" orig="I201"/>
+                        <Mapping image="I213" orig="I200"/>
                     </Morphism>
                 </NAC>
             </ApplCondition>
@@ -1164,9 +1164,9 @@
                 <Mapping image="I247" orig="I236"/>
                 <Mapping image="I248" orig="I237"/>
                 <Mapping image="I249" orig="I238"/>
-                <Mapping image="I250" orig="I240"/>
                 <Mapping image="I252" orig="I242"/>
                 <Mapping image="I251" orig="I241"/>
+                <Mapping image="I250" orig="I240"/>
             </Morphism>
             <ApplCondition>
                 <NAC>
@@ -1239,10 +1239,10 @@
                         <Mapping image="I258" orig="I236"/>
                         <Mapping image="I259" orig="I237"/>
                         <Mapping image="I260" orig="I238"/>
-                        <Mapping image="I263" orig="I240"/>
                         <Mapping image="I265" orig="I242"/>
-                        <Mapping image="I262" orig="I239"/>
                         <Mapping image="I264" orig="I241"/>
+                        <Mapping image="I262" orig="I239"/>
+                        <Mapping image="I263" orig="I240"/>
                     </Morphism>
                 </NAC>
             </ApplCondition>
@@ -1323,8 +1323,8 @@
                 <Mapping image="I280" orig="I271"/>
                 <Mapping image="I281" orig="I272"/>
                 <Mapping image="I282" orig="I273"/>
-                <Mapping image="I285" orig="I276"/>
                 <Mapping image="I284" orig="I275"/>
+                <Mapping image="I285" orig="I276"/>
                 <Mapping image="I286" orig="I277"/>
             </Morphism>
             <ApplCondition>
@@ -1397,8 +1397,8 @@
                         <Mapping image="I290" orig="I272"/>
                         <Mapping image="I291" orig="I273"/>
                         <Mapping image="I292" orig="I274"/>
-                        <Mapping image="I296" orig="I276"/>
                         <Mapping image="I295" orig="I275"/>
+                        <Mapping image="I296" orig="I276"/>
                         <Mapping image="I297" orig="I277"/>
                     </Morphism>
                 </NAC>
@@ -1466,8 +1466,8 @@
                         <Mapping image="I303" orig="I272"/>
                         <Mapping image="I304" orig="I273"/>
                         <Mapping image="I305" orig="I274"/>
-                        <Mapping image="I308" orig="I276"/>
                         <Mapping image="I307" orig="I275"/>
+                        <Mapping image="I308" orig="I276"/>
                         <Mapping image="I309" orig="I277"/>
                     </Morphism>
                 </NAC>
@@ -1567,9 +1567,9 @@
                 <Mapping image="I329" orig="I318"/>
                 <Mapping image="I330" orig="I319"/>
                 <Mapping image="I331" orig="I320"/>
+                <Mapping image="I332" orig="I322"/>
                 <Mapping image="I334" orig="I324"/>
                 <Mapping image="I333" orig="I323"/>
-                <Mapping image="I332" orig="I322"/>
             </Morphism>
             <ApplCondition>
                 <NAC>
@@ -1647,10 +1647,10 @@
                         <Mapping image="I341" orig="I317"/>
                         <Mapping image="I342" orig="I319"/>
                         <Mapping image="I343" orig="I320"/>
-                        <Mapping image="I349" orig="I324"/>
                         <Mapping image="I344" orig="I321"/>
-                        <Mapping image="I348" orig="I323"/>
                         <Mapping image="I347" orig="I322"/>
+                        <Mapping image="I349" orig="I324"/>
+                        <Mapping image="I348" orig="I323"/>
                     </Morphism>
                 </NAC>
             </ApplCondition>
@@ -1721,19 +1721,19 @@
         <Rule ID="I364" formula="true" name="process_stop_up">
             <Graph ID="I366" kind="LHS" name="LeftOf_process_stop_up">
                 <Node ID="I367" type="I5">
-                    <NodeLayout X="360" Y="348"/>
+                    <NodeLayout X="115" Y="178"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Node ID="I368" type="I6">
-                    <NodeLayout X="478" Y="347"/>
+                    <NodeLayout X="233" Y="177"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Node ID="I369" type="I4">
-                    <NodeLayout X="378" Y="203"/>
+                    <NodeLayout X="137" Y="62"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Node ID="I370" type="I2">
-                    <NodeLayout X="237" Y="211"/>
+                    <NodeLayout X="52" Y="88"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Edge ID="I371" source="I367" target="I368" type="I7">
@@ -1741,7 +1741,7 @@
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
                 <Edge ID="I372" source="I369" target="I369" type="I9">
-                    <EdgeLayout bendX="330" bendY="178" loopH="20"
+                    <EdgeLayout bendX="89" bendY="37" loopH="20"
                         loopW="20" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
@@ -1752,22 +1752,18 @@
             </Graph>
             <Graph ID="I374" kind="RHS" name="RightOf_process_stop_up">
                 <Node ID="I375" type="I5">
-                    <NodeLayout X="360" Y="348"/>
+                    <NodeLayout X="89" Y="112"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Node ID="I376" type="I6">
-                    <NodeLayout X="478" Y="347"/>
+                    <NodeLayout X="207" Y="111"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I377" type="I4">
-                    <NodeLayout X="378" Y="203"/>
+                <Node ID="I377" type="I2">
+                    <NodeLayout X="68" Y="42"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
-                <Node ID="I378" type="I2">
-                    <NodeLayout X="237" Y="211"/>
-                    <additionalLayout age="0" force="10" frozen="true" zone="50"/>
-                </Node>
-                <Edge ID="I379" source="I375" target="I376" type="I7">
+                <Edge ID="I378" source="I375" target="I376" type="I7">
                     <EdgeLayout bendX="0" bendY="0" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
@@ -1775,72 +1771,71 @@
             <Morphism comment="Formula: true" name="process_stop_up">
                 <Mapping image="I375" orig="I367"/>
                 <Mapping image="I376" orig="I368"/>
-                <Mapping image="I377" orig="I369"/>
-                <Mapping image="I378" orig="I370"/>
-                <Mapping image="I379" orig="I371"/>
+                <Mapping image="I377" orig="I370"/>
+                <Mapping image="I378" orig="I371"/>
             </Morphism>
             <ApplCondition>
                 <NAC>
-                    <Graph ID="I380" kind="NAC" name="no_call">
-                        <Node ID="I381" type="I5">
-                            <NodeLayout X="74" Y="351"/>
+                    <Graph ID="I379" kind="NAC" name="no_call">
+                        <Node ID="I380" type="I5">
+                            <NodeLayout X="57" Y="169"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I382" type="I6">
-                            <NodeLayout X="234" Y="346"/>
+                        <Node ID="I381" type="I6">
+                            <NodeLayout X="217" Y="164"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I383" type="I4">
-                            <NodeLayout X="137" Y="201"/>
+                        <Node ID="I382" type="I4">
+                            <NodeLayout X="125" Y="68"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I384" type="I2">
-                            <NodeLayout X="45" Y="247"/>
+                        <Node ID="I383" type="I2">
+                            <NodeLayout X="33" Y="114"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Node ID="I385" type="I4">
-                            <NodeLayout X="264" Y="209"/>
+                        <Node ID="I384" type="I4">
+                            <NodeLayout X="252" Y="76"/>
                             <additionalLayout age="0" force="10"
                                 frozen="true" zone="50"/>
                         </Node>
-                        <Edge ID="I386" source="I381" target="I382" type="I7">
+                        <Edge ID="I385" source="I380" target="I381" type="I7">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I387" source="I383" target="I383" type="I9">
-                            <EdgeLayout bendX="89" bendY="176"
-                                loopH="20" loopW="20" textOffsetX="0" textOffsetY="-22"/>
+                        <Edge ID="I386" source="I382" target="I382" type="I9">
+                            <EdgeLayout bendX="77" bendY="43" loopH="20"
+                                loopW="20" textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I388" source="I382" target="I383" type="I10">
+                        <Edge ID="I387" source="I381" target="I382" type="I10">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I389" source="I382" target="I385" type="I10">
+                        <Edge ID="I388" source="I381" target="I384" type="I10">
                             <EdgeLayout bendX="0" bendY="0"
                                 textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
-                        <Edge ID="I390" source="I385" target="I385" type="I8">
-                            <EdgeLayout bendX="222" bendY="184"
+                        <Edge ID="I389" source="I384" target="I384" type="I8">
+                            <EdgeLayout bendX="210" bendY="51"
                                 loopH="20" loopW="20" textOffsetX="0" textOffsetY="-22"/>
                             <additionalLayout aktlength="200" force="10" preflength="200"/>
                         </Edge>
                     </Graph>
                     <Morphism name="no_call">
-                        <Mapping image="I381" orig="I367"/>
-                        <Mapping image="I382" orig="I368"/>
-                        <Mapping image="I383" orig="I369"/>
-                        <Mapping image="I384" orig="I370"/>
-                        <Mapping image="I387" orig="I372"/>
-                        <Mapping image="I386" orig="I371"/>
-                        <Mapping image="I388" orig="I373"/>
+                        <Mapping image="I380" orig="I367"/>
+                        <Mapping image="I381" orig="I368"/>
+                        <Mapping image="I382" orig="I369"/>
+                        <Mapping image="I383" orig="I370"/>
+                        <Mapping image="I385" orig="I371"/>
+                        <Mapping image="I387" orig="I373"/>
+                        <Mapping image="I386" orig="I372"/>
                     </Morphism>
                 </NAC>
             </ApplCondition>
