@@ -6,7 +6,7 @@ module XML.GPRReader.GXLInstatiator
 
 import qualified Data.List                          as L
 
-import           Abstract.Category.FinitaryCategory (isIsomorphism)
+import           Abstract.Category.FinitaryCategory (identity)
 import           Abstract.Rewriting.DPO
 import qualified Data.Graphs                        as G
 import           Data.TypedGraph.Morphism           as TGM
@@ -31,16 +31,10 @@ instatiateOneRule typeGraph types rule = (fst rule, instatiateRule typeGraph pro
     (processedNodes,processedEdges) = processRuleGraph types rule
 
 instatiateRule :: G.Graph (Maybe a) (Maybe b) -> [ProcessedNode] -> [ProcessedEdge] -> TypedGraphRule a b
-instatiateRule typeGraph nodes edges = removeIsoNacs preRule
-  where
-    preRule = instatiateRuleEdges (instatiateRuleNodes typeGraph nodes) edges
-    removeIsoNacs r = buildProduction (getLHS r) (getRHS r) (filter (not . isIsomorphism) (getNACs r))
+instatiateRule typeGraph nodes edges = instatiateRuleEdges (instatiateRuleNodes typeGraph nodes) edges
 
 instatiateRuleNodes :: G.Graph (Maybe a) (Maybe b) -> [ProcessedNode] -> TypedGraphRule a b
-instatiateRuleNodes typeGraph [] = emptyRuleEmptyNac
-  where
-    emptyRule = emptyGraphRule typeGraph
-    emptyRuleEmptyNac = buildProduction (getLHS emptyRule) (getRHS emptyRule) [getLHS emptyRule]
+instatiateRuleNodes typeGraph [] = emptyGraphRule typeGraph
 instatiateRuleNodes typeGraph ((n,ntype,cond):nodes) = action cond (instatiateRuleNodes typeGraph nodes)
   where
     action Preservation = addsPreservationNode n ntype
@@ -72,7 +66,10 @@ addsForbiddenNode nodeId ntype r =
   buildProduction
     (getLHS r)
     (getRHS r)
-    (map (TGM.createNodeOnCodomain (G.NodeId nodeId) (G.NodeId ntype)) (getNACs r))
+    ((TGM.createNodeOnCodomain (G.NodeId nodeId) (G.NodeId ntype) isoL) : getNACs r)
+  where
+    typeGraphL = codomainGraph (getLHS r)
+    isoL = identity typeGraphL
 
 addsCreationNode :: NodeId -> NodeTypeId -> TypedGraphRule a b -> TypedGraphRule a b
 addsCreationNode nodeId ntype r =
@@ -108,7 +105,24 @@ addsForbiddenEdge edgeId src tgt etype r =
   buildProduction
     (getLHS r)
     (getRHS r)
-    (map (TGM.createEdgeOnCodomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype)) (getNACs r))
+    newNac
+  where
+    left = getLHS r
+    typeGraphL = codomainGraph left
+    isoL = identity typeGraphL
+    -- provisorial solution for adding of forbidden edges.
+    -- if: src and tgt of edge in L
+    --   then: creates a new NAC with edge
+    --   else: for all nacs of r such that src and tgt of edge in nac: adds the edge
+    -- it should be processed on GXLPreProcessing, however for now it is only possible to check it here.
+    newNac =
+      if (G.NodeId src) `elem` nodeIdsFromCodomain left && (G.NodeId tgt) `elem` nodeIdsFromCodomain left
+        then ((TGM.createEdgeOnCodomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype) isoL) : getNACs r)
+        else (map addEdgeNAC (getNACs r))
+    addEdgeNAC nac =
+      if (G.NodeId src) `elem` nodeIdsFromCodomain nac && (G.NodeId tgt) `elem` nodeIdsFromCodomain nac
+        then TGM.createEdgeOnCodomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype) nac
+        else nac
 
 addsCreationEdge :: EdgeId -> NodeId -> NodeId -> EdgeTypeId -> TypedGraphRule a b -> TypedGraphRule a b
 addsCreationEdge edgeId src tgt etype r =
