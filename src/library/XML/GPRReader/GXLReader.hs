@@ -20,11 +20,9 @@ Tags supported (with exact semantic of GROOVE):
 
  (5) not : NAC.
 
- (6) rem : remarks (are forgotten).
+ (6) flag: node label.
 
-Future work:
-
- (1) Tag: flag.
+ (7) rem : remarks (are forgotten).
 -}
 module XML.GPRReader.GXLReader (readGrammar, readGGName) where
 

@@ -47,7 +47,10 @@ deletedLabels :: [String]
 deletedLabels = ["rem:"]
 
 normalizeLabel :: Label -> Label
-normalizeLabel label = if ':' `elem` label then tail (dropWhile (/= ':') label) else label
+normalizeLabel label =
+  if ':' `elem` label && not ("flag:" `isPrefixOf` label)
+    then tail (dropWhile (/= ':') label)
+    else label
 
 -- process type graph
 processTypeGraph :: ParsedRuleGraph -> ProcessedTypeGraph
@@ -109,7 +112,7 @@ processEdge (nodeTypes,edgeTypes) ruleTyping nodes nonPreservNodes ((nsrc,ntgt,l
         typeName = head [normalizeLabel lbl | ((n,_,lbl),_) <- ruleTyping, n == name]
     
     edgeCondition
-      | ':' `elem` label =
+      | ':' `elem` label && not ("flag:" `isPrefixOf` label) =
         case takeWhile (':' /=) label of
           "del" -> Deletion
           "new" -> Creation
