@@ -1,3 +1,31 @@
+{-|
+Module      : GXLReader
+Description : A reader of GXL files in a GPS (GROOVE Productions System) directory.
+
+It supports a subset of GROOVE syntax:
+
+ (1) Grammars must be valid in the GROOVE Tool.
+
+ (2) Grammars must be typed.
+
+Tags supported (with exact semantic of GROOVE):
+
+ (1) type : typing.
+
+ (2) use : (optional for) preservation.
+
+ (3) new : creation.
+
+ (4) del : deletion.
+
+ (5) not : NAC.
+
+ (6) rem : remarks (are forgotten).
+
+Future work:
+
+ (1) Tag: flag.
+-}
 module XML.GPRReader.GXLReader (readGrammar, readGGName) where
 
 import qualified Data.List                      as L
@@ -14,6 +42,7 @@ import           XML.GPRReader.GXLPreProcessing
 
 type Names = [(String,String)]
 
+-- | Reads the grammar in the fileName and returns it and a list of type names
 readGrammar :: String -> IO (Grammar (TypedGraphMorphism a b), Names)
 readGrammar fileName = do
   files <- getDirectoryContents fileName
@@ -57,6 +86,7 @@ readGrammar fileName = do
   
   return (instatiatedGrammar, preparedNames)
 
+-- | Returns the grammar name in the fileName
 readGGName :: String -> String
 readGGName = removeExtension. removePath . removeLastSlash
   where
