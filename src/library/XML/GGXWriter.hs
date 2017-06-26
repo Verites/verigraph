@@ -264,7 +264,8 @@ writeNodeType names (nodeId,nodeType) =
     [sattr "ID" nodeId, sattr "abstract" "false", sattr "name" name] []
   where
     adjNames = map (first clearId) names
-    name = fromMaybe nodeType (lookup (clearId nodeType) adjNames)
+    name = if null searchName || length searchName > 1 then nodeType else head searchName
+    searchName = [lbl | (id,lbl) <- adjNames, clearId nodeType == id, ":[NODE]:" `isInfixOf` lbl]
 
 writeEdgeTypes :: ArrowXml a => [(String,String)] -> [(String,String)] -> [a XmlTree XmlTree]
 writeEdgeTypes names = map (writeEdgeType names)
@@ -275,7 +276,8 @@ writeEdgeType names (edgeId,edgeType) =
     [sattr "ID" edgeId, sattr "abstract" "false", sattr "name" name] []
   where
     adjNames = map (first clearId) names
-    name = fromMaybe edgeType (lookup (clearId edgeType) adjNames)
+    name = if null searchName || length searchName > 1 then edgeType else head searchName
+    searchName = [lbl | (id,lbl) <- adjNames, clearId edgeType == id, ":[EDGE]:" `isInfixOf` lbl]
 
 writeGraph :: ArrowXml a => String -> String -> String
               -> [ParsedTypedNode] -> [ParsedTypedEdge] -> a XmlTree XmlTree

@@ -19,6 +19,8 @@ library
   other-extensions:    TypeFamilies, MultiParamTypeClasses, FlexibleContexts
   build-depends:       base >=4.8 && <4.10,
                        containers >=0.4 && <0.6,
+                       directory >= 1.3,
+                       filepath >= 1.4,
                        hxt >=9.3.1.15 && <9.4,
                        mtl >=2.2 && <2.3,
                        parsec >=3.1 && <3.2,
@@ -72,6 +74,7 @@ library
                        Util.List
                        XML.GGXReader
                        XML.GGXWriter
+                       XML.GPRReader.GXLReader
   other-modules:
                        Abstract.Rewriting.DPO.DiagramAlgorithms
                        Logic.Ctl.Base
@@ -96,6 +99,9 @@ library
                        XML.GGXParseOut
                        XML.GGXReader.SndOrder
                        XML.GGXReader.Span
+                       XML.GPRReader.GXLInstatiator
+                       XML.GPRReader.GXLParseIn
+                       XML.GPRReader.GXLPreProcessing
                        XML.ParsedTypes
                        XML.ParseSndOrderRule
                        XML.Utilities
@@ -120,6 +126,16 @@ executable verigraph
                        ParallelIndependence
                        Processes
                        GlobalOptions
+
+executable verigraph-gxl
+  default-language:    Haskell2010
+  hs-source-dirs:      src/CLI/
+  main-is:             GxlCli.hs
+  ghc-options:         -Wall -fno-warn-name-shadowing -fno-warn-unused-do-bind
+  build-depends:       base, verigraph,
+                       matrix >= 0.3,
+                       optparse-applicative>=0.12 && < 0.14
+  other-modules:       GlobalOptions
 
 executable verigraph-mcheck
   default-language:    Haskell2010
@@ -171,3 +187,4 @@ test-suite HSpecTests
                        Logic.Ctl.TestUtils
                        Rewriting.DPO.TypedGraphRule.NacManipulationSpec
                        Rewriting.DPO.TypedGraphRuleSpec
+                       XML.GPRReader.GXLReaderSpec

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<gxl xmlns="http://www.gupro.de/GXL/gxl-1.0.dtd">
+    <graph role="type" edgeids="false" edgemode="directed" id="type">
+        <attr name="$version">
+            <string>curly</string>
+        </attr>
+        <node id="n0">
+            <attr name="layout">
+                <string>131 135 58 17</string>
+            </attr>
+        </node>
+        <node id="n1">
+            <attr name="layout">
+                <string>534 137 64 17</string>
+            </attr>
+        </node>
+        <edge from="n0" to="n1">
+            <attr name="label">
+                <string>request</string>
+            </attr>
+            <attr name="layout">
+                <string>686 -12 160 143 566 145 11</string>
+            </attr>
+        </edge>
+        <edge from="n0" to="n0">
+            <attr name="label">
+                <string>type:process</string>
+            </attr>
+        </edge>
+        <edge from="n0" to="n0">
+            <attr name="label">
+                <string>next</string>
+            </attr>
+            <attr name="layout">
+                <string>500 0 160 143 138 93 160 143 11</string>
+            </attr>
+        </edge>
+        <edge from="n1" to="n0">
+            <attr name="label">
+                <string>token</string>
+            </attr>
+            <attr name="layout">
+                <string>632 -40 566 145 160 143 11</string>
+            </attr>
+        </edge>
+        <edge from="n1" to="n0">
+            <attr name="label">
+                <string>release</string>
+            </attr>
+            <attr name="layout">
+                <string>632 -40 566 145 160 143 11</string>
+            </attr>
+        </edge>
+        <edge from="n1" to="n0">
+            <attr name="label">
+                <string>held_by</string>
+            </attr>
+            <attr name="layout">
+                <string>632 -40 566 145 160 143 11</string>
+            </attr>
+        </edge>
+        <edge from="n1" to="n0">
+            <attr name="label">
+                <string>blocked</string>
+            </attr>
+            <attr name="layout">
+                <string>632 -40 566 145 160 143 11</string>
+            </attr>
+        </edge>
+        <edge from="n1" to="n1">
+            <attr name="label">
+                <string>type:resource</string>
+            </attr>
+        </edge>
+    </graph>
+</gxl>

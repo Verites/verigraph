@@ -47,7 +47,7 @@ testElevatorConflicts rules =
     "( 0 0 0 0 0 1 1 0 1 )\n"++
     "( 0 0 0 0 1 0 1 0 0 )\n"++
     "( 0 0 0 0 0 0 0 0 0 )\n"++
-    "( 0 0 0 0 1 1 1 0 4 )\n"
+    "( 0 0 0 0 1 1 1 0 1 )\n"
 
 pairwise :: (a -> a -> [b]) -> [a] -> Matrix Int
 pairwise f items =
