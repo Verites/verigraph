@@ -34,7 +34,7 @@ script:
 - stack -j 2 --no-terminal clean --full
 
 # Build the package, its tests, coverage reports and run the tests
-- stack -j 2 --no-terminal test --haddock --no-haddock-deps --coverage
+- stack -j 2 --no-terminal test --coverage --verbose
 
 # Send results and notify
 
