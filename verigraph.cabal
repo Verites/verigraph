@@ -66,6 +66,7 @@ library
                        Logic.Model
                        Logic.Ctl
                        Rewriting.DPO.TypedGraphRule.NacManipulation
+                       Rewriting.DPO.TypedGraphRule.Scheduling
                        Rewriting.DPO.TypedGraphRule
                        Rewriting.DPO.TypedGraph.GraphProcess.OccurrenceRelation
                        Rewriting.DPO.TypedGraph.GraphProcess

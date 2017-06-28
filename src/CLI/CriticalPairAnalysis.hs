@@ -91,7 +91,7 @@ execute globalOpts opts = do
         fstOrdRules = map snd namedFstOrdRules
         sndOrdRules = map snd namedSndOrdRules
 
-        interlevelCPs = applySecondOrder (interLevelCP dpoConf) namedFstOrdRules namedSndOrdRules
+        interlevelCPs = applySecondOrderFunction (interLevelCP dpoConf) namedFstOrdRules namedSndOrdRules
         interlevelWithoutCounting = Set.fromList $ map (\(x,y,_,_) -> (x,y)) interlevelCPs
         evoConflicts = allEvolSpans dpoConf namedSndOrdRules
 
