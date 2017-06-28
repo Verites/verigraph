@@ -1,87 +1,80 @@
-module Data.PartitionSpec where
+module Data.PartitionSpec (spec) where
 
 
-import           Data.Map              (Map)
-import qualified Data.Map              as Map
+import           Control.Monad
 import           Data.Set              (Set)
 import qualified Data.Set              as Set
 import           Math.Combinat.Numbers (bellNumber)
 import           Test.Hspec
-import           Test.Hspec.QuickCheck
-import           Test.QuickCheck
 
 import           Data.Partition
 
 
-modifyNumTestCases :: Int -> SpecWith a -> SpecWith a
-modifyNumTestCases x = modifyMaxSize (const x) . modifyMaxSuccess (const $ x + 1)
 
 spec :: Spec
 spec = do
 
-  describe "allPartitionsOf" $ modifyNumTestCases 15 $ do
-    prop "produces the correct number of partitions" $ \(NonNegative numElements) ->
-      integerLength (allPartitionsOf [0 .. numElements - 1 :: Int]) == bellNumber numElements
+  describe "allPartitionsOf" $ do
+    it "produces the correct number of partitions" $ forM_ [0..8] $ \numElements ->
+      integerLength (allPartitionsOf [0 .. numElements - 1 :: Int]) `shouldBe` bellNumber numElements
 
-    prop "produces valid partitions" $ \(NonNegative numElements) ->
+    it "produces valid partitions" $ forM_ [0..8] $ \numElements -> do
       let elements = [0 .. numElements - 1 :: Int]
-      in (`all` allPartitionsOf elements) $ \partition ->
-        pairwiseDisjoint (Set.toList partition)
-        && Set.unions (Set.toList partition) == Set.fromList elements
+      forM (allPartitionsOf elements) $ \partition -> do
+        Set.toList partition `shouldSatisfy` pairwiseDisjoint
+        Set.unions (Set.toList partition) `shouldBe` Set.fromList elements
 
-    prop "produces no duplicates" $ \(NonNegative numElements) ->
+    it "produces no duplicates" $ forM_ [0..8] $ \numElements -> do
       let partitions = allPartitionsOf [0 .. numElements - 1 :: Int]
-      in length partitions == Set.size (Set.fromList partitions)
+      length partitions `shouldBe` Set.size (Set.fromList partitions)
 
-  describe "addToPartition" $ modifyNumTestCases 10 $ do
-    prop "produces the correct number of partitions" $ \(NonNegative numElements) newElement ->
-      (newElement < 0 || numElements <= newElement) ==>
-      forAll (partitionsOfSize numElements) $ \partition ->
-        length (addToPartition newElement partition) == Set.size partition + 1
+  describe "addToPartition" $  do
+    it "produces the correct number of partitions" $
+      forM_ [0..8] $ \numElements ->
+      forM [numElements, -1, minBound, maxBound] $ \newElement ->
+      forM (allPartitionsOf [0 .. numElements - 1 :: Int]) $ \originalPartition ->
+        length (addToPartition newElement originalPartition) `shouldBe` Set.size originalPartition + 1
 
-    prop "produces valid partitions" $ \(NonNegative numElements) newElement ->
-      (newElement < 0 || numElements <= newElement) ==>
-      forAll (partitionsOfSize numElements) $ \originalPartition ->
-        (`all` addToPartition newElement originalPartition) $ \partition ->
-          pairwiseDisjoint (Set.toList partition)
-          && Set.unions (Set.toList partition) == Set.unions (Set.singleton newElement : Set.toList originalPartition)
+    it "produces valid partitions" $
+      forM_ [0..8] $ \numElements ->
+      forM [numElements, -1, minBound, maxBound] $ \newElement ->
+      forM (allPartitionsOf [0 .. numElements - 1 :: Int]) $ \originalPartition ->
+        forM (addToPartition newElement originalPartition) $ \partition -> do
+          Set.toList partition `shouldSatisfy` pairwiseDisjoint
+          Set.unions (Set.toList partition) `shouldBe` Set.unions (Set.singleton newElement : Set.toList originalPartition)
 
-    prop "produces no duplicates" $ \(NonNegative numElements) newElement ->
-      (newElement < 0 || numElements <= newElement) ==>
-      forAll (partitionsOfSize numElements) $ \originalPartition ->
+    it "produces no duplicates" $
+      forM_ [0..8] $ \numElements ->
+      forM [numElements, -1, minBound, maxBound] $ \newElement ->
+      forM (allPartitionsOf [0 .. numElements - 1 :: Int]) $ \originalPartition -> do
         let partitions = addToPartition newElement originalPartition
-        in length partitions == Set.size (Set.fromList partitions)
+        length partitions `shouldBe` Set.size (Set.fromList partitions)
 
-  describe "allRefinementsOf" $ modifyMaxSize (const 10) $ do
-    prop "produces valid partitions" $ \(NonNegative numElements) ->
-      forAll (partitionsOfSize numElements) $ \originalPartition ->
-        (`all` allRefinementsOf originalPartition) $ \refinement ->
-        pairwiseDisjoint (Set.toList refinement)
-        && Set.unions (Set.toList refinement) == Set.unions (Set.toList originalPartition)
+  describe "allRefinementsOf" $ do
+    it "produces valid partitions that are actual refinements" $
+      forM_ [0..7] $ \numElements ->
+      forM (allPartitionsOf [0 .. numElements - 1 :: Int]) $ \originalPartition ->
+      forM (allRefinementsOf originalPartition) $ \refinement -> do
+        Set.toList refinement `shouldSatisfy` pairwiseDisjoint
+        Set.unions (Set.toList refinement) `shouldBe` Set.unions (Set.toList originalPartition)
+        (refinement, originalPartition) `shouldSatisfy` uncurry refines
 
-    prop "produces no duplicates" $ \(NonNegative numElements) ->
-      forAll (partitionsOfSize numElements) $ \originalPartition ->
-      let refinements = allRefinementsOf originalPartition
-      in length refinements == Set.size (Set.fromList refinements)
+    it "produces no duplicates" $
+      forM_ [0..7] $ \numElements ->
+      forM (allPartitionsOf [0 .. numElements - 1 :: Int]) $ \originalPartition -> do
+        let refinements = allRefinementsOf originalPartition
+        length refinements `shouldBe` Set.size (Set.fromList refinements)
 
-    prop "produces actual refinements" $ \(NonNegative numElements) ->
-      forAll (partitionsOfSize numElements) $ \originalPartition ->
-      (`all` allRefinementsOf originalPartition) $ \refinement ->
-        refinement `refines` originalPartition
-
-    prop "produces the correct number of refinements" $ \(NonNegative numElements) ->
+    it "produces the correct number of refinements" $ forM_ [0..7] $ \numElements -> do
       let partitions = allPartitionsOf [0 .. numElements - 1 :: Int]
-      in forAll (elements partitions) $ \originalPartition ->
+      forM partitions $ \originalPartition -> do
         let naiveRefinements = filter (`refines` originalPartition) partitions
-        in length (allRefinementsOf originalPartition) == length naiveRefinements
+        length (allRefinementsOf originalPartition) `shouldBe` length naiveRefinements
 
 
 refines :: Ord a => Partition a -> Partition a -> Bool
 refines refinement partition = all (containedInSomeBlockOf partition) (Set.toList refinement)
   where containedInSomeBlockOf partition refinedBlock = any (refinedBlock `Set.isSubsetOf`) (Set.toList partition)
-
-partitionsOfSize :: Int -> Gen (Partition Int)
-partitionsOfSize n = elements (allPartitionsOf [0 .. n - 1])
 
 pairwiseDisjoint :: Ord a => [Set a] -> Bool
 pairwiseDisjoint [] = True
