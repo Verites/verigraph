@@ -11,7 +11,6 @@ import           Abstract.Category.AdhesiveHLR
 import           Abstract.Rewriting.DPO
 import           Control.Monad                 (when)
 import           Data.Graphs                   (Graph)
-import           Data.Maybe
 import           Data.TypedGraph.Morphism
 import           GlobalOptions
 import           Image.Dot
@@ -25,7 +24,7 @@ data SchedulingType = AsLongAsPossible | AllMatchesOneStep | Specific deriving (
 data Options = Options
   { outputFile :: String
   , scheduling :: SchedulingType
-  , limitPar   :: Maybe String
+  , limitPar   :: Int
   , srcRule    :: Maybe String
   , tgtRule    :: Maybe String
   }
@@ -39,11 +38,13 @@ options = Options
     <> action "file"
     <> help "GGX file that will be written, adding the new rules to the original graph grammar")
   <*> schedulingIn
-  <*> optional (strOption
+  <*> option auto
     ( long "limit"
     <> metavar "(INT > 0)"
     <> action "int"
-    <> help ("Input of 'as-long-as-possible', limit of rewritings, default is 5")))
+    <> showDefault
+    <> value 5
+    <> help ("Input of 'as-long-as-possible', limit of rewritings"))
   <*> optional (strOption
     ( long "from"
     <> metavar "2-rule"
@@ -87,10 +88,7 @@ execute globalOpts opts = do
         (Just src) = srcMaybe
         tgtMaybe = tgtRule opts
         (Just tgt) = tgtMaybe
-        limitMaybe = limitPar opts
-        (Just limitString) = limitMaybe
-        limitTmp = if isNothing limitMaybe then 5 else read limitString :: Int
-        limit = if limitTmp >= 0 then limitTmp else 5
+        limit = limitPar opts
         printDot = False --flag to test the print to .dot functions
 
     (fstOrderGG, sndOrderGG, printNewNacs) <- XML.readGrammar (inputFile globalOpts) (useConstraints globalOpts) dpoConf
