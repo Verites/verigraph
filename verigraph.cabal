@@ -93,6 +93,7 @@ library
                        Util.List
                        Util.Map
                        Util.Monad
+                       Util.EnumMap
                        XML.GGXReader
                        XML.GGXWriter
                        XML.GPRReader.GXLReader

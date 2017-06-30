@@ -1,27 +1,25 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Category.LabeledGraph.Cocomplete () where
 
-import           Data.EnumMap                           (EnumMap)
-import qualified Data.EnumMap                           as EnumMap
-import qualified Data.List                              as List
 import           Data.List.NonEmpty                     (NonEmpty (..))
 import qualified Data.List.NonEmpty                     as NonEmpty
-import           Data.Map                               (Map)
 import qualified Data.Map                               as Map
-import           Data.Maybe                             (catMaybes, listToMaybe, mapMaybe)
-import           Data.Semigroup
+import           Data.Maybe                             (catMaybes, listToMaybe,
+                                                         mapMaybe)
 import           Data.Set                               (Set)
 import qualified Data.Set                               as Set
-import           Data.Text                              (Text)
-import qualified Data.Text                              as Text
 
 import           Abstract.Category.Cocomplete
 import           Abstract.Category.FinitaryCategory
 import           Category.LabeledGraph.FinitaryCategory ()
-import           Data.LabeledGraph                      hiding (edgeMap, empty, nodeMap)
+import           Data.EnumMap                           (EnumMap)
+import qualified Data.EnumMap                           as EnumMap
+import           Data.LabeledGraph                      hiding (edgeMap, empty,
+                                                         nodeMap)
 import qualified Data.LabeledGraph                      as Graph
-import           Data.LabeledGraph.Morphism             hiding (edgeMap, nodeMap, variableMap)
+import           Data.LabeledGraph.Morphism             hiding (edgeMap,
+                                                         nodeMap, variableMap)
 import           Data.Partition
 import           Data.Variable
 
@@ -35,9 +33,10 @@ instance Cocomplete LabeledMorphism where
 
   calculateCoproduct a b =
     let
-      (nodeMapA, edgeMapA, varMapA) = relableGraph a [0 ..] [0 ..] "_a"
+      (nodeMapA, edgeMapA, varMapA) = relableGraph a [0 ..] [0 ..] [0 ..]
+      (numNodesA, numEdgesA, numVarsA) = (length (nodes a), length (edges a), EnumMap.size (freeVariableMap a))
       (nodeMapB, edgeMapB, varMapB) =
-        relableGraph b [toEnum $ length (nodes a) ..] [toEnum $ length (edges a) ..] "_b"
+        relableGraph b [toEnum numNodesA ..] [toEnum numEdgesA ..] [toEnum numVarsA ..]
       coproductGraph = Graph.fromNodesAndEdges
         (EnumMap.elems nodeMapA ++ EnumMap.elems nodeMapB)
         (EnumMap.elems edgeMapA ++ EnumMap.elems edgeMapB)
@@ -56,17 +55,18 @@ instance Cocomplete LabeledMorphism where
     in
       zipWith (makeEmbeddingInto coproductGraph) graphs relabelings
     where
-      relableAll :: (NodeId, EdgeId, Int) -> [LabeledGraph] -> [Relabeling]
+      relableAll :: (NodeId, EdgeId, VarId) -> [LabeledGraph] -> [Relabeling]
       relableAll _ [] = []
-      relableAll (freeNodeId, freeEdgeId, varSuffix) (g:gs) =
-          relableGraph g [freeNodeId..] [freeEdgeId..] (Text.pack $ '_' : show varSuffix)
-          : relableAll (freeNodeId', freeEdgeId', varSuffix + 1) gs
+      relableAll (freeNodeId, freeEdgeId, freeVarId) (g:gs) =
+          relableGraph g [freeNodeId..] [freeEdgeId..] [freeVarId..]
+          : relableAll (freeNodeId', freeEdgeId', freeVarId') gs
         where
           freeNodeId' = freeNodeId + toEnum (length $ nodes g)
           freeEdgeId' = freeEdgeId + toEnum (length $ edges g)
+          freeVarId' = freeVarId + toEnum (EnumMap.size $ freeVariableMap g)
 
 
-type Relabeling = (EnumMap NodeId LNode, EnumMap EdgeId LEdge, Map Variable Variable)
+type Relabeling = (EnumMap NodeId LNode, EnumMap EdgeId LEdge, EnumMap VarId Variable)
 
 nodeMap :: Relabeling -> EnumMap NodeId LNode
 nodeMap (m, _, _) = m
@@ -74,14 +74,16 @@ nodeMap (m, _, _) = m
 edgeMap :: Relabeling -> EnumMap EdgeId LEdge
 edgeMap (_, m, _) = m
 
-relableGraph :: LabeledGraph -> [NodeId] -> [EdgeId] -> Text -> Relabeling
-relableGraph graph newNodeIds newEdgeIds varSuffix = (nodeMap, edgeMap, varMap)
+relableGraph :: LabeledGraph -> [NodeId] -> [EdgeId] -> [VarId] -> Relabeling
+relableGraph graph newNodeIds newEdgeIds newVarIds = (nodeMap, edgeMap, varMap)
   where
-    varMap = Map.fromList [ (v, v <> varSuffix) | v <- freeVariablesOf graph ]
+    varMap = EnumMap.fromList
+      [ (oldId, Variable newId names)
+          | (Variable oldId names, newId) <- zip (freeVariablesOf graph) newVarIds ]
     nodeMap = EnumMap.fromList
-      [ (oldId, Node newId newAttribute)
-          | (Node oldId oldAttribute, newId) <- zip (nodes graph) newNodeIds
-          , let newAttribute = oldAttribute >>= (`Map.lookup` varMap)
+      [ (oldId, Node newId newLabel)
+          | (Node oldId oldLabel, newId) <- zip (nodes graph) newNodeIds
+          , let newLabel = (`EnumMap.lookup` varMap) . varId =<< oldLabel
       ]
     edgeMap = EnumMap.fromList
       [ (e, Edge e' src' tgt' ())
@@ -92,7 +94,7 @@ relableGraph graph newNodeIds newEdgeIds varSuffix = (nodeMap, edgeMap, varMap)
 
 makeEmbeddingInto :: LabeledGraph -> LabeledGraph -> Relabeling -> LabeledMorphism
 makeEmbeddingInto codomain domain (nodeMap, edgeMap, varMap) =
-  LabeledMorphism domain codomain (EnumMap.map nodeId nodeMap) (EnumMap.map edgeId edgeMap) varMap
+  LabeledMorphism domain codomain (EnumMap.map nodeId nodeMap) (EnumMap.map edgeId edgeMap) (EnumMap.map varId varMap)
 
 
 -- * Coequalizer algorithm
@@ -151,12 +153,15 @@ calculateGenericCoequalizer sharedDomain sharedCodomain parallelMorphisms =
     collapsedVarsFromNodes = catMaybes
       [ filterMap labelOnCodomain block | block <- Set.toList nodePartition ]
     collapsedVarsFromFunctions = catMaybes
-      [ filterMap (applyToVariable v) parallelMorphisms | v <- freeVariablesOf sharedDomain ]
+      [ filterMap (lookupVarId v) parallelMorphisms | v <- freeVariableIdsOf sharedDomain ]
     variablePartition = mergeElements collapsedVarsFromFunctions $
-      mergeSets collapsedVarsFromNodes (discretePartition $ freeVariablesOf sharedCodomain)
+      mergeSets collapsedVarsFromNodes (discretePartition $ freeVariableIdsOf sharedCodomain)
 
-    variableRenaming = partitionToSurjection variablePartition
-      (Text.concat . List.intersperse "__" . Set.toList)
+    variableRenaming = partitionToSurjection variablePartition $ \equivalentVarIds ->
+      let
+        representativeId = Set.findMin equivalentVarIds
+        names = concat . mapMaybe (fmap varNameHints . lookupVarOnCodomain) $ Set.toList equivalentVarIds
+      in Variable representativeId names
     nodeMapping = partitionToSurjection nodePartition $ \equivalentNodeIds ->
       let
         representativeId = Set.findMin equivalentNodeIds
@@ -176,7 +181,9 @@ calculateGenericCoequalizer sharedDomain sharedCodomain parallelMorphisms =
     LabeledMorphism sharedCodomain coequalizerGraph
       (EnumMap.fromList . Map.toList $ fmap nodeId nodeMapping)
       (EnumMap.fromList . Map.toList $ fmap edgeId edgeMapping)
-      variableRenaming
+      (EnumMap.fromList . Map.toList $ fmap varId variableRenaming)
   where
-    labelOnCodomain nodeId = lookupNode nodeId sharedCodomain >>= nodeLabel
+    labelOnCodomain nodeId = lookupNode nodeId sharedCodomain >>= (fmap varId . nodeLabel)
+    lookupVarOnCodomain varId = EnumMap.lookup varId codomainVarMap
+    codomainVarMap = freeVariableMap sharedCodomain
 {-# INLINE calculateGenericCoequalizer #-}

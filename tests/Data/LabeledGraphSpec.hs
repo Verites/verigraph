@@ -1,9 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications  #-}
 module Data.LabeledGraphSpec where
 
-import qualified Data.Map                     as Map
 import           Test.Hspec
 
+import qualified Data.EnumMap                 as EnumMap
 import           Data.LabeledGraph            as Graph
 import           Data.LabeledGraph.QuickCheck ()
 import           Data.Variable
@@ -14,31 +15,34 @@ spec = do
   describe "instance FreeVariables LNode" $ do
 
     describe "renameVariable" $ do
+      let rename0to1 = renameVariable @LNode 0 (Variable 1 ["y"])
       it "renames the intended variable" $
-        renameVariable "x" "y" (Node 0 $ Just "x") `shouldBe` (Node 0 (Just "y") :: LNode)
+        rename0to1 (Node 0 $ Just $ Variable 0 ["x"]) `shouldBe` Node 0 (Just $ Variable 1 ["y"])
       it "preserves other variables" $
-        renameVariable "x" "y" (Node 0 $ Just "z") `shouldBe` (Node 0 (Just "z") :: LNode)
+        rename0to1 (Node 0 $ Just $ Variable 2 ["z"]) `shouldBe` Node 0 (Just $ Variable 2 ["z"])
       it "preserves unlabeled nodes" $
-        renameVariable "x" "y" (Node 0 Nothing) `shouldBe` (Node 0 Nothing :: LNode)
+        rename0to1 (Node 0 Nothing) `shouldBe` Node 0 Nothing
 
     describe "renameVariables" $ do
-      let subst = Map.fromList [("a", "x"), ("b", "y")] :: Renaming
+      let rename = renameVariables @LNode $
+            EnumMap.fromList [(0, Variable 10 ["x"]), (1, Variable 11 ["y"])]
       it "renames the intended variables" $ do
-        renameVariables subst (Node 0 $ Just "a") `shouldBe` (Node 0 (Just "x") :: LNode)
-        renameVariables subst (Node 0 $ Just "b") `shouldBe` (Node 0 (Just "y") :: LNode)
+        rename (Node 0 $ Just $ Variable 0 ["a"]) `shouldBe` Node 0 (Just $ Variable 10 ["x"])
+        rename (Node 0 $ Just $ Variable 1 ["b"]) `shouldBe` Node 0 (Just $ Variable 11 ["y"])
       it "preserves other variables" $
-        renameVariables subst (Node 0 $ Just "c") `shouldBe` (Node 0 (Just "c") :: LNode)
+        rename (Node 0 $ Just $ Variable 3 ["c"]) `shouldBe` Node 0 (Just $ Variable 3 ["c"])
       it "preserves unlabeled nodes" $
-        renameVariables subst (Node 0 Nothing) `shouldBe` (Node 0 Nothing :: LNode)
+        rename (Node 0 Nothing) `shouldBe` Node 0 Nothing
 
 
   describe "instance FreeVariables LNode" $ do
-    let graph = Graph.fromNodesAndEdges [Node 0 Nothing, Node 1 (Just "a"), Node 2 (Just "b"), Node 3 (Just "c")] []
+    let graph = Graph.fromNodesAndEdges
+          [Node 0 Nothing, Node 1 (Just $ Variable 4 ["a"]), Node 2 (Just $ Variable 5 ["b"]), Node 3 (Just $ Variable 6 ["c"])] []
 
     describe "renameVariable" $ do
-      let renamed = renameVariable "a" "x" graph
+      let renamed = renameVariable 4 (Variable 10 ["x"]) graph
       it "renames the intended variable" $
-        lookupNode 1 renamed `shouldBe` Just (Node 1 (Just "x"))
+        lookupNode 1 renamed `shouldBe` Just (Node 1 (Just $ Variable 10 ["x"]))
       it "preserves other variables" $ do
         lookupNode 2 renamed `shouldBe` lookupNode 2 graph
         lookupNode 3 renamed `shouldBe` lookupNode 3 graph
@@ -46,11 +50,11 @@ spec = do
         lookupNode 0 renamed `shouldBe` lookupNode 0 graph
 
     describe "renameVariables" $ do
-      let subst = Map.fromList [("a", "x"), ("b", "y")] :: Renaming
+      let subst = EnumMap.fromList [(4, Variable 10 ["x"]), (5, Variable 11 ["y"])]
       let renamed = renameVariables subst graph
       it "renames the intended variables" $ do
-        lookupNode 1 renamed `shouldBe` Just (Node 1 (Just "x"))
-        lookupNode 2 renamed `shouldBe` Just (Node 2 (Just "y"))
+        lookupNode 1 renamed `shouldBe` Just (Node 1 (Just $ Variable 10 ["x"]))
+        lookupNode 2 renamed `shouldBe` Just (Node 2 (Just $ Variable 11 ["y"]))
       it "preserves other variables" $
         lookupNode 3 renamed `shouldBe` lookupNode 3 graph
       it "preserves unlabeled nodes" $

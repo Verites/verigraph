@@ -1,30 +1,32 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE NamedFieldPuns         #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE TypeApplications       #-}
+{-# LANGUAGE TypeSynonymInstances   #-}
 module Category.LabeledGraph.FindMorphism () where
 
 import           Control.Applicative
 import           Control.Monad
 import           Control.Monad.List
 import           Control.Monad.Reader
-import           Data.Map                               (Map)
-import qualified Data.Map                               as Map
 import           Data.Maybe                             (mapMaybe)
-import           Data.Set                               (Set)
-import qualified Data.Set                               as Set
 
 import           Abstract.Category.FinitaryCategory
 import           Category.LabeledGraph.FinitaryCategory ()
+import           Data.EnumMap                           (EnumMap)
 import qualified Data.EnumMap                           as EnumMap
-import           Data.LabeledGraph                      hiding (edgeMap, empty, nodeMap)
+import           Data.EnumSet                           (EnumSet)
+import qualified Data.EnumSet                           as EnumSet
+import           Data.LabeledGraph                      hiding (edgeMap, empty,
+                                                         nodeMap)
 import qualified Data.LabeledGraph                      as Graph
-import           Data.LabeledGraph.Morphism             hiding (edgeMap, nodeMap, variableMap)
+import           Data.LabeledGraph.Morphism             hiding (edgeMap,
+                                                         nodeMap, variableMap)
 import           Data.LabeledGraph.Morphism             as Morphism
 import           Data.Variable
-import           Util.Map                               as Map
+import           Util.EnumMap                           as EnumMap
 
 
 -- | Function that allows building multiple morphisms between two objects.
@@ -37,7 +39,7 @@ type MorphismBuilder = BuilderState -> ReaderT BuilderConfig [] BuilderState
 data BuilderState = State
   { nodeState :: ComponentState NodeId LNode
   , edgeState :: ComponentState EdgeId LEdge
-  , varState  :: ComponentState Variable Variable
+  , varState  :: ComponentState VarId Variable
   }
 
 -- | Restrictions on the morphisms that may be found.
@@ -45,20 +47,20 @@ data BuilderConfig =
   Config
     { nodeConfig :: ComponentConfig NodeId LNode
     , edgeConfig :: ComponentConfig EdgeId LEdge
-    , varConfig  :: ComponentConfig Variable Variable
+    , varConfig  :: ComponentConfig VarId Variable
     }
 
 -- | Current state of the morphism finding algorithm for one component of the morphism.
 data ComponentState id element = CState
-  { unmappedDomElements  :: Map id element
-  , availableCodElements :: Map id element
-  , mapping              :: Map id id
+  { unmappedDomElements  :: EnumMap id element
+  , availableCodElements :: EnumMap id element
+  , mapping              :: EnumMap id id
   }
 
 -- | Restrictions on one of the components of the morphisms that may be found.
 data ComponentConfig id element = CConfig
   { updateAfterMapping :: id -> id -> ComponentState id element -> ComponentState id element
-  , validateFinalState :: Set id -> Set id -> ComponentState id element -> Bool
+  , validateFinalState :: EnumSet id -> EnumSet id -> ComponentState id element -> Bool
   }
 
 instance FindMorphism LabeledMorphism where
@@ -69,21 +71,21 @@ instance FindMorphism LabeledMorphism where
 
   findCospanCommuter restriction left right =
     runMorphismBuilder (makeConfig restriction) (domain left) (domain right) $
-      mapAllFromCospan lookupEdgeId (EnumMap.toList . Morphism.edgeMap)
-        >=> mapAllFromCospan lookupNodeId (EnumMap.toList . Morphism.nodeMap)
-        >=> mapAllFromCospan applyToVariable (Map.toList . Morphism.variableMap)
+      mapAllFromCospan lookupEdgeId Morphism.edgeMap
+        >=> mapAllFromCospan lookupNodeId Morphism.nodeMap
+        >=> mapAllFromCospan lookupVarId Morphism.variableMap
     where
       mapAllFromCospan :: Component id elem =>
-        (id -> LabeledMorphism -> Maybe id) -> (LabeledMorphism -> [(id, id)]) -> MorphismBuilder
+        (id -> LabeledMorphism -> Maybe id) -> (LabeledMorphism -> EnumMap id id) -> MorphismBuilder
       mapAllFromCospan applyTo getMorphismComponent =
         let
-          candidates = Map.inverse (getMorphismComponent right)
+          candidates = EnumMap.inverse . EnumMap.toList $ getMorphismComponent right
           pickCodomainElem state elemLeft =
             case applyTo (idOf elemLeft) left of
               Nothing -> []
-              Just elemMid -> case Map.lookup elemMid candidates of
+              Just elemMid -> case EnumMap.lookup elemMid candidates of
                 Nothing -> []
-                Just elemsRight -> mapMaybe (`Map.lookup` availableCodElements state) elemsRight
+                Just elemsRight -> mapMaybe (`EnumMap.lookup` availableCodElements state) elemsRight
         in mapAll pickCodomainElem
 
 
@@ -95,9 +97,10 @@ instance FindMorphism LabeledMorphism where
       addMappingsFromSpan state = do
         state1 <- foldM induceMapping state (inducedPairs applyToEdgeId Graph.edgeIds)
         state2 <- foldM induceMapping state1 (inducedPairs applyToNodeId Graph.nodeIds)
-        foldM induceMapping state2 (inducedPairs applyToVariable freeVariablesOf)
+        foldM (induceMapping @VarId @Variable) state2 (inducedPairs applyToVarId freeVariableIdsOf)
+      induceMapping :: (Eq id, Component id element) => BuilderState -> (element, element) -> ReaderT BuilderConfig [] BuilderState
       induceMapping state (domainElem, codomainElem) =
-        case Map.lookup (idOf domainElem) (mapping $ getComponent state) of
+        case EnumMap.lookup (idOf domainElem) (mapping $ getComponent state) of
           Nothing -> addMapping domainElem codomainElem state
           Just previousMapping -> do
             guard (previousMapping == idOf codomainElem)
@@ -107,6 +110,8 @@ instance FindMorphism LabeledMorphism where
             | z <- getElems (domain nac)
             , Just x <- [applyTo z nac]
             , Just y <- [applyTo z match] ]
+      applyToVarId v f = lookupVarId v f >>= (`EnumMap.lookup` codomainVarMap)
+      codomainVarMap = freeVariableMap (codomain match)
 
 
 -- | Create a configuration that will produce morphisms of the given type.
@@ -121,18 +126,18 @@ makeConfig restriction = Config config config config
         }
       Monomorphism -> CConfig
         { updateAfterMapping = \_ e state ->
-            state { availableCodElements = Map.delete e (availableCodElements state) }
+            state { availableCodElements = EnumMap.delete e (availableCodElements state) }
         , validateFinalState = \_ _ _ -> True
         }
       Epimorphism -> CConfig
           { updateAfterMapping = \_ _ -> id
           , validateFinalState = \_ codomain state ->
-              Set.fromList (Map.elems $ mapping state) == codomain
+              EnumSet.fromList (EnumMap.elems $ mapping state) == codomain
           }
       Isomorphism -> CConfig
         {  updateAfterMapping = \_ e state ->
-            state { availableCodElements = Map.delete e (availableCodElements state) }
-        , validateFinalState = \_ _ state -> Map.null (availableCodElements state)
+            state { availableCodElements = EnumMap.delete e (availableCodElements state) }
+        , validateFinalState = \_ _ state -> EnumMap.null (availableCodElements state)
         }
 {-# INLINE makeConfig #-}
 
@@ -143,28 +148,25 @@ runMorphismBuilder config domain codomain build =
   let
     initialState = State
       { nodeState = CState
-          { unmappedDomElements = Map.fromList (Graph.nodeMap domain)
-          , availableCodElements = Map.fromList (Graph.nodeMap codomain)
-          , mapping = Map.empty }
+          { unmappedDomElements = EnumMap.fromList (Graph.nodeMap domain)
+          , availableCodElements = EnumMap.fromList (Graph.nodeMap codomain)
+          , mapping = EnumMap.empty }
       , edgeState = CState
-          { unmappedDomElements = Map.fromList (Graph.edgeMap domain)
-          , availableCodElements = Map.fromList (Graph.edgeMap codomain)
-          , mapping = Map.empty }
+          { unmappedDomElements = EnumMap.fromList (Graph.edgeMap domain)
+          , availableCodElements = EnumMap.fromList (Graph.edgeMap codomain)
+          , mapping = EnumMap.empty }
       , varState = CState
-          { unmappedDomElements = Map.fromList [ (v, v) | v <- freeVariablesOf domain ]
-          , availableCodElements = Map.fromList [ (v, v) | v <- freeVariablesOf codomain ]
-          , mapping = Map.empty }
+          { unmappedDomElements = freeVariableMap domain
+          , availableCodElements = freeVariableMap codomain
+          , mapping = EnumMap.empty }
       }
     in do
       finalState <- runReaderT (build initialState) config
-      guard $ validateFinalState (nodeConfig config) (Set.fromList $ nodeIds domain) (Set.fromList $ nodeIds codomain) (nodeState finalState)
-      guard $ validateFinalState (edgeConfig config) (Set.fromList $ edgeIds domain) (Set.fromList $ edgeIds codomain) (edgeState finalState)
+      guard $ validateFinalState (nodeConfig config) (EnumSet.fromList $ nodeIds domain) (EnumSet.fromList $ nodeIds codomain) (nodeState finalState)
+      guard $ validateFinalState (edgeConfig config) (EnumSet.fromList $ edgeIds domain) (EnumSet.fromList $ edgeIds codomain) (edgeState finalState)
       guard $ validateFinalState (varConfig config) (freeVariableSet domain) (freeVariableSet codomain) (varState finalState)
       return $
-        LabeledMorphism domain codomain
-          (EnumMap.fromList . Map.toList . mapping $ nodeState finalState)
-          (EnumMap.fromList . Map.toList . mapping $ edgeState finalState)
-          (mapping $ varState finalState)
+        LabeledMorphism domain codomain (mapping $ nodeState finalState) (mapping $ edgeState finalState) (mapping $ varState finalState)
 
 
 -- | Maps all unmapped elements of the domain. For each unmapped element of the domain, attempts
@@ -172,16 +174,17 @@ runMorphismBuilder config domain codomain build =
 mapAllElementsFreely :: MorphismBuilder
 mapAllElementsFreely = mapAllEdges >=> mapAllNodes >=> mapAllVariables
   where
-    mapAllEdges = mapAll (pickElems :: ComponentState EdgeId LEdge -> LEdge -> [LEdge])
-    mapAllNodes = mapAll (pickElems :: ComponentState NodeId LNode -> LNode -> [LNode])
-    mapAllVariables = mapAll (pickElems :: ComponentState Variable Variable -> Variable -> [Variable])
-    pickElems state _ = Map.elems (availableCodElements state)
+    mapAllNodes = mapAll (pickElems @NodeId @LNode)
+    mapAllEdges = mapAll (pickElems @EdgeId @LEdge)
+    mapAllVariables = mapAll (pickElems @VarId @Variable)
+    pickElems :: Enum id => ComponentState id elem -> t -> [elem]
+    pickElems state _ = EnumMap.elems (availableCodElements state)
 {-# INLINE mapAllElementsFreely #-}
 
 
 -- | Class describing components of the morphism (e.g. node component, edge component, variable
 -- component)
-class (Ord id) => Component id element | id -> element, element -> id where
+class (Eq id, Enum id) => Component id element | id -> element, element -> id where
   getComponent :: BuilderState -> ComponentState id element
   setComponent :: ComponentState id element -> BuilderState -> BuilderState
   getConfig :: BuilderConfig -> ComponentConfig id element
@@ -201,9 +204,9 @@ mapAll pickCodomainElement =
   where
     recurse :: MorphismBuilder
     recurse state
-      | Map.null (unmappedDomElements $ getComponent state :: Map id element) = return state
+      | EnumMap.null (unmappedDomElements $ getComponent @id @element state) = return state
       | otherwise = do
-          let (_, domainElement) = Map.findMin (unmappedDomElements $ getComponent state)
+          let (_, domainElement) = EnumMap.findMin (unmappedDomElements $ getComponent state)
           codomainElement <- lift $ pickCodomainElement (getComponent state) domainElement
           state' <- addMapping domainElement codomainElement state
           recurse state'
@@ -215,14 +218,14 @@ mapAll pickCodomainElement =
 -- codomain elements.
 addInducedMapping :: Component id element => id -> id -> MorphismBuilder
 addInducedMapping domainId codomainId state =
-  case Map.lookup domainId (unmappedDomElements $ getComponent state) of
+  case EnumMap.lookup domainId (unmappedDomElements $ getComponent state) of
     Nothing -> do
-      guard $ Map.lookup domainId (mapping $ getComponent state) == Just codomainId
+      guard $ EnumMap.lookup domainId (mapping $ getComponent state) == Just codomainId
       return state
     Just domainNode ->
-      case Map.lookup codomainId (availableCodElements $ getComponent state) of
+      case EnumMap.lookup codomainId (availableCodElements $ getComponent state) of
         Just codomainNode -> addMapping domainNode codomainNode state
-        Nothing -> empty
+        Nothing           -> empty
 
 -- | Insert a mapping between elements with the given identifiers. Assumes the domain element is
 -- unmapped and the codomain element is available.
@@ -231,8 +234,8 @@ insertMapping domainId codomainId state = do
   let componentState = getComponent state
   componentConfig <- asks getConfig
   let updatedState = updateAfterMapping componentConfig domainId codomainId $ componentState
-        { mapping = Map.insert domainId codomainId (mapping componentState)
-        , unmappedDomElements = Map.delete domainId (unmappedDomElements componentState)
+        { mapping = EnumMap.insert domainId codomainId (mapping componentState)
+        , unmappedDomElements = EnumMap.delete domainId (unmappedDomElements componentState)
         }
   return (setComponent updatedState state)
 
@@ -254,14 +257,14 @@ instance Component NodeId LNode where
   idOf = nodeId
   addMapping domainNode codomainNode state0 = do
     state1 <- case (nodeLabel domainNode, nodeLabel codomainNode) of
-      (Nothing, _) -> return state0 -- Unlabeled nodes can be mapped to labeled nodes
+      (Nothing, _)      -> return state0 -- Unlabeled nodes can be mapped to labeled nodes
       (Just _, Nothing) -> empty -- Labeled nodes cannot be mapped to unlabeled nodes
-      (Just v, Just w) -> addInducedMapping v w state0
+      (Just v, Just w)  -> addInducedMapping (varId v) (varId w) state0
     insertMapping (nodeId domainNode) (nodeId codomainNode) state1
 
-instance Component Variable Variable where
+instance Component VarId Variable where
   getComponent = varState
   setComponent newVarState state = state { varState = newVarState }
   getConfig = varConfig
-  idOf = id
-  addMapping = insertMapping
+  idOf = varId
+  addMapping v w = insertMapping (varId v) (varId w)

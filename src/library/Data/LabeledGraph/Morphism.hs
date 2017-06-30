@@ -1,6 +1,6 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
-{-# LANGUAGE PatternSynonyms #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE PatternSynonyms           #-}
+{-# LANGUAGE TypeFamilies              #-}
 module Data.LabeledGraph.Morphism
   (
   -- * Morphism type
@@ -16,11 +16,11 @@ module Data.LabeledGraph.Morphism
   , isBijective
   , applyToNode
   , applyToEdge
-  , applyToVariable
   , applyToNodeId
   , applyToEdgeId
   , lookupNodeId
   , lookupEdgeId
+  , lookupVarId
   , isNodeDefined
   , isEdgeDefined
 
@@ -36,19 +36,11 @@ module Data.LabeledGraph.Morphism
   , nodeRelation
   , edgeRelation
   , variableRelation
-
-  -- ** Lists
-  , orphanNodes
-  , orphanEdges
-  , orphanVariables
   ) where
 
 
-import           Data.Foldable     (foldl')
-import           Data.Map          (Map)
-import qualified Data.Map          as Map
-import           Data.Maybe        (isJust, maybeToList)
-import qualified Data.Set          as Set
+import qualified Data.List         as List
+import           Data.Maybe        (isJust)
 import qualified Data.Text         as Text
 
 import           Base.Valid
@@ -59,6 +51,7 @@ import           Data.LabeledGraph hiding (edgeMap, nodeMap)
 import           Data.Relation     (Relation)
 import qualified Data.Relation     as Relation
 import           Data.Variable
+import qualified Util.EnumMap      as EnumMap
 
 
 data LabeledMorphism = LabeledMorphism
@@ -66,7 +59,7 @@ data LabeledMorphism = LabeledMorphism
   , codomainGraph :: LabeledGraph
   , nodeMap       :: EnumMap NodeId NodeId
   , edgeMap       :: EnumMap EdgeId EdgeId
-  , variableMap   :: Map Variable Variable
+  , variableMap   :: EnumMap VarId VarId
   }
   deriving Eq
 
@@ -79,18 +72,25 @@ instance Show LabeledMorphism where
     , "LEdge mappings:\n"
     , concatMap showEdgeMapping (EnumMap.toList $ edgeMap m)
     , "Variable renamings:\n"
-    , concatMap showVarRenaming (Map.toList $ variableMap m) ]
+    , concatMap showVarRenaming (EnumMap.toList $ variableMap m) ]
     where
       showNodeMapping (id1, id2) = "\t" ++ showNode id1 (domainGraph m) ++ " => " ++ showNode id2 (codomainGraph m) ++ "\n"
       showNode n graph = case lookupNode n graph of
-        Nothing -> "INVALID(" ++ show n ++ ")"
+        Nothing   -> "INVALID(" ++ show n ++ ")"
         Just node -> show n ++ " [" ++ label node ++ "]"
-        where label = maybe "" Text.unpack . nodeLabel
+        where label = maybe "" showVar' . nodeLabel
       showEdgeMapping (id1, id2) = "\t" ++ showEdge id1 (domainGraph m) ++ " => " ++ showEdge id2 (codomainGraph m) ++ "\n"
       showEdge e graph = case lookupEdge e graph of
         Nothing -> "INVALID(" ++ show e ++ ")"
         Just edge -> show e ++ " [" ++ show (sourceId edge) ++ "->" ++ show (targetId edge) ++ "]"
-      showVarRenaming (v1, v2) = Text.unpack v1 ++ " => " ++ Text.unpack v2 ++ "\n"
+      showVarRenaming (id1, id2) = showVar id1 domVars ++ " => " ++ showVar id2 codVars ++ "\n"
+      showVar v varMap = case EnumMap.lookup v varMap of
+        Nothing  -> "INVALID(" ++ show v ++ ")"
+        Just var -> showVar' var
+      showVar' (Variable v []) = show v
+      showVar' (Variable v names) = show v ++ ":" ++ List.intercalate "," (map Text.unpack names)
+      domVars = freeVariableMap (domainGraph m)
+      codVars = freeVariableMap (codomainGraph m)
 
 
 instance Valid LabeledMorphism where
@@ -116,7 +116,7 @@ instance Valid LabeledMorphism where
             case (nodeLabel node, nodeLabel =<< applyToNode node morphism) of
               (Nothing, _)      -> True
               (Just _, Nothing) -> False
-              (Just v, justW)   -> applyToVariable v morphism == justW
+              (Just v, justW)   -> lookupVarId (varId v) morphism == (varId <$> justW)
 
 
 -- * Query
@@ -126,27 +126,29 @@ isTotal m = isTotalOnNodes m && isTotalOnEdges m && isTotalOnVariables m
 
 isTotalOnNodes m = EnumMap.keysSet (nodeMap m) == (EnumSet.fromList . nodeIds $ domainGraph m)
 isTotalOnEdges m = EnumMap.keysSet (edgeMap m) == (EnumSet.fromList . edgeIds $ domainGraph m)
-isTotalOnVariables m = Map.keysSet (variableMap m) == freeVariableSet (domainGraph m)
+isTotalOnVariables m = EnumMap.keysSet (variableMap m) == freeVariableSet (domainGraph m)
 
 isInjective :: LabeledMorphism -> Bool
-isInjective m =
-  isInjective' (nodeMap m) && isInjective' (edgeMap m) && isInjective' (variableMap m)
-  where
-    isInjective' = all (<=1) . preimageCounts
-    preimageCounts = foldl' incrementCount Map.empty
-    incrementCount counts x = Map.insertWith (+) x (1 :: Int) counts
+isInjective m = isInjective' (nodeMap m) && isInjective' (edgeMap m) && isInjective' (variableMap m)
+  where isInjective' = EnumMap.isInjective . EnumMap.toList
 
 isSurjective :: LabeledMorphism -> Bool
 isSurjective m =
-    enumMapRange (nodeMap m) == (EnumSet.fromList . nodeIds $ codomainGraph m)
-      && enumMapRange (edgeMap m) == (EnumSet.fromList . edgeIds $ codomainGraph m)
-      && mapRange (variableMap m) == freeVariableSet (codomainGraph m)
-    where
-      enumMapRange = EnumSet.fromList . EnumMap.elems
-      mapRange = Set.fromList . Map.elems
+  range (nodeMap m) == (EnumSet.fromList . nodeIds $ codomainGraph m)
+    && range (edgeMap m) == (EnumSet.fromList . edgeIds $ codomainGraph m)
+    && range (variableMap m) == freeVariableSet (codomainGraph m)
+  where range = EnumSet.fromList . EnumMap.elems
 
 isBijective :: LabeledMorphism -> Bool
-isBijective m = isInjective m && isSurjective m
+isBijective m =
+  isBijective' (nodeMap m) (EnumSet.fromList . nodeIds $ codomainGraph m)
+    && isBijective' (edgeMap m) (EnumSet.fromList . edgeIds $ codomainGraph m)
+    && isBijective' (variableMap m) (freeVariableSet $ codomainGraph m)
+  where
+    isBijective' m codomain = all isSingleton inverseM && EnumMap.keysSet inverseM == codomain
+      where inverseM = EnumMap.inverse (EnumMap.toList m)
+    isSingleton [_] = True
+    isSingleton _   = False
 
 applyToNode :: LNode -> LabeledMorphism -> Maybe LNode
 applyToNode = applyToNodeId . nodeId
@@ -164,14 +166,14 @@ applyToEdgeId edgeId f = do
   edgeId' <- lookupEdgeId edgeId f
   lookupEdge edgeId' (codomainGraph f)
 
-applyToVariable :: Variable -> LabeledMorphism -> Maybe Variable
-applyToVariable var = Map.lookup var . variableMap
-
 lookupNodeId :: NodeId -> LabeledMorphism -> Maybe NodeId
 lookupNodeId nodeId = EnumMap.lookup nodeId . nodeMap
 
 lookupEdgeId :: EdgeId -> LabeledMorphism -> Maybe EdgeId
 lookupEdgeId edgeId = EnumMap.lookup edgeId . edgeMap
+
+lookupVarId :: VarId -> LabeledMorphism -> Maybe VarId
+lookupVarId varId = EnumMap.lookup varId . variableMap
 
 isNodeDefined :: NodeId -> LabeledMorphism -> Bool
 isNodeDefined nodeId m = isJust (applyToNodeId nodeId m)
@@ -195,21 +197,21 @@ isEdgeDefined edgeId m = isJust (applyToEdgeId edgeId m)
 --    corresponding node in the codomainGraph)
 fromGraphsAndLists
   :: LabeledGraph -> LabeledGraph
-      -> [(NodeId, NodeId)] -> [(EdgeId, EdgeId)] -> [(Variable, Variable)]
+      -> [(NodeId, NodeId)] -> [(EdgeId, EdgeId)] -> [(VarId, VarId)]
       -> LabeledMorphism
 fromGraphsAndLists dom cod nodeMap edgeMap varMap = LabeledMorphism
   { domainGraph = dom
   , codomainGraph = cod
   , nodeMap = EnumMap.fromList nodeMap
   , edgeMap = EnumMap.fromList edgeMap
-  , variableMap = inducedRenaming `Map.union` Map.fromList varMap
+  , variableMap = inducedRenaming `EnumMap.union` EnumMap.fromList varMap
   }
   where
-    inducedRenaming = Map.fromList
+    inducedRenaming = EnumMap.fromList
       [ (v1, v2)
           | (n1, n2) <- nodeMap
-          , v1 <- maybeToList $ nodeLabel =<< lookupNode n1 dom
-          , v2 <- maybeToList $ nodeLabel =<< lookupNode n2 cod
+          , Just (Variable v1 _) <- [nodeLabel =<< lookupNode n1 dom]
+          , Just (Variable v2 _) <- [nodeLabel =<< lookupNode n2 cod]
       ]
 
 -- | Given @f : A -> B@ and @g : B -> C@, @compose g f : A -> C@ is a graph morphism equivalent to
@@ -227,10 +229,10 @@ compose g f = LabeledMorphism
       [ (x, z)
           | (x, y) <- EnumMap.toList firstMap
           , Just z <- [EnumMap.lookup y secondMap] ]
-    composeMaps firstMap secondMap = Map.fromList
+    composeMaps firstMap secondMap = EnumMap.fromList
         [ (x, z)
-            | (x, y) <- Map.toList firstMap
-            , Just z <- [Map.lookup y secondMap] ]
+            | (x, y) <- EnumMap.toList firstMap
+            , Just z <- [EnumMap.lookup y secondMap] ]
 {-# INLINE compose #-}
 
 
@@ -248,31 +250,6 @@ edgeRelation :: LabeledMorphism -> Relation EdgeId
 edgeRelation f =
   Relation.fromPairs (edgeIds $ domainGraph f) (edgeIds $ codomainGraph f) (EnumMap.toList $ edgeMap f)
 
-variableRelation :: LabeledMorphism -> Relation Variable
-variableRelation f = Relation.fromPairs
-  (freeVariablesOf $ domainGraph f)
-  (freeVariablesOf $ codomainGraph f)
-  (Map.toList $ variableMap f)
-
-
--- ** Lists
-
-orphanNodes :: LabeledMorphism -> [NodeId]
-orphanNodes f = EnumSet.toList orphans
-  where
-    orphans = EnumSet.difference
-      (EnumSet.fromList . nodeIds $ domainGraph f)
-      (EnumMap.keysSet $ nodeMap f)
-
-orphanEdges :: LabeledMorphism -> [EdgeId]
-orphanEdges f = EnumSet.toList orphans
-  where
-    orphans = EnumSet.difference
-      (EnumSet.fromList . edgeIds $ domainGraph f)
-      (EnumMap.keysSet $ edgeMap f)
-
-orphanVariables :: LabeledMorphism -> [Variable]
-orphanVariables f = Set.toList $
-  Set.difference
-    (freeVariableSet $ domainGraph f)
-    (Map.keysSet $ variableMap f)
+variableRelation :: LabeledMorphism -> Relation VarId
+variableRelation f =
+  Relation.fromPairs (freeVariableIdsOf $ domainGraph f) (freeVariableIdsOf $ codomainGraph f) (EnumMap.toList $ variableMap f)

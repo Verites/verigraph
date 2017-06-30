@@ -1,4 +1,5 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-|
 An implementation of graphs labeled with uninterepreted variables.
@@ -27,14 +28,14 @@ module Data.LabeledGraph
   , module Data.Graphs
   ) where
 
+import qualified Data.List     as List
+import qualified Data.Text     as Text
 
+import qualified Data.EnumMap  as EnumMap
 import           Data.Graphs   hiding (empty, fromNodesAndEdges, nodeInfo)
 import qualified Data.Graphs   as Graph
 import           Data.Variable
 
-import qualified Data.Map      as Map
-import qualified Data.Set      as Set
-import qualified Data.Text     as Text
 
 
 -- | A graph with uninterpreted variables as labels.
@@ -83,32 +84,35 @@ instance {-# OVERLAPPING #-} Show LabeledGraph where
       showNode (n, Graph.Node _ label) = "\t" ++ show n ++ " [" ++ showLabel label ++ "]" ++ "\n"
       showEdge (e, Graph.Edge _ src tgt _) =
         "\t" ++ show e ++ " (" ++ show src ++ "->" ++ show tgt ++ ")\n"
-      showLabel Nothing  = ""
-      showLabel (Just v) = Text.unpack v
+      showLabel Nothing                    = ""
+      showLabel (Just (Variable id [])) = show id
+      showLabel (Just (Variable id names)) =
+        show id ++ ":" ++ List.intercalate "," (map Text.unpack names)
 
 
 instance FreeVariables LNode where
 
-  freeVariableSet (Node _ Nothing)  = Set.empty
-  freeVariableSet (Node _ (Just v)) = Set.singleton v
-  {-# INLINE freeVariableSet #-}
+  freeVariableMap (Node _ Nothing)  = EnumMap.empty
+  freeVariableMap (Node _ (Just v)) = EnumMap.singleton (varId v) v
+  {-# INLINE freeVariableMap #-}
 
-  renameVariable x y (Node n v) = Node n (if v == Just x then Just y else v)
+  renameVariable idX varY (Node n v) = Node n (if (varId <$> v) == Just idX then Just varY else v)
   {-# INLINE renameVariable #-}
 
-  renameVariables subst (Node n v) = Node n (Map.findWithDefault <$> v <*> v <*> pure subst)
+  renameVariables subst (Node n v) =
+    Node n (EnumMap.findWithDefault <$> v <*> (varId <$> v) <*> pure subst)
   {-# INLINE renameVariables #-}
 
 
 instance FreeVariables LabeledGraph where
 
-  freeVariableSet = freeVariableSet . Graph.nodes
-  {-# INLINE freeVariableSet #-}
+  freeVariableMap = freeVariableMap . Graph.nodes
+  {-# INLINE freeVariableMap #-}
 
-  renameVariable x y = Graph.mapNodes (fmap rename . Graph.nodeInfo)
-    where rename v = if v == x then y else v
+  renameVariable idX varY = Graph.mapNodes (fmap rename . Graph.nodeInfo)
+    where rename v = if varId v == idX then varY else v
   {-# INLINE renameVariable #-}
 
   renameVariables subst = Graph.mapNodes (fmap rename . Graph.nodeInfo)
-    where rename v = Map.findWithDefault v v subst
+    where rename v = EnumMap.findWithDefault v (varId v) subst
   {-# INLINE renameVariables #-}

@@ -1,10 +1,29 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE TypeSynonymInstances #-}
-module Data.LabeledGraph.QuickCheck where
+{-|
+Test utilities for labeled graphs.
+
+Provides functions for random generation of labeled graphs and obtaining random elements of them.
+
+Also provides 'Eq' instances for some types that shouldn't have them in normal circumstances, but
+are useful for testing.
+-}
+module Data.LabeledGraph.QuickCheck
+  ( -- * 'Eq' instances
+   -- $eq-instances
+
+   -- * Random generation of labeled graphs
+   -- $arbitrary
+    randomGraph
+  , randomGraphSmallerThan
+  , randomSubgraphOf
+  , randomSizedGraph
+  , Graph.numNodesAndEdgesFor
+  , Graph.shrinkGraph
+  ) where
 
 
 import           Data.Foldable
-import qualified Data.Text              as Text
 import           Test.QuickCheck
 
 
@@ -13,6 +32,20 @@ import qualified Data.Graphs.QuickCheck as Graph
 import           Data.LabeledGraph
 import           Data.Variable
 
+
+{- $eq-instances
+This module provides 'Eq' instances for 'LNode', 'LEdge' and 'Variable'. This is /not/ appropriate
+for regular code, since nodes, edges and variables should be compared exclusively by identifier. In
+tests, however, we often need to check equality of identifiers and payloads, so these instances are
+useful.
+-}
+instance Eq Variable where
+  Variable v1 names1 == Variable v2 names2 = (v1, names1) == (v2, names2)
+
+
+{- $arbitrary
+Besides the functions listed below, this module provides an 'Arbitrary' instance for 'LabeledGraph'.
+-}
 
 instance {-# OVERLAPPING #-} Arbitrary LabeledGraph where
   arbitrary = sized randomSizedGraph
@@ -23,7 +56,7 @@ instance {-# OVERLAPPING #-} Arbitrary LabeledGraph where
 randomGraph :: Int -> Int -> Int -> Gen LabeledGraph
 randomGraph numNodes numEdges maxVariables =
   let
-    variables = map (Text.pack . ('x':) . show) [0 .. maxVariables - 1]
+    variables = [ Variable (toEnum i) [] | i <- [0 .. maxVariables - 1] ]
     randomLabel
        | maxVariables > 0 = oneof [pure Nothing, Just <$> elements variables]
        | otherwise = pure Nothing

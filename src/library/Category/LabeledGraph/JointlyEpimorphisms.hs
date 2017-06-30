@@ -8,7 +8,6 @@ import           Data.Map                               (Map)
 import qualified Data.Map                               as Map
 import           Data.Maybe                             (isNothing, mapMaybe)
 import qualified Data.Set                               as Set
-import qualified Data.Text                              as Text
 
 import           Abstract.Category.JointlyEpimorphisms
 import           Category.LabeledGraph.FinitaryCategory ()
@@ -17,23 +16,29 @@ import           Data.LabeledGraph
 import           Data.LabeledGraph.Morphism
 import           Data.Partition
 import           Data.Variable
+import qualified Util.Map                               as Map
 
 
 instance JointlyEpimorphisms LabeledMorphism where
 
   createAllQuotients g = do
-    variablesPartition <- allPartitionsOf (freeVariablesOf g)
-    let varMap = partitionToSurjection variablesPartition
-          (Text.concat . List.intersperse "__" . Set.toList)
+    variablesPartition <- allPartitionsOf (freeVariableIdsOf g)
+    let varMap = partitionToSurjection variablesPartition $ \identifiedIds ->
+          let
+            representativeId = Set.findMin identifiedIds
+            names = concat . mapMaybe (fmap varNameHints . lookupVarOnG) $ Set.toList identifiedIds
+          in Variable representativeId names
+    let varIdMap = fmap varId varMap
 
     -- Two labeled nodes can only be identified if they have the same label. Thus, we first
     -- partition labeled nodes according to their label, then pick a refinement of this partition,
     -- then add unlabeled nodes to it (identifing them with any other node).
-    let renamedNodes = renameVariables varMap (nodes g)
+    let renamedNodes =
+          [Node n (Map.lookupMaybe (varId <$> v) varMap) | Node n v <- nodes g]
     let (unlabeledNodes, labeledNodes) = List.partition (isNothing . nodeLabel) renamedNodes
-    let nodeLabels = EnumMap.fromList [ (nodeId n, v) | n <- labeledNodes, let Just v = nodeLabel n ]
+    let nodeLabels = EnumMap.fromList [(nodeId n, v) | n <- labeledNodes, let Just v = nodeLabel n]
 
-    let groupedNodesByLabel = [map nodeId group | group <- partitionBy nodeLabel labeledNodes]
+    let groupedNodesByLabel = [map nodeId group | group <- partitionBy (fmap varId . nodeLabel) labeledNodes]
     labeledNodesPartition <- allRefinementsOf (toPartition groupedNodesByLabel)
     nodesPartition <- foldM (flip addToPartition) labeledNodesPartition (map nodeId unlabeledNodes)
     let nodeMap = partitionToSurjection nodesPartition $ \identifiedIds ->
@@ -55,9 +60,11 @@ instance JointlyEpimorphisms LabeledMorphism where
     return $ LabeledMorphism g quotientGraph
       (EnumMap.fromList . Map.toList $ nodeIdMap)
       (EnumMap.fromList . Map.toList $ edgeIdMap)
-      varMap
+      (EnumMap.fromList . Map.toList $ varIdMap)
     where
       sourceTarget (Edge _ src tgt _) = (src, tgt)
+      lookupVarOnG v = EnumMap.lookup v gVarMap
+      gVarMap = freeVariableMap g
 
 
 type ListPartition a = [[a]]

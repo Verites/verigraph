@@ -48,8 +48,12 @@ equalLists _ [] = False
 equalLists [] _ = False
 equalLists (x:xs) ys =
   case List.break (==x) ys of
-    (_, []) -> False -- x not found in ys
+    (_, [])      -> False -- x not found in ys
     (ys0, _:ys1) -> equalLists xs (ys0 ++ ys1)
+
+noDuplicates :: Eq a => [a] -> Bool
+noDuplicates []     = True
+noDuplicates (x:xs) = notElem x xs && noDuplicates xs
 
 -- | Boolean implication.
 (-->) :: Bool -> Bool -> Bool

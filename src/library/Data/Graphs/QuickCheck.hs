@@ -1,4 +1,30 @@
-module Data.Graphs.QuickCheck where
+{-|
+Test utilities for graphs.
+
+Provides functions for random generation of graphs and obtaining random elements of graphs.
+
+Also provides 'Eq' instances for some types that shouldn't have them in normal circumstances, but
+are useful for testing.
+-}
+module Data.Graphs.QuickCheck
+  ( -- * 'Eq' instances
+    -- $eq-instances
+
+    -- * Random generation of graphs
+    -- $arbitrary
+    randomGraph
+  , randomSizedGraph
+  , numNodesAndEdgesFor
+  , shrinkGraph
+
+    -- * Random elements of graphs
+  , randomNodeOf
+  , randomNodeIdOf
+  , randomNodeInContextOf
+  , randomEdgeOf
+  , randomEdgeIdOf
+  , randomEdgeInContextOf
+  ) where
 
 import           Control.Arrow
 import           Test.QuickCheck.Arbitrary
@@ -6,6 +32,15 @@ import           Test.QuickCheck.Gen
 
 import           Data.Graphs
 
+
+{- $arbitrary
+Besides the functions listed below, this module provides 'Arbitrary' instances for 'NodeId',
+'EdgeId', 'Node', 'Edge' and 'Graph'. These instances assume that node/edge payloads have
+'Arbitrary' instances.
+
+Note that all provided instances are marked as @OVERLAPPABLE@, and specialized versions of Graphs
+may provide their own instances.
+-}
 
 instance Arbitrary NodeId where
   arbitrary = NodeId <$> arbitrary
@@ -25,7 +60,7 @@ instance (Arbitrary e) => Arbitrary (Edge e) where
   shrink (Edge id src tgt payload) = map (Edge id src tgt) (shrink payload)
 
 
-instance (Arbitrary n, Arbitrary e) => Arbitrary (Graph n e) where
+instance {-# OVERLAPPABLE #-} (Arbitrary n, Arbitrary e) => Arbitrary (Graph n e) where
   arbitrary = sized (randomSizedGraph arbitrary arbitrary)
   shrink = shrinkGraph
 
@@ -33,6 +68,12 @@ instance (Arbitrary n, Arbitrary e) => Arbitrary (Graph n e) where
 instance Show (NodeContext n e) where
   show _ = "<NodeCtx>"
 
+{- $eq-instances
+This module provides 'Eq' instances for 'Node' and 'Edge', assuming that payloads also have 'Eq'
+instances. This is /not/ appropriate for regular code, since nodes and edges should be compared
+exclusively by identifier. In tests, however, we often need to check equality of identifiers and
+payloads, so these instances are useful.
+-}
 
 instance Eq n => Eq (Node n) where
   Node id1 payload1 == Node id2 payload2 = (id1, payload1) == (id2, payload2)

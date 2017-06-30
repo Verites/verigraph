@@ -3,10 +3,6 @@ module Category.LabeledGraph.CocompleteSpec where
 
 import           Data.Foldable
 import           Data.List.NonEmpty                 (NonEmpty (..))
-import           Data.Map                           (Map)
-import qualified Data.Map                           as Map
-import           Data.Set                           (Set)
-import qualified Data.Set                           as Set
 import           Test.Hspec
 import           Test.Hspec.QuickCheck
 
@@ -65,23 +61,23 @@ spec = do
       let
         (inj1, inj2) = calculateCoproduct g1 g2
         nodeImageIntersection = EnumSet.intersection
-          (enumMapImage $ Morphism.nodeMap inj1)
-          (enumMapImage $ Morphism.nodeMap inj2)
+          (image $ Morphism.nodeMap inj1)
+          (image $ Morphism.nodeMap inj2)
         edgeImageIntersection = EnumSet.intersection
-          (enumMapImage $ Morphism.edgeMap inj1)
-          (enumMapImage $ Morphism.edgeMap inj2)
-        varImageIntersection = Set.intersection
-          (mapImage $ Morphism.variableMap inj1)
-          (mapImage $ Morphism.variableMap inj2)
-      in EnumSet.null nodeImageIntersection && EnumSet.null edgeImageIntersection && Set.null varImageIntersection
+          (image $ Morphism.edgeMap inj1)
+          (image $ Morphism.edgeMap inj2)
+        varImageIntersection = EnumSet.intersection
+          (image $ Morphism.variableMap inj1)
+          (image $ Morphism.variableMap inj2)
+      in EnumSet.null nodeImageIntersection && EnumSet.null edgeImageIntersection && EnumSet.null varImageIntersection
 
     prop "is jointly surjective" $ \g1 g2 ->
       let
         (inj1, inj2) = calculateCoproduct g1 g2
         coproductObj = codomain inj1
-        nodeImages = EnumSet.union (enumMapImage $ Morphism.nodeMap inj1) (enumMapImage $ Morphism.nodeMap inj2)
-        edgeImages = EnumSet.union (enumMapImage $ Morphism.edgeMap inj1) (enumMapImage $ Morphism.edgeMap inj2)
-        varImages = Set.union (mapImage $ Morphism.variableMap inj1) (mapImage $ Morphism.variableMap inj2)
+        nodeImages = EnumSet.union (image $ Morphism.nodeMap inj1) (image $ Morphism.nodeMap inj2)
+        edgeImages = EnumSet.union (image $ Morphism.edgeMap inj1) (image $ Morphism.edgeMap inj2)
+        varImages = EnumSet.union (image $ Morphism.variableMap inj1) (image $ Morphism.variableMap inj2)
       in
         nodeImages == EnumSet.fromList (nodeIds coproductObj)
           && edgeImages == EnumSet.fromList (edgeIds coproductObj)
@@ -120,11 +116,11 @@ spec = do
       calculateCoequalizer f g `shouldBeIsomorphicTo` expectedCoeq
 
     it "collapses only the necessary variables" $ do
-      let a = fromNodesAndEdges [Node 0 $ Just "x", Node 1 $ Just "y", Node 2 $ Just "z"] []
+      let a = fromNodesAndEdges [Node 0 $ Just $ Variable 1 ["x"], Node 1 $ Just $ Variable 2 ["y"], Node 2 $ Just $ Variable 3 ["z"]] []
       let f = identity a :: LabeledMorphism
-      let g = fromGraphsAndLists a a [(0,1), (1,0), (2,2)] [] [("x","y"), ("y","x")]
-      let expectedCoeqObject = fromNodesAndEdges [Node 0 $ Just "a", Node 2 $ Just "b"] []
-      let expectedCoeq = fromGraphsAndLists a expectedCoeqObject [(0,0), (1,0), (2,2)] [] [("x","a"), ("y","a"), ("z","b")]
+      let g = fromGraphsAndLists a a [(0,1), (1,0), (2,2)] [] [(1,2), (2,1)]
+      let expectedCoeqObject = fromNodesAndEdges [Node 0 $ Just $ Variable 4 ["a"], Node 2 $ Just $ Variable 5 ["b"]] []
+      let expectedCoeq = fromGraphsAndLists a expectedCoeqObject [(0,0), (1,0), (2,2)] [] [(0,4), (1,4), (2,5)]
       calculateCoequalizer f g `shouldBeIsomorphicTo` expectedCoeq
 
     prop "is valid" $ \g1 g2 ->
@@ -170,8 +166,5 @@ spec = do
 
 
 
-enumMapImage :: (Enum k, Enum a) => EnumMap k a -> EnumSet a
-enumMapImage = EnumSet.fromList . EnumMap.elems
-
-mapImage :: Ord a => Map k a -> Set a
-mapImage = Set.fromList . Map.elems
+image :: (Enum k, Enum a) => EnumMap k a -> EnumSet a
+image = EnumSet.fromList . EnumMap.elems

@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications  #-}
 module Category.LabeledGraph.MorphismSpec where
 
 import qualified Data.Map                           as Map
@@ -35,7 +36,7 @@ spec = do
       Morphism.fromGraphsAndLists g1 g1 [(0, 0)] [] [] `shouldNotSatisfy` isValid
 
     it "rejects partial variable mappings" $ do
-      let g1 = Graph.fromNodesAndEdges [Node 0 (Just "x")] []
+      let g1 = Graph.fromNodesAndEdges [Node 0 (Just $ Variable 0 ["x"])] []
       let g2 = Graph.fromNodesAndEdges [Node 0 Nothing] []
       Morphism.fromGraphsAndLists g1 g2 [] [] [] `shouldNotSatisfy` isValid
 
@@ -50,25 +51,25 @@ spec = do
       Morphism.fromGraphsAndLists g1 g2 [(0,1), (1,1)] [(0,0)] [] `shouldNotSatisfy` isValid
 
     it "rejects mapping a labeled node to an unlabeled node" $ do
-      let g1 = Graph.fromNodesAndEdges [Node 0 (Just "x"), Node 1 Nothing] []
-      Morphism.fromGraphsAndLists g1 g1 [(0,1), (1,1)] [] [("x", "x")] `shouldNotSatisfy` isValid
+      let g1 = Graph.fromNodesAndEdges [Node 0 (Just $ Variable 0 ["x"]), Node 1 Nothing] []
+      Morphism.fromGraphsAndLists g1 g1 [(0,1), (1,1)] [] [(0, 0)] `shouldNotSatisfy` isValid
 
     it "accepts mapping an unlabeled node to a labeled node" $ do
-      let g1 = Graph.fromNodesAndEdges [Node 0 (Just "x"), Node 1 Nothing] []
-      Morphism.fromGraphsAndLists g1 g1 [(0,0), (1,0)] [] [("x", "x")] `shouldSatisfy` isValid
+      let g1 = Graph.fromNodesAndEdges [Node 0 (Just $ Variable 0 ["x"]), Node 1 Nothing] []
+      Morphism.fromGraphsAndLists g1 g1 [(0,0), (1,0)] [] [(0, 0)] `shouldSatisfy` isValid
 
     it "rejects mapping a node and its label inconsistently" $ do
-      let g1 = Graph.fromNodesAndEdges [Node 0 (Just "x"), Node 1 (Just "y")] []
-      let m = LabeledMorphism g1 g1 (EnumMap.fromList [(0,1), (1,1)]) EnumMap.empty (Map.fromList [("x", "x")])
+      let g1 = Graph.fromNodesAndEdges [Node 0 (Just $ Variable 0 ["x"]), Node 1 (Just $ Variable 1 ["y"])] []
+      let m = LabeledMorphism g1 g1 (EnumMap.fromList [(0,1), (1,1)]) EnumMap.empty (EnumMap.fromList [(0, 0)])
       m `shouldNotSatisfy` isValid
 
   describe "identity" $ do
 
     prop "is always valid" $ \g ->
-      isValid (identity g :: LabeledMorphism)
+      isValid (identity @LabeledMorphism g)
 
     prop "is always an isomorphism" $ \g ->
-      isIsomorphism (identity g :: LabeledMorphism)
+      isIsomorphism (identity @LabeledMorphism g)
 
     prop "maps nodes to themselves" $ \g ->
       (`all` nodes g) $ \n ->
@@ -79,8 +80,8 @@ spec = do
         applyToEdge e (identity g) == Just e
 
     prop "maps variables to themselves" $ \g ->
-      (`all` freeVariablesOf g) $ \v ->
-        applyToVariable v (identity g) == Just v
+      (`all` freeVariableIdsOf g) $ \v ->
+        lookupVarId v (identity g) == Just v
 
 
   describe "compose" $ withSmallerGraphs $ do
@@ -101,7 +102,7 @@ spec = do
       in
         mapsCorrectly nodes applyToNode
           && mapsCorrectly edges applyToEdge
-          && mapsCorrectly freeVariablesOf applyToVariable
+          && mapsCorrectly freeVariableIdsOf lookupVarId
 
 
   describe "isMonomorphism" $ do
@@ -111,28 +112,28 @@ spec = do
       g3 = fromNodesAndEdges [Node 0 Nothing, Node 1 Nothing] [Edge 0 0 0 ()]
 
     it "is false when nodes are collapsed" $
-      let m = fromGraphsAndLists g1 g2 [(0, 0), (1, 0)] [(0, 0), (1, 1)] [] :: LabeledMorphism
+      let m = fromGraphsAndLists g1 g2 [(0, 0), (1, 0)] [(0, 0), (1, 1)] []
       in isMonomorphism m `shouldBe` False
 
     it "is false when edges are collapsed" $
-      let m = fromGraphsAndLists g1 g3 [(0, 0), (1, 1)] [(0, 0), (1, 0)] [] :: LabeledMorphism
+      let m = fromGraphsAndLists g1 g3 [(0, 0), (1, 1)] [(0, 0), (1, 0)] []
       in isMonomorphism m `shouldBe` False
 
     it "is false when variables are collapsed" $
-      let m = fromGraphsAndLists g1 g1 [(0, 0), (1, 1)] [(0, 0), (1, 1)] [("x", "a"), ("y", "a")] :: LabeledMorphism
+      let m = fromGraphsAndLists g1 g1 [(0, 0), (1, 1)] [(0, 0), (1, 1)] [(3, 5), (4, 5)]
       in isMonomorphism m `shouldBe` False
 
     it "is true for a monomorphism" $
-      let m = fromGraphsAndLists g2 g1 [(0, 0)] [(0, 0), (1, 1)] [] :: LabeledMorphism
+      let m = fromGraphsAndLists g2 g1 [(0, 0)] [(0, 0), (1, 1)] []
       in isMonomorphism m `shouldBe` True
 
 
   describe "isEpimorphism" $ do
     let
-      g1 = fromNodesAndEdges [Node 0 (Just "a"), Node 1 Nothing] [Edge 0 0 0 (), Edge 1 0 0 ()]
-      g2 = fromNodesAndEdges [Node 0 (Just "a")] [Edge 0 0 0 (), Edge 1 0 0 ()]
-      g3 = fromNodesAndEdges [Node 0 (Just "a"), Node 1 Nothing] [Edge 0 0 0 ()]
-      g4 = fromNodesAndEdges [Node 0 (Just "a"), Node 1 (Just "b")] [Edge 0 0 0 (), Edge 1 0 0 ()]
+      g1 = fromNodesAndEdges [Node 0 (Just $ Variable 3 ["a"]), Node 1 Nothing] [Edge 0 0 0 (), Edge 1 0 0 ()]
+      g2 = fromNodesAndEdges [Node 0 (Just $ Variable 3 ["a"])] [Edge 0 0 0 (), Edge 1 0 0 ()]
+      g3 = fromNodesAndEdges [Node 0 (Just $ Variable 3 ["a"]), Node 1 Nothing] [Edge 0 0 0 ()]
+      g4 = fromNodesAndEdges [Node 0 (Just $ Variable 3 ["a"]), Node 1 (Just $ Variable 4 ["b"])] [Edge 0 0 0 (), Edge 1 0 0 ()]
 
     it "is false when some node isn't reached" $
       let m = fromGraphsAndLists g2 g1 [(0, 0)] [(0, 0), (1, 1)] [] :: LabeledMorphism
@@ -160,8 +161,8 @@ spec = do
 
   describe "fromGraphsAndLists" $ do
     let
-      g1 = fromNodesAndEdges [Node 0 (Just "x"), Node 1 (Just "y")] [Edge 0 0 0 (), Edge 1 1 1 ()]
-      g2 = fromNodesAndEdges [Node 0 (Just "a")] [Edge 0 0 0 ()]
+      g1 = fromNodesAndEdges [Node 0 (Just $ Variable 2 ["x"]), Node 1 (Just $ Variable 3 ["y"])] [Edge 0 0 0 (), Edge 1 1 1 ()]
+      g2 = fromNodesAndEdges [Node 0 (Just $ Variable 4 ["a"])] [Edge 0 0 0 ()]
 
     it "has correct domain and codomain" $ do
       let m = fromGraphsAndLists g1 g2 [(0, 0), (1, 0)] [(0, 0), (1, 0)] []
@@ -170,46 +171,4 @@ spec = do
 
     it "maps variables according to the nodes" $ do
       let m = fromGraphsAndLists g1 g2 [(0, 0), (1, 0)] [(0, 0), (1, 0)] []
-      variableMap m `shouldBe` Map.fromList [("x", "a"), ("y", "a")]
-
-
-  describe "orphanNodes" $ withSmallerGraphs $ do
-
-    prop "is empty for total morphisms" $ \domain codomain ->
-      forAllMorphismsBetween GenericMorphism domain codomain $ \m ->
-        orphanNodes m == []
-
-    it "contains all and only domain nodes that aren't mapped" $ do
-      let
-        g1 = fromNodesAndEdges [Node 0 (Just "x"), Node 1 (Just "y")] [Edge 0 0 0 (), Edge 1 1 1 ()]
-        g2 = fromNodesAndEdges [Node 0 (Just "a")] [Edge 0 0 0 ()]
-        m = fromGraphsAndLists g1 g2 [(0, 0)] [(0, 0)] []
-      orphanNodes m `shouldBe` [1]
-
-
-  describe "orphanEdges" $ withSmallerGraphs $ do
-
-    prop "is empty for total morphisms" $ \domain codomain ->
-      forAllMorphismsBetween GenericMorphism domain codomain $ \m ->
-        orphanEdges m == []
-
-    it "contains all and only domain edges that aren't mapped" $ do
-      let
-        g1 = fromNodesAndEdges [Node 0 (Just "x"), Node 1 (Just "y")] [Edge 0 0 0 (), Edge 1 1 1 ()]
-        g2 = fromNodesAndEdges [Node 0 (Just "a")] [Edge 0 0 0 ()]
-        m = fromGraphsAndLists g1 g2 [(0, 0)] [(0, 0)] []
-      orphanEdges m `shouldBe` [1]
-
-
-  describe "orphanVariables" $ withSmallerGraphs $ do
-
-    prop "is empty for total morphisms" $ \domain codomain ->
-      forAllMorphismsBetween GenericMorphism domain codomain $ \m ->
-        orphanVariables m == []
-
-    it "contains all and only domain variables that aren't mapped" $ do
-      let
-        g1 = fromNodesAndEdges [Node 0 (Just "x"), Node 1 (Just "y")] [Edge 0 0 0 (), Edge 1 1 1 ()]
-        g2 = fromNodesAndEdges [Node 0 (Just "a")] [Edge 0 0 0 ()]
-        m = fromGraphsAndLists g1 g2 [(0, 0)] [(0, 0)] []
-      orphanVariables m `shouldBe` ["y"]
+      variableMap m `shouldBe` EnumMap.fromList [(2, 4), (3, 4)]

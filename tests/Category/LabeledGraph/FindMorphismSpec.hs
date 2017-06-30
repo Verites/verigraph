@@ -1,5 +1,6 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
 module Category.LabeledGraph.FindMorphismSpec where
 
 import           Control.Monad
@@ -39,23 +40,22 @@ spec = withSmallerGraphs $ do
 
 
     context "from any empty graph" $ do
-
       it "always produces a single morphism" $
         property $ \codomain ->
-          length (findMorphisms GenericMorphism Graph.empty codomain :: [LabeledMorphism]) == 1
+          length (findMorphisms @LabeledMorphism GenericMorphism Graph.empty codomain) == 1
 
       it "always produces a single monomorphism" $
         property $ \codomain ->
-          length (findMorphisms Monomorphism Graph.empty codomain :: [LabeledMorphism]) == 1
+          length (findMorphisms @LabeledMorphism Monomorphism Graph.empty codomain) == 1
 
       it "always produces no epimorphism (unless the codomain is empty)" $
         property $ \codomain ->
-          length (findMorphisms Epimorphism Graph.empty codomain :: [LabeledMorphism])
+          length (findMorphisms @LabeledMorphism Epimorphism Graph.empty codomain)
             == if Graph.null codomain then 1 else 0
 
       it "always produces no isomorphism (unless the codomain is empty)" $
         property $ \codomain ->
-          length (findMorphisms Isomorphism Graph.empty codomain :: [LabeledMorphism])
+          length (findMorphisms @LabeledMorphism Isomorphism Graph.empty codomain)
             == if Graph.null codomain then 1 else 0
 
 
@@ -218,8 +218,8 @@ spec = withSmallerGraphs $ do
         in equalLists expected (findMorphisms Isomorphism domain codomain)
 
     it "doesn't map labeled nodes to unlabeled nodes" $ do
-      let g1 = fromNodesAndEdges [Node 0 (Just "x"), Node 1 (Just "y")] []
-      let g2 = fromNodesAndEdges [Node 0 Nothing, Node 1 (Just "a"), Node 2 (Just "b")] []
+      let g1 = fromNodesAndEdges [Node 0 (Just $ Variable 3 ["x"]), Node 1 (Just $ Variable 4 ["y"])] []
+      let g2 = fromNodesAndEdges [Node 0 Nothing, Node 1 (Just $ Variable 5 ["a"]), Node 2 (Just $ Variable 6 ["b"])] []
       let morphisms = findMorphisms GenericMorphism g1 g2 :: [LabeledMorphism]
       length morphisms `shouldBe` 4
       forM_ morphisms $ \m -> do
@@ -227,8 +227,8 @@ spec = withSmallerGraphs $ do
         lookupNodeId 1 m `shouldNotBe` Just 0
 
     it "restricts the mapping of nodes with same label" $ do
-      let g1 = fromNodesAndEdges [Node 0 (Just "x"), Node 1 (Just "x")] []
-      let g2 = fromNodesAndEdges [Node 0 (Just "a"), Node 1 (Just "b")] []
+      let g1 = fromNodesAndEdges [Node 0 (Just $ Variable 3 ["x"]), Node 1 (Just $ Variable 3 ["x"])] []
+      let g2 = fromNodesAndEdges [Node 0 (Just $ Variable 4 ["a"]), Node 1 (Just $ Variable 5 ["b"])] []
       let morphisms = findMorphisms GenericMorphism g1 g2 :: [LabeledMorphism]
       length morphisms `shouldBe` 2
       forM_ morphisms $ \m ->
@@ -286,12 +286,12 @@ spec = withSmallerGraphs $ do
         in
           neverCollapses nodeIds lookupNodeId
             && neverCollapses edgeIds lookupEdgeId
-            && neverCollapses freeVariablesOf applyToVariable
+            && neverCollapses freeVariableIdsOf lookupVarId
 
 
   describe "findCospanCommuter" $ modifyMaxDiscardRatio (const 500) $ do
 
-    context "producing any morphisms" $ modifyMaxSize (const 25) $ modifyMaxSuccess (const 100) $
+    context "producing any morphisms" $ modifyMaxSize (const 25) $ modifyMaxSuccess (const 70) $
       prop "behaves as exhaustive search then filter" $ \g1 g2 g3 ->
         forAllMorphismsBetween GenericMorphism g1 g2 $ \left ->
         forAllMorphismsBetween GenericMorphism g3 g2 $ \right ->
