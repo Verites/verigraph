@@ -43,13 +43,27 @@ class FinitaryCategory morph => JointlyEpimorphisms morph where
       allPairs = createJointlyEpimorphicPairs inj (codomain m1) (codomain m2)
       filt = filter (\(x,y) -> x <&> m1 == y <&> m2) allPairs
 
-  -- Similar to calculateCommutativeSquares but indicating which morphism is injective
+  -- Similar to calculateCommutativeSquares but indicating which morphism is injective.
+  --
+  -- Given the morphisms /f : X -> A/ and /g : X -> B/ with the same domain,
+  -- obtain all jointly epimorphic pairs /(f', g')/ such that the following
+  -- diagram commutes.
+  -- @
+  --        g
+  --     X──────▶B
+  --     │       │
+  --   f │       │ f'
+  --     ▼       ▼
+  --     A──────▶Y
+  --        g'
+  -- @
+  --
+  -- If the first Bool argument is True then g' is injective.
+  -- If the second Bool argument is True then f' is injective.
   calculateCommutativeSquaresAlongMonomorphism :: (morph,Bool) -> (morph,Bool) -> [(morph,morph)]
 
--- | Create all jointly epimorphic pairs of morphisms from the codomains of
--- the given morphisms.
+-- | Create all jointly epimorphic pairs of morphisms from the codomains of the given morphisms.
 -- The flag indicates only monomorphic morphisms.
-createJointlyEpimorphicPairsFromCodomains :: (JointlyEpimorphisms morph) => MatchRestriction -> morph
-                                          -> morph -> [(morph,morph)]
+createJointlyEpimorphicPairsFromCodomains :: (JointlyEpimorphisms morph) => MatchRestriction -> morph -> morph -> [(morph,morph)]
 createJointlyEpimorphicPairsFromCodomains inj m1 m2 =
   createJointlyEpimorphicPairs (inj == MonoMatches) (codomain m1) (codomain m2)
