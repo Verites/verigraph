@@ -31,30 +31,33 @@ gprTest = do
     (ggGGX,_,_) <- XML.readGrammar fileName1 False dpoConf
     (ggGPR,_) <- GPR.readGrammar fileName2
 
-    let (rulesGGX,rulesGPR,_) = getRules ggGGX ggGPR undefined
+    let (pacmanRulesGGX,pacmanRulesGPR,_) = getRules ggGGX ggGPR undefined
 
-    pairwise (findCriticalPairs dpoConf) rulesGPR `shouldBe` pairwise (findCriticalPairs dpoConf) rulesGGX
-    pairwise (findCriticalSequences dpoConf) rulesGPR `shouldBe` pairwise (findCriticalSequences dpoConf) rulesGGX
+    runAnalysis findCriticalPairs pacmanRulesGPR pacmanRulesGGX
+    runAnalysis findCriticalSequences pacmanRulesGPR pacmanRulesGGX
 
   it "Mutex grammar" $ do
     (ggGGX,_,_) <- XML.readGrammar fileName3 False dpoConf
     (ggGPR,_) <- GPR.readGrammar fileName4
 
-    let (rulesGGX,rulesGPR,_) = getRules ggGGX ggGPR undefined
+    let (mutexRulesGGX,mutexRulesGPR,_) = getRules ggGGX ggGPR undefined
 
-    pairwise (findCriticalPairs dpoConf) rulesGPR `shouldBe` pairwise (findCriticalPairs dpoConf) rulesGGX
-    pairwise (findCriticalSequences dpoConf) rulesGPR `shouldBe` pairwise (findCriticalSequences dpoConf) rulesGGX
+    runAnalysis findCriticalPairs mutexRulesGPR mutexRulesGGX
+    runAnalysis findCriticalSequences mutexRulesGPR mutexRulesGGX
 
   it "Elevator grammar" $ do
     (ggGGX,_,_) <- XML.readGrammar fileName5 False dpoConf
     (ggGPR,_) <- GPR.readGrammar fileName6
     (ggGPRFlag,_) <- GPR.readGrammar fileName7
 
-    let (rulesGGX,rulesGPR,rulesGPRFlag) = getRules ggGGX ggGPR ggGPRFlag
+    let (elevatorRulesGGX,elevatorRulesGPR,elevatorRulesGPRFlag) = getRules ggGGX ggGPR ggGPRFlag
 
-    pairwise (findAllEssentialDeleteUse dpoConf) rulesGPRFlag `shouldBe` pairwise (findAllEssentialDeleteUse dpoConf) rulesGGX
-    pairwise (findCriticalPairs dpoConf) rulesGPR `shouldBe` pairwise (findCriticalPairs dpoConf) rulesGGX
-    pairwise (findCriticalSequences dpoConf) rulesGPR `shouldBe` pairwise (findCriticalSequences dpoConf) rulesGGX
+    runAnalysis findAllEssentialDeleteUse elevatorRulesGPRFlag elevatorRulesGGX
+    runAnalysis findCriticalPairs elevatorRulesGPR elevatorRulesGGX
+    runAnalysis findCriticalSequences elevatorRulesGPR elevatorRulesGGX
+
+runAnalysis algorithm rules1 rules2 =
+  pairwise (algorithm dpoConf) rules1 `shouldBe` pairwise (algorithm dpoConf) rules2
 
 getRules a b c = (f a, f b, f c)
   where
