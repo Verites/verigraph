@@ -12,8 +12,8 @@ module XML.GPRReader.GXLParseIn
   ) where
 
 import           Data.Tree.NTree.TypeDefs
-import           Text.XML.HXT.Core
 import           System.FilePath          (dropExtension, takeFileName)
+import           Text.XML.HXT.Core
 
 import           XML.XMLUtilities
 

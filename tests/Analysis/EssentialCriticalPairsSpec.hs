@@ -1,11 +1,11 @@
 module Analysis.EssentialCriticalPairsSpec where
 
-import           Data.Matrix                      hiding ((<|>))
-import           Test.Hspec
 import           Abstract.Rewriting.DPO
 import           Analysis.EssentialCriticalPairs
 import           Category.TypedGraphRule.JointlyEpimorphisms ()
-import qualified XML.GGXReader                    as XML
+import           Data.Matrix                                 hiding ((<|>))
+import           Test.Hspec
+import qualified XML.GGXReader                               as XML
 
 fileName1 = "tests/grammars/elevator.ggx"
 fileName2 = "tests/grammars/secondOrderMatchTest.ggx"

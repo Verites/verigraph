@@ -3,7 +3,7 @@ module Rewriting.DPO.TypedGraphRuleSpec where
 import           Test.Hspec
 
 import           Abstract.Rewriting.DPO
-import qualified XML.GGXReader                    as XML
+import qualified XML.GGXReader          as XML
 
 fileName1 = "tests/grammars/nacs2rule.ggx"
 fileName2 = "tests/grammars/secondOrderMatchTest.ggx"
@@ -20,7 +20,7 @@ msnTest =
        (_,_,log2) <- XML.readGrammar fileName1 False dpoConf2
        (_,_,log3) <- XML.readGrammar fileName2 False dpoConf1
        (_,_,log4) <- XML.readGrammar fileName2 False dpoConf2
-      
+
        checkMinimalSafetyNACs log1 2
        checkMinimalSafetyNACs log2 9
        checkMinimalSafetyNACs log3 0

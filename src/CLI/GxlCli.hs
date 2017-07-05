@@ -12,8 +12,8 @@ import           Analysis.CriticalSequence
 import           Analysis.EssentialCriticalPairs
 import           GlobalOptions
 import           Rewriting.DPO.TypedGraph
-import qualified XML.GPRReader.GXLReader               as GPR
 import qualified XML.GGXWriter                         as GW
+import qualified XML.GPRReader.GXLReader               as GPR
 
 data AnalysisType = Conflicts | Dependencies | None deriving (Eq)
 
@@ -64,27 +64,27 @@ execute :: (GlobalOptions, Options) -> IO ()
 execute (globalOpts, options) =
   do
     (fstOrderGrammar,names) <- GPR.readGrammar (inputFile globalOpts)
-    
+
     putStrLn "Loading the graph grammar..."
     putStrLn ""
-    
+
     let ggName = GPR.readGGName (inputFile globalOpts)
         dpoConf = morphismsConf globalOpts
         action
           | criticalPairs options     = Conflicts
           | criticalSequences options = Dependencies
           | otherwise                 = None
-        
+
         essentialCP = essentialFlag options
         writer = defWriterFun essentialCP dpoConf action
-        
+
         namedRules = DPO.productions fstOrderGrammar
         rules = map snd namedRules
-        
+
         -- creates an empty second-order grammar for the writer function
         typeGraph = codomain (codomain (getLHS (head rules)))
         emptySndOrderGrammar = grammar (emptyGraphRule typeGraph) [] []
-        
+
     let analysis = printAnalysis essentialCP action dpoConf rules
     case outputFile options of
       Just file ->
@@ -92,10 +92,10 @@ execute (globalOpts, options) =
           putStrLn "Warning: exporting conflicts/dependencies to .cpx not fully supported."
           writer (fstOrderGrammar,emptySndOrderGrammar) ggName names file
       Nothing -> analysis
-    
+
     putStrLn ""
     putStrLn "Bye!"
-    
+
     return ()
 
 printAnalysis :: (JointlyEpimorphisms morph, DPO morph) =>

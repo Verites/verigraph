@@ -12,7 +12,7 @@ module XML.GPRReader.GXLPreProcessing
   , ProcessedTypeGraph
   ) where
 
-import           Data.List                 (delete, isPrefixOf, partition)
+import           Data.List                (delete, isPrefixOf, partition)
 
 import           XML.GPRReader.GXLParseIn
 
@@ -73,12 +73,12 @@ processRuleGraph :: ProcessedTypeGraph -> ParsedRuleGraph -> ProcessedRuleGraph
 processRuleGraph tg@(nodeTypes,_) rule = (processedNodes,processedEdges)
   where
     (nodes,edges) = snd rule
-    
+
     removedIgnoredLabels = map adjustIgnoredLabels (filter removeIgnoredLabels edges)
-    
+
     (ruleTyping,typeNo) = partition (\((_,_,label),_) -> isPrefixOf "type:" label) removedIgnoredLabels
     (nonPreservNodes,edgs) = partition (\((_,_,label),_) -> (label `elem` specialLabels)) typeNo
-    
+
     processedNodes = processNodes nodeTypes ruleTyping nonPreservNodes edgs nodes
     processedEdges = processEdges tg ruleTyping nodes nonPreservNodes edgs
 
@@ -100,17 +100,17 @@ processEdge (nodeTypes,edgeTypes) ruleTyping nodes nonPreservNodes ((nsrc,ntgt,l
   (id, idt nsrc, idt ntgt, edgeType, edgeCondition)
   where
     idt name = head [idn_ | (n,idn_) <- nodes, n == name]
-    
+
     (edgeType:_) = [ide_ |
                      (src_,tgt_,lbl_,ide_) <- edgeTypes,
                      src_ == getTypeLabel nsrc,
                      tgt_ == getTypeLabel ntgt,
                      lbl_ == normalizeLabel label]
-    
+
     getTypeLabel name = head [idt | (lbl,idt) <- nodeTypes, lbl == typeName]
       where
         typeName = head [normalizeLabel lbl | ((n,_,lbl),_) <- ruleTyping, n == name]
-    
+
     edgeCondition
       | ':' `elem` label && not ("flag:" `isPrefixOf` label) =
         case takeWhile (':' /=) label of
@@ -119,13 +119,13 @@ processEdge (nodeTypes,edgeTypes) ruleTyping nodes nonPreservNodes ((nsrc,ntgt,l
           "not" -> ForbiddenEdge
           msg   -> error ("processEdges: edgeCondition invalid (" ++ msg ++ ")")
       | otherwise        = checkNacSrcTgt
-    
+
     checkNacSrcTgt
       | srctgtCondition "not:" = ForbiddenEdge
       | srctgtCondition "del:" = Deletion
       | srctgtCondition "new:" = Creation
       | otherwise = Preservation
-    
+
     srctgtCondition str = not (null [lbl | ((node,_,lbl),_) <- nonPreservNodes, lbl == str, node == nsrc || node == ntgt])
 
 processNodes :: [NodeWithTypeId] -> [ParsedEdge] -> [ParsedEdge] -> [ParsedEdge] -> [ParsedNode] -> [ProcessedNode]
@@ -137,7 +137,7 @@ processNode types ruleTyping nonPreservNodes edges (node,id) =
   where
     (nodeTypeLabel:_) = [lbl | ((n,_,lbl),_) <- ruleTyping, n == node]
     (nodeType:_) = [idt | (name,idt) <- types, name == normalizeLabel nodeTypeLabel]
-    
+
     c = [c_ | ((nt_,_,c_),_) <- nonPreservNodes, nt_ == node]
     cond
       | null c = Preservation
@@ -145,7 +145,7 @@ processNode types ruleTyping nonPreservNodes edges (node,id) =
       | head c == "new:" = Creation
       | head c == "not:" = ForbiddenNode whichNac
       | otherwise = error ("processNodes: " ++ show c)
-    
+
     allNodesOfAllNacs = [node | ((node,_,lbl),_) <- nonPreservNodes, lbl == "not:"]
     minimalNodeIdNac = minimum (findNacNodes allNodesOfAllNacs edges node)
     whichNac = head [id | ((src,_,_),id) <- ruleTyping, src == minimalNodeIdNac]

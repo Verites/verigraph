@@ -27,13 +27,13 @@ parIndepTest =
   describe "Check Parallel/Sequentially independent rules for pullbacks against delete-use" $ do
     it "Parallel Test for Cond1" $
       mapM_ (\fn -> test1 dpoConf fn Parallel Cond1) filenames
-  
+
     it "Parallel Test for Cond2" $
       mapM_ (\fn -> test1 dpoConf fn Parallel Cond2) filenames
-  
+
     it "Sequentially Test for Cond1" $
       mapM_ (\fn -> test1 dpoConf fn Sequentially Cond1) filenames
-  
+
     it "Sequentially Test for Cond2" $
       mapM_ (\fn -> test1 dpoConf fn Sequentially Cond2) filenames
 

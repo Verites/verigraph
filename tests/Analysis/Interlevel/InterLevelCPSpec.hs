@@ -1,6 +1,6 @@
 module Analysis.Interlevel.InterLevelCPSpec where
 
-import           Data.Maybe                                   (fromMaybe)
+import           Data.Maybe                         (fromMaybe)
 import           Test.Hspec
 
 import           Abstract.Category.FinitaryCategory
@@ -10,7 +10,7 @@ import           Category.TypedGraphRule
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
 import           Util.List
-import qualified XML.GGXReader                    as XML
+import qualified XML.GGXReader                      as XML
 
 fileName = "tests/grammars/secondOrderMatchTest.ggx"
 dpoConf1 = MorphismsConfig MonoMatches MonomorphicNAC
@@ -23,14 +23,14 @@ dangextTest :: Spec
 dangextTest = do
     it "dangling extension generates expected values" $ do
       (gg1,_,_) <- XML.readGrammar fileName False dpoConf1
-      
+
       checkDanglingExtension gg1
-    
+
     it "it finds inter-level conflicts in expected situations" $ do
       (gg1,gg2,_) <- XML.readGrammar fileName False dpoConf1
-      
+
       checkInterlevelConflict dpoConf1 dpoConf2 gg1 gg2
-      
+
 -- | Runs dangling extension to a specific rule and checks if there is
 -- the correct number of messages and data nodes, all nodes and all edges
 checkDanglingExtension gg1 =
@@ -46,12 +46,12 @@ checkDanglingExtension gg1 =
         dataInDang = countElement typeOfData (map snd nods)
         nods = typedNodes dangGraph
         edgs = typedEdges dangGraph
-    
+
     msgsInDang  `shouldBe` 3
     dataInDang  `shouldBe` 3
     length nods `shouldBe` 8
     length edgs `shouldBe` 8
-    
+
 -- | Checks if the inter-level conflicts algorithm finds conflicts in
 -- expected situations. It does not check what is the conflict.
 checkInterlevelConflict mono arbitrary gg1 gg2 =
@@ -68,7 +68,7 @@ checkInterlevelConflict mono arbitrary gg1 gg2 =
         b = ("b", getRule "b" gg2)
         c = ("c", getRule "c" gg2)
         d = ("d", getRule "d" gg2)
-    
+
     length (interLevelCP arbitrary a sendMsg) `shouldBe` 1
     length (interLevelCP arbitrary b sendMsg) `shouldBe` 0
     length (interLevelCP arbitrary c sendMsg) `shouldBe` 0

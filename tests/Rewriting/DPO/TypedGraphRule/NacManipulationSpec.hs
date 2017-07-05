@@ -49,7 +49,7 @@ checkNacManipulation gg =
         deleteDisable = deleteStep DisableDelete deletion_modeledNACs deletion_concreteNACs
         deleteMono = deleteStep Monomorphisms deletion_modeledNACs deletion_concreteNACs
         deleteIPO = deleteStep InitialPushouts deletion_modeledNACs deletion_concreteNACs
-    
+
     length createDisable `shouldBe` 0
     length createPO `shouldBe` 1
     length createShift `shouldBe` 3

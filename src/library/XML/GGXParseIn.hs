@@ -1,4 +1,4 @@
-{-# LANGUAGE Arrows #-}
+{-# LANGUAGE Arrows                    #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
 module XML.GGXParseIn

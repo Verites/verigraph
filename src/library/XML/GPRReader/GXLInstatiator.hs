@@ -29,28 +29,28 @@ instatiateRule :: G.Graph (Maybe a) (Maybe b) -> ProcessedTypeGraph -> ParsedRul
 instatiateRule typeGraph types rule = (fst rule, ruleWithNacs)
   where
     (processedNodes,processedEdges) = processRuleGraph types rule
-    
+
     (forbiddenNodes,nodesWithoutNac) =
       L.partition (\(_,_,cond) -> cond `notElem` [Preservation,Creation,Deletion]) processedNodes
-    
+
     (forbiddenEdges,edgesWithoutNac) =
       L.partition (\(_,_,_,_,cond) -> cond == ForbiddenEdge) processedEdges
-    
+
     (nacsWithOnlyOneEdge,edgesInNacsWithNodes) =
       L.partition (\(_,src,tgt,_,_) -> G.NodeId src `elem` nodesL && G.NodeId tgt `elem` nodesL) forbiddenEdges
     nodesL = nodeIdsFromCodomain (getLHS ruleWithoutNacs)
-    
+
     groupNodesByNac =
       L.groupBy
         (\(_,_,ForbiddenNode x) (_,_,ForbiddenNode y) -> x == y)
         (L.sortBy (\(_,_,ForbiddenNode x) (_,_,ForbiddenNode y) -> compare x y) forbiddenNodes)
-    
+
     ruleWithoutNacs = instatiateRuleEdges (instatiateRuleNodes typeGraph nodesWithoutNac) edgesWithoutNac
-    
+
     nacsWithOnlyNodes = map (instatiateNacNodes ruleWithoutNacs) groupNodesByNac
     nacs1 = instatiateNacEdges edgesInNacsWithNodes nacsWithOnlyNodes
     nacs2 = instatiateLonelyNacEdges (getLHS ruleWithoutNacs) nacsWithOnlyOneEdge
-    
+
     ruleWithNacs = buildProduction (getLHS ruleWithoutNacs) (getRHS ruleWithoutNacs) (nacs1 ++ nacs2)
 
 instatiateNacNodes :: Production (TypedGraphMorphism a b) -> [ProcessedNode] -> TypedGraphMorphism a b
@@ -62,7 +62,7 @@ instatiateNacNodes r =
 instatiateNacEdges :: [ProcessedEdge] -> [TypedGraphMorphism a b] -> [TypedGraphMorphism a b]
 instatiateNacEdges _ [] = []
 instatiateNacEdges edges (n:nacs) = foldr insertEdge n edges : instatiateNacEdges edges nacs
-  where    
+  where
     insertEdge (e,src,tgt,tp,_) n =
       if G.NodeId src `elem` nodeIdsFromCodomain n && G.NodeId tgt `elem` nodeIdsFromCodomain n
         then TGM.createEdgeOnCodomain (G.EdgeId e) (G.NodeId src) (G.NodeId tgt) (G.EdgeId tp) n
@@ -72,7 +72,7 @@ instatiateLonelyNacEdges :: TypedGraphMorphism a b -> [ProcessedEdge] -> [TypedG
 instatiateLonelyNacEdges l = map insertEdge
   where
     isoL = identity (codomainGraph l)
-    
+
     insertEdge (e,src,tgt,tp,_) =
       createEdgeOnCodomain (G.EdgeId e) (G.NodeId src) (G.NodeId tgt) (G.EdgeId tp) isoL
 
@@ -81,18 +81,18 @@ instatiateRuleNodes typeGraph [] = emptyGraphRule typeGraph
 instatiateRuleNodes typeGraph ((n,ntype,cond):nodes) = action cond (instatiateRuleNodes typeGraph nodes)
   where
     action Preservation = addsPreservationNode n ntype
-    action Creation = addsCreationNode n ntype
-    action Deletion = addsDeletionNode n ntype
-    action _ = error "instatiateRuleNodes: it's not supposed to be here"
+    action Creation     = addsCreationNode n ntype
+    action Deletion     = addsDeletionNode n ntype
+    action _            = error "instatiateRuleNodes: it's not supposed to be here"
 
 instatiateRuleEdges :: TypedGraphRule a b -> [ProcessedEdge] -> TypedGraphRule a b
 instatiateRuleEdges init [] = init
 instatiateRuleEdges init ((e,src,tgt,etype,cond):edges) = action cond (instatiateRuleEdges init edges)
   where
     action Preservation = addsPreservationEdge e src tgt etype
-    action Creation = addsCreationEdge e src tgt etype
-    action Deletion = addsDeletionEdge e src tgt etype
-    action _ = error "instatiateRuleEdges: it's not supposed to be here"
+    action Creation     = addsCreationEdge e src tgt etype
+    action Deletion     = addsDeletionEdge e src tgt etype
+    action _            = error "instatiateRuleEdges: it's not supposed to be here"
 
 addsDeletionNode :: NodeId -> NodeTypeId -> TypedGraphRule a b -> TypedGraphRule a b
 addsDeletionNode nodeId ntype r =

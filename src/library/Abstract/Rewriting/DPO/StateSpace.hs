@@ -11,7 +11,7 @@ exploration.
 -}
 
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 module Abstract.Rewriting.DPO.StateSpace
   (
   -- * State spaces
