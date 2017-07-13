@@ -1,4 +1,4 @@
-module Util.Map (inverse, lookupMaybe, partitionEithers) where
+module Util.Map (inverse, lookupMaybe, partitionEithers, indexBy) where
 
 import           Control.Arrow
 import           Data.Foldable
@@ -15,6 +15,11 @@ inverse = foldl' addInverse Map.empty
 lookupMaybe :: Ord k => Maybe k -> Map k v -> Maybe v
 lookupMaybe x m = x >>= (`Map.lookup` m)
 
+-- | Given a projection and a list of elements, index the elements by their projection.
+indexBy :: Ord k => (v -> k) -> [v] -> Map k [v]
+indexBy projection = foldl' addItem Map.empty
+  where addItem m x = Map.insertWith (++) (projection x) [x] m
+  
 -- | Partition a map of 'Either's into a map containing only left-values and
 -- another containing right-values.
 partitionEithers :: Ord k => Map k (Either a b) -> (Map k a, Map k b)

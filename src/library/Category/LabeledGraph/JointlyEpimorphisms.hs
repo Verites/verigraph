@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Category.LabeledGraph.JointlyEpimorphisms where
 
+import           Control.Applicative
 import           Control.Monad
 import           Data.Function                          (on)
 import qualified Data.List                              as List
@@ -11,6 +12,7 @@ import qualified Data.Set                               as Set
 
 import           Abstract.Category.JointlyEpimorphisms
 import           Category.LabeledGraph.FinitaryCategory ()
+import           Data.EnumMap                           (EnumMap)
 import qualified Data.EnumMap                           as EnumMap
 import           Data.LabeledGraph
 import           Data.LabeledGraph.Morphism
@@ -65,6 +67,74 @@ instance JointlyEpimorphisms LabeledMorphism where
       sourceTarget (Edge _ src tgt _) = (src, tgt)
       lookupVarOnG v = EnumMap.lookup v gVarMap
       gVarMap = freeVariableMap g
+
+  createMonicJointlyEpimorphicPairs gL gR = do
+    varIdentifications <- pickIdentifications (freeVariablesOf gL) (freeVariablesOf gR) $ \_ _ -> True
+    let (varMapL, varMapR, _) = identificationsToMaps varIdentifications varId
+          (\(Variable _ hints) v -> Variable v hints)
+          (\(Variable _ hints1) (Variable _ hints2) v -> Variable v (hints1 ++ hints2))
+
+    let nodesL = renameVariables varMapL (nodes gL)
+    let nodesR = renameVariables varMapR (nodes gR)
+    nodeIdentifications <- pickIdentifications nodesL nodesR $ \nL nR ->
+                              case (nodeLabel nL, nodeLabel nR) of
+                                (Nothing, _)       -> True
+                                (_, Nothing)       -> True
+                                (Just vL, Just vR) -> varId vL == varId vR
+    let (nodeMapL, nodeMapR, codNodes) = identificationsToMaps nodeIdentifications nodeId
+          (\(Node _ v) n -> Node n v)
+          (\(Node _ vl) (Node _ vr) n -> Node n (vl <|> vr))
+
+    let edgesL = map (renameSourceTarget nodeMapL) (edges gL)
+    let edgesR = map (renameSourceTarget nodeMapR) (edges gR)
+    edgeIdentifications <- pickIdentifications edgesL edgesR $ \eL eR ->
+                              sourceId eL == sourceId eR && targetId eL == targetId eR
+    let (edgeMapL, edgeMapR, codEdges) = identificationsToMaps edgeIdentifications edgeId
+          (\(Edge _ src tgt _) e -> Edge e src tgt ())
+          (\(Edge _ src tgt _) _ e -> Edge e src tgt ())
+
+    let codomainGraph = fromNodesAndEdges codNodes codEdges
+    return
+      ( LabeledMorphism gL codomainGraph (EnumMap.map nodeId nodeMapL) (EnumMap.map edgeId edgeMapL) (EnumMap.map varId varMapL)
+      , LabeledMorphism gR codomainGraph (EnumMap.map nodeId nodeMapR) (EnumMap.map edgeId edgeMapR) (EnumMap.map varId varMapR)
+      )
+    where
+      renameSourceTarget nodeMap (Edge e src tgt ()) =
+        Edge e (nodeId $ nodeMap EnumMap.! src) (nodeId $ nodeMap EnumMap.! tgt) ()
+
+
+type Identifications a = ([a], [(a, a)], [a])
+
+pickIdentifications :: [a] -> [a] -> (a -> a -> Bool) -> [Identifications a]
+pickIdentifications xs ys isIdentifiable = recurse ([], [], []) xs ys
+  where
+    recurse (disjointX, identified, disjointY) [] ys = [(disjointX, identified, ys ++ disjointY)]
+    recurse (disjointX, identified, disjointY) xs [] = [(xs ++ disjointX, identified, disjointY)]
+    recurse (disjointX, identified, disjointY) (x:xs) ys = concat $
+      recurse (x:disjointX, identified, disjointY) xs ys :
+      [ recurse (disjointX, (x,y):identified, disjointY) xs ys'
+          | (y,ys') <- allSplits ys, isIdentifiable x y ]
+
+identificationsToMaps :: Enum k => Identifications a -> (a -> k) -> (a -> k -> v) -> (a -> a -> k -> v) -> (EnumMap k v, EnumMap k v, [v])
+identificationsToMaps (elemsL, joinedElements, elemsR) idOf makeSingle makeJoined =
+  let
+    pairsL = [ (idOf l, makeSingle l v) | (l, v) <- zip elemsL [toEnum 0..] ]
+    pairsR = [ (idOf r, makeSingle r v) | (r, v) <- zip elemsR [toEnum (length elemsL)..] ]
+    pairsJoined = [ (idOf l, idOf r, makeJoined l r v)
+                    | ((l, r), v) <- zip joinedElements [toEnum (length elemsL + length elemsR)..] ]
+  in
+    ( EnumMap.fromList $ pairsL ++ [ (l, e) | (l, _, e) <- pairsJoined ]
+    , EnumMap.fromList $ pairsR ++ [ (r, e) | (_, r, e) <- pairsJoined ]
+    , map snd pairsL ++ map snd pairsR ++ map (\(_,_,e) -> e) pairsJoined
+    )
+
+allSplits :: [a] -> [(a, [a])]
+allSplits [] = []
+allSplits [x] = [(x, [])]
+allSplits (x:xs) =
+  (x, xs) :
+  [ (x', x:xs') | (x', xs') <- allSplits xs ]
+
 
 
 type ListPartition a = [[a]]

@@ -3,11 +3,7 @@
 module Category.LabeledGraph.JointlyEpimorphismsSpec where
 
 import           Control.Monad
-import           Data.Map                              (Map)
-import qualified Data.Map                              as Map
-import           Data.Set                              (Set)
-import qualified Data.Set                              as Set
-import           Math.Combinat.Numbers                 (bellNumber)
+import           Math.Combinat.Numbers                 (bellNumber, binomial)
 import           Test.Hspec
 import           Test.Hspec.QuickCheck
 import           Test.QuickCheck
@@ -119,6 +115,78 @@ spec = withSmallerGraphs $ do
             ]
           ]
 
+  describe "createMonicJointlyEpimorphicPairs" $ do
+
+    prop "produces valid monomorphisms" $ \g1 g2 ->
+      forAll (elements $ createMonicJointlyEpimorphicPairs g1 g2) $ \(m1, m2) ->
+        isValid m1 && isValid m2 && isMonomorphism m1 && isMonomorphism (m2 :: LabeledMorphism)
+
+    prop "produces jointly epic pairs with correct domains and codomains" $ \g1 g2 ->
+      forAll (elements $ createMonicJointlyEpimorphicPairs g1 g2) $ \(m1, m2) ->
+        domain m1 == g1 && domain m2 == g2 && codomain m1 == codomain m2 && areJointlyEpic m1 m2
+
+    context "with no edges" $
+      it "produces the correct number of pairs" $
+        forM_ [0..7] $ \n ->
+        forM_ [0..n] $ \m ->
+        let
+          g1 = fromNodesAndEdges [Node i Nothing | i <- [0..m-1]] []
+          g2 = fromNodesAndEdges [Node i Nothing | i <- [0..n-1]] []
+        in
+          integerLength (createMonicJointlyEpimorphicPairs g1 g2 :: [(LabeledMorphism, LabeledMorphism)])
+          `shouldBe` sum [binomial m numDisjoint * permutation n (m - numDisjoint) | numDisjoint <- [0..m]]
+          -- We calculate the expected number of pairs by interpreting their creation as follows:
+          --
+          --  1. Pick 0 < numDisjoint <= m, the number of elements of g1 that are not identified
+          --     with any of g2
+          --
+          --  2. Pick a combination of numDisjoint elements from g1 (total of m elements), which
+          --     are not identified with any of g2
+          --
+          --  3. Pick a permutation of (m - numDisjoint) elements from g2 (total of n elements),
+          --     which are identified with the elements of g1 in that order
+
+    context "with one node and multiple edges" $
+      it "produces the correct number of pairs" $
+        forM_ [0..7] $ \n ->
+        forM_ [0..n] $ \m ->
+        let
+          g1 = fromNodesAndEdges [Node 0 Nothing] [Edge i 0 0 () | i <- [0..m-1]]
+          g2 = fromNodesAndEdges [Node 1 Nothing] [Edge i 1 1 () | i <- [0..n-1]]
+        in
+          integerLength (createMonicJointlyEpimorphicPairs g1 g2 :: [(LabeledMorphism, LabeledMorphism)])
+          `shouldBe` 1 + sum [binomial m numDisjoint * permutation n (m - numDisjoint) | numDisjoint <- [0..m]]
+
+    it "produces all identifications of unlabeled nodes"
+      pending
+
+    it "identifies nodes coherently with variables"
+      pending
+
+    it "identifies edges coherently with nodes"
+      pending
+
+
+areJointlyEpic :: LabeledMorphism -> LabeledMorphism -> Bool
+areJointlyEpic f g =
+  EnumSet.union (image $ Morphism.nodeMap f) (image $ Morphism.nodeMap g) == EnumSet.fromList (Graph.nodeIds $ codomain f)
+  &&
+    EnumSet.union (image $ Morphism.edgeMap f) (image $ Morphism.edgeMap g) == EnumSet.fromList (Graph.edgeIds $ codomain f)
+  && EnumSet.union (image $ Morphism.variableMap f) (image $ Morphism.variableMap g) == freeVariableSet (codomain f)
+
+integerLength :: [a] -> Integer
+integerLength = fromIntegral . length
+
+image :: (Enum k, Enum a) => EnumMap k a -> EnumSet a
+image = EnumSet.fromList . EnumMap.elems
+
+-- | Calculate the number of permutations of length @k@ drawn from @n@ distinguishable elements.
+permutation :: Integral a => a -> a -> Integer
+permutation n k = product [fromIntegral (n - k + 1) .. fromIntegral n]
+
+
+
+-- * UTILITIES FOR HARDCODING EXPECTED PARTITIONS
 
 data VarPartition = V [Variable] [(VarId, VarId)] [NodePartition]
 data NodePartition = N [Node (Maybe VarId)] [(NodeId, NodeId)] [EdgePartition]
@@ -133,13 +201,3 @@ partitions domain varTree = do
   let vars' = EnumMap.fromList [ (varId v, v) | v <- vars ]
   let nodes' = map (\(Node n v) -> Node n (EnumMap.lookupMaybe v vars')) nodes
   return $ fromGraphsAndLists domain (fromNodesAndEdges nodes' edges) nodeMap edgeMap varMap
-
-
-integerLength :: [a] -> Integer
-integerLength = fromIntegral . length
-
-enumMapImage :: (Enum k, Enum a) => EnumMap k a -> EnumSet a
-enumMapImage = EnumSet.fromList . EnumMap.elems
-
-mapImage :: Ord a => Map k a -> Set a
-mapImage = Set.fromList . Map.elems
