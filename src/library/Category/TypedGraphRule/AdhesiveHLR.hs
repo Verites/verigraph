@@ -2,12 +2,13 @@ module Category.TypedGraphRule.AdhesiveHLR where
 
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.Cocomplete
-import           Abstract.Category.FinitaryCategory           ()
+import           Abstract.Category.FinitaryCategory
 import           Abstract.Rewriting.DPO
 import           Category.TypedGraph.AdhesiveHLR              hiding (isOrphanEdge)
 import           Category.TypedGraph.CommutingSquares
 import           Category.TypedGraphRule
 import           Category.TypedGraphRule.Cocomplete           ()
+import           Category.TypedGraphRule.FindMorphism         ()
 import           Data.Graphs                                  as G
 import qualified Data.Graphs.Morphism                         as GM
 import           Data.TypedGraph.Morphism
@@ -15,6 +16,8 @@ import           Rewriting.DPO.TypedGraph                     ()
 import           Rewriting.DPO.TypedGraphRule.NacManipulation
 
 instance AdhesiveHLR (RuleMorphism a b) where
+
+  findMMorphisms = findMonomorphisms
 
   -- Pushout for second-order with creation of NACs.
   -- It runs the pushout without NACs (from cocomplete),

@@ -1,11 +1,11 @@
 module Analysis.ParallelIndependentSpec where
 
-import           Data.Matrix                  hiding ((<|>))
-import           Test.Hspec
-import           Abstract.Category.FinitaryCategory (MorphismType(..))
+import           Abstract.Category.FinitaryCategory (MorphismType (..))
 import           Abstract.Rewriting.DPO
 import           Analysis.ParallelIndependent
-import qualified XML.GGXReader                as XML
+import           Data.Matrix                        hiding ((<|>))
+import           Test.Hspec
+import qualified XML.GGXReader                      as XML
 
 -- This test is based on that the pullback scheme for detecting parallel
 -- or sequentially independece is identical to find for delete-use.

@@ -2,9 +2,9 @@ module Rewriting.DPO.TypedGraphRuleSpec where
 
 import           Test.Hspec
 
-import           Abstract.Category.FinitaryCategory (MorphismType(..))
+import           Abstract.Category.FinitaryCategory (MorphismType (..))
 import           Abstract.Rewriting.DPO
-import qualified XML.GGXReader          as XML
+import qualified XML.GGXReader                      as XML
 
 fileName1 = "tests/grammars/nacs2rule.ggx"
 fileName2 = "tests/grammars/secondOrderMatchTest.ggx"

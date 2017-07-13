@@ -4,7 +4,7 @@ import           Data.List
 import           Data.Matrix                                 hiding ((<|>))
 import           Test.Hspec
 
-import           Abstract.Category.FinitaryCategory (MorphismType(..))
+import           Abstract.Category.FinitaryCategory          (MorphismType (..))
 import           Abstract.Rewriting.DPO
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence

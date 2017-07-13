@@ -7,7 +7,7 @@ import           Math.Combinat.Numbers                 (bellNumber)
 import           Test.Hspec
 
 import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.FinitaryCategory (MorphismType(..))
+import           Abstract.Category.FinitaryCategory    (MorphismType (..))
 import           Abstract.Category.JointlyEpimorphisms
 import           Abstract.Rewriting.DPO
 import           Analysis.CriticalPairs

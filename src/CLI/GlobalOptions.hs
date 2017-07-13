@@ -7,9 +7,9 @@ module GlobalOptions
   , useConstraints
   ) where
 
-import           Abstract.Category.FinitaryCategory (MorphismType(..))
-import           Abstract.Rewriting.DPO (MorphismsConfig (..),NacSatisfaction (..))
-import           Data.Monoid                   ((<>))
+import           Abstract.Category.FinitaryCategory (MorphismType (..))
+import           Abstract.Rewriting.DPO             (MorphismsConfig (..), NacSatisfaction (..))
+import           Data.Monoid                        ((<>))
 import           Options.Applicative
 
 data GlobalOptions = GOpts

@@ -1,6 +1,6 @@
 module Analysis.EssentialCriticalPairsSpec where
 
-import           Abstract.Category.FinitaryCategory (MorphismType(..))
+import           Abstract.Category.FinitaryCategory          (MorphismType (..))
 import           Abstract.Rewriting.DPO
 import           Analysis.EssentialCriticalPairs
 import           Category.TypedGraphRule.JointlyEpimorphisms ()

@@ -115,3 +115,7 @@ class (Cocomplete morph) => AdhesiveHLR morph where
   --        g
   -- @
   calculatePullback :: morph -> morph -> (morph,morph)
+
+  {- | Given two objects @A@ and @B@ of the M-Adhesive Category, finds all the morphisms
+      @m : A -> B@ such that @m@ is in @M@ class of morphisms -}
+  findMMorphisms :: Obj morph -> Obj morph -> [morph]

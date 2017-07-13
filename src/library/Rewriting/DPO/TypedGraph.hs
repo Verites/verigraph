@@ -21,18 +21,18 @@ module Rewriting.DPO.TypedGraph
 , isDeleted
 ) where
 
-import           Abstract.Category.FinitaryCategory as FC
-import           Abstract.Rewriting.DPO             as DPO
-import           Category.TypedGraph                ()
+import           Abstract.Category.FinitaryCategory      as FC
+import           Abstract.Rewriting.DPO                  as DPO
+import           Category.TypedGraph                     ()
 import           Category.TypedGraph.AdhesiveHLR
-import           Category.TypedGraph.FindMorphism   ()
-import           Data.Graphs                        as G
-import qualified Data.Graphs.Morphism               as GM
-import           Data.TypedGraph                    as GM
-import           Data.TypedGraph.Morphism           as TGM
+import           Category.TypedGraph.FindMorphism        ()
+import           Data.Graphs                             as G
+import qualified Data.Graphs.Morphism                    as GM
+import           Data.TypedGraph                         as GM
+import           Data.TypedGraph.Morphism                as TGM
 import           Data.TypedGraph.Partition               (generateGraphPartitions)
-import           Data.TypedGraph.Partition.ToVerigraph   (mountTypedGraphMorphisms)
 import           Data.TypedGraph.Partition.FromVerigraph (createSatisfyingNacsDisjointUnion)
+import           Data.TypedGraph.Partition.ToVerigraph   (mountTypedGraphMorphisms)
 
 type TypedGraphRule a b = Production (TypedGraphMorphism a b)
 type NamedTypedGraphRule a b = NamedProduction (TypedGraphMorphism a b)

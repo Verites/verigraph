@@ -2,13 +2,13 @@ module Abstract.Category.AdhesiveHLR.ApplicationCondition (
 
 ) where
 
-import           Abstract.Category.FinitaryCategory
+import           Abstract.Category.AdhesiveHLR hiding (Constraint(..), AtomicConstraint(..))
 import           Base.Valid
 
 data AtomicApplicationCondition morph = AtomicApplicationCondition {
-   name :: String
+   name       :: String
 ,  positive :: Bool
-,  base :: morph
+,  base       :: morph
 ,  extensions :: [morph]
 } deriving (Show)
 
@@ -24,23 +24,24 @@ instance Valid morph => Valid (AtomicApplicationCondition morph) where
             ("extension morphism #" ++ show index ++ " of atomic application condition " ++ n)
             (validate e) ]
 
-satisfiesAtomicApplicationCondition :: (FindMorphism morph) => morph -> AtomicApplicationCondition morph -> Bool
+satisfiesAtomicApplicationCondition :: (AdhesiveHLR morph) => morph
+  -> AtomicApplicationCondition morph -> Bool
 satisfiesAtomicApplicationCondition m condition = Prelude.null ps || allPsAreSatisfied
   where
     object = codomain m
     x = base condition
     xis = extensions condition
-    psCandidates = findMonomorphisms (codomain x) object
+    psCandidates = findMMorphisms (codomain x) object
     ps = filter (\p -> p <&> x == m) psCandidates
     positiveSatisfaction = all (\p ->       existsCommutativeQ p xis) ps
     negativeSatisfaction = all (\p -> not $ existsCommutativeQ p xis) ps
     allPsAreSatisfied = if positive condition then positiveSatisfaction else negativeSatisfaction
 
-existsCommutativeQ :: (FindMorphism morph) => morph -> [morph] -> Bool
+existsCommutativeQ :: (AdhesiveHLR morph) => morph -> [morph] -> Bool
 existsCommutativeQ p = any satisfies
   where
     object = codomain p
-    qs xi = findMonomorphisms (codomain xi) object
+    qs xi = findMMorphisms (codomain xi) object
     satisfies xi = any (\q -> q <&> xi == p) (qs xi)
 
 data ApplicationCondition morph =
@@ -52,13 +53,13 @@ data ApplicationCondition morph =
   | Not { nc :: ApplicationCondition morph }
   deriving (Show)
 
-satisfiesApplicationCondition :: (FindMorphism morph) => morph -> ApplicationCondition morph -> Bool
+satisfiesApplicationCondition :: (AdhesiveHLR morph) => morph -> ApplicationCondition morph -> Bool
 satisfiesApplicationCondition m condition =
   case condition of
     Atomic atomic -> satisfiesAtomicApplicationCondition m atomic
-    Not nc -> not $ satisfiesApplicationCondition m nc
-    And lc rc -> satisfiesApplicationCondition m lc && satisfiesApplicationCondition m rc
-    Or lc rc -> satisfiesApplicationCondition m lc || satisfiesApplicationCondition m rc
+    Not nc        -> not $ satisfiesApplicationCondition m nc
+    And lc rc     -> satisfiesApplicationCondition m lc && satisfiesApplicationCondition m rc
+    Or lc rc      -> satisfiesApplicationCondition m lc || satisfiesApplicationCondition m rc
 
-satisfiesAllApplicationConditions :: (FindMorphism morph) => morph -> [ApplicationCondition morph] -> Bool
+satisfiesAllApplicationConditions :: (AdhesiveHLR morph) => morph -> [ApplicationCondition morph] -> Bool
 satisfiesAllApplicationConditions m = all (satisfiesApplicationCondition m)

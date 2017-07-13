@@ -1,18 +1,18 @@
 {-# LANGUAGE TypeFamilies #-}
 module Rewriting.DPO.TypedGraphRule where
 
-import           Data.Maybe                            (fromMaybe, mapMaybe)
+import           Data.Maybe                                  (fromMaybe, mapMaybe)
 
 import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.JointlyEpimorphisms
 import           Abstract.Category.FinitaryCategory
+import           Abstract.Category.JointlyEpimorphisms
 import           Abstract.Rewriting.DPO
 import           Base.Valid
 import           Category.TypedGraphRule
-import qualified Category.TypedGraphRule.AdhesiveHLR   as SO ()
-import           Category.TypedGraphRule.FindMorphism  ()
+import qualified Category.TypedGraphRule.AdhesiveHLR         as SO ()
+import           Category.TypedGraphRule.FindMorphism        ()
 import           Category.TypedGraphRule.JointlyEpimorphisms
-import           Data.Graphs                           as G
+import           Data.Graphs                                 as G
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
 import           Rewriting.DPO.TypedGraph

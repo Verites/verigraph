@@ -5,11 +5,14 @@ import           Data.Maybe                         (fromJust, mapMaybe)
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.FinitaryCategory
 import           Category.TypedGraph.Cocomplete     ()
+import           Category.TypedGraph.FindMorphism   ()
 import           Data.Graphs                        as G
 import qualified Data.Graphs.Morphism               as GM
 import           Data.TypedGraph.Morphism
 
 instance AdhesiveHLR (TypedGraphMorphism a b) where
+
+  findMMorphisms = findMonomorphisms
 
   -- @
   --        d
