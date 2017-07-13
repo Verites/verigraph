@@ -12,7 +12,6 @@ module XML.GGXWriter
 import           Data.Maybe
 import           Text.XML.HXT.Core
 
-import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.FinitaryCategory          (codomain)
 import           Abstract.Rewriting.DPO
 import qualified Analysis.CriticalPairs                      as CP

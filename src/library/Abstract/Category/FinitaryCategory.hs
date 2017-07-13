@@ -26,7 +26,7 @@ data MorphismType
   | Monomorphism
   | Epimorphism
   | Isomorphism
-  deriving (Show, Enum)
+  deriving (Show, Enum, Eq)
 
 type Span morph = (morph, morph)
 

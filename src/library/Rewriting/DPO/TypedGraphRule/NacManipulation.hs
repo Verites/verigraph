@@ -56,4 +56,4 @@ createStep ShiftNACs match modeledNACs =
   concatMap (nacDownwardShift conf match) modeledNACs
     where
       -- conf is used only to indicate AnyMatches, that is the most generic case for nacDownwardShift
-      conf = MorphismsConfig AnyMatches undefined
+      conf = MorphismsConfig GenericMorphism undefined

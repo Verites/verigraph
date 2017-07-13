@@ -13,6 +13,7 @@ module Analysis.Interlevel.EvolutionarySpans
   ) where
 
 import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category.FinitaryCategory
 import           Abstract.Category.JointlyEpimorphisms
 import           Abstract.Rewriting.DPO
 import           Abstract.Rewriting.DPO.DiagramAlgorithms
@@ -59,7 +60,7 @@ evolSpans conf (n1,r1) (n2,r2) = (n1, n2, spans)
     leftR1 = buildProduction (mappingLeft (getLHS r1)) (mappingLeft (getRHS r1)) []
     leftR2 = buildProduction (mappingLeft (getLHS r2)) (mappingLeft (getRHS r2)) []
 
-    pairs = createJointlyEpimorphicPairs (matchRestriction conf == MonoMatches) leftR1 leftR2
+    pairs = createJointlyEpimorphicPairs (matchRestriction conf == Monomorphism) leftR1 leftR2
 
     xs = filter (\(m1,_) -> isValid (codomain m1)) pairs
     xs' = filter (\(m1,m2) -> satisfyRewritingConditions conf (r1Left, mappingLeft m1) (r2Left, mappingLeft m2)) xs

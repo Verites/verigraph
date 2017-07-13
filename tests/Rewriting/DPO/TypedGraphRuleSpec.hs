@@ -2,13 +2,14 @@ module Rewriting.DPO.TypedGraphRuleSpec where
 
 import           Test.Hspec
 
+import           Abstract.Category.FinitaryCategory (MorphismType(..))
 import           Abstract.Rewriting.DPO
 import qualified XML.GGXReader          as XML
 
 fileName1 = "tests/grammars/nacs2rule.ggx"
 fileName2 = "tests/grammars/secondOrderMatchTest.ggx"
-dpoConf1 = MorphismsConfig MonoMatches MonomorphicNAC
-dpoConf2 = MorphismsConfig AnyMatches MonomorphicNAC
+dpoConf1 = MorphismsConfig Monomorphism MonomorphicNAC
+dpoConf2 = MorphismsConfig GenericMorphism MonomorphicNAC
 
 spec :: Spec
 spec = context "Second-Order Minimal Safety NACs Test" msnTest

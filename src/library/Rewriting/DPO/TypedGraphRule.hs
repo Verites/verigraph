@@ -1,14 +1,17 @@
+{-# LANGUAGE TypeFamilies #-}
 module Rewriting.DPO.TypedGraphRule where
 
 import           Data.Maybe                            (fromMaybe, mapMaybe)
 
 import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.JointlyEpimorphisms
+import           Abstract.Category.FinitaryCategory
 import           Abstract.Rewriting.DPO
 import           Base.Valid
 import           Category.TypedGraphRule
 import qualified Category.TypedGraphRule.AdhesiveHLR   as SO ()
 import           Category.TypedGraphRule.FindMorphism  ()
+import           Category.TypedGraphRule.JointlyEpimorphisms
 import           Data.Graphs                           as G
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
@@ -67,6 +70,39 @@ instance DPO (RuleMorphism a b) where
       ruleWithOnlyMinimalSafetyNacs =
         buildProduction (getLHS rule) (getRHS rule) (minimalSafetyNacs conf rule)
 
+  createJointlyEpimorphicPairsFromNAC conf ruleR nac = ret
+    where
+      createJointly x = createJointlyEpimorphicPairsFromNAC conf (codomain x)
+
+      nL = mappingLeft nac
+      nK = mappingInterface nac
+      nR = mappingRight nac
+      leftR = getLHS ruleR
+      rightR = getRHS ruleR
+      rK = domain (getLHS ruleR)
+      codNac = codomain nac
+
+      interfaceEpiPairs = createJointlyEpimorphicPairsFromNAC conf rK nK
+
+      lefts = concatMap
+                (\(kR,kN) ->
+                  let ls = createSideRule createJointly kR leftR leftR kN (getLHS codNac) nL
+                  in map (\(ll1,ll2,m) -> (kR, kN, ll1, ll2, m)) ls)
+                interfaceEpiPairs
+
+      rights = concatMap
+                (\(kR,kN,ll1,ll2,l) ->
+                  let rs = createSideRule createJointly kR rightR rightR kN (getRHS codNac) nR
+                  in map (\(rr1,rr2,r) -> (kR,kN,ll1,ll2,l,rr1,rr2,r)) rs)
+                lefts
+
+      transposeNACs l = map (snd . calculatePushout l)
+
+      ret = map (\(k1,k2,ll1,ll2,l,r1,r2,r) ->
+                   let rule = buildProduction l r $ transposeNACs ll1 (getNACs ruleR) ++ transposeNACs ll2 (getNACs codNac)
+                   in (ruleMorphism ruleR rule ll1 k1 r1,
+                       ruleMorphism (codomain nac) rule ll2 k2 r2)) rights
+
 ---- Minimal Safety NACs
 
 -- | Configuration for the minimalSafetyNACs algorithms, it defines from
@@ -91,7 +127,7 @@ minimalSafetyNacs :: MorphismsConfig -> SndOrderRule a b -> [RuleMorphism a b]
 minimalSafetyNacs conf sndRule =
   newNacsProb LeftSide sndRule ++
   newNacsProb RightSide sndRule ++
-  ( if matchRestriction conf == AnyMatches then
+  ( if matchRestriction conf == GenericMorphism then
       newNacsPair LeftSide sndRule ++ newNacsPair RightSide sndRule
     else
       []
@@ -213,7 +249,7 @@ createNacProb sideChoose ruleL x = ruleMorphism ruleL nacRule mapL mapK mapR
 -- Insert NACs to avoid condition (b) in Thm 70 (rodrigo machado phd thesis, 2012)
 newNacsPair :: Side -> SndOrderRule a b -> [RuleMorphism a b]
 newNacsPair sideChoose sndRule =
-  mapMaybe createNac retNodes ++ mapMaybe createNac retEdges
+  mapMaybe createNac filteredNodes ++ mapMaybe createNac filteredEdges
   where
     applyNode = applyNodeIdUnsafe
     applyEdge = applyEdgeIdUnsafe
@@ -231,24 +267,31 @@ newNacsPair sideChoose sndRule =
     lb = getSide ruleK
     lc = getSide ruleR
 
-    pairs apply isOrphan list =
-      [(apply fl x, apply fl y) |
-          x <- list $ domain $ codomain lb
-        , y <- list $ domain $ codomain lb
+    --pairsNodes = pairs applyNode isOrphanNode nodeIds
+    pairsNodes =
+      [(applyNode fl x, applyNode fl y) |
+          x <- nodeIds $ domain $ codomain lb
+        , y <- nodeIds $ domain $ codomain lb
         , x /= y
-        , isOrphan lb x
-        , not (isOrphan lc (apply gl x))
-        , not (isOrphan lc (apply gl y))]
+        , isOrphanNode lb x
+        , not (isOrphanNode lc (applyNode gl x))
+        , not (isOrphanNode lc (applyNode gl y))]
 
-    pairsNodes = pairs applyNode isOrphanNode nodeIds
-    pairsEdges = pairs applyEdge isOrphanEdge edgeIds
+
+    --pairsEdges = pairs applyEdge isOrphanEdge edgeIds
+    pairsEdges =
+      [(applyEdge fl x, applyEdge fl y) |
+          x <- edgeIds $ domain $ codomain lb
+        , y <- edgeIds $ domain $ codomain lb
+        , x /= y
+        , isOrphanEdge lb x
+        , not (isOrphanEdge lc (applyEdge gl x))
+        , not (isOrphanEdge lc (applyEdge gl y))]
 
     epis = calculateAllPartitions (codomain (getSide ruleL))
 
-    filtered apply pairs = [e | e <- epis, any (\(a,b) -> apply e a == apply e b) pairs]
-
-    retNodes = filtered applyNode pairsNodes
-    retEdges = filtered applyEdge pairsEdges
+    filteredNodes = [e | e <- epis, any (\(a,b) -> applyNode e a == applyNode e b) pairsNodes]
+    filteredEdges = [e | e <- epis, any (\(a,b) -> applyEdge e a == applyEdge e b) pairsEdges]
 
     createNac e = if isValid n then Just n else Nothing
       where

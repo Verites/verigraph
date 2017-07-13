@@ -77,7 +77,7 @@ isEssentialDeleteUse conf (l1',c,m1,m2) = null commuting
 
 findMorphismsFromDomains :: FindMorphism morph => MorphismsConfig -> morph -> morph -> [morph]
 findMorphismsFromDomains conf  a b =
-  findMorphisms (matchRestrictionToMorphismType $ matchRestriction conf) (domain a) (domain b)
+  findMorphisms (matchRestriction conf) (domain a) (domain b)
 
 -- Check if it is correct.
 findAllEssentialProduceDangling :: --(DPO morph, JointlyEpimorphisms morph) =>

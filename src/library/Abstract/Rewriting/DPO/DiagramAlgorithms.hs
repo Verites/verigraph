@@ -101,7 +101,7 @@ findAllPossibleH21 conf m2 d1 =
     then error "produceDangling: non unique h21 morphism"
     else h21
   where
-    morphismRestriction = matchRestrictionToMorphismType (matchRestriction conf)
+    morphismRestriction = matchRestriction conf
     h21 = findCospanCommuter morphismRestriction m2 d1
 
 -- | Verifies delete-use, if false verifies produce-dangling.
@@ -154,4 +154,4 @@ produceForbidOneNac conf p1 p2 (n2,idx) = do
 
 findMorphisms' :: FindMorphism morph => MorphismsConfig -> Obj morph -> Obj morph -> [morph]
 findMorphisms' conf =
-  findMorphisms (matchRestrictionToMorphismType $ matchRestriction conf)
+  findMorphisms (matchRestriction conf)

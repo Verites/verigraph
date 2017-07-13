@@ -2,7 +2,7 @@ module Analysis.CriticalSequenceSpec where
 
 import           Data.Matrix                                 hiding ((<|>))
 import           Test.Hspec
-
+import           Abstract.Category.FinitaryCategory (MorphismType(..))
 import           Abstract.Rewriting.DPO
 import           Analysis.CriticalSequence
 import           Category.TypedGraphRule.JointlyEpimorphisms
@@ -10,7 +10,7 @@ import qualified XML.GGXReader                               as XML
 
 fileName1 = "tests/grammars/teseRodrigo.ggx"
 fileName2 = "tests/grammars/secondOrderMatchTest.ggx"
-dpoConf = MorphismsConfig AnyMatches PartiallyMonomorphicNAC
+dpoConf = MorphismsConfig GenericMorphism PartiallyMonomorphicNAC
 testCase findDependencies rules expected = expected `shouldBe` show (pairwise (findDependencies dpoConf) rules)
 
 spec :: Spec

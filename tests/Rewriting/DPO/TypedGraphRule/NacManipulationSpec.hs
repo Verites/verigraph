@@ -10,7 +10,7 @@ import           Rewriting.DPO.TypedGraphRule.NacManipulation
 import qualified XML.GGXReader                                as XML
 
 fileName = "tests/grammars/NacManipulation.ggx"
-dpoConf = MorphismsConfig MonoMatches MonomorphicNAC
+dpoConf = MorphismsConfig Monomorphism MonomorphicNAC
 
 spec :: Spec
 spec = context "NAC Manipulation Test" nacmanipTest

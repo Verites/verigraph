@@ -26,9 +26,8 @@ module Abstract.Rewriting.DPO
   , addReachableGraphs
 
   , MorphismsConfig(..)
-  , MatchRestriction(..)
-  , matchRestrictionToMorphismType
   , NacSatisfaction(..)
+
 
   -- ** Application
 
@@ -177,6 +176,12 @@ class (AdhesiveHLR morph, FindMorphism morph) => DPO morph where
   -- a set of NACs /n'i : R -> N'i/ that is equivalent to the original NAC.
   shiftNacOverProduction :: MorphismsConfig -> Production morph -> morph -> [morph]
 
+  -- | Create a special case of jointly epimorphic pairs, where the second morphism is a Nac.
+  -- The pairs generated are dependent of the NAC config.
+  --
+  -- FIXME: rethink this function and the best module to place it
+  createJointlyEpimorphicPairsFromNAC :: MorphismsConfig -> Obj morph -> morph -> [(morph,morph)]
+
 -- | Obtain all matches from the production into the given object, even if they
 -- aren't applicable.
 --
@@ -184,7 +189,7 @@ class (AdhesiveHLR morph, FindMorphism morph) => DPO morph where
 findAllMatches :: (DPO morph) => MorphismsConfig -> Production morph -> Obj morph -> [morph]
 findAllMatches conf production =
   findMorphisms
-    (matchRestrictionToMorphismType $ matchRestriction conf)
+    (matchRestriction conf)
     (codomain $ left production)
 
 -- | Obtain the matches from the production into the given object that satisfiy the NACs
@@ -233,8 +238,7 @@ satisfiesGluingConditions :: DPO morph => MorphismsConfig -> Production morph ->
 satisfiesGluingConditions conf production match =
   hasPushoutComplement (matchIsMono, match) (GenericMorphism, left production)
   where
-    matchIsMono =
-      matchRestrictionToMorphismType (matchRestriction conf)
+    matchIsMono = (matchRestriction conf)
 
 -- | True if the given match satisfies all NACs of the given production.
 satisfiesNACs :: DPO morph => MorphismsConfig -> Production morph -> morph -> Bool
@@ -285,6 +289,15 @@ rewrite morph prod =
 invertProductionWithoutNacs :: Production morph -> Production morph
 invertProductionWithoutNacs p = Production (right p) (left p) []
 
+-- | Flag indicating the semantics of NAC satisfaction.
+data NacSatisfaction = MonomorphicNAC | PartiallyMonomorphicNAC deriving (Eq, Show)
+
+data MorphismsConfig = MorphismsConfig
+  { matchRestriction :: MorphismType
+  , nacSatisfaction  :: NacSatisfaction
+  }
+
+
 -- TODO: deprecate? why do we need this __here__?
 -- | Check gluing conditions and the NACs satisfaction for a pair of matches
 -- @inj@ only indicates if the match is injective, this function does not checks it
@@ -299,5 +312,5 @@ satisfyRewritingConditions conf (l,m1) (r,m2) =
 nacDownwardShift :: JointlyEpimorphisms morph => MorphismsConfig -> morph -> morph -> [morph]
 nacDownwardShift conf morph n = newNacs
   where
-    pairs = calculateCommutativeSquaresAlongMonomorphism (n,True) (morph, matchRestriction conf == MonoMatches)
+    pairs = calculateCommutativeSquaresAlongMonomorphism (n,True) (morph, matchRestriction conf == Monomorphism)
     newNacs = map snd pairs

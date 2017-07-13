@@ -5,7 +5,7 @@ module Analysis.Processes
   , findConflictsAndDependencies
   ) where
 
-import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category.FinitaryCategory
 import           Abstract.Rewriting.DPO
 import           Abstract.Rewriting.DPO.DiagramAlgorithms
 import           Abstract.Rewriting.DPO.Process
@@ -43,7 +43,7 @@ expandeProductions :: (NamedRuleWithMatches morph, NamedRuleWithMatches morph) -
 expandeProductions (a,b) = map (\x -> (a,x)) (expandNACs b)
 
 conf :: MorphismsConfig
-conf = MorphismsConfig MonoMatches MonomorphicNAC
+conf = MorphismsConfig Monomorphism MonomorphicNAC
 
 validLeftRewritings :: GenerateProcess morph => Production morph -> Production morph-> (morph,morph) -> Bool
 validLeftRewritings p1 p2 (m1,m2) =

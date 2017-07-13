@@ -7,6 +7,7 @@ import           Math.Combinat.Numbers                 (bellNumber)
 import           Test.Hspec
 
 import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category.FinitaryCategory (MorphismType(..))
 import           Abstract.Category.JointlyEpimorphisms
 import           Abstract.Rewriting.DPO
 import           Analysis.CriticalPairs
@@ -18,10 +19,10 @@ import qualified XML.GGXReader                         as XML
 
 fileName1 = "tests/grammars/sndOrderEpi.ggx"
 fileName2 = "tests/grammars/partialInjectivity.ggx"
-dpoConf1 = MorphismsConfig MonoMatches MonomorphicNAC
-dpoConf2 = MorphismsConfig AnyMatches MonomorphicNAC
-dpoConf3 = MorphismsConfig MonoMatches PartiallyMonomorphicNAC
-dpoConf4 = MorphismsConfig AnyMatches PartiallyMonomorphicNAC
+dpoConf1 = MorphismsConfig Monomorphism MonomorphicNAC
+dpoConf2 = MorphismsConfig GenericMorphism MonomorphicNAC
+dpoConf3 = MorphismsConfig Monomorphism PartiallyMonomorphicNAC
+dpoConf4 = MorphismsConfig GenericMorphism PartiallyMonomorphicNAC
 
 spec :: Spec
 spec = context "Partitions Test" partitionsTest

@@ -106,7 +106,7 @@ relevantMatches :: MorphismsConfig -> TypedGraphMorphism a b -> TypedGraphMorphi
 relevantMatches conf dangFl dangGl = concatMap createQuotients allSubgraphs
   where
     createQuotients
-      | matchRestriction conf == MonoMatches = \g -> [identity g]
+      | matchRestriction conf == Monomorphism = \g -> [identity g]
       | otherwise = createAllQuotients
     (_,al) = calculatePushout dangFl dangGl
     --axs = induzedSubgraphs al

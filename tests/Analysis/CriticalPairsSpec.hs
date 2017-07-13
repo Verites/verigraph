@@ -2,7 +2,7 @@ module Analysis.CriticalPairsSpec where
 
 import           Data.Matrix                                 hiding ((<|>))
 import           Test.Hspec
-
+import           Abstract.Category.FinitaryCategory (MorphismType(..))
 import           Abstract.Rewriting.DPO
 import           Analysis.CriticalPairs
 import           Category.TypedGraphRule.JointlyEpimorphisms
@@ -10,7 +10,7 @@ import qualified XML.GGXReader                               as XML
 
 fileName1 = "tests/grammars/teseRodrigo.ggx"
 fileName2 = "tests/grammars/secondOrderMatchTest.ggx"
-dpoConf = MorphismsConfig MonoMatches PartiallyMonomorphicNAC
+dpoConf = MorphismsConfig Monomorphism PartiallyMonomorphicNAC
 testCase findConflicts rules expected = expected `shouldBe` show (pairwise (findConflicts dpoConf) rules)
 
 spec :: Spec

@@ -7,8 +7,8 @@ module GlobalOptions
   , useConstraints
   ) where
 
-import           Abstract.Category.AdhesiveHLR (MatchRestriction (..), MorphismsConfig (..),
-                                                NacSatisfaction (..))
+import           Abstract.Category.FinitaryCategory (MorphismType(..))
+import           Abstract.Rewriting.DPO (MorphismsConfig (..),NacSatisfaction (..))
 import           Data.Monoid                   ((<>))
 import           Options.Applicative
 
@@ -20,9 +20,19 @@ data GlobalOptions = GOpts
   , useConstraints           :: Bool
   }
 
+-- | Flag indicating what restrictions are required or assumed of matches.
+data MatchRestriction = MonoMatches | AnyMatches deriving (Eq, Show)
+
+-- | Converts a match restriction to the corresponding MorphismType
+matchRestrictionToMorphismType :: MatchRestriction -> MorphismType
+matchRestrictionToMorphismType MonoMatches = Monomorphism
+matchRestrictionToMorphismType AnyMatches  = GenericMorphism
+
+mt :: GlobalOptions -> MorphismType
+mt = matchRestrictionToMorphismType . arbitraryMatches
 
 morphismsConf :: GlobalOptions -> MorphismsConfig
-morphismsConf opts = MorphismsConfig (arbitraryMatches opts) (injectiveNacSatisfaction opts)
+morphismsConf opts = MorphismsConfig (mt opts) (injectiveNacSatisfaction opts)
 
 
 globalOpts :: Parser GlobalOptions

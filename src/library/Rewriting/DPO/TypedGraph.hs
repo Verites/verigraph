@@ -30,6 +30,9 @@ import           Data.Graphs                        as G
 import qualified Data.Graphs.Morphism               as GM
 import           Data.TypedGraph                    as GM
 import           Data.TypedGraph.Morphism           as TGM
+import           Data.TypedGraph.Partition               (generateGraphPartitions)
+import           Data.TypedGraph.Partition.ToVerigraph   (mountTypedGraphMorphisms)
+import           Data.TypedGraph.Partition.FromVerigraph (createSatisfyingNacsDisjointUnion)
 
 type TypedGraphRule a b = Production (TypedGraphMorphism a b)
 type NamedTypedGraphRule a b = NamedProduction (TypedGraphMorphism a b)
@@ -80,3 +83,11 @@ instance DPO (TypedGraphMorphism a b) where
     buildProduction (getRHS rule) (getLHS rule) (concatMap (shiftNacOverProduction conf rule) (getNACs rule))
 
   shiftNacOverProduction conf rule nac = [calculateComatch nac rule | satisfiesGluingConditions conf rule nac]
+
+  createJointlyEpimorphicPairsFromNAC conf r nac =
+    map (mountTypedGraphMorphisms r (codomain nac)) (generateGraphPartitions labeled)
+    where
+      injectiveMatch = matchRestriction conf == Monomorphism
+      totalInjectiveNac = nacSatisfaction conf == MonomorphicNAC
+
+      labeled = createSatisfyingNacsDisjointUnion (r, injectiveMatch) (nac, totalInjectiveNac)

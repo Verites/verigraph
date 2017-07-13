@@ -41,39 +41,6 @@ instance JointlyEpimorphisms (RuleMorphism a b) where
 
   createAllQuotients _ = error "createAllQuotients for RuleMorphism: Not implemented"
 
-  createJointlyEpimorphicPairsFromNAC conf ruleR nac = ret
-    where
-      createJointly x = createJointlyEpimorphicPairsFromNAC conf (codomain x)
-
-      nL = mappingLeft nac
-      nK = mappingInterface nac
-      nR = mappingRight nac
-      leftR = getLHS ruleR
-      rightR = getRHS ruleR
-      rK = domain (getLHS ruleR)
-      codNac = codomain nac
-
-      interfaceEpiPairs = createJointlyEpimorphicPairsFromNAC conf rK nK
-
-      lefts = concatMap
-                (\(kR,kN) ->
-                  let ls = createSideRule createJointly kR leftR leftR kN (getLHS codNac) nL
-                  in map (\(ll1,ll2,m) -> (kR, kN, ll1, ll2, m)) ls)
-                interfaceEpiPairs
-
-      rights = concatMap
-                (\(kR,kN,ll1,ll2,l) ->
-                  let rs = createSideRule createJointly kR rightR rightR kN (getRHS codNac) nR
-                  in map (\(rr1,rr2,r) -> (kR,kN,ll1,ll2,l,rr1,rr2,r)) rs)
-                lefts
-
-      transposeNACs l = map (snd . calculatePushout l)
-
-      ret = map (\(k1,k2,ll1,ll2,l,r1,r2,r) ->
-                   let rule = buildProduction l r $ transposeNACs ll1 (getNACs ruleR) ++ transposeNACs ll2 (getNACs codNac)
-                   in (ruleMorphism ruleR rule ll1 k1 r1,
-                       ruleMorphism (codomain nac) rule ll2 k2 r2)) rights
-
   calculateCommutativeSquaresAlongMonomorphism (m1,inj1) (m2,inj2) = filt
     where
       allCommutingPairs = calculateCommutativeSquares False m1 m2

@@ -312,7 +312,7 @@ isInGraph initial x = case x of
   _      -> error $ "case " ++ show x ++ "shouldn't occur"
 
 conf :: MorphismsConfig
-conf = MorphismsConfig MonoMatches MonomorphicNAC
+conf = MorphismsConfig Monomorphism MonomorphicNAC
 
 findH21 :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 findH21 m2 d1 =

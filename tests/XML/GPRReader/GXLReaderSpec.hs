@@ -4,6 +4,7 @@ import           Data.List
 import           Data.Matrix                                 hiding ((<|>))
 import           Test.Hspec
 
+import           Abstract.Category.FinitaryCategory (MorphismType(..))
 import           Abstract.Rewriting.DPO
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
@@ -20,7 +21,7 @@ fileName5 = "tests/grammars/elevator.ggx"
 fileName6 = "tests/grammars/elevator.gps"
 fileName7 = "tests/grammars/elevatorWithFlags.gps"
 
-dpoConf = MorphismsConfig AnyMatches MonomorphicNAC
+dpoConf = MorphismsConfig GenericMorphism MonomorphicNAC
 
 spec :: Spec
 spec = context "GPR Reader Test - CPA/CSA analysis is equal on GGX and GPR files" gprTest

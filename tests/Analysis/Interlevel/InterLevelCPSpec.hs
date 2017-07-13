@@ -13,8 +13,8 @@ import           Util.List
 import qualified XML.GGXReader                      as XML
 
 fileName = "tests/grammars/secondOrderMatchTest.ggx"
-dpoConf1 = MorphismsConfig MonoMatches MonomorphicNAC
-dpoConf2 = MorphismsConfig AnyMatches MonomorphicNAC
+dpoConf1 = MorphismsConfig Monomorphism MonomorphicNAC
+dpoConf2 = MorphismsConfig GenericMorphism MonomorphicNAC
 
 spec :: Spec
 spec = context "Inter-level Critical Pairs Test" dangextTest

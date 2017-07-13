@@ -11,11 +11,6 @@ module Abstract.Category.AdhesiveHLR
   , satisfiesConstraint
   , satisfiesAllConstraints
   , AdhesiveHLR(..)
-
-  , MatchRestriction(..)
-  , matchRestrictionToMorphismType
-  , NacSatisfaction(..)
-  , MorphismsConfig(..)
   ) where
 
 import           Abstract.Category.AdhesiveHLR.Constraint
@@ -120,19 +115,3 @@ class (Cocomplete morph) => AdhesiveHLR morph where
   --        g
   -- @
   calculatePullback :: morph -> morph -> (morph,morph)
-
--- | Flag indicating what restrictions are required or assumed of matches.
-data MatchRestriction = MonoMatches | AnyMatches deriving (Eq, Show)
-
--- | Converts a match restriction to the corresponding MorphismType
-matchRestrictionToMorphismType :: MatchRestriction -> MorphismType
-matchRestrictionToMorphismType MonoMatches = Monomorphism
-matchRestrictionToMorphismType AnyMatches  = GenericMorphism
-
--- | Flag indicating the semantics of NAC satisfaction.
-data NacSatisfaction = MonomorphicNAC | PartiallyMonomorphicNAC deriving (Eq, Show)
-
-data MorphismsConfig = MorphismsConfig
-  { matchRestriction :: MatchRestriction
-  , nacSatisfaction  :: NacSatisfaction
-  }

@@ -68,7 +68,7 @@ getData = buildProduction leftGetData rightGetData []
 
 -- | Test Instantiate
 
-morphismConfig = MorphismsConfig MonoMatches MonomorphicNAC
+morphismConfig = MorphismsConfig Monomorphism MonomorphicNAC
 
 instanceGraph = build [1,2,3,4] [(1,2,1),(4,4,3)]
 typedInstanceGraph = buildGraphMorphism instanceGraph typeGraphRules [(3,4),(2,3),(1,1),(4,2)] [(1,1),(4,4)]

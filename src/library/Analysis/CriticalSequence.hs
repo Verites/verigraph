@@ -22,7 +22,6 @@ module Analysis.CriticalSequence
    findAllDeliverDeleteAndDeliverDangling,
    ) where
 
-import           Abstract.Category.AdhesiveHLR
 import           Abstract.Category.JointlyEpimorphisms
 import           Abstract.Rewriting.DPO                   hiding (calculateComatch)
 import           Abstract.Rewriting.DPO.DiagramAlgorithms

@@ -6,6 +6,7 @@ module Analysis.ConcurrentRules
 ) where
 
 import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category.FinitaryCategory
 import           Abstract.Category.JointlyEpimorphisms
 import           Abstract.Rewriting.DPO
 import           Analysis.CriticalSequence             (findTriggeredCriticalSequences,
@@ -64,7 +65,7 @@ epiPairsForConcurrentRule OnlyDependency conf constraints c n =
   in filter validDependency dependencies
 
 epiPairsForConcurrentRule AllOverlapings conf constraints c n =
-  let matchInj = matchRestriction conf == MonoMatches
+  let matchInj = matchRestriction conf == Monomorphism
       allPairs = createJointlyEpimorphicPairs matchInj (codomain (getRHS c)) (codomain (getLHS n))
       isValidPair (lp, rp) = satisfiesAllConstraints (codomain lp) constraints &&
         satisfiesGluingConditions conf (invertProductionWithoutNacs c) lp && satisfiesRewritingConditions conf n rp
@@ -85,6 +86,6 @@ concurrentRuleForPair conf constraints c n pair = if invalidSides then Nothing e
     den = filter validNac $ concatMap (nacDownwardShift conf (snd pair)) (getNACs n)
     lp = filter validNac $ concatMap (shiftNacOverProduction conf inverseP) den
     -- Filters that are not in the default algorithm, useful when dealing with injective morphisms only
-    validNac nac = matchRestriction conf /= MonoMatches || satisfiesAllConstraints (codomain nac) constraints
-    invalidSides = matchRestriction conf == MonoMatches &&
+    validNac nac = matchRestriction conf /= Monomorphism || satisfiesAllConstraints (codomain nac) constraints
+    invalidSides = matchRestriction conf == Monomorphism &&
       (not (satisfiesAllConstraints (codomain l) constraints) || not (satisfiesAllConstraints (codomain r) constraints))

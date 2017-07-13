@@ -66,7 +66,7 @@ satisfiesNACRewriting l = satisfiesGluingConditions dpoConf prod
   where
     -- Production just to test satisfiesGluingConditions, note that right side is not used.
     prod = buildProduction l undefined []
-    dpoConf = MorphismsConfig AnyMatches undefined
+    dpoConf = MorphismsConfig GenericMorphism undefined
 
 instance FinitaryCategory (RuleMorphism a b) where
     type Obj (RuleMorphism a b) = TypedGraphRule a b
