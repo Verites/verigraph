@@ -36,6 +36,7 @@ library
                        Abstract.Category.FinalPullbackComplement
                        Abstract.Category.FinitaryCategory
                        Abstract.Category.JointlyEpimorphisms
+                       Abstract.Category.NewClasses
                        Abstract.Rewriting.DPO
                        Abstract.Rewriting.DPO.Derivation
                        Abstract.Rewriting.DPO.Process
