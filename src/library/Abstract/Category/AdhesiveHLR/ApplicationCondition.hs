@@ -2,7 +2,8 @@ module Abstract.Category.AdhesiveHLR.ApplicationCondition (
 
 ) where
 
-import           Abstract.Category.AdhesiveHLR hiding (Constraint(..), AtomicConstraint(..))
+import           Abstract.Category.AdhesiveHLR.Core
+import           Abstract.Category.FinitaryCategory
 import           Base.Valid
 
 data AtomicApplicationCondition morph = AtomicApplicationCondition {
