@@ -113,13 +113,14 @@ executable verigraph
   default-language:    Haskell2010
   hs-source-dirs:      src/CLI/
   main-is:             Cli.hs
-  ghc-options:         -Wall -fno-warn-name-shadowing -fno-warn-unused-do-bind
+  ghc-options:         -Wall -fno-warn-name-shadowing -fno-warn-unused-do-bind -threaded -with-rtsopts -N
   other-extensions:    TypeFamilies, MultiParamTypeClasses, FlexibleContexts
   build-depends:       base, verigraph,
                        containers,
                        hxt,
                        matrix >= 0.3,
                        optparse-applicative>=0.12 && < 0.14,
+                       parallel >= 3.2,
                        split >= 0.2
   other-modules:       ApplySndOrderRules
                        ConcurrentRules
@@ -127,16 +128,19 @@ executable verigraph
                        ParallelIndependence
                        Processes
                        GlobalOptions
+                       Util
 
 executable verigraph-gxl
   default-language:    Haskell2010
   hs-source-dirs:      src/CLI/
   main-is:             GxlCli.hs
-  ghc-options:         -Wall -fno-warn-name-shadowing -fno-warn-unused-do-bind
+  ghc-options:         -Wall -fno-warn-name-shadowing -fno-warn-unused-do-bind -threaded -with-rtsopts -N
   build-depends:       base, verigraph,
                        matrix >= 0.3,
-                       optparse-applicative>=0.12 && < 0.14
+                       optparse-applicative>=0.12 && < 0.14,
+                       parallel >= 3.2
   other-modules:       GlobalOptions
+                       Util
 
 executable verigraph-mcheck
   default-language:    Haskell2010

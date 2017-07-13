@@ -1,7 +1,7 @@
 module Main (main) where
 
-import           Data.Matrix                           hiding ((<|>))
 import           Data.Monoid                           ((<>))
+import           GHC.Conc                              (numCapabilities)
 import           Options.Applicative
 
 import           Abstract.Category.FinitaryCategory
@@ -12,6 +12,7 @@ import           Analysis.CriticalSequence
 import           Analysis.EssentialCriticalPairs
 import           GlobalOptions
 import           Rewriting.DPO.TypedGraph
+import           Util
 import qualified XML.GGXWriter                         as GW
 import qualified XML.GPRReader.GXLReader               as GPR
 
@@ -65,6 +66,7 @@ execute (globalOpts, options) =
   do
     (fstOrderGrammar,names) <- GPR.readGrammar (inputFile globalOpts)
 
+    putStrLn $ "number of cores: " ++ show numCapabilities ++ "\n"
     putStrLn "Loading the graph grammar..."
     putStrLn ""
 
@@ -160,14 +162,3 @@ defWriterFun essential conf t =
     Conflicts    -> GW.writeConflictsFile essential conf
     Dependencies -> GW.writeDependenciesFile conf
     None         -> GW.writeGrammarFile
-
--- | Combine three matrices with the given function. All matrices _must_ have
--- the same dimensions.
-liftMatrix3 :: (a -> b -> c -> d) -> Matrix a -> Matrix b -> Matrix c -> Matrix d
-liftMatrix3 f ma mb mc = matrix (nrows ma) (ncols ma) $ \pos ->
-  f (ma!pos) (mb!pos) (mc!pos)
-
-pairwiseCompare :: (a -> a -> b) -> [a] -> Matrix b
-pairwiseCompare compare items =
-  matrix (length items) (length items) $ \(i,j) ->
-    compare (items !! (i-1)) (items !! (j-1))

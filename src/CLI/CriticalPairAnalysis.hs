@@ -4,6 +4,8 @@ module CriticalPairAnalysis
   , execute
   ) where
 
+import           GHC.Conc                              (numCapabilities)
+
 import           Abstract.Category.JointlyEpimorphisms
 import           Abstract.Rewriting.DPO
 import           Analysis.CriticalPairs
@@ -12,12 +14,12 @@ import           Analysis.EssentialCriticalPairs
 import           Analysis.Interlevel.EvolutionarySpans
 import           Analysis.Interlevel.InterLevelCP
 import           Control.Monad                         (when)
-import           Data.Matrix                           hiding ((<|>))
 import           Data.Monoid                           ((<>))
 import qualified Data.Set                              as Set
 import           GlobalOptions
 import           Options.Applicative
 import           Rewriting.DPO.TypedGraphRule
+import           Util
 import           Util.List
 import qualified XML.GGXReader                         as XML
 import qualified XML.GGXWriter                         as GW
@@ -73,6 +75,8 @@ calculateDependencies flag = flag `elem` [Both,Dependencies]
 execute :: GlobalOptions -> Options -> IO ()
 execute globalOpts opts = do
     let dpoConf = morphismsConf globalOpts
+
+    putStrLn $ "number of cores: " ++ show numCapabilities ++ "\n"
 
     (fstOrderGG, sndOrderGG, printNewNacs) <- XML.readGrammar (inputFile globalOpts) (useConstraints globalOpts) dpoConf
     ggName <- XML.readGGName (inputFile globalOpts)
@@ -220,14 +224,3 @@ defWriterFun essential secondOrder conf t =
     (True, Dependencies)  -> GW.writeSndOderDependenciesFile conf
     (True, Both)          -> GW.writeSndOderConfDepFile conf
     (_, None)             -> GW.writeGrammarFile
-
--- | Combine three matrices with the given function. All matrices _must_ have
--- the same dimensions.
-liftMatrix3 :: (a -> b -> c -> d) -> Matrix a -> Matrix b -> Matrix c -> Matrix d
-liftMatrix3 f ma mb mc = matrix (nrows ma) (ncols ma) $ \pos ->
-  f (ma!pos) (mb!pos) (mc!pos)
-
-pairwiseCompare :: (a -> a -> b) -> [a] -> Matrix b
-pairwiseCompare compare items =
-  matrix (length items) (length items) $ \(i,j) ->
-    compare (items !! (i-1)) (items !! (j-1))
