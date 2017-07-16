@@ -44,29 +44,29 @@ options = Options
     <> action "int"
     <> showDefault
     <> value 5
-    <> help ("Input of 'as-long-as-possible', limit of rewritings"))
+    <> help "Input of 'as-long-as-possible', limit of rewritings")
   <*> optional (strOption
     ( long "from"
     <> metavar "2-rule"
     <> action "file"
-    <> help ("Input of 'specific', 2-rule to the second-order rewriting")))
+    <> help "Input of 'specific', 2-rule to the second-order rewriting"))
   <*> optional (strOption
     ( long "to"
     <> metavar "rule"
     <> action "file"
-    <> help ("Input of 'specific', rule to be evolved by the second-order rewriting")))
+    <> help "Input of 'specific', rule to be evolved by the second-order rewriting"))
 
 schedulingIn :: Parser SchedulingType
 schedulingIn =
       flag' AllMatchesOneStep
         ( long "one-step"
-          <> help "Apply all matches from 2-rules to rules once.")
+          <> help "Apply each match from 2-rules to rules once")
   <|> flag' AsLongAsPossible
         ( long "as-long-as-possible"
-          <> help "Apply 'AsLongAsPossible' all second-order rules.")
+          <> help "Apply 'AsLongAsPossible' all second-order rules")
   <|> flag' Specific
         ( long "specific"
-          <> help "Apply all matches 'specific' from the given 2rule and rule.")
+          <> help "Apply all matches from the given 2rule and rule")
   <|> pure AllMatchesOneStep
 
 addEmptyFstOrderRule :: Graph (Maybe a) (Maybe b) -> [(String,GR.TypedGraphRule a b)] -> [(String,GR.TypedGraphRule a b)]
@@ -95,7 +95,7 @@ execute globalOpts opts = do
     ggName <- XML.readGGName (inputFile globalOpts)
     names <- XML.readNames (inputFile globalOpts)
 
-    putStrLn "Reading the second order graph grammar..."
+    putStrLn "Reading the second-order graph grammar..."
     putStrLn ""
 
     putStrLn $ "injective satisfiability of nacs: " ++ show (nacSatisfaction dpoConf)

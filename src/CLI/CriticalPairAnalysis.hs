@@ -47,7 +47,7 @@ options = Options
 cpOrder :: Parser Bool
 cpOrder = flag False True
     ( long "snd-order"
-    <> help "Set the analysis to the second order rules")
+    <> help "Set the analysis to the second-order rules")
 
 essentialCP :: Parser Bool
 essentialCP = flag False True

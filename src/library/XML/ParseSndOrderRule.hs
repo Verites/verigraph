@@ -3,8 +3,8 @@ Module      : ParseSndOrderRule
 Description : Imports 2-rules from .ggx to verigraph
 Stability   : experimental
 
-AGG implements first order rules in the SPO approach, to model 2-rules
-(second order rules in the DPO approach) a translation is needed.
+AGG implements first-order rules in the SPO approach, to model 2-rules
+(second-order rules in the DPO approach) a translation is needed.
 
 AGG model: a rule is two graphs and a partial mapping between them.
 
@@ -15,7 +15,7 @@ AGG model: a rule is two graphs and a partial mapping between them.
   L ───▶ R
 @
 
-Verigraph second order model:
+Verigraph second-order model:
 
 @
         nl       fl       fr
@@ -32,7 +32,7 @@ Verigraph second order model:
     Nr◀──────Ra◀─────\<Rb\>─────▶Rc
 @
 
-The second order rules in AGG must be represented as two first order rules with some aditional maps.
+The second-order rules in AGG must be represented as two first-order rules with some aditional maps.
 
 This maps bind two graph in different rules, to represent it we use the object names in AGG.
 
@@ -41,8 +41,8 @@ if there a NAC these maps will be needes: Nl to Nr, La to Nl and Ra to Nr.
 
 Besides that, rule names in agg must follow this form: 2rule_(left|right|nacid)_(ruleName)
 
-The translation from first order rules in the SPO to DPO is straightforward,
-and additionally with object name maps, all second order rule can be instantiated.
+The translation from first-order rules in the SPO to DPO is straightforward,
+and additionally with object name maps, all second-order rule can be instantiated.
 -}
 
 module XML.ParseSndOrderRule (
@@ -107,8 +107,8 @@ getObjNameMapping (_,nodesL,edgesL) (_,nodesR,edgesR) = mapNodes ++ mapEdges
     mapNodes = getMap (nonMono nodesRMap) nodesLMap
     mapEdges = getMap (nonMono edgesRMap) edgesLMap
 
--- | Receives all parsed 2-rules in the agg format (first order rule with object name maps)
--- and converts to second order rules on verigraph
+-- | Receives all parsed 2-rules in the agg format (first-order rule with object name maps)
+-- and converts to second-order rules on verigraph
 parseSndOrderRules :: [RuleWithNacs] -> [(SndOrderRuleSide,SndOrderRuleSide,[SndOrderRuleSide])]
 parseSndOrderRules = groupRules . map getSndOrderRuleSide
 
@@ -137,8 +137,8 @@ groupRules rules =
     name (_,x,_) = x
     sorted = sortOn name rules
     grouped = groupBy ((==) `on` name) sorted
-    getLeft list = fromMaybe (error "Second order rule without left") (findSide "left" list)
-    getRight list = fromMaybe (error "Second order rule without right") (findSide "right" list)
+    getLeft list = fromMaybe (error "Second-order rule without left") (findSide "left" list)
+    getRight list = fromMaybe (error "Second-order rule without right") (findSide "right" list)
     findSide str = find (\x -> side x == str)
 
 -- TODO: replace applyNodeUnsafe for getNodeType?

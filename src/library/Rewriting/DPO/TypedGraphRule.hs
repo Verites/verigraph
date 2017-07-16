@@ -17,7 +17,7 @@ import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
 import           Rewriting.DPO.TypedGraph
 
--- | A second order rule:
+-- | A second-order rule:
 --
 -- @
 --         nl       nr
@@ -106,13 +106,13 @@ instance DPO (RuleMorphism a b) where
 ---- Minimal Safety NACs
 
 -- | Configuration for the minimalSafetyNACs algorithms, it defines from
--- which side of the getLHS (second order production) is being analyzed
+-- which side of the getLHS (second-order production) is being analyzed
 data Side = LeftSide | RightSide
 
 -- | Either: Node_ is only a NodeId | Edge_ is an Edge with: EdgeId plus source and target NodeIds
 data NodeOrEdge b = Node_ NodeId | Edge_ (Edge b) deriving (Show)
 
--- | Adds the minimal safety nacs needed to this production always produce a second order rule.
+-- | Adds the minimal safety nacs needed to this production always produce a second-order rule.
 -- If the nacs that going to be added not satisfies the others nacs, then it do not need to be added.
 addMinimalSafetyNacs :: MorphismsConfig -> SndOrderRule a b -> SndOrderRule a b
 addMinimalSafetyNacs conf sndRule =

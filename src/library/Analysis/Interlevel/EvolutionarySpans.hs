@@ -33,7 +33,7 @@ data EvoSpan a b = EvoSpan {
   cpe        :: CPE
   } deriving (Eq,Show)
 
--- | Given a list of second order rules, calculate all Evolutionary Spans
+-- | Given a list of second-order rules, calculate all Evolutionary Spans
 -- This analysis is supposed to be symmetric, here is considering only this case
 allEvolSpans :: MorphismsConfig -> [(String, SndOrderRule a b)] -> [(String, String, [EvoSpan a b])]
 -- combine rules symmetrically
@@ -66,7 +66,7 @@ evolSpans conf (n1,r1) (n2,r2) = (n1, n2, spans)
     xs' = filter (\(m1,m2) -> satisfyRewritingConditions conf (r1Left, mappingLeft m1) (r2Left, mappingLeft m2)) xs
     xs'' = filter (\(m1,m2) -> satisfyRewritingConditions conf (r1Right, mappingLeft m1) (r2Right, mappingLeft m2)) xs'
 
--- | Given two second order rules and their matches overlaped, return their type
+-- | Given two second-order rules and their matches overlaped, return their type
 classify :: MorphismsConfig -> SndOrderRule a b -> SndOrderRule a b -> (RuleMorphism a b, RuleMorphism a b) -> CPE
 classify conf r1 r2 (m1,m2) = (deleteUseFlGl, deleteUseFlGl'')
   where

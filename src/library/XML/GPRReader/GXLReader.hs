@@ -77,7 +77,7 @@ readGrammar fileName = do
   let rules = instatiateRules typeGraph typesWithId parsedRules
 
   ensureValid $ validateNamed (\name -> "Rule '"++name++"'") rules
-  _ <- (L.null rules && error "No first order productions were found, at least one is needed.") `seq` return ()
+  _ <- (L.null rules && error "No first-order productions were found, at least one is needed.") `seq` return ()
 
   let instatiatedGrammar = grammar initialState [] rules
       preparedNames = prepareNames typesWithId

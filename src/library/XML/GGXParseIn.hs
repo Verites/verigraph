@@ -144,7 +144,7 @@ parseGraphConstraints = atTag "Formula" >>>
     formula <- getAttrValue "f" -< constraint
     returnA -< (name, parseFormula formula)
 
--- | Parse all enabled rules of first order
+-- | Parse all enabled rules of first-order
 parseRule :: ArrowXml cat => cat (NTree XNode) RuleWithNacs
 parseRule = atTag "Rule" >>>
   proc rule -> do

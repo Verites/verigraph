@@ -29,7 +29,7 @@ data InterLevelCP a b = InterLevelCP {
   fstOrderMatch :: TypedGraphMorphism a b
   } deriving (Eq,Show)
 
--- | Matches the second order rule with the first order, and calls theirs critical pairs
+-- | Matches the second-order rule with the first-order, and calls theirs critical pairs
 interLevelCP :: MorphismsConfig -> (String, SndOrderRule a b) -> (String, TypedGraphRule a b) -> [(String,String,Int,InterLevelCP a b)]
 interLevelCP conf (sndName, sndRule) (fstName, fstRule) =
   map (\((x,y,z),w) -> (x,y,z,w)) unformattedConflicts
@@ -45,7 +45,7 @@ interLevelCP conf (sndName, sndRule) (fstName, fstRule) =
         conflicts <- interLevelConflictOneMatch conf sndRule match
         return $ InterLevelCP match conflicts
 
--- | Calculates the second order rewriting,
+-- | Calculates the second-order rewriting,
 -- defines the dangling extension for L and L'',
 -- gets all relevant graphs from L
 interLevelConflictOneMatch :: MorphismsConfig -> SndOrderRule a b -> RuleMorphism a b -> [TypedGraphMorphism a b]

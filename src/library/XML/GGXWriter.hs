@@ -50,7 +50,7 @@ appendSndOrderDependencies conf (gg1,gg2) = (newGG1, gg2)
     conflictRules = map (\(idx,(n1,n2,tp,rule)) -> ("dependency_" ++ show tp ++ "_" ++ n1 ++ "_" ++ n2 ++ "_" ++ show idx, rule)) (zip ([0..]::[Int]) matches)
     newGG1 = grammar (start gg1) [] (productions gg1 ++ conflictRules)
 
--- | Writes grammar, second order conflicts and dependencies (.ggx)
+-- | Writes grammar, second-order conflicts and dependencies (.ggx)
 writeSndOderConfDepFile :: MorphismsConfig -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
 writeSndOderConfDepFile conf ggs name names fileName =
   do
@@ -60,7 +60,7 @@ writeSndOderConfDepFile conf ggs name names fileName =
     putStrLn $ "Saved in " ++ fileName
     return ()
 
--- | Writes the grammar and the second order conflicts (.ggx)
+-- | Writes the grammar and the second-order conflicts (.ggx)
 writeSndOderConflictsFile :: MorphismsConfig -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
 writeSndOderConflictsFile conf ggs name names fileName =
   do
@@ -70,7 +70,7 @@ writeSndOderConflictsFile conf ggs name names fileName =
     putStrLn $ "Saved in " ++ fileName
     return ()
 
--- | Writes the grammar and the second order dependencies (.ggx)
+-- | Writes the grammar and the second-order dependencies (.ggx)
 writeSndOderDependenciesFile :: MorphismsConfig -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
 writeSndOderDependenciesFile conf ggs name names fileName =
   do
