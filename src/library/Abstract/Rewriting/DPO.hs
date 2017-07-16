@@ -168,7 +168,7 @@ findProduction name grammar = lookup name (productions grammar)
 -- used for double-pushout transformations.
 class (AdhesiveHLR morph, FindMorphism morph) => DPO morph where
   -- | Inverts a production, adjusting the NACs accordingly.
-  -- Needs information of nac injective satisfaction (in second order)
+  -- Needs information of nac injective satisfaction (in second-order)
   -- and matches injective.
   invertProduction :: MorphismsConfig -> Production morph -> Production morph
 

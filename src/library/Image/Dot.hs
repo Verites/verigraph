@@ -199,7 +199,7 @@ printGraphRuleCore context leftName interfaceName rightName rule =
 getRuleName :: String -> (String, String, String)
 getRuleName ruleName = (ruleName ++ "L", ruleName ++ "K", ruleName ++ "R")
 
--- | Create a dotfile representation of the given snd order rule
+-- | Create a dotfile representation of the given second-order rule
 printSndOrderRule :: NamingContext -> String -> SndOrderRule a b -> Doc
 printSndOrderRule context ruleName rule =
   printDigraph

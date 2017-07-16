@@ -17,7 +17,7 @@ import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
 import           Rewriting.DPO.TypedGraph
 
--- | A second order rule:
+-- | A second-order rule:
 --
 -- @
 --         nl       nr
@@ -106,13 +106,13 @@ instance DPO (RuleMorphism a b) where
 ---- Minimal Safety NACs
 
 -- | Configuration for the minimalSafetyNACs algorithms, it defines from
--- which side of the getLHS (second order production) is being analyzed
+-- which side of the getLHS (second-order production) is being analyzed
 data Side = LeftSide | RightSide
 
 -- | Either: Node_ is only a NodeId | Edge_ is an Edge with: EdgeId plus source and target NodeIds
 data NodeOrEdge b = Node_ NodeId | Edge_ (Edge b) deriving (Show)
 
--- | Adds the minimal safety nacs needed to this production always produce a second order rule.
+-- | Adds the minimal safety nacs needed to this production always produce a second-order rule.
 -- If the nacs that going to be added not satisfies the others nacs, then it do not need to be added.
 addMinimalSafetyNacs :: MorphismsConfig -> SndOrderRule a b -> SndOrderRule a b
 addMinimalSafetyNacs conf sndRule =
@@ -321,19 +321,9 @@ isOrphanNode m n = n `elem` orphanTypedNodeIds m
 isOrphanEdge :: TypedGraphMorphism a b -> EdgeId -> Bool
 isOrphanEdge m n = n `elem` orphanTypedEdgeIds m
 
--- | Receives a function that works with a second order and a first order rule.
+-- | Receives a function that works with a second-order and a first-order rule.
 -- Apply this function on all possible combinations of rules.
-applySecondOrder ::
+applySecondOrderFunction ::
      ((String, SndOrderRule a b) -> (String, TypedGraphRule a b) -> [t])
   -> [(String, TypedGraphRule a b)] -> [(String, SndOrderRule a b)] -> [t]
-applySecondOrder f fstRules = concatMap (\r -> concatMap (f r) fstRules)
-
--- | Applies a named second order rule to a named first order rule with all possible matches,
--- and generates named first order rules as result.
-applySndOrderRule :: MorphismsConfig -> (String, SndOrderRule a b) -> (String, TypedGraphRule a b) -> [(String, TypedGraphRule a b)]
-applySndOrderRule conf (sndName,sndRule) (fstName,fstRule) =
-  let
-    matches = findApplicableMatches conf sndRule fstRule
-    newRules = map (`rewrite` sndRule) matches
-    newNames = map (\number -> fstName ++ "_" ++ sndName ++ "_" ++ show number) ([0..] :: [Int])
-  in zip newNames newRules
+applySecondOrderFunction f fstRules = concatMap (\r -> concatMap (f r) fstRules)

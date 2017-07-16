@@ -12,7 +12,7 @@ import           Base.Valid
 import           Category.TypedGraph
 import           Rewriting.DPO.TypedGraph
 
--- | A morphism between two first order rules.
+-- | A morphism between two first-order rules.
 --
 -- The following diagram illustrates such a morphism, omiting the NACs.
 --

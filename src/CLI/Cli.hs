@@ -41,7 +41,7 @@ commands = subparser (cpAnalysis <> secondOrder <> concurrentRule <> parallelInd
       ( fullDesc <> progDesc "Run critical pair analysis on the input grammar")
 
     secondOrder = command "snd-order" . fmap ApplySndOrderRules $ info (helper <*> ASO.options)
-      ( fullDesc <> progDesc "Apply all second order rules in all possible matches with the first order rules")
+      ( fullDesc <> progDesc "Apply second-order rules in a scheduled application control")
 
     concurrentRule = command "concurrent-rule" . fmap ConcurrentRules $ info (helper <*> CR.options)
       ( fullDesc <> progDesc "Generate concurrent rules for the input grammar and rule sequences")

@@ -37,7 +37,7 @@ import           XML.Utilities
 import           XML.XMLUtilities
 
 -- | Reads the grammar in the XML, adds the needed minimal safety nacs
---   to second order, and returns the grammar and a log
+--   to second-order, and returns the grammar and a log
 readGrammar :: String -> Bool -> MorphismsConfig
             -> IO (Grammar (TypedGraphMorphism a b), Grammar (RuleMorphism a b), [(String, Int)])
 readGrammar fileName useConstraints morphismsConf = do
@@ -57,7 +57,7 @@ readGrammar fileName useConstraints morphismsConf = do
       productions = map (instantiateRule typeGraph) fstOrdRules
 
   ensureValid $ validateNamed (\name -> "Rule '"++name++"'") (zip rulesNames productions)
-  _ <- (L.null productions && error "No first order productions were found, at least one is needed.") `seq` return ()
+  _ <- (L.null productions && error "No first-order productions were found, at least one is needed.") `seq` return ()
 
   parsedAtomicConstraints <- readAtomicConstraints fileName
   parsedGraphConstraints  <- readGraphConstraints fileName
@@ -113,7 +113,7 @@ minimalSafetyNacsWithLog conf oldGG = (newGG, printNewNacs)
 
 printMinimalSafetyNacsLog :: [(String, Int)] -> [String]
 printMinimalSafetyNacsLog printNewNacs =
-    ["Adding minimal safety nacs to second order productions:"]
+    ["Adding minimal safety nacs to second-order productions:"]
     ++ map (\(r,n) -> "Rule " ++ r ++ ", added " ++ show n ++ " nacs") printNewNacs
     ++ ["All minimal safety nacs added!"]
 

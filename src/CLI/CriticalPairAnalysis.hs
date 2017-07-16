@@ -47,7 +47,7 @@ options = Options
 cpOrder :: Parser Bool
 cpOrder = flag False True
     ( long "snd-order"
-    <> help "Set the analysis to the second order rules")
+    <> help "Set the analysis to the second-order rules")
 
 essentialCP :: Parser Bool
 essentialCP = flag False True
@@ -91,7 +91,7 @@ execute globalOpts opts = do
         fstOrdRules = map snd namedFstOrdRules
         sndOrdRules = map snd namedSndOrdRules
 
-        interlevelCPs = applySecondOrder (interLevelCP dpoConf) namedFstOrdRules namedSndOrdRules
+        interlevelCPs = applySecondOrderFunction (interLevelCP dpoConf) namedFstOrdRules namedSndOrdRules
         interlevelWithoutCounting = Set.fromList $ map (\(x,y,_,_) -> (x,y)) interlevelCPs
         evoConflicts = allEvolSpans dpoConf namedSndOrdRules
 
