@@ -181,6 +181,7 @@ test-suite HSpecTests
                        Analysis.EssentialCriticalPairsSpec
                        Analysis.Interlevel.InterLevelCPSpec
                        Analysis.ParallelIndependentSpec
+                       Category.TypedGraph.FinalPullbackComplementSpec
                        Data.Graphs.GraphMorphismSpec
                        Data.GraphsSpec
                        Data.PartitionSpec
