@@ -137,6 +137,7 @@ executable verigraph-gxl
   main-is:             GxlCli.hs
   ghc-options:         -Wall -fno-warn-name-shadowing -fno-warn-unused-do-bind -threaded -with-rtsopts -N
   build-depends:       base, verigraph,
+                       containers,
                        matrix >= 0.3,
                        optparse-applicative>=0.12 && < 0.14,
                        parallel >= 3.2

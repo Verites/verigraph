@@ -1,7 +1,14 @@
+{-|
+Description : Essential Critical Pairs generator.
+
+This module provides functions that generate all essential critical
+pairs between two productions. The essential critical pairs are
+classified with 'CriticalPairType', but each pair can be only a
+'DeleteUse' or a 'ProduceDangling'.
+-}
 module Analysis.EssentialCriticalPairs
  ( namedEssentialCriticalPairs,
    findAllEssentialDeleteUse,
-   findAllEssentialProduceForbid,
    findAllEssentialProduceDangling
    ) where
 
@@ -10,10 +17,6 @@ import           Abstract.Category.FinitaryCategory
 import           Abstract.Category.JointlyEpimorphisms
 import           Abstract.Rewriting.DPO
 import           Analysis.CriticalPairs
-
--- TODO: Conclude this implementation or extract it to an experimental branch until it is ready
----- Essential Critical Pairs generation.
--- Warning: this algorithms are in development.
 
 type NamedRule morph = (String, Production morph)
 type NamedCriticalPairs morph = (String,String,[CriticalPair morph])
@@ -32,8 +35,7 @@ findEssentialCriticalPairs :: (JointlyEpimorphisms morph, DPO morph) =>
   MorphismsConfig -> Production morph -> Production morph -> [CriticalPair morph]
 findEssentialCriticalPairs conf p1 p2 =
   findAllEssentialDeleteUse conf p1 p2 ++
-  findAllEssentialProduceDangling conf p1 p2 ++
-  findAllEssentialProduceForbid conf p1 p2
+  findAllEssentialProduceDangling conf p1 p2
 
 -- | Get all essential delete-use and organize them in a list of 'CriticalPair'.
 findAllEssentialDeleteUse :: (JointlyEpimorphisms morph, DPO morph) =>
@@ -89,12 +91,3 @@ findAllEssentialProduceDangling :: --(DPO morph, JointlyEpimorphisms morph) =>
 
 -- Returning empty for while.
 findAllEssentialProduceDangling _ _ _ = []
-
--- TODO
--- Returning all produce forbid for while
-findAllEssentialProduceForbid :: --(DPO morph, JointlyEpimorphisms morph) =>
-  MorphismsConfig -> Production morph -> Production morph -> [CriticalPair morph]
---findAllEssentialProduceForbid conf p1 p2 = findAllProduceForbid conf p1 p2
-
--- Returning empty for while
-findAllEssentialProduceForbid _ _ _ = []

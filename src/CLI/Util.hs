@@ -3,6 +3,20 @@ module Util where
 import           Control.Parallel (par)
 import           Data.Matrix
 
+import           Abstract.Category.JointlyEpimorphisms
+import           Abstract.Rewriting.DPO
+import           Analysis.CriticalPairs
+import           Analysis.CriticalSequence
+import           Analysis.EssentialCriticalPairs
+
+data AnalysisType = Both | Conflicts | Dependencies | None deriving (Eq)
+
+calculateConflicts :: AnalysisType -> Bool
+calculateConflicts flag = flag `elem` [Both,Conflicts]
+
+calculateDependencies :: AnalysisType -> Bool
+calculateDependencies flag = flag `elem` [Both,Dependencies]
+
 -- | Combine three matrices with the given function. All matrices _must_ have
 -- the same dimensions.
 liftMatrix3 :: (a -> b -> c -> d) -> Matrix a -> Matrix b -> Matrix c -> Matrix d
@@ -18,3 +32,58 @@ parallelMap :: (a -> b) -> [a] -> [b]
 parallelMap f (x:xs) = let r = f x
                        in r `par` r : parallelMap f xs
 parallelMap _ _      = []
+
+printAnalysis :: (JointlyEpimorphisms morph, DPO morph) =>
+  Bool -> AnalysisType -> MorphismsConfig -> [Production morph] -> IO ()
+printAnalysis essential action dpoConf rules =
+  let findAllEssentialProduceForbid _ _ _ = []
+      essentialConfMatrix = analysisMatrix dpoConf rules
+        findAllEssentialDeleteUse findAllEssentialProduceDangling findAllEssentialProduceForbid
+        "Essential Delete-Use" "Essential Produce-Dangling" "Essential Produce-Forbid" "Essential Conflicts"
+      confMatrix = analysisMatrix dpoConf rules
+        findAllDeleteUse findAllProduceDangling findAllProduceForbid
+        "Delete-Use" "Produce-Dangling" "Produce-Forbid" "Conflicts"
+      depMatrix = triDepMatrix ++ irrDepMatrix
+      triDepMatrix = analysisMatrix dpoConf rules
+        findAllProduceUse findAllRemoveDangling findAllDeleteForbid
+        "Produce-Use" "Remove-Dangling" "Deliver-Forbid" "Triggered Dependencies"
+      irrDepMatrix = analysisMatrix dpoConf rules
+        findAllDeliverDelete findAllDeliverDangling findAllForbidProduce
+        "Deliver-Delete" "Deliver-Dangling" "Forbid-Produce" "Irreversible Dependencies"
+  in mapM_
+       putStrLn $
+       (case (essential, calculateConflicts action) of
+         (True, True)  -> essentialConfMatrix
+         (False, True) -> confMatrix
+         _             -> []
+       )
+       ++ (if calculateDependencies action then depMatrix else [])
+
+-- Receives functions and theirs names,
+-- and returns they applicated to the rules
+analysisMatrix :: MorphismsConfig -> [Production morph]
+  -> (MorphismsConfig -> Production morph -> Production morph -> [cps])
+  -> (MorphismsConfig -> Production morph -> Production morph -> [cps])
+  -> (MorphismsConfig -> Production morph -> Production morph -> [cps])
+  -> String -> String -> String -> String
+  -> [String]
+analysisMatrix dpoConf rules f1 f2 f3 n1 n2 n3 n4 =
+  let f1Matrix = pairwiseCompare (f1 dpoConf) rules
+      f2Matrix = pairwiseCompare (f2 dpoConf) rules
+      f3Matrix = pairwiseCompare (f3 dpoConf) rules
+      finalMatrix =
+        liftMatrix3
+          (\x y z -> x ++ y ++ z)
+          f1Matrix f2Matrix f3Matrix
+  in  [ n1 ++ ":"
+      , show (length <$> f1Matrix)
+      , ""
+      , n2 ++ ":"
+      , show (length <$> f2Matrix)
+      , ""
+      , n3 ++ ":"
+      , show (length <$> f3Matrix)
+      , ""
+      , "All " ++ n4 ++ ":"
+      , show (length <$> finalMatrix)
+      , ""]
