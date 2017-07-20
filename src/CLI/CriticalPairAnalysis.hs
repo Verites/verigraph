@@ -6,11 +6,7 @@ module CriticalPairAnalysis
 
 import           GHC.Conc                              (numCapabilities)
 
-import           Abstract.Category.JointlyEpimorphisms
 import           Abstract.Rewriting.DPO
-import           Analysis.CriticalPairs
-import           Analysis.CriticalSequence
-import           Analysis.EssentialCriticalPairs
 import           Analysis.Interlevel.EvolutionarySpans
 import           Analysis.Interlevel.InterLevelCP
 import           Control.Monad                         (when)
@@ -30,8 +26,6 @@ data Options = Options
   , essentialFlag :: Bool
   , analysisType  :: AnalysisType
   }
-
-data AnalysisType = Both | Conflicts | Dependencies | None deriving (Eq)
 
 options :: Parser Options
 options = Options
@@ -65,12 +59,6 @@ cpAnalysisType =
         ( long "dependencies-only"
           <> help "Restrict to Critical Sequence analysis")
   <|> pure Both
-
-calculateConflicts :: AnalysisType -> Bool
-calculateConflicts flag = flag `elem` [Both,Conflicts]
-
-calculateDependencies :: AnalysisType -> Bool
-calculateDependencies flag = flag `elem` [Both,Dependencies]
 
 execute :: GlobalOptions -> Options -> IO ()
 execute globalOpts opts = do
@@ -157,60 +145,6 @@ printEvoConflicts = map printOneEvo
                        show (printConf (False,True) (thd e)) ++ ", " ++
                        show (printConf (True,True) (thd e)) ++ ")"
     printConf str evos = countElement str (map cpe evos)
-
-printAnalysis :: (JointlyEpimorphisms morph, DPO morph) =>
-  Bool -> AnalysisType -> MorphismsConfig -> [Production morph] -> IO ()
-printAnalysis essential action dpoConf rules =
-  let essentialConfMatrix = analysisMatrix dpoConf rules
-        findAllEssentialDeleteUse findAllEssentialProduceDangling findAllEssentialProduceForbid
-        "Essential Delete-Use" "Essential Produce-Dangling" "Essential Produce-Forbid" "Essential Conflicts"
-      confMatrix = analysisMatrix dpoConf rules
-        findAllDeleteUse findAllProduceDangling findAllProduceForbid
-        "Delete-Use" "Produce-Dangling" "Produce-Forbid" "Conflicts"
-      depMatrix = triDepMatrix ++ irrDepMatrix
-      triDepMatrix = analysisMatrix dpoConf rules
-        findAllProduceUse findAllRemoveDangling findAllDeleteForbid
-        "Produce-Use" "Remove-Dangling" "Deliver-Forbid" "Triggered Dependencies"
-      irrDepMatrix = analysisMatrix dpoConf rules
-        findAllDeliverDelete findAllDeliverDangling findAllForbidProduce
-        "Deliver-Delete" "Deliver-Dangling" "Forbid-Produce" "Irreversible Dependencies"
-  in mapM_
-       putStrLn $
-       (case (essential, calculateConflicts action) of
-         (True, True)  -> essentialConfMatrix
-         (False, True) -> confMatrix
-         _             -> []
-       )
-       ++ (if calculateDependencies action then depMatrix else [])
-
--- Receives functions and theirs names,
--- and returns they applicated to the rules
-analysisMatrix :: MorphismsConfig -> [Production morph]
-  -> (MorphismsConfig -> Production morph -> Production morph -> [cps])
-  -> (MorphismsConfig -> Production morph -> Production morph -> [cps])
-  -> (MorphismsConfig -> Production morph -> Production morph -> [cps])
-  -> String -> String -> String -> String
-  -> [String]
-analysisMatrix dpoConf rules f1 f2 f3 n1 n2 n3 n4 =
-  let f1Matrix = pairwiseCompare (f1 dpoConf) rules
-      f2Matrix = pairwiseCompare (f2 dpoConf) rules
-      f3Matrix = pairwiseCompare (f3 dpoConf) rules
-      finalMatrix =
-        liftMatrix3
-          (\x y z -> x ++ y ++ z)
-          f1Matrix f2Matrix f3Matrix
-  in  [ n1 ++ ":"
-      , show (length <$> f1Matrix)
-      , ""
-      , n2 ++ ":"
-      , show (length <$> f2Matrix)
-      , ""
-      , n3 ++ ":"
-      , show (length <$> f3Matrix)
-      , ""
-      , "All " ++ n4 ++ ":"
-      , show (length <$> finalMatrix)
-      , ""]
 
 defWriterFun :: Bool -> Bool -> MorphismsConfig -> AnalysisType
              -> GW.Grammars a b -> String
