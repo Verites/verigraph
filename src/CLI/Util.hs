@@ -36,7 +36,8 @@ parallelMap _ _      = []
 printAnalysis :: (JointlyEpimorphisms morph, DPO morph) =>
   Bool -> AnalysisType -> MorphismsConfig -> [Production morph] -> IO ()
 printAnalysis essential action dpoConf rules =
-  let findAllEssentialProduceForbid _ _ _ = []
+  let findAllEssentialProduceDangling _ _ _ = []
+      findAllEssentialProduceForbid _ _ _ = []
       essentialConfMatrix = analysisMatrix dpoConf rules
         findAllEssentialDeleteUse findAllEssentialProduceDangling findAllEssentialProduceForbid
         "Essential Delete-Use" "Essential Produce-Dangling" "Essential Produce-Forbid" "Essential Conflicts"

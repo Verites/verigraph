@@ -4,12 +4,11 @@ Description : Essential Critical Pairs generator.
 This module provides functions that generate all essential critical
 pairs between two productions. The essential critical pairs are
 classified with 'CriticalPairType', but each pair can be only a
-'DeleteUse' or a 'ProduceDangling'.
+'DeleteUse'.
 -}
 module Analysis.EssentialCriticalPairs
  ( namedEssentialCriticalPairs,
-   findAllEssentialDeleteUse,
-   findAllEssentialProduceDangling
+   findAllEssentialDeleteUse
    ) where
 
 import           Abstract.Category.AdhesiveHLR
@@ -33,9 +32,7 @@ namedEssentialCriticalPairs conf namedRules =
 -- | Finds all Essential Critical Pairs between two given Productions
 findEssentialCriticalPairs :: (JointlyEpimorphisms morph, DPO morph) =>
   MorphismsConfig -> Production morph -> Production morph -> [CriticalPair morph]
-findEssentialCriticalPairs conf p1 p2 =
-  findAllEssentialDeleteUse conf p1 p2 ++
-  findAllEssentialProduceDangling conf p1 p2
+findEssentialCriticalPairs = findAllEssentialDeleteUse
 
 -- | Get all essential delete-use and organize them in a list of 'CriticalPair'.
 findAllEssentialDeleteUse :: (JointlyEpimorphisms morph, DPO morph) =>
@@ -80,14 +77,3 @@ isEssentialDeleteUse conf (l1',c,m1,m2) = null commuting
 findMorphismsFromDomains :: FindMorphism morph => MorphismsConfig -> morph -> morph -> [morph]
 findMorphismsFromDomains conf  a b =
   findMorphisms (matchRestriction conf) (domain a) (domain b)
-
--- Check if it is correct.
-findAllEssentialProduceDangling :: --(DPO morph, JointlyEpimorphisms morph) =>
-  MorphismsConfig -> Production morph -> Production morph -> [CriticalPair morph]
---findAllEssentialProduceDangling conf p1 p2 =
---  filter
---    (\(CriticalPair (m1,m2) Nothing Nothing ProduceDangling) -> isEssentialDeleteUse conf p2 (m2,m1))
---    (findAllProduceDangling conf p1 p2)
-
--- Returning empty for while.
-findAllEssentialProduceDangling _ _ _ = []
