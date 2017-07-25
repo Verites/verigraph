@@ -1,15 +1,17 @@
 -- {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE AllowAmbiguousTypes #-}
 -- | Provides definitions for the Double-Pushout approach to
 -- High-Level Rewriting Systems.
 module Abstract.Rewriting.DPO
   ( Production
   , buildProduction
-  , getLHS
-  , getRHS
-  , getNACs
+  , leftMorphism
+  , rightMorphism
+  , nacs
+  , leftObject
+  , rightObject
+  , interfaceObject
 
   , grammar
   , Grammar
@@ -68,24 +70,29 @@ import           Util.Monad
 -- Consists of two morphisms /'left' : K -> L/ and /'right' : K -> R/,
 -- as well as a set of 'nacs' /L -> Ni/.
 data Production (cat :: * -> *) morph = Production
-  { left  :: morph   -- ^ The morphism /K -> L/ of a production
-  ,  right :: morph  -- ^ The morphism /K -> R/ of a production
-  ,  nacs  :: [morph] -- ^ The set of nacs /L -> Ni/ of a production
-  }  deriving (Eq, Show, Read)
+  { leftMorphism  :: morph   -- ^ The morphism /K -> L/ of a production
+  , rightMorphism :: morph  -- ^ The morphism /K -> R/ of a production
+  , nacs  :: [morph] -- ^ The set of nacs /L -> Ni/ of a production
+  } deriving (Eq, Show, Read)
+
+leftObject, rightObject, interfaceObject :: (LRNAdhesive cat morph) => Production cat morph -> Obj cat
+leftObject = codomain . leftMorphism
+rightObject = codomain . rightMorphism
+interfaceObject = domain . rightMorphism
 
 instance (LRNAdhesive cat morph, Valid cat morph, Eq (Obj cat)) => Valid cat (Production cat morph) where
   validator (Production l r nacs) = do
     withContext "left morphism" $ do
       validator l
-      ensureM (l `belongsToClass` leftHandMorphism @cat) "The LHS morphism is not on the appropriate class"
+      ensureM (isLeftHandMorphism @cat l) "The morphism is not on the appropriate class"
     withContext "right morphism" $ do
       validator r
-      ensureM (r `belongsToClass` ruleMorphism @cat) "The RHS morphism is not on the appropriate class"
+      ensureM (isRuleMorphism @cat r) "The morphism is not on the appropriate class"
     ensure (domain @cat l == domain @cat r) "The domains of the LHS and RHS morphisms are not the same"
     forM_ (zip nacs [1..]) $ \(nac, idx :: Int) ->
       withContext ("nac #" ++ show idx) $ do
         validator nac
-        ensure (codomain @cat l == domain @cat nac) "The domain is not the LHS object"
+        ensure (codomain l == domain @cat nac) "The domain is not the LHS object"
       
 
 type NamedProduction cat morph = (String, Production cat morph)
@@ -96,18 +103,6 @@ type NamedProduction cat morph = (String, Production cat morph)
 -- Note: this doesn't check that the production is valid.
 buildProduction :: LRNAdhesive cat morph => morph -> morph -> [morph] -> Production cat morph
 buildProduction = Production
-
--- | Returns the morphism /K -> L/ of the given production
-getLHS :: Production cat morph -> morph
-getLHS = left
-
--- | Returns the morphism /K -> R/ of the given production
-getRHS :: Production cat morph -> morph
-getRHS = right
-
--- | Returns the set of nacs /L -> Ni/ of the given production
-getNACs :: Production cat morph -> [morph]
-getNACs = nacs
 
 data Grammar cat morph = Grammar
   { start           :: Obj cat
@@ -170,7 +165,7 @@ class (LRNAdhesive cat morph, FindMorphism cat morph) => DPO cat morph where
 --
 -- When given `MonoMatches`, only obtains monomorphic matches.
 findAllMatches :: forall cat morph. DPO cat morph => Production cat morph -> Obj cat -> cat [morph]
-findAllMatches production = findMorphisms (matchMorphism @cat) (codomain @cat $ left production)
+findAllMatches production = findMorphisms (matchMorphism @cat) (codomain @cat $ leftMorphism production)
 
 -- | Obtain the matches from the production into the given object that satisfiy the NACs
 -- and gluing conditions.
@@ -203,8 +198,8 @@ findApplicableMatches production obj =
 -- nor if the match satisfies all application conditions.
 calculateDPO :: DPO cat morph => morph -> Production cat morph -> cat (morph, morph, morph, morph)
 calculateDPO m (Production l r _) = do
-  (k, f) <- pushoutComplementRN l m
-  (n, g) <- pushoutAlongRN k r
+  (k, f) <- calculatePushoutComplementOfRN l m
+  (n, g) <- calculatePushoutAlongRN k r
   return (k, n, f, g)
 
 -- | True if the given match satisfies the gluing condition and NACs of the
@@ -215,7 +210,7 @@ satisfiesRewritingConditions production match =
 
 -- | Verifies if the gluing conditions for a production /p/ are satisfied by a match /m/
 satisfiesGluingConditions :: DPO cat morph => Production cat morph -> morph -> cat Bool
-satisfiesGluingConditions production match = hasPushoutComplementRN (left production) match
+satisfiesGluingConditions production match = hasPushoutComplementOfRN (leftMorphism production) match
 
 -- | True if the given match satisfies all NACs of the given production.
 satisfiesNACs :: DPO cat morph => Production cat morph -> morph -> cat Bool
@@ -255,7 +250,7 @@ rewrite morph prod = codomain @cat <$> calculateComatch morph prod
 
 -- | Discards the NACs of a production and inverts it.
 invertProductionWithoutNacs :: Production cat morph -> Production cat morph
-invertProductionWithoutNacs p = Production (right p) (left p) []
+invertProductionWithoutNacs p = Production (rightMorphism p) (leftMorphism p) []
 
 
 -- TODO: deprecate? why do we need this __here__?
@@ -270,4 +265,4 @@ satisfyRewritingConditions (l,m1) (r,m2) =
 -- an equivalent set of NACs /n'i : L' -> N'i/ that is equivalent to the
 -- original NAC.
 nacDownwardShift :: forall cat morph. (LRNAdhesive cat morph, EM'PairFactorizable cat morph) => morph -> morph -> cat [morph]
-nacDownwardShift morph n = map snd <$> jointlyEpicSquares (monic @cat, n) (matchMorphism @cat, morph)
+nacDownwardShift morph n = map snd <$> findJointlyEpicSquares (monic @cat, n) (matchMorphism @cat, morph)

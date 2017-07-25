@@ -1,9 +1,13 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE KindSignatures #-}
 module Abstract.Constraint
-  ( AtomicConstraint (..)
-  , buildNamedAtomicConstraint
+  ( AtomicConstraint
+  , atomicConstraint
+  , name
+  , isPositive
+  , morphism
+  , premise
+  , conclusion
   , satisfiesAtomicConstraint
   , satisfiesAllAtomicConstraints
   , Constraint (..)
@@ -17,38 +21,38 @@ import           Util.Monad
 
 data AtomicConstraint (cat :: * -> *) morph = AtomicConstraint
   { name     :: String
+  , isPositive :: Bool
   , morphism :: morph
-  , positive :: Bool
   } deriving (Show)
 
 instance Valid cat morph => Valid cat (AtomicConstraint cat morph) where
   validator = validator . morphism
 
-buildNamedAtomicConstraint :: Category cat morph => String -> morph -> Bool -> AtomicConstraint cat morph
-buildNamedAtomicConstraint = AtomicConstraint
+atomicConstraint :: Category cat morph => String -> Bool -> morph -> AtomicConstraint cat morph
+atomicConstraint = AtomicConstraint
 
-premise :: forall cat morph. Category cat morph => AtomicConstraint cat morph -> Obj cat
-premise = domain @cat . morphism
+premise :: Category cat morph => AtomicConstraint cat morph -> Obj cat
+premise = domain . morphism
 
-conclusion :: forall cat morph. Category cat morph => AtomicConstraint cat morph -> Obj cat
-conclusion = codomain @cat . morphism
+conclusion :: Category cat morph => AtomicConstraint cat morph -> Obj cat
+conclusion = codomain . morphism
 
 -- | Given an object @G@ and a AtomicConstraint @a : P -> C@, check whether @G@ satisfies the AtomicConstraint @a@
 satisfiesAtomicConstraint :: forall cat morph. FindMorphism cat morph => Obj cat -> AtomicConstraint cat morph -> cat Bool
 satisfiesAtomicConstraint object constraint = do
-  premiseMatches <- findMorphisms (monic @cat) (premise @cat constraint) object
+  premiseMatches <- findMorphisms (monic @cat) (premise constraint) object
   allM matchSatisfiesConstraint premiseMatches
   where
     matchSatisfiesConstraint premiseMatch = do
       conclusionMatches <- findSpanCommuters (monic @cat) (morphism constraint) premiseMatch
       return $
-        if positive constraint then
+        if isPositive constraint then
           not (null conclusionMatches)
         else
           null conclusionMatches
 
 -- | Given an object @G@ and a list of AtomicConstraints @a : P -> C@, check whether @G@ satisfies the all them
-satisfiesAllAtomicConstraints :: forall cat morph. FindMorphism cat morph => Obj cat -> [AtomicConstraint cat morph] -> cat Bool
+satisfiesAllAtomicConstraints :: FindMorphism cat morph => Obj cat -> [AtomicConstraint cat morph] -> cat Bool
 satisfiesAllAtomicConstraints object = allM (satisfiesAtomicConstraint object)
 
 data Constraint cat morph =
