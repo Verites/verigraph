@@ -58,7 +58,7 @@ import Control.Monad
 
 import           Abstract.Category.NewClasses
 import           Abstract.Constraint
---import           Base.Valid
+import           Base.Valid
 import           Util.Monad
 
 
@@ -73,23 +73,20 @@ data Production (cat :: * -> *) morph = Production
   ,  nacs  :: [morph] -- ^ The set of nacs /L -> Ni/ of a production
   }  deriving (Eq, Show, Read)
 
-{-
-instance (FinitaryCategory morph, Valid morph, Eq (Obj morph)) => Valid (Production morph) where
-  validate (Production l r nacs) =
-    mconcat $
-      [ withContext "left morphism" (validate l)
-      , withContext "right morphism" (validate r)
-      , ensure (isMonomorphism l) "The left side of the production is not monic"
-      , ensure (isMonomorphism r) "The right side of the production is not monic"
-      , ensure (domain l == domain r) "The domains of the left and right morphisms aren't the same"
-      ] ++ zipWith validateNac nacs ([1..] :: [Int])
-    where
-      validateNac nac index =
-        mconcat
-          [ withContext ("NAC #" ++ show index) (validate nac)
-          , ensure (codomain l == domain nac) ("The domain of NAC #" ++ show index ++ " is not the left side of the production")
-          ] -}
-
+instance (LRNAdhesive cat morph, Valid cat morph, Eq (Obj cat)) => Valid cat (Production cat morph) where
+  validator (Production l r nacs) = do
+    withContext "left morphism" $ do
+      validator l
+      ensureM (l `belongsToClass` leftHandMorphism @cat) "The LHS morphism is not on the appropriate class"
+    withContext "right morphism" $ do
+      validator r
+      ensureM (r `belongsToClass` ruleMorphism @cat) "The RHS morphism is not on the appropriate class"
+    ensure (domain @cat l == domain @cat r) "The domains of the LHS and RHS morphisms are not the same"
+    forM_ (zip nacs [1..]) $ \(nac, idx :: Int) ->
+      withContext ("nac #" ++ show idx) $ do
+        validator nac
+        ensure (codomain @cat l == domain @cat nac) "The domain is not the LHS object"
+      
 
 type NamedProduction cat morph = (String, Production cat morph)
 
@@ -119,32 +116,24 @@ data Grammar cat morph = Grammar
   , reachableGraphs :: [(String, Obj cat)]
   }
 
-{-
-instance (FinitaryCategory morph, Valid morph, Valid (Obj morph), Eq (Obj morph)) => Valid (Grammar morph) where
-
-  validate (Grammar s c r rg) =
-    mconcat $
-      [ withContext "Start graph" (validate s)]
-      ++ zipWith validateConstraint c ([1..] :: [Int])
-      ++ map validateProduction r
-      ++ map validateGraph rg
-    where
-      validateConstraint constraint index =
-        mconcat [ withContext ("Constraint #" ++ show index) (validate constraint) ]
-      validateProduction (name, production) =
-        mconcat [ withContext ("Rule " ++ name) (validate production)]
-      validateGraph (name, graph) =
-        mconcat [ withContext ("Graph " ++ name) (validate graph)]
--}
+instance (LRNAdhesive cat morph, Valid cat morph, Valid cat (Obj cat), Eq (Obj cat)) => Valid cat (Grammar cat morph) where
+  validator (Grammar s cs rs gs) = do
+    withContext "Start graph" $ validator s
+    forM_ (zip cs [1..]) $ \(constraint, idx :: Int) ->
+      withContext ("Constraint #" ++ show idx) (validator constraint)
+    forM_ rs $ \(name, rule) ->
+      withContext ("Rule " ++ name) (validator rule)
+    forM_ gs $ \(name, graph) ->
+      withContext ("Graph " ++ name) (validator graph)
+    
 
 -- | Object that uses a Span of Morphisms to connect the right-hand-side of a Production with the left-hand-side of another one
-data ObjectFlow cat morph =
-  ObjectFlow {
-  index       :: String -- ^ A identifier for the Object Flow
-, producer    :: String -- ^ The name of the production that will produce the input for the next
-, consumer    :: String -- ^ The name of the production that uses the result of the other
-, spanMapping :: Span cat morph -- ^ A span of Morphisms @Ri <- IO -> Lo@ where @Ri@ is the right-hand-side of the @producer production@ and @Lo@ is the left-hand-side of the @consumer production@
-}
+data ObjectFlow cat morph = ObjectFlow 
+  { index       :: String -- ^ A identifier for the Object Flow
+  , producer    :: String -- ^ The name of the production that will produce the input for the next
+  , consumer    :: String -- ^ The name of the production that uses the result of the other
+  , spanMapping :: Span cat morph -- ^ A span of Morphisms @Ri <- IO -> Lo@ where @Ri@ is the right-hand-side of the @producer production@ and @Lo@ is the left-hand-side of the @consumer production@
+  }
 
 type RuleSequence cat morph = (String,[(String, Production cat morph)],[ObjectFlow cat morph])
 

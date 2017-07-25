@@ -12,7 +12,7 @@ module Abstract.Constraint
   ) where
 
 import           Abstract.Category.NewClasses
---import           Base.Valid
+import           Base.Valid
 import           Util.Monad
 
 data AtomicConstraint (cat :: * -> *) morph = AtomicConstraint
@@ -21,8 +21,8 @@ data AtomicConstraint (cat :: * -> *) morph = AtomicConstraint
   , positive :: Bool
   } deriving (Show)
 
-{-instance Valid morph => Valid (AtomicConstraint morph) where
-  validate = validate . morphism-}
+instance Valid cat morph => Valid cat (AtomicConstraint cat morph) where
+  validator = validator . morphism
 
 buildNamedAtomicConstraint :: Category cat morph => String -> morph -> Bool -> AtomicConstraint cat morph
 buildNamedAtomicConstraint = AtomicConstraint
@@ -58,12 +58,12 @@ data Constraint cat morph =
   | Not (Constraint cat morph)
   deriving (Show)
 
-{-instance Valid morph => Valid (Constraint morph) where
-    validate cons = case cons of
-      Atomic a -> validate a
-      Not b    -> validate (nc b)
-      And a b  -> mconcat [validate (lc a), validate (rc b)]
-      Or a b   -> mconcat [validate (lc a), validate (rc b)]-}
+instance Valid cat morph => Valid cat (Constraint cat morph) where
+  validator cons = case cons of
+    Atomic a  -> validator a
+    Not c     -> validator c
+    And c1 c2 -> validator c1 >> validator c2
+    Or c1 c2  -> validator c1 >> validator c2
 
 constraintSatisfied :: Monad cat => (AtomicConstraint cat morph -> cat Bool) -> Constraint cat morph -> cat Bool
 constraintSatisfied checkAtomic = check
