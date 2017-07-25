@@ -1,7 +1,7 @@
-{-# LANGUAGE FlexibleContexts     #-}
-{-# LANGUAGE TypeFamilies         #-}
-{-# LANGUAGE UndecidableInstances #-}
-
+-- {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 -- | Provides definitions for the Double-Pushout approach to
 -- High-Level Rewriting Systems.
 module Abstract.Rewriting.DPO
@@ -24,10 +24,6 @@ module Abstract.Rewriting.DPO
   , findProduction
   , reachableGraphs
   , addReachableGraphs
-
-  , MorphismsConfig(..)
-  , NacSatisfaction(..)
-
 
   -- ** Application
 
@@ -58,10 +54,12 @@ module Abstract.Rewriting.DPO
   , nacDownwardShift
   ) where
 
-import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.FinitaryCategory
-import           Abstract.Category.JointlyEpimorphisms
-import           Base.Valid
+import Control.Monad
+
+import           Abstract.Category.NewClasses
+import           Abstract.Constraint
+--import           Base.Valid
+import           Util.Monad
 
 
 
@@ -69,12 +67,13 @@ import           Base.Valid
 --
 -- Consists of two morphisms /'left' : K -> L/ and /'right' : K -> R/,
 -- as well as a set of 'nacs' /L -> Ni/.
-data Production morph = Production {
-   left  :: morph   -- ^ The morphism /K -> L/ of a production
-,  right :: morph  -- ^ The morphism /K -> R/ of a production
-,  nacs  :: [morph] -- ^ The set of nacs /L -> Ni/ of a production
-}  deriving (Eq, Show, Read)
+data Production (cat :: * -> *) morph = Production
+  { left  :: morph   -- ^ The morphism /K -> L/ of a production
+  ,  right :: morph  -- ^ The morphism /K -> R/ of a production
+  ,  nacs  :: [morph] -- ^ The set of nacs /L -> Ni/ of a production
+  }  deriving (Eq, Show, Read)
 
+{-
 instance (FinitaryCategory morph, Valid morph, Eq (Obj morph)) => Valid (Production morph) where
   validate (Production l r nacs) =
     mconcat $
@@ -89,37 +88,38 @@ instance (FinitaryCategory morph, Valid morph, Eq (Obj morph)) => Valid (Product
         mconcat
           [ withContext ("NAC #" ++ show index) (validate nac)
           , ensure (codomain l == domain nac) ("The domain of NAC #" ++ show index ++ " is not the left side of the production")
-          ]
+          ] -}
 
 
-type NamedProduction morph = (String, Production morph)
+type NamedProduction cat morph = (String, Production cat morph)
 
 -- | Construct a production from the morphism /l : K -> L/,
 -- the morphism /r : K -> R/, and the nacs /L -> Ni/, respectively.
 --
 -- Note: this doesn't check that the production is valid.
-buildProduction :: morph -> morph -> [morph] -> Production morph
+buildProduction :: LRNAdhesive cat morph => morph -> morph -> [morph] -> Production cat morph
 buildProduction = Production
 
 -- | Returns the morphism /K -> L/ of the given production
-getLHS :: Production morph -> morph
+getLHS :: Production cat morph -> morph
 getLHS = left
 
 -- | Returns the morphism /K -> R/ of the given production
-getRHS :: Production morph -> morph
+getRHS :: Production cat morph -> morph
 getRHS = right
 
 -- | Returns the set of nacs /L -> Ni/ of the given production
-getNACs :: Production morph -> [morph]
+getNACs :: Production cat morph -> [morph]
 getNACs = nacs
 
-data Grammar morph = Grammar {
-   start           :: Obj morph
-,  constraints     :: [Constraint morph]
-,  productions     :: [NamedProduction morph]
-,  reachableGraphs :: [(String, Obj morph)]
-}
+data Grammar cat morph = Grammar
+  { start           :: Obj cat
+  , constraints     :: [Constraint cat morph]
+  , productions     :: [NamedProduction cat morph]
+  , reachableGraphs :: [(String, Obj cat)]
+  }
 
+{-
 instance (FinitaryCategory morph, Valid morph, Valid (Obj morph), Eq (Obj morph)) => Valid (Grammar morph) where
 
   validate (Grammar s c r rg) =
@@ -135,70 +135,61 @@ instance (FinitaryCategory morph, Valid morph, Valid (Obj morph), Eq (Obj morph)
         mconcat [ withContext ("Rule " ++ name) (validate production)]
       validateGraph (name, graph) =
         mconcat [ withContext ("Graph " ++ name) (validate graph)]
-
+-}
 
 -- | Object that uses a Span of Morphisms to connect the right-hand-side of a Production with the left-hand-side of another one
-data ObjectFlow morph =
+data ObjectFlow cat morph =
   ObjectFlow {
   index       :: String -- ^ A identifier for the Object Flow
 , producer    :: String -- ^ The name of the production that will produce the input for the next
 , consumer    :: String -- ^ The name of the production that uses the result of the other
-, spanMapping :: Span morph -- ^ A span of Morphisms @Ri <- IO -> Lo@ where @Ri@ is the right-hand-side of the @producer production@ and @Lo@ is the left-hand-side of the @consumer production@
+, spanMapping :: Span cat morph -- ^ A span of Morphisms @Ri <- IO -> Lo@ where @Ri@ is the right-hand-side of the @producer production@ and @Lo@ is the left-hand-side of the @consumer production@
 }
 
-type RuleSequence morph = (String,[(String, Production morph)],[ObjectFlow morph])
+type RuleSequence cat morph = (String,[(String, Production cat morph)],[ObjectFlow cat morph])
 
-grammar :: Obj morph -> [Constraint morph] -> [NamedProduction morph] -> Grammar morph
+grammar :: LRNAdhesive cat morph => Obj cat -> [Constraint cat morph] -> [NamedProduction cat morph] -> Grammar cat morph
 grammar s c r = Grammar s c r []
 
-addReachableGraphs :: [(String, Obj morph)] -> Grammar morph -> Grammar morph
+addReachableGraphs :: [(String, Obj cat)] -> Grammar cat morph -> Grammar cat morph
 addReachableGraphs gs' (Grammar s c r gs)  = Grammar s c r (gs ++ gs')
 
-getProductionName :: NamedProduction morph -> String
+getProductionName :: NamedProduction cat morph -> String
 getProductionName = fst
 
-getProduction :: NamedProduction morph -> Production morph
+getProduction :: NamedProduction cat morph -> Production cat morph
 getProduction = snd
 
-findProduction :: String -> Grammar morph -> Maybe (Production morph)
+findProduction :: String -> Grammar cat morph -> Maybe (Production cat morph)
 findProduction name grammar = lookup name (productions grammar)
 
 
 -- | Class for morphisms whose category is Adhesive-HLR, and which can be
 -- used for double-pushout transformations.
-class (AdhesiveHLR morph, FindMorphism morph) => DPO morph where
+class (LRNAdhesive cat morph, FindMorphism cat morph) => DPO cat morph where
   -- | Inverts a production, adjusting the NACs accordingly.
   -- Needs information of nac injective satisfaction (in second-order)
   -- and matches injective.
-  invertProduction :: MorphismsConfig -> Production morph -> Production morph
+  invertProduction :: Production cat morph -> Production cat morph
 
   -- | Given a production /L ←l- K -r→ R/ and a NAC morphism /n : L -> N/, obtain
   -- a set of NACs /n'i : R -> N'i/ that is equivalent to the original NAC.
-  shiftNacOverProduction :: MorphismsConfig -> Production morph -> morph -> [morph]
-
-  -- | Create a special case of jointly epimorphic pairs, where the second morphism is a Nac.
-  -- The pairs generated are dependent of the NAC config.
-  --
-  -- FIXME: rethink this function and the best module to place it
-  createJointlyEpimorphicPairsFromNAC :: MorphismsConfig -> Obj morph -> morph -> [(morph,morph)]
+  shiftNacOverProduction :: Production cat morph -> morph -> [morph]
 
 -- | Obtain all matches from the production into the given object, even if they
 -- aren't applicable.
 --
 -- When given `MonoMatches`, only obtains monomorphic matches.
-findAllMatches :: (DPO morph) => MorphismsConfig -> Production morph -> Obj morph -> [morph]
-findAllMatches conf production =
-  findMorphisms
-    (matchRestriction conf)
-    (codomain $ left production)
+findAllMatches :: forall cat morph. DPO cat morph => Production cat morph -> Obj cat -> cat [morph]
+findAllMatches production = findMorphisms (matchMorphism @cat) (codomain @cat $ left production)
 
 -- | Obtain the matches from the production into the given object that satisfiy the NACs
 -- and gluing conditions.
 --
 -- When given `MonoMatches`, only obtains monomorphic matches.
-findApplicableMatches :: (DPO morph) => MorphismsConfig -> Production morph -> Obj morph -> [morph]
-findApplicableMatches conf production obj =
-  filter (satisfiesRewritingConditions conf production) (findAllMatches conf production obj)
+findApplicableMatches :: (DPO cat morph) => Production cat morph -> Obj cat -> cat [morph]
+findApplicableMatches production obj =
+  filterM (satisfiesRewritingConditions production) =<< findAllMatches production obj
 
 
 
@@ -221,41 +212,28 @@ findApplicableMatches conf production obj =
 --
 -- Note: this doesn't test whether the match is for the actual production,
 -- nor if the match satisfies all application conditions.
-calculateDPO :: DPO morph => morph -> Production morph -> (morph,morph, morph,morph)
-calculateDPO m (Production l r _) =
-  let (k, f) = calculatePushoutComplement m l
-      (n, g) = calculatePushout k r
-  in (k, n, f, g)
+calculateDPO :: DPO cat morph => morph -> Production cat morph -> cat (morph, morph, morph, morph)
+calculateDPO m (Production l r _) = do
+  (k, f) <- pushoutComplementRN l m
+  (n, g) <- pushoutAlongRN k r
+  return (k, n, f, g)
 
 -- | True if the given match satisfies the gluing condition and NACs of the
 -- given production.
-satisfiesRewritingConditions :: DPO morph => MorphismsConfig -> Production morph -> morph -> Bool
-satisfiesRewritingConditions conf production match =
-  satisfiesGluingConditions conf production match && satisfiesNACs conf production match
+satisfiesRewritingConditions :: DPO cat morph => Production cat morph -> morph -> cat Bool
+satisfiesRewritingConditions production match =
+  satisfiesGluingConditions production match `andM` satisfiesNACs production match
 
 -- | Verifies if the gluing conditions for a production /p/ are satisfied by a match /m/
-satisfiesGluingConditions :: DPO morph => MorphismsConfig -> Production morph -> morph -> Bool
-satisfiesGluingConditions conf production match =
-  hasPushoutComplement (matchIsMono, match) (GenericMorphism, left production)
-  where
-    matchIsMono = (matchRestriction conf)
+satisfiesGluingConditions :: DPO cat morph => Production cat morph -> morph -> cat Bool
+satisfiesGluingConditions production match = hasPushoutComplementRN (left production) match
 
 -- | True if the given match satisfies all NACs of the given production.
-satisfiesNACs :: DPO morph => MorphismsConfig -> Production morph -> morph -> Bool
-satisfiesNACs conf production match =
-  all (satisfiesSingleNac conf match) (nacs production)
+satisfiesNACs :: DPO cat morph => Production cat morph -> morph -> cat Bool
+satisfiesNACs production match = allM (satisfiesSingleNac match) (nacs production)
 
-satisfiesSingleNac :: DPO morph => MorphismsConfig -> morph -> morph -> Bool
-satisfiesSingleNac conf match nac =
-  let nacMatches =
-        case nacSatisfaction conf of
-          MonomorphicNAC ->
-            findMonomorphisms (codomain nac) (codomain match)
-          PartiallyMonomorphicNAC ->
-            partialInjectiveMatches nac match
-      commutes nacMatch =
-        nacMatch <&> nac == match
-  in not $ any commutes nacMatches
+satisfiesSingleNac :: forall cat morph. DPO cat morph => morph -> morph -> cat Bool
+satisfiesSingleNac match nac = null <$> findSpanCommuters (monic @cat) nac match
 
 -- | Given a match and a production, calculate the calculateComatch for the
 -- corresponding transformation.
@@ -275,42 +253,32 @@ satisfiesSingleNac conf match nac =
 --
 -- Note: this doesn't test whether the match is for the actual production,
 -- nor if the match satisfies all application conditions.
-calculateComatch :: DPO morph => morph -> Production morph -> morph
-calculateComatch morph prod = let (_,m',_,_) = calculateDPO morph prod in m'
+calculateComatch :: DPO cat morph => morph -> Production cat morph -> cat morph
+calculateComatch morph prod = do
+  (_,m',_,_) <- calculateDPO morph prod
+  return m'
 
 -- | Given a match and a production, obtain the rewritten object.
 --
 -- @rewrite match production@ is equivalent to @'codomain' ('calculateComatch' match production)@
-rewrite :: DPO morph => morph -> Production morph -> Obj morph
-rewrite morph prod =
-  codomain (calculateComatch morph prod)
+rewrite :: forall cat morph. DPO cat morph => morph -> Production cat morph -> cat (Obj cat)
+rewrite morph prod = codomain @cat <$> calculateComatch morph prod
 
 -- | Discards the NACs of a production and inverts it.
-invertProductionWithoutNacs :: Production morph -> Production morph
+invertProductionWithoutNacs :: Production cat morph -> Production cat morph
 invertProductionWithoutNacs p = Production (right p) (left p) []
-
--- | Flag indicating the semantics of NAC satisfaction.
-data NacSatisfaction = MonomorphicNAC | PartiallyMonomorphicNAC deriving (Eq, Show)
-
-data MorphismsConfig = MorphismsConfig
-  { matchRestriction :: MorphismType
-  , nacSatisfaction  :: NacSatisfaction
-  }
 
 
 -- TODO: deprecate? why do we need this __here__?
 -- | Check gluing conditions and the NACs satisfaction for a pair of matches
 -- @inj@ only indicates if the match is injective, this function does not checks it
-satisfyRewritingConditions :: DPO morph => MorphismsConfig -> (Production morph,morph) -> (Production morph,morph) -> Bool
-satisfyRewritingConditions conf (l,m1) (r,m2) =
-  satisfiesRewritingConditions conf l m1 && satisfiesRewritingConditions conf r m2
+satisfyRewritingConditions :: DPO cat morph => (Production cat morph, morph) -> (Production cat morph, morph) -> cat Bool
+satisfyRewritingConditions (l,m1) (r,m2) =
+  satisfiesRewritingConditions l m1 `andM` satisfiesRewritingConditions r m2
 
 -- TODO: Is this really a DPO feature?
 -- | Given a morphism /m : L -> L'/ and a NAC /n : L -> N/, obtains
 -- an equivalent set of NACs /n'i : L' -> N'i/ that is equivalent to the
 -- original NAC.
-nacDownwardShift :: JointlyEpimorphisms morph => MorphismsConfig -> morph -> morph -> [morph]
-nacDownwardShift conf morph n = newNacs
-  where
-    pairs = calculateCommutativeSquaresAlongMonomorphism (n,True) (morph, matchRestriction conf == Monomorphism)
-    newNacs = map snd pairs
+nacDownwardShift :: forall cat morph. (LRNAdhesive cat morph, EM'PairFactorizable cat morph) => morph -> morph -> cat [morph]
+nacDownwardShift morph n = map snd <$> jointlyEpicSquares (monic @cat, n) (matchMorphism @cat, morph)
