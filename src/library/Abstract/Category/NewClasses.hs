@@ -46,8 +46,8 @@ isEpic :: forall cat morph. Category cat morph => morph -> cat Bool
 isEpic = (`belongsToClass` epic @cat)
 
 -- | Check if a given morphism is an isomorphism.
-isIso :: forall cat morph. Category cat morph => morph -> cat Bool
-isIso = (`belongsToClass` iso @cat)
+isIsomorphism :: forall cat morph. Category cat morph => morph -> cat Bool
+isIsomorphism = (`belongsToClass` iso @cat)
 
 -- | A span is a pair of morphisms with same domain (e.g. \(A \to C \leftarrow B \)).
 type Span (cat :: * -> *) morph = (morph, morph)

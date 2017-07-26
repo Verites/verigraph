@@ -39,7 +39,6 @@ module Abstract.Rewriting.DPO
   , satisfiesGluingConditions
   , satisfiesNACs
   , satisfiesRewritingConditions
-  , satisfyRewritingConditions
 
   -- *** Transformation
   -- | Given a production and a match for its left side, it may be possible
@@ -251,14 +250,6 @@ rewrite morph prod = codomain @cat <$> calculateComatch morph prod
 -- | Discards the NACs of a production and inverts it.
 invertProductionWithoutNacs :: Production cat morph -> Production cat morph
 invertProductionWithoutNacs p = Production (rightMorphism p) (leftMorphism p) []
-
-
--- TODO: deprecate? why do we need this __here__?
--- | Check gluing conditions and the NACs satisfaction for a pair of matches
--- @inj@ only indicates if the match is injective, this function does not checks it
-satisfyRewritingConditions :: DPO cat morph => (Production cat morph, morph) -> (Production cat morph, morph) -> cat Bool
-satisfyRewritingConditions (l,m1) (r,m2) =
-  satisfiesRewritingConditions l m1 `andM` satisfiesRewritingConditions r m2
 
 -- TODO: Is this really a DPO feature?
 -- | Given a morphism /m : L -> L'/ and a NAC /n : L -> N/, obtains

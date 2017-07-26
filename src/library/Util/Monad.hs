@@ -20,6 +20,11 @@ allM test (x:xs) = do
   result <- test x
   if result then allM test xs else return False
   
+anyM :: Monad m => (a -> m Bool) -> [a] -> m Bool
+anyM _ [] = return False
+anyM test (x:xs) = do
+  result <- test x
+  if result then return True else anyM test xs
 
 pickOne :: Monad m => m [a] -> ListT m a
 pickOne = ListT

@@ -1,3 +1,4 @@
+{-# LANGUAGE TupleSections #-}
 module Analysis.CriticalSequence
  ( CriticalSequenceType (..),
    CriticalSequence,
@@ -22,11 +23,12 @@ module Analysis.CriticalSequence
    findAllDeliverDeleteAndDeliverDangling,
    ) where
 
-import           Abstract.Category.JointlyEpimorphisms
+import Control.Monad
+
+import           Abstract.Category.NewClasses
 import           Abstract.Rewriting.DPO                   hiding (calculateComatch)
 import           Abstract.Rewriting.DPO.DiagramAlgorithms
 import           Analysis.CriticalPairs                   (findPotentialCriticalPairs)
-import           Data.Maybe                               (mapMaybe)
 
 -- | Data representing the type of a 'CriticalPair'
 data CriticalSequenceType =
@@ -38,7 +40,7 @@ data CriticalSequenceType =
   | ForbidProduce   -- ^ resp. inverted produce-forbid
   deriving (Eq,Show)
 
-type NamedRule morph = (String, Production morph)
+type NamedRule cat morph = (String, Production cat morph)
 type NamedCriticalPairs morph = (String,String,[CriticalSequence morph])
 
 -- | A Critical Sequence is defined as two matches (m1,m2) from the
@@ -104,26 +106,22 @@ getNacIndexOfCriticalSequence cs =
     Nothing      -> Nothing
 
 -- | Returns the Critical Sequences with rule names
-namedCriticalSequences :: (JointlyEpimorphisms morph, DPO morph) => MorphismsConfig -> [NamedRule morph] -> [NamedCriticalPairs morph]
-namedCriticalSequences conf rules =
-  map (uncurry getCSs) [(a,b) | a <- rules, b <- rules]
-  where
-    getCSs (n1,r1) (n2,r2) = (n1, n2, findCriticalSequences conf r1 r2)
+namedCriticalSequences :: (EM'PairFactorizable cat morph, DPO cat morph) => [NamedRule cat morph] -> cat [NamedCriticalPairs morph]
+namedCriticalSequences rules = mapM (uncurry findCriticalSequences') [ (a,b) | a <- rules, b <- rules ]
+  where findCriticalSequences' (n1,r1) (n2,r2) = (n1, n2,) <$> findCriticalSequences r1 r2
 
 -- | Given two productions @p1@ and @p2@, finds the Critical sequences
 -- in which the application of @p1@ enables the application of @p2@
-findTriggeredCriticalSequences :: (JointlyEpimorphisms morph, DPO morph) => MorphismsConfig -> Production morph -> Production morph -> [CriticalSequence morph]
-findTriggeredCriticalSequences conf p1 p2 =
-  findAllProduceUseAndRemoveDangling conf p1 p2 ++
-  findAllDeleteForbid conf p1 p2
+findTriggeredCriticalSequences :: (EM'PairFactorizable cat morph, DPO cat morph) => Production cat morph -> Production cat morph -> cat [CriticalSequence morph]
+findTriggeredCriticalSequences p1 p2 = (++) <$> findAllProduceUseAndRemoveDangling p1 p2 <*> findAllDeleteForbid p1 p2
 
 -- | Given two productions @p1@ and @p2@, it finds all Critical Sequences of @p1@ and @p2@ (in this order)
-findCriticalSequences :: (JointlyEpimorphisms morph, DPO morph) => MorphismsConfig -> Production morph -> Production morph -> [CriticalSequence morph]
-findCriticalSequences conf p1 p2 =
-  findAllProduceUseAndRemoveDangling conf p1 p2 ++
-  findAllDeleteForbid conf p1 p2 ++
-  findAllDeliverDeleteAndDeliverDangling conf p1 p2 ++
-  findAllForbidProduce conf p1 p2
+findCriticalSequences :: (EM'PairFactorizable cat morph, DPO cat morph) => Production cat morph -> Production cat morph -> cat [CriticalSequence morph]
+findCriticalSequences p1 p2 = concat <$> sequence
+    [ findAllProduceUseAndRemoveDangling p1 p2
+    , findAllDeleteForbid p1 p2
+    , findAllDeliverDeleteAndDeliverDangling p1 p2
+    , findAllForbidProduce p1 p2 ]
 
 -- ** Triggering Dependencies
 
@@ -137,13 +135,12 @@ findCriticalSequences conf p1 p2 =
 -- Rule @p1@ causes a produce-use dependency with @p2@
 -- if rule @p1@ creates something that is used by @p2@.
 -- Verify the non existence of h21: L2 -> D1 such that d1 . h21 = m2'.
-findAllProduceUse :: (DPO morph, JointlyEpimorphisms morph) => MorphismsConfig -> Production morph -> Production morph -> [CriticalSequence morph]
-findAllProduceUse conf p1 p2 =
-  map (\m -> CriticalSequence Nothing m Nothing ProduceUse) prodUse
-  where
-    p1' = invertProduction conf p1
-    gluing = findPotentialCriticalPairs conf p1' p2
-    prodUse = filter (isDeleteUse conf p1') gluing
+findAllProduceUse :: (DPO cat morph, EM'PairFactorizable cat morph) => Production cat morph -> Production cat morph -> cat [CriticalSequence morph]
+findAllProduceUse p1 p2 = do
+  let p1' = invertProduction p1
+  matchPairs <- findPotentialCriticalPairs p1' p2
+  dependencies <- filterM (isDeleteUse p1') matchPairs
+  return [ CriticalSequence Nothing m Nothing ProduceUse | m <- dependencies ]
 
 -- *** RemoveDangling
 
@@ -151,25 +148,24 @@ findAllProduceUse conf p1 p2 =
 --
 -- Rule @p1@ causes a remove-dangling dependency with @p2@
 -- if rule @p1@ deletes something that enables @p2@.
-findAllRemoveDangling :: (JointlyEpimorphisms morph, DPO morph) => MorphismsConfig -> Production morph -> Production morph -> [CriticalSequence morph]
-findAllRemoveDangling conf p1 p2 =
-  map (\m -> CriticalSequence Nothing m Nothing RemoveDangling) remDang
-  where
-    p1' = invertProduction conf p1
-    gluing = findPotentialCriticalPairs conf p1' p2
-    remDang = filter (isProduceDangling conf p1' p2) gluing
+findAllRemoveDangling :: (EM'PairFactorizable cat morph, DPO cat morph) => Production cat morph -> Production cat morph -> cat [CriticalSequence morph]
+findAllRemoveDangling p1 p2 = do
+  let p1' = invertProduction p1
+  matchPairs <- findPotentialCriticalPairs p1' p2
+  dependencies <- filterM (isProduceDangling p1' p2) matchPairs
+  return [ CriticalSequence Nothing m Nothing RemoveDangling | m <- dependencies ]
 
 -- ProduceUse and RemoveDangling
 
 -- | Tests ProduceUse and RemoveDangling for the same pairs,
 -- more efficient than deal separately.
-findAllProduceUseAndRemoveDangling :: (JointlyEpimorphisms morph, DPO morph) => MorphismsConfig -> Production morph -> Production morph -> [CriticalSequence morph]
-findAllProduceUseAndRemoveDangling conf p1 p2 =
-  map categorizeDependency dependencies
+findAllProduceUseAndRemoveDangling :: (EM'PairFactorizable cat morph, DPO cat morph) => Production cat morph -> Production cat morph -> cat [CriticalSequence morph]
+findAllProduceUseAndRemoveDangling p1 p2 = do
+  let p1' = invertProduction p1
+  matchPairs <- findPotentialCriticalPairs p1' p2
+  dependencies <- mapM (deleteUseDangling p1' p2) matchPairs
+  return [ categorizeDependency x | Just x <- dependencies ]
   where
-    p1' = invertProduction conf p1
-    gluing = findPotentialCriticalPairs conf p1' p2
-    dependencies = mapMaybe (deleteUseDangling conf p1' p2) gluing
     categorizeDependency x = case x of
       (Left m)  -> CriticalSequence Nothing m Nothing ProduceUse
       (Right m) -> CriticalSequence Nothing m Nothing RemoveDangling
@@ -179,18 +175,12 @@ findAllProduceUseAndRemoveDangling conf p1 p2 =
 -- | All DeleteForbid caused by the derivation of @p1@ before @r@.
 -- Rule @p1@ causes a delete-forbid dependency with @p2@ if
 -- some NAC in @p2@ turns satisfied after the aplication of @p1@
-findAllDeleteForbid :: (DPO morph, JointlyEpimorphisms morph) => MorphismsConfig -> Production morph -> Production morph -> [CriticalSequence morph]
-findAllDeleteForbid conf p1 p2 =
-  concatMap (findDeleteForbidForNAC conf p1' p2) (zip (getNACs p2) [0..])
-  where
-    p1' = invertProduction conf p1
-
--- | Check DeleteForbid for a NAC @n@ in @p2@
-findDeleteForbidForNAC :: (JointlyEpimorphisms morph, DPO morph) => MorphismsConfig -> Production morph -> Production morph -> (morph, Int) -> [CriticalSequence morph]
-findDeleteForbidForNAC conf p1' p2 nac =
-  map
-    (\(m',m,nac) -> CriticalSequence (Just m) m' (Just nac) DeleteForbid)
-    (produceForbidOneNac conf p1' p2 nac)
+findAllDeleteForbid :: (DPO cat morph, EM'PairFactorizable cat morph) => Production cat morph -> Production cat morph -> cat [CriticalSequence morph]
+findAllDeleteForbid p1 p2 = do
+  let p1' = invertProduction p1
+  dependencies <- mapM (produceForbidOneNac p1' p2) $ zip (nacs p2) [0..]
+  return [ CriticalSequence (Just m) m' (Just nac) DeleteForbid
+             | (m', m, nac) <- concat dependencies ]
 
 -- ** Irreversible Dependencies
 
@@ -205,13 +195,12 @@ findDeleteForbidForNAC conf p1' p2 nac =
 -- Rule @p1@ causes a deliver-delete dependency with @p2@ if
 -- rule @p2@ deletes something that is used by @p2@,
 -- Verify the non existence of h12: L1 -> D2 such that d2 . h12 = m1'.
-findAllDeliverDelete :: (DPO morph, JointlyEpimorphisms morph) => MorphismsConfig -> Production morph -> Production morph -> [CriticalSequence morph]
-findAllDeliverDelete conf p1 p2 =
-  map (\m -> CriticalSequence Nothing m Nothing DeliverDelete) delDel
-  where
-    p1' = invertProduction conf p1
-    gluing = findPotentialCriticalPairs conf p1' p2
-    delDel = filter (\(m1,m2) -> isDeleteUse conf p2 (m2,m1)) gluing
+findAllDeliverDelete :: (DPO cat morph, EM'PairFactorizable cat morph) => Production cat morph -> Production cat morph -> cat [CriticalSequence morph]
+findAllDeliverDelete p1 p2 = do
+  let p1' = invertProduction p1
+  matchPairs <- findPotentialCriticalPairs p2 p1'
+  dependencies <- filterM (isDeleteUse p2) matchPairs
+  return [ CriticalSequence Nothing m Nothing DeliverDelete | m <- dependencies ]
 
 -- *** DeliverDangling
 
@@ -219,24 +208,23 @@ findAllDeliverDelete conf p1 p2 =
 --
 -- Rule @p1@ causes a deliver-delete dependency with @p2@ if
 -- rule @p2@ creates something that disables the inverse of @p1@.
-findAllDeliverDangling :: (DPO morph, JointlyEpimorphisms morph) => MorphismsConfig -> Production morph -> Production morph -> [CriticalSequence morph]
-findAllDeliverDangling conf p1 p2 =
-  map (\m -> CriticalSequence Nothing m Nothing DeliverDangling) delDang
-  where
-    p1' = invertProduction conf p1
-    gluing = findPotentialCriticalPairs conf p1' p2
-    delDang = filter (\(m1,m2) -> isProduceDangling conf p2 p1' (m2,m1)) gluing
+findAllDeliverDangling :: (DPO cat morph, EM'PairFactorizable cat morph) => Production cat morph -> Production cat morph -> cat [CriticalSequence morph]
+findAllDeliverDangling p1 p2 = do
+  let p1' = invertProduction p1
+  matchPairs <- findPotentialCriticalPairs p2 p1'
+  dependencies <- filterM (isProduceDangling p2 p1') matchPairs
+  return [ CriticalSequence Nothing m Nothing DeliverDangling | m <- dependencies ]
 
 -- DeliverDelete and DeliverDangling
 
 -- | Tests DeliverDelete and DeliverDangling for the same overlapping pairs
-findAllDeliverDeleteAndDeliverDangling :: (JointlyEpimorphisms morph, DPO morph) => MorphismsConfig -> Production morph -> Production morph -> [CriticalSequence morph]
-findAllDeliverDeleteAndDeliverDangling conf p1 p2 =
-  map categorizeDependency dependencies
+findAllDeliverDeleteAndDeliverDangling :: (EM'PairFactorizable cat morph, DPO cat morph) => Production cat morph -> Production cat morph -> cat [CriticalSequence morph]
+findAllDeliverDeleteAndDeliverDangling p1 p2 = do
+  let p1' = invertProduction p1
+  matchPairs <- findPotentialCriticalPairs p2 p1'
+  dependencies <- mapM (deleteUseDangling p2 p1') matchPairs
+  return [ categorizeDependency x | Just x <- dependencies ]
   where
-    p1' = invertProduction conf p1
-    gluing = findPotentialCriticalPairs conf p1' p2
-    dependencies = mapMaybe (\(m1,m2) -> deleteUseDangling conf p2 p1' (m2,m1)) gluing
     categorizeDependency x = case x of
       (Left m)  -> CriticalSequence Nothing m Nothing DeliverDelete
       (Right m) -> CriticalSequence Nothing m Nothing DeliverDangling
@@ -247,15 +235,10 @@ findAllDeliverDeleteAndDeliverDangling conf p1 p2 =
 --
 -- Rule @p1@ causes a forbid-produce dependency with @p2@ if some
 -- NAC in right of @p1@ turns satisfied after the aplication of @p2@.
-findAllForbidProduce :: (DPO morph, JointlyEpimorphisms morph) => MorphismsConfig -> Production morph -> Production morph -> [CriticalSequence morph]
-findAllForbidProduce conf p1 p2 =
-  concatMap (findForbidProduceForNAC conf p1' p2) (zip (getNACs p1') [0..])
-    where
-      p1' = invertProduction conf p1
+findAllForbidProduce :: (DPO cat morph, EM'PairFactorizable cat morph) => Production cat morph -> Production cat morph -> cat [CriticalSequence morph]
+findAllForbidProduce p1 p2 = do
+  let p1' = invertProduction p1
+  conflicts <- mapM (produceForbidOneNac p1' p2) (zip (nacs p1') [0..])
+  return [ CriticalSequence (Just matches) comatches (Just nac) ForbidProduce
+            | (matches, comatches, nac) <- concat conflicts ]
 
--- | Check ForbidProduce for a NAC @n@ in right of @p1@
-findForbidProduceForNAC :: (JointlyEpimorphisms morph, DPO morph) => MorphismsConfig -> Production morph -> Production morph -> (morph, Int) -> [CriticalSequence morph]
-findForbidProduceForNAC conf p1' p2 nac =
-  map
-    (\(morph,morph',nac) -> CriticalSequence (Just morph) morph' (Just nac) ForbidProduce)
-    (produceForbidOneNac conf p2 p1' nac)
