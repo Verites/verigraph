@@ -18,13 +18,15 @@ This diagram shows objects and morphisms names used in the algorithms below:
 
 q21 : N2 -> P1
 h21 : L2 -> D1
-h21_e1 : L2 -> P1
+m2' : L2 -> P1
 
 prod1 = l1 r1 {n1}
 
 prod2 = l2 r2 {n2}
 -}
-
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 module Abstract.Rewriting.DPO.DiagramAlgorithms (
     isDeleteUse
   , isProduceDangling
@@ -33,125 +35,118 @@ module Abstract.Rewriting.DPO.DiagramAlgorithms (
   , isDeleteForbid
   , deleteUseDangling
   , produceForbidOneNac
-  , findAllPossibleH21
   ) where
 
-import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.FinitaryCategory
-import           Abstract.Category.JointlyEpimorphisms
-import           Abstract.Rewriting.DPO
+
 import           Control.Applicative
-import           Control.Monad
+import           Control.Monad.List
+
+import           Abstract.Category.NewClasses
+import           Abstract.Rewriting.DPO
+import Util.Monad
+
 
 -- | Rule @p1@ is in a delete-use conflict with @p2@ if @p1@ deletes
 -- something that is used by @p2@.
 --
 -- Verifies the non existence of h21: L2 -> D1 such that d1 . h21 = m2
-isDeleteUse :: DPO morph => MorphismsConfig -> Production morph -> (morph,morph) -> Bool
-isDeleteUse conf p1 (m1,m2) = null h21
-  where
-    (_,d1) = calculatePushoutComplement m1 (getLHS p1) --gets only the morphism D1 to G
-    h21 = findAllPossibleH21 conf m2 d1
+isDeleteUse :: forall cat morph. DPO cat morph => Production cat morph -> (morph,morph) -> cat Bool
+isDeleteUse p1 (m1,m2) = do
+  (_,d1) <- calculatePushoutComplementOfRN (leftMorphism p1) m1 --gets only the morphism D1 to G
+  h21 <- findCospanCommuters (matchMorphism @cat) m2 d1
+  return (null h21)
 
-isProduceUse :: DPO morph => MorphismsConfig -> Production morph -> (morph,morph) -> Bool
-isProduceUse conf p1 (m1',m2) = null h21
-  where
-    (_,e1) = calculatePushoutComplement m1' (getRHS p1) --gets only the morphism D1 to G
-    h21 = findAllPossibleH21 conf m2 e1
+isProduceUse :: forall cat morph. DPO cat morph => Production cat morph -> (morph,morph) -> cat Bool
+isProduceUse p1 (m1',m2) = do
+  (_,e1) <- calculatePushoutComplementOfRN (rightMorphism p1) m1' --gets only the morphism D1 to G
+  h21 <- findCospanCommuters (matchMorphism @cat) m2 e1
+  return (null h21)
 
 -- Runs the DPO rewriting on p1 with m1 and
 -- returns h21 and h21_e1 morphism as diagram above
-getH21fromRewriting :: DPO morph => MorphismsConfig -> Production morph -> morph -> morph -> ([morph], morph)
-getH21fromRewriting conf p1 m1 m2 = (h21,h21_e1)
-  where
-    (k1,d1) = calculatePushoutComplement m1 (getLHS p1)
-    (_,e1) = calculatePushout k1 (getRHS p1)
-    h21 = findAllPossibleH21 conf m2 d1
-    h21_e1 = e1 <&> head h21 --h21 is unique if it exists
+getM2AfterRewriting :: forall cat morph. DPO cat morph => Production cat morph -> morph -> morph -> cat (Maybe morph)
+getM2AfterRewriting p1 m1 m2 = do
+  (k1, d1) <- calculatePushoutComplementOfRN (leftMorphism p1) m1 
+  (_, e1) <- calculatePushoutAlongRN (rightMorphism p1) k1
+  h21Candidates <- findCospanCommuters (matchMorphism @cat) m2 d1
+  return $ case h21Candidates of
+    [] -> Nothing
+    [h21] -> Just (e1 <&> h21) --h21 is unique if it exists
+    _ -> error "getH21FromRewriting: non-unique h21"
 
 -- | Rule @p1@ is in a produce-dangling conflict with @p2@ if @p1@
 -- produces something that disables @p2@.
 --
 -- Gets the match of @p1@ from L2 to P1, checks if satisfiesNACs and not satisfiesGluingConditions
-isProduceDangling :: DPO morph => MorphismsConfig -> Production morph -> Production morph -> (morph,morph) -> Bool
-isProduceDangling conf p1 p2 (m1,m2) =
-  let (h21,h21_e1) = getH21fromRewriting conf p1 m1 m2
-  in not (null h21) && not (satisfiesGluingConditions conf p2 h21_e1) && satisfiesNACs conf p2 h21_e1
+isProduceDangling :: DPO cat morph => Production cat morph -> Production cat morph -> (morph,morph) -> cat Bool
+isProduceDangling p1 p2 (m1,m2) = do
+  maybeM2' <- getM2AfterRewriting p1 m1 m2
+  case maybeM2' of
+    Nothing -> return False
+    Just m2' -> (not <$> satisfiesGluingConditions p2 m2') `andM` satisfiesNACs p2 m2'
 
-isProduceForbid :: (DPO morph) => MorphismsConfig -> Production morph -> Production morph -> (morph,morph) -> Bool
-isProduceForbid conf p1 p2 (m1,m2) =
-  let (h21,h21_e1) = getH21fromRewriting conf p1 m1 m2
-  in not (null h21) && satisfiesGluingConditions conf p2 h21_e1 && not (satisfiesNACs conf p2 h21_e1)
+isProduceForbid :: DPO cat morph => Production cat morph -> Production cat morph -> (morph,morph) -> cat Bool
+isProduceForbid p1 p2 (m1,m2) = do
+  maybeM2' <- getM2AfterRewriting p1 m1 m2
+  case maybeM2' of
+    Nothing -> return False
+    Just m2' -> satisfiesGluingConditions p2 m2' `andM` (not <$> satisfiesNACs p2 m2')
 
-isDeleteForbid :: DPO morph => MorphismsConfig -> Production morph -> Production morph -> (morph,morph) -> Bool
-isDeleteForbid conf p1 p2 (m1',m2) =
-  let
-    validRewriting = hasPushoutComplement (Monomorphism, m1') (Monomorphism, getRHS p1)
-    (k1,e1) = calculatePushoutComplement m1' (getRHS p1)
-    h21 = findAllPossibleH21 conf m2 e1
-    (_,d1) = calculatePushout k1 (getLHS p1)
-    h21_d1 = d1 <&> head h21
-  in validRewriting && not (null h21) && satisfiesGluingConditions conf p2 h21_d1 && not (satisfiesNACs conf p2 h21_d1)
-
--- | Given the morphisms @m2: L2 -> G@ and @d1 : D1 -> G@, finds all possible @h21 : L2 -> D1@
--- where m2 = h21 . d1
-findAllPossibleH21 :: DPO morph => MorphismsConfig -> morph -> morph -> [morph]
-findAllPossibleH21 conf m2 d1 =
-  if length h21 > 1
-    then error "produceDangling: non unique h21 morphism"
-    else h21
-  where
-    morphismRestriction = matchRestriction conf
-    h21 = findCospanCommuter morphismRestriction m2 d1
+isDeleteForbid :: forall cat morph. DPO cat morph => Production cat morph -> Production cat morph -> (morph,morph) -> cat Bool
+isDeleteForbid p1 p2 (m1',m2') = do
+  hasRewriting <- hasPushoutComplementOfRN (rightMorphism p1) m1'
+  if not hasRewriting
+    then return False
+    else do
+      (k1, e1) <- calculatePushoutComplementOfRN (rightMorphism p1) m1'
+      (_, d1) <- calculatePushoutAlongRN k1 (leftMorphism p1)
+      h21Candidates <- findCospanCommuters (matchMorphism @cat) m2' e1
+      let m2 = d1 <&> head h21Candidates
+      (return . not $ null h21Candidates) `andM` satisfiesGluingConditions p2 m2 `andM` (not <$> satisfiesNACs p2 m2)
 
 -- | Verifies delete-use, if false verifies produce-dangling.
 -- Returns Left in the case of delete-use and Right for produce-dangling.
-deleteUseDangling :: DPO morph => MorphismsConfig -> Production morph -> Production morph -> (morph,morph)-> Maybe (Either (morph,morph) (morph,morph))
-deleteUseDangling conf p1 p2 (m1,m2) =
-  case (null h21, dangling) of
-    (True,_)     -> Just (Left (m1,m2))  -- delete use case
-    (False,True) -> Just (Right (m1,m2)) -- produce dangling case
-    _            -> Nothing              -- free overlap case
-  where
-    (h21,h21_e1) = getH21fromRewriting conf p1 m1 m2
-    dangling = not (satisfiesGluingConditions conf p2 h21_e1) && satisfiesNACs conf p2 h21_e1
+deleteUseDangling :: DPO cat morph => Production cat morph -> Production cat morph -> (morph,morph)-> cat (Maybe (Either (morph,morph) (morph,morph)))
+deleteUseDangling p1 p2 (m1,m2) = do
+  maybeM2' <- getM2AfterRewriting p1 m1 m2
+  case maybeM2' of
+    Nothing -> return $ Just (Left (m1,m2)) -- delete use case
+    Just m2' -> do
+      hasProduceDangling <- (not <$> satisfiesGluingConditions p2 m2') `andM` satisfiesNACs p2 m2'
+      if hasProduceDangling 
+        then return $ Just (Right (m1,m2))
+        else return Nothing
 
 -- | Rule @p1@ is in a produce-forbid conflict with @p2@ if @p1@
 -- produces something that enables some nac of @p2@.
 --
 -- Checks produce-forbid for a NAC @n@ in @p2@
-produceForbidOneNac :: (JointlyEpimorphisms morph, DPO morph) => MorphismsConfig -> Production morph
-                    -> Production morph -> (morph, Int) -> [((morph,morph), (morph,morph), (morph,Int))]
-produceForbidOneNac conf p1 p2 (n2,idx) = do
-  let p1' = invertProduction conf p1
+produceForbidOneNac :: forall cat morph. (DPO cat morph, EM'PairFactorizable cat morph) => Production cat morph
+                    -> Production cat morph -> (morph, Int) -> cat [((morph,morph), (morph,morph), (morph,Int))]
+produceForbidOneNac p1 p2 (n2,idx) = runListT $ do
+  let p1' = invertProduction p1
 
   -- Pick a jointly epi pair /R1 -m1'-> P1 <-q21- N2/
-  (m1', q21) <- createJointlyEpimorphicPairsFromNAC conf (codomain $ getRHS p1) n2
+  (m1', q21) <- pickOne $ findJointlyEpicPairs (matchMorphism @cat, rightObject p1) (monic @cat, codomain n2)
 
   -- Reconstruct the match /m1/ that would lead to this pair
-  guard (satisfiesRewritingConditions conf p1' m1')
-  let (k1, m1, e1, d1) = calculateDPO m1' p1'
-  guard (satisfiesNACs conf p1 m1)
+  guardM (satisfiesRewritingConditions p1' m1')
+  (k1, m1, _, d1) <- lift $ calculateDPO m1' p1'
+  guardM (satisfiesNACs p1 m1)
 
   -- Look for morphisms /h21 : L2 -> D1/
-  let h21Candidates = findMorphisms' conf (domain n2) (codomain k1)
-      composeNQ21 = q21 <&> n2
-
-  case filter (\h21 -> e1 <&> h21 == composeNQ21) h21Candidates of
+  let m2' = q21 <&> n2
+  h21Candidates <- lift $ findCospanCommuters (matchMorphism @cat) m2' k1
+  case h21Candidates of
     [] ->
       -- No proper h21, so no produce-forbid conflict
       empty
 
     [h21] -> do
       let m2 = d1 <&> h21
-          m2' = e1 <&> h21
-      guard (satisfiesRewritingConditions conf p2 m2)
+      guardM (satisfiesRewritingConditions p2 m2)
 
       -- There is h21 and the match m2 is valid, so there is a conflict
       return ((m1, m2), (m1', m2'), (q21, idx))
 
     _ -> error "produceForbidOneNac: h21 should be unique, but isn't"
-
-findMorphisms' :: FindMorphism morph => MorphismsConfig -> Obj morph -> Obj morph -> [morph]
-findMorphisms' conf =
-  findMorphisms (matchRestriction conf)

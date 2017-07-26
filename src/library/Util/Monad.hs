@@ -1,5 +1,8 @@
 module Util.Monad where
 
+import Control.Monad
+import Control.Monad.List
+import Control.Applicative
 
 andM :: Monad m => m Bool -> m Bool -> m Bool
 andM mp mq = do
@@ -17,3 +20,9 @@ allM test (x:xs) = do
   result <- test x
   if result then allM test xs else return False
   
+
+pickOne :: Monad m => m [a] -> ListT m a
+pickOne = ListT
+
+guardM :: (Monad m, MonadTrans t, Monad (t m), Alternative (t m)) => m Bool -> t m ()
+guardM test = lift test >>= guard

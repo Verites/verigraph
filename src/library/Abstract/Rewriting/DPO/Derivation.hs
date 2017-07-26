@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 module Abstract.Rewriting.DPO.Derivation
 ( Derivation(..)
 , generateDerivation
@@ -9,11 +11,11 @@ module Abstract.Rewriting.DPO.Derivation
 
 where
 
-import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category.NewClasses
 import           Abstract.Rewriting.DPO
 
-data Derivation morph = Derivation
-  { production :: Production morph
+data Derivation cat morph = Derivation
+  { production :: Production cat morph
   , match      :: morph
   , comatch    :: morph
   , gluing     :: morph
@@ -21,35 +23,37 @@ data Derivation morph = Derivation
   , dToH       :: morph
   } deriving (Eq, Show, Read)
 
-generateDerivationUnsafe :: (DPO morph) => morph -> Production morph -> Derivation morph
-generateDerivationUnsafe morph p = Derivation p morph n k f g
-  where
-    (k,n,f,g) = calculateDPO morph p
+generateDerivationUnsafe :: (DPO cat morph) => morph -> Production cat morph -> cat (Derivation cat morph)
+generateDerivationUnsafe morph p = do
+  (k,n,f,g) <- calculateDPO morph p
+  return (Derivation p morph n k f g)
 
 -- | Given a match @m@ and a production @p@, it returns @Just d@, where @d@ is the corresponding Derivation if @m@ satisfies the rewriting conditions, or @Nothing@.
-generateDerivation :: (DPO morph) => MorphismsConfig -> morph -> Production morph -> Maybe (Derivation morph)
-generateDerivation conf morph p =
-  if satisfiesRewritingConditions conf p morph then
-     Just (generateDerivationUnsafe morph p)
-  else Nothing
+generateDerivation :: DPO cat morph => morph -> Production cat morph -> cat (Maybe (Derivation cat morph))
+generateDerivation morph p = do
+  canRewrite <- satisfiesRewritingConditions p morph
+  if canRewrite then
+    Just <$> generateDerivationUnsafe morph p
+  else
+    return Nothing
 
-getDObjects :: (DPO morph) =>  [Derivation morph] -> [Obj morph]
+getDObjects :: DPO cat morph =>  [Derivation cat morph] -> [Obj cat]
 getDObjects = fmap (domain . dToG)
 
-getLeftBottomMorphisms :: [Derivation morph] -> [morph]
+getLeftBottomMorphisms :: [Derivation cat morph] -> [morph]
 getLeftBottomMorphisms = fmap dToG
 
-getRightBottomMorphisms :: [Derivation morph] -> [morph]
+getRightBottomMorphisms :: [Derivation cat morph] -> [morph]
 getRightBottomMorphisms = fmap dToH
 
-getBottomObjects :: (DPO morph) => Derivation morph -> (Obj morph,Obj morph,Obj morph)
+getBottomObjects :: DPO cat morph => Derivation cat morph -> (Obj cat,Obj cat,Obj cat)
 getBottomObjects d =
   let l = codomain . dToG
       k =   domain . dToG
       r = codomain . dToH
    in (l d, k d, r d)
 
-getAllBottomObjects :: (DPO morph) => [Derivation morph] -> [Obj morph]
+getAllBottomObjects :: DPO cat morph => [Derivation cat morph] -> [Obj cat]
 getAllBottomObjects []     = error "can not return objects of an empty derivation"
 getAllBottomObjects [d]    = (\(a,b,c) -> [a,b,c]) $ getBottomObjects d
 getAllBottomObjects (d:ds) = (\(a,b,_) -> [a,b]) (getBottomObjects d) ++ getAllBottomObjects ds
