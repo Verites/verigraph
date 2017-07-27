@@ -24,7 +24,7 @@ class (Monad cat, Eq morph) => Category cat morph | cat -> morph, morph -> cat w
   codomain :: morph -> Obj cat
 
   -- | Data type defining the different classes of morphism for this category.
-  type MorphismClass cat :: *
+  data MorphismClass cat :: *
   -- | Class containing all morphisms of the category.
   anyMorphism :: MorphismClass cat
   -- | Class containing all monomorphisms of the category.
