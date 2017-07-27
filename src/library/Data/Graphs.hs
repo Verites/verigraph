@@ -79,10 +79,12 @@ module Data.Graphs (
     , newEdges
 ) where
 
-import           Base.Cardinality
-import           Base.Valid
+import Control.Monad
 import           Data.List
 import           Data.Maybe       (fromJust, fromMaybe)
+
+import           Base.Cardinality
+import           Base.Valid
 import           Util.List
 
 
@@ -547,12 +549,9 @@ getIncomingEdges :: Graph n e -> NodeId -> [EdgeId]
 getIncomingEdges g n = filter (\e -> targetOf g e == Just n) (edgeIds g)
 
 
-instance Valid (Graph n e) where
-    validate graph =
-      mconcat $ map validateEdge (edgeMap graph)
-      where
-        validateEdge (edge, Edge _ src tgt _) =
-          mconcat
-            [ ensure (isNodeOf graph src) ("Source node #" ++ show src ++ " of edge #" ++ show edge ++ " is not a member of the graph")
-            , ensure (isNodeOf graph tgt) ("Target node #" ++ show src ++ " of edge #" ++ show edge ++ " is not a member of the graph")
-            ]
+instance Monad m => Valid m (Graph n e) where
+    validator graph =
+      forM_ (edgeMap graph) $ \(edgeId, Edge _ src tgt _) ->
+        withContext ("edge #" ++ show edgeId) $ do
+          ensure (isNodeOf graph src) ("Source node #" ++ show src ++ " is not a member of the graph")
+          ensure (isNodeOf graph tgt) ("Target node #" ++ show tgt ++ " is not a member of the graph")

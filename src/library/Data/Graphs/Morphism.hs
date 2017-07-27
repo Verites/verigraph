@@ -271,22 +271,19 @@ createNodeOnCodomain n2 gm =
      , nodeRelation = R.insertOnCodomain n2 (nodeRelation gm)
      }
 
-
-instance Valid (GraphMorphism a b) where
-    validate morphism@(GraphMorphism dom cod nodeMap edgeMap) =
-      mconcat
-        [ withContext "domain" (validate dom)
-        , withContext "codomain" (validate cod)
-        , ensure (R.isFunctional nodeMap) "The relation of nodes is not functional"
-        , ensure (R.isTotal nodeMap) "The function of nodes is not total on its domain"
-        , ensure (R.isFunctional edgeMap) "The relation of edges is not functional"
-        , ensure (R.isTotal edgeMap) "The function of edges is not total on its domain"
-        , ensure incidencePreserved "The morphism doesn't preserve incidence/adjacency"
-        ]
+-- TODO: allow partial morphisms in general, forbid then on the category of graphs and total graph morphisms
+instance {-# OVERLAPPABLE #-} Monad m => Valid m (GraphMorphism a b) where
+    validator morphism@(GraphMorphism dom cod nodeMap edgeMap) = do
+      withContext "domain" (validator dom)
+      withContext "codomain" (validator cod)
+      ensure (R.isFunctional nodeMap) "the relation of nodes is not functional"
+      ensure (R.isTotal nodeMap) "the function of nodes is not total on its domain"
+      ensure (R.isFunctional edgeMap) "the relation of edges is not functional"
+      ensure (R.isTotal edgeMap) "the function of edges is not total on its domain"
+      ensure incidencePreserved "the morphism doesn't preserve incidence/adjacency"
       where
-        incidencePreserved =
-          all
-            (\e@(Edge _ domSrc domTgt _) ->
-                (Just . sourceId =<< applyEdge morphism e) == applyNodeId morphism domSrc
-             && (Just . targetId =<< applyEdge morphism e) == applyNodeId morphism domTgt)
-            (G.edges dom)
+        incidencePreserved = all
+          (\e@(Edge _ domSrc domTgt _) ->
+              (Just . sourceId =<< applyEdge morphism e) == applyNodeId morphism domSrc
+            && (Just . targetId =<< applyEdge morphism e) == applyNodeId morphism domTgt)
+          (G.edges dom)
