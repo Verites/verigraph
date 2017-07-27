@@ -3,6 +3,7 @@ module Util.Monad where
 import Control.Monad
 import Control.Monad.List
 import Control.Applicative
+import Data.Maybe (catMaybes)
 
 andM :: Monad m => m Bool -> m Bool -> m Bool
 andM mp mq = do
@@ -31,3 +32,9 @@ pickOne = ListT
 
 guardM :: (Monad m, MonadTrans t, Monad (t m), Alternative (t m)) => m Bool -> t m ()
 guardM test = lift test >>= guard
+
+concatMapM :: (Monad m, Traversable t) => (a -> m [b]) -> t a -> m [b]
+concatMapM f = fmap concat . mapM f
+
+mapMaybeM :: Monad m => (a -> m (Maybe b)) -> [a] -> m [b]
+mapMaybeM f = fmap catMaybes . mapM f

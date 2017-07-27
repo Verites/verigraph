@@ -157,7 +157,7 @@ class (LRNAdhesive cat morph, FindMorphism cat morph) => DPO cat morph where
 
   -- | Given a production /L ←l- K -r→ R/ and a NAC morphism /n : L -> N/, obtain
   -- a set of NACs /n'i : R -> N'i/ that is equivalent to the original NAC.
-  shiftNacOverProduction :: Production cat morph -> morph -> [morph]
+  shiftNacOverProduction :: Production cat morph -> morph -> cat [morph]
 
 -- | Obtain all matches from the production into the given object, even if they
 -- aren't applicable.

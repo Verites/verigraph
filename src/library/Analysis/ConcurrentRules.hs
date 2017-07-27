@@ -1,91 +1,99 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 module Analysis.ConcurrentRules
 ( CRDependencies (..),
   allConcurrentRules,
   maxConcurrentRules
 ) where
 
-import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.FinitaryCategory
-import           Abstract.Category.JointlyEpimorphisms
+import Control.Monad
+
+import           Abstract.Category.NewClasses
+import           Abstract.Constraint
 import           Abstract.Rewriting.DPO
 import           Analysis.CriticalSequence             (findTriggeredCriticalSequences,
                                                         getCriticalSequenceComatches)
 import           Base.Cardinality
-import           Base.Valid
-import           Data.Maybe                            (mapMaybe)
+import Util.Monad
 
 data CRDependencies = AllOverlapings | OnlyDependency
 
 -- | Generates the Concurrent Rules for a given list of Productions following the order of the elements in the list.
-allConcurrentRules :: (DPO morph, JointlyEpimorphisms morph, Eq (Obj morph), Valid morph) => CRDependencies -> MorphismsConfig
-                    -> [Constraint morph] -> [Production morph] -> [Production morph]
-allConcurrentRules _ _ _ [] = []
-allConcurrentRules _ _ _ [x] = [x]
-allConcurrentRules dep conf constraints (x:xs) = concatMap (crs x) (allCRs xs)
-  where
-    crs = concurrentRules dep conf constraints
-    allCRs = allConcurrentRules dep conf constraints
+allConcurrentRules :: (DPO cat morph, EM'PairFactorizable cat morph, Eq (Obj cat)) => CRDependencies
+                    -> [Constraint cat morph] -> [Production cat morph] -> cat [Production cat morph]
+allConcurrentRules _ _ [] = return []
+allConcurrentRules _ _ [r] = return [r]
+allConcurrentRules dep constraints (r:rs) = do
+  concurrentRulesOfRest <- allConcurrentRules dep constraints rs
+  concatMapM (concurrentRules dep constraints r) concurrentRulesOfRest
 
 -- | Generates the Concurrent Rules with the least disjoint JointlyEpimorphisms (JointlyEpimorphisms with the least cardinality) for a given list of Productions
 -- (following the order of the elements in the list).
-maxConcurrentRules :: (DPO morph, JointlyEpimorphisms morph, Eq (Obj morph), Valid morph, Cardinality (Obj morph))
-                  => CRDependencies -> MorphismsConfig -> [Constraint morph] -> [Production morph] -> [Production morph]
-maxConcurrentRules _ _ _ [] = []
-maxConcurrentRules _ _ _ [r] = [r]
-maxConcurrentRules dep conf constraints (r:rs) = concat $ concatRule r (maxConcurrentRules dep conf constraints rs)
-  where
-    concatRule rule subMaxRule = case subMaxRule of
-      [] -> []
-      xs -> map (maxConcurrentRuleForLastPairs dep conf constraints rule) xs
+maxConcurrentRules :: (DPO cat morph, EM'PairFactorizable cat morph, Eq (Obj cat), Cardinality (Obj cat))
+                  => CRDependencies -> [Constraint cat morph] -> [Production cat morph] -> cat [Production cat morph]
+maxConcurrentRules _ _ [] = return []
+maxConcurrentRules _ _ [r] = return [r]
+maxConcurrentRules dep constraints (r:rs) = do
+  maxConcurrentRulesOfRest <- maxConcurrentRules dep constraints rs
+  concatMapM (maxConcurrentRuleForLastPairs dep constraints r) maxConcurrentRulesOfRest
 
-concurrentRules :: (DPO morph, JointlyEpimorphisms morph) => CRDependencies -> MorphismsConfig -> [Constraint morph] -> Production morph -> Production morph -> [Production morph]
-concurrentRules dep conf constraints c n =
-  let epiPairs = epiPairsForConcurrentRule dep conf constraints c n
-  in mapMaybe (concurrentRuleForPair conf constraints c n) epiPairs
+concurrentRules :: (DPO cat morph, EM'PairFactorizable cat morph) => CRDependencies -> [Constraint cat morph] -> Production cat morph -> Production cat morph -> cat [Production cat morph]
+concurrentRules dep constraints c n = do
+  epiPairs <- epiPairsForConcurrentRule dep constraints c n
+  mapMaybeM (concurrentRuleForPair constraints c n) epiPairs
 
-maxConcurrentRuleForLastPairs :: (DPO morph, JointlyEpimorphisms morph, Cardinality (Obj morph)) => CRDependencies -> MorphismsConfig -> [Constraint morph] ->
-  Production morph -> Production morph -> [Production morph]
-maxConcurrentRuleForLastPairs dep conf constraints c n =
-  let epiPairs = epiPairsForConcurrentRule dep conf constraints c n
-      maxPair = last (epiPairsForConcurrentRule dep conf constraints c n)
-      sizeOfMaxPair = cardinality $ codomain (fst maxPair)
-      maxPairs = filter (\(e,_) -> cardinality (codomain e) == sizeOfMaxPair) epiPairs
-      maxRule = if null epiPairs
-        then []
-        else mapMaybe (concurrentRuleForPair conf constraints c n) maxPairs
-  in maxRule
+maxConcurrentRuleForLastPairs :: (DPO cat morph, EM'PairFactorizable cat morph, Cardinality (Obj cat)) => CRDependencies -> [Constraint cat morph] ->
+  Production cat morph -> Production cat morph -> cat [Production cat morph]
+maxConcurrentRuleForLastPairs dep constraints c n = do
+  epiPairs <- epiPairsForConcurrentRule dep constraints c n
+  if null epiPairs
+    then return []
+    else do
+      let maxPair = last epiPairs
+          sizeOfMaxPair = sizeOfPair maxPair
+          maxPairs = filter (\pair -> sizeOfPair pair == sizeOfMaxPair) epiPairs
+      mapMaybeM (concurrentRuleForPair constraints c n) maxPairs
+  where sizeOfPair = cardinality . codomain . fst
 
-epiPairsForConcurrentRule :: (DPO morph, JointlyEpimorphisms morph)
-  => CRDependencies -> MorphismsConfig -> [Constraint morph] -> Production morph -> Production morph -> [(morph,morph)]
+epiPairsForConcurrentRule :: forall cat morph. (DPO cat morph, EM'PairFactorizable cat morph)
+  => CRDependencies -> [Constraint cat morph] -> Production cat morph -> Production cat morph -> cat [(morph,morph)]
 -- it only considers triggered dependencies because is the most intuitive and natural behaviour expected until now.
-epiPairsForConcurrentRule OnlyDependency conf constraints c n =
-  let dependencies = map getCriticalSequenceComatches (findTriggeredCriticalSequences conf c n)
-      validDependency (lp, _) = satisfiesAllConstraints (codomain lp) constraints
-  in filter validDependency dependencies
+epiPairsForConcurrentRule OnlyDependency constraints c n = do
+  dependencies <- map getCriticalSequenceComatches <$> findTriggeredCriticalSequences c n
+  filterM validDependency dependencies
+  where validDependency (lp, _) = satisfiesAllConstraints (codomain lp) constraints
 
-epiPairsForConcurrentRule AllOverlapings conf constraints c n =
-  let matchInj = matchRestriction conf == Monomorphism
-      allPairs = createJointlyEpimorphicPairs matchInj (codomain (getRHS c)) (codomain (getLHS n))
-      isValidPair (lp, rp) = satisfiesAllConstraints (codomain lp) constraints &&
-        satisfiesGluingConditions conf (invertProductionWithoutNacs c) lp && satisfiesRewritingConditions conf n rp
-  in filter isValidPair allPairs
+epiPairsForConcurrentRule AllOverlapings constraints c n = do
+  matchPairs <- findJointlyEpicPairs (matchMorphism @cat, rightObject c) (matchMorphism @cat, leftObject n)
+  filterM isValidPair matchPairs
+  where isValidPair (lp, rp) =
+          satisfiesAllConstraints (codomain lp) constraints 
+          `andM` satisfiesGluingConditions (invertProductionWithoutNacs c) lp
+          `andM` satisfiesRewritingConditions n rp
 
-concurrentRuleForPair :: (DPO morph, JointlyEpimorphisms morph) => MorphismsConfig -> [Constraint morph] -> Production morph -> Production morph -> (morph,morph) -> Maybe (Production morph)
-concurrentRuleForPair conf constraints c n pair = if invalidSides then Nothing else Just (buildProduction l r (dmc ++ lp))
+concurrentRuleForPair :: forall cat morph. (DPO cat morph, EM'PairFactorizable cat morph) => [Constraint cat morph] -> Production cat morph -> Production cat morph -> (morph,morph) -> cat (Maybe (Production cat morph))
+concurrentRuleForPair constraints c n pair = do
+  pocC <- calculatePushoutComplementOfRN (rightMorphism c) (fst pair)
+  pocN <- calculatePushoutComplementOfRN (leftMorphism n) (snd pair)
+
+  poC <- calculatePushoutAlongRN (leftMorphism c) (fst pocC)
+  poN <- calculatePushoutAlongRN (rightMorphism n) (snd pocN)
+  pb <- calculatePullbackAlongR (snd pocC) (snd pocN)
+
+  let l = snd poC <&> fst pb
+  let r = snd poN <&> snd pb
+  
+  dmc <- filterM validNac =<< concatMapM (nacDownwardShift (fst poC)) (nacs c)
+
+  let inverseP = buildProduction (snd pocC) (snd poC) []
+  den <- filterM validNac =<< concatMapM (nacDownwardShift (snd pair)) (nacs n)
+  lp <- filterM validNac =<< concatMapM (shiftNacOverProduction inverseP) den
+
+  invalidSides <- matchMorphism @cat `isSubclassOf` monic @cat `andM`
+      (not <$> satisfiesAllConstraints (codomain l) constraints `andM` satisfiesAllConstraints (codomain r) constraints)
+  return $ if invalidSides then Nothing else Just (buildProduction l r (dmc ++ lp))
   where
-    pocC = calculatePushoutComplement (fst pair) (getRHS c)
-    pocN = calculatePushoutComplement (snd pair) (getLHS n)
-    poC = calculatePushout (fst pocC) (getLHS c)
-    poN = calculatePushout (fst pocN) (getRHS n)
-    pb = calculatePullback (snd pocC) (snd pocN)
-    l = snd poC <&> fst pb
-    r = snd poN <&> snd pb
-    dmc = filter validNac $ concatMap (nacDownwardShift conf (fst poC)) (getNACs c)
-    inverseP = buildProduction (snd pocC) (snd poC) []
-    den = filter validNac $ concatMap (nacDownwardShift conf (snd pair)) (getNACs n)
-    lp = filter validNac $ concatMap (shiftNacOverProduction conf inverseP) den
     -- Filters that are not in the default algorithm, useful when dealing with injective morphisms only
-    validNac nac = matchRestriction conf /= Monomorphism || satisfiesAllConstraints (codomain nac) constraints
-    invalidSides = matchRestriction conf == Monomorphism &&
-      (not (satisfiesAllConstraints (codomain l) constraints) || not (satisfiesAllConstraints (codomain r) constraints))
+    validNac :: morph -> cat Bool
+    validNac nac = (not <$> matchMorphism @cat `isSubclassOf` monic @cat) `orM` satisfiesAllConstraints (codomain nac) constraints

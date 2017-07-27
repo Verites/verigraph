@@ -37,6 +37,9 @@ class (Monad cat, Eq morph) => Category cat morph | cat -> morph, morph -> cat w
   -- | Check if a given morphism belongs to the given class of morphisms.
   belongsToClass :: morph -> MorphismClass cat -> cat Bool
 
+  -- | Check if all morphisms of the first class belong also to the second class.
+  isSubclassOf :: MorphismClass cat -> MorphismClass cat -> cat Bool
+
 -- | Check if a given morphism is monic.
 isMonic :: forall cat morph. Category cat morph => morph -> cat Bool
 isMonic = (`belongsToClass` monic @cat)
