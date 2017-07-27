@@ -44,7 +44,7 @@ Besides that, rule names in agg must follow this form: 2rule_(left|right|nacid)_
 The translation from first-order rules in the SPO to DPO is straightforward,
 and additionally with object name maps, all second-order rule can be instantiated.
 -}
-
+{-# LANGUAGE ScopedTypeVariables #-}
 module XML.ParseSndOrderRule (
     parseSndOrderRules
   , getLeftObjNameMapping
@@ -143,13 +143,14 @@ groupRules rules =
 
 -- TODO: replace applyNodeUnsafe for getNodeType?
 -- | Given a morphism from some graph in the rule left to nac extracts the mapping
-getObjectNacNameMorph :: GraphMorphism a b -> ([Mapping], [Mapping])
+getObjectNacNameMorph :: forall a b. GraphMorphism a b -> ([Mapping], [Mapping])
 getObjectNacNameMorph m = (nodesMap m, edgesMap m)
   where
     adjustNonMono = parseNonMonoObjNames . group . sort
     nodesMap = adjustNonMono . getMap GM.applyNodeIdUnsafe . nodeIds . domain
     edgesMap = adjustNonMono . getMap GM.applyEdgeIdUnsafe . edgeIds . domain
 
+    getMap :: Show c => (GraphMorphism a b -> c -> c) -> [c] -> [(String, Maybe d, String)]
     getMap f = map (\e -> (show (f m e), Nothing, show e))
     group = groupBy (\(x,_,_) (y,_,_) -> x == y)
     sort = sortBy (\(x,_,_) (y,_,_) -> compare x y)
@@ -179,9 +180,10 @@ parseNonMonoObjNames (x:xs) = (a,b,newObjName) : parseNonMonoObjNames xs
 
 -- | Given two morphisms with the same domain, maps the codomain of both according to the interface (domain graph)
 -- Used to translate DPO in verigraph to SPO in ggx
-getObjectNameMorphism :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [Mapping]
+getObjectNameMorphism :: forall a b. TypedGraphMorphism a b -> TypedGraphMorphism a b -> [Mapping]
 getObjectNameMorphism left right = nodesMap ++ edgesMap
   where
     nodesMap = getMap TGM.applyNodeIdUnsafe (nodeIdsFromDomain left)
     edgesMap = getMap TGM.applyEdgeIdUnsafe (edgeIdsFromDomain left)
+    getMap :: Show c => (TypedGraphMorphism a b -> c -> c) -> [c] -> [(String, Maybe d, String)]
     getMap f = map (\e -> (show (f right e), Nothing, show (f left e)))
