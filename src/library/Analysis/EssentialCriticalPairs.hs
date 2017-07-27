@@ -6,74 +6,63 @@ pairs between two productions. The essential critical pairs are
 classified with 'CriticalPairType', but each pair can be only a
 'DeleteUse'.
 -}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TupleSections #-}
 module Analysis.EssentialCriticalPairs
  ( namedEssentialCriticalPairs,
    findAllEssentialDeleteUse
    ) where
 
-import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.FinitaryCategory
-import           Abstract.Category.JointlyEpimorphisms
+import Control.Monad
+
+import           Abstract.Category.NewClasses
 import           Abstract.Rewriting.DPO
 import           Analysis.CriticalPairs
+import Util.Monad
 
-type NamedRule morph = (String, Production morph)
-type NamedCriticalPairs morph = (String,String,[CriticalPair morph])
+type NamedRule cat morph = (String, Production cat morph)
+type NamedCriticalPairs morph = (String,String, [CriticalPair morph])
 
 -- | Returns the Essential Critical Pairs with rule names
-namedEssentialCriticalPairs :: (JointlyEpimorphisms morph, DPO morph) =>
-  MorphismsConfig -> [NamedRule morph] -> [NamedCriticalPairs morph]
-namedEssentialCriticalPairs conf namedRules =
-  map (uncurry getCPs) [(a,b) | a <- namedRules, b <- namedRules]
-    where
-      getCPs (n1,r1) (n2,r2) =
-        (n1, n2, findEssentialCriticalPairs conf r1 r2)
+namedEssentialCriticalPairs :: (EM'PairFactorizable cat morph, DPO cat morph, Complete cat morph, InitialPushout cat morph) =>
+  [NamedRule cat morph] -> cat [NamedCriticalPairs morph]
+namedEssentialCriticalPairs namedRules =
+  mapM (uncurry findEssentialCriticalPairs') [ (a,b) | a <- namedRules, b <- namedRules ]
+    where findEssentialCriticalPairs' (n1,r1) (n2,r2) = (n1, n2,) <$> findEssentialCriticalPairs r1 r2
 
 -- | Finds all Essential Critical Pairs between two given Productions
-findEssentialCriticalPairs :: (JointlyEpimorphisms morph, DPO morph) =>
-  MorphismsConfig -> Production morph -> Production morph -> [CriticalPair morph]
+findEssentialCriticalPairs :: (EM'PairFactorizable cat morph, DPO cat morph, Complete cat morph, InitialPushout cat morph) =>
+  Production cat morph -> Production cat morph -> cat [CriticalPair morph]
 findEssentialCriticalPairs = findAllEssentialDeleteUse
 
 -- | Get all essential delete-use and organize them in a list of 'CriticalPair'.
-findAllEssentialDeleteUse :: (JointlyEpimorphisms morph, DPO morph) =>
-  MorphismsConfig -> Production morph -> Production morph -> [CriticalPair morph]
-findAllEssentialDeleteUse conf p1 p2 =
-  map (\(_,_,m1,m2) -> CriticalPair (m1,m2) Nothing Nothing DeleteUse) essentialCPs
-  where
-    essentialCPs =
-      filter
-        (isEssentialDeleteUse conf)
-        (findPotentialEssentialCPs conf p1 p2)
+findAllEssentialDeleteUse :: (EM'PairFactorizable cat morph, DPO cat morph, Complete cat morph, InitialPushout cat morph) =>
+  Production cat morph -> Production cat morph -> cat [CriticalPair morph]
+findAllEssentialDeleteUse p1 p2 = do
+  conflicts <- filterM isEssentialDeleteUse =<< findPotentialEssentialCPs p1 p2
+  return [ CriticalPair (m1,m2) Nothing Nothing DeleteUse | (_,_,m1,m2) <- conflicts ]
 
 -- | Generates all "epi" pairs for essential delete-use,
 -- returns part of the initial pushout to avoid recalculations.
-findPotentialEssentialCPs :: (DPO morph, JointlyEpimorphisms morph) => MorphismsConfig -> Production morph -> Production morph -> [(morph,morph, morph,morph)]
-findPotentialEssentialCPs conf p1 p2 = satisfyingPairs
+findPotentialEssentialCPs :: forall cat morph. (DPO cat morph, EM'PairFactorizable cat morph, InitialPushout cat morph) => Production cat morph -> Production cat morph -> cat [(morph,morph, morph,morph)]
+findPotentialEssentialCPs p1 p2 = do
+  (_, l1', c) <- calculateInitialPushout (leftMorphism p1)
+  pairs <- findJointlyEpicPairs (matchMorphism @cat, codomain l1') (matchMorphism @cat, leftObject p2)
+  shiftedPairs <- forM pairs $ \(e1, e2) -> do
+    (d1', m1) <- calculatePushoutAlongRN c e1
+    let m2 = d1' <&> e2
+    return (l1', c, m1, m2)
+  filterM isValidPairOfMatches shiftedPairs
   where
-    (_,l1',c) = calculateInitialPushout (getLHS p1)
-    pairs = createJointlyEpimorphicPairsFromCodomains (matchRestriction conf) l1' (getLHS p2)
-    shiftedPairs =
-      map
-        (\(e1,e2) ->
-          let (m1,d1') = calculatePushout e1 c
-              m2 = d1' <&> e2
-           in (l1', c, m1, m2)
-        )
-      pairs
-    satisfyingPairs = filter (\(_,_,m1,m2) -> satisfyRewritingConditions conf (p1,m1) (p2,m2)) shiftedPairs
+    isValidPairOfMatches (_, _, m1, m2) = satisfiesRewritingConditions p1 m1 `andM` satisfiesRewritingConditions p2 m2
 
 -- | A pair of monomorphic matches (with precalcultated initial pushout (l1',c) elements)
 -- is an essential delete use when the
 -- pullback of the composition of the c (from the initial pushout) with m1
 -- and m2 is a pushout (guaranteed by the construction of 'findPotentialEssentialCPs')
 -- and does not exist morphism from S1 to B that commutes.
-isEssentialDeleteUse :: DPO morph => MorphismsConfig -> (morph,morph, morph,morph) -> Bool
-isEssentialDeleteUse conf (l1',c,m1,m2) = null commuting
-  where
-    (_,o1) = calculatePullback (m1 <&> c) m2
-    alls1 = findMorphismsFromDomains conf o1 l1'
-    commuting = filter (\s1 -> l1' <&> s1 == o1) alls1
-
-findMorphismsFromDomains :: FindMorphism morph => MorphismsConfig -> morph -> morph -> [morph]
-findMorphismsFromDomains conf  a b =
-  findMorphisms (matchRestriction conf) (domain a) (domain b)
+isEssentialDeleteUse :: forall cat morph. (DPO cat morph, Complete cat morph) => (morph,morph, morph,morph) -> cat Bool
+isEssentialDeleteUse (l1', c, m1, m2) = do
+  (_, o1) <- calculatePullback (m1 <&> c) m2
+  null <$> findCospanCommuters (matchMorphism @cat) o1 l1'

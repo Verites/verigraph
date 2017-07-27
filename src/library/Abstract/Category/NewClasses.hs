@@ -210,5 +210,5 @@ isMatchMorphism :: forall cat morph. LRNAdhesive cat morph => morph -> cat Bool
 isMatchMorphism = (`belongsToClass` matchMorphism @cat)
 
 class MFinitary cat morph => InitialPushout cat morph where
-  initialPushout :: morph -> cat (morph, morph, morph)
+  calculateInitialPushout :: morph -> cat (morph, morph, morph)
 
