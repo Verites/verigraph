@@ -52,14 +52,14 @@ import Util.Monad
 -- Verifies the non existence of h21: L2 -> D1 such that d1 . h21 = m2
 isDeleteUse :: forall cat morph. DPO cat morph => Production cat morph -> (morph,morph) -> cat Bool
 isDeleteUse p1 (m1,m2) = do
-  (_,d1) <- calculatePushoutComplementOfRN (leftMorphism p1) m1 --gets only the morphism D1 to G
+  (_, d1) <- calculatePushoutComplementOfRN (leftMorphism p1) m1 --gets only the morphism D1 to G
   h21 <- findCospanCommuters (matchMorphism @cat) m2 d1
   return (null h21)
 
 isProduceUse :: forall cat morph. DPO cat morph => Production cat morph -> (morph,morph) -> cat Bool
-isProduceUse p1 (m1',m2) = do
-  (_,e1) <- calculatePushoutComplementOfRN (rightMorphism p1) m1' --gets only the morphism D1 to G
-  h21 <- findCospanCommuters (matchMorphism @cat) m2 e1
+isProduceUse p1 (m1', m2') = do
+  (_, e1) <- calculatePushoutComplementOfRN (rightMorphism p1) m1' --gets only the morphism D1 to G
+  h21 <- findCospanCommuters (matchMorphism @cat) m2' e1
   return (null h21)
 
 -- Runs the DPO rewriting on p1 with m1 and
@@ -79,7 +79,7 @@ getM2AfterRewriting p1 m1 m2 = do
 --
 -- Gets the match of @p1@ from L2 to P1, checks if satisfiesNACs and not satisfiesGluingConditions
 isProduceDangling :: DPO cat morph => Production cat morph -> Production cat morph -> (morph,morph) -> cat Bool
-isProduceDangling p1 p2 (m1,m2) = do
+isProduceDangling p1 p2 (m1, m2) = do
   maybeM2' <- getM2AfterRewriting p1 m1 m2
   case maybeM2' of
     Nothing -> return False
@@ -93,13 +93,13 @@ isProduceForbid p1 p2 (m1,m2) = do
     Just m2' -> satisfiesGluingConditions p2 m2' `andM` (not <$> satisfiesNACs p2 m2')
 
 isDeleteForbid :: forall cat morph. DPO cat morph => Production cat morph -> Production cat morph -> (morph,morph) -> cat Bool
-isDeleteForbid p1 p2 (m1',m2') = do
+isDeleteForbid p1 p2 (m1', m2') = do
   hasRewriting <- hasPushoutComplementOfRN (rightMorphism p1) m1'
   if not hasRewriting
     then return False
     else do
       (k1, e1) <- calculatePushoutComplementOfRN (rightMorphism p1) m1'
-      (_, d1) <- calculatePushoutAlongRN k1 (leftMorphism p1)
+      (_, d1) <- calculatePushoutAlongRN (leftMorphism p1) k1
       h21Candidates <- findCospanCommuters (matchMorphism @cat) m2' e1
       let m2 = d1 <&> head h21Candidates
       (return . not $ null h21Candidates) `andM` satisfiesGluingConditions p2 m2 `andM` (not <$> satisfiesNACs p2 m2)
@@ -107,14 +107,14 @@ isDeleteForbid p1 p2 (m1',m2') = do
 -- | Verifies delete-use, if false verifies produce-dangling.
 -- Returns Left in the case of delete-use and Right for produce-dangling.
 deleteUseDangling :: DPO cat morph => Production cat morph -> Production cat morph -> (morph,morph)-> cat (Maybe (Either (morph,morph) (morph,morph)))
-deleteUseDangling p1 p2 (m1,m2) = do
+deleteUseDangling p1 p2 (m1, m2) = do
   maybeM2' <- getM2AfterRewriting p1 m1 m2
   case maybeM2' of
-    Nothing -> return $ Just (Left (m1,m2)) -- delete use case
+    Nothing -> return $ Just (Left (m1, m2)) -- delete use case
     Just m2' -> do
       hasProduceDangling <- (not <$> satisfiesGluingConditions p2 m2') `andM` satisfiesNACs p2 m2'
       if hasProduceDangling 
-        then return $ Just (Right (m1,m2))
+        then return $ Just (Right (m1, m2))
         else return Nothing
 
 -- | Rule @p1@ is in a produce-forbid conflict with @p2@ if @p1@

@@ -192,12 +192,77 @@ class Category cat morph => LRNAdhesive cat morph where
   leftHandMorphism :: MorphismClass cat
   matchMorphism :: MorphismClass cat
 
+  
+  -- | Calculate the pushout of a rule-morphism and a match-morphism.
+  --
+  -- Given the morphisms \(r : A \to B\) and \(m : A \to C\), respectively and
+  -- with \(r \in \mathcal{R}\) and \(m \in \mathcal{N}\), returns the pair of
+  -- morphisms \(r' : C \to D\) and \(m': B \to D\) such that the following
+  -- square is a pushout.
+  --
+  -- @
+  --       r
+  --    A──────▶B
+  --    │       │
+  --  m │       │ m'
+  --    ▼       ▼
+  --    C──────▶D
+  --       r'
+  -- @
+  --
+  -- The behaviour of this function is undefined if the morphisms don't belong
+  -- to the appropriate classes.
   calculatePushoutAlongRN :: morph -> morph -> cat (morph, morph)
 
+  -- | Calculate the pullback of a rule-morphism and another morphism.
+  --
+  -- Given the morphisms \(r : A \to B\) and \(f : A \to C\), respectively and
+  -- with \(r \in \mathcal{R}\), returns the pair of morphisms \(r' : X \to B\)
+  -- and \(f': X \to A\) such that the following square is a pullback.
+  --
+  -- @
+  --        r'
+  --     X──────▶B
+  --     │       │
+  --  f' │       │ f
+  --     ▼       ▼
+  --     A──────▶C
+  --        r
+  -- @
+  --
+  -- The behaviour of this function is undefined if the morphisms don't belong
+  -- to the appropriate classes.
   calculatePullbackAlongR :: morph -> morph -> cat (morph, morph)
 
+  -- | Check if the morphisms \(r : A \to B\) and \(m : B \to C \), respectively
+  -- and with \(r \in \mathcal{R}\) and \(m \in \mathcal{N}\), have a pushout
+  -- complement (see 'calculatePushoutComplementOfRN').
+  --
+  -- The behaviour of this function is undefined if the morphisms don't belong
+  -- to the appropriate classes.
   hasPushoutComplementOfRN :: morph -> morph -> cat Bool
 
+  -- | Calculate the pushout complement for a sequence of a rule-morphism and a
+  -- match-morphism, __assuming it exists__. In order to test if the pushout
+  -- complement exists, use 'hasPushoutComplementOfRN'.
+  --
+  -- Given the morphisms \(r : A \to B\) and \(m : B \to C\), respectively and
+  -- with \(r \in \mathcal{R}\) and \(m \in \mathcal{N}\), returns the pair of
+  -- morphisms \(m' : A \to X\) and \(r' : X \to C\) such that the following
+  -- square is a pushout. Since the category is Adhesive, such a pair is unique.
+  --
+  -- @
+  --        r
+  --     A──────▶B
+  --     │       │
+  --  m' │       │ m
+  --     ▼       ▼
+  --     X──────▶C
+  --        r'
+  -- @
+  --
+  -- The behaviour of this function is undefined if the morphisms don't belong
+  -- to the appropriate classes.
   calculatePushoutComplementOfRN :: morph -> morph -> cat (morph, morph)
 
 isRuleMorphism :: forall cat morph. LRNAdhesive cat morph => morph -> cat Bool
@@ -210,5 +275,21 @@ isMatchMorphism :: forall cat morph. LRNAdhesive cat morph => morph -> cat Bool
 isMatchMorphism = (`belongsToClass` matchMorphism @cat)
 
 class MFinitary cat morph => InitialPushout cat morph where
+  -- | Calculate the \(\mathcal{M}\)-initial pushout of the given morphism.
+  --
+  -- Given the morphism \(f : A \to A'\), returns the morphisms \(b : B \to A\),
+  -- \(f' : B \to C\) and \(c: C \to A'\), respectively and with
+  -- \(b,c \in \mathcal{M}\), such that the following square is an
+  -- \(\mathcal{M}\)-initial pushout of \(f\).
+  --
+  -- @
+  --        f'
+  --    B──────▶C
+  --    │       │
+  --  b │       │ c
+  --    ▼       ▼
+  --    A──────▶A'
+  --        f
+  -- @
   calculateInitialPushout :: morph -> cat (morph, morph, morph)
 

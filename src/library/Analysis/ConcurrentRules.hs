@@ -72,27 +72,86 @@ epiPairsForConcurrentRule AllOverlapings constraints c n = do
           `andM` satisfiesGluingConditions (invertProductionWithoutNacs c) lp
           `andM` satisfiesRewritingConditions n rp
 
+
+{-
+
+  The following function is related to the following diagrams.
+
+   Lc ◀──── Kc ────▶ Rc      Ln ◀──── Kn ────▶ Rn
+    │       │          \    /         │        │
+  mc│     dc│        mc'\  /mn        │dn      │mn' 
+    ▼       ▼            ▼▼           ▼        ▼
+    G ◀──── Dc ────────▶ Hc ◀──────── Dn ────▶ Hn
+       lc'  ▲      rc'          ln'   ▲    rn'
+             \                       /
+              \───────── K ─────────/
+                   kc          kn
+
+
+         nc 
+    Nc ◀───── Lc
+    │         │
+    │         │mc
+    ▼         ▼
+    Nc' ◀──── G
+         nc'
+                   
+                             
+    Nn''                Ln ────▶ Nn
+    ▲               mn /
+    │                 ▼    
+    G ◀──── Dc ────▶ Hc ────▶ Nn'
+        lc'     rc'
+
+    
+-}
 concurrentRuleForPair :: forall cat morph. (DPO cat morph, EM'PairFactorizable cat morph) => [Constraint cat morph] -> Production cat morph -> Production cat morph -> (morph,morph) -> cat (Maybe (Production cat morph))
-concurrentRuleForPair constraints c n pair = do
-  pocC <- calculatePushoutComplementOfRN (rightMorphism c) (fst pair)
-  pocN <- calculatePushoutComplementOfRN (leftMorphism n) (snd pair)
+concurrentRuleForPair constraints c n (mc', mn) = do
+  {- Lc ◀──── Kc ────▶ Rc      Ln ◀──── Kn ────▶ Rn
+       │       │          \    /         │        │
+     mc│     dc│        mc'\  /mn        │dn      │mn' 
+       ▼       ▼            ▼▼           ▼        ▼
+       G ◀──── Dc ────────▶ Hc ◀──────── Dn ────▶ Hn
+         lc'  ▲      rc'          ln'   ▲    rn'
+               \                       /
+                \───────── K ─────────/
+                     kc          kn
+  -}
+  (dc, rc') <- calculatePushoutComplementOfRN (rightMorphism c) mc'
+  (dn, ln') <- calculatePushoutComplementOfRN (leftMorphism n) mn
 
-  poC <- calculatePushoutAlongRN (leftMorphism c) (fst pocC)
-  poN <- calculatePushoutAlongRN (rightMorphism n) (snd pocN)
-  pb <- calculatePullbackAlongR (snd pocC) (snd pocN)
+  (lc', mc) <- calculatePushoutAlongRN (leftMorphism c) dc
+  (rn', _) <- calculatePushoutAlongRN (rightMorphism n) dn
+  (kn, kc) <- calculatePullbackAlongR rc' ln'
 
-  let l = snd poC <&> fst pb
-  let r = snd poN <&> snd pb
-  
-  dmc <- filterM validNac =<< concatMapM (nacDownwardShift (fst poC)) (nacs c)
-
-  let inverseP = buildProduction (snd pocC) (snd poC) []
-  den <- filterM validNac =<< concatMapM (nacDownwardShift (snd pair)) (nacs n)
-  lp <- filterM validNac =<< concatMapM (shiftNacOverProduction inverseP) den
-
-  invalidSides <- matchMorphism @cat `isSubclassOf` monic @cat `andM`
+  let l = lc' <&> kc
+  let r = rn' <&> kn
+  sidesViolateConstraints <- matchMorphism @cat `isSubclassOf` monic @cat `andM`
       (not <$> satisfiesAllConstraints (codomain l) constraints `andM` satisfiesAllConstraints (codomain r) constraints)
-  return $ if invalidSides then Nothing else Just (buildProduction l r (dmc ++ lp))
+
+  {-       nc 
+      Nc ◀──── Lc
+               │
+               ▼ mc
+      Nc' ◀─── G
+           nc'
+  -}
+  nacsFromC <- filterM validNac =<< concatMapM (nacDownwardShift mc) (nacs c)
+
+  {-  Nn''                Ln ────▶ Nn
+      ▲               mn /
+      │                 ▼    
+      G ◀──── Dc ────▶ Hc ────▶ Nn'
+          lc'     rc'
+  -}
+  nacsFromN' <- filterM validNac =<< concatMapM (nacDownwardShift mn) (nacs n)
+  nacsFromN <- filterM validNac =<< concatMapM (shiftNacOverProduction $ buildProduction rc' lc' []) nacsFromN'
+
+  return $ 
+    if sidesViolateConstraints then
+      Nothing 
+    else
+      Just $ buildProduction l r (nacsFromC ++ nacsFromN)
   where
     -- Filters that are not in the default algorithm, useful when dealing with injective morphisms only
     validNac :: morph -> cat Bool

@@ -179,9 +179,10 @@ findApplicableMatches production obj =
 -- | Given a match and a production, calculates the double-pushout diagram
 -- for the corresponding transformation.
 --
--- Given match /m : L -> G/ and the production /L ←l- K -r→ R/ such that
--- @'satisfiesRewritingConditions' _ _ p m == True@, returns /k/, /n/, /f/ and /g/ (respectively)
--- such that the following two squares are pushouts.
+-- Given match \(m : L \to G\) and the production \(L \overset{l}{\leftarrow} K
+-- \overset{r}{\to} R\) such that @'satisfiesRewritingConditions' _ _ p m ==
+-- True@, returns \(k, n, l'\) and \(r'\) (respectively) such that the following
+-- two squares are pushouts.
 --
 -- @
 --       l        r
@@ -190,16 +191,16 @@ findApplicableMatches production obj =
 --  m │       │ k     │ n
 --    ▼       ▼       ▼
 --    G◀──────D──────▶H
---         f     g
+--         l'    r'
 -- @
 --
--- Note: this doesn't test whether the match is for the actual production,
--- nor if the match satisfies all application conditions.
+-- The behaviour of this function is undefined when the given match doesn't
+-- satisfy the rewriting conditions.
 calculateDPO :: DPO cat morph => morph -> Production cat morph -> cat (morph, morph, morph, morph)
 calculateDPO m (Production l r _) = do
-  (k, f) <- calculatePushoutComplementOfRN l m
-  (n, g) <- calculatePushoutAlongRN k r
-  return (k, n, f, g)
+  (k, l') <- calculatePushoutComplementOfRN l m
+  (r', n) <- calculatePushoutAlongRN r k
+  return (k, n, l', r')
 
 -- | True if the given match satisfies the gluing condition and NACs of the
 -- given production.
