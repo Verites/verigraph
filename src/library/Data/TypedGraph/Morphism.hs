@@ -22,13 +22,11 @@ compose t2 t1 = TypedGraphMorphism (domainGraph t1) (codomainGraph t2) $ GM.comp
 buildTypedGraphMorphism :: TypedGraph a b -> TypedGraph a b -> GraphMorphism (Maybe a) (Maybe b) -> TypedGraphMorphism a b
 buildTypedGraphMorphism = TypedGraphMorphism
 
-instance Valid (TypedGraphMorphism a b) where
-    validate (TypedGraphMorphism dom cod m) =
-      mconcat
-        [ withContext "domain" (validate dom)
-        , withContext "codomain" (validate cod)
-        , ensure (dom == GM.compose cod m) "Morphism doesn't preserve typing"
-        ]
+instance {-# OVERLAPPABLE #-} Monad m => Valid m (TypedGraphMorphism a b) where
+    validator (TypedGraphMorphism dom cod m) = do
+      withContext "domain" (validator dom)
+      withContext "codomain" (validator cod)
+      ensure (dom == GM.compose cod m) "Morphism doesn't preserve typing"
 
 -- TODO: refactor these fucntion to avoid duplication, probably with untypedGraph
 -- | Return the nodes ids in the domain of a given @TypedGraphMorphism@
