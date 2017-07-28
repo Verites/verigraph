@@ -124,7 +124,7 @@ deleteUseDangling p1 p2 (m1, m2) = do
 produceForbidOneNac :: forall cat morph. (DPO cat morph, EM'PairFactorizable cat morph) => Production cat morph
                     -> Production cat morph -> (morph, Int) -> cat [((morph,morph), (morph,morph), (morph,Int))]
 produceForbidOneNac p1 p2 (n2,idx) = runListT $ do
-  let p1' = invertProduction p1
+  p1' <- lift $ invertProduction p1
 
   -- Pick a jointly epi pair /R1 -m1'-> P1 <-q21- N2/
   (m1', q21) <- pickOne $ findJointlyEpicPairs (matchMorphism @cat, rightObject p1) (monic @cat, codomain n2)

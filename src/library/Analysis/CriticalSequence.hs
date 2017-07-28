@@ -137,7 +137,7 @@ findCriticalSequences p1 p2 = concat <$> sequence
 -- Verify the non existence of h21: L2 -> D1 such that d1 . h21 = m2'.
 findAllProduceUse :: (DPO cat morph, EM'PairFactorizable cat morph) => Production cat morph -> Production cat morph -> cat [CriticalSequence morph]
 findAllProduceUse p1 p2 = do
-  let p1' = invertProduction p1
+  p1' <- invertProduction p1
   matchPairs <- findPotentialCriticalPairs p1' p2
   dependencies <- filterM (isDeleteUse p1') matchPairs
   return [ CriticalSequence Nothing m Nothing ProduceUse | m <- dependencies ]
@@ -150,7 +150,7 @@ findAllProduceUse p1 p2 = do
 -- if rule @p1@ deletes something that enables @p2@.
 findAllRemoveDangling :: (EM'PairFactorizable cat morph, DPO cat morph) => Production cat morph -> Production cat morph -> cat [CriticalSequence morph]
 findAllRemoveDangling p1 p2 = do
-  let p1' = invertProduction p1
+  p1' <- invertProduction p1
   matchPairs <- findPotentialCriticalPairs p1' p2
   dependencies <- filterM (isProduceDangling p1' p2) matchPairs
   return [ CriticalSequence Nothing m Nothing RemoveDangling | m <- dependencies ]
@@ -161,7 +161,7 @@ findAllRemoveDangling p1 p2 = do
 -- more efficient than deal separately.
 findAllProduceUseAndRemoveDangling :: (EM'PairFactorizable cat morph, DPO cat morph) => Production cat morph -> Production cat morph -> cat [CriticalSequence morph]
 findAllProduceUseAndRemoveDangling p1 p2 = do
-  let p1' = invertProduction p1
+  p1' <- invertProduction p1
   matchPairs <- findPotentialCriticalPairs p1' p2
   dependencies <- mapM (deleteUseDangling p1' p2) matchPairs
   return [ categorizeDependency x | Just x <- dependencies ]
@@ -177,7 +177,7 @@ findAllProduceUseAndRemoveDangling p1 p2 = do
 -- some NAC in @p2@ turns satisfied after the aplication of @p1@
 findAllDeleteForbid :: (DPO cat morph, EM'PairFactorizable cat morph) => Production cat morph -> Production cat morph -> cat [CriticalSequence morph]
 findAllDeleteForbid p1 p2 = do
-  let p1' = invertProduction p1
+  p1' <- invertProduction p1
   dependencies <- mapM (produceForbidOneNac p1' p2) $ zip (nacs p2) [0..]
   return [ CriticalSequence (Just m) m' (Just nac) DeleteForbid
              | (m', m, nac) <- concat dependencies ]
@@ -197,7 +197,7 @@ findAllDeleteForbid p1 p2 = do
 -- Verify the non existence of h12: L1 -> D2 such that d2 . h12 = m1'.
 findAllDeliverDelete :: (DPO cat morph, EM'PairFactorizable cat morph) => Production cat morph -> Production cat morph -> cat [CriticalSequence morph]
 findAllDeliverDelete p1 p2 = do
-  let p1' = invertProduction p1
+  p1' <- invertProduction p1
   matchPairs <- findPotentialCriticalPairs p2 p1'
   dependencies <- filterM (isDeleteUse p2) matchPairs
   return [ CriticalSequence Nothing m Nothing DeliverDelete | m <- dependencies ]
@@ -210,7 +210,7 @@ findAllDeliverDelete p1 p2 = do
 -- rule @p2@ creates something that disables the inverse of @p1@.
 findAllDeliverDangling :: (DPO cat morph, EM'PairFactorizable cat morph) => Production cat morph -> Production cat morph -> cat [CriticalSequence morph]
 findAllDeliverDangling p1 p2 = do
-  let p1' = invertProduction p1
+  p1' <- invertProduction p1
   matchPairs <- findPotentialCriticalPairs p2 p1'
   dependencies <- filterM (isProduceDangling p2 p1') matchPairs
   return [ CriticalSequence Nothing m Nothing DeliverDangling | m <- dependencies ]
@@ -220,7 +220,7 @@ findAllDeliverDangling p1 p2 = do
 -- | Tests DeliverDelete and DeliverDangling for the same overlapping pairs
 findAllDeliverDeleteAndDeliverDangling :: (EM'PairFactorizable cat morph, DPO cat morph) => Production cat morph -> Production cat morph -> cat [CriticalSequence morph]
 findAllDeliverDeleteAndDeliverDangling p1 p2 = do
-  let p1' = invertProduction p1
+  p1' <- invertProduction p1
   matchPairs <- findPotentialCriticalPairs p2 p1'
   dependencies <- mapM (deleteUseDangling p2 p1') matchPairs
   return [ categorizeDependency x | Just x <- dependencies ]
@@ -237,7 +237,7 @@ findAllDeliverDeleteAndDeliverDangling p1 p2 = do
 -- NAC in right of @p1@ turns satisfied after the aplication of @p2@.
 findAllForbidProduce :: (DPO cat morph, EM'PairFactorizable cat morph) => Production cat morph -> Production cat morph -> cat [CriticalSequence morph]
 findAllForbidProduce p1 p2 = do
-  let p1' = invertProduction p1
+  p1' <- invertProduction p1
   conflicts <- mapM (produceForbidOneNac p1' p2) (zip (nacs p1') [0..])
   return [ CriticalSequence (Just matches) comatches (Just nac) ForbidProduce
             | (matches, comatches, nac) <- concat conflicts ]

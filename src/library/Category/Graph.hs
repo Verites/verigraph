@@ -45,6 +45,9 @@ instance Category (GraphCat n e) (GraphMorphism n e) where
   isSubclassOf c1 c2 = return $ isSubclassOf' c1 c2
     where
       isSubclassOf' _ AllMorphisms = True
+      isSubclassOf' Monomorphisms Monomorphisms = True
+      isSubclassOf' Epimorphisms Epimorphisms = True
+      isSubclassOf' Isomorphisms Isomorphisms = True
       isSubclassOf' Isomorphisms Monomorphisms = True
       isSubclassOf' Isomorphisms Epimorphisms = True
       isSubclassOf' _ _ = False

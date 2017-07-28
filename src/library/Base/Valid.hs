@@ -6,6 +6,7 @@ module Base.Valid
   , ensureValid
   , Valid(..)
   , Validator
+  , invalid
   , ensure
   , ensureM
   , withContext
@@ -55,6 +56,9 @@ class Monad m => Valid m a where
   -- | Checks if the given value is well-formed, providing an explanation of any errors encountered.
   validator :: a -> Validator m
 
+
+invalid :: Monad m => String -> Validator m
+invalid message = tell (IsInvalid [message])
 
 -- | Return 'IsValid' if the given boolean is true, otherwise return 'IsInvalid' with the given error message.
 ensure :: Monad m => Bool -> String -> Validator m

@@ -7,6 +7,8 @@ import           Data.Graphs                        as G
 import qualified Data.Graphs.Morphism               as GM
 import           Data.TypedGraph.Morphism
 
+-- FIXME: migrate this module (and create new class for FPBC)
+
 instance FinalPullbackComplement (TypedGraphMorphism a b) where
 
   -- @

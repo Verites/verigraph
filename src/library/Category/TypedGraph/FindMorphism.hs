@@ -1,9 +1,8 @@
 module Category.TypedGraph.FindMorphism () where
 
 
-import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.FinitaryCategory as FC
-import           Category.TypedGraph                ()
+import           Abstract.Category.NewClasses
+import           Category.TypedGraph.Category
 import           Data.Graphs                        as G
 import qualified Data.Graphs.Morphism               as GM
 import qualified Data.Relation                      as R
@@ -14,14 +13,23 @@ import           Control.Arrow
 import           Data.List                          as L
 import           Data.Maybe
 
-instance FindMorphism (TypedGraphMorphism a b) where
-  induceSpanMorphism      = induceSpan
-  findMorphisms           = findMatches
-  partialInjectiveMatches = partialInjectiveMatches'
-  findCospanCommuter      = findCospanCommuter'
+instance FindMorphism (TGraphCat n e) (TypedGraphMorphism n e) where
+  induceSpanMorphism lefts rights = return $ induceSpan lefts rights
+
+  findMorphisms cls dom cod = do
+    cls' <- resolveClass cls
+    return $ findMatches cls' dom cod
+
+  findSpanCommuters cls left right = do
+    cls' <- resolveClass cls
+    return $ findSpanCommuter' cls' left right
+
+  findCospanCommuters cls left right = do
+    cls' <- resolveClass cls
+    return $ findCospanCommuter' cls' left right
 
 
-lookupEdgeById :: [Edge a] -> EdgeId -> Maybe (Edge a)
+lookupEdgeById :: [Edge e] -> EdgeId -> Maybe (Edge e)
 lookupEdgeById [] _ = Nothing
 lookupEdgeById (e:es) edgeid =
   if edgeid == edgeId e then
@@ -29,7 +37,7 @@ lookupEdgeById (e:es) edgeid =
   else
     lookupEdgeById es edgeid
 
-deleteEdgeById :: [Edge a] -> EdgeId -> [Edge a]
+deleteEdgeById :: [Edge e] -> EdgeId -> [Edge e]
 deleteEdgeById [] _ = []
 deleteEdgeById (e:es) edgeid =
   if edgeid == edgeId e then
@@ -38,10 +46,10 @@ deleteEdgeById (e:es) edgeid =
     e : deleteEdgeById es edgeid
 
 
-data CospanBuilderState a =
+data CospanBuilderState e =
   State {
-    domainEdges            :: [Edge a]
-  , codomainEdges          :: [Edge a]
+    domainEdges            :: [Edge e]
+  , codomainEdges          :: [Edge e]
   , unmappedDomainNodes    :: [NodeId]
   , unmappedDomainEdges    :: [EdgeId]
   , availableCodomainNodes :: [NodeId]
@@ -54,7 +62,7 @@ data CospanBuilderState a =
 
 -- | Given two TypedGraphMorphism @f : B -> A@ and @g : C -> A@ it finds a list of Morphisms
 -- @hi : B -> C@ shuch that @¬g . f = hi@ for all @i@.
-findCospanCommuter' :: MorphismType -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
+findCospanCommuter' :: TGraphMorphismClass -> TypedGraphMorphism n e -> TypedGraphMorphism n e -> [TypedGraphMorphism n e]
 findCospanCommuter' conf morphismF morphismG
   | codomain morphismF /= codomain morphismG = []
   | otherwise =
@@ -100,18 +108,18 @@ findCospanCommuter' conf morphismF morphismG
   in
     map buildTGMFromState finalStates
 
--- | Given a MorphismType and a initial @CospanBuilderState@ with final Node Relations complete,
+-- | Given a TGraphMorphismClass and a initial @CospanBuilderState@ with final Node Relations complete,
 -- finds a Relation @B -> C@ between edges of @B@ and @C@. (Auxiliary function)
-findCospanCommuterEdgeRelations :: MorphismType -> CospanBuilderState a -> [CospanBuilderState a]
+findCospanCommuterEdgeRelations :: TGraphMorphismClass -> CospanBuilderState e -> [CospanBuilderState e]
 findCospanCommuterEdgeRelations conf state
   | L.null $ unmappedDomainEdges state =
     let isoCondition = L.null $ availableCodomainEdges state
         epiCondition = L.null . R.orphans $ finalEdgeRelation state
     in case conf of
-         Isomorphism ->
+         Isomorphisms ->
            if isoCondition then return state else []
 
-         Epimorphism ->
+         Epimorphisms ->
            if epiCondition then return state else []
 
          _ -> return state
@@ -125,18 +133,18 @@ findCospanCommuterEdgeRelations conf state
 
       findCospanCommuterEdgeRelations conf updatedState
 
--- | Given a MorphismType and a initial @CospanBuilderState@ with empty final Relations,
+-- | Given a TGraphMorphismClass and a initial @CospanBuilderState@ with empty final Relations,
 -- finds a Relation @B -> C@ between nodes of @B@ and @C@. (Auxiliary function)
-findCospanCommuterNodeRelations :: MorphismType -> CospanBuilderState a -> [CospanBuilderState a]
+findCospanCommuterNodeRelations :: TGraphMorphismClass -> CospanBuilderState e -> [CospanBuilderState e]
 findCospanCommuterNodeRelations conf state
   | L.null $ unmappedDomainNodes state =
     let isoCondition = L.null $ availableCodomainNodes state
         epiCondition = L.null . R.orphans $ finalNodeRelation state
     in case conf of
-         Isomorphism ->
+         Isomorphisms ->
            if isoCondition then return state else []
 
-         Epimorphism ->
+         Epimorphisms ->
            if epiCondition then return state else []
 
          _ -> return state
@@ -151,7 +159,7 @@ findCospanCommuterNodeRelations conf state
       findCospanCommuterNodeRelations conf updatedState
 
 -- | Verify if a node of @B@ can be mapped to a node of @C@, if possible, updates the given @CospanBuilderState@. (Auxiliary function)
-updateNodeState :: MorphismType -> NodeId -> NodeId -> CospanBuilderState a -> [CospanBuilderState a]
+updateNodeState :: TGraphMorphismClass -> NodeId -> NodeId -> CospanBuilderState e -> [CospanBuilderState e]
 updateNodeState conf nodeOnDomain nodeOnCodomain state =
   let
     nodeDomainApplied = R.apply (finalNodeRelation state) nodeOnDomain
@@ -173,23 +181,23 @@ updateNodeState conf nodeOnDomain nodeOnCodomain state =
                           }
   in
     case (conf, monoCondition) of
-      (Monomorphism, False) ->
+      (Monomorphisms, False) ->
         []
 
-      (Isomorphism, False) ->
+      (Isomorphisms, False) ->
         []
 
-      (Monomorphism, True) ->
+      (Monomorphisms, True) ->
         return updatedMonoState
 
-      (Isomorphism, True) ->
+      (Isomorphisms, True) ->
         return updatedMonoState
 
       _ ->
         return updatedGenericState
 
 -- | Verify if a edge of @B@ can be mapped to a node of @C@, if possible, updates the given @CospanBuilderState@. (Auxiliary function)
-updateEdgeState :: MorphismType -> EdgeId -> EdgeId -> CospanBuilderState a -> [CospanBuilderState a]
+updateEdgeState :: TGraphMorphismClass -> EdgeId -> EdgeId -> CospanBuilderState e -> [CospanBuilderState e]
 updateEdgeState conf edgeOnDomain edgeOnCodomain state =
   do
     let monoCondition = edgeOnCodomain`elem` availableCodomainEdges state
@@ -217,16 +225,16 @@ updateEdgeState conf edgeOnDomain edgeOnCodomain state =
                               }
 
     case (conf, monoCondition) of
-      (Monomorphism, False) ->
+      (Monomorphisms, False) ->
         []
 
-      (Isomorphism, False) ->
+      (Isomorphisms, False) ->
         []
 
-      (Monomorphism, True) ->
+      (Monomorphisms, True) ->
         return updatedMonoState
 
-      (Isomorphism, True) ->
+      (Isomorphisms, True) ->
         return updatedMonoState
 
       _ ->
@@ -236,7 +244,7 @@ updateEdgeState conf edgeOnDomain edgeOnCodomain state =
 -- | Given two lists of TypedGraphMorphism @fi : Ai -> B@ and @gi : Ai -> C@ it induces a Morphism
 -- @h : B -> C@ shuch that @h . fi = gi@ for all @i@. The lists must have the same length and must
 -- not be empty.
-induceSpan :: [TypedGraphMorphism a b] ->  [TypedGraphMorphism a b] -> TypedGraphMorphism a b
+induceSpan :: [TypedGraphMorphism n e] ->  [TypedGraphMorphism n e] -> TypedGraphMorphism n e
 induceSpan fs gs
   | Prelude.null fs = error "can not induce morphism from empty list of morphisms"
   | length fs /= length gs = error "morphisms list should have the same length"
@@ -246,7 +254,7 @@ induceSpan fs gs
 
 -- | Given two TypedGraphMorphism @f : A -> B@ and @g : A -> C@ it builds a TypedGraphMorphism @h : B -> C@
 -- with an empty mapping between the objects (auxiliary function)
-initialSpanMorphism :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
+initialSpanMorphism :: TypedGraphMorphism n e -> TypedGraphMorphism n e -> TypedGraphMorphism n e
 initialSpanMorphism morphismF morphismG = buildTypedGraphMorphism domainH codomainH mappingH
   where
     domainH   = codomain morphismF
@@ -256,30 +264,34 @@ initialSpanMorphism morphismF morphismG = buildTypedGraphMorphism domainH codoma
 
 -- | Given a TypedGraphMorphism @h : B -> C@ and a tuple of TypedGraphMorphism (f : A -> B, g : A -> C)
 -- it updates @h@ with a mapping from @B to C@ where @h . f = g@ (auxiliary function)
-buildSpanRelation :: TypedGraphMorphism a b ->  (TypedGraphMorphism a b, TypedGraphMorphism a b) -> TypedGraphMorphism a b
+buildSpanRelation :: TypedGraphMorphism n e ->  (TypedGraphMorphism n e, TypedGraphMorphism n e) -> TypedGraphMorphism n e
 buildSpanRelation morphismH (morphismF, morphismG) =
   buildSpanEdgeRelation (buildSpanNodeRelation morphismH (morphismF, morphismG)) (morphismF, morphismG)
 
 -- | Given a TypedGraphMorphism @h : B -> C@ and a tuple of TypedGraphMorphism (f : A -> B, g : A -> C)
 -- it updates @h@ with a mapping of edges from @B to C@ where @h . f = g@ (auxiliary function)
-buildSpanNodeRelation :: TypedGraphMorphism a b ->  (TypedGraphMorphism a b, TypedGraphMorphism a b) -> TypedGraphMorphism a b
+buildSpanNodeRelation :: TypedGraphMorphism n e ->  (TypedGraphMorphism n e, TypedGraphMorphism n e) -> TypedGraphMorphism n e
 buildSpanNodeRelation morphismH (morphismF, morphismG) = foldr (uncurry untypedUpdateNodeRelation) morphismH newNodeRelation
   where
     newNodeRelation = map (applyNodeIdUnsafe morphismF &&& applyNodeIdUnsafe morphismG ) $ nodeIdsFromDomain morphismF
 
 -- | Given a TypedGraphMorphism @h : B -> C@ and a tuple of TypedGraphMorphism (f : A -> B, g : A -> C)
 -- it updates @h@ with a mapping of edges from @B to C@ where @h . f = g@ (auxiliary function)
-buildSpanEdgeRelation :: TypedGraphMorphism a b ->  (TypedGraphMorphism a b, TypedGraphMorphism a b) -> TypedGraphMorphism a b
+buildSpanEdgeRelation :: TypedGraphMorphism n e ->  (TypedGraphMorphism n e, TypedGraphMorphism n e) -> TypedGraphMorphism n e
 buildSpanEdgeRelation morphismH (morphismF, morphismG) = foldr (uncurry updateEdgeRelation) morphismH newEdgeRelation
   where
     newEdgeRelation = map (applyEdgeIdUnsafe morphismF &&& applyEdgeIdUnsafe morphismG ) $ edgeIdsFromDomain morphismF
 
 ------------------------------------------------------------------------------
 
+-- FIXME: implement findSpanCommuter', which is a variation of partialInjectiveMatches'
+findSpanCommuter' :: TGraphMorphismClass -> TypedGraphMorphism n e -> TypedGraphMorphism n e -> [TypedGraphMorphism n e]
+findSpanCommuter' = undefined
+
 -- | Finds matches __/q/__ .
 --
 --   Partially injective. (Injective out of __/m/__)
-partialInjectiveMatches' :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
+partialInjectiveMatches' :: TypedGraphMorphism n e -> TypedGraphMorphism n e -> [TypedGraphMorphism n e]
 partialInjectiveMatches' nac match = do
   let
     lhsNodes = nodeIdsFromDomain match
@@ -292,7 +304,7 @@ partialInjectiveMatches' nac match = do
 
   case q'' of
     Nothing -> []
-    Just q2 -> completeMappings Monomorphism q2 (sourceNodes, sourceEdges) (targetNodes, targetEdges)
+    Just q2 -> completeMappings Monomorphisms q2 (sourceNodes, sourceEdges) (targetNodes, targetEdges)
       where
         notMappedNodes tgm node = isNothing $ applyNodeId tgm node
         notMappedEdges tgm edge = isNothing $ applyEdgeId tgm edge
@@ -303,7 +315,7 @@ partialInjectiveMatches' nac match = do
 
 --VERIFY EDGES MAPPING N <- l AND L -> G AND BUILD A N -> G
 --PARTIAL EDGES MORPHISM
-preBuildEdges :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> [G.EdgeId] -> Maybe (TypedGraphMorphism a b)
+preBuildEdges :: TypedGraphMorphism n e -> TypedGraphMorphism n e -> TypedGraphMorphism n e -> [G.EdgeId] -> Maybe (TypedGraphMorphism n e)
 preBuildEdges tgm _ _ [] = Just tgm
 preBuildEdges tgm nac match (h:t) = do
   let nacEdge = applyEdgeIdUnsafe nac h
@@ -319,7 +331,7 @@ preBuildEdges tgm nac match (h:t) = do
 
 --VERIFY NODE MAPPINGS N <- L AND L -> G AND BUILD A N -> G
 --PARTIAL NODES MORPHISM
-preBuildNodes :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> [G.NodeId] -> Maybe (TypedGraphMorphism a b)
+preBuildNodes :: TypedGraphMorphism n e -> TypedGraphMorphism n e -> TypedGraphMorphism n e -> [G.NodeId] -> Maybe (TypedGraphMorphism n e)
 preBuildNodes tgm _   _     []    = Just tgm
 preBuildNodes tgm nac match (h:t) = do
   let nacNode   = applyNodeIdUnsafe nac h
@@ -338,7 +350,7 @@ preBuildNodes tgm nac match (h:t) = do
 -- | Finds matches __/m/__
 --
 --   Injective, surjective, isomorphic or all possible matches
-findMatches :: MorphismType -> GM.GraphMorphism (Maybe a) (Maybe b) -> GM.GraphMorphism (Maybe a) (Maybe b) -> [TypedGraphMorphism a b]
+findMatches :: TGraphMorphismClass -> GM.GraphMorphism (Maybe n) (Maybe e) -> GM.GraphMorphism (Maybe n) (Maybe e) -> [TypedGraphMorphism n e]
 findMatches prop graph1 graph2 =
   completeMappings prop tgm (sourceNodes, sourceEdges) (targetNodes, targetEdges)
   where
@@ -358,18 +370,18 @@ type ExpandedGraph b = ([G.NodeId], [Edge b])
 
 -- | Given a TypedGraphMorphism @tgm@ from (A -> T) to (B -> T) and the two ExpandedGraphs of A and B, it completes the @tgm@
 -- with all the possible mappings from (A -> T) to (B -> T)
-completeMappings :: MorphismType -> TypedGraphMorphism a b -> ExpandedGraph (Maybe b) -> ExpandedGraph (Maybe b) -> [TypedGraphMorphism a b]
+completeMappings :: TGraphMorphismClass -> TypedGraphMorphism n e -> ExpandedGraph (Maybe b) -> ExpandedGraph (Maybe b) -> [TypedGraphMorphism n e]
 completeMappings prop tgm ([], []) targetGraph = completeFromEmptySource prop tgm targetGraph
 completeMappings prop tgm (sourceNodes, []) targetGraph = completeWithRemainingNodes prop tgm (sourceNodes, []) targetGraph
 completeMappings prop tgm sourceGraph targetGraph = completeFromSourceEdges prop tgm sourceGraph targetGraph
 
-completeFromEmptySource :: MorphismType -> TypedGraphMorphism a b -> ExpandedGraph (Maybe b) -> [TypedGraphMorphism a b]
+completeFromEmptySource :: TGraphMorphismClass -> TypedGraphMorphism n e -> ExpandedGraph (Maybe b) -> [TypedGraphMorphism n e]
 completeFromEmptySource prop tgm (nodesT, edgesT) =
   case prop of
-    GenericMorphism -> all
-    Monomorphism    -> all
-    Epimorphism     -> epimorphism
-    Isomorphism     -> isomorphism
+    AllMorphisms     -> all
+    Monomorphisms    -> all
+    Epimorphisms     -> epimorphism
+    Isomorphisms     -> isomorphism
   where
     all = return tgm
     isomorphism | L.null nodesT && L.null edgesT = return tgm
@@ -378,7 +390,7 @@ completeFromEmptySource prop tgm (nodesT, edgesT) =
     epimorphism | L.null (orphanTypedNodeIds tgm) && L.null (orphanTypedEdgeIds tgm) = return tgm
                 | otherwise = []
 
-completeWithRemainingNodes :: MorphismType -> TypedGraphMorphism a b -> ExpandedGraph (Maybe b) -> ExpandedGraph (Maybe b) -> [TypedGraphMorphism a b]
+completeWithRemainingNodes :: TGraphMorphismClass -> TypedGraphMorphism n e -> ExpandedGraph (Maybe b) -> ExpandedGraph (Maybe b) -> [TypedGraphMorphism n e]
 completeWithRemainingNodes prop tgm ([], _)  (nodesT, edgesT) = completeFromEmptySource prop tgm (nodesT, edgesT)
 completeWithRemainingNodes _    _    _       ([],     _)      = []
 completeWithRemainingNodes prop tgm (h:t, _) (nodesT, edgesT) = do
@@ -388,16 +400,16 @@ completeWithRemainingNodes prop tgm (h:t, _) (nodesT, edgesT) = do
     Nothing  -> []
     Just tgm' ->
       case prop of
-        GenericMorphism -> all
-        Monomorphism    -> monomorphism
-        Epimorphism     -> all
-        Isomorphism     -> monomorphism
+        AllMorphisms -> all
+        Monomorphisms    -> monomorphism
+        Epimorphisms     -> all
+        Isomorphisms     -> monomorphism
       where
         nodesT'   = delete nodeFromTarget nodesT
         monomorphism = completeMappings prop tgm' (t, []) (nodesT', edgesT)
         all          = completeMappings prop tgm' (t, []) (nodesT , edgesT)
 
-completeFromSourceEdges ::  MorphismType -> TypedGraphMorphism a b -> ExpandedGraph (Maybe b) -> ExpandedGraph (Maybe b) -> [TypedGraphMorphism a b]
+completeFromSourceEdges ::  TGraphMorphismClass -> TypedGraphMorphism n e -> ExpandedGraph (Maybe b) -> ExpandedGraph (Maybe b) -> [TypedGraphMorphism n e]
 completeFromSourceEdges _ _ (_, []) (_, _) = error "completeFromSourceEdges: unexpected empty node list"
 completeFromSourceEdges prop tgm (nodes, e:t) (nodesT, edgesT)
   | L.null edgesT = []
@@ -418,12 +430,12 @@ completeFromSourceEdges prop tgm (nodes, e:t) (nodesT, edgesT)
           where tgm1 = updateNodesMapping srcH srcE nodesT tgm
                 tgm2 = updateNodesMapping tgtH tgtE nodesT' $ fromJust tgm1
                 nodesT' = case prop of
-                  Monomorphism    -> L.delete srcE nodesT
-                  Isomorphism     -> L.delete srcE nodesT
-                  Epimorphism     -> nodesT
-                  GenericMorphism -> nodesT
+                  Monomorphisms    -> L.delete srcE nodesT
+                  Isomorphisms     -> L.delete srcE nodesT
+                  Epimorphisms     -> nodesT
+                  AllMorphisms -> nodesT
 
-        --MAPPING SRC EDGE AND TGT EDGE
+        --MAPPING SRC Edge eND TGT EDGE
         tgmE
           | isNothing tgmN = Nothing
           | otherwise = updateEdgesMapping h edgeFromTarget edgesT $ fromJust tgmN
@@ -439,15 +451,15 @@ completeFromSourceEdges prop tgm (nodes, e:t) (nodesT, edgesT)
             all          = completeMappings prop tgm' (nodes', t) (nodesT,  edgesT)
             --CHOSE BETWEEN INJECTIVE OR NOT
         case prop of
-          GenericMorphism -> all
-          Monomorphism    -> monomorphism
-          Epimorphism     -> all
-          Isomorphism     -> monomorphism
+          AllMorphisms -> all
+          Monomorphisms    -> monomorphism
+          Epimorphisms     -> all
+          Isomorphisms     -> monomorphism
       Nothing  -> []
 
 -- VALIDATION OF A NODE MAPPING
 -- VERIFY IF THE TYPES OF n1 AND n2 ARE COMPATIBLE AND UPDATE MAPPING
-updateNodesMapping :: G.NodeId -> G.NodeId -> [G.NodeId] -> TypedGraphMorphism a b -> Maybe (TypedGraphMorphism a b)
+updateNodesMapping :: G.NodeId -> G.NodeId -> [G.NodeId] -> TypedGraphMorphism n e -> Maybe (TypedGraphMorphism n e)
 updateNodesMapping n1 n2 nodesT tgm =
   do
     let (d, c, m) = decomposeTypedGraphMorphism tgm
@@ -460,7 +472,7 @@ updateNodesMapping n1 n2 nodesT tgm =
 
 -- VALIDATION OF A EDGE MAPPING
 -- VERIFY IF THE TYPES OF e1 AND e2 ARE COMPATIBLE AND UPDATE MAPPING
-updateEdgesMapping :: G.EdgeId -> G.EdgeId -> [G.Edge (Maybe b)] -> TypedGraphMorphism a b -> Maybe (TypedGraphMorphism a b)
+updateEdgesMapping :: G.EdgeId -> G.EdgeId -> [G.Edge (Maybe b)] -> TypedGraphMorphism n e -> Maybe (TypedGraphMorphism n e)
 updateEdgesMapping e1 e2 edgesT tgm =
   do
     let (d, c, m) = decomposeTypedGraphMorphism tgm
@@ -469,5 +481,5 @@ updateEdgesMapping e1 e2 edgesT tgm =
     then Just $ buildTypedGraphMorphism d c (GM.updateEdges e1 e2 m)
     else Nothing
 
-decomposeTypedGraphMorphism :: TypedGraphMorphism a b -> (GM.GraphMorphism (Maybe a) (Maybe b), GM.GraphMorphism (Maybe a) (Maybe b), GM.GraphMorphism (Maybe a) (Maybe b))
+decomposeTypedGraphMorphism :: TypedGraphMorphism n e -> (GM.GraphMorphism (Maybe n) (Maybe e), GM.GraphMorphism (Maybe n) (Maybe e), GM.GraphMorphism (Maybe n) (Maybe e))
 decomposeTypedGraphMorphism tgm = (domain tgm, codomain tgm, mapping tgm)

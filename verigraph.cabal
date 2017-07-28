@@ -77,16 +77,17 @@ library
                        Rewriting.DPO.TypedGraph
                        Util.Closures
                        Util.List
+                       Util.Map
                        Util.Monad
                        XML.GGXReader
                        XML.GGXWriter
                        XML.GPRReader.GXLReader
   other-modules:
                        Abstract.Rewriting.DPO.DiagramAlgorithms
-                       Category.TypedGraph.AdhesiveHLR
-                       Category.TypedGraph.Cocomplete
+                       Category.TypedGraph.Adhesive
+                       Category.TypedGraph.Category
                        Category.TypedGraph.CommutingSquares
-                       Category.TypedGraph.JointlyEpimorphisms
+                       Category.TypedGraph.Limit
                        Category.TypedGraphRule.AdhesiveHLR
                        Category.TypedGraphRule.Cocomplete
                        Category.TypedGraphRule.FindMorphism

@@ -4,9 +4,12 @@ module Rewriting.DPO.TypedGraph
 (-- * Types
   TypedGraphRule
 , NamedTypedGraphRule
-, getLHS
-, getRHS
-, getNACs
+, leftMorphism
+, rightMorphism
+, leftObject
+, interfaceObject
+, rightObject
+, nacs
 
 -- * Basic Functions
 , invertProductionWithoutNacs
@@ -18,46 +21,40 @@ module Rewriting.DPO.TypedGraph
 , preservedEdges
 , emptyGraphRule
 , nullGraphRule
-, isDeleted
 ) where
 
-import           Abstract.Category.FinitaryCategory as FC
 import           Abstract.Rewriting.DPO             as DPO
-import           Category.TypedGraph                ()
-import           Category.TypedGraph.AdhesiveHLR
-import           Category.TypedGraph.FindMorphism   ()
+import           Category.TypedGraph                
 import           Data.Graphs                        as G
 import qualified Data.Graphs.Morphism               as GM
 import           Data.TypedGraph                    as GM
 import           Data.TypedGraph.Morphism           as TGM
-import           Data.TypedGraph.Partition               (generateGraphPartitions)
-import           Data.TypedGraph.Partition.ToVerigraph   (mountTypedGraphMorphisms)
-import           Data.TypedGraph.Partition.FromVerigraph (createSatisfyingNacsDisjointUnion)
+import           Util.Monad
 
-type TypedGraphRule a b = Production (TypedGraphMorphism a b)
-type NamedTypedGraphRule a b = NamedProduction (TypedGraphMorphism a b)
+type TypedGraphRule a b = Production (TGraphCat a b) (TypedGraphMorphism a b)
+type NamedTypedGraphRule a b = NamedProduction (TGraphCat a b) (TypedGraphMorphism a b)
 
 -- | Return the nodes deleted by a rule
 deletedNodes :: TypedGraphRule a b -> [G.NodeId]
-deletedNodes r = TGM.orphanTypedNodeIds (getLHS r)
+deletedNodes r = TGM.orphanTypedNodeIds (leftMorphism r)
 
 -- | Return the nodes created by a rule
 createdNodes :: TypedGraphRule a b -> [G.NodeId]
-createdNodes r = TGM.orphanTypedNodeIds (getRHS r)
+createdNodes r = TGM.orphanTypedNodeIds (rightMorphism r)
 
 -- | Return the edges deleted by a rule
 deletedEdges :: TypedGraphRule a b -> [G.EdgeId]
-deletedEdges r = TGM.orphanTypedEdgeIds (getLHS r)
+deletedEdges r = TGM.orphanTypedEdgeIds (leftMorphism r)
 
 -- | Return the edges created by a rule
 createdEdges :: TypedGraphRule a b -> [G.EdgeId]
-createdEdges = TGM.orphanTypedEdgeIds . getRHS
+createdEdges = TGM.orphanTypedEdgeIds . rightMorphism
 
 preservedNodes :: TypedGraphRule a b -> [G.NodeId]
-preservedNodes = nodeIdsFromDomain . getLHS
+preservedNodes = nodeIdsFromDomain . leftMorphism
 
 preservedEdges :: TypedGraphRule a b -> [G.EdgeId]
-preservedEdges = edgeIdsFromDomain . getLHS
+preservedEdges = edgeIdsFromDomain . leftMorphism
 
 -- | Returns an empty TypedGraphRule
 emptyGraphRule :: Graph (Maybe a) (Maybe b) -> TypedGraphRule a b
@@ -70,24 +67,16 @@ emptyGraphRule typegraph = emptyRule
 
 -- | Checks if it is a null rule
 nullGraphRule :: TypedGraphRule a b -> Bool
-nullGraphRule rule = null l && null k && null r
-  where
-    null = G.null . untypedGraph
-    l = codomain $ getLHS rule
-    k = domain $ getLHS rule
-    r = codomain $ getRHS rule
+nullGraphRule rule = null (leftObject rule) && null (interfaceObject rule) && null (rightObject rule)
+  where null = G.null . untypedGraph
 
-instance DPO (TypedGraphMorphism a b) where
+instance DPO (TGraphCat a b) (TypedGraphMorphism a b) where
+  invertProduction rule = do
+    shiftedNacs <- concatMapM (shiftNacOverProduction rule) (nacs rule)
+    return $ buildProduction (rightMorphism rule) (leftMorphism rule) shiftedNacs
 
-  invertProduction conf rule =
-    buildProduction (getRHS rule) (getLHS rule) (concatMap (shiftNacOverProduction conf rule) (getNACs rule))
-
-  shiftNacOverProduction conf rule nac = [calculateComatch nac rule | satisfiesGluingConditions conf rule nac]
-
-  createJointlyEpimorphicPairsFromNAC conf r nac =
-    map (mountTypedGraphMorphisms r (codomain nac)) (generateGraphPartitions labeled)
-    where
-      injectiveMatch = matchRestriction conf == Monomorphism
-      totalInjectiveNac = nacSatisfaction conf == MonomorphicNAC
-
-      labeled = createSatisfyingNacsDisjointUnion (r, injectiveMatch) (nac, totalInjectiveNac)
+  shiftNacOverProduction rule nac = do
+    canRewrite <- satisfiesGluingConditions rule nac
+    if canRewrite
+      then (:[]) <$> calculateComatch nac rule
+      else return []

@@ -8,6 +8,8 @@ module Data.Relation
       Relation
     -- * Construction
     , empty
+    , fromList
+    , fromMapAndCodomain
     -- * Transformation
     , compose
     , Data.Relation.id
@@ -16,6 +18,7 @@ module Data.Relation
     , removeFromDomain
     , removeFromCodomain
     , insertOnCodomain
+    , filterDomain
     -- * Query
     , apply
     , domain
@@ -46,6 +49,19 @@ instance (Eq a, Ord a) => Eq (Relation a) where
     r1 == r2 = sort(domain r1) == sort(domain r2) &&
                sort(codomain r1) == sort(codomain r2) &&
                mapping r1 == mapping r2
+
+-- | Construct a relation from a list of pairs of related elements.
+fromList :: Ord a => [(a, a)] -> Relation a
+fromList pairs =
+  let
+    mapping = foldl' (\m (k,v) -> Map.insertWith (++) k [v] m) Map.empty pairs
+    codomain = sort . nub $ map snd pairs
+  in Relation (Map.keys mapping) codomain mapping
+  
+-- | Construct a relation from a map and a list of codomain elements.
+fromMapAndCodomain :: Ord a => Map.Map a a -> [a] -> Relation a
+fromMapAndCodomain mapping codomain =
+  Relation (Map.keys mapping) (sort $ nub codomain) (Map.map (:[]) mapping)
 
 -- | Return a list of all domain elements mapped by the relation.
 listDomain :: Relation a -> [a]
@@ -126,6 +142,13 @@ removeFromCodomain x r = r { codomain = L.delete x (codomain r)
 -- | Insert an element on the codomain of the relation
 insertOnCodomain :: Ord a => a -> Relation a -> Relation a
 insertOnCodomain x r = r { codomain = [x] `union` codomain r }
+
+-- | Remove the elements of the domain that don't pass the given test.
+filterDomain :: (a -> Bool) -> Relation a -> Relation a
+filterDomain test r = r 
+  { domain = L.filter test (domain r)
+  , mapping = Map.filterWithKey (const . test) (mapping r)
+  }
 
 -- | Test if @r@ is functional.
 isFunctional :: Relation a -> Bool

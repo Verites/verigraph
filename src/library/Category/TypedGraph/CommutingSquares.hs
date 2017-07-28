@@ -1,13 +1,16 @@
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Category.TypedGraph.CommutingSquares (
     commutingMorphism
   , commutingMorphismSameDomain
   , commutingMorphismSameCodomain
   ) where
 
-import           Abstract.Category.FinitaryCategory
-import           Category.TypedGraph                ()
-import           Category.TypedGraph.FindMorphism   ()
+import           Abstract.Category.NewClasses
+import           Category.TypedGraph
 import           Data.TypedGraph.Morphism
+
+-- TODO: Shouldn't this module be closer to where it is used?
 
 ---- All functions in this file search the unique morphism in some diagram.
 -- Since it is for build productions, we consider only monomorphic morphisms.
@@ -17,7 +20,7 @@ import           Data.TypedGraph.Morphism
 -- 2. An error: if the diagram do not has the commuting morphism.
 -- 3. An error: if two or more commuting morphisms are found, which is probably an implementation error.
 
-output :: String -> [TypedGraphMorphism a b] -> TypedGraphMorphism a b
+output :: String -> [TypedGraphMorphism n e] -> TypedGraphMorphism n e
 output fname morphisms =
   case morphisms of
     [] -> error $ "("++fname++") Error when commuting monomorphic morphisms (must be generating an invalid rule)"
@@ -38,13 +41,13 @@ output fname morphisms =
 --        Y ────▶B
 --           b2
 -- @
-commutingMorphism :: TypedGraphMorphism a b -> TypedGraphMorphism a b
-                  -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
-commutingMorphism a1 b1 a2 b2 = buildTypedGraphMorphism (domain a1) (domain b1) select
-  where
-    mats = findMonomorphisms (domain a1) (domain b1)
-    filt = filter (\m -> b1 <&> m == a1 && b2 <&> m == a2) mats
-    select = mapping $ output "commutingMorphism" filt
+commutingMorphism :: TypedGraphMorphism n e -> TypedGraphMorphism n e
+                  -> TypedGraphMorphism n e -> TypedGraphMorphism n e -> TGraphCat n e (TypedGraphMorphism n e)
+commutingMorphism a1 b1 a2 b2 = do
+  mats <- findMonomorphisms (domain a1) (domain b1)
+  let filt = filter (\m -> b1 <&> m == a1 && b2 <&> m == a2) mats
+  let select = mapping $ output "commutingMorphism" filt
+  return $ buildTypedGraphMorphism (domain a1) (domain b1) select
 
 -- | Given the morphisms /k1 : X -> Y/, /s1 : X -> Z/,
 -- /k2 : W -> Y/ and /s2 : W -> Z/, respectively,
@@ -60,13 +63,13 @@ commutingMorphism a1 b1 a2 b2 = buildTypedGraphMorphism (domain a1) (domain b1) 
 --        Z◀──── W
 --           s2
 -- @
-commutingMorphismSameDomain :: TypedGraphMorphism a b -> TypedGraphMorphism a b
-                            -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
-commutingMorphismSameDomain k1 s1 k2 s2 = buildTypedGraphMorphism (codomain k1) (codomain s1) select
-  where
-    mats = findMonomorphisms (codomain k1) (codomain s1)
-    filt = filter (\m -> m <&> k1 == s1 && m <&> k2 == s2) mats
-    select = mapping $ output "commutingMorphismSameDomain" filt
+commutingMorphismSameDomain :: TypedGraphMorphism n e -> TypedGraphMorphism n e
+                            -> TypedGraphMorphism n e -> TypedGraphMorphism n e -> TGraphCat n e (TypedGraphMorphism n e)
+commutingMorphismSameDomain k1 s1 k2 s2 = do
+  mats <- findMonomorphisms (codomain k1) (codomain s1)
+  let filt = filter (\m -> m <&> k1 == s1 && m <&> k2 == s2) mats
+  let select = mapping $ output "commutingMorphismSameDomain" filt
+  return $ buildTypedGraphMorphism (codomain k1) (codomain s1) select
 
 -- | Given the morphisms /k1 : Y -> X/, /s1 : Z -> X/,
 -- /k2 : W -> Y/ and /s2 : W -> Z/, respectively,
@@ -82,10 +85,13 @@ commutingMorphismSameDomain k1 s1 k2 s2 = buildTypedGraphMorphism (codomain k1) 
 --        Z◀──── W
 --           s2
 -- @
-commutingMorphismSameCodomain :: TypedGraphMorphism a b -> TypedGraphMorphism a b
-                              -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
-commutingMorphismSameCodomain k1 s1 k2 s2 = buildTypedGraphMorphism (domain k1) (domain s1) select
-  where
-    mats = findMonomorphisms (domain k1) (domain s1)
-    filt = filter (\m -> s1 <&> m == k1 && m <&> k2 == s2) mats
-    select = mapping $ output "commutingMorphismSameCodomain" filt
+commutingMorphismSameCodomain :: TypedGraphMorphism n e -> TypedGraphMorphism n e
+                              -> TypedGraphMorphism n e -> TypedGraphMorphism n e -> TGraphCat n e (TypedGraphMorphism n e)
+commutingMorphismSameCodomain k1 s1 k2 s2 = do
+  mats <- findMonomorphisms (domain k1) (domain s1)
+  let filt = filter (\m -> s1 <&> m == k1 && m <&> k2 == s2) mats
+  let select = mapping $ output "commutingMorphismSameCodomain" filt
+  return $ buildTypedGraphMorphism (domain k1) (domain s1) select
+
+findMonomorphisms :: forall n e. TypedGraph n e -> TypedGraph n e -> TGraphCat n e [TypedGraphMorphism n e]
+findMonomorphisms = findMorphisms (monic @(TGraphCat n e))

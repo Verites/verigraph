@@ -153,7 +153,7 @@ class (LRNAdhesive cat morph, FindMorphism cat morph) => DPO cat morph where
   -- | Inverts a production, adjusting the NACs accordingly.
   -- Needs information of nac injective satisfaction (in second-order)
   -- and matches injective.
-  invertProduction :: Production cat morph -> Production cat morph
+  invertProduction :: Production cat morph -> cat (Production cat morph)
 
   -- | Given a production /L ←l- K -r→ R/ and a NAC morphism /n : L -> N/, obtain
   -- a set of NACs /n'i : R -> N'i/ that is equivalent to the original NAC.
