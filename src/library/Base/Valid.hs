@@ -11,6 +11,7 @@ module Base.Valid
   , ensureM
   , withContext
   , validateNamed
+  , mapValidator
   ) where
 
 import Control.Monad.Writer.Lazy
@@ -56,7 +57,6 @@ class Monad m => Valid m a where
   -- | Checks if the given value is well-formed, providing an explanation of any errors encountered.
   validator :: a -> Validator m
 
-
 invalid :: Monad m => String -> Validator m
 invalid message = tell (IsInvalid [message])
 
@@ -100,3 +100,17 @@ ensureValid result =
   case errorMessages result of
     Nothing       -> return ()
     Just messages -> putStrLn messages >> exitFailure
+
+-- | Changes the underlying monad of a validator.
+--
+-- It often happens that the validation of a particular type is done on a monad
+-- @m@, but we need to validate it within a monad @n@. If there is a function
+-- @convert :: m a -> m b@, then we can use @mapValidator convert validator@ to
+-- change the underlying monad of the validation.
+--
+-- A common case is the use of monad transformers. Assume we have an instance
+-- @Validate m a@, but we need to perform validation within the monad @t m@,
+-- where @t@ is a 'MonadTransformer'. In this case, we can use @mapValidator
+-- lift validator@.
+mapValidator :: (m ((), ValidationResult) -> n ((), ValidationResult)) -> Validator m -> Validator n
+mapValidator convertInnerMonad = mapWriterT convertInnerMonad

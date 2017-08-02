@@ -179,3 +179,6 @@ isOrphanNode m n = n `elem` orphanTypedNodeIds m
 
 isOrphanEdge :: TypedGraphMorphism a b -> EdgeId -> Bool
 isOrphanEdge m e = e `elem` orphanTypedEdgeIds m
+
+satisfiesNACRewriting :: DPO cat morph => morph -> morph -> cat Bool
+satisfiesNACRewriting l = satisfiesGluingConditions (buildProduction l undefined [])

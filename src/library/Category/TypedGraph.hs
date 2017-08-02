@@ -6,6 +6,7 @@ module Category.TypedGraph
 , TypedGraphMorphism
 , TGraphCat
 , TGraphConfig(..)
+, MatchRestriction(..)
 , runCat
 , getTypeGraph
 )  where
@@ -13,7 +14,6 @@ module Category.TypedGraph
 import Control.Monad
 import Control.Monad.Trans
 
-import           Abstract.Category.NewClasses
 import           Base.Valid
 import qualified Data.Graphs                        as Graph
 import qualified Data.Graphs.Morphism               as Graph

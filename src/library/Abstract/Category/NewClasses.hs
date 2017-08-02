@@ -45,7 +45,10 @@ module Abstract.Category.NewClasses
   , InitialPushout(..)
   ) where
 
+import Control.Monad.List
 import           Data.List.NonEmpty (NonEmpty(..))
+
+import Util.Monad
 
 
 {- | Type class for representing categories in Verigraph.
@@ -335,6 +338,10 @@ class EM'Factorizable cat morph => EM'PairFactorizable cat morph where
   -- morphisms /h1, h2 : Z -> A/, if /h1 != h2/ then /h1 . f != h2 . f/ or 
   -- /h2 . f != h2 . g/.
   findJointlyEpicSquares :: (MorphismClass cat, morph) -> (MorphismClass cat, morph) -> cat [(morph, morph)]
+  findJointlyEpicSquares (cf, f) (cg, g) = runListT $ do
+    (g', f') <- pickOne $ findJointlyEpicPairs (cf, codomain f) (cg, codomain g)
+    guard (g' <&> f == f' <&> g)
+    return (f', g')
 
 {- | Type class for categories whose \(\mathrm{Hom}\)-sets are computable.
 

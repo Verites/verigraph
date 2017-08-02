@@ -2,6 +2,7 @@
 module Category.TypedGraph.Category
 ( TGraphCat
 , TGraphConfig(..)
+, MatchRestriction(..)
 , TGraphMorphismClass(..)
 , fixedClass
 , matchMorphismsClass
