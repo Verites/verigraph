@@ -20,12 +20,10 @@ import           Data.Partition
 
 
 instance Complete (TGraphCat n e) (TypedGraphMorphism n e) where
+  getFinalObject = identity <$> getTypeGraph
 
-  getInitialObject = return (identity Graph.empty)
-
-  getMorphismFromInitialObjectTo g = return $
-    TypedGraphMorphism (Untyped.empty Graph.empty Graph.empty) g
-      (Untyped.empty Graph.empty (untypedGraph g))
+  getMorphismToFinalObjectFrom g = return $
+    TypedGraphMorphism g (identity $ typeGraph g) g
 
   calculateEqualizer f g = return $
     let
@@ -134,10 +132,11 @@ type TypedEdge = (EdgeId, NodeId, NodeId, EdgeId)
 type RelabelFunction = (NodeId -> NodeId, EdgeId -> EdgeId)
 
 instance Cocomplete (TGraphCat n e) (TypedGraphMorphism n e) where
-  getFinalObject = identity <$> getTypeGraph
+  getInitialObject = return (identity Graph.empty)
 
-  getMorphismToFinalObjectFrom g = return $
-    TypedGraphMorphism g (identity $ typeGraph g) g
+  getMorphismFromInitialObjectTo g = return $
+    TypedGraphMorphism (Untyped.empty Graph.empty Graph.empty) g
+      (Untyped.empty Graph.empty (untypedGraph g))
 
   calculateCoequalizer f g = return (calculateCoequalizer' f g)
   calculateNCoequalizer = return . calculateNCoequalizer'

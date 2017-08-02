@@ -396,39 +396,36 @@ class Category cat morph => FindMorphism cat morph where
 
 -- | Type class for categories that have all finite limits.
 --
--- This type class provides constructions for initial objects, equalizers,
+-- This type class provides constructions for final objects, equalizers,
 -- products and pullbacks. With these, it should be possible (if not efficient)
 -- to construct any finite limit.
 --
--- Even though pullbacks could be 
--- calculated by a product followed by an equalizer, no default implementation for them is provided. This is because product
--- objects tend to be very large, so the naive implementation of pullbacks would
--- be inefficient.
+-- Even though pullbacks could be calculated by a product followed by an
+-- equalizer, no default implementation for them is provided. This is because
+-- product objects tend to be very large, so the naive implementation of
+-- pullbacks would be inefficient. On the other hand, since products can be
+-- calculated as pullbacks of the morphisms to the final object, there is a
+-- default implementation of products.
 --
 -- Since equalizers, products and pullbacks are associative, the default
 -- implementation for their n-ary versions consists of repeated application of
 -- the binary versions. Specialized implementations might reduce execution time
 -- and memory consumption.
---
--- If the category has a final object, then products can be calculated as
--- pullbacks of the morphisms to the final object. Thus, there is a default
--- implementation of products for 'Cocomplete' categories, in terms of the final
--- object and pullbacks.
 class Category cat morph => Complete cat morph where
 
-  -- | Obtain the initial object of the category.
+  -- | Obtain the final object of the category.
   --
-  -- An object \(\mathbf{0}\) is initial when, for any other object \(X\), there
-  -- is a unique morphism \(\mathbf{0} \to X\). Note that there isn't
-  -- necessarily a unique initial object, but all of them are isomorphic. This
-  -- function always returns the same initial object.
-  getInitialObject :: cat (Obj cat)
+  -- An object \(\mathbf{1}\) is final when, for any other object \(X\), there
+  -- is a unique morphism \(X \to \mathbf{1}\). Note that there isn't
+  -- necessarily a unique final object, but all of them are isomorphic. This
+  -- function always returns the same final object.
+  getFinalObject :: cat (Obj cat)
 
-  -- | Obtain the unique morphism from the initial object into the given object.
+  -- | Obtain the unique morphism from the given object into the final object.
   --
-  -- It is guaranteed that the domain of this morphism is /equal/ to the initial
-  -- object returned by 'getInitialObject', and not just isomorphic.
-  getMorphismFromInitialObjectTo :: Obj cat -> cat morph
+  -- It is guaranteed that the codomain of this morphism is /equal/ to the final
+  -- object returned by 'getFinalObject', and not just isomorphic.
+  getMorphismToFinalObjectFrom :: Obj cat -> cat morph
 
   -- | Given two parallel morphisms, calculate their equalizer.
   --
@@ -453,7 +450,6 @@ class Category cat morph => Complete cat morph where
   -- \((p_X, p_Y)\) from the product
   -- \(X \overset{p_X}{\leftarrow} X\times Y \overset{p_Y}{\to} Y\).
   calculateProduct :: Obj cat -> Obj cat -> cat (morph, morph)
-  default calculateProduct :: Cocomplete cat morph => Obj cat -> Obj cat -> cat (morph, morph)
   calculateProduct x y = do
     fx <- getMorphismToFinalObjectFrom x
     fy <- getMorphismToFinalObjectFrom y
@@ -466,7 +462,7 @@ class Category cat morph => Complete cat morph where
   -- \((P, \{p_i : P \to X_i\})\), where \(P\) is the product object
   -- of all \(X_i\) and each \(p_i\) is a projection morphism.
   calculateNProduct :: [Obj cat] -> cat (Obj cat, [morph])
-  calculateNProduct [] = (,[]) <$> getInitialObject
+  calculateNProduct [] = (,[]) <$> getFinalObject
   calculateNProduct [x] = return (x, [identity x])
   calculateNProduct xs = do
     ps <- recurse xs
@@ -504,7 +500,7 @@ class Category cat morph => Complete cat morph where
   -- return the pair \((P, \{p_i : P \to X_i\})\) where \(P\) is the pullback
   -- object for all \(f_i\) and each \(p_i\) is a projection morphism.
   calculateNPullback :: [morph] -> cat (Obj cat, [morph])
-  calculateNPullback [] = (,[]) <$> getInitialObject
+  calculateNPullback [] = (,[]) <$> getFinalObject
   calculateNPullback [f] = return (domain f, [identity $ domain f])
   calculateNPullback fs = do
     ps <- recurse fs
@@ -523,7 +519,7 @@ class Category cat morph => Complete cat morph where
 
 -- | Type class for categories that have all finite colimits.
 --
--- This type class provides constructions for final objects, coequalizers,
+-- This type class provides constructions for initial objects, coequalizers,
 -- coproducts and pushouts. With these, it should be possible (if not efficient)
 -- to construct any finite colimit.
 --
@@ -537,21 +533,20 @@ class Category cat morph => Complete cat morph where
 -- the binary versions. Specialized implementations might reduce execution time
 -- and memory consumption.
 class Category cat morph => Cocomplete cat morph where
-  {-# MINIMAL getFinalObject, getMorphismToFinalObjectFrom, calculateCoequalizer, calculateCoproduct #-}
 
-  -- | Obtain the final object of the category.
+  -- | Obtain the initial object of the category.
   --
-  -- An object \(\mathbf{1}\) is final when, for any other object \(X\), there
-  -- is a unique morphism \(X \to \mathbf{1}\). Note that there isn't
-  -- necessarily a unique final object, but all of them are isomorphic. This
-  -- function always returns the same final object.
-  getFinalObject :: cat (Obj cat)
+  -- An object \(\mathbf{0}\) is initial when, for any other object \(X\), there
+  -- is a unique morphism \(\mathbf{0} \to X\). Note that there isn't
+  -- necessarily a unique initial object, but all of them are isomorphic. This
+  -- function always returns the same initial object.
+  getInitialObject :: cat (Obj cat)
 
-  -- | Obtain the unique morphism from the given object into the final object.
+  -- | Obtain the unique morphism from the initial object into the given object.
   --
-  -- It is guaranteed that the codomain of this morphism is /equal/ to the final
-  -- object returned by 'getFinalObject', and not just isomorphic.
-  getMorphismToFinalObjectFrom :: Obj cat -> cat morph
+  -- It is guaranteed that the domain of this morphism is /equal/ to the initial
+  -- object returned by 'getInitialObject', and not just isomorphic.
+  getMorphismFromInitialObjectTo :: Obj cat -> cat morph
 
   -- | Given two parallel morphisms, calculate their coequalizer.
   --
@@ -583,7 +578,7 @@ class Category cat morph => Cocomplete cat morph where
   -- \((S, \{j_i : X_i \to S\})\), where \(S\) is the product object
   -- of all \(X_i\) and each \(j_i\) is an injection morphism.
   calculateNCoproduct :: [Obj cat] -> cat (Obj cat, [morph])
-  calculateNCoproduct [] = (,[]) <$> getFinalObject
+  calculateNCoproduct [] = (,[]) <$> getInitialObject
   calculateNCoproduct [x] = return (x, [identity x])
   calculateNCoproduct xs = do
     ps <- recurse xs
@@ -626,7 +621,7 @@ class Category cat morph => Cocomplete cat morph where
   -- return the pair \((S, \{j_i : X_i \to S\})\) where \(S\) is the pushout
   -- object for all \(f_i\) and each \(j_i\) is an injection morphism.
   calculateNPushout :: [morph] -> cat (Obj cat, [morph])
-  calculateNPushout [] = (,[]) <$> getFinalObject
+  calculateNPushout [] = (,[]) <$> getInitialObject
   calculateNPushout [f] = return (codomain f, [identity $ codomain f])
   calculateNPushout fs = do
     js <- recurse fs
