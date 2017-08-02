@@ -43,6 +43,7 @@ module Abstract.Category.NewClasses
 
   -- * Other Constructions
   , InitialPushout(..)
+  , FinalPullbackComplement(..)
   ) where
 
 import Control.Monad.List
@@ -826,3 +827,23 @@ class MFinitary cat morph => InitialPushout cat morph where
   -- @
   calculateInitialPushout :: morph -> cat (morph, morph, morph)
 
+
+class Category cat morph => FinalPullbackComplement cat morph where
+  -- | Calculate the final pullback complement for a monomorphism followed by another morphism.
+  --
+  -- Given the morphisms \(f : A \to B\) and \(g : B \to C\), respectively and
+  -- with \(f\) monic, returns the pair of morphisms \(g' : X \to B\) and
+  -- \(f' : A \to X\) such that the following square is a pullback.
+  --
+  -- @
+  --        f
+  --     A──────▶B
+  --     │       │
+  --  g' │       │ g
+  --     ▼       ▼
+  --     X──────▶C
+  --        f'
+  -- @
+  --
+  -- The behaviour is undefined when the first morphism isn't monic.
+  calculateFinalPullbackComplementOfMonoAny :: morph -> morph -> (morph, morph)

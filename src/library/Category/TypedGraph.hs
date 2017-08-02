@@ -1,6 +1,4 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
-
 module Category.TypedGraph
 ( TypedGraph
 , TypedGraphMorphism
@@ -21,6 +19,7 @@ import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
 import           Category.TypedGraph.Category
 import           Category.TypedGraph.FindMorphism ()
+import           Category.TypedGraph.FinalPullbackComplement ()
 import           Category.TypedGraph.Limit ()
 import           Category.TypedGraph.Adhesive ()
 

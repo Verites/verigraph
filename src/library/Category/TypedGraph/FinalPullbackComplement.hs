@@ -1,15 +1,14 @@
 module Category.TypedGraph.FinalPullbackComplement where
 
-import           Abstract.Category.FinalPullbackComplement
-import           Abstract.Category.FinitaryCategory
-import           Category.TypedGraph.Cocomplete     ()
+import           Abstract.Category.NewClasses
+import           Category.TypedGraph.Category
+import           Category.TypedGraph.Limit     ()
 import           Data.Graphs                        as G
 import qualified Data.Graphs.Morphism               as GM
 import           Data.TypedGraph.Morphism
 
--- FIXME: migrate this module (and create new class for FPBC)
 
-instance FinalPullbackComplement (TypedGraphMorphism a b) where
+instance FinalPullbackComplement (TGraphCat n e) (TypedGraphMorphism n e) where
 
   -- @
   --       l
@@ -40,7 +39,7 @@ instance FinalPullbackComplement (TypedGraphMorphism a b) where
   --
   -- This function is divided in four steps,
   -- first two for nodes and the lasts for edges.
-  calculateFinalPullbackComplement m l = step4
+  calculateFinalPullbackComplementOfMonoAny m l = step4
     where
       typedGraphK = domain l
       typedGraphA = codomain m
@@ -112,7 +111,3 @@ instance FinalPullbackComplement (TypedGraphMorphism a b) where
           typeE = edgeTypeInA e
           updatedK = createEdgeOnCodomain newEdge u v typeE k
           updatedL' = createEdgeOnDomain newEdge u v typeE e l'
-
-  hasFinalPullbackComplement (Monomorphism, _) _ = True
-  hasFinalPullbackComplement _ _ =
-    error "Final pullback complement is not implemented for non monomorphic matches"
