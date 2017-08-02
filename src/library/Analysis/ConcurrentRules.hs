@@ -73,38 +73,6 @@ epiPairsForConcurrentRule AllOverlapings constraints c n = do
           `andM` satisfiesRewritingConditions n rp
 
 
-{-
-
-  The following function is related to the following diagrams.
-
-   Lc ◀──── Kc ────▶ Rc      Ln ◀──── Kn ────▶ Rn
-    │       │          \    /         │        │
-  mc│     dc│        mc'\  /mn        │dn      │mn' 
-    ▼       ▼            ▼▼           ▼        ▼
-    G ◀──── Dc ────────▶ Hc ◀──────── Dn ────▶ Hn
-       lc'  ▲      rc'          ln'   ▲    rn'
-             \                       /
-              \───────── K ─────────/
-                   kc          kn
-
-
-         nc 
-    Nc ◀───── Lc
-    │         │
-    │         │mc
-    ▼         ▼
-    Nc' ◀──── G
-         nc'
-                   
-                             
-    Nn''                Ln ────▶ Nn
-    ▲               mn /
-    │                 ▼    
-    G ◀──── Dc ────▶ Hc ────▶ Nn'
-        lc'     rc'
-
-    
--}
 concurrentRuleForPair :: forall cat morph. (DPO cat morph, EM'PairFactorizable cat morph) => [Constraint cat morph] -> Production cat morph -> Production cat morph -> (morph,morph) -> cat (Maybe (Production cat morph))
 concurrentRuleForPair constraints c n (mc', mn) = do
   {- Lc ◀──── Kc ────▶ Rc      Ln ◀──── Kn ────▶ Rn
