@@ -1,6 +1,5 @@
 dist/
 doc/
-.idea/
 org/
 tmp/
 .stack-work/
@@ -29,3 +28,7 @@ images/.directory
 #Emacs stuff
 TAGS
 *#
+
+# Text editor stuff
+.vscode
+.idea
