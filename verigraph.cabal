@@ -57,7 +57,6 @@ library
                        Category.TypedGraph.FinalPullbackComplement
                        Category.TypedGraph.FindMorphism
                        Category.TypedGraphRule
-                       Category.TypedGraphRule.JointlyEpimorphisms
                        Data.Graphs
                        Data.Graphs.Morphism
                        Data.Graphs.QuickCheck
@@ -88,7 +87,8 @@ library
                        Category.TypedGraph.CommutingSquares
                        Category.TypedGraph.Limit
                        Category.TypedGraphRule.AdhesiveHLR
-                       Category.TypedGraphRule.Cocomplete
+                       Category.TypedGraphRule.Category
+                       Category.TypedGraphRule.Limit
                        Category.TypedGraphRule.FindMorphism
                        Data.TypedGraph.Partition
                        Data.TypedGraph.Partition.FromVerigraph
