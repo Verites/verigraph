@@ -6,7 +6,7 @@ module XML.GPRReader.GXLInstatiator
 
 import qualified Data.List                          as L
 
-import           Abstract.Category.FinitaryCategory (identity)
+import           Abstract.Category.NewClasses
 import           Abstract.Rewriting.DPO
 import qualified Data.Graphs                        as G
 import           Data.TypedGraph.Morphism           as TGM
@@ -38,7 +38,7 @@ instatiateRule typeGraph types rule = (fst rule, ruleWithNacs)
 
     (nacsWithOnlyOneEdge,edgesInNacsWithNodes) =
       L.partition (\(_,src,tgt,_,_) -> G.NodeId src `elem` nodesL && G.NodeId tgt `elem` nodesL) forbiddenEdges
-    nodesL = nodeIdsFromCodomain (getLHS ruleWithoutNacs)
+    nodesL = nodeIdsFromCodomain (leftMorphism ruleWithoutNacs)
 
     groupNodesByNac =
       L.groupBy
@@ -49,15 +49,15 @@ instatiateRule typeGraph types rule = (fst rule, ruleWithNacs)
 
     nacsWithOnlyNodes = map (instatiateNacNodes ruleWithoutNacs) groupNodesByNac
     nacs1 = instatiateNacEdges edgesInNacsWithNodes nacsWithOnlyNodes
-    nacs2 = instatiateLonelyNacEdges (getLHS ruleWithoutNacs) nacsWithOnlyOneEdge
+    nacs2 = instatiateLonelyNacEdges (leftMorphism ruleWithoutNacs) nacsWithOnlyOneEdge
 
-    ruleWithNacs = buildProduction (getLHS ruleWithoutNacs) (getRHS ruleWithoutNacs) (nacs1 ++ nacs2)
+    ruleWithNacs = buildProduction (leftMorphism ruleWithoutNacs) (leftMorphism ruleWithoutNacs) (nacs1 ++ nacs2)
 
-instatiateNacNodes :: Production (TypedGraphMorphism a b) -> [ProcessedNode] -> TypedGraphMorphism a b
+instatiateNacNodes :: TypedGraphRule a b -> [ProcessedNode] -> TypedGraphMorphism a b
 instatiateNacNodes r =
   foldr (\(n,ntype,_) -> TGM.createNodeOnCodomain (G.NodeId n) (G.NodeId ntype)) isoL
   where
-    isoL = identity (codomainGraph (getLHS r))
+    isoL = identity (leftObject r)
 
 instatiateNacEdges :: [ProcessedEdge] -> [TypedGraphMorphism a b] -> [TypedGraphMorphism a b]
 instatiateNacEdges _ [] = []
@@ -71,7 +71,7 @@ instatiateNacEdges edges (n:nacs) = foldr insertEdge n edges : instatiateNacEdge
 instatiateLonelyNacEdges :: TypedGraphMorphism a b -> [ProcessedEdge] -> [TypedGraphMorphism a b]
 instatiateLonelyNacEdges l = map insertEdge
   where
-    isoL = identity (codomainGraph l)
+    isoL = identity (codomain l)
 
     insertEdge (e,src,tgt,tp,_) =
       createEdgeOnCodomain (G.EdgeId e) (G.NodeId src) (G.NodeId tgt) (G.EdgeId tp) isoL
@@ -97,45 +97,45 @@ instatiateRuleEdges init ((e,src,tgt,etype,cond):edges) = action cond (instatiat
 addsDeletionNode :: NodeId -> NodeTypeId -> TypedGraphRule a b -> TypedGraphRule a b
 addsDeletionNode nodeId ntype r =
   buildProduction
-    (TGM.createNodeOnCodomain (G.NodeId nodeId) (G.NodeId ntype) (getLHS r))
-    (getRHS r)
+    (TGM.createNodeOnCodomain (G.NodeId nodeId) (G.NodeId ntype) (leftMorphism r))
+    (rightMorphism r)
     []
 
 addsCreationNode :: NodeId -> NodeTypeId -> TypedGraphRule a b -> TypedGraphRule a b
 addsCreationNode nodeId ntype r =
   buildProduction
-    (getLHS r)
-    (TGM.createNodeOnCodomain (G.NodeId nodeId) (G.NodeId ntype) (getRHS r))
+    (leftMorphism r)
+    (TGM.createNodeOnCodomain (G.NodeId nodeId) (G.NodeId ntype) (rightMorphism r))
     []
 
 addsPreservationNode :: NodeId -> NodeTypeId -> TypedGraphRule a b -> TypedGraphRule a b
 addsPreservationNode nodeId ntype r =
   buildProduction
     (TGM.createNodeOnCodomain (G.NodeId nodeId) (G.NodeId ntype)
-      (TGM.createNodeOnDomain (G.NodeId nodeId) (G.NodeId ntype) (G.NodeId nodeId) (getLHS r)))
+      (TGM.createNodeOnDomain (G.NodeId nodeId) (G.NodeId ntype) (G.NodeId nodeId) (leftMorphism r)))
     (TGM.createNodeOnCodomain (G.NodeId nodeId) (G.NodeId ntype)
-      (TGM.createNodeOnDomain (G.NodeId nodeId) (G.NodeId ntype) (G.NodeId nodeId) (getRHS r)))
+      (TGM.createNodeOnDomain (G.NodeId nodeId) (G.NodeId ntype) (G.NodeId nodeId) (rightMorphism r)))
     []
 
 addsDeletionEdge :: EdgeId -> NodeId -> NodeId -> EdgeTypeId -> TypedGraphRule a b -> TypedGraphRule a b
 addsDeletionEdge edgeId src tgt etype r =
   buildProduction
-    (TGM.createEdgeOnCodomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype) (getLHS r))
-    (getRHS r)
+    (TGM.createEdgeOnCodomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype) (leftMorphism r))
+    (rightMorphism r)
     []
 
 addsCreationEdge :: EdgeId -> NodeId -> NodeId -> EdgeTypeId -> TypedGraphRule a b -> TypedGraphRule a b
 addsCreationEdge edgeId src tgt etype r =
   buildProduction
-    (getLHS r)
-    (TGM.createEdgeOnCodomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype) (getRHS r))
+    (leftMorphism r)
+    (TGM.createEdgeOnCodomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype) (rightMorphism r))
     []
 
 addsPreservationEdge :: EdgeId -> NodeId -> NodeId -> EdgeTypeId -> TypedGraphRule a b -> TypedGraphRule a b
 addsPreservationEdge edgeId src tgt etype r =
   buildProduction
     (TGM.createEdgeOnCodomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype)
-      (TGM.createEdgeOnDomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype) (G.EdgeId edgeId) (getLHS r)))
+      (TGM.createEdgeOnDomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype) (G.EdgeId edgeId) (leftMorphism r)))
     (TGM.createEdgeOnCodomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype)
-      (TGM.createEdgeOnDomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype) (G.EdgeId edgeId) (getRHS r)))
+      (TGM.createEdgeOnDomain (G.EdgeId edgeId) (G.NodeId src) (G.NodeId tgt) (G.EdgeId etype) (G.EdgeId edgeId) (rightMorphism r)))
     []

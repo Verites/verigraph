@@ -4,6 +4,7 @@ module Rewriting.DPO.TypedGraph
 (-- * Types
   TypedGraphRule
 , NamedTypedGraphRule
+, TypedGraphGrammar
 , leftMorphism
 , rightMorphism
 , leftObject
@@ -33,6 +34,7 @@ import           Util.Monad
 
 type TypedGraphRule a b = Production (TGraphCat a b) (TypedGraphMorphism a b)
 type NamedTypedGraphRule a b = NamedProduction (TGraphCat a b) (TypedGraphMorphism a b)
+type TypedGraphGrammar a b = Grammar (TGraphCat a b) (TypedGraphMorphism a b)
 
 -- | Return the nodes deleted by a rule
 deletedNodes :: TypedGraphRule a b -> [G.NodeId]

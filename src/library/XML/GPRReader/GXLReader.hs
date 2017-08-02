@@ -33,7 +33,8 @@ import           System.IO
 
 import           Abstract.Rewriting.DPO
 import           Base.Valid
-import           Data.TypedGraph.Morphism       (TypedGraphMorphism, domainGraph)
+import           Category.TypedGraph 
+import           Rewriting.DPO.TypedGraph
 import           XML.GPRReader.GXLInstatiator
 import           XML.GPRReader.GXLParseIn
 import           XML.GPRReader.GXLPreProcessing
@@ -41,7 +42,7 @@ import           XML.GPRReader.GXLPreProcessing
 type Names = [(String,String)]
 
 -- | Reads the grammar in the fileName and returns it and a list of type names
-readGrammar :: String -> IO (Grammar (TypedGraphMorphism a b), Names)
+readGrammar :: String -> IO (TypedGraphGrammar a b, Names)
 readGrammar fileName = do
   files <- getDirectoryContents fileName
 
@@ -67,7 +68,7 @@ readGrammar fileName = do
   let stateGraphPathName = fileName ++ "/" ++ stateGraphName ++ ".gst"
   stateGraph <- parseGPR stateGraphPathName
   let (_,stateRule) = instatiateRule typeGraph typesWithId stateGraph
-      initialState = domainGraph (getLHS stateRule)
+      initialState = leftObject stateRule
 
   -- rules
   let ruleNames = filter (\name -> takeExtension name == ".gpr") files
@@ -76,7 +77,9 @@ readGrammar fileName = do
 
   let rules = instatiateRules typeGraph typesWithId parsedRules
 
-  ensureValid $ validateNamed (\name -> "Rule '"++name++"'") rules
+  let tGraphConfig = TGraphConfig typeGraph undefined
+  ensureValid . (`runCat` tGraphConfig) $
+    validateNamed (\name -> "Rule '"++name++"'") rules
   _ <- (L.null rules && error "No first-order productions were found, at least one is needed.") `seq` return ()
 
   let instatiatedGrammar = grammar initialState [] rules

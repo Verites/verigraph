@@ -55,8 +55,8 @@ module XML.ParseSndOrderRule (
   , getObjectNameMorphism
   ) where
 
-import           Abstract.Category.FinitaryCategory
-import           Category.Graph                     ()
+import           Abstract.Category.NewClasses
+import           Category.Graph                     
 import           Data.Char                          (toLower)
 import           Data.Function                      (on)
 import           Data.Graphs

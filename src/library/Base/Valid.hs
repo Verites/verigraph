@@ -19,10 +19,15 @@ import qualified Data.List   as List
 import           System.Exit
 
 
--- | Result of validating some value
+-- | Result of validating some value.
 data ValidationResult
-  = IsValid -- ^ Indicates that no error was found
-  | IsInvalid [String] -- ^ Indicates that errors were found, with messages explaining them
+  = IsValid -- ^ Indicates that no error was found.
+  | IsInvalid [String] -- ^ Indicates that errors were found, with messages explaining them.
+
+-- | Obtains the error messages produced by validation, or 'Nothing' if no error was found.
+errorMessages :: ValidationResult -> Maybe String
+errorMessages IsValid          = Nothing
+errorMessages (IsInvalid msgs) = Just (List.intercalate "\n" msgs)
 
 instance Monoid ValidationResult where
 
@@ -50,6 +55,20 @@ isValid x = do
   return $ case result of
     IsValid -> True
     IsInvalid _ -> False
+
+-- | Validates a list of named values, modifying their names with the given function.
+validateNamed :: Valid m a => (name -> String) -> [(name, a)] -> m ValidationResult
+validateNamed nameToContext items = runValidator (mapM_ validateItem items)
+  where
+    validateItem (name, item) =
+      withContext (nameToContext name) (validator item)
+
+-- | If the given validation detected some error, prints the error out and exits with failure.
+ensureValid :: ValidationResult -> IO ()
+ensureValid result =
+  case errorMessages result of
+    Nothing       -> return ()
+    Just messages -> putStrLn messages >> exitFailure
 
 -- | Type class for types that admit "malformed" values, and must thus be checked.
 class Monad m => Valid m a where
@@ -81,26 +100,6 @@ withContext context = censor prependContext
     prefix = context ++ ": "
 
 
--- | Obtains the error messages produced by validation, or 'Nothing' if no error was found
-errorMessages :: ValidationResult -> Maybe String
-errorMessages IsValid          = Nothing
-errorMessages (IsInvalid msgs) = Just (List.intercalate "\n" msgs)
-
-
--- | Validates a list of named values, modifying their names with the given function.
-validateNamed :: Valid m a => (name -> String) -> [(name, a)] -> Validator m
-validateNamed nameToContext items = mapM_ validateItem items
-  where
-    validateItem (name, item) =
-      withContext (nameToContext name) (validator item)
-
--- | If the given validation detected some error, prints the error out and exits with failure.
-ensureValid :: ValidationResult -> IO ()
-ensureValid result =
-  case errorMessages result of
-    Nothing       -> return ()
-    Just messages -> putStrLn messages >> exitFailure
-
 -- | Changes the underlying monad of a validator.
 --
 -- It often happens that the validation of a particular type is done on a monad
@@ -113,4 +112,4 @@ ensureValid result =
 -- where @t@ is a 'MonadTransformer'. In this case, we can use @mapValidator
 -- lift validator@.
 mapValidator :: (m ((), ValidationResult) -> n ((), ValidationResult)) -> Validator m -> Validator n
-mapValidator convertInnerMonad = mapWriterT convertInnerMonad
+mapValidator = mapWriterT
