@@ -131,12 +131,12 @@ produceForbidOneNac p1 p2 (n2,idx) = runListT $ do
 
   -- Reconstruct the match /m1/ that would lead to this pair
   guardM (satisfiesRewritingConditions p1' m1')
-  (k1, m1, _, d1) <- lift $ calculateDPO m1' p1'
+  (_, m1, e1, d1) <- lift $ calculateDPO m1' p1'
   guardM (satisfiesNACs p1 m1)
 
   -- Look for morphisms /h21 : L2 -> D1/
   let m2' = q21 <&> n2
-  h21Candidates <- lift $ findCospanCommuters (matchMorphism @cat) m2' k1
+  h21Candidates <- lift $ findCospanCommuters (matchMorphism @cat) m2' e1
   case h21Candidates of
     [] ->
       -- No proper h21, so no produce-forbid conflict

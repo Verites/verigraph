@@ -68,6 +68,7 @@ type NamedCriticalPairs morph = (String,String,[CriticalPair morph])
 --
 -- q21 (nacMatch) :: from N2 to P1
 
+-- TODO: Restructure types so that there are no 'Maybe' fields dependent on other fields.
 data CriticalPair morph = CriticalPair {
     matches   :: (morph,morph),
     comatches :: Maybe (morph,morph),
