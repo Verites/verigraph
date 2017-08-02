@@ -22,7 +22,7 @@ module Abstract.Category.NewClasses
   , ECofinitary(..)
   , isQuotient
 
-  -- * \((\mathcal{E},\mathcal{M})\)-Factorization
+  -- * \((\mathcal{E},\mathcal{M'})\)-Factorization
   , EM'Factorizable(..)
   , isMonicFactor
   , EM'PairFactorizable(..)
