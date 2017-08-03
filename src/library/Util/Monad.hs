@@ -11,6 +11,7 @@ module Util.Monad
   , breakM
     -- * ListT helpers
   , pickOne
+  , pickFromList
   , guardM
   ) where
 
@@ -44,6 +45,9 @@ anyM test (x:xs) = do
 
 pickOne :: Monad m => m [a] -> ListT m a
 pickOne = ListT
+
+pickFromList :: Monad m => [a] -> ListT m a
+pickFromList = ListT . return
 
 guardM :: (Monad m, MonadTrans t, Monad (t m), Alternative (t m)) => m Bool -> t m ()
 guardM test = lift test >>= guard

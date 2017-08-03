@@ -1,59 +1,64 @@
+{-# LANGUAGE MonadComprehensions #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Rewriting.DPO.TypedGraphRule.NacManipulation where
 
-import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.FinitaryCategory
+import Control.Monad.List
+
+import           Abstract.Category.NewClasses
 import           Abstract.Rewriting.DPO
-import           Category.TypedGraph.AdhesiveHLR         ()
-import           Category.TypedGraph.JointlyEpimorphisms ()
-import           Category.TypedGraphRule.Cocomplete      ()
-import           Data.TypedGraph.Morphism
+import Base.Isomorphic
+import           Category.TypedGraph
+import Util.Monad
 
 
 -- | Auxiliar structure and function to delete first-order NACs
 data DeleteScheme = DisableDelete | Monomorphisms | InitialPushouts
 
-deleteStep :: DeleteScheme -> [TypedGraphMorphism a b] -> [TypedGraphMorphism a b] -> [TypedGraphMorphism a b]
+deleteStep :: forall n e. DeleteScheme -> [TypedGraphMorphism n e] -> [TypedGraphMorphism n e] -> TGraphCat n e [TypedGraphMorphism n e]
 
-deleteStep DisableDelete _ concreteNACs = concreteNACs
+deleteStep DisableDelete _ concreteNACs = return concreteNACs
 
-deleteStep Monomorphisms modeledNACs concreteNACs =
-  [nn' | nn' <- concreteNACs, all (`maintainTest` nn') modeledNACs]
-    where
-      findMorph :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
-      findMorph a b = findMorphisms Monomorphism (codomain a) (codomain b)
-
-      --it forces commuting
-      --maintainTest a b = Prelude.null $ filter (\morp -> compose a morp == compose match b) (findMorph a b)
-      maintainTest a b = Prelude.null $ findMorph a b
-
-deleteStep InitialPushouts modeledNACs concreteNACs =
-  [fst nn' | nn' <- ipoConcrete, all (\nn -> not (verifyIsoBetweenMorphisms nn (snd nn'))) ipoModeled]
+deleteStep Monomorphisms modeledNACs concreteNACs = runListT $ do
+  nn' <- pickFromList concreteNACs :: ListT (TGraphCat n e) (TypedGraphMorphism n e)
+  guardM $ allM (`maintainTest` nn') modeledNACs
+  return nn'
   where
-    ipoModeled = map ((\ (_, x, _) -> x) . calculateInitialPushout) modeledNACs
-    ipoConcrete = map (\(n,(_,x,_)) -> (n,x)) (zip concreteNACs (map calculateInitialPushout concreteNACs))
+    findMorph :: TypedGraphMorphism n e -> TypedGraphMorphism n e -> TGraphCat n e [TypedGraphMorphism n e]
+    findMorph f g = findMorphisms monic (codomain f) (codomain g)
 
-verifyIsoBetweenMorphisms :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
+    --it forces commuting
+    --maintainTest f g = Prelude.null . filter (\morp -> compose f morp == compose match g) <$> findMorph f g
+    maintainTest f g = Prelude.null <$> findMorph f g
+
+deleteStep InitialPushouts modeledNACs concreteNACs = do
+  ipoModeled <- mapM (fmap (\ (_, x, _) -> x) . calculateInitialPushout) modeledNACs
+  ipoConcrete <- map (\(n,(_,x,_)) -> (n,x)) . zip concreteNACs <$> mapM calculateInitialPushout concreteNACs
+  runListT $ do
+    nn' <- pickFromList ipoConcrete
+    guardM $ allM (\nn -> not <$> isIso nn (snd nn')) ipoModeled
+    return (fst nn')
+
+{-
+verifyIsoBetweenMorphisms :: TypedGraphMorphism n e -> TypedGraphMorphism n e -> cat Bool
 verifyIsoBetweenMorphisms n n' = not $ Prelude.null comb
   where
-    findIso :: FindMorphism morph => (t -> Obj morph) -> t -> t -> [morph]
-    findIso f x y = findMorphisms Isomorphism (f x) (f y)
+    findIso :: FindMorphism cat morph => (t -> Obj cat) -> t -> t -> cat [morph]
+    findIso f x y = findMorphisms iso (f x) (f y)
 
     findIsoDom = findIso domain n n'
     findIsoCod = findIso codomain n n'
     comb = [(d,c) | d <- findIsoDom, c <- findIsoCod, n' <&> d == c <&> n]
+-}
 
 -- | Auxiliar structure and function to create first-order NACs
 data CreateScheme = DisableCreate | Pushout | ShiftNACs
 
-createStep :: CreateScheme -> TypedGraphMorphism a b -> [TypedGraphMorphism a b] -> [TypedGraphMorphism a b]
-
-createStep DisableCreate _ _ = []
-
-createStep Pushout match modeledNACs =
-  map (snd . calculatePushout match) modeledNACs
-
+createStep :: CreateScheme -> TypedGraphMorphism n e -> [TypedGraphMorphism n e] -> TGraphCat n e [TypedGraphMorphism n e]
+createStep DisableCreate _ _ = return []
+createStep Pushout match modeledNACs = mapM (fmap snd . calculatePushout match) modeledNACs
 createStep ShiftNACs match modeledNACs =
-  concatMap (nacDownwardShift conf match) modeledNACs
-    where
+  concatMapM (nacDownwardShift match) modeledNACs
+    {-where
+      -- FIXME: does something break when matches are restricted to monic?
       -- conf is used only to indicate AnyMatches, that is the most generic case for nacDownwardShift
-      conf = MorphismsConfig GenericMorphism undefined
+      conf = MorphismsConfig GenericMorphism undefined -}
