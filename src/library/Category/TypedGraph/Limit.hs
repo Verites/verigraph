@@ -1,5 +1,4 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TupleSections #-}
 module Category.TypedGraph.Limit () where
 
 import           Data.List.NonEmpty                 (NonEmpty(..))
@@ -143,18 +142,16 @@ instance Cocomplete (TGraphCat n e) (TypedGraphMorphism n e) where
   
   calculateCoproduct f g = return (calculateCoproduct' f g)
 
-  calculateNCoproduct [] = (,[]) <$> getFinalObject
-  calculateNCoproduct [x] = return (x, [identity x])
-  calculateNCoproduct (x:xs) = return $
-    let js = calculateNCoproduct' (x :| xs)
-    in (codomain (head js), js)
+  calculateNCoproduct [] = return []
+  calculateNCoproduct [x] = return [identity x]
+  calculateNCoproduct (x:xs) = return $ calculateNCoproduct' (x :| xs)
 
-  calculateNPushout [] = (,[]) <$> getFinalObject
+  calculateNPushout [] = return []
   calculateNPushout (f:fs) = return $
     let
       (j:js) = calculateNCoproduct' (codomain f :| map codomain fs)
       k = calculateNCoequalizer' (j <&> f :| zipWith (<&>) js fs)
-    in (codomain k, map (k<&>) (j:js))
+    in map (k<&>) (j:js)
 
 calculateCoequalizer' :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 calculateCoequalizer' f g = initCoequalizerMorphism b nodeEquivalences edgeEquivalences

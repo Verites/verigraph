@@ -4,7 +4,6 @@
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TypeApplications       #-}
 {-# LANGUAGE TypeFamilies           #-}
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE DefaultSignatures #-}
 module Abstract.Category.NewClasses 
   (
@@ -462,22 +461,16 @@ class Category cat morph => Complete cat morph where
   -- Given a family of objects \(\{X_i\}\), return the pair
   -- \((P, \{p_i : P \to X_i\})\), where \(P\) is the product object
   -- of all \(X_i\) and each \(p_i\) is a projection morphism.
-  calculateNProduct :: [Obj cat] -> cat (Obj cat, [morph])
-  calculateNProduct [] = (,[]) <$> getFinalObject
-  calculateNProduct [x] = return (x, [identity x])
-  calculateNProduct xs = do
-    ps <- recurse xs
-    return (domain $ head ps, ps)
-    where
-      recurse [] = error "unreachable"
-      recurse [_] = error "unreachable"
-      recurse [x,y] = do
-        (px, py) <- calculateProduct x y
-        return [px, py]
-      recurse (x:ys) = do
-        qs <- recurse ys
-        (px, pys) <- calculateProduct x (domain $ head qs)
-        return (px : map (<&>pys) qs)
+  calculateNProduct :: [Obj cat] -> cat [morph]
+  calculateNProduct [] = return []
+  calculateNProduct [x] = return [identity x]
+  calculateNProduct [x,y] = do
+    (px, py) <- calculateProduct x y
+    return [px, py]
+  calculateNProduct (x:ys) = do
+    qs <- calculateNProduct ys
+    (px, pys) <- calculateProduct x (domain $ head qs)
+    return (px : map (<&>pys) qs)
 
   -- | Given two morphisms with the same codomain, calculate their pullback.
   --
@@ -500,22 +493,16 @@ class Category cat morph => Complete cat morph where
   -- Given a family of morphisms with same codomain \(\{f_i : X_i \to Z\}\),
   -- return the pair \((P, \{p_i : P \to X_i\})\) where \(P\) is the pullback
   -- object for all \(f_i\) and each \(p_i\) is a projection morphism.
-  calculateNPullback :: [morph] -> cat (Obj cat, [morph])
-  calculateNPullback [] = (,[]) <$> getFinalObject
-  calculateNPullback [f] = return (domain f, [identity $ domain f])
-  calculateNPullback fs = do
-    ps <- recurse fs
-    return (domain (head ps), ps)
-    where
-      recurse [] = error "unreachable"
-      recurse [_] = error "unreachable"
-      recurse [f, g] = do
-        (pg, pf) <- calculatePullback f g
-        return [pf, pg]
-      recurse (f : g : gs) = do
-        qs <- recurse (g : gs)
-        (pf, pgs) <- calculatePullback f (g <&> head qs)
-        return (pf : map (<&>pgs) qs)
+  calculateNPullback :: [morph] -> cat [morph]
+  calculateNPullback [] = return []
+  calculateNPullback [f] = return [identity (domain f)]
+  calculateNPullback [f, g] = do
+    (pg, pf) <- calculatePullback f g
+    return [pf, pg]
+  calculateNPullback (f : g : gs) = do
+    qs <- calculateNPullback (g : gs)
+    (pf, pgs) <- calculatePullback f (g <&> head qs)
+    return (pf : map (<&>pgs) qs)
 
 
 -- | Type class for categories that have all finite colimits.
@@ -578,22 +565,16 @@ class Category cat morph => Cocomplete cat morph where
   -- Given a family of objects \(\{X_i\}\), return the pair
   -- \((S, \{j_i : X_i \to S\})\), where \(S\) is the product object
   -- of all \(X_i\) and each \(j_i\) is an injection morphism.
-  calculateNCoproduct :: [Obj cat] -> cat (Obj cat, [morph])
-  calculateNCoproduct [] = (,[]) <$> getInitialObject
-  calculateNCoproduct [x] = return (x, [identity x])
-  calculateNCoproduct xs = do
-    ps <- recurse xs
-    return (domain $ head ps, ps)
-    where
-      recurse [] = error "unreachable"
-      recurse [_] = error "unreachable"
-      recurse [x,y] = do
-        (jx, jy) <- calculateCoproduct x y
-        return [jx, jy]
-      recurse (x:ys) = do
-        ks <- recurse ys
-        (jx, jys) <- calculateCoproduct x (codomain $ head ks)
-        return (jx : map (jys<&>) ks)
+  calculateNCoproduct :: [Obj cat] -> cat [morph]
+  calculateNCoproduct [] = return []
+  calculateNCoproduct [x] = return [identity x]
+  calculateNCoproduct [x, y] = do
+    (jx, jy) <- calculateCoproduct x y
+    return [jx, jy]
+  calculateNCoproduct (x:ys) = do
+    ks <- calculateNCoproduct ys
+    (jx, jys) <- calculateCoproduct x (codomain $ head ks)
+    return (jx : map (jys<&>) ks)
 
   -- | Given two morphisms with same domain, calculate their pushout.
   --
@@ -621,22 +602,16 @@ class Category cat morph => Cocomplete cat morph where
   -- Given a family of morphisms with same domain \(\{f_i : Z \to X_i\}\),
   -- return the pair \((S, \{j_i : X_i \to S\})\) where \(S\) is the pushout
   -- object for all \(f_i\) and each \(j_i\) is an injection morphism.
-  calculateNPushout :: [morph] -> cat (Obj cat, [morph])
-  calculateNPushout [] = (,[]) <$> getInitialObject
-  calculateNPushout [f] = return (codomain f, [identity $ codomain f])
-  calculateNPushout fs = do
-    js <- recurse fs
-    return (codomain (head js), js)
-    where
-      recurse [] = error "unreachable"
-      recurse [_] = error "unreachable"
-      recurse [f, g] = do
-        (jy, jx) <- calculatePushout f g
-        return [jx, jy]
-      recurse (f : g : gs) = do
-        ks <- recurse (g : gs)
-        (jf, jgs) <- calculatePushout f (g <&> head ks)
-        return (jf : map (jgs<&>) ks)
+  calculateNPushout :: [morph] -> cat [morph]
+  calculateNPushout [] = return []
+  calculateNPushout [f] = return [identity (codomain f)]
+  calculateNPushout [f, g] = do
+    (jy, jx) <- calculatePushout f g
+    return [jx, jy]
+  calculateNPushout (f : g : gs) = do
+    ks <- calculateNPushout (g : gs)
+    (jf, jgs) <- calculatePushout f (g <&> head ks)
+    return (jf : map (jgs<&>) ks)
 
 
 class Category cat morph => Adhesive cat morph where

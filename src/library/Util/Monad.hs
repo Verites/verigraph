@@ -4,6 +4,7 @@ import Control.Monad
 import Control.Monad.List
 import Control.Applicative
 import Data.Maybe (catMaybes)
+import Data.Foldable
 
 andM :: Monad m => m Bool -> m Bool -> m Bool
 andM mp mq = do
@@ -38,3 +39,11 @@ concatMapM f = fmap concat . mapM f
 
 mapMaybeM :: Monad m => (a -> m (Maybe b)) -> [a] -> m [b]
 mapMaybeM f = fmap catMaybes . mapM f
+
+partitionM :: (Foldable t, Monad m) => (a -> m Bool) -> t a -> m ([a], [a])
+partitionM p = foldrM select ([],[])
+  where
+    select x (ts, fs) = do
+      px <- p x
+      return $ if px then (x:ts, fs) else (ts, x:fs)
+{-# INLINE partitionM #-}
