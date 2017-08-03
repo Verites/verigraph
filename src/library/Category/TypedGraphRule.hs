@@ -11,3 +11,5 @@ module Category.TypedGraphRule
 
 import           Category.TypedGraphRule.Category
 import           Category.TypedGraphRule.FindMorphism ()
+import           Category.TypedGraphRule.Limit ()
+import           Category.TypedGraphRule.Adhesive ()

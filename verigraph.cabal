@@ -80,7 +80,7 @@ library
                        Category.TypedGraph.Category
                        Category.TypedGraph.CommutingSquares
                        Category.TypedGraph.Limit
-                       Category.TypedGraphRule.AdhesiveHLR
+                       Category.TypedGraphRule.Adhesive
                        Category.TypedGraphRule.Category
                        Category.TypedGraphRule.Limit
                        Category.TypedGraphRule.FindMorphism
