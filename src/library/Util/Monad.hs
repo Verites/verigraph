@@ -9,6 +9,7 @@ module Util.Monad
   , mapMaybeM
   , partitionM
   , breakM
+  , nubByM
     -- * ListT helpers
   , pickOne
   , pickFromList
@@ -76,3 +77,13 @@ breakM p xs@(x:xs') = do
     else do
       (ys, zs) <- breakM p xs'
       return (x:ys, zs)
+
+nubByM :: Monad m => (a -> a -> m Bool) -> [a] -> m [a]
+nubByM eq l = nubBy' l []
+  where
+    nubBy' [] _ = return []
+    nubBy' (y:ys) alreadyAdded = do
+      hasDuplicate <- anyM (eq y) alreadyAdded
+      if hasDuplicate
+        then nubBy' ys alreadyAdded
+        else (y:) <$> nubBy' ys (y : alreadyAdded)

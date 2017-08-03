@@ -648,7 +648,7 @@ class Category cat morph => Adhesive cat morph where
   default calculatePushoutAlongMono :: Cocomplete cat morph => morph -> morph -> cat (morph, morph)
   calculatePushoutAlongMono = calculatePushout
 
-  -- | Calculate the pullback of a rule-morphism and another morphism.
+  -- | Calculate the pullback of the given morphisms with same codomain.
   --
   -- Given the morphisms \(f : A \to B\) and \(g : A \to C\), respectively,
   -- returns the pair of morphisms \(f' : P \to B\) and \(g': P \to A\) such
@@ -674,7 +674,7 @@ class Category cat morph => Adhesive cat morph where
   -- and with at least one of them monic, have a pushout complement (see
   -- 'calculatePushoutComplementAlongMono').
   --
-  -- The behaviour of this function is undefined none of the morphisms is monic.
+  -- The behaviour of this function is undefined when none of the morphisms is monic.
   hasPushoutComplementAlongMono :: morph -> morph -> cat Bool
 
   -- | Calculate the pushout complement for a sequence of a morphisms,

@@ -5,12 +5,10 @@ module Rewriting.DPO.TypedGraph
   TypedGraphRule
 , NamedTypedGraphRule
 , TypedGraphGrammar
-, leftMorphism
-, rightMorphism
+, Production(..)
 , leftObject
 , interfaceObject
 , rightObject
-, nacs
 
 -- * Basic Functions
 , invertProductionWithoutNacs

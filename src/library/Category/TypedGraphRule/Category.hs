@@ -21,7 +21,6 @@ import           Control.Monad.List
 
 import           Abstract.Category.NewClasses
 import           Abstract.Rewriting.DPO
-import           Base.Valid
 import           Category.TypedGraph (TGraphCat, TGraphConfig(TGraphConfig), TypedGraphMorphism)
 import           Category.TypedGraph.Category (TGraphMorphismClass(..))
 import qualified Category.TypedGraph.Category as TGraph
@@ -80,20 +79,6 @@ getTypeGraph = TGRC $ asks catTypeGraph
 liftTGraph :: TGraphCat n e a -> TGRuleCat n e a
 liftTGraph = TGRC . lift
 
-instance Valid (TGRuleCat n e) (RuleMorphism n e) where
-  validator (RuleMorphism dom cod mapL mapK mapR) = do
-    withContext "domain" (validateTGraph dom)
-    withContext "codomain" (validateTGraph cod)
-    withContext "left-hand graph morphism" (validateTGraph mapL)
-    withContext "interface graph morphism" (validateTGraph mapK)
-    withContext "right-hand graph morphism" (validateTGraph mapR)
-    ensure (leftMorphism cod <&> mapK == mapL <&> leftMorphism dom) "Left square doesn't commute"
-    ensure (rightMorphism cod <&> mapK == mapR <&> rightMorphism dom) "Right square doesn't commute"
-    where
-      validateTGraph :: Valid (TGraphCat n e) a => a -> Validator (TGRuleCat n e)
-      validateTGraph = mapValidator liftTGraph . validator
-
-    
 type TGRuleMorphismClass = TGraphMorphismClass
 
 instance Category (TGRuleCat n e) (RuleMorphism n e) where

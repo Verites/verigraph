@@ -45,3 +45,43 @@ instance Cocomplete (TGRuleCat n e) (RuleMorphism n e) where
     let m2 = RuleMorphism rule2 coproductRule l2 k2 r2
     return (m1, m2)
  
+instance Complete (TGRuleCat n e) (RuleMorphism n e) where
+  getFinalObject = do
+    finalGraph <- liftTGraph getFinalObject
+    return $ buildProduction (identity finalGraph) (identity finalGraph) []
+
+  getMorphismToFinalObjectFrom rule = do
+    fL <- liftTGraph $ getMorphismToFinalObjectFrom (leftObject rule)
+    fK <- liftTGraph $ getMorphismToFinalObjectFrom (interfaceObject rule)
+    fR <- liftTGraph $ getMorphismToFinalObjectFrom (rightObject rule)
+    let finalGraph = domain fL
+    let finalRule = buildProduction (identity finalGraph) (identity finalGraph) []
+    return (RuleMorphism finalRule rule fL fK fR)
+
+  -- FIXME: implement calculateEqualizer
+
+  -- @
+  --        g'
+  --     X──────▶A
+  --     │       │
+  --  f' │       │ f
+  --     ▼       ▼
+  --     B──────▶C
+  --        g
+  -- @
+  calculatePullback (RuleMorphism fA _ fL fK fR) (RuleMorphism gB _ gL gK gR) = liftTGraph $ do
+    (f'L, g'L) <- calculatePullback fL gL
+    (f'K, g'K) <- calculatePullback fK gK
+    (f'R, g'R) <- calculatePullback fR gR
+
+    l <- commutingMorphism
+          (leftMorphism gB <&> f'K) f'L
+          (leftMorphism fA <&> g'K) g'L
+    r <- commutingMorphism
+          (rightMorphism gB <&> f'K) f'R
+          (rightMorphism fA <&> g'K) g'R
+    let
+      x = buildProduction l r []
+      f' = RuleMorphism x gB f'L f'K f'R
+      g' = RuleMorphism x fA g'L g'K g'R
+    return (f', g')

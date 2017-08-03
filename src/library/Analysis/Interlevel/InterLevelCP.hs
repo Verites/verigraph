@@ -8,114 +8,93 @@ module Analysis.Interlevel.InterLevelCP
     danglingExtension
   ) where
 
-import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.FinitaryCategory
-import           Abstract.Category.JointlyEpimorphisms
+import Control.Monad
+
+import           Abstract.Category.NewClasses
 import           Abstract.Rewriting.DPO
+import           Category.TypedGraph
 import           Category.TypedGraphRule
 import           Data.Graphs
-import           Data.Graphs.Morphism                  hiding (createEdgeOnCodomain,
-                                                        createNodeOnCodomain)
-import           Data.List                             (nubBy)
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
-import           Data.TypedGraph.Subgraph
-import           Rewriting.DPO.TypedGraph
 import           Rewriting.DPO.TypedGraphRule
+import Util.Monad
 
 
-data InterLevelCP a b = InterLevelCP {
-  sndOrderMatch :: RuleMorphism a b,
-  fstOrderMatch :: TypedGraphMorphism a b
+data InterLevelCP n e = InterLevelCP {
+  sndOrderMatch :: RuleMorphism n e,
+  fstOrderMatch :: TypedGraphMorphism n e
   } deriving (Eq,Show)
 
 -- | Matches the second-order rule with the first-order, and calls theirs critical pairs
-interLevelCP :: MorphismsConfig -> (String, SndOrderRule a b) -> (String, TypedGraphRule a b) -> [(String,String,Int,InterLevelCP a b)]
-interLevelCP conf (sndName, sndRule) (fstName, fstRule) =
-  map (\((x,y,z),w) -> (x,y,z,w)) unformattedConflicts
-
+interLevelCP :: (String, SndOrderRule n e) -> (String, TypedGraphRule n e) -> TGRuleCat n e [(String,String,Int,InterLevelCP n e)]
+interLevelCP (sndName, sndRule) (fstName, fstRule) = addNames <$> do
+  matches <- findApplicableMatches sndRule fstRule
+  concatMapM conflictsForMatch matches
   where
-    newNames = map (\number -> (fstName, sndName, number)) ([0..] :: [Int])
-    unformattedConflicts = zip newNames (concatMap conflictsForMatch validMatches)
-
-    validMatches = findApplicableMatches conf sndRule fstRule
-
-    conflictsForMatch match =
-      do
-        conflicts <- interLevelConflictOneMatch conf sndRule match
-        return $ InterLevelCP match conflicts
+    addNames = zipWith (\number conflict -> (fstName, sndName, number, conflict)) [0..]
+    conflictsForMatch match = map (InterLevelCP match) <$> interLevelConflictOneMatch sndRule match
 
 -- | Calculates the second-order rewriting,
 -- defines the dangling extension for L and L'',
 -- gets all relevant graphs from L
-interLevelConflictOneMatch :: MorphismsConfig -> SndOrderRule a b -> RuleMorphism a b -> [TypedGraphMorphism a b]
-interLevelConflictOneMatch conf sndRule match = m0s
-  where
-    sndOrderL = getLHS sndRule
-    sndOrderR = getRHS sndRule
+interLevelConflictOneMatch :: SndOrderRule n e -> RuleMorphism n e -> TGRuleCat n e [TypedGraphMorphism n e]
+interLevelConflictOneMatch sndRule match = do
+  (k,l') <- calculatePushoutComplementAlongMono (leftMorphism sndRule) match
+  (m',r') <- calculatePushout k (rightMorphism sndRule)
+  let fl = mappingLeft l'
+      gl = mappingLeft r'
 
-    (k,l') = calculatePushoutComplement match sndOrderL
-    (m',r') = calculatePushout k sndOrderR
+      p = codomain match
+      p'' = codomain m'
 
-    p = codomain match
-    p'' = codomain m'
+      bigL = leftMorphism p
+      bigL'' = leftMorphism p''
 
-    bigL = getLHS p
-    bigL'' = getLHS p''
+      danglingExtFl = danglingExtension bigL <&> fl
+      danglingExtGl = danglingExtension bigL'' <&> gl
+  liftTGraph $ do
+    axs <- relevantMatches danglingExtFl danglingExtGl
+    relevantGraphs <- removeDuplicated (map codomain axs)
+    let defineMatches = allILCP p p'' fl gl
+    concatMapM defineMatches relevantGraphs
 
-    fl = mappingLeft l'
-    gl = mappingLeft r'
 
-    danglingExtFl = danglingExtension bigL <&> fl
-    danglingExtGl = danglingExtension bigL'' <&> gl
-
-    relevantGraphs = map codomain axs
-    axs = relevantMatches conf danglingExtFl danglingExtGl
-
-    m0s = concatMap defineMatches (removeDuplicated relevantGraphs)
-    defineMatches = allILCP conf p p'' fl gl
-
-removeDuplicated :: [GraphMorphism (Maybe a) (Maybe b)] -> [GraphMorphism (Maybe a) (Maybe b)]
-removeDuplicated = nubBy (\x y -> not $ Prelude.null $ find x y)
-  where
-    find :: GraphMorphism (Maybe a) (Maybe b) -> GraphMorphism (Maybe a) (Maybe b) -> [TypedGraphMorphism a b]
-    find = findMorphisms Isomorphism
+removeDuplicated :: [TypedGraph a b] -> TGraphCat a b [TypedGraph a b]
+removeDuplicated = nubByM (\x y -> not . Prelude.null <$> findMorphisms iso x y)
 
 -- | For a relevant graph, gets all matches and check conflict
-allILCP :: DPO morph => MorphismsConfig -> Production morph -> Production morph -> morph -> morph -> Obj morph -> [morph]
-allILCP conf p p'' fl gl ax = filter conflicts validMatches
-  where
-    validMatches = findApplicableMatches conf p ax
-    conflicts = ilCP conf fl gl p''
+allILCP :: DPO cat morph => Production cat morph -> Production cat morph -> morph -> morph -> Obj cat -> cat [morph]
+allILCP p p'' fl gl ax = filterM conflicts =<< findApplicableMatches p ax
+  where conflicts = ilCP fl gl p''
 
 -- | For a m0, checks if exists a conflicting m''0
-ilCP :: DPO morph => MorphismsConfig -> morph -> morph -> Production morph -> morph -> Bool
-ilCP conf fl gl p'' m0 = Prelude.null validM0''-- or all (==False) (map (\m'' -> satsGluing inj bigL'' m'') validM0'') --thesis def
+ilCP :: DPO cat morph => morph -> morph -> Production cat morph -> morph -> cat Bool
+ilCP fl gl p'' m0 = do
+  matchesM0'' <- findApplicableMatches p'' (codomain m0)
+  --paper definition
+  --validM0'' = filter (\m0'' -> not ((validMatch m0'') && (commutes m0''))) matchesM0''
+  validM0'' <- filterM (\m0'' -> commutes m0'' `andM` validMatch m0'') matchesM0''
+  return (Prelude.null validM0'')-- or all (==False) (map (\m'' -> satsGluing inj bigL'' m'') validM0'') --thesis def
   where
-    matchesM0'' = findApplicableMatches conf p'' (codomain m0)
-    validMatch = satisfiesRewritingConditions conf p''
+    validMatch = satisfiesRewritingConditions p''
+    commutes m0'' = return (m0 <&> fl == m0'' <&> gl)
 
-    commutes m0'' = m0 <&> fl == m0'' <&> gl
-
-    --paper definition
-    --validM0'' = filter (\m0'' -> not ((validMatch m0'') && (commutes m0''))) matchesM0''
-    validM0'' = filter (\m0'' -> commutes m0'' && validMatch m0'') matchesM0''
-
-relevantMatches :: MorphismsConfig -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> [TypedGraphMorphism a b]
+relevantMatches :: TypedGraphMorphism n e -> TypedGraphMorphism n e -> TGraphCat n e [TypedGraphMorphism n e]
 --relevantMatches inj dangFl dangGl = concatMap (\ax -> partitions inj (codomain ax)) axs
-relevantMatches conf dangFl dangGl = concatMap createQuotients allSubgraphs
-  where
-    createQuotients
-      | matchRestriction conf == Monomorphism = \g -> [identity g]
-      | otherwise = createAllQuotients
-    (_,al) = calculatePushout dangFl dangGl
-    --axs = induzedSubgraphs al
-    allSubgraphs = subgraphs (codomain al)
+relevantMatches dangFl dangGl = do
+  (_, al) <- calculatePushout dangFl dangGl
+  subgraphs <- map domain <$> findAllSubobjectsOf (codomain al)
+  -- FIXME: does the following refer to matches of first- or second-order rules?
+  monicMatches <- matchMorphism `isSubclassOf` monic
+  if monicMatches
+    then return (map identity subgraphs)
+    else concatMapM findAllQuotientsOf subgraphs
 
 -- Algorithm proposed in (MACHADO, 2012) to extend a TGM.
 -- For each orphan node in the received morphism l, it must add all
 -- possible edges that connects in this node according to the type graph.
-danglingExtension :: TypedGraphMorphism a b -> TypedGraphMorphism a b
+danglingExtension :: TypedGraphMorphism n e -> TypedGraphMorphism n e
 danglingExtension l = tlUpdated
   where
     initObject = idMap (codomain l) (codomain l)
