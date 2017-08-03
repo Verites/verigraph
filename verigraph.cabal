@@ -29,13 +29,7 @@ library
                        set-monad >= 0.2,
                        split >= 0.2,
                        wl-pprint >=1.2 && <1.3
-  exposed-modules:     Abstract.Category.AdhesiveHLR
-                       Abstract.Category.Cocomplete
-                       Abstract.Category.Complete
-                       Abstract.Category.FinalPullbackComplement
-                       Abstract.Category.FinitaryCategory
-                       Abstract.Category.JointlyEpimorphisms
-                       Abstract.Category.NewClasses
+  exposed-modules:     Abstract.Category.NewClasses
                        Abstract.Constraint
                        Abstract.Rewriting.DPO
                        Abstract.Rewriting.DPO.Derivation
