@@ -5,6 +5,8 @@
 {-# LANGUAGE TypeApplications       #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE DefaultSignatures #-}
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE MonadComprehensions #-}
 module Abstract.Category.NewClasses 
   (
     -- * Category
@@ -48,6 +50,7 @@ module Abstract.Category.NewClasses
 import Control.Monad.List
 import           Data.List.NonEmpty (NonEmpty(..))
 
+import Base.Isomorphic
 import Util.Monad
 
 
@@ -394,6 +397,14 @@ class Category cat morph => FindMorphism cat morph where
   -- __WARNING:__ since such a morphism may not exist, this may return an invalid morphism.
   induceSpanMorphism :: [morph] -> [morph] -> cat morph
 
+instance {-# OVERLAPPABLE #-} (FindMorphism cat morph, IsoM cat (Obj cat), Monad cat) => IsoM cat morph where
+  isIso f g = do
+    isomorphisms <- runListT
+      [ (domainIso, codomainIso)
+        | codomainIso <- pickOne $ findMorphisms iso (codomain f) (codomain g)
+        , domainIso <- pickOne $ findCospanCommuters iso (codomainIso <&> f) g ]
+    return (not . null $ isomorphisms)
+
 -- | Type class for categories that have all finite limits.
 --
 -- This type class provides constructions for final objects, equalizers,
@@ -417,7 +428,7 @@ class Category cat morph => Complete cat morph where
   --
   -- An object \(\mathbf{1}\) is final when, for any other object \(X\), there
   -- is a unique morphism \(X \to \mathbf{1}\). Note that there isn't
-  -- necessarily a unique final object, but all of them are isomorphic. This
+  -- necessarily a unique final object, but all of them are isomorphic. This 
   -- function always returns the same final object.
   getFinalObject :: cat (Obj cat)
 

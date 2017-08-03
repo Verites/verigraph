@@ -1,4 +1,6 @@
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 module Category.TypedGraph
 ( TypedGraph
 , TypedGraphMorphism
@@ -12,10 +14,12 @@ module Category.TypedGraph
 import Control.Monad
 import Control.Monad.Trans
 
+import           Abstract.Category.NewClasses
 import           Base.Valid
+import           Base.Isomorphic
 import qualified Data.Graphs                        as Graph
 import qualified Data.Graphs.Morphism               as Graph
-import           Data.TypedGraph
+import           Data.TypedGraph                    hiding (null)
 import           Data.TypedGraph.Morphism
 import           Category.TypedGraph.Category
 import           Category.TypedGraph.FindMorphism ()
@@ -44,3 +48,6 @@ instance {-# OVERLAPS #-} Valid (TGraphCat n e) (TypedGraph n e) where
             ensure (Graph.isEdgeOf catTypeGraph typeId) ("has invalid type #" ++ show typeId)
             ensure (Graph.applyNodeId graph srcId == Just srcTypeId) "has source of invalid type"
             ensure (Graph.applyNodeId graph tgtId == Just tgtTypeId) "has target of invalid type"
+
+instance {-# OVERLAPS #-} IsoM (TGraphCat n e) (TypedGraph n e) where
+  isIso g1 g2 = not . null <$> findMorphisms iso g1 g2

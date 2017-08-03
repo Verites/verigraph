@@ -1,4 +1,18 @@
-module Util.Monad where
+module Util.Monad 
+  ( -- * Boolean helpers
+    andM
+  , orM
+  , allM
+  , anyM
+    -- * List helpers
+  , concatMapM
+  , mapMaybeM
+  , partitionM
+  , breakM
+    -- * ListT helpers
+  , pickOne
+  , guardM
+  ) where
 
 import Control.Monad
 import Control.Monad.List
@@ -41,9 +55,20 @@ mapMaybeM :: Monad m => (a -> m (Maybe b)) -> [a] -> m [b]
 mapMaybeM f = fmap catMaybes . mapM f
 
 partitionM :: (Foldable t, Monad m) => (a -> m Bool) -> t a -> m ([a], [a])
-partitionM p = foldrM select ([],[])
-  where
-    select x (ts, fs) = do
-      px <- p x
-      return $ if px then (x:ts, fs) else (ts, x:fs)
+partitionM p = foldrM (select p) ([],[])
 {-# INLINE partitionM #-}
+
+select :: Monad m => (a -> m Bool) -> a -> ([a], [a]) -> m ([a], [a])
+select p x (ts, fs) = do
+  px <- p x
+  return $ if px then (x:ts, fs) else (ts, x:fs)
+
+breakM :: (Monad m) => (a -> m Bool) -> [a] -> m ([a], [a])
+breakM _ [] = return ([], [])
+breakM p xs@(x:xs') = do
+  px <- p x
+  if px 
+    then return ([], xs) 
+    else do
+      (ys, zs) <- breakM p xs'
+      return (x:ys, zs)
