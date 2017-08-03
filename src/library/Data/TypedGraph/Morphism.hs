@@ -153,6 +153,7 @@ createNodeOnCodomain n2 tp tgm =
       , mapping = GM.createNodeOnCodomain n2 (mapping tgm)
       }
 
+-- TODO: verify this description
 -- | updates a typed graph morphism, mapping node n1 to node n2. It assumes both nodes already exist.
 updateNodeRelation :: NodeId -> NodeId -> NodeId -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 updateNodeRelation n1 n2 tp tgm =

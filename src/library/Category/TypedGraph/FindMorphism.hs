@@ -3,14 +3,14 @@ module Category.TypedGraph.FindMorphism () where
 
 import           Abstract.Category.NewClasses
 import           Category.TypedGraph.Category
-import           Data.Graphs                        as G
-import qualified Data.Graphs.Morphism               as GM
-import qualified Data.Relation                      as R
+import           Data.Graphs                  as G
+import qualified Data.Graphs.Morphism         as GM
+import qualified Data.Relation                as R
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
 
 import           Control.Arrow
-import           Data.List                          as L
+import           Data.List                    as L
 import           Data.Maybe
 
 instance FindMorphism (CatM n e) (TypedGraphMorphism n e) where
@@ -47,7 +47,7 @@ deleteEdgeById (e:es) edgeid =
 
 
 data CospanBuilderState e =
-  State {
+  CospanState {
     domainEdges            :: [Edge e]
   , codomainEdges          :: [Edge e]
   , unmappedDomainNodes    :: [NodeId]
@@ -91,7 +91,7 @@ findCospanCommuter' conf morphismF morphismG
     edgesOfDomain   = edges untypedDomainFromF
     edgesOfCodomain = edges untypedDomainFromG
 
-    initialState = State
+    initialState = CospanState
                    edgesOfDomain edgesOfCodomain
                    nodesIdsFromF edgesIdsFromF
                    nodesIdsFromG edgesIdsFromG
@@ -252,15 +252,6 @@ induceSpan fs gs
     where
       morphismH = initialSpanMorphism (head fs) (head gs)
 
--- | Given two TypedGraphMorphism @f : A -> B@ and @g : A -> C@ it builds a TypedGraphMorphism @h : B -> C@
--- with an empty mapping between the objects (auxiliary function)
-initialSpanMorphism :: TypedGraphMorphism n e -> TypedGraphMorphism n e -> TypedGraphMorphism n e
-initialSpanMorphism morphismF morphismG = buildTypedGraphMorphism domainH codomainH mappingH
-  where
-    domainH   = codomain morphismF
-    codomainH = codomain morphismG
-    mappingH  = GM.empty (domain domainH) (domain codomainH)
-
 
 -- | Given a TypedGraphMorphism @h : B -> C@ and a tuple of TypedGraphMorphism (f : A -> B, g : A -> C)
 -- it updates @h@ with a mapping from @B to C@ where @h . f = g@ (auxiliary function)
@@ -282,70 +273,185 @@ buildSpanEdgeRelation morphismH (morphismF, morphismG) = foldr (uncurry updateEd
   where
     newEdgeRelation = map (applyEdgeIdUnsafe morphismF &&& applyEdgeIdUnsafe morphismG ) $ edgeIdsFromDomain morphismF
 
+
+
 ------------------------------------------------------------------------------
 
--- FIXME: implement findSpanCommuter', which is a variation of partialInjectiveMatches'
+
+
+data SpanBuilderState n e =
+  SpanState {
+    morphismF                  :: TypedGraphMorphism n e
+  , morphismG                  :: TypedGraphMorphism n e
+  , morphismH                  :: TypedGraphMorphism n e
+  , availableSpanCodomainEdges :: [G.EdgeId]
+  , availableSpanCodomainNodes :: [G.NodeId]
+  }
+
+
+-- |          f     g
+-- |       B <-- A --> C
+-- |       \           ^
+-- |        \_________/
+-- |             h
+
 findSpanCommuter' :: ActualMorphismClass -> TypedGraphMorphism n e -> TypedGraphMorphism n e -> [TypedGraphMorphism n e]
-findSpanCommuter' = error "findSpanCommuter' unimplemented"
-
--- | Finds matches __/q/__ .
---
---   Partially injective. (Injective out of __/m/__)
-partialInjectiveMatches' :: TypedGraphMorphism n e -> TypedGraphMorphism n e -> [TypedGraphMorphism n e]
-partialInjectiveMatches' nac match = do
+findSpanCommuter' prop morphismF morphismG  = do
   let
-    lhsNodes = nodeIdsFromDomain match
-    lhsEdges = edgeIdsFromDomain match
-    q = initialSpanMorphism nac match
-    q' = preBuildEdges q nac match lhsEdges
-    q'' = case q' of
-      Just q1 -> preBuildNodes q1 nac match lhsNodes
-      Nothing -> Nothing
+    codomainNodes = nodeIdsFromCodomain morphismG
+    codomainEdges = edgeIdsFromCodomain morphismG
 
-  case q'' of
+    initialMorphism = initialSpanMorphism morphismF morphismG
+    initialState = SpanState morphismF morphismG initialMorphism codomainEdges codomainNodes
+
+    centerEdges = edgeIdsFromDomain morphismG
+    centerNodes = nodeIdsFromDomain morphismG
+
+    state'' =
+      do
+        state' <- preBuildEdges prop initialState centerEdges
+        preBuildNodes prop state' centerNodes
+
+  case state'' of
     Nothing -> []
-    Just q2 -> completeMappings Monomorphisms q2 (sourceNodes, sourceEdges) (targetNodes, targetEdges)
+    Just state''' ->
+      completeMappings
+        prop
+        (morphismH state''')
+        (notMappedSourceNodes, notMappedSourceEdges) (notMappedTargetNodes, notMappedTargetEdges)
       where
-        notMappedNodes tgm node = isNothing $ applyNodeId tgm node
-        notMappedEdges tgm edge = isNothing $ applyEdgeId tgm edge
-        sourceNodes = filter (notMappedNodes q2) (nodeIdsFromDomain q2)
-        sourceEdges = filter (notMappedEdges q2 . edgeId) (edgesFromDomain q2)
-        targetNodes = orphanTypedNodeIds q2
-        targetEdges = orphanTypedEdges q2
+        finalTGM = morphismH state'''
+        notMappedSourceNodes = filter (isNotMappedNode finalTGM) (nodeIdsFromDomain finalTGM)
+        notMappedSourceEdges = filter (isNotMappedEdge finalTGM . edgeId) (edgesFromDomain finalTGM)
+        notMappedTargetNodes = orphanTypedNodeIds finalTGM
+        notMappedTargetEdges = orphanTypedEdges finalTGM
 
---VERIFY EDGES MAPPING N <- l AND L -> G AND BUILD A N -> G
---PARTIAL EDGES MORPHISM
-preBuildEdges :: TypedGraphMorphism n e -> TypedGraphMorphism n e -> TypedGraphMorphism n e -> [G.EdgeId] -> Maybe (TypedGraphMorphism n e)
-preBuildEdges tgm _ _ [] = Just tgm
-preBuildEdges tgm nac match (h:t) = do
-  let nacEdge = applyEdgeIdUnsafe nac h
-      matchEdge   = applyEdgeIdUnsafe match h
-      (dom, cod, _) = decomposeTypedGraphMorphism tgm
-      tgm' = if (extractEdgeType dom nacEdge == extractEdgeType cod matchEdge) &&
-                (isNothing (applyEdgeId tgm nacEdge) || (applyEdgeId tgm nacEdge == Just matchEdge))
-             then Just $ buildTypedGraphMorphism dom cod (GM.updateEdges nacEdge matchEdge $ mapping tgm)
-             else Nothing
-  case tgm' of
-    Just tgm'' -> preBuildEdges tgm'' nac match t
-    Nothing    -> Nothing
+        isNotMappedNode :: TypedGraphMorphism n e -> NodeId -> Bool
+        isNotMappedNode tgm node = isNothing $ applyNodeId tgm node
 
---VERIFY NODE MAPPINGS N <- L AND L -> G AND BUILD A N -> G
---PARTIAL NODES MORPHISM
-preBuildNodes :: TypedGraphMorphism n e -> TypedGraphMorphism n e -> TypedGraphMorphism n e -> [G.NodeId] -> Maybe (TypedGraphMorphism n e)
-preBuildNodes tgm _   _     []    = Just tgm
-preBuildNodes tgm nac match (h:t) = do
-  let nacNode   = applyNodeIdUnsafe nac h
-      matchNode = applyNodeIdUnsafe match h
-      (tgmDomain, tgmCodomain, tgmMapping) = decomposeTypedGraphMorphism tgm
-      tgm' = if (extractNodeType tgmDomain nacNode == extractNodeType tgmCodomain matchNode) &&
-                (isNothing (applyNodeId tgm nacNode) || (applyNodeId tgm nacNode == Just matchNode))
-             then Just $ buildTypedGraphMorphism tgmDomain tgmCodomain (GM.updateNodes nacNode matchNode tgmMapping)
-             else Nothing
-  case tgm' of
-    Just tgm'' -> preBuildNodes tgm'' nac match t
-    Nothing    -> Nothing
+        isNotMappedEdge :: TypedGraphMorphism n e -> EdgeId -> Bool
+        isNotMappedEdge tgm edge = isNothing $ applyEdgeId tgm edge
+
+
+-- | Given two TypedGraphMorphism @f : A -> B@ and @g : A -> C@ it builds a TypedGraphMorphism @h : B -> C@
+-- with an empty mapping between the objects (auxiliary function)
+initialSpanMorphism :: TypedGraphMorphism n e -> TypedGraphMorphism n e -> TypedGraphMorphism n e
+initialSpanMorphism morphismF morphismG = buildTypedGraphMorphism domainH codomainH mappingH
+  where
+    domainH   = codomain morphismF
+    codomainH = codomain morphismG
+    mappingH  = GM.empty (domain domainH) (domain codomainH)
+
+
+
+-- |          f     g
+-- |       B <-- A --> C
+-- |       \           ^
+-- |        \_________/
+-- |             h
+-- |
+-- | verify edges mapping on f:B <- A and g:A -> C to build a h:B -> C
+-- | partial edges morphism
+
+preBuildEdges :: ActualMorphismClass -> SpanBuilderState n e -> [G.EdgeId] -> Maybe (SpanBuilderState n e)
+preBuildEdges prop state [] = Just state
+preBuildEdges prop state (edge:es) =
+  do
+    state' <- updateEdgesSpanState prop state edge
+    preBuildEdges prop state' es
+
+-- TODO: FORCE NODE MAPPINGS (VERIFY IF IT IS NECESSARY)
+updateEdgesSpanState :: ActualMorphismClass -> SpanBuilderState n e -> G.EdgeId -> Maybe (SpanBuilderState n e)
+updateEdgesSpanState prop state edge = do
+  let edgeOnF = applyEdgeIdUnsafe (morphismF state) edge
+      edgeOnG = applyEdgeIdUnsafe (morphismG state) edge
+      updatedMapping = updateEdgeRelation edgeOnF edgeOnG (morphismH state)
+
+      updatedMonoState = state { morphismH = updatedMapping
+                               , availableSpanCodomainEdges = delete edgeOnG (availableSpanCodomainEdges state)
+                               }
+
+      updatedGenericState = state { morphismH = updatedMapping }
+
+      monoCondition = edgeOnG `elem` availableSpanCodomainEdges state
+
+  if (extractEdgeType (domain $ morphismH state) edgeOnF == extractEdgeType (codomain $ morphismH state) edgeOnG) &&
+     (isNothing (applyEdgeId (morphismH state) edgeOnF) || (applyEdgeId (morphismH state) edgeOnF == Just edgeOnG))
+    then
+    case (prop, monoCondition) of
+      (Isomorphisms, False) ->
+        Nothing
+
+      (Monomorphisms, False) ->
+        Nothing
+
+      (Isomorphisms, True) ->
+        return updatedMonoState
+
+      (Monomorphisms, True) ->
+        return updatedMonoState
+
+      _ ->
+        return updatedGenericState
+
+    else Nothing
+
+-- |          f     g
+-- |       B <-- A --> C
+-- |       \           ^
+-- |        \_________/
+-- |             h
+-- |
+-- | verify edges mapping on f:B <- A and g:A -> C to build a h:B -> C
+-- | partial nodes morphism
+preBuildNodes :: ActualMorphismClass -> SpanBuilderState n e -> [G.NodeId] -> Maybe (SpanBuilderState n e)
+preBuildNodes _ state []    = return state
+preBuildNodes prop state (n:ns) =
+  do
+    state' <- updateNodesSpanState prop state n
+    preBuildNodes prop state' ns
+
+updateNodesSpanState  :: ActualMorphismClass -> SpanBuilderState n e -> G.NodeId -> Maybe (SpanBuilderState n e)
+updateNodesSpanState prop state node = do
+  let nodeOnF = applyNodeIdUnsafe (morphismF state) node
+      nodeOnG = applyNodeIdUnsafe (morphismG state) node
+      updatedMapping = untypedUpdateNodeRelation nodeOnF nodeOnG (morphismH state)
+
+
+      updatedMonoState = state { morphismH = updatedMapping
+                               , availableSpanCodomainNodes = delete nodeOnG (availableSpanCodomainNodes state)
+                               }
+
+      updatedGenericState = state { morphismH = updatedMapping }
+
+      monoCondition = nodeOnG `elem` availableSpanCodomainNodes state
+
+  if (extractNodeType (domain $ morphismH state) nodeOnF == extractNodeType (codomain $ morphismH state) nodeOnG) &&
+     (isNothing (applyNodeId (morphismH state) nodeOnF) || (applyNodeId (morphismH state) nodeOnF == Just nodeOnG))
+    then
+    case (prop, monoCondition) of
+        (Isomorphisms, False) ->
+          Nothing
+
+        (Monomorphisms, False) ->
+          Nothing
+
+        (Isomorphisms, True) ->
+          return updatedMonoState
+
+        (Monomorphisms, True) ->
+          return updatedMonoState
+
+        _ ->
+          return updatedGenericState
+
+  else Nothing
+
+
 
 ---------------------------------------------------------------------------------
+
+
 
 -- | Finds matches __/m/__
 --
