@@ -51,6 +51,7 @@ import Util.Monad
 --
 -- right = interface rule, codomain rule, rightL, rightK, rightR
 type SndOrderRule n e = Production (TGRuleCat n e) (RuleMorphism n e)
+type SndOrderGrammar n e = Grammar (TGRuleCat n e) (RuleMorphism n e)
 
 instance DPO (TGRuleCat n e) (RuleMorphism n e) where
   invertProduction r = do

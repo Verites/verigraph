@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 module XML.GGXReader
  ( readGrammar,
    readGGName,
@@ -14,21 +15,26 @@ module XML.GGXReader
    printMinimalSafetyNacsLog
    ) where
 
-import           Abstract.Category.AdhesiveHLR
+import           Control.Monad
+import qualified Data.List                    as L
+import qualified Data.Map                     as M
+import           Data.Maybe                   (fromJust, fromMaybe, mapMaybe)
+import           Text.XML.HXT.Core
+
+import           Abstract.Category.NewClasses
+import           Abstract.Constraint
 import           Abstract.Rewriting.DPO
 import           Base.Valid
+import           Category.TypedGraph          (TGraphCat)
+import qualified Category.TypedGraph          as TGraph
 import           Category.TypedGraphRule
-import qualified Data.Graphs                   as G
-import           Data.Graphs.Morphism          as GM
-import qualified Data.List                     as L
-import qualified Data.Map                      as M
-import           Data.Maybe                    (fromJust, fromMaybe, mapMaybe)
+import qualified Data.Graphs                  as G
+import           Data.Graphs.Morphism         as GM
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
-import           Rewriting.DPO.TypedGraph      as GR
+import           Rewriting.DPO.TypedGraph     as GR
 import           Rewriting.DPO.TypedGraphRule
-import           Text.XML.HXT.Core
-import qualified XML.Formulas                  as F
+import qualified XML.Formulas                 as F
 import           XML.GGXParseIn
 import           XML.GGXReader.SndOrder
 import           XML.GGXReader.Span
@@ -36,11 +42,12 @@ import           XML.ParsedTypes
 import           XML.Utilities
 import           XML.XMLUtilities
 
+
 -- | Reads the grammar in the XML, adds the needed minimal safety nacs
 --   to second-order, and returns the grammar and a log
-readGrammar :: String -> Bool -> MorphismsConfig
-            -> IO (Grammar (TypedGraphMorphism a b), Grammar (RuleMorphism a b), [(String, Int)])
-readGrammar fileName useConstraints morphismsConf = do
+readGrammar :: forall a b. String -> Bool -> TGRuleConfig a b
+            -> IO (TypedGraphGrammar a b, SndOrderGrammar a b, [(String, Int)])
+readGrammar fileName useConstraints configTemplate = do
   parsedTypeGraphs <- readTypeGraph fileName
   let parsedTypeGraph = case parsedTypeGraphs of
                          []    -> error "error, type graph not found"
@@ -48,15 +55,17 @@ readGrammar fileName useConstraints morphismsConf = do
   _ <- parsedTypeGraph `seq` return ()
 
   let typeGraph = instantiateTypeGraph parsedTypeGraph
+  let tGraphConfig = (fstOrderConfig configTemplate) { TGraph.catTypeGraph = typeGraph }
+  let tGRuleConfig = configTemplate { fstOrderConfig = tGraphConfig }
 
   parsedGraphs <- readGraphs fileName
   parsedRules <- readRules fileName
 
   let (sndOrdRules, fstOrdRules) = L.partition (\((x,_,_,_),_) -> L.isPrefixOf "2rule_" x) parsedRules
       rulesNames = map (\((x,_,_,_),_) -> x) fstOrdRules
-      productions = map (instantiateRule typeGraph) fstOrdRules
+      productions = map (instantiateRule typeGraph) fstOrdRules :: [TypedGraphRule a b]
 
-  ensureValid $ validateNamed (\name -> "Rule '"++name++"'") (zip rulesNames productions)
+  ensureValid $ TGraph.runCat (validateNamed (\name -> "Rule '"++name++"'") (zip rulesNames productions)) tGraphConfig
   _ <- (L.null productions && error "No first-order productions were found, at least one is needed.") `seq` return ()
 
   parsedAtomicConstraints <- readAtomicConstraints fileName
@@ -70,19 +79,18 @@ readGrammar fileName useConstraints morphismsConf = do
   let initGraph = head (map snd parsedGraphs)
       fstOrderGrammar = grammar initGraph cons (zip rulesNames productions)
 
+      sndOrderRules :: [(String, SndOrderRule a b)]
       sndOrderRules = instantiateSndOrderRules typeGraph sndOrdRules
       emptyRule = emptyGraphRule typeGraph
       sndOrderGrammar = grammar emptyRule [] sndOrderRules
 
-      (sndOrderGrammarWithMinimalSafetyNacs, logNewNacs) =
-        minimalSafetyNacsWithLog morphismsConf sndOrderGrammar
+      (sndOrderGrammarWithMinimalSafetyNacs, logNewNacs) = runCat (minimalSafetyNacsWithLog sndOrderGrammar) tGRuleConfig
+      invalidIndices = L.elemIndices False $ runCat (mapM (isValid . snd) sndOrderRules) tGRuleConfig
 
-
-  _ <- (case L.elemIndices False (map (isValid . snd) sndOrderRules) of
-          []  -> []
-          [a] -> error $ "Second Order Rule " ++ show a ++ " is not valid (starting from 0)."
-          l   -> error $ "Second Order Rules " ++ show l ++ " are not valid (starting from 0)."
-          ) `seq` return ()
+  case invalidIndices of
+    []  -> return ()
+    [a] -> error $ "Second Order Rule " ++ show a ++ " is not valid (starting from 0)."
+    l   -> error $ "Second Order Rules " ++ show l ++ " are not valid (starting from 0)."
 
   return (fstOrderGrammar, sndOrderGrammarWithMinimalSafetyNacs, logNewNacs)
 
@@ -97,19 +105,17 @@ readGGName fileName = do
 -- Minimal Safety Nacs Logs
 
 -- FIX: find a better place for this two functions
-minimalSafetyNacsWithLog :: MorphismsConfig -> Grammar (RuleMorphism a b)
-                         -> (Grammar (RuleMorphism a b), [(String, Int)])
-minimalSafetyNacsWithLog conf oldGG = (newGG, printNewNacs)
-  where
-    newNacs =
-      map (\(n,r) ->
-        let newRule = addMinimalSafetyNacs conf r
-            tamNewNacs = length (getNACs newRule)
-            tamNacs = length (getNACs r)
-         in ((n, newRule), (n, tamNewNacs - tamNacs))
-        ) (productions oldGG)
+minimalSafetyNacsWithLog :: SndOrderGrammar a b -> TGRuleCat a b (SndOrderGrammar a b, [(String, Int)])
+minimalSafetyNacsWithLog oldGG = do
+  newNacs <- forM (productions oldGG) $ \(n, r) -> do
+    newRule <- addMinimalSafetyNacs r
+    let tamNewNacs = length (nacs newRule)
+        tamNacs = length (nacs r)
+    return ((n, newRule), (n, tamNewNacs - tamNacs))
+  let
     newGG = oldGG {productions = map fst newNacs}
     printNewNacs = map snd newNacs
+  return (newGG, printNewNacs)
 
 printMinimalSafetyNacsLog :: [(String, Int)] -> [String]
 printMinimalSafetyNacsLog printNewNacs =
@@ -160,20 +166,20 @@ readGraphs fileName =
 readRules :: String -> IO[RuleWithNacs]
 readRules fileName = runX (parseXML fileName >>> parseRule)
 
-readSequences :: Grammar (TypedGraphMorphism a b) -> String -> IO [(String, [GR.TypedGraphRule a b])]
+readSequences :: TypedGraphGrammar a b -> String -> IO [(String, [GR.TypedGraphRule a b])]
 readSequences grammar fileName = map (expandSequence grammar) <$> runX (parseXML fileName >>> parseRuleSequence)
 
-expandSequence :: Grammar (TypedGraphMorphism a b) -> Sequence -> (String, [GR.TypedGraphRule a b])
+expandSequence :: TypedGraphGrammar a b -> Sequence -> (String, [GR.TypedGraphRule a b])
 expandSequence grammar (name,s,_) = (name, mapMaybe lookupRule . concat $ map expandSub s)
   where
     expandSub (i, s) = concat $ replicate i $ concatMap expandItens s
     expandItens (i, r) = replicate i r
     lookupRule name = L.lookup name (productions grammar)
 
-readSequencesWithObjectFlow :: Grammar (TypedGraphMorphism a b) -> String -> IO [(String, [(String, GR.TypedGraphRule a b)], [ObjectFlow (TypedGraphMorphism a b)])]
+readSequencesWithObjectFlow :: TypedGraphGrammar a b -> String -> IO [(String, [(String, GR.TypedGraphRule a b)], [ObjectFlow (TGraphCat a b) (TypedGraphMorphism a b)])]
 readSequencesWithObjectFlow grammar fileName = map (prepareFlows grammar) <$> runX (parseXML fileName >>> parseRuleSequence)
 
-prepareFlows :: Grammar (TypedGraphMorphism a b) -> Sequence -> (String, [(String, GR.TypedGraphRule a b)], [ObjectFlow (TypedGraphMorphism a b)])
+prepareFlows :: TypedGraphGrammar a b -> Sequence -> (String, [(String, GR.TypedGraphRule a b)], [ObjectFlow (TGraphCat a b) (TypedGraphMorphism a b)])
 prepareFlows grammar (name,s,flows) = (name, map fun getAll, objs)
   where
     fun name = (name, fromJust $ lookupRule name)
@@ -181,15 +187,15 @@ prepareFlows grammar (name,s,flows) = (name, map fun getAll, objs)
     lookupRule name = L.lookup name (productions grammar)
     objs = instantiateObjectsFlow (productions grammar) flows
 
-instantiateObjectsFlow :: [(String, Production (TypedGraphMorphism a b))] -> [ParsedObjectFlow] -> [ObjectFlow (TypedGraphMorphism a b)]
+instantiateObjectsFlow :: [(String, Production (TGraphCat a b) (TypedGraphMorphism a b))] -> [ParsedObjectFlow] -> [ObjectFlow (TGraphCat a b) (TypedGraphMorphism a b)]
 instantiateObjectsFlow _ [] = []
 instantiateObjectsFlow [] _ = []
 instantiateObjectsFlow productions (o:os) =
   let
     createObject (idx,cons,prod,maps) = ObjectFlow idx prod cons (createSpan prod cons maps)
     createSpan prod cons = instantiateSpan (rightGraph (searchRight prod)) (leftGraph (searchLeft cons))
-    leftGraph = codomain . getLHS
-    rightGraph = codomain . getRHS
+    leftGraph = leftObject
+    rightGraph = rightObject
     searchLeft ruleName = fromJust $ L.lookup ruleName productions
     searchRight ruleName = fromJust $ L.lookup ruleName productions
   in createObject o : instantiateObjectsFlow productions os
@@ -214,8 +220,8 @@ lookupNodes nodes n = fromMaybe
   where
     changeToListOfPairs = map (\(x,_,y) -> (x,y)) nodes
 
-instantiateAtomicConstraint :: TypeGraph a b -> ParsedAtomicConstraint -> AtomicConstraint (TypedGraphMorphism a b)
-instantiateAtomicConstraint tg (name, premise, conclusion, maps) = buildNamedAtomicConstraint name (buildTypedGraphMorphism p c m) isPositive
+instantiateAtomicConstraint :: TypeGraph a b -> ParsedAtomicConstraint -> AtomicConstraint (TGraphCat a b) (TypedGraphMorphism a b)
+instantiateAtomicConstraint tg (name, premise, conclusion, maps) = atomicConstraint name isPositive (buildTypedGraphMorphism p c m)
   where
     p = instantiateTypedGraph premise tg
     c = instantiateTypedGraph conclusion tg
@@ -225,13 +231,13 @@ instantiateAtomicConstraint tg (name, premise, conclusion, maps) = buildNamedAto
     pNodes = G.nodeIds (domain p)
     (mNodes,mEdges) = L.partition (\(_,_,x) -> G.NodeId (toN x) `elem` pNodes) maps
 
-instantiateConstraints :: [(String, F.Formula)] -> [AtomicConstraint (TypedGraphMorphism a b)] -> [Constraint (TypedGraphMorphism a b)]
+instantiateConstraints :: [(String, F.Formula)] -> [AtomicConstraint (TGraphCat a b) (TypedGraphMorphism a b)] -> [Constraint (TGraphCat a b) (TypedGraphMorphism a b)]
 instantiateConstraints formulas atomicConstraints = map (translateFormula mappings) f
   where
     f = map snd formulas
     mappings = M.fromAscList $ zip [1..] atomicConstraints
 
-translateFormula :: M.Map Int (AtomicConstraint (TypedGraphMorphism a b)) -> F.Formula -> Constraint (TypedGraphMorphism a b)
+translateFormula :: M.Map Int (AtomicConstraint (TGraphCat a b) (TypedGraphMorphism a b)) -> F.Formula -> Constraint (TGraphCat a b) (TypedGraphMorphism a b)
 translateFormula m formula =
   let
     get = (m M.!) . fromIntegral

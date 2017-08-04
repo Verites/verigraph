@@ -12,13 +12,13 @@ module XML.GGXWriter
 import           Data.Maybe
 import           Text.XML.HXT.Core
 
-import           Abstract.Category.FinitaryCategory          (codomain)
+import           Abstract.Category.NewClasses
 import           Abstract.Rewriting.DPO
 import qualified Analysis.CriticalPairs                      as CP
 import qualified Analysis.CriticalSequence                   as CS
 import qualified Analysis.EssentialCriticalPairs             as ECP
+import qualified Category.TypedGraph                         as TGraph
 import           Category.TypedGraphRule
-import           Category.TypedGraphRule.JointlyEpimorphisms ()
 import qualified Data.Graphs                                 as G
 import           Data.List
 import           Data.TypedGraph                             (TypedGraph)
@@ -32,102 +32,94 @@ import           XML.ParsedTypes
 import           XML.ParseSndOrderRule
 import           XML.Utilities
 
-type Grammars a b = (Grammar (TypedGraphMorphism a b), Grammar (RuleMorphism a b))
+type Grammars a b = (GR.TypedGraphGrammar a b, SO.SndOrderGrammar a b)
 
-appendSndOrderConflicts :: MorphismsConfig -> Grammars a b -> Grammars a b
-appendSndOrderConflicts conf (gg1,gg2) = (newGG1, gg2)
-  where
-    conflicts = CP.namedCriticalPairs conf (productions gg2)
+appendSndOrderConflicts :: Grammars a b -> TGRuleCat a b (Grammars a b)
+appendSndOrderConflicts (gg1,gg2) = do
+  conflicts <- CP.namedCriticalPairs (productions gg2)
+  let
     matches = concatMap (\(n1,n2,c) -> map (\ol -> (n1, n2, CP.getCriticalPairType ol, codomain (fst (CP.getCriticalPairMatches ol)))) c) conflicts
     conflictRules = map (\(idx,(n1,n2,tp,rule)) -> ("conflict_" ++ show tp ++ "_" ++ n1 ++ "_" ++ n2 ++ "_" ++ show idx, rule)) (zip ([0..]::[Int]) matches)
     newGG1 = grammar (start gg1) [] (productions gg1 ++ conflictRules)
+  return (newGG1, gg2)
 
-appendSndOrderDependencies :: MorphismsConfig -> Grammars a b -> Grammars a b
-appendSndOrderDependencies conf (gg1,gg2) = (newGG1, gg2)
-  where
-    conflicts = CS.namedCriticalSequences conf (productions gg2)
+appendSndOrderDependencies :: Grammars a b -> TGRuleCat a b (Grammars a b)
+appendSndOrderDependencies (gg1,gg2) = do
+  conflicts <- CS.namedCriticalSequences (productions gg2)
+  let
     matches = concatMap (\(n1,n2,c) -> map (\ol -> (n1, n2, CS.getCriticalSequenceType ol, codomain (fst (CS.getCriticalSequenceComatches ol)))) c) conflicts
     conflictRules = map (\(idx,(n1,n2,tp,rule)) -> ("dependency_" ++ show tp ++ "_" ++ n1 ++ "_" ++ n2 ++ "_" ++ show idx, rule)) (zip ([0..]::[Int]) matches)
     newGG1 = grammar (start gg1) [] (productions gg1 ++ conflictRules)
+  return (newGG1, gg2)
 
 -- | Writes grammar, second-order conflicts and dependencies (.ggx)
-writeSndOderConfDepFile :: MorphismsConfig -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
-writeSndOderConfDepFile conf ggs name names fileName =
-  do
-    let newGG = (appendSndOrderDependencies conf . appendSndOrderConflicts conf) ggs
-        essential = False
-    runX $ writeConfDep essential conf newGG name names fileName
-    putStrLn $ "Saved in " ++ fileName
-    return ()
+writeSndOderConfDepFile :: TGRuleConfig a b -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
+writeSndOderConfDepFile conf ggs name names fileName = do
+  let newGG = runCat (appendSndOrderDependencies =<< appendSndOrderConflicts ggs) conf
+      essential = False
+  runX $ writeConfDep (fstOrderConfig conf) essential newGG name names fileName
+  putStrLn $ "Saved in " ++ fileName
 
 -- | Writes the grammar and the second-order conflicts (.ggx)
-writeSndOderConflictsFile :: MorphismsConfig -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
-writeSndOderConflictsFile conf ggs name names fileName =
-  do
-    let newGG = appendSndOrderConflicts conf ggs
-        essential = False
-    runX $ writeConf essential conf newGG name names fileName
-    putStrLn $ "Saved in " ++ fileName
-    return ()
+writeSndOderConflictsFile :: TGRuleConfig a b -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
+writeSndOderConflictsFile conf ggs name names fileName = do
+  let newGG = runCat (appendSndOrderConflicts ggs) conf
+      essential = False
+  runX $ writeConf (fstOrderConfig conf) essential newGG name names fileName
+  putStrLn $ "Saved in " ++ fileName
 
 -- | Writes the grammar and the second-order dependencies (.ggx)
-writeSndOderDependenciesFile :: MorphismsConfig -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
-writeSndOderDependenciesFile conf ggs name names fileName =
-  do
-    let newGG = appendSndOrderDependencies conf ggs
-    runX $ writeDep conf newGG name names fileName
-    putStrLn $ "Saved in " ++ fileName
-    return ()
+writeSndOderDependenciesFile :: TGRuleConfig a b -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
+writeSndOderDependenciesFile conf ggs name names fileName = do
+  let newGG = runCat (appendSndOrderDependencies ggs) conf
+  runX $ writeDep (fstOrderConfig conf) newGG name names fileName
+  putStrLn $ "Saved in " ++ fileName
 
 -- | Writes grammar, conflicts and dependencies (.cpx)
-writeConfDepFile :: Bool -> MorphismsConfig -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
-writeConfDepFile essential conf ggs name names fileName = do
-  runX $ writeConfDep essential conf ggs name names fileName
+writeConfDepFile :: TGraph.TGraphConfig a b -> Bool -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
+writeConfDepFile config essential ggs name names fileName = do
+  runX $ writeConfDep config essential ggs name names fileName
   putStrLn $ "Saved in " ++ fileName
-  return ()
 
 -- | Writes the grammar and the conflicts (.cpx)
-writeConflictsFile :: Bool -> MorphismsConfig -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
-writeConflictsFile essential conf ggs name names fileName = do
-  runX $ writeConf essential conf ggs name names fileName
+writeConflictsFile :: TGraph.TGraphConfig a b -> Bool -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
+writeConflictsFile conf essential ggs name names fileName = do
+  runX $ writeConf conf essential ggs name names fileName
   putStrLn $ "Saved in " ++ fileName
-  return ()
 
 -- | Writes the grammar and the dependencies (.cpx)
-writeDependenciesFile :: MorphismsConfig -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
+writeDependenciesFile :: TGraph.TGraphConfig a b -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
 writeDependenciesFile conf ggs name names fileName = do
   runX $ writeDep conf ggs name names fileName
   putStrLn $ "Saved in " ++ fileName
-  return ()
 
 -- | Writes only the grammar (.ggx)
 writeGrammarFile :: Grammars a b -> String -> [(String,String)] -> String -> IO ()
 writeGrammarFile ggs name names fileName = do
   runX $ root [] [writeRoot ggs name names] >>> writeDocument [withIndent yes] fileName
   putStrLn $ "Saved in " ++ fileName
-  return ()
 
-writeConfDep :: Bool -> MorphismsConfig -> Grammars a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
-writeConfDep essential conf ggs@(gg1,_) name names fileName = root [] [writeCpx ggs cps css name names] >>> writeDocument [withIndent yes] fileName
+writeConfDep :: TGraph.TGraphConfig a b -> Bool -> Grammars a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
+writeConfDep config essential ggs@(gg1,_) name names fileName = root [] [writeCpx ggs cps css name names] >>> writeDocument [withIndent yes] fileName
   where
-    cps =
+    cps = (`TGraph.runCat` config) $
       if essential
-        then ECP.namedEssentialCriticalPairs conf (productions gg1)
-        else CP.namedCriticalPairs conf (productions gg1)
-    css = CS.namedCriticalSequences conf (productions gg1)
+        then ECP.namedEssentialCriticalPairs (productions gg1)
+        else CP.namedCriticalPairs (productions gg1)
+    css = TGraph.runCat (CS.namedCriticalSequences (productions gg1)) config
 
-writeConf :: Bool -> MorphismsConfig -> Grammars a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
-writeConf essential conf ggs@(gg1,_) name names fileName = root [] [writeCpx ggs cps [] name names] >>> writeDocument [withIndent yes] fileName
+writeConf :: TGraph.TGraphConfig a b -> Bool -> Grammars a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
+writeConf config essential ggs@(gg1,_) name names fileName = root [] [writeCpx ggs cps [] name names] >>> writeDocument [withIndent yes] fileName
   where
-    cps =
+    cps = (`TGraph.runCat` config) $
       if essential
-        then ECP.namedEssentialCriticalPairs conf (productions gg1)
-        else CP.namedCriticalPairs conf (productions gg1)
+        then ECP.namedEssentialCriticalPairs (productions gg1)
+        else CP.namedCriticalPairs (productions gg1)
 
-writeDep :: MorphismsConfig -> Grammars a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
+writeDep :: TGraph.TGraphConfig a b -> Grammars a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
 writeDep conf ggs@(gg1,_) name names fileName = root [] [writeCpx ggs [] cps name names] >>> writeDocument [withIndent yes] fileName
   where
-    cps = CS.namedCriticalSequences conf (productions gg1)
+    cps = TGraph.runCat (CS.namedCriticalSequences (productions gg1)) conf
 
 --Functions to deal with ggx format specificities
 writeRoot :: ArrowXml a => Grammars b c -> String -> [(String,String)] -> a XmlTree XmlTree
@@ -226,7 +218,7 @@ writeGrammar (gg1,gg2) names = writeAggProperties ++
 writeInitialGraph :: ArrowXml a => TypedGraph b c -> a XmlTree XmlTree
 writeInitialGraph initial = writeHostGraph ("Init", initial)
 
-writeReachableGraphs :: ArrowXml a => Grammar (TypedGraphMorphism b c) -> [a XmlTree XmlTree]
+writeReachableGraphs :: ArrowXml a => GR.TypedGraphGrammar b c -> [a XmlTree XmlTree]
 writeReachableGraphs gg = map writeHostGraph (reachableGraphs gg)
 --    write (name,graph) writeGraph "initial_graph" "HOST" "Init" nodes edges
 --    -- Reuses the serialize for productions to serialize the initial graph
@@ -459,7 +451,7 @@ writeEdgeConflict graphId (edgeId, objName, edgeType, source, target) =
       sattr "type" edgeType])
     []
 
-writeSndOrderRules :: ArrowXml a => Grammar (RuleMorphism b c) -> [a XmlTree XmlTree]
+writeSndOrderRules :: ArrowXml a => SO.SndOrderGrammar b c -> [a XmlTree XmlTree]
 writeSndOrderRules grammar = concatMap writeSndOrderRule (productions grammar)
 
 writeSndOrderRule :: ArrowXml a => (String, SO.SndOrderRule b c) -> [a XmlTree XmlTree]
@@ -468,12 +460,12 @@ writeSndOrderRule (name, sndOrderRule) =
     ("2rule_left_" ++ name)
     objNameMapLeftLeft objNameMapLeftLeft
     objNameMapLeftRight objNameMapLeftRight
-    (GR.getLHS sndOrderRule)] ++
+    (leftMorphism sndOrderRule)] ++
   [writeSndOrderRuleSide
     ("2rule_right_" ++ name)
     objNameMapRightLeft objNameMapRightLeft
     objNameMapRightRight objNameMapRightRight
-    (GR.getRHS sndOrderRule)] ++
+    (rightMorphism sndOrderRule)] ++
     map (\(n,idx) ->
           writeSndOrderRuleSide
             ("2rule_nac" ++ show idx ++ "_" ++ name)
@@ -482,16 +474,16 @@ writeSndOrderRule (name, sndOrderRule) =
             (objNameMapNacRightN n)
             (objNameMapNacRightE n)
             n)
-       (zip (getNACs sndOrderRule) ([0..] :: [Int]))
+       (zip (nacs sndOrderRule) ([0..] :: [Int]))
     where
       objNameMapNacLeftN n = getObjectNacNameMorphismNodes (mapping (mappingLeft n))
       objNameMapNacLeftE n = getObjectNacNameMorphismEdges (mapping (mappingLeft n))
       objNameMapNacRightN n = getObjectNacNameMorphismNodes (mapping (mappingRight n))
       objNameMapNacRightE n = getObjectNacNameMorphismEdges (mapping (mappingRight n))
-      objNameMapRightLeft = getObjectNameMorphism (mappingLeft (GR.getLHS sndOrderRule)) (mappingLeft (GR.getRHS sndOrderRule))
-      objNameMapRightRight = getObjectNameMorphism (mappingRight (GR.getLHS sndOrderRule)) (mappingRight (GR.getRHS sndOrderRule))
-      graphLRuleL = codomain (mappingLeft (GR.getLHS sndOrderRule))
-      graphRRuleL = codomain (mappingRight (GR.getLHS sndOrderRule))
+      objNameMapRightLeft = getObjectNameMorphism (mappingLeft (leftMorphism sndOrderRule)) (mappingLeft (rightMorphism sndOrderRule))
+      objNameMapRightRight = getObjectNameMorphism (mappingRight (leftMorphism sndOrderRule)) (mappingRight (rightMorphism sndOrderRule))
+      graphLRuleL = codomain (mappingLeft (leftMorphism sndOrderRule))
+      graphRRuleL = codomain (mappingRight (leftMorphism sndOrderRule))
       twice f x = f x x
       objNameMapLeftLeft = twice getObjectNameMorphism (idMap graphLRuleL graphLRuleL)
       objNameMapLeftRight = twice getObjectNameMorphism (idMap graphRRuleL graphRRuleL)
@@ -499,7 +491,7 @@ writeSndOrderRule (name, sndOrderRule) =
 writeSndOrderRuleSide :: ArrowXml a => String -> [Mapping] -> [Mapping] -> [Mapping] -> [Mapping] -> RuleMorphism b c -> a XmlTree XmlTree
 writeSndOrderRuleSide name objLeftN objLeftE objRightN objRightE ruleMorphism = writeRule objLeftN objLeftE objRightN objRightE [] (name, codomain ruleMorphism)
 
-writeRules :: ArrowXml a => Grammar (TypedGraphMorphism b c) -> [(String,String)] -> [a XmlTree XmlTree]
+writeRules :: ArrowXml a => GR.TypedGraphGrammar b c -> [(String,String)] -> [a XmlTree XmlTree]
 writeRules grammar nacNames = map (writeRule [] [] [] [] nacNames) (productions grammar)
 
 writeRule :: ArrowXml a => [Mapping] -> [Mapping] -> [Mapping] -> [Mapping] -> [(String,String)] -> (String, GR.TypedGraphRule b c) -> a XmlTree XmlTree
@@ -603,5 +595,5 @@ writeAdditionalEdgeLayout =
   mkelem "additionalLayout"
   [ sattr "aktlength" "200", sattr "force" "10", sattr "preflength" "200" ] []
 
-typeGraph :: Grammar (TypedGraphMorphism a b) -> G.Graph (Maybe a) (Maybe b)
+typeGraph :: GR.TypedGraphGrammar a b -> G.Graph (Maybe a) (Maybe b)
 typeGraph = codomain . start
