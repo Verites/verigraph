@@ -24,8 +24,10 @@
 - modules:
 #   - {name: [Data.Set, Data.HashSet], as: Set} # if you import Data.Set qualified, it must be as 'Set'
 #   - {name: Control.Arrow, within: []} # Certain modules are banned entirely
+  - {name: Data.Graph, within: []}
   - {name: Category.TypedGraph, as: TGraph}
   - {name: Category.TypedGraphRule, as: TGRule}
+  - {name: Data.Graphs, as: Graph}
   
 #
 # - functions:

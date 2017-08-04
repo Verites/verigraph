@@ -1,22 +1,23 @@
 -- | Test Suite for Process Module
 module Abstract.Rewriting.DPO.ProcessSpec where
 
-import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.FinitaryCategory
-import           Abstract.Rewriting.DPO
-import           Abstract.Rewriting.DPO.Derivation
-import           Abstract.Rewriting.DPO.Process
-import           Data.TypedGraph.Morphism
-import           Rewriting.DPO.TypedGraph.GraphProcess ()
-
-import           Data.Graphs
-import           Data.Graphs.Morphism
 import           Data.Maybe                            (fromJust)
 import           Test.Hspec
 
+import           Abstract.Category.NewClasses
+import           Abstract.Rewriting.DPO
+import           Abstract.Rewriting.DPO.Derivation
+import           Abstract.Rewriting.DPO.Process
+import qualified Category.TypedGraph                   as TGraph
+import           Data.Graphs
+import           Data.Graphs.Morphism
+import           Data.TypedGraph.Morphism
+import           Rewriting.DPO.TypedGraph.GraphProcess ()
+
+
 spec :: Spec
 spec =
-  context "Process From Derivations" $
+  context "Process From Derivations" $ do
     it "Produces the expected values" $
       processFromDerivations `shouldBe` processFromDerivationsResult
 
@@ -68,20 +69,22 @@ getData = buildProduction leftGetData rightGetData []
 
 -- | Test Instantiate
 
-morphismConfig = MorphismsConfig Monomorphism MonomorphicNAC
+--morphismConfig = MorphismsConfig Monomorphism MonomorphicNAC
 
 instanceGraph = build [1,2,3,4] [(1,2,1),(4,4,3)]
 typedInstanceGraph = buildGraphMorphism instanceGraph typeGraphRules [(3,4),(2,3),(1,1),(4,2)] [(1,1),(4,4)]
 
-matchSendMsg = head (findMonomorphisms lTypedSendMsg typedInstanceGraph :: [TypedGraphMorphism a b ])
-derivationSendMsg =fromJust $  generateDerivation morphismConfig matchSendMsg sendMsg
+tGraphConfig = TGraph.Config Data.Graphs.empty TGraph.MonicMatches
 
-overlappingGraph = codomain $ comatch derivationSendMsg
+processFromDerivations = TGraph.runCat tGraphConfig $ do
+  matchSendMsg <- head <$> findMorphisms monic lTypedSendMsg typedInstanceGraph
+  derivationSendMsg <- fromJust <$> generateDerivation matchSendMsg sendMsg
 
-matchGetData = head (findMonomorphisms lTypedGetData overlappingGraph :: [TypedGraphMorphism a b])
-derivationGetData = fromJust $ generateDerivation morphismConfig matchGetData getData
+  let overlappingGraph = codomain (comatch derivationSendMsg)
 
-processFromDerivations = calculateProcess [derivationSendMsg, derivationGetData]
+  matchGetData <- head <$> findMorphisms monic lTypedGetData overlappingGraph
+  derivationGetData <- fromJust <$> generateDerivation matchGetData getData
+  calculateProcess [derivationSendMsg, derivationGetData]
 
 
 -- | Core Graph Result

@@ -2,9 +2,12 @@ module Analysis.ParallelIndependentSpec where
 
 import           Data.Matrix                  hiding ((<|>))
 import           Test.Hspec
-import           Abstract.Category.FinitaryCategory (MorphismType(..))
+
 import           Abstract.Rewriting.DPO
 import           Analysis.ParallelIndependent
+import qualified Category.TypedGraph          as TGraph
+import qualified Category.TypedGraphRule      as TGRule
+import qualified Data.Graphs                  as Graph
 import qualified XML.GGXReader                as XML
 
 -- This test is based on that the pullback scheme for detecting parallel
@@ -17,7 +20,8 @@ filenames = ["tests/grammars/nacs2rule.ggx"
             ,"tests/grammars/secondOrderMatchTest.ggx"
             ,"tests/grammars/elevator.ggx"
             ,"tests/grammars/mutex.ggx"]
-dpoConf = MorphismsConfig GenericMorphism MonomorphicNAC
+tGraphConf = TGraph.Config Graph.empty TGraph.AllMatches
+tGRuleConf = TGRule.Config tGraphConf TGRule.AllMatches
 
 spec :: Spec
 spec = context "Parallel Independence Test" parIndepTest
@@ -26,27 +30,27 @@ parIndepTest :: Spec
 parIndepTest =
   describe "Check Parallel/Sequentially independent rules for pullbacks against delete-use" $ do
     it "Parallel Test for Cond1" $
-      mapM_ (\fn -> test1 dpoConf fn Parallel Cond1) filenames
+      mapM_ (\fn -> test1 tGraphConf fn Parallel Cond1) filenames
 
     it "Parallel Test for Cond2" $
-      mapM_ (\fn -> test1 dpoConf fn Parallel Cond2) filenames
+      mapM_ (\fn -> test1 tGraphConf fn Parallel Cond2) filenames
 
     it "Sequentially Test for Cond1" $
-      mapM_ (\fn -> test1 dpoConf fn Sequentially Cond1) filenames
+      mapM_ (\fn -> test1 tGraphConf fn Sequentially Cond1) filenames
 
     it "Sequentially Test for Cond2" $
-      mapM_ (\fn -> test1 dpoConf fn Sequentially Cond2) filenames
+      mapM_ (\fn -> test1 tGraphConf fn Sequentially Cond2) filenames
 
-test1 dpoConf fileName alg pb =
+test1 tGraphConf fileName alg pb =
   do
-    (gg,_,_) <- XML.readGrammar fileName False dpoConf
+    (gg,_,_) <- XML.readGrammar fileName False tGRuleConf
 
     let rules = map snd (productions gg)
-        analysisPB = pairwiseCompare (isIndependent alg pb dpoConf) rules
-        analysisDU = pairwiseCompare (isIndependent alg Cond3 dpoConf) rules
+        analysisPB = pairwiseCompare tGraphConf (isIndependent alg pb) rules
+        analysisDU = pairwiseCompare tGraphConf (isIndependent alg Cond3) rules
 
     analysisDU `shouldBe` analysisPB
 
-pairwiseCompare :: (a -> a -> Bool) -> [a] -> Matrix Bool
-pairwiseCompare compare items =
-  matrix (length items) (length items) $ \(i,j) -> compare (items !! (i-1)) (items !! (j-1))
+pairwiseCompare :: TGraph.Config n e -> (a -> a -> TGraph.CatM n e Bool) -> [a] -> Matrix Bool
+pairwiseCompare conf compare items = TGraph.runCat conf . mapM (uncurry compare) .
+  matrix (length items) (length items) $ \(i,j) -> (items !! (i-1), items !! (j-1))

@@ -39,7 +39,7 @@ instance FinalPullbackComplement (CatM n e) (TypedGraphMorphism n e) where
   --
   -- This function is divided in four steps,
   -- first two for nodes and the lasts for edges.
-  calculateFinalPullbackComplementOfMonoAny m l = step4
+  calculateFinalPullbackComplementOfMonoAny m l = return step4
     where
       typedGraphK = domain l
       typedGraphA = codomain m

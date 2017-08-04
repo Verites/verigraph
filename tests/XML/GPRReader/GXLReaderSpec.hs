@@ -4,13 +4,13 @@ import           Data.List
 import           Data.Matrix                     hiding ((<|>))
 import           Test.Hspec
 
-import           Abstract.Category.NewClasses
 import           Abstract.Rewriting.DPO
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
 import           Analysis.EssentialCriticalPairs
 import qualified Category.TypedGraph             as TGraph
-import           Category.TypedGraphRule
+import           Category.TypedGraphRule         (TypedGraphRule)
+import qualified Category.TypedGraphRule         as TGRule
 import qualified Data.Graphs                     as Graph
 import qualified XML.GGXReader                   as XML
 import qualified XML.GPRReader.GXLReader         as GPR
@@ -23,8 +23,8 @@ fileName5 = "tests/grammars/elevator.ggx"
 fileName6 = "tests/grammars/elevator.gps"
 fileName7 = "tests/grammars/elevatorWithFlags.gps"
 
-tGraphConfig = TGraph.TGraphConfig Graph.empty TGraph.AllMatches
-tGRuleConfig = TGRuleConfig tGraphConfig TGraph.AllMatches
+tGraphConfig = TGraph.Config Graph.empty TGraph.AllMatches
+tGRuleConfig = TGRule.Config tGraphConfig TGraph.AllMatches
 
 spec :: Spec
 spec = context "GPR Reader Test - CPA/CSA analysis is equal on GGX and GPR files" gprTest
@@ -60,9 +60,9 @@ gprTest = do
     runAnalysis tGraphConfig findCriticalPairs elevatorRulesGPR elevatorRulesGGX
     runAnalysis tGraphConfig findCriticalSequences elevatorRulesGPR elevatorRulesGGX
 
-runAnalysis :: TGraph.TGraphConfig n e -> (TypedGraphRule n e -> TypedGraphRule n e -> TGraph.TGraphCat n e [a]) -> [TypedGraphRule n e] -> [TypedGraphRule n e] -> IO ()
+runAnalysis :: TGraph.Config n e -> (TypedGraphRule n e -> TypedGraphRule n e -> TGraph.CatM n e [a]) -> [TypedGraphRule n e] -> [TypedGraphRule n e] -> IO ()
 runAnalysis config algorithm rules1 rules2 =
-  TGraph.runCat (pairwise algorithm rules1) config `shouldBe` TGraph.runCat (pairwise algorithm rules2) config
+  TGraph.runCat config (pairwise algorithm rules1) `shouldBe` TGraph.runCat config (pairwise algorithm rules2)
 
 getRules a b c = (f a, f b, f c)
   where

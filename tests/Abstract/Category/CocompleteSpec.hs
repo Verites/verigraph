@@ -2,15 +2,16 @@
 
 module Abstract.Category.CocompleteSpec where
 
-import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.Cocomplete
+import           Test.Hspec
+
+import           Abstract.Category.NewClasses
+import qualified Category.TypedGraph          as TGraph
 import           Data.Graphs
 import           Data.Graphs.Morphism
-import           Data.List.NonEmpty                    (fromList)
+import           Data.List.NonEmpty           (fromList)
 import           Data.TypedGraph.Morphism
-import           Rewriting.DPO.TypedGraph.GraphProcess ()
 
-import           Test.Hspec
+tGraphConfig = TGraph.Config Data.Graphs.empty TGraph.AllMatches
 
 
 spec :: Spec
@@ -97,7 +98,7 @@ typedGraphBOne = buildGraphMorphism graphBOne typeGraphOne [(50,1),(60,1),(70,1)
 mappingMorphismHOne = buildGraphMorphism graphAOne graphBOne [(10,50),(20,60),(30,70),(40,80)] []
 typedMorphismHOne = buildTypedGraphMorphism typedGraphAOne typedGraphBOne mappingMorphismHOne
 
-testCaseOne = calculateCoequalizer typedMorphismHOne typedMorphismHOne
+testCaseOne = TGraph.runCat tGraphConfig $ calculateCoequalizer typedMorphismHOne typedMorphismHOne
 
 
 
@@ -116,7 +117,7 @@ mappingMorphismHTwo = buildGraphMorphism graphATwo graphBTwo [(10,50),(20,60)] [
 
 typedMorphismHTwo = buildTypedGraphMorphism typedGraphATwo typedGraphBTwo mappingMorphismHTwo
 
-testCaseTwo = calculateCoequalizer typedMorphismHTwo typedMorphismHTwo
+testCaseTwo = TGraph.runCat tGraphConfig $ calculateCoequalizer typedMorphismHTwo typedMorphismHTwo
 
 
 
@@ -156,9 +157,9 @@ typedMorphismFThree = buildTypedGraphMorphism typedGraphAThree typedGraphBThree 
 typedMorphismGThree = buildTypedGraphMorphism typedGraphAThree typedGraphBThree mappingMorphismGThree
 typedMorphismHThree = buildTypedGraphMorphism typedGraphAThree typedGraphBThree mappingMorphismHThree
 
-testCaseThreePUSHOUT = Abstract.Category.AdhesiveHLR.calculatePushout typedMorphismFThree typedMorphismHThree
+testCaseThreePUSHOUT = TGraph.runCat tGraphConfig $ calculatePushout typedMorphismFThree typedMorphismHThree
 
-testCaseThree = calculateCoequalizer typedMorphismFThree typedMorphismGThree
+testCaseThree = TGraph.runCat tGraphConfig $ calculateCoequalizer typedMorphismFThree typedMorphismGThree
 
 
 -- | Case 4
@@ -179,7 +180,7 @@ mappingMorphismHFour = buildGraphMorphism graphAFour graphBFour [(10,50),(20,60)
 typedMorphismGFour = buildTypedGraphMorphism typedGraphAFour typedGraphBFour mappingMorphismGFour
 typedMorphismHFour = buildTypedGraphMorphism typedGraphAFour typedGraphBFour mappingMorphismHFour
 
-testCaseFour = calculateCoequalizer typedMorphismHFour typedMorphismGFour
+testCaseFour = TGraph.runCat tGraphConfig $ calculateCoequalizer typedMorphismHFour typedMorphismGFour
 
 
 
@@ -207,17 +208,17 @@ typedMorphismFFive = buildTypedGraphMorphism typedGraphAFive typedGraphBFive map
 typedMorphismGFive = buildTypedGraphMorphism typedGraphAFive typedGraphBFive mappingMorphismGFive
 typedMorphismHFive = buildTypedGraphMorphism typedGraphAFive typedGraphBFive mappingMorphismHFive
 
-testCaseFive = calculateNCoequalizer $ fromList [typedMorphismFFive, typedMorphismGFive, typedMorphismHFive]
+testCaseFive = TGraph.runCat tGraphConfig $ calculateNCoequalizer $ fromList [typedMorphismFFive, typedMorphismGFive, typedMorphismHFive]
 
 
 
 -- | See COEqualizer test case One
-testCaseSix = calculateNCoequalizer $ fromList [typedMorphismHOne,typedMorphismHOne]
+testCaseSix = TGraph.runCat tGraphConfig $ calculateNCoequalizer $ fromList [typedMorphismHOne,typedMorphismHOne]
 
 
 
 -- | See COEqualizer test case Two
-testCaseSeven = calculateNCoequalizer $ fromList [typedMorphismHTwo,typedMorphismHTwo]
+testCaseSeven = TGraph.runCat tGraphConfig $ calculateNCoequalizer $ fromList [typedMorphismHTwo,typedMorphismHTwo]
 
 
 
@@ -235,4 +236,4 @@ mappingMorphismFEight = buildGraphMorphism graphAEight graphBEight [(10,50),(20,
 
 typedMorphismFEight = buildTypedGraphMorphism typedGraphAEight typedGraphBEight mappingMorphismFEight
 
-testCaseEight = calculateNCoequalizer $ fromList [typedMorphismFEight]
+testCaseEight = TGraph.runCat tGraphConfig $ calculateNCoequalizer $ fromList [typedMorphismFEight]

@@ -8,7 +8,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MonadComprehensions #-}
 {-# LANGUAGE FlexibleInstances #-}
-module Abstract.Category.NewClasses 
+module Abstract.Category.NewClasses
   (
     -- * Category
     Category(..)
@@ -270,7 +270,7 @@ isQuotient = (`belongsToClass` quotient @cat)
  class 'ECofinitary'), and that the class \(\mathcal{M'}\) be a class of
  monomorphisms. Note that \(\mathcal{M'}\) may be different from the class
  \(\mathcal{M}\) for which the category is \(\mathcal{M}\)-finitary.
- 
+
  Examples are: the category of (typed) graphs, where \(\mathcal{E}\) is the
  class of all epimorphisms and \(\mathcal{M'} = \mathcal{M}\) is the class of
  all monomorphisms; the category of symbolic graphs, where \(\mathcal{E}\) is
@@ -349,7 +349,7 @@ class EM'Factorizable cat morph => EM'PairFactorizable cat morph where
   -- __NOTE:__ The order of the morphism classes is different from 'jointlyEpicPairs'.
   --
   -- A pair of morphisms /X --f-> Z <-g-- Y/ is jointly epic if, given any two
-  -- morphisms /h1, h2 : Z -> A/, if /h1 != h2/ then /h1 . f != h2 . f/ or 
+  -- morphisms /h1, h2 : Z -> A/, if /h1 != h2/ then /h1 . f != h2 . f/ or
   -- /h2 . f != h2 . g/.
   findJointlyEpicSquares :: (MorphismClass cat, morph) -> (MorphismClass cat, morph) -> cat [(morph, morph)]
   findJointlyEpicSquares (cf, f) (cg, g) = runListT $ do
@@ -369,7 +369,7 @@ class EM'Factorizable cat morph => EM'PairFactorizable cat morph where
  a particular diagram commute. Since the number of morphisms between any two
  objects may be very large, enumerating all then filtering is very inefficient
  in general. Thus, there are specialized versions of morphism search that may be
- considerably faster. 
+ considerably faster.
 -}
 class Category cat morph => FindMorphism cat morph where
   -- | Find all morphisms between the given objects that belong to the given class.
@@ -379,7 +379,7 @@ class Category cat morph => FindMorphism cat morph where
   -- all morphisms \(h : B \to C\), of the given class, such that \(g = h \circ f\).
   --
   -- @
-  --      f    
+  --      f
   --   A ────▶ B
   --    ╲      │
   --   g ╲     │ h
@@ -395,7 +395,7 @@ class Category cat morph => FindMorphism cat morph where
   --       f
   --    B ────▶ A
   --    │       ▲
-  --  h │      ╱ 
+  --  h │      ╱
   --    ▼     ╱ g
   --    C ───╱
   -- @
@@ -439,7 +439,7 @@ class Category cat morph => Complete cat morph where
   --
   -- An object \(\mathbf{1}\) is final when, for any other object \(X\), there
   -- is a unique morphism \(X \to \mathbf{1}\). Note that there isn't
-  -- necessarily a unique final object, but all of them are isomorphic. This 
+  -- necessarily a unique final object, but all of them are isomorphic. This
   -- function always returns the same final object.
   getFinalObject :: cat (Obj cat)
 
@@ -719,7 +719,7 @@ class Category cat morph => LRNAdhesive cat morph where
   leftHandMorphism :: MorphismClass cat
   matchMorphism :: MorphismClass cat
 
-  
+
   -- | Calculate the pushout of a rule-morphism and a match-morphism.
   --
   -- Given the morphisms \(r : A \to B\) and \(m : A \to C\), respectively and
@@ -843,4 +843,4 @@ class Category cat morph => FinalPullbackComplement cat morph where
   -- @
   --
   -- The behaviour is undefined when the first morphism isn't monic.
-  calculateFinalPullbackComplementOfMonoAny :: morph -> morph -> (morph, morph)
+  calculateFinalPullbackComplementOfMonoAny :: morph -> morph -> cat (morph, morph)

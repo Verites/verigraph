@@ -1,20 +1,21 @@
 module Analysis.Interlevel.InterLevelCPSpec where
 
-import           Data.Maybe                         (fromMaybe)
+import           Data.Maybe                       (fromMaybe)
 import           Test.Hspec
 
-import           Abstract.Category.FinitaryCategory
+import           Abstract.Category.NewClasses
 import           Abstract.Rewriting.DPO
 import           Analysis.Interlevel.InterLevelCP
-import           Category.TypedGraphRule
+import qualified Category.TypedGraph              as TGraph
+import qualified Category.TypedGraphRule          as TGRule
+import           Data.Graphs                      as Graph
 import           Data.TypedGraph
-import           Data.TypedGraph.Morphism
 import           Util.List
-import qualified XML.GGXReader                      as XML
+import qualified XML.GGXReader                    as XML
 
 fileName = "tests/grammars/secondOrderMatchTest.ggx"
-dpoConf1 = MorphismsConfig Monomorphism MonomorphicNAC
-dpoConf2 = MorphismsConfig GenericMorphism MonomorphicNAC
+dpoConf1 = TGRule.Config (TGraph.Config Graph.empty TGraph.MonicMatches) TGRule.MonicMatches
+dpoConf2 = TGRule.Config (TGraph.Config Graph.empty TGraph.AllMatches) TGRule.AllMatches
 
 spec :: Spec
 spec = context "Inter-level Critical Pairs Test" dangextTest
@@ -37,7 +38,7 @@ checkDanglingExtension gg1 =
   do
     let ruleC = getRule "ruleC" gg1
 
-        left = getLHS ruleC
+        left = leftMorphism ruleC
         dangGraph = codomain (danglingExtension left)
 
         [(_,typeOfMsg),(_,typeOfData)] = typedNodes (codomain left)
@@ -69,34 +70,36 @@ checkInterlevelConflict mono arbitrary gg1 gg2 =
         c = ("c", getRule "c" gg2)
         d = ("d", getRule "d" gg2)
 
-    length (interLevelCP arbitrary a sendMsg) `shouldBe` 1
-    length (interLevelCP arbitrary b sendMsg) `shouldBe` 0
-    length (interLevelCP arbitrary c sendMsg) `shouldBe` 0
-    length (interLevelCP arbitrary d sendMsg) `shouldBe` 0
-    length (interLevelCP arbitrary a getData) `shouldBe` 0
-    length (interLevelCP arbitrary b getData) `shouldBe` 0
-    length (interLevelCP arbitrary c getData) `shouldBe` 0
-    length (interLevelCP arbitrary d getData) `shouldBe` 0
-    length (interLevelCP arbitrary a receiveMsg) `shouldBe` 0
-    length (interLevelCP arbitrary b receiveMsg) `shouldBe` 0
-    length (interLevelCP arbitrary c receiveMsg) `shouldBe` 0
-    length (interLevelCP arbitrary d receiveMsg) `shouldBe` 0
-    length (interLevelCP arbitrary a deleteMsg) `shouldBe` 0
-    length (interLevelCP arbitrary b deleteMsg) `shouldBe` 0
-    length (interLevelCP arbitrary c deleteMsg) `shouldBe` 0
-    length (interLevelCP arbitrary d deleteMsg) `shouldBe` 0
-    length (interLevelCP arbitrary a ruleB) `shouldBe` 0
-    Prelude.null (interLevelCP mono b ruleB) `shouldBe` False
-    length (interLevelCP arbitrary c ruleB) `shouldBe` 0
-    length (interLevelCP arbitrary d ruleB) `shouldBe` 0
-    length (interLevelCP arbitrary a ruleC) `shouldBe` 0
-    length (interLevelCP arbitrary b ruleC) `shouldBe` 0
-    Prelude.null (interLevelCP mono c ruleC) `shouldBe` False
-    length (interLevelCP arbitrary d ruleC) `shouldBe` 0
-    length (interLevelCP arbitrary a ruleD) `shouldBe` 0
-    length (interLevelCP arbitrary b ruleD) `shouldBe` 0
-    length (interLevelCP arbitrary c ruleD) `shouldBe` 0
-    Prelude.null (interLevelCP mono d ruleD) `shouldBe` False
+    length (interLevelCP' arbitrary a sendMsg) `shouldBe` 1
+    length (interLevelCP' arbitrary b sendMsg) `shouldBe` 0
+    length (interLevelCP' arbitrary c sendMsg) `shouldBe` 0
+    length (interLevelCP' arbitrary d sendMsg) `shouldBe` 0
+    length (interLevelCP' arbitrary a getData) `shouldBe` 0
+    length (interLevelCP' arbitrary b getData) `shouldBe` 0
+    length (interLevelCP' arbitrary c getData) `shouldBe` 0
+    length (interLevelCP' arbitrary d getData) `shouldBe` 0
+    length (interLevelCP' arbitrary a receiveMsg) `shouldBe` 0
+    length (interLevelCP' arbitrary b receiveMsg) `shouldBe` 0
+    length (interLevelCP' arbitrary c receiveMsg) `shouldBe` 0
+    length (interLevelCP' arbitrary d receiveMsg) `shouldBe` 0
+    length (interLevelCP' arbitrary a deleteMsg) `shouldBe` 0
+    length (interLevelCP' arbitrary b deleteMsg) `shouldBe` 0
+    length (interLevelCP' arbitrary c deleteMsg) `shouldBe` 0
+    length (interLevelCP' arbitrary d deleteMsg) `shouldBe` 0
+    length (interLevelCP' arbitrary a ruleB) `shouldBe` 0
+    Prelude.null (interLevelCP' mono b ruleB) `shouldBe` False
+    length (interLevelCP' arbitrary c ruleB) `shouldBe` 0
+    length (interLevelCP' arbitrary d ruleB) `shouldBe` 0
+    length (interLevelCP' arbitrary a ruleC) `shouldBe` 0
+    length (interLevelCP' arbitrary b ruleC) `shouldBe` 0
+    Prelude.null (interLevelCP' mono c ruleC) `shouldBe` False
+    length (interLevelCP' arbitrary d ruleC) `shouldBe` 0
+    length (interLevelCP' arbitrary a ruleD) `shouldBe` 0
+    length (interLevelCP' arbitrary b ruleD) `shouldBe` 0
+    length (interLevelCP' arbitrary c ruleD) `shouldBe` 0
+    Prelude.null (interLevelCP' mono d ruleD) `shouldBe` False
+
+interLevelCP' conf x y = TGRule.runCat conf $ interLevelCP x y
 
 getRule str gg =
   fromMaybe

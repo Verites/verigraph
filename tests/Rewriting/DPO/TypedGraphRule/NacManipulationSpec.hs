@@ -15,7 +15,7 @@ import           Rewriting.DPO.TypedGraphRule.NacManipulation
 import qualified XML.GGXReader                                as XML
 
 fileName = "tests/grammars/NacManipulation.ggx"
-config = TGraph.TGraphConfig Graph.empty TGraph.MonicMatches
+config = TGraph.Config Graph.empty TGraph.MonicMatches
 
 spec :: Spec
 spec = context "NAC Manipulation Test" nacmanipTest
@@ -23,7 +23,7 @@ spec = context "NAC Manipulation Test" nacmanipTest
 nacmanipTest :: Spec
 nacmanipTest =
   it "create/delete the expected number of NACs" $
-    do (gg,_,_) <- XML.readGrammar fileName False (TGRule.TGRuleConfig config TGRule.MonicMatches)
+    do (gg,_,_) <- XML.readGrammar fileName False (TGRule.Config config TGRule.MonicMatches)
        checkNacManipulation gg
 
 -- | Checks if the NAC manipulations functions create/delete the
@@ -32,7 +32,7 @@ checkNacManipulation :: TypedGraphGrammar n e -> IO ()
 checkNacManipulation gg = do
   let
     config' = config { TGraph.catTypeGraph = typeGraph (start gg) }
-    (createDisable, createPO, createShift, deleteDisable, deleteMono, deleteIPO) = (`TGraph.runCat` config') $ do
+    (createDisable, createPO, createShift, deleteDisable, deleteMono, deleteIPO) = TGraph.runCat config' $ do
       let find x y = findMorphisms anyMorphism (codomain x) (codomain y)
 
       -- Creation

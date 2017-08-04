@@ -2,18 +2,16 @@ module Rewriting.DPO.TypedGraphRuleSpec where
 
 import           Test.Hspec
 
-import           Abstract.Category.NewClasses
-import           Abstract.Rewriting.DPO
-import qualified Category.TypedGraph          as TGraph
-import qualified Category.TypedGraphRule      as TGRule
-import           Data.Graphs                  as Graph
-import qualified XML.GGXReader                as XML
+import qualified Category.TypedGraph     as TGraph
+import qualified Category.TypedGraphRule as TGRule
+import           Data.Graphs             as Graph
+import qualified XML.GGXReader           as XML
 
 fileName1 = "tests/grammars/nacs2rule.ggx"
 fileName2 = "tests/grammars/secondOrderMatchTest.ggx"
 
-dpoConf1 = TGRule.TGRuleConfig (TGraph.TGraphConfig Graph.empty TGraph.MonicMatches) TGRule.MonicMatches
-dpoConf2 = TGRule.TGRuleConfig (TGraph.TGraphConfig Graph.empty TGraph.AllMatches) TGRule.MonicMatches
+dpoConf1 = TGRule.Config (TGraph.Config Graph.empty TGraph.MonicMatches) TGRule.MonicMatches
+dpoConf2 = TGRule.Config (TGraph.Config Graph.empty TGraph.AllMatches) TGRule.MonicMatches
 
 spec :: Spec
 spec = context "Second-Order Minimal Safety NACs Test" msnTest

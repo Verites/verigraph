@@ -1,19 +1,18 @@
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module Category.TypedGraph.FinalPullbackComplementSpec where
 
 import           Test.Hspec
 
-import           Abstract.Category.FinalPullbackComplement
-import           Abstract.Category.FinitaryCategory
+import           Abstract.Category.NewClasses
 import           Abstract.Rewriting.DPO
-import           Category.TypedGraph.FinalPullbackComplement
-import qualified Data.TypedGraph as TG
+import qualified Category.TypedGraph          as TGraph
+import qualified Data.Graphs                  as Graph
+import qualified Data.Graphs.Morphism         as G
+import qualified Data.TypedGraph              as TG
 import           Data.TypedGraph.Morphism
-import qualified Data.Graphs as G
-import qualified Data.Graphs.Morphism as G
-import qualified XML.GGXReader                    as XML
+import qualified XML.GGXReader                as XML
 
 spec :: Spec
 spec = context "Final Pullback Complement" fpbcTest
@@ -40,31 +39,33 @@ fpbcTest =
   verifyR3 test3
 
 -- Gets rules and set them to appropriated morphisms tests
-prepareTest1 r1 = (m,l,k,l')
-  where
-    m = getLHS r1
-    l = invert (getRHS r1)
-    (k,l') = calculateFinalPullbackComplement m l
+prepareTest1 r1 = TGraph.runCat config $ do
+  let m = leftMorphism r1
+  let l = invert (rightMorphism r1)
+  (k,l') <- calculateFinalPullbackComplementOfMonoAny m l
+  return (m,l,k,l')
 
-prepareTest2 r2 = (m,l,k,l')
-  where
-    m = getLHS r2
+prepareTest2 r2 = TGraph.runCat config $ do
+  let
+    m = leftMorphism r2
     l = foldr
           removeNodeFromDomain
-          (invert (getRHS r2))
-          (nodeIdsFromCodomain (getRHS r2))
-    (k,l') = calculateFinalPullbackComplement m l
+          (invert (rightMorphism r2))
+          (nodeIdsFromCodomain (rightMorphism r2))
+  (k,l') <- calculateFinalPullbackComplementOfMonoAny m l
+  return (m,l,k,l')
 
-prepareTest3 r3 = (m,l,k,l')
-  where
-    m = getLHS r3
-    node = head (nodeIdsFromCodomain (getRHS r3))
+prepareTest3 r3 = TGraph.runCat config $ do
+  let
+    m = leftMorphism r3
+    node = head (nodeIdsFromCodomain (rightMorphism r3))
     l = createNodeOnDomain
-          (node + G.NodeId 1)
-          (G.applyNodeIdUnsafe (codomain (getRHS r3)) node)
-          (head (nodeIdsFromDomain (getRHS r3)))
-          (invert (getRHS r3))
-    (k,l') = calculateFinalPullbackComplement m l
+          (node + Graph.NodeId 1)
+          (G.applyNodeIdUnsafe (rightObject r3) node)
+          (head (nodeIdsFromDomain (rightMorphism r3)))
+          (invert (rightMorphism r3))
+  (k, l') <- calculateFinalPullbackComplementOfMonoAny m l
+  return (m,l,k,l')
 
 -- Generic tests for any pullback square
 verifyAnyPullback (m,l,k,l') =
@@ -77,13 +78,17 @@ verifyAnyPullback (m,l,k,l') =
     isMonomorphism l `shouldBe` isMonomorphism l'
     isMonomorphism m `shouldBe` isMonomorphism k
 
+isMonomorphism = TGraph.runCat config . isMonic
+
+config = TGraph.Config Graph.empty TGraph.AllMatches
+
 -- Specific tests
 
 verifyR1 (_,_,k,l') =
   do
     length (nodeIdsFromCodomain k) `shouldBe` 1
     length (edgeIdsFromCodomain k) `shouldBe` 1
-    isIsomorphism l' `shouldBe` True
+    TGraph.runCat config (isIsomorphism l') `shouldBe` True
 
 verifyR2 (_,_,k,l') = TG.null (codomain k) `shouldBe` True
 

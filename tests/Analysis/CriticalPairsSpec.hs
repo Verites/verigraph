@@ -1,17 +1,19 @@
 module Analysis.CriticalPairsSpec where
 
-import           Data.Matrix                                 hiding ((<|>))
+import           Data.Matrix             hiding ((<|>))
 import           Test.Hspec
-import           Abstract.Category.FinitaryCategory (MorphismType(..))
+
 import           Abstract.Rewriting.DPO
 import           Analysis.CriticalPairs
-import           Category.TypedGraphRule.JointlyEpimorphisms
-import qualified XML.GGXReader                               as XML
+import qualified Category.TypedGraph     as TGraph
+import qualified Category.TypedGraphRule as TGRule
+import qualified Data.Graphs             as Graph
+import qualified XML.GGXReader           as XML
 
 fileName1 = "tests/grammars/teseRodrigo.ggx"
 fileName2 = "tests/grammars/secondOrderMatchTest.ggx"
-dpoConf = MorphismsConfig Monomorphism PartiallyMonomorphicNAC
-testCase findConflicts rules expected = expected `shouldBe` show (pairwise (findConflicts dpoConf) rules)
+tGraphConfig = TGraph.Config Graph.empty TGraph.MonicMatches
+tGRuleConfig = TGRule.Config tGraphConfig TGraph.MonicMatches
 
 spec :: Spec
 spec = context "Critical Pairs Test" cpaTest
@@ -19,13 +21,13 @@ spec = context "Critical Pairs Test" cpaTest
 cpaTest :: Spec
 cpaTest = do
     it "first-order" $ do
-      (gg1,_,_) <- XML.readGrammar fileName1 False dpoConf
+      (gg1,_,_) <- XML.readGrammar fileName1 False tGRuleConfig
       let fstRules = map snd (productions gg1)
 
       testTeseRodrigoConflicts fstRules
 
     it "second-order" $ do
-      (_,gg2,_) <- XML.readGrammar fileName2 False dpoConf
+      (_,gg2,_) <- XML.readGrammar fileName2 False tGRuleConfig
       let sndRules = map snd (productions gg2)
 
       testSndOrderConflicts sndRules
@@ -71,6 +73,11 @@ testTeseRodrigoConflicts rules =
         "( 0 0 0 0 0 0 0 0 )\n"++
         "( 0 0 0 0 0 0 0 0 )\n"++
         "( 0 0 0 0 0 1 0 0 )\n"
+  where
+    testCase findDependencies rules expected = show (length $ pairwise findDependencies rules) `shouldBe` expected
+    pairwise f items = TGraph.runCat tGraphConfig . mapM (uncurry f) .
+      matrix (length items) (length items) $ \(i,j) ->
+        (items !! (i-1), items !! (j-1))
 
 testSndOrderConflicts rules =
   do
@@ -101,8 +108,8 @@ testSndOrderConflicts rules =
         "( 0 0 0 0 0 )\n"++
         "( 0 0 0 0 0 )\n"++
         "( 0 0 0 0 0 )\n"
-
-pairwise :: (a -> a -> [b]) -> [a] -> Matrix Int
-pairwise f items =
-  matrix (length items) (length items) $ \(i,j) ->
-    length (f (items !! (i-1)) (items !! (j-1)))
+  where
+    testCase findDependencies rules expected = show (length $ pairwise findDependencies rules) `shouldBe` expected
+    pairwise f items = TGRule.runCat tGRuleConfig . mapM (uncurry f) .
+      matrix (length items) (length items) $ \(i,j) ->
+        (items !! (i-1), items !! (j-1))

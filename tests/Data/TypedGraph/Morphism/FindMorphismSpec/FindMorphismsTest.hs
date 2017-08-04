@@ -1,14 +1,15 @@
 module Data.TypedGraph.Morphism.FindMorphismSpec.FindMorphismsTest (findMorphismsTest) where
 
-import           Abstract.Category.FinitaryCategory
-import           Category.TypedGraph.FindMorphism
-import           Data.Graphs
-import qualified Data.Graphs.Morphism               as GM
 import           Data.List
-import qualified Data.Map                           as M
-import qualified Data.Relation                      as R
-import qualified Data.TypedGraph.Morphism           as TGM
+import qualified Data.Map                     as M
 import           Test.Hspec
+
+import           Abstract.Category.NewClasses
+import qualified Category.TypedGraph          as TGraph
+import           Data.Graphs
+import qualified Data.Graphs.Morphism         as GM
+import qualified Data.Relation                as R
+import qualified Data.TypedGraph.Morphism     as TGM
 
 type TGM a b = TGM.TypedGraphMorphism a b
 type GM a b = GM.GraphMorphism (Maybe a) (Maybe b)
@@ -130,6 +131,12 @@ genericApply src tgt = (sort . map toCanonical $ findMonomorphisms src tgt,
           nodeMapping = sort . relationAsFunction . M.toList . R.mapping $ GM.nodeRelation gm
           edgeMapping = sort . relationAsFunction . M.toList . R.mapping $ GM.edgeRelation gm
       in (nodeMapping, edgeMapping)
+
+    findMonomorphisms src tgt = TGraph.runCat conf $ findMorphisms monic src tgt
+    findEpimorphisms src tgt = TGraph.runCat conf $ findMorphisms epic src tgt
+    findIsomorphisms src tgt = TGraph.runCat conf $ findMorphisms iso src tgt
+    findAllMorphisms src tgt = TGraph.runCat conf $ findMorphisms anyMorphism src tgt
+    conf = TGraph.Config Data.Graphs.empty TGraph.AllMatches
 
 
 -- | Graphs instances for build tests

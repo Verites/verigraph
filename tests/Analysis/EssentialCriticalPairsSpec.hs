@@ -1,17 +1,19 @@
 module Analysis.EssentialCriticalPairsSpec where
 
-import           Abstract.Category.FinitaryCategory (MorphismType(..))
+import           Data.Matrix                     hiding ((<|>))
+import           Test.Hspec
+
 import           Abstract.Rewriting.DPO
 import           Analysis.EssentialCriticalPairs
-import           Category.TypedGraphRule.JointlyEpimorphisms ()
-import           Data.Matrix                                 hiding ((<|>))
-import           Test.Hspec
-import qualified XML.GGXReader                               as XML
+import qualified Category.TypedGraph             as TGraph
+import qualified Category.TypedGraphRule         as TGRule
+import qualified Data.Graphs                     as Graph
+import qualified XML.GGXReader                   as XML
 
 fileName1 = "tests/grammars/elevator.ggx"
 fileName2 = "tests/grammars/secondOrderMatchTest.ggx"
-dpoConf = MorphismsConfig Monomorphism PartiallyMonomorphicNAC
-testCase findEssentialCP rules expected = expected `shouldBe` show (pairwise (findEssentialCP dpoConf) rules)
+dpoConf = TGRule.Config (TGraph.Config Graph.empty TGraph.MonicMatches) TGRule.MonicMatches
+testCase findEssentialCP rules expected = expected `shouldBe` show (pairwise findEssentialCP rules)
 
 spec :: Spec
 spec = context "Essential Critical Pairs Test" ecpaTest
@@ -31,15 +33,17 @@ ecpaTest = do
       testSndOrderConflicts sndRules
 
 testSndOrderConflicts rules =
-  testCase findAllEssentialDeleteUse rules $
+  testCase findAllEssentialDeleteUse' rules $
     "( 0 0 0 0 0 )\n"++
     "( 0 0 0 0 0 )\n"++
     "( 0 0 2 0 0 )\n"++
     "( 0 0 0 1 0 )\n"++
     "( 0 0 0 0 1 )\n"
+  where
+    findAllEssentialDeleteUse' x y = TGRule.runCat dpoConf $ findAllEssentialDeleteUse x y
 
 testElevatorConflicts rules =
-  testCase findAllEssentialDeleteUse rules $
+  testCase findAllEssentialDeleteUse' rules $
     "( 1 1 0 0 1 0 1 0 0 )\n"++
     "( 0 0 0 0 0 0 0 0 0 )\n"++
     "( 0 0 0 0 0 0 0 0 0 )\n"++
@@ -49,6 +53,8 @@ testElevatorConflicts rules =
     "( 0 0 0 0 1 0 1 0 0 )\n"++
     "( 0 0 0 0 0 0 0 0 0 )\n"++
     "( 0 0 0 0 1 1 1 0 1 )\n"
+  where
+    findAllEssentialDeleteUse' x y = TGraph.runCat (TGRule.fstOrderConfig dpoConf) $ findAllEssentialDeleteUse x y
 
 pairwise :: (a -> a -> [b]) -> [a] -> Matrix Int
 pairwise f items =

@@ -1,5 +1,6 @@
 module Data.GraphsSpec where
 
+import           Data.Functor.Identity
 import           Data.Maybe
 import           Test.Hspec
 import           Test.Hspec.QuickCheck
@@ -14,19 +15,19 @@ import           Data.Graphs.QuickCheck
 spec :: Spec
 spec = do
 
-  describe "empty" $
-    it "is valid" $ empty `shouldSatisfy` isValid
+  describe "empty" $ do
+    it "is valid" $ empty `shouldSatisfy` runIdentity . isValid
 
-  describe "build" $
-    prop "is always valid" $ \nodes edges -> isValid (build nodes edges)
+  describe "build" $ do
+    prop "is always valid" $ \nodes edges -> runIdentity $ isValid (build nodes edges)
 
-  describe "fromNodesAndEdges" $
+  describe "fromNodesAndEdges" $ do
     prop "is always valid" $ \nodes edges ->
-      isValid (fromNodesAndEdges nodes edges :: Graph Int Int)
+      runIdentity $ isValid (fromNodesAndEdges nodes edges :: Graph Int Int)
 
   describe "insertNode" $ do
     prop "preserves validity" $ \graph nodeId ->
-      isValid (insertNode nodeId graph :: Graph (Maybe Int) Int)
+      runIdentity $ isValid (insertNode nodeId graph :: Graph (Maybe Int) Int)
 
     prop "node present after insert" $ \graph nodeId ->
       lookupNode nodeId (insertNode nodeId graph :: Graph (Maybe Int) Int)
@@ -34,7 +35,7 @@ spec = do
 
   describe "insertNodeWithPayload" $ do
     prop "preserves validity" $ \graph nodeId payload ->
-      isValid (insertNodeWithPayload nodeId payload graph :: Graph Int Int)
+      runIdentity $ isValid (insertNodeWithPayload nodeId payload graph :: Graph Int Int)
 
     prop "node present after insert" $ \graph nodeId payload ->
       lookupNode nodeId (insertNodeWithPayload nodeId payload graph :: Graph Int Int)
@@ -42,7 +43,7 @@ spec = do
 
   describe "insertEdge" $ do
     prop "preserves validity" $ \graph edgeId srcId tgtId ->
-      isValid (insertEdge edgeId srcId tgtId graph :: Graph Int (Maybe Int))
+      runIdentity $ isValid (insertEdge edgeId srcId tgtId graph :: Graph Int (Maybe Int))
 
     prop "edge present after insert" $ \graph edgeId ->
       not (Prelude.null $ nodes graph) ==>
@@ -54,7 +55,7 @@ spec = do
 
   describe "insertEdgeWithPayload" $ do
     prop "preserves validity" $ \graph edgeId srcId tgtId payload ->
-      isValid (insertEdgeWithPayload edgeId srcId tgtId payload graph :: Graph Int Int)
+      runIdentity $ isValid (insertEdgeWithPayload edgeId srcId tgtId payload graph :: Graph Int Int)
 
     prop "edge present after insert" $ \graph edgeId payload ->
       not (Prelude.null $ nodes graph) ==>
@@ -66,7 +67,7 @@ spec = do
 
   describe "removeNode" $ do
     prop "preserves validity" $ \graph nodeId ->
-      isValid (removeNode nodeId graph :: Graph Int Int)
+      runIdentity $ isValid (removeNode nodeId graph :: Graph Int Int)
 
     prop "node removed if isolated" $ \graph ->
       not (Prelude.null $ nodes graph) ==>
@@ -82,7 +83,7 @@ spec = do
 
   describe "removeNodeAndIncidentEdges" $ do
     prop "preserves validity" $ \graph nodeId ->
-      isValid (removeNodeAndIncidentEdges nodeId graph :: Graph Int Int)
+      runIdentity $ isValid (removeNodeAndIncidentEdges nodeId graph :: Graph Int Int)
 
     prop "node removed" $ \graph ->
       not (Prelude.null $ nodes graph) ==>
@@ -91,14 +92,14 @@ spec = do
 
   describe "removeEdge" $ do
     prop "preserves validity" $ \graph edgeId ->
-      isValid (removeEdge edgeId graph :: Graph Int Int)
+      runIdentity $ isValid (removeEdge edgeId graph :: Graph Int Int)
 
     prop "edge removed" $ \graph ->
       not (Prelude.null $ edges graph) ==>
       (`all` edgeIds graph) $ \edgeId ->
         isNothing $ lookupEdge edgeId (removeEdge edgeId graph :: Graph Int Int)
 
-  describe "updateNodePayload" $
+  describe "updateNodePayload" $ do
     prop "payload changed" $ \graph f ->
       not (Prelude.null $ nodes graph) ==>
       (`all` nodeIds graph) $ \nodeId ->
@@ -108,7 +109,7 @@ spec = do
           (nodeInfo <$> lookupNode nodeId graph')
           == (apply f . nodeInfo <$> lookupNode nodeId graph)
 
-  describe "updateEdgePayload" $
+  describe "updateEdgePayload" $ do
     prop "payload changed" $ \graph f ->
       not (Prelude.null $ edges graph) ==>
       (`all` edgeIds graph) $ \edgeId ->
