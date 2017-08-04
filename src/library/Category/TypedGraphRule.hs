@@ -9,7 +9,6 @@ module Category.TypedGraphRule
 , TGRuleCat
 , TGRuleConfig(..)
 , runCat
-, getTypeGraph
 , liftTGraph
 ) where
 

@@ -13,7 +13,6 @@ import           Category.TypedGraphRule
 import           Data.Graphs                           as G
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
-import           Rewriting.DPO.TypedGraph
 import Util.Monad
 
 -- | A second-order rule:
@@ -61,11 +60,13 @@ instance DPO (TGRuleCat n e) (RuleMorphism n e) where
   -- | Needs the satisfiesNACs extra verification because
   -- not every satisfiesGluingConditions nac can be shifted
   shiftNacOverProduction rule n = do
+    safetyNacs <- minimalSafetyNacs rule
+    let ruleWithOnlyMinimalSafetyNacs = rule { nacs = safetyNacs }
+
     canShift <- satisfiesGluingConditions rule n `andM` satisfiesNACs ruleWithOnlyMinimalSafetyNacs n
     if canShift
       then (:[]) <$> calculateComatch n rule
       else return []
-    where ruleWithOnlyMinimalSafetyNacs = rule { nacs = minimalSafetyNacs rule }
 
 ---- Minimal Safety NACs
 
@@ -80,21 +81,19 @@ data NodeOrEdge b = Node_ NodeId | Edge_ (Edge b) deriving (Show)
 -- If the nacs that going to be added not satisfies the others nacs, then it do not need to be added.
 addMinimalSafetyNacs :: SndOrderRule n e -> TGRuleCat n e (SndOrderRule n e)
 addMinimalSafetyNacs sndRule = do
-  safetyNacs <- filterM (satisfiesNACs sndRule) (minimalSafetyNacs sndRule)
+  safetyNacs <- filterM (satisfiesNACs sndRule) =<< minimalSafetyNacs sndRule
   return $ sndRule { nacs = nacs sndRule ++ safetyNacs }
 
 -- | Generates the minimal safety NACs of a 2-rule
-minimalSafetyNacs :: SndOrderRule n e -> [RuleMorphism n e]
-minimalSafetyNacs sndRule = newNacsProb LeftSide sndRule ++ newNacsProb RightSide sndRule
-  {-
-  newNacsProb LeftSide sndRule ++
-  newNacsProb RightSide sndRule ++
-  -- FIXME: is this match restriction relevant to first- or second-order rewriting?
-  ( if matchRestriction == GenericMorphism then
-      newNacsPair LeftSide sndRule ++ newNacsPair RightSide sndRule
-    else
-      []
-  ) -}
+minimalSafetyNacs :: SndOrderRule n e -> TGRuleCat n e [RuleMorphism n e]
+minimalSafetyNacs sndRule = do
+  monicMatches <- matchMorphism `isSubclassOf` monic
+  let monicSafetyNacs = newNacsProb LeftSide sndRule ++ newNacsProb RightSide sndRule
+  if monicMatches
+    then return monicSafetyNacs
+    else do
+      additionalSafetyNacs <- (++) <$> newNacsPair LeftSide sndRule <*> newNacsPair RightSide sndRule
+      return (monicSafetyNacs ++ additionalSafetyNacs)
 
 -- | Generate NACs that forbid deleting elements in L or R but not in K,
 -- It discovers how situations must have a NAC and function createNacProb creates them.

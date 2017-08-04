@@ -56,9 +56,4 @@ data CreateScheme = DisableCreate | Pushout | ShiftNACs
 createStep :: CreateScheme -> TypedGraphMorphism n e -> [TypedGraphMorphism n e] -> TGraphCat n e [TypedGraphMorphism n e]
 createStep DisableCreate _ _ = return []
 createStep Pushout match modeledNACs = mapM (fmap snd . calculatePushout match) modeledNACs
-createStep ShiftNACs match modeledNACs =
-  concatMapM (nacDownwardShift match) modeledNACs
-    {-where
-      -- FIXME: does something break when matches are restricted to monic?
-      -- conf is used only to indicate AnyMatches, that is the most generic case for nacDownwardShift
-      conf = MorphismsConfig GenericMorphism undefined -}
+createStep ShiftNACs match modeledNACs = concatMapM (nacDownwardShift match) modeledNACs

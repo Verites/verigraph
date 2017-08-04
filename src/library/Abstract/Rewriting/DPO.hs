@@ -257,4 +257,4 @@ invertProductionWithoutNacs p = Production (rightMorphism p) (leftMorphism p) []
 -- an equivalent set of NACs /n'i : L' -> N'i/ that is equivalent to the
 -- original NAC.
 nacDownwardShift :: forall cat morph. (LRNAdhesive cat morph, EM'PairFactorizable cat morph) => morph -> morph -> cat [morph]
-nacDownwardShift morph n = map snd <$> findJointlyEpicSquares (monic @cat, n) (matchMorphism @cat, morph)
+nacDownwardShift morph n = map snd <$> findJointlyEpicSquares (anyMorphism @cat, n) (monic @cat, morph)

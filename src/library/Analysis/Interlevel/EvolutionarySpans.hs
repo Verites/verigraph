@@ -12,7 +12,6 @@ module Analysis.Interlevel.EvolutionarySpans
   , cpe
   ) where
 
-import           Control.Monad
 import           Control.Monad.List
 
 import           Abstract.Category.NewClasses

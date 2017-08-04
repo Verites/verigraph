@@ -5,11 +5,12 @@ module Category.TypedGraphRule.Category
 ( RuleMorphism(..)
 , TGRuleCat
 , TGRuleConfig(..)
+, MatchRestriction
 , TGRuleMorphismClass
 , TGraphMorphismClass(..)
 , fixedClass
+, matchMorphismsClass
 , runCat
-, getTypeGraph
 , liftTGraph
 , resolveClass
 , asTGraphClass
@@ -21,11 +22,10 @@ import           Control.Monad.List
 
 import           Abstract.Category.NewClasses
 import           Abstract.Rewriting.DPO
-import           Category.TypedGraph (TGraphCat, TGraphConfig(TGraphConfig), TypedGraphMorphism)
+import           Category.TypedGraph (TGraphCat, TGraphConfig, TypedGraphMorphism, MatchRestriction(..))
 import           Category.TypedGraph.Category (TGraphMorphismClass(..))
 import qualified Category.TypedGraph.Category as TGraph
 import           Rewriting.DPO.TypedGraph
-import Data.Graphs (Graph)
 import Util.Monad
 
 -- | A morphism between two first-order rules.
@@ -65,16 +65,12 @@ newtype TGRuleCat n e a = TGRC { unTGRC :: ReaderT (TGRuleConfig n e) (TGraphCat
   deriving (Functor, Applicative, Monad)
 
 data TGRuleConfig n e = TGRuleConfig
-  { catTypeGraph :: Graph (Maybe n) (Maybe e)
+  { fstOrderConfig :: TGraphConfig n e
+  , matchRestriction :: MatchRestriction
   }
 
 runCat :: TGRuleCat n e a -> TGRuleConfig n e -> a
-runCat (TGRC action) config = TGraph.runCat (runReaderT action config) tGraphConfig
-  where tGraphConfig = TGraphConfig (catTypeGraph config) TGraph.AllMatches
-  -- FIXME: what should be the match restriction in tGraphConfig?
-  
-getTypeGraph :: TGRuleCat n e (Graph (Maybe n) (Maybe e))
-getTypeGraph = TGRC $ asks catTypeGraph
+runCat (TGRC action) config = TGraph.runCat (runReaderT action config) (fstOrderConfig config)
 
 liftTGraph :: TGraphCat n e a -> TGRuleCat n e a
 liftTGraph = TGRC . lift
@@ -99,6 +95,7 @@ instance Category (TGRuleCat n e) (RuleMorphism n e) where
 
   data MorphismClass (TGRuleCat n e)
     = FixedClass TGRuleMorphismClass
+    | MatchMorphisms
 
   anyMorphism = FixedClass AllMorphisms
   monic = FixedClass Monomorphisms
@@ -120,8 +117,16 @@ instance Category (TGRuleCat n e) (RuleMorphism n e) where
 fixedClass :: TGRuleMorphismClass -> MorphismClass (TGRuleCat n e)
 fixedClass = FixedClass
 
+matchMorphismsClass :: MorphismClass (TGRuleCat n e)
+matchMorphismsClass = MatchMorphisms
+
 resolveClass :: MorphismClass (TGRuleCat n e) -> TGRuleCat n e TGRuleMorphismClass
 resolveClass (FixedClass c) = return c
+resolveClass MatchMorphisms = do
+  restriction <- TGRC $ asks matchRestriction
+  return $ case restriction of
+    AllMatches -> AllMorphisms
+    MonicMatches -> Monomorphisms
 
 asTGraphClass :: MorphismClass (TGRuleCat n e) -> TGRuleCat n e (MorphismClass (TGraphCat n e))
 asTGraphClass = fmap TGraph.fixedClass . resolveClass
@@ -136,15 +141,15 @@ belongsTo f c =
 
 instance MFinitary (TGRuleCat n e) (RuleMorphism n e) where
   subobject = monic
-  -- FIXME: implement getMorphismToCanonicalSubobject and findSubobjectsOf for RuleMorphism
+  -- TODO: implement getMorphismToCanonicalSubobject and findSubobjectsOf for RuleMorphism
 
 instance ECofinitary (TGRuleCat n e) (RuleMorphism n e) where
   quotient = epic
-  -- FIXME: implement getMorphismFromCanonicalQuotient and findQuotientsOf for RuleMorphism
+  -- TODO: implement getMorphismFromCanonicalQuotient and findQuotientsOf for RuleMorphism
 
 instance EM'Factorizable (TGRuleCat n e) (RuleMorphism n e) where
   monicFactor = monic
-  -- FIXME: implement factorize
+  -- TODO: implement factorize for RuleMorphism
 
 instance EM'PairFactorizable (TGRuleCat n e) (RuleMorphism n e) where
 

@@ -30,8 +30,6 @@ instance Adhesive (TGRuleCat n e) (RuleMorphism n e) where
   --    X──────▶S
   --       f'
   -- @
-
-  -- FIXME: why is this different from `calculatePushout` from Cocomplete?
   calculatePushoutAlongMono m@(RuleMorphism _ ruleX _ _ _) f@(RuleMorphism _ ruleY _ _ _) = do 
     (RuleMorphism _ preRuleS m'L m'K m'R, RuleMorphism _ _ f'L f'K f'R) <- calculatePushout m f
     liftTGraph $ do
@@ -100,7 +98,7 @@ instance Adhesive (TGRuleCat n e) (RuleMorphism n e) where
 instance LRNAdhesive (TGRuleCat n e) (RuleMorphism n e) where
   ruleMorphism = monic
   leftHandMorphism = monic
-  matchMorphism = monic -- FIXME: do we allow arbitrary snd-order matches?
+  matchMorphism = matchMorphismsClass
 
   hasPushoutComplementOfRN = hasPushoutComplementAlongMono
   calculatePushoutComplementOfRN = calculatePushoutComplementAlongMono
