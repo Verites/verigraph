@@ -5,7 +5,7 @@ module Category.TypedGraphRule.Category
 ( RuleMorphism(..)
 , TGRuleCat
 , TGRuleConfig(..)
-, MatchRestriction
+, MatchRestriction(..)
 , TGRuleMorphismClass
 , TGraphMorphismClass(..)
 , fixedClass

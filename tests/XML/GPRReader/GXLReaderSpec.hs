@@ -1,17 +1,19 @@
 module XML.GPRReader.GXLReaderSpec where
 
 import           Data.List
-import           Data.Matrix                                 hiding ((<|>))
+import           Data.Matrix                     hiding ((<|>))
 import           Test.Hspec
 
-import           Abstract.Category.FinitaryCategory (MorphismType(..))
+import           Abstract.Category.NewClasses
 import           Abstract.Rewriting.DPO
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
 import           Analysis.EssentialCriticalPairs
-import           Category.TypedGraphRule.JointlyEpimorphisms
-import qualified XML.GGXReader                               as XML
-import qualified XML.GPRReader.GXLReader                     as GPR
+import qualified Category.TypedGraph             as TGraph
+import           Category.TypedGraphRule
+import qualified Data.Graphs                     as Graph
+import qualified XML.GGXReader                   as XML
+import qualified XML.GPRReader.GXLReader         as GPR
 
 fileName1 = "tests/grammars/pacman2.ggx"
 fileName2 = "tests/grammars/pacman.gps"
@@ -21,7 +23,8 @@ fileName5 = "tests/grammars/elevator.ggx"
 fileName6 = "tests/grammars/elevator.gps"
 fileName7 = "tests/grammars/elevatorWithFlags.gps"
 
-dpoConf = MorphismsConfig GenericMorphism MonomorphicNAC
+tGraphConfig = TGraph.TGraphConfig Graph.empty TGraph.AllMatches
+tGRuleConfig = TGRuleConfig tGraphConfig TGraph.AllMatches
 
 spec :: Spec
 spec = context "GPR Reader Test - CPA/CSA analysis is equal on GGX and GPR files" gprTest
@@ -29,43 +32,44 @@ spec = context "GPR Reader Test - CPA/CSA analysis is equal on GGX and GPR files
 gprTest :: Spec
 gprTest = do
   it "Pacman grammar" $ do
-    (ggGGX,_,_) <- XML.readGrammar fileName1 False dpoConf
+    (ggGGX,_,_) <- XML.readGrammar fileName1 False tGRuleConfig
     (ggGPR,_) <- GPR.readGrammar fileName2
 
     let (pacmanRulesGGX,pacmanRulesGPR,_) = getRules ggGGX ggGPR undefined
 
-    runAnalysis findCriticalPairs pacmanRulesGPR pacmanRulesGGX
-    runAnalysis findCriticalSequences pacmanRulesGPR pacmanRulesGGX
+    runAnalysis tGraphConfig findCriticalPairs pacmanRulesGPR pacmanRulesGGX
+    runAnalysis tGraphConfig findCriticalSequences pacmanRulesGPR pacmanRulesGGX
 
   it "Mutex grammar" $ do
-    (ggGGX,_,_) <- XML.readGrammar fileName3 False dpoConf
+    (ggGGX,_,_) <- XML.readGrammar fileName3 False tGRuleConfig
     (ggGPR,_) <- GPR.readGrammar fileName4
 
     let (mutexRulesGGX,mutexRulesGPR,_) = getRules ggGGX ggGPR undefined
 
-    runAnalysis findCriticalPairs mutexRulesGPR mutexRulesGGX
-    runAnalysis findCriticalSequences mutexRulesGPR mutexRulesGGX
+    runAnalysis tGraphConfig findCriticalPairs mutexRulesGPR mutexRulesGGX
+    runAnalysis tGraphConfig findCriticalSequences mutexRulesGPR mutexRulesGGX
 
   it "Elevator grammar" $ do
-    (ggGGX,_,_) <- XML.readGrammar fileName5 False dpoConf
+    (ggGGX,_,_) <- XML.readGrammar fileName5 False tGRuleConfig
     (ggGPR,_) <- GPR.readGrammar fileName6
     (ggGPRFlag,_) <- GPR.readGrammar fileName7
 
     let (elevatorRulesGGX,elevatorRulesGPR,elevatorRulesGPRFlag) = getRules ggGGX ggGPR ggGPRFlag
 
-    runAnalysis findAllEssentialDeleteUse elevatorRulesGPRFlag elevatorRulesGGX
-    runAnalysis findCriticalPairs elevatorRulesGPR elevatorRulesGGX
-    runAnalysis findCriticalSequences elevatorRulesGPR elevatorRulesGGX
+    runAnalysis tGraphConfig findAllEssentialDeleteUse elevatorRulesGPRFlag elevatorRulesGGX
+    runAnalysis tGraphConfig findCriticalPairs elevatorRulesGPR elevatorRulesGGX
+    runAnalysis tGraphConfig findCriticalSequences elevatorRulesGPR elevatorRulesGGX
 
-runAnalysis algorithm rules1 rules2 =
-  pairwise (algorithm dpoConf) rules1 `shouldBe` pairwise (algorithm dpoConf) rules2
+runAnalysis :: TGraph.TGraphConfig n e -> (TypedGraphRule n e -> TypedGraphRule n e -> TGraph.TGraphCat n e [a]) -> [TypedGraphRule n e] -> [TypedGraphRule n e] -> IO ()
+runAnalysis config algorithm rules1 rules2 =
+  TGraph.runCat (pairwise algorithm rules1) config `shouldBe` TGraph.runCat (pairwise algorithm rules2) config
 
 getRules a b c = (f a, f b, f c)
   where
     f g = map snd (sortRules (productions g))
     sortRules = sortBy (\(a,_) (b,_) -> compare a b)
 
-pairwise :: (a -> a -> [b]) -> [a] -> Matrix Int
+pairwise :: Monad m => (a -> a -> m [b]) -> [a] -> m (Matrix Int)
 pairwise f items =
-  matrix (length items) (length items) $ \(i,j) ->
-    length (f (items !! (i-1)) (items !! (j-1)))
+  mapM (fmap length . uncurry f) $
+  matrix (length items) (length items) (\(i,j) -> (items !! (i-1), items !! (j-1)))

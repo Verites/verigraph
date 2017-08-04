@@ -8,6 +8,7 @@ module Category.TypedGraphRule
 , mappingInterface
 , TGRuleCat
 , TGRuleConfig(..)
+, MatchRestriction(..)
 , runCat
 , liftTGraph
 ) where
