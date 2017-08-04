@@ -42,8 +42,8 @@ import           XML.GPRReader.GXLPreProcessing
 type Names = [(String,String)]
 
 -- | Reads the grammar in the fileName and returns it and a list of type names
-readGrammar :: String -> IO (TypedGraphGrammar a b, Names)
-readGrammar fileName = do
+readGrammar :: String -> TGraph.Config a b -> IO (TypedGraphGrammar a b, Names)
+readGrammar fileName configTemplate = do
   files <- getDirectoryContents fileName
 
   -- system.properties file
@@ -77,7 +77,7 @@ readGrammar fileName = do
 
   let rules = instatiateRules typeGraph typesWithId parsedRules
 
-  let config = TGraph.Config typeGraph undefined
+  let config = configTemplate { TGraph.catTypeGraph = typeGraph }
   ensureValid . TGraph.runCat config $ validateNamed (\name -> "Rule '"++name++"'") rules
   _ <- (L.null rules && error "No first-order productions were found, at least one is needed.") `seq` return ()
 

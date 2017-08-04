@@ -172,7 +172,7 @@ isOrphanEdge :: TypedGraphMorphism a b -> EdgeId -> Bool
 isOrphanEdge m e = e `elem` orphanTypedEdgeIds m
 
 satisfiesNACRewriting :: DPO cat morph => morph -> morph -> cat Bool
-satisfiesNACRewriting l = satisfiesGluingConditions (buildProduction l undefined [])
+satisfiesNACRewriting l = satisfiesGluingConditions (buildProduction l (error "satisfiesNACRewriting: right side shouldn't be used") [])
 
 -- | Given the left-hand-side morphism of a rule /l : K -> L/, a match /m : L -> G/ of this rule, an element __/e/__
 -- (that can be either a __/Node/__ or an __/Edge/__) and two functions /apply/ (for applying that element in a TypedGraphMorphism) and

@@ -286,7 +286,7 @@ buildSpanEdgeRelation morphismH (morphismF, morphismG) = foldr (uncurry updateEd
 
 -- FIXME: implement findSpanCommuter', which is a variation of partialInjectiveMatches'
 findSpanCommuter' :: ActualMorphismClass -> TypedGraphMorphism n e -> TypedGraphMorphism n e -> [TypedGraphMorphism n e]
-findSpanCommuter' = undefined
+findSpanCommuter' = error "findSpanCommuter' unimplemented"
 
 -- | Finds matches __/q/__ .
 --

@@ -11,7 +11,7 @@ fileName1 = "tests/grammars/nacs2rule.ggx"
 fileName2 = "tests/grammars/secondOrderMatchTest.ggx"
 
 dpoConf1 = TGRule.Config (TGraph.Config Graph.empty TGraph.MonicMatches) TGRule.MonicMatches
-dpoConf2 = TGRule.Config (TGraph.Config Graph.empty TGraph.AllMatches) TGRule.MonicMatches
+dpoConf2 = TGRule.Config (TGraph.Config Graph.empty TGraph.AllMatches) TGRule.AllMatches
 
 spec :: Spec
 spec = context "Second-Order Minimal Safety NACs Test" msnTest

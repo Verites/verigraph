@@ -33,7 +33,7 @@ gprTest :: Spec
 gprTest = do
   it "Pacman grammar" $ do
     (ggGGX,_,_) <- XML.readGrammar fileName1 False tGRuleConfig
-    (ggGPR,_) <- GPR.readGrammar fileName2
+    (ggGPR,_) <- GPR.readGrammar fileName2 tGraphConfig
 
     let (pacmanRulesGGX,pacmanRulesGPR,_) = getRules ggGGX ggGPR undefined
 
@@ -42,7 +42,7 @@ gprTest = do
 
   it "Mutex grammar" $ do
     (ggGGX,_,_) <- XML.readGrammar fileName3 False tGRuleConfig
-    (ggGPR,_) <- GPR.readGrammar fileName4
+    (ggGPR,_) <- GPR.readGrammar fileName4 tGraphConfig
 
     let (mutexRulesGGX,mutexRulesGPR,_) = getRules ggGGX ggGPR undefined
 
@@ -51,8 +51,8 @@ gprTest = do
 
   it "Elevator grammar" $ do
     (ggGGX,_,_) <- XML.readGrammar fileName5 False tGRuleConfig
-    (ggGPR,_) <- GPR.readGrammar fileName6
-    (ggGPRFlag,_) <- GPR.readGrammar fileName7
+    (ggGPR,_) <- GPR.readGrammar fileName6 tGraphConfig
+    (ggGPRFlag,_) <- GPR.readGrammar fileName7 tGraphConfig
 
     let (elevatorRulesGGX,elevatorRulesGPR,elevatorRulesGPRFlag) = getRules ggGGX ggGPR ggGPRFlag
 

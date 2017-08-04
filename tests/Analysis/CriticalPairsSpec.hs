@@ -74,7 +74,7 @@ testTeseRodrigoConflicts rules =
         "( 0 0 0 0 0 0 0 0 )\n"++
         "( 0 0 0 0 0 1 0 0 )\n"
   where
-    testCase findDependencies rules expected = show (length $ pairwise findDependencies rules) `shouldBe` expected
+    testCase findDependencies rules expected = show (length <$> pairwise findDependencies rules) `shouldBe` expected
     pairwise f items = TGraph.runCat tGraphConfig . mapM (uncurry f) .
       matrix (length items) (length items) $ \(i,j) ->
         (items !! (i-1), items !! (j-1))
@@ -109,7 +109,7 @@ testSndOrderConflicts rules =
         "( 0 0 0 0 0 )\n"++
         "( 0 0 0 0 0 )\n"
   where
-    testCase findDependencies rules expected = show (length $ pairwise findDependencies rules) `shouldBe` expected
+    testCase findDependencies rules expected = show (length <$> pairwise findDependencies rules) `shouldBe` expected
     pairwise f items = TGRule.runCat tGRuleConfig . mapM (uncurry f) .
       matrix (length items) (length items) $ \(i,j) ->
         (items !! (i-1), items !! (j-1))
