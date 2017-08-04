@@ -312,6 +312,16 @@ class EM'Factorizable cat morph => EM'PairFactorizable cat morph where
   --   * \(f \in \mathcal{C}_1\)
   --   * \(g \in \mathcal{C}_2\)
   findJointlyEpicPairs :: (MorphismClass cat, Obj cat) -> (MorphismClass cat, Obj cat) -> cat [(morph, morph)]
+  default findJointlyEpicPairs :: (Cocomplete cat morph) => (MorphismClass cat, Obj cat) -> (MorphismClass cat, Obj cat) -> cat [(morph, morph)]
+  findJointlyEpicPairs (c1, x) (c2, y) = do
+    (jx, jy) <- calculateCoproduct x y
+    runListT $ do
+      e <- pickOne $ findAllQuotientsOf (codomain jx)
+      let (f, g) = (e <&> jx, e <&> jy)
+      guardM $ f `belongsToClass` c1
+      guardM $ g `belongsToClass` c2
+      return (f, g)
+
 
   -- | Create all jointly epimorphic pairs of morphisms from the codomains of
   -- the given objects, such that their components are in the appropriate
