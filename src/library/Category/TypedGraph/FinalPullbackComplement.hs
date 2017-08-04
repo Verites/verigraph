@@ -8,7 +8,7 @@ import qualified Data.Graphs.Morphism               as GM
 import           Data.TypedGraph.Morphism
 
 
-instance FinalPullbackComplement (TGraphCat n e) (TypedGraphMorphism n e) where
+instance FinalPullbackComplement (CatM n e) (TypedGraphMorphism n e) where
 
   -- @
   --       l

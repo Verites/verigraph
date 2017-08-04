@@ -12,8 +12,9 @@ import Control.Monad
 
 import           Abstract.Category.NewClasses
 import           Abstract.Rewriting.DPO
-import           Category.TypedGraph
-import           Category.TypedGraphRule
+import qualified Category.TypedGraph as TGraph
+import Category.TypedGraphRule (liftFstOrder, TypedGraphRule, Production(..), RuleMorphism, mappingLeft)
+import qualified Category.TypedGraphRule as TGRule
 import           Data.Graphs
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
@@ -27,7 +28,7 @@ data InterLevelCP n e = InterLevelCP {
   } deriving (Eq,Show)
 
 -- | Matches the second-order rule with the first-order, and calls theirs critical pairs
-interLevelCP :: (String, SndOrderRule n e) -> (String, TypedGraphRule n e) -> TGRuleCat n e [(String,String,Int,InterLevelCP n e)]
+interLevelCP :: (String, SndOrderRule n e) -> (String, TypedGraphRule n e) -> TGRule.CatM n e [(String,String,Int,InterLevelCP n e)]
 interLevelCP (sndName, sndRule) (fstName, fstRule) = addNames <$> do
   matches <- findApplicableMatches sndRule fstRule
   concatMapM conflictsForMatch matches
@@ -38,7 +39,7 @@ interLevelCP (sndName, sndRule) (fstName, fstRule) = addNames <$> do
 -- | Calculates the second-order rewriting,
 -- defines the dangling extension for L and L'',
 -- gets all relevant graphs from L
-interLevelConflictOneMatch :: SndOrderRule n e -> RuleMorphism n e -> TGRuleCat n e [TypedGraphMorphism n e]
+interLevelConflictOneMatch :: SndOrderRule n e -> RuleMorphism n e -> TGRule.CatM n e [TypedGraphMorphism n e]
 interLevelConflictOneMatch sndRule match = do
   (k,l') <- calculatePushoutComplementAlongMono (leftMorphism sndRule) match
   (m',r') <- calculatePushout k (rightMorphism sndRule)
@@ -53,14 +54,14 @@ interLevelConflictOneMatch sndRule match = do
 
       danglingExtFl = danglingExtension bigL <&> fl
       danglingExtGl = danglingExtension bigL'' <&> gl
-  liftTGraph $ do
+  liftFstOrder $ do
     axs <- relevantMatches danglingExtFl danglingExtGl
     relevantGraphs <- removeDuplicated (map codomain axs)
     let defineMatches = allILCP p p'' fl gl
     concatMapM defineMatches relevantGraphs
 
 
-removeDuplicated :: [TypedGraph a b] -> TGraphCat a b [TypedGraph a b]
+removeDuplicated :: [TypedGraph a b] -> TGraph.CatM a b [TypedGraph a b]
 removeDuplicated = nubByM (\x y -> not . Prelude.null <$> findMorphisms iso x y)
 
 -- | For a relevant graph, gets all matches and check conflict
@@ -80,7 +81,7 @@ ilCP fl gl p'' m0 = do
     validMatch = satisfiesRewritingConditions p''
     commutes m0'' = return (m0 <&> fl == m0'' <&> gl)
 
-relevantMatches :: TypedGraphMorphism n e -> TypedGraphMorphism n e -> TGraphCat n e [TypedGraphMorphism n e]
+relevantMatches :: TypedGraphMorphism n e -> TypedGraphMorphism n e -> TGraph.CatM n e [TypedGraphMorphism n e]
 --relevantMatches inj dangFl dangGl = concatMap (\ax -> partitions inj (codomain ax)) axs
 relevantMatches dangFl dangGl = do
   (_, al) <- calculatePushout dangFl dangGl

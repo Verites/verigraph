@@ -18,7 +18,8 @@ import qualified Analysis.CriticalPairs                      as CP
 import qualified Analysis.CriticalSequence                   as CS
 import qualified Analysis.EssentialCriticalPairs             as ECP
 import qualified Category.TypedGraph                         as TGraph
-import           Category.TypedGraphRule
+import Category.TypedGraphRule (RuleMorphism, mappingLeft, mappingRight)
+import qualified Category.TypedGraphRule as TGRule
 import qualified Data.Graphs                                 as G
 import           Data.List
 import           Data.TypedGraph                             (TypedGraph)
@@ -34,7 +35,7 @@ import           XML.Utilities
 
 type Grammars a b = (GR.TypedGraphGrammar a b, SO.SndOrderGrammar a b)
 
-appendSndOrderConflicts :: Grammars a b -> TGRuleCat a b (Grammars a b)
+appendSndOrderConflicts :: Grammars a b -> TGRule.CatM a b (Grammars a b)
 appendSndOrderConflicts (gg1,gg2) = do
   conflicts <- CP.namedCriticalPairs (productions gg2)
   let
@@ -43,7 +44,7 @@ appendSndOrderConflicts (gg1,gg2) = do
     newGG1 = grammar (start gg1) [] (productions gg1 ++ conflictRules)
   return (newGG1, gg2)
 
-appendSndOrderDependencies :: Grammars a b -> TGRuleCat a b (Grammars a b)
+appendSndOrderDependencies :: Grammars a b -> TGRule.CatM a b (Grammars a b)
 appendSndOrderDependencies (gg1,gg2) = do
   conflicts <- CS.namedCriticalSequences (productions gg2)
   let
@@ -53,42 +54,42 @@ appendSndOrderDependencies (gg1,gg2) = do
   return (newGG1, gg2)
 
 -- | Writes grammar, second-order conflicts and dependencies (.ggx)
-writeSndOderConfDepFile :: TGRuleConfig a b -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
+writeSndOderConfDepFile :: TGRule.Config a b -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
 writeSndOderConfDepFile conf ggs name names fileName = do
-  let newGG = runCat (appendSndOrderDependencies =<< appendSndOrderConflicts ggs) conf
+  let newGG = TGRule.runCat conf $ appendSndOrderDependencies =<< appendSndOrderConflicts ggs
       essential = False
-  runX $ writeConfDep (fstOrderConfig conf) essential newGG name names fileName
+  runX $ writeConfDep (TGRule.fstOrderConfig conf) essential newGG name names fileName
   putStrLn $ "Saved in " ++ fileName
 
 -- | Writes the grammar and the second-order conflicts (.ggx)
-writeSndOderConflictsFile :: TGRuleConfig a b -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
+writeSndOderConflictsFile :: TGRule.Config a b -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
 writeSndOderConflictsFile conf ggs name names fileName = do
-  let newGG = runCat (appendSndOrderConflicts ggs) conf
+  let newGG = TGRule.runCat conf $ appendSndOrderConflicts ggs
       essential = False
-  runX $ writeConf (fstOrderConfig conf) essential newGG name names fileName
+  runX $ writeConf (TGRule.fstOrderConfig conf) essential newGG name names fileName
   putStrLn $ "Saved in " ++ fileName
 
 -- | Writes the grammar and the second-order dependencies (.ggx)
-writeSndOderDependenciesFile :: TGRuleConfig a b -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
+writeSndOderDependenciesFile :: TGRule.Config a b -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
 writeSndOderDependenciesFile conf ggs name names fileName = do
-  let newGG = runCat (appendSndOrderDependencies ggs) conf
-  runX $ writeDep (fstOrderConfig conf) newGG name names fileName
+  let newGG = TGRule.runCat conf $ appendSndOrderDependencies ggs
+  runX $ writeDep (TGRule.fstOrderConfig conf) newGG name names fileName
   putStrLn $ "Saved in " ++ fileName
 
 -- | Writes grammar, conflicts and dependencies (.cpx)
-writeConfDepFile :: TGraph.TGraphConfig a b -> Bool -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
+writeConfDepFile :: TGraph.Config a b -> Bool -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
 writeConfDepFile config essential ggs name names fileName = do
   runX $ writeConfDep config essential ggs name names fileName
   putStrLn $ "Saved in " ++ fileName
 
 -- | Writes the grammar and the conflicts (.cpx)
-writeConflictsFile :: TGraph.TGraphConfig a b -> Bool -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
+writeConflictsFile :: TGraph.Config a b -> Bool -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
 writeConflictsFile conf essential ggs name names fileName = do
   runX $ writeConf conf essential ggs name names fileName
   putStrLn $ "Saved in " ++ fileName
 
 -- | Writes the grammar and the dependencies (.cpx)
-writeDependenciesFile :: TGraph.TGraphConfig a b -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
+writeDependenciesFile :: TGraph.Config a b -> Grammars a b -> String -> [(String,String)] -> String -> IO ()
 writeDependenciesFile conf ggs name names fileName = do
   runX $ writeDep conf ggs name names fileName
   putStrLn $ "Saved in " ++ fileName
@@ -99,27 +100,27 @@ writeGrammarFile ggs name names fileName = do
   runX $ root [] [writeRoot ggs name names] >>> writeDocument [withIndent yes] fileName
   putStrLn $ "Saved in " ++ fileName
 
-writeConfDep :: TGraph.TGraphConfig a b -> Bool -> Grammars a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
+writeConfDep :: TGraph.Config a b -> Bool -> Grammars a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
 writeConfDep config essential ggs@(gg1,_) name names fileName = root [] [writeCpx ggs cps css name names] >>> writeDocument [withIndent yes] fileName
   where
-    cps = (`TGraph.runCat` config) $
+    cps = TGraph.runCat config $
       if essential
         then ECP.namedEssentialCriticalPairs (productions gg1)
         else CP.namedCriticalPairs (productions gg1)
-    css = TGraph.runCat (CS.namedCriticalSequences (productions gg1)) config
+    css = TGraph.runCat config $ CS.namedCriticalSequences (productions gg1)
 
-writeConf :: TGraph.TGraphConfig a b -> Bool -> Grammars a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
+writeConf :: TGraph.Config a b -> Bool -> Grammars a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
 writeConf config essential ggs@(gg1,_) name names fileName = root [] [writeCpx ggs cps [] name names] >>> writeDocument [withIndent yes] fileName
   where
-    cps = (`TGraph.runCat` config) $
+    cps = TGraph.runCat config $
       if essential
         then ECP.namedEssentialCriticalPairs (productions gg1)
         else CP.namedCriticalPairs (productions gg1)
 
-writeDep :: TGraph.TGraphConfig a b -> Grammars a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
+writeDep :: TGraph.Config a b -> Grammars a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
 writeDep conf ggs@(gg1,_) name names fileName = root [] [writeCpx ggs [] cps name names] >>> writeDocument [withIndent yes] fileName
   where
-    cps = TGraph.runCat (CS.namedCriticalSequences (productions gg1)) conf
+    cps = TGraph.runCat conf $ CS.namedCriticalSequences (productions gg1)
 
 --Functions to deal with ggx format specificities
 writeRoot :: ArrowXml a => Grammars b c -> String -> [(String,String)] -> a XmlTree XmlTree

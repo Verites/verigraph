@@ -14,7 +14,7 @@ import           Rewriting.DPO.TypedGraph                     ()
 import           Rewriting.DPO.TypedGraphRule.NacManipulation
 import Util.Monad
 
-instance Adhesive (TGRuleCat n e) (RuleMorphism n e) where
+instance Adhesive (CatM n e) (RuleMorphism n e) where
 
   -- Pushout for second-order with creation of NACs.
   -- It runs the pushout without NACs (from cocomplete),
@@ -32,7 +32,7 @@ instance Adhesive (TGRuleCat n e) (RuleMorphism n e) where
   -- @
   calculatePushoutAlongMono m@(RuleMorphism _ ruleX _ _ _) f@(RuleMorphism _ ruleY _ _ _) = do 
     (RuleMorphism _ preRuleS m'L m'K m'R, RuleMorphism _ _ f'L f'K f'R) <- calculatePushout m f
-    liftTGraph $ do
+    liftFstOrder $ do
       transposedNACs <- mapM (\nac -> fst <$> calculatePushoutAlongMono nac m'L) (nacs ruleY)
       createdNACs <- createStep ShiftNACs f'L (nacs ruleX)
       let
@@ -56,7 +56,7 @@ instance Adhesive (TGRuleCat n e) (RuleMorphism n e) where
   --     X──────▶C
   --        f'
   -- @
-  calculatePushoutComplementAlongMono (RuleMorphism ruleA ruleB fL fK fR) (RuleMorphism _ ruleC gL gK gR) = liftTGraph $ do
+  calculatePushoutComplementAlongMono (RuleMorphism ruleA ruleB fL fK fR) (RuleMorphism _ ruleC gL gK gR) = liftFstOrder $ do
     (gL', fL') <- calculatePushoutComplementAlongMono fL gL
     (gK', fK') <- calculatePushoutComplementAlongMono fK gK
     (gR', fR') <- calculatePushoutComplementAlongMono fR gR
@@ -87,7 +87,7 @@ instance Adhesive (TGRuleCat n e) (RuleMorphism n e) where
       f' = RuleMorphism ruleX ruleC fL' fK' fR'
     return (g', f')
 
-  hasPushoutComplementAlongMono f g = liftTGraph $
+  hasPushoutComplementAlongMono f g = liftFstOrder $
       hasPushoutComplementAlongMono (mappingLeft f) (mappingLeft g)
       `andM` hasPushoutComplementAlongMono (mappingRight f) (mappingRight g)
       `andM` hasPushoutComplementAlongMono (mappingInterface f) (mappingInterface g)
@@ -95,7 +95,7 @@ instance Adhesive (TGRuleCat n e) (RuleMorphism n e) where
         (danglingSpan (leftMorphism $ codomain g) (mappingLeft g) (mappingInterface g) (mappingLeft f) (mappingInterface f)
         && danglingSpan (rightMorphism $ codomain g) (mappingRight g) (mappingInterface g) (mappingRight f) (mappingInterface f))
 
-instance LRNAdhesive (TGRuleCat n e) (RuleMorphism n e) where
+instance LRNAdhesive (CatM n e) (RuleMorphism n e) where
   ruleMorphism = monic
   leftHandMorphism = monic
   matchMorphism = matchMorphismsClass
@@ -103,7 +103,7 @@ instance LRNAdhesive (TGRuleCat n e) (RuleMorphism n e) where
   hasPushoutComplementOfRN = hasPushoutComplementAlongMono
   calculatePushoutComplementOfRN = calculatePushoutComplementAlongMono
 
-instance InitialPushout (TGRuleCat n e) (RuleMorphism n e) where
+instance InitialPushout (CatM n e) (RuleMorphism n e) where
   -- This function for second-order must run the first-order initial
   -- pushouts and after add elements to the boundary (B) rule if
   -- it was generated with dangling span condition
@@ -124,9 +124,9 @@ instance InitialPushout (TGRuleCat n e) (RuleMorphism n e) where
       nodeTypesInAR = GM.applyNodeIdUnsafe (domain fR)
       edgeTypesInAR = GM.applyEdgeIdUnsafe (domain fR)
 
-    (initBL, _, _) <- liftTGraph $ calculateInitialPushout fL
-    (bK, _, _) <- liftTGraph $ calculateInitialPushout fK
-    (initBR, _, _) <- liftTGraph $ calculateInitialPushout fR
+    (initBL, _, _) <- liftFstOrder $ calculateInitialPushout fL
+    (bK, _, _) <- liftFstOrder $ calculateInitialPushout fK
+    (initBR, _, _) <- liftFstOrder $ calculateInitialPushout fR
 
     let
       nodesBL = [n | n <- nodeIdsFromDomain fL, isOrphanNode (leftMorphism ruleX) n, not (isOrphanNode (leftMorphism ruleY) (applyNodeIdUnsafe fL n))]
@@ -141,8 +141,8 @@ instance InitialPushout (TGRuleCat n e) (RuleMorphism n e) where
       prebR = foldr (\n -> createNodeOnDomain n (nodeTypesInAR n) n) initBR nodesBR
       bR = foldr (\e -> createEdgeOnDomain (edgeId e) (sourceId e) (targetId e) (edgeTypesInAR (edgeId e)) (edgeId e)) prebR edgesBR
 
-    lB <- liftTGraph $ searchMorphism (leftMorphism ruleX <&> bK) bL
-    rB <- liftTGraph $ searchMorphism (rightMorphism ruleX <&> bK) bR
+    lB <- liftFstOrder $ searchMorphism (leftMorphism ruleX <&> bK) bL
+    rB <- liftFstOrder $ searchMorphism (rightMorphism ruleX <&> bK) bR
     let
       ruleB = buildProduction lB rB []
       b = RuleMorphism ruleB ruleX bL bK bR

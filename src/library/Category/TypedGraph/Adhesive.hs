@@ -9,7 +9,7 @@ import           Data.Graphs                        as G
 import qualified Data.Graphs.Morphism               as GM
 import           Data.TypedGraph.Morphism
 
-instance Adhesive (TGraphCat n e) (TypedGraphMorphism n e) where
+instance Adhesive (CatM n e) (TypedGraphMorphism n e) where
 
   {-
      PO complement algorithm:
@@ -110,7 +110,7 @@ isOrphanEdge :: TypedGraphMorphism a b -> EdgeId -> Bool
 isOrphanEdge m n = n `elem` orphanTypedEdgeIds m
 
 
-instance LRNAdhesive (TGraphCat n e) (TypedGraphMorphism n e) where
+instance LRNAdhesive (CatM n e) (TypedGraphMorphism n e) where
   ruleMorphism = fixedClass Monomorphisms
   leftHandMorphism = fixedClass Monomorphisms
   matchMorphism = matchMorphismsClass
@@ -118,7 +118,7 @@ instance LRNAdhesive (TGraphCat n e) (TypedGraphMorphism n e) where
   calculatePushoutComplementOfRN = calculatePushoutComplementAlongMono
 
 
-instance InitialPushout (TGraphCat n e) (TypedGraphMorphism n e) where
+instance InitialPushout (CatM n e) (TypedGraphMorphism n e) where
 
   -- @
   --        d

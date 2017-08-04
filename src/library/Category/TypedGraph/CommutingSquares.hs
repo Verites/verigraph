@@ -42,7 +42,7 @@ output fname morphisms =
 --           b2
 -- @
 commutingMorphism :: TypedGraphMorphism n e -> TypedGraphMorphism n e
-                  -> TypedGraphMorphism n e -> TypedGraphMorphism n e -> TGraphCat n e (TypedGraphMorphism n e)
+                  -> TypedGraphMorphism n e -> TypedGraphMorphism n e -> CatM n e (TypedGraphMorphism n e)
 commutingMorphism a1 b1 a2 b2 = do
   mats <- findMonomorphisms (domain a1) (domain b1)
   let filt = filter (\m -> b1 <&> m == a1 && b2 <&> m == a2) mats
@@ -64,7 +64,7 @@ commutingMorphism a1 b1 a2 b2 = do
 --           s2
 -- @
 commutingMorphismSameDomain :: TypedGraphMorphism n e -> TypedGraphMorphism n e
-                            -> TypedGraphMorphism n e -> TypedGraphMorphism n e -> TGraphCat n e (TypedGraphMorphism n e)
+                            -> TypedGraphMorphism n e -> TypedGraphMorphism n e -> CatM n e (TypedGraphMorphism n e)
 commutingMorphismSameDomain k1 s1 k2 s2 = do
   mats <- findMonomorphisms (codomain k1) (codomain s1)
   let filt = filter (\m -> m <&> k1 == s1 && m <&> k2 == s2) mats
@@ -86,12 +86,12 @@ commutingMorphismSameDomain k1 s1 k2 s2 = do
 --           s2
 -- @
 commutingMorphismSameCodomain :: TypedGraphMorphism n e -> TypedGraphMorphism n e
-                              -> TypedGraphMorphism n e -> TypedGraphMorphism n e -> TGraphCat n e (TypedGraphMorphism n e)
+                              -> TypedGraphMorphism n e -> TypedGraphMorphism n e -> CatM n e (TypedGraphMorphism n e)
 commutingMorphismSameCodomain k1 s1 k2 s2 = do
   mats <- findMonomorphisms (domain k1) (domain s1)
   let filt = filter (\m -> s1 <&> m == k1 && m <&> k2 == s2) mats
   let select = mapping $ output "commutingMorphismSameCodomain" filt
   return $ buildTypedGraphMorphism (domain k1) (domain s1) select
 
-findMonomorphisms :: forall n e. TypedGraph n e -> TypedGraph n e -> TGraphCat n e [TypedGraphMorphism n e]
-findMonomorphisms = findMorphisms (monic @(TGraphCat n e))
+findMonomorphisms :: forall n e. TypedGraph n e -> TypedGraph n e -> CatM n e [TypedGraphMorphism n e]
+findMonomorphisms = findMorphisms (monic @(CatM n e))

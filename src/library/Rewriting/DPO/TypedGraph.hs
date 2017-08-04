@@ -23,16 +23,16 @@ module Rewriting.DPO.TypedGraph
 ) where
 
 import           Abstract.Rewriting.DPO             as DPO
-import           Category.TypedGraph                
+import           Category.TypedGraph                as TGraph
 import           Data.Graphs                        as G
 import qualified Data.Graphs.Morphism               as GM
 import           Data.TypedGraph                    as GM
 import           Data.TypedGraph.Morphism           as TGM
 import           Util.Monad
 
-type TypedGraphRule a b = Production (TGraphCat a b) (TypedGraphMorphism a b)
-type NamedTypedGraphRule a b = NamedProduction (TGraphCat a b) (TypedGraphMorphism a b)
-type TypedGraphGrammar a b = Grammar (TGraphCat a b) (TypedGraphMorphism a b)
+type TypedGraphRule a b = Production (TGraph.CatM a b) (TypedGraphMorphism a b)
+type NamedTypedGraphRule a b = NamedProduction (TGraph.CatM a b) (TypedGraphMorphism a b)
+type TypedGraphGrammar a b = Grammar (TGraph.CatM a b) (TypedGraphMorphism a b)
 
 -- | Return the nodes deleted by a rule
 deletedNodes :: TypedGraphRule a b -> [G.NodeId]
@@ -70,7 +70,7 @@ nullGraphRule :: TypedGraphRule a b -> Bool
 nullGraphRule rule = null (leftObject rule) && null (interfaceObject rule) && null (rightObject rule)
   where null = G.null . untypedGraph
 
-instance DPO (TGraphCat a b) (TypedGraphMorphism a b) where
+instance DPO (TGraph.CatM a b) (TypedGraphMorphism a b) where
   invertProduction rule = do
     shiftedNacs <- concatMapM (shiftNacOverProduction rule) (nacs rule)
     return $ buildProduction (rightMorphism rule) (leftMorphism rule) shiftedNacs

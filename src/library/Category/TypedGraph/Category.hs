@@ -1,9 +1,10 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Category.TypedGraph.Category
-( TGraphCat
-, TGraphConfig(..)
+( CatM
+, Config(..)
 , MatchRestriction(..)
-, TGraphMorphismClass(..)
+, Morphism
+, ActualMorphismClass(..)
 , fixedClass
 , matchMorphismsClass
 , runCat
@@ -35,41 +36,43 @@ import           Data.TypedGraph.Partition.FromVerigraph (createDisjointUnion)
 import           Data.TypedGraph.Partition.ToVerigraph   (mountTypedGraphMorphisms)
 
 
-newtype TGraphCat n e a = TGC { unTGC :: Reader (TGraphConfig n e) a }
+type Morphism = TypedGraphMorphism
+
+newtype CatM n e a = CatM (Reader (Config n e) a)
   deriving (Functor, Applicative, Monad)
 
-data TGraphConfig n e = TGraphConfig
+data Config n e = Config
   { catTypeGraph :: Graph (Maybe n) (Maybe e)
   , matchRestriction :: MatchRestriction
   }
 
-runCat :: TGraphCat n e a -> TGraphConfig n e -> a
-runCat = runReader . unTGC
+runCat :: Config n e -> CatM n e a -> a
+runCat config (CatM action) = runReader action config
 
-getTypeGraph :: TGraphCat n e (Graph (Maybe n) (Maybe e))
-getTypeGraph = TGC $ asks catTypeGraph
+getTypeGraph :: CatM n e (Graph (Maybe n) (Maybe e))
+getTypeGraph = CatM $ asks catTypeGraph
 
-getMatchRestriction :: TGraphCat n e MatchRestriction
-getMatchRestriction = TGC $ asks matchRestriction
+getMatchRestriction :: CatM n e MatchRestriction
+getMatchRestriction = CatM $ asks matchRestriction
 
 data MatchRestriction = AllMatches | MonicMatches
   deriving (Eq, Show)
 
-data TGraphMorphismClass
+data ActualMorphismClass
   = AllMorphisms
   | Monomorphisms
   | Epimorphisms
   | Isomorphisms
   deriving (Eq, Show)
 
-fixedClass :: TGraphMorphismClass -> MorphismClass (TGraphCat n e)
+fixedClass :: ActualMorphismClass -> MorphismClass (CatM n e)
 fixedClass = FixedClass
 
-matchMorphismsClass :: MorphismClass (TGraphCat n e)
+matchMorphismsClass :: MorphismClass (CatM n e)
 matchMorphismsClass = MatchMorphisms
 
-instance Category (TGraphCat n e) (TypedGraphMorphism n e) where
-  type Obj (TGraphCat n e) = TypedGraph n e
+instance Category (CatM n e) (TypedGraphMorphism n e) where
+  type Obj (CatM n e) = TypedGraph n e
 
   domain = domainGraph
   codomain = codomainGraph
@@ -77,8 +80,8 @@ instance Category (TGraphCat n e) (TypedGraphMorphism n e) where
   t2 <&> t1 = compose t2 t1
   identity t = TypedGraphMorphism t t (identity $ domain t)
 
-  data MorphismClass (TGraphCat n e)
-    = FixedClass TGraphMorphismClass
+  data MorphismClass (CatM n e)
+    = FixedClass ActualMorphismClass
     | MatchMorphisms
     deriving (Eq, Show)
 
@@ -100,21 +103,21 @@ instance Category (TGraphCat n e) (TypedGraphMorphism n e) where
   belongsToClass f c = belongsTo f <$> resolveClass c
   
 
-resolveClass :: MorphismClass (TGraphCat n e) -> TGraphCat n e (TGraphMorphismClass)
+resolveClass :: MorphismClass (CatM n e) -> CatM n e ActualMorphismClass
 resolveClass (FixedClass c) = return c
-resolveClass (MatchMorphisms) = do
+resolveClass MatchMorphisms = do
   restriction <- getMatchRestriction
   return $ case restriction of
     AllMatches -> AllMorphisms
     MonicMatches -> Monomorphisms
 
-belongsTo :: TypedGraphMorphism n e -> TGraphMorphismClass -> Bool
+belongsTo :: TypedGraphMorphism n e -> ActualMorphismClass -> Bool
 _ `belongsTo` AllMorphisms = True
 f `belongsTo` Monomorphisms = Graph.runCat . isMonic $ mapping f
 f `belongsTo` Epimorphisms = Graph.runCat . isEpic $ mapping f
 f `belongsTo` Isomorphisms = Graph.runCat . isIsomorphism $ mapping f
 
-instance MFinitary (TGraphCat n e) (TypedGraphMorphism n e) where
+instance MFinitary (CatM n e) (TypedGraphMorphism n e) where
   subobject = FixedClass Monomorphisms
 
   getCanonicalSubobject f = return $
@@ -158,7 +161,7 @@ assembleSubgraph subnodes subedges graph =
       (Relation.fromList [ (e, e) | e <- Graph.edgeIds untypedSubgraph ])
   in TypedGraphMorphism subtyping graph inclusion
 
-instance ECofinitary (TGraphCat n e) (TypedGraphMorphism n e) where
+instance ECofinitary (CatM n e) (TypedGraphMorphism n e) where
   quotient = FixedClass Epimorphisms
 
   getCanonicalQuotient f = return $
@@ -206,7 +209,7 @@ assembleQuotient nodeBlocks edgeBlocks graph =
   in TypedGraphMorphism graph typing collapsing
 
 
-instance EM'Factorizable (TGraphCat n e) (TypedGraphMorphism n e) where
+instance EM'Factorizable (CatM n e) (TypedGraphMorphism n e) where
   monicFactor = FixedClass Monomorphisms
 
   factorize f = return $
@@ -221,7 +224,7 @@ instance EM'Factorizable (TGraphCat n e) (TypedGraphMorphism n e) where
     in (epicFactor, monicFactor)
 
 
-instance EM'PairFactorizable (TGraphCat n e) (TypedGraphMorphism n e) where
+instance EM'PairFactorizable (CatM n e) (TypedGraphMorphism n e) where
 
   findJointlyEpicPairs (cls1', x1) (cls2', x2) = do
     cls1 <- resolveClass cls1'
@@ -240,7 +243,7 @@ instance EM'PairFactorizable (TGraphCat n e) (TypedGraphMorphism n e) where
       isCommutingSquare (e1, e2) = e1 <&> m1 == e2 <&> m2
       flipPair (x,y) = (y,x)
 
-ensureInClass :: TGraphMorphismClass -> (a -> TypedGraphMorphism n e) -> [a] -> [a]
+ensureInClass :: ActualMorphismClass -> (a -> TypedGraphMorphism n e) -> [a] -> [a]
 ensureInClass AllMorphisms _ = id
 ensureInClass Monomorphisms _ = id
 ensureInClass cls elem = filter ((`belongsTo` cls) . elem)

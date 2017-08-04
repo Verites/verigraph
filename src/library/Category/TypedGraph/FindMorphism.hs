@@ -13,7 +13,7 @@ import           Control.Arrow
 import           Data.List                          as L
 import           Data.Maybe
 
-instance FindMorphism (TGraphCat n e) (TypedGraphMorphism n e) where
+instance FindMorphism (CatM n e) (TypedGraphMorphism n e) where
   induceSpanMorphism lefts rights = return $ induceSpan lefts rights
 
   findMorphisms cls dom cod = do
@@ -62,7 +62,7 @@ data CospanBuilderState e =
 
 -- | Given two TypedGraphMorphism @f : B -> A@ and @g : C -> A@ it finds a list of Morphisms
 -- @hi : B -> C@ shuch that @¬g . f = hi@ for all @i@.
-findCospanCommuter' :: TGraphMorphismClass -> TypedGraphMorphism n e -> TypedGraphMorphism n e -> [TypedGraphMorphism n e]
+findCospanCommuter' :: ActualMorphismClass -> TypedGraphMorphism n e -> TypedGraphMorphism n e -> [TypedGraphMorphism n e]
 findCospanCommuter' conf morphismF morphismG
   | codomain morphismF /= codomain morphismG = []
   | otherwise =
@@ -108,9 +108,9 @@ findCospanCommuter' conf morphismF morphismG
   in
     map buildTGMFromState finalStates
 
--- | Given a TGraphMorphismClass and a initial @CospanBuilderState@ with final Node Relations complete,
+-- | Given a ActualMorphismClass and a initial @CospanBuilderState@ with final Node Relations complete,
 -- finds a Relation @B -> C@ between edges of @B@ and @C@. (Auxiliary function)
-findCospanCommuterEdgeRelations :: TGraphMorphismClass -> CospanBuilderState e -> [CospanBuilderState e]
+findCospanCommuterEdgeRelations :: ActualMorphismClass -> CospanBuilderState e -> [CospanBuilderState e]
 findCospanCommuterEdgeRelations conf state
   | L.null $ unmappedDomainEdges state =
     let isoCondition = L.null $ availableCodomainEdges state
@@ -133,9 +133,9 @@ findCospanCommuterEdgeRelations conf state
 
       findCospanCommuterEdgeRelations conf updatedState
 
--- | Given a TGraphMorphismClass and a initial @CospanBuilderState@ with empty final Relations,
+-- | Given a ActualMorphismClass and a initial @CospanBuilderState@ with empty final Relations,
 -- finds a Relation @B -> C@ between nodes of @B@ and @C@. (Auxiliary function)
-findCospanCommuterNodeRelations :: TGraphMorphismClass -> CospanBuilderState e -> [CospanBuilderState e]
+findCospanCommuterNodeRelations :: ActualMorphismClass -> CospanBuilderState e -> [CospanBuilderState e]
 findCospanCommuterNodeRelations conf state
   | L.null $ unmappedDomainNodes state =
     let isoCondition = L.null $ availableCodomainNodes state
@@ -159,7 +159,7 @@ findCospanCommuterNodeRelations conf state
       findCospanCommuterNodeRelations conf updatedState
 
 -- | Verify if a node of @B@ can be mapped to a node of @C@, if possible, updates the given @CospanBuilderState@. (Auxiliary function)
-updateNodeState :: TGraphMorphismClass -> NodeId -> NodeId -> CospanBuilderState e -> [CospanBuilderState e]
+updateNodeState :: ActualMorphismClass -> NodeId -> NodeId -> CospanBuilderState e -> [CospanBuilderState e]
 updateNodeState conf nodeOnDomain nodeOnCodomain state =
   let
     nodeDomainApplied = R.apply (finalNodeRelation state) nodeOnDomain
@@ -197,7 +197,7 @@ updateNodeState conf nodeOnDomain nodeOnCodomain state =
         return updatedGenericState
 
 -- | Verify if a edge of @B@ can be mapped to a node of @C@, if possible, updates the given @CospanBuilderState@. (Auxiliary function)
-updateEdgeState :: TGraphMorphismClass -> EdgeId -> EdgeId -> CospanBuilderState e -> [CospanBuilderState e]
+updateEdgeState :: ActualMorphismClass -> EdgeId -> EdgeId -> CospanBuilderState e -> [CospanBuilderState e]
 updateEdgeState conf edgeOnDomain edgeOnCodomain state =
   do
     let monoCondition = edgeOnCodomain`elem` availableCodomainEdges state
@@ -285,7 +285,7 @@ buildSpanEdgeRelation morphismH (morphismF, morphismG) = foldr (uncurry updateEd
 ------------------------------------------------------------------------------
 
 -- FIXME: implement findSpanCommuter', which is a variation of partialInjectiveMatches'
-findSpanCommuter' :: TGraphMorphismClass -> TypedGraphMorphism n e -> TypedGraphMorphism n e -> [TypedGraphMorphism n e]
+findSpanCommuter' :: ActualMorphismClass -> TypedGraphMorphism n e -> TypedGraphMorphism n e -> [TypedGraphMorphism n e]
 findSpanCommuter' = undefined
 
 -- | Finds matches __/q/__ .
@@ -350,7 +350,7 @@ preBuildNodes tgm nac match (h:t) = do
 -- | Finds matches __/m/__
 --
 --   Injective, surjective, isomorphic or all possible matches
-findMatches :: TGraphMorphismClass -> GM.GraphMorphism (Maybe n) (Maybe e) -> GM.GraphMorphism (Maybe n) (Maybe e) -> [TypedGraphMorphism n e]
+findMatches :: ActualMorphismClass -> GM.GraphMorphism (Maybe n) (Maybe e) -> GM.GraphMorphism (Maybe n) (Maybe e) -> [TypedGraphMorphism n e]
 findMatches prop graph1 graph2 =
   completeMappings prop tgm (sourceNodes, sourceEdges) (targetNodes, targetEdges)
   where
@@ -370,12 +370,12 @@ type ExpandedGraph b = ([G.NodeId], [Edge b])
 
 -- | Given a TypedGraphMorphism @tgm@ from (A -> T) to (B -> T) and the two ExpandedGraphs of A and B, it completes the @tgm@
 -- with all the possible mappings from (A -> T) to (B -> T)
-completeMappings :: TGraphMorphismClass -> TypedGraphMorphism n e -> ExpandedGraph (Maybe b) -> ExpandedGraph (Maybe b) -> [TypedGraphMorphism n e]
+completeMappings :: ActualMorphismClass -> TypedGraphMorphism n e -> ExpandedGraph (Maybe b) -> ExpandedGraph (Maybe b) -> [TypedGraphMorphism n e]
 completeMappings prop tgm ([], []) targetGraph = completeFromEmptySource prop tgm targetGraph
 completeMappings prop tgm (sourceNodes, []) targetGraph = completeWithRemainingNodes prop tgm (sourceNodes, []) targetGraph
 completeMappings prop tgm sourceGraph targetGraph = completeFromSourceEdges prop tgm sourceGraph targetGraph
 
-completeFromEmptySource :: TGraphMorphismClass -> TypedGraphMorphism n e -> ExpandedGraph (Maybe b) -> [TypedGraphMorphism n e]
+completeFromEmptySource :: ActualMorphismClass -> TypedGraphMorphism n e -> ExpandedGraph (Maybe b) -> [TypedGraphMorphism n e]
 completeFromEmptySource prop tgm (nodesT, edgesT) =
   case prop of
     AllMorphisms     -> all
@@ -390,7 +390,7 @@ completeFromEmptySource prop tgm (nodesT, edgesT) =
     epimorphism | L.null (orphanTypedNodeIds tgm) && L.null (orphanTypedEdgeIds tgm) = return tgm
                 | otherwise = []
 
-completeWithRemainingNodes :: TGraphMorphismClass -> TypedGraphMorphism n e -> ExpandedGraph (Maybe b) -> ExpandedGraph (Maybe b) -> [TypedGraphMorphism n e]
+completeWithRemainingNodes :: ActualMorphismClass -> TypedGraphMorphism n e -> ExpandedGraph (Maybe b) -> ExpandedGraph (Maybe b) -> [TypedGraphMorphism n e]
 completeWithRemainingNodes prop tgm ([], _)  (nodesT, edgesT) = completeFromEmptySource prop tgm (nodesT, edgesT)
 completeWithRemainingNodes _    _    _       ([],     _)      = []
 completeWithRemainingNodes prop tgm (h:t, _) (nodesT, edgesT) = do
@@ -409,7 +409,7 @@ completeWithRemainingNodes prop tgm (h:t, _) (nodesT, edgesT) = do
         monomorphism = completeMappings prop tgm' (t, []) (nodesT', edgesT)
         all          = completeMappings prop tgm' (t, []) (nodesT , edgesT)
 
-completeFromSourceEdges ::  TGraphMorphismClass -> TypedGraphMorphism n e -> ExpandedGraph (Maybe b) -> ExpandedGraph (Maybe b) -> [TypedGraphMorphism n e]
+completeFromSourceEdges ::  ActualMorphismClass -> TypedGraphMorphism n e -> ExpandedGraph (Maybe b) -> ExpandedGraph (Maybe b) -> [TypedGraphMorphism n e]
 completeFromSourceEdges _ _ (_, []) (_, _) = error "completeFromSourceEdges: unexpected empty node list"
 completeFromSourceEdges prop tgm (nodes, e:t) (nodesT, edgesT)
   | L.null edgesT = []

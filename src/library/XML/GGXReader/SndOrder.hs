@@ -2,7 +2,8 @@ module XML.GGXReader.SndOrder (instantiateSndOrderRules) where
 
 import           Abstract.Category.NewClasses
 import           Abstract.Rewriting.DPO
-import           Category.TypedGraphRule
+import Category.TypedGraphRule (TypedGraphRule, Production(..), RuleMorphism(RuleMorphism))
+import qualified Category.TypedGraphRule as TGRule
 import qualified Data.Graphs                        as G
 import           Data.Graphs.Morphism               as GM
 import           Data.TypedGraph
@@ -13,7 +14,7 @@ import           XML.ParsedTypes
 import qualified XML.ParseSndOrderRule              as SO
 import           XML.Utilities
 
-instantiateSndOrderRules :: G.Graph (Maybe a) (Maybe b) -> [RuleWithNacs] -> [(String, Production (TGRuleCat a b) (RuleMorphism a b))]
+instantiateSndOrderRules :: G.Graph (Maybe a) (Maybe b) -> [RuleWithNacs] -> [(String, Production (TGRule.CatM a b) (RuleMorphism a b))]
 instantiateSndOrderRules typeGraph sndOrdRules = zip sndOrderNames d
   where
     a = SO.parseSndOrderRules sndOrdRules

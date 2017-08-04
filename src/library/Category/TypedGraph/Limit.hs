@@ -18,7 +18,7 @@ import           Data.TypedGraph.Morphism
 import           Data.Partition
 
 
-instance Complete (TGraphCat n e) (TypedGraphMorphism n e) where
+instance Complete (CatM n e) (TypedGraphMorphism n e) where
   getFinalObject = identity <$> getTypeGraph
 
   getMorphismToFinalObjectFrom g = return $
@@ -130,7 +130,7 @@ type TypedNode = (NodeId,NodeId)
 type TypedEdge = (EdgeId, NodeId, NodeId, EdgeId)
 type RelabelFunction = (NodeId -> NodeId, EdgeId -> EdgeId)
 
-instance Cocomplete (TGraphCat n e) (TypedGraphMorphism n e) where
+instance Cocomplete (CatM n e) (TypedGraphMorphism n e) where
   getInitialObject = return (identity Graph.empty)
 
   getMorphismFromInitialObjectTo g = return $

@@ -18,8 +18,9 @@ import           Abstract.Category.NewClasses
 import           Abstract.Rewriting.DPO
 import           Abstract.Rewriting.DPO.DiagramAlgorithms
 import           Base.Valid
-import           Category.TypedGraph                      ()
-import           Category.TypedGraphRule
+--import qualified Category.TypedGraph                      
+import Category.TypedGraphRule (liftFstOrder, RuleMorphism, mappingLeft, mappingRight)
+import qualified Category.TypedGraphRule as TGRule
 import           Rewriting.DPO.TypedGraphRule
 import           Util.Monad
 
@@ -36,7 +37,7 @@ data EvoSpan n e = EvoSpan {
 
 -- | Given a list of second-order rules, calculate all Evolutionary Spans
 -- This analysis is supposed to be symmetric, here is considering only this case
-allEvolSpans :: [(String, SndOrderRule n e)] -> TGRuleCat n e [(String, String, [EvoSpan n e])]
+allEvolSpans :: [(String, SndOrderRule n e)] -> TGRule.CatM n e [(String, String, [EvoSpan n e])]
 -- combine rules symmetrically
 allEvolSpans []           = return []
 allEvolSpans rules@(r:rs) = (++) <$> mapM (evolSpans r) rules <*> allEvolSpans rs
@@ -45,7 +46,7 @@ allEvolSpans rules@(r:rs) = (++) <$> mapM (evolSpans r) rules <*> allEvolSpans r
 --allEvolSpans dpoConf sndOrderRules = concatMap (\r1 -> map (evolSpans dpoConf r1) sndOrderRules) sndOrderRules
 
 -- | Gets all Evolutionary Spans of two Second Order Rules
-evolSpans :: (String, SndOrderRule n e) -> (String, SndOrderRule n e) -> TGRuleCat n e (String, String, [EvoSpan n e])
+evolSpans :: (String, SndOrderRule n e) -> (String, SndOrderRule n e) -> TGRule.CatM n e (String, String, [EvoSpan n e])
 evolSpans (n1,r1) (n2,r2) = do
   let
 
@@ -63,15 +64,15 @@ evolSpans (n1,r1) (n2,r2) = do
   spans <- runListT $ do
     (m1, m2) <- pickOne $ findJointlyEpicPairs (matchMorphism, leftR1) (matchMorphism, leftR2)
     guardM $ isValid (codomain m1)
-    guardM . liftTGraph $
+    guardM . liftFstOrder $
       satisfiesRewritingConditions r1Left (mappingLeft m1) `andM` satisfiesRewritingConditions r2Left (mappingLeft m2)
       `andM` satisfiesRewritingConditions r1Right (mappingLeft m1) `andM` satisfiesRewritingConditions r2Right (mappingLeft m2)
     lift (EvoSpan m1 m2 <$> classify r1 r2 (m1, m2))
   return (n1, n2, spans)
 
 -- | Given two second-order rules and their matches overlaped, return their type
-classify :: SndOrderRule n e -> SndOrderRule n e -> (RuleMorphism n e, RuleMorphism n e) -> TGRuleCat n e CPE
-classify r1 r2 (m1,m2) = liftTGraph ((,) <$> deleteUseFlGl <*> deleteUseFlGl'')
+classify :: SndOrderRule n e -> SndOrderRule n e -> (RuleMorphism n e, RuleMorphism n e) -> TGRule.CatM n e CPE
+classify r1 r2 (m1,m2) = liftFstOrder ((,) <$> deleteUseFlGl <*> deleteUseFlGl'')
   where
     isConflict l1 l2 m =
          isDeleteUse l1 m

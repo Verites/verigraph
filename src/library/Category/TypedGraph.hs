@@ -1,11 +1,18 @@
+{- | This module defines the category \(\mathbf{Graph}_T\) of typed graphs.
+
+This is intended to be imported qualified, to avoid name clashes, e.g.
+
+> import Category.TypedGraph 
+> import Category.TypedGraph as TGraph
+
+-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
 module Category.TypedGraph
 ( TypedGraph
-, TypedGraphMorphism
-, TGraphCat
-, TGraphConfig(..)
+, Morphism
+, CatM
+, Config(..)
 , MatchRestriction(..)
 , runCat
 , getTypeGraph
@@ -27,8 +34,7 @@ import           Category.TypedGraph.FinalPullbackComplement ()
 import           Category.TypedGraph.Limit ()
 import           Category.TypedGraph.Adhesive ()
 
-
-instance {-# OVERLAPS #-} Valid (TGraphCat n e) (TypedGraph n e) where
+instance {-# OVERLAPS #-} Valid (CatM n e) (TypedGraph n e) where
   validator graph = do
     catTypeGraph <- lift getTypeGraph
     ensure (typeGraph graph == catTypeGraph) "wrong type graph for the category"
@@ -49,5 +55,5 @@ instance {-# OVERLAPS #-} Valid (TGraphCat n e) (TypedGraph n e) where
             ensure (Graph.applyNodeId graph srcId == Just srcTypeId) "has source of invalid type"
             ensure (Graph.applyNodeId graph tgtId == Just tgtTypeId) "has target of invalid type"
 
-instance {-# OVERLAPS #-} IsoM (TGraphCat n e) (TypedGraph n e) where
+instance {-# OVERLAPS #-} IsoM (CatM n e) (TypedGraph n e) where
   isIso g1 g2 = not . null <$> findMorphisms iso g1 g2

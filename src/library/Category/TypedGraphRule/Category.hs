@@ -3,15 +3,15 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Category.TypedGraphRule.Category
 ( RuleMorphism(..)
-, TGRuleCat
-, TGRuleConfig(..)
+, Morphism
+, CatM
+, Config(..)
 , MatchRestriction(..)
-, TGRuleMorphismClass
-, TGraphMorphismClass(..)
+, ActualMorphismClass(..)
 , fixedClass
 , matchMorphismsClass
 , runCat
-, liftTGraph
+, liftFstOrder
 , resolveClass
 , asTGraphClass
 , belongsTo
@@ -22,8 +22,7 @@ import           Control.Monad.List
 
 import           Abstract.Category.NewClasses
 import           Abstract.Rewriting.DPO
-import           Category.TypedGraph (TGraphCat, TGraphConfig, TypedGraphMorphism, MatchRestriction(..))
-import           Category.TypedGraph.Category (TGraphMorphismClass(..))
+import           Category.TypedGraph.Category (ActualMorphismClass(..), MatchRestriction(..))
 import qualified Category.TypedGraph.Category as TGraph
 import           Rewriting.DPO.TypedGraph
 import Util.Monad
@@ -56,29 +55,30 @@ data RuleMorphism n e =
   RuleMorphism {
     rmDomain         :: TypedGraphRule n e
   , rmCodomain       :: TypedGraphRule n e
-  , mappingLeft      :: TypedGraphMorphism n e
-  , mappingInterface :: TypedGraphMorphism n e
-  , mappingRight     :: TypedGraphMorphism n e
+  , mappingLeft      :: TGraph.Morphism n e
+  , mappingInterface :: TGraph.Morphism n e
+  , mappingRight     :: TGraph.Morphism n e
   } deriving (Eq, Show)
 
-newtype TGRuleCat n e a = TGRC { unTGRC :: ReaderT (TGRuleConfig n e) (TGraphCat n e) a }
+type Morphism = RuleMorphism
+
+newtype CatM n e a = CatM (ReaderT (Config n e) (TGraph.CatM n e) a)
   deriving (Functor, Applicative, Monad)
 
-data TGRuleConfig n e = TGRuleConfig
-  { fstOrderConfig :: TGraphConfig n e
-  , matchRestriction :: MatchRestriction
+data Config n e = Config
+  { fstOrderConfig :: TGraph.Config n e
+  , matchRestriction :: TGraph.MatchRestriction
   }
 
-runCat :: TGRuleCat n e a -> TGRuleConfig n e -> a
-runCat (TGRC action) config = TGraph.runCat (runReaderT action config) (fstOrderConfig config)
+runCat :: Config n e -> CatM n e a -> a
+runCat config (CatM action) = TGraph.runCat (fstOrderConfig config) (runReaderT action config)
 
-liftTGraph :: TGraphCat n e a -> TGRuleCat n e a
-liftTGraph = TGRC . lift
+liftFstOrder :: TGraph.CatM n e a -> CatM n e a
+liftFstOrder = CatM . lift
 
-type TGRuleMorphismClass = TGraphMorphismClass
 
-instance Category (TGRuleCat n e) (RuleMorphism n e) where
-  type Obj (TGRuleCat n e) = TypedGraphRule n e
+instance Category (CatM n e) (RuleMorphism n e) where
+  type Obj (CatM n e) = TypedGraphRule n e
 
   domain = rmDomain
   codomain = rmCodomain
@@ -93,8 +93,8 @@ instance Category (TGRuleCat n e) (RuleMorphism n e) where
             (identity $ interfaceObject t)
             (identity $ rightObject t)
 
-  data MorphismClass (TGRuleCat n e)
-    = FixedClass TGRuleMorphismClass
+  data MorphismClass (CatM n e)
+    = FixedClass ActualMorphismClass
     | MatchMorphisms
 
   anyMorphism = FixedClass AllMorphisms
@@ -114,24 +114,24 @@ instance Category (TGRuleCat n e) (RuleMorphism n e) where
   
   belongsToClass f c = belongsTo f <$> resolveClass c 
 
-fixedClass :: TGRuleMorphismClass -> MorphismClass (TGRuleCat n e)
+fixedClass :: ActualMorphismClass -> MorphismClass (CatM n e)
 fixedClass = FixedClass
 
-matchMorphismsClass :: MorphismClass (TGRuleCat n e)
+matchMorphismsClass :: MorphismClass (CatM n e)
 matchMorphismsClass = MatchMorphisms
 
-resolveClass :: MorphismClass (TGRuleCat n e) -> TGRuleCat n e TGRuleMorphismClass
+resolveClass :: MorphismClass (CatM n e) -> CatM n e ActualMorphismClass
 resolveClass (FixedClass c) = return c
 resolveClass MatchMorphisms = do
-  restriction <- TGRC $ asks matchRestriction
+  restriction <- CatM $ asks matchRestriction
   return $ case restriction of
     AllMatches -> AllMorphisms
     MonicMatches -> Monomorphisms
 
-asTGraphClass :: MorphismClass (TGRuleCat n e) -> TGRuleCat n e (MorphismClass (TGraphCat n e))
+asTGraphClass :: MorphismClass (CatM n e) -> CatM n e (MorphismClass (TGraph.CatM n e))
 asTGraphClass = fmap TGraph.fixedClass . resolveClass
 
-belongsTo :: RuleMorphism n e -> TGRuleMorphismClass -> Bool
+belongsTo :: RuleMorphism n e -> ActualMorphismClass -> Bool
 belongsTo _ AllMorphisms = True
 belongsTo f c =
   (mappingLeft f `TGraph.belongsTo` c)
@@ -139,25 +139,25 @@ belongsTo f c =
   && (mappingRight f `TGraph.belongsTo` c)
 
 
-instance MFinitary (TGRuleCat n e) (RuleMorphism n e) where
+instance MFinitary (CatM n e) (RuleMorphism n e) where
   subobject = monic
   -- TODO: implement getMorphismToCanonicalSubobject and findSubobjectsOf for RuleMorphism
 
-instance ECofinitary (TGRuleCat n e) (RuleMorphism n e) where
+instance ECofinitary (CatM n e) (RuleMorphism n e) where
   quotient = epic
   -- TODO: implement getMorphismFromCanonicalQuotient and findQuotientsOf for RuleMorphism
 
-instance EM'Factorizable (TGRuleCat n e) (RuleMorphism n e) where
+instance EM'Factorizable (CatM n e) (RuleMorphism n e) where
   monicFactor = monic
   -- TODO: implement factorize for RuleMorphism
 
-instance EM'PairFactorizable (TGRuleCat n e) (RuleMorphism n e) where
+instance EM'PairFactorizable (CatM n e) (RuleMorphism n e) where
 
   findJointlyEpicPairs (c1', p1) (c2', p2) = do
     c1 <- TGraph.fixedClass <$> resolveClass c1'
     c2 <- TGraph.fixedClass <$> resolveClass c2'
     let findJointlyEpic x y = findJointlyEpicPairs (c1, x) (c2, y)
-    liftTGraph . runListT $ do
+    liftFstOrder . runListT $ do
       {- Find jointly epic K1 --ek1-> KE <-ek2-- K2 -}
       (ek1, ek2) <- pickOne $ findJointlyEpic (interfaceObject p1) (interfaceObject p2)
 

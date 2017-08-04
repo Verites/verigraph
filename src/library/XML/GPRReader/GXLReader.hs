@@ -33,7 +33,7 @@ import           System.IO
 
 import           Abstract.Rewriting.DPO
 import           Base.Valid
-import           Category.TypedGraph 
+import qualified Category.TypedGraph as TGraph
 import           Rewriting.DPO.TypedGraph
 import           XML.GPRReader.GXLInstatiator
 import           XML.GPRReader.GXLParseIn
@@ -77,9 +77,8 @@ readGrammar fileName = do
 
   let rules = instatiateRules typeGraph typesWithId parsedRules
 
-  let tGraphConfig = TGraphConfig typeGraph undefined
-  ensureValid . (`runCat` tGraphConfig) $
-    validateNamed (\name -> "Rule '"++name++"'") rules
+  let config = TGraph.Config typeGraph undefined
+  ensureValid . TGraph.runCat config $ validateNamed (\name -> "Rule '"++name++"'") rules
   _ <- (L.null rules && error "No first-order productions were found, at least one is needed.") `seq` return ()
 
   let instatiatedGrammar = grammar initialState [] rules

@@ -25,7 +25,7 @@ import           Abstract.Category.NewClasses
 import           Abstract.Rewriting.DPO
 import           Abstract.Rewriting.DPO.Derivation
 import           Abstract.Rewriting.DPO.Process                           hiding (productions)
-import           Category.TypedGraph
+import qualified Category.TypedGraph as TGraph
 import           Data.Graphs                                              (Graph)
 import qualified Data.Graphs.Morphism                                     as GM
 import           Data.Maybe                                               (fromJust, fromMaybe,
@@ -38,7 +38,7 @@ import           Rewriting.DPO.TypedGraph.GraphProcess.OccurrenceRelation
 import           Util.Closures                                            as C
 import           Util.List
 
-instance GenerateProcess (TGraphCat n e) (TypedGraphMorphism n e) where
+instance GenerateProcess (TGraph.CatM n e) (TypedGraphMorphism n e) where
   typing = retypeProduction
   productionTyping = retype
   restrictMorphisms = restrictMorphisms'
@@ -46,7 +46,7 @@ instance GenerateProcess (TGraphCat n e) (TypedGraphMorphism n e) where
 
 data DoublyTypedGrammar n e = DoublyTypedGrammar {
   singleTypedGrammar       :: TypedGraphGrammar n e -- ^ The grammar typed over the double type graph
-, originalRulesWithMatches :: [NamedRuleWithMatches (TGraphCat n e) (TypedGraphMorphism n e)] -- ^ The productions of the original grammar, together with their matches in the double type graph
+, originalRulesWithMatches :: [NamedRuleWithMatches (TGraph.CatM n e) (TypedGraphMorphism n e)] -- ^ The productions of the original grammar, together with their matches in the double type graph
 , doubleType               :: TypedGraph n e -- ^ The double type graph, typed over the simple type graph
 , originRelation           :: Relation -- ^ The relation that shows the rule that originated each element (node or edge) in the grammar
 , concreteRelation         :: Relation -- ^ The occurrence relation of the grammar (existencial relation + concrete conflicts and dependencies induced by NACs)
@@ -66,7 +66,7 @@ emptyRestrictions :: DoublyTypedGrammar n e -> Bool
 emptyRestrictions = S.null . restrictRelation
 
 -- | Given a rule sequence, it calculates its underlying doubly-typed graph grammar
-generateDoublyTypedGrammar :: RuleSequence (TGraphCat n e) (TypedGraphMorphism n e) -> TGraphCat n e (DoublyTypedGrammar n e)
+generateDoublyTypedGrammar :: RuleSequence (TGraph.CatM n e) (TypedGraphMorphism n e) -> TGraph.CatM n e (DoublyTypedGrammar n e)
 generateDoublyTypedGrammar sequence = do 
   originalRulesWithMatches <- calculateRulesColimit sequence -- TODO: unify this two functions
   newRules <- generateGraphProcess sequence
@@ -75,7 +75,7 @@ generateDoublyTypedGrammar sequence = do
     relation = occurrenceRelation newRules
     created = createdElements cdRelation
     deleted = deletedElements cdRelation
-    doubleType = codomain $ getMatch $ head originalRulesWithMatches
+    doubleType = codomain . getMatch $ head originalRulesWithMatches
     coreGraph = domain doubleType
     startGraph = removeElements coreGraph created
     finalGraph = removeElements coreGraph deleted
@@ -98,7 +98,7 @@ getElements ogg =
     elements = L.map getRuleItems rs
   in (ruleNames, unions elements)
 
-calculateNacRelations :: DoublyTypedGrammar n e -> Set Interaction -> TGraphCat n e (DoublyTypedGrammar n e)
+calculateNacRelations :: DoublyTypedGrammar n e -> Set Interaction -> TGraph.CatM n e (DoublyTypedGrammar n e)
 calculateNacRelations ogg is = do
   let (deleteForbid,produceForbid) = S.partition (\i -> interactionType i == DeleteForbid) is
   (dfs, absDfs) <- calculateDeleteForbids ogg deleteForbid
@@ -112,7 +112,7 @@ calculateNacRelations ogg is = do
               (buildTransitivity (concreteRelation ogg `union` dfs `union` pfs)) -- do the reflexive and transitive Closure
               (absDfs `union` absPfs)
 
-calculateDeleteForbids :: DoublyTypedGrammar n e -> Set Interaction -> TGraphCat n e (Relation, AbstractRelation)
+calculateDeleteForbids :: DoublyTypedGrammar n e -> Set Interaction -> TGraph.CatM n e (Relation, AbstractRelation)
 calculateDeleteForbids ogg dfs = do 
   let
     isConcreteDeleteForbid (i, t) = isInGraph (initialGraph ogg) t || happensBeforeAction (concreteRelation ogg) t (secondRule i)
@@ -124,7 +124,7 @@ calculateDeleteForbids ogg dfs = do
     toAbstractRelation (i, c) = (AbstractDeleteForbid, (findRule (creationRelation ogg) c, Rule (secondRule i)), toRelation (i, c))
   return (S.map toRelation concreteDF, S.map toAbstractRelation abstract)
 
-calculateProduceForbids :: DoublyTypedGrammar n e -> Set Interaction -> TGraphCat n e (Relation, AbstractRelation)
+calculateProduceForbids :: DoublyTypedGrammar n e -> Set Interaction -> TGraph.CatM n e (Relation, AbstractRelation)
 calculateProduceForbids ogg pfs = do 
   let
     isConcreteProduceForbid (i,t) = neverDeleted t (deletionRelation ogg)
@@ -139,7 +139,7 @@ calculateProduceForbids ogg pfs = do
 
 -- | Given an doubly typed grammar and an interaction of the types ProduceForbid or DeleteForbid between two productions
 -- it returns the interaction together with the element that triggered the NAC involved in this conflict or dependency
-findConcreteTrigger :: DoublyTypedGrammar n e -> Interaction -> TGraphCat n e (Interaction, RelationItem) -- check if the order is correct for produce forbids
+findConcreteTrigger :: DoublyTypedGrammar n e -> Interaction -> TGraph.CatM n e (Interaction, RelationItem) -- check if the order is correct for produce forbids
 findConcreteTrigger ogg interaction@(Interaction a1 a2 t nacIdx) = do
   let
     originalRules = L.map (\(a,b,c) -> (a, (b,c))) (originalRulesWithMatches ogg)
@@ -174,7 +174,7 @@ getTrigger nac =
 uniqueOrigin :: [NamedTypedGraphRule n e] -> Bool
 uniqueOrigin productions = not (repeated createdList) && not (repeated deletedList)
   where
-    creationAndDeletion = S.filter isRuleAndElement $ unions $ L.map creationAndDeletionRelation productions
+    creationAndDeletion = S.filter isRuleAndElement . unions $ L.map creationAndDeletionRelation productions
     isCreated a = case a of
       (Rule _, _) -> True
       _           -> False
@@ -276,7 +276,7 @@ preservationAndDeletionRelation productions cdRelation =
 
 type RuleWithMatches n e = (TypedGraphRule n e, (TypedGraphMorphism n e, TypedGraphMorphism n e, TypedGraphMorphism n e))
 
-getUnderlyingDerivation :: RuleWithMatches n e -> TypedGraphMorphism n e -> TGraphCat n e (Derivation (TGraphCat n e) (TypedGraphMorphism n e))
+getUnderlyingDerivation :: RuleWithMatches n e -> TypedGraphMorphism n e -> TGraph.CatM n e (Derivation (TGraph.CatM n e) (TypedGraphMorphism n e))
 getUnderlyingDerivation (p1,(m1,_,_)) comatch = do
   (_, dToH1Candidate) <- calculatePushoutComplementOfRN (rightMorphism p1) comatch
   let
@@ -287,7 +287,7 @@ getUnderlyingDerivation (p1,(m1,_,_)) comatch = do
     (match,dToG1) = restrictMorphisms (m1,dToG1Candidate)
   return $ Derivation p1 match comatch gluing dToG1 dToH1
 
-findMono :: TypedGraph n e -> TypedGraph n e -> TGraphCat n e (TypedGraphMorphism n e)
+findMono :: TypedGraph n e -> TypedGraph n e -> TGraph.CatM n e (TypedGraphMorphism n e)
 findMono x y = do
   monos <- findMorphisms monic x y
   return $ if L.null monos then error "morphisms not found" else head monos
@@ -322,7 +322,7 @@ isInGraph initial x = case x of
 = MorphismsConfig Monomorphism MonomorphicNAC
 -}
 
-findH21 :: TypedGraphMorphism n e -> TypedGraphMorphism n e -> TGraphCat n e (TypedGraphMorphism n e)
+findH21 :: TypedGraphMorphism n e -> TypedGraphMorphism n e -> TGraph.CatM n e (TypedGraphMorphism n e)
 findH21 m2 d1 = do
   h21 <- findCospanCommuters monic m2 d1
   return $ if Prelude.null h21 then error "morphism h21 not found" else head h21
@@ -343,7 +343,7 @@ relatedByPreservationAndDeletion relation namedRule
                                 _      -> False
   in if related r nodes edges then singleton (Rule name, snd r) else relatedByPreservationAndDeletion rs namedRule
 
-retypeProduction :: (Derivation (TGraphCat n e) (TypedGraphMorphism n e), (TypedGraphMorphism n e,TypedGraphMorphism n e,TypedGraphMorphism n e)) ->  TypedGraphRule n e
+retypeProduction :: (Derivation (TGraph.CatM n e) (TypedGraphMorphism n e), (TypedGraphMorphism n e,TypedGraphMorphism n e,TypedGraphMorphism n e)) ->  TypedGraphRule n e
 retypeProduction (derivation, (g1,_,g3)) = newProduction
   where
     p = production derivation

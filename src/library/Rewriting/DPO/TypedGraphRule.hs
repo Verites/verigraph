@@ -8,8 +8,9 @@ import           Data.Maybe                            (fromMaybe)
 import           Abstract.Category.NewClasses
 import           Abstract.Rewriting.DPO
 import           Base.Valid
-import           Category.TypedGraph                   ()
-import           Category.TypedGraphRule               
+import qualified Category.TypedGraph                   as TGraph
+import           Category.TypedGraphRule               (TypedGraphRule, RuleMorphism(RuleMorphism), mappingLeft, mappingRight, liftFstOrder)
+import qualified Category.TypedGraphRule               as TGRule
 import           Data.Graphs                           as G
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
@@ -50,10 +51,10 @@ import Util.Monad
 -- left = domain rule, interface rule, leftL, leftK, leftR
 --
 -- right = interface rule, codomain rule, rightL, rightK, rightR
-type SndOrderRule n e = Production (TGRuleCat n e) (RuleMorphism n e)
-type SndOrderGrammar n e = Grammar (TGRuleCat n e) (RuleMorphism n e)
+type SndOrderRule n e = Production (TGRule.CatM n e) (RuleMorphism n e)
+type SndOrderGrammar n e = Grammar (TGRule.CatM n e) (RuleMorphism n e)
 
-instance DPO (TGRuleCat n e) (RuleMorphism n e) where
+instance DPO (TGRule.CatM n e) (RuleMorphism n e) where
   invertProduction r = do
     shiftedNacs <- concatMapM (shiftNacOverProduction r) (nacs r)
     addMinimalSafetyNacs $ buildProduction (rightMorphism r) (leftMorphism r) shiftedNacs
@@ -80,13 +81,13 @@ data NodeOrEdge b = Node_ NodeId | Edge_ (Edge b) deriving (Show)
 
 -- | Adds the minimal safety nacs needed to this production always produce a second-order rule.
 -- If the nacs that going to be added not satisfies the others nacs, then it do not need to be added.
-addMinimalSafetyNacs :: SndOrderRule n e -> TGRuleCat n e (SndOrderRule n e)
+addMinimalSafetyNacs :: SndOrderRule n e -> TGRule.CatM n e (SndOrderRule n e)
 addMinimalSafetyNacs sndRule = do
   safetyNacs <- filterM (satisfiesNACs sndRule) =<< minimalSafetyNacs sndRule
   return $ sndRule { nacs = nacs sndRule ++ safetyNacs }
 
 -- | Generates the minimal safety NACs of a 2-rule
-minimalSafetyNacs :: SndOrderRule n e -> TGRuleCat n e [RuleMorphism n e]
+minimalSafetyNacs :: SndOrderRule n e -> TGRule.CatM n e [RuleMorphism n e]
 minimalSafetyNacs sndRule = do
   monicMatches <- matchMorphism `isSubclassOf` monic
   let monicSafetyNacs = newNacsProb LeftSide sndRule ++ newNacsProb RightSide sndRule
@@ -210,7 +211,7 @@ createNacProb sideChoose ruleL x = RuleMorphism ruleL nacRule mapL mapK mapR
 
 -- | Generate NACs that forbid non monomorphic rule generation.
 -- Insert NACs to avoid condition (b) in Thm 70 (rodrigo machado phd thesis, 2012)
-newNacsPair :: forall n e. Side -> SndOrderRule n e -> TGRuleCat n e [RuleMorphism n e]
+newNacsPair :: forall n e. Side -> SndOrderRule n e -> TGRule.CatM n e [RuleMorphism n e]
 newNacsPair sideChoose sndRule = do
   let
     applyNode = applyNodeIdUnsafe
@@ -238,7 +239,7 @@ newNacsPair sideChoose sndRule = do
     pairsNodes = findPairs applyNode isOrphanNode (nodeIds . untypedGraph)
     pairsEdges = findPairs applyEdge isOrphanEdge (edgeIds . untypedGraph)
 
-  epis <- liftTGraph $ findAllQuotientsOf (codomain (getSide ruleL))
+  epis <- liftFstOrder $ findAllQuotientsOf (codomain (getSide ruleL))
   let
     filteredNodes = [e | e <- epis, any (\(a,b) -> applyNode e a == applyNode e b) pairsNodes]
     filteredEdges = [e | e <- epis, any (\(a,b) -> applyEdge e a == applyEdge e b) pairsEdges]

@@ -2,8 +2,8 @@ module Image.Dot where
 
 import           Abstract.Category.NewClasses
 import           Abstract.Rewriting.DPO.StateSpace
-import           Category.TypedGraph
-import           Category.TypedGraphRule
+import qualified Category.TypedGraph as TGraph
+import Category.TypedGraphRule (TypedGraphRule, Production(..), mappingLeft, mappingRight, mappingInterface)
 import           Data.Graphs                        hiding (Node (..))
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
@@ -49,7 +49,7 @@ printSubgraph name props = printDotGraph "subgraph" ("cluster_" ++ name) (("labe
 
 
 -- | Create a dotfile representation of the given state space, labeling states with their IDs
-printStateSpace :: StateSpace (TGraphCat a b) (TypedGraphMorphism a b) -> Doc
+printStateSpace :: StateSpace (TGraph.CatM a b) (TypedGraphMorphism a b) -> Doc
 printStateSpace stateSpace =
   printDigraph
     "stateSpace"

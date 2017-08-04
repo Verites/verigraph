@@ -11,7 +11,7 @@ module Rewriting.DPO.TypedGraphRule.Scheduling
 import           Data.Maybe                   (fromMaybe)
 
 import           Abstract.Rewriting.DPO       (findApplicableMatches,rewrite)
-import           Category.TypedGraphRule      
+import qualified Category.TypedGraphRule as TGRule
 import           Rewriting.DPO.TypedGraph     (TypedGraphRule)
 import           Rewriting.DPO.TypedGraphRule (SndOrderRule)
 
@@ -22,11 +22,11 @@ type Named2Rule n e = (String,SndOrderRule n e)
 
 -- | Apply "AsLongAsPossible" any second-order rule.
 -- It is limited to `n` rewritings.
-asLongAsPossible :: [Named2Rule n e] -> [NamedRule n e] -> Int -> TGRuleCat n e (String,[NamedRule n e])
+asLongAsPossible :: [Named2Rule n e] -> [NamedRule n e] -> Int -> TGRule.CatM n e (String,[NamedRule n e])
 asLongAsPossible s f n = asLongAsPossible_ s f ("limit of rewritings: " ++ show n) n
 
 -- Each iteration applies a rewrite, removes the old rule, and put the new rule in the end of the rules list.
-asLongAsPossible_ :: [Named2Rule n e] -> [NamedRule n e] -> String -> Int -> TGRuleCat n e (String,[NamedRule n e])
+asLongAsPossible_ :: [Named2Rule n e] -> [NamedRule n e] -> String -> Int -> TGRule.CatM n e (String,[NamedRule n e])
 asLongAsPossible_ _ fstRules log 0 = return (log ++ "\n limit of rewritings exceeded.",fstRules) 
 asLongAsPossible_ sndRules fstRules log n = do
   matches <- getOneMatch sndRules [] fstRules
@@ -41,7 +41,7 @@ asLongAsPossible_ sndRules fstRules log n = do
 
 -- Returns just one match (if it exits) between [2-rules] and [rules].
 -- Also, returns the list of rules without the matched one.
-getOneMatch :: [Named2Rule n e] -> [NamedRule n e] -> [NamedRule n e] -> TGRuleCat n e (Maybe (RuleMorphism n e, Named2Rule n e, String, [NamedRule n e]))
+getOneMatch :: [Named2Rule n e] -> [NamedRule n e] -> [NamedRule n e] -> TGRule.CatM n e (Maybe (TGRule.Morphism n e, Named2Rule n e, String, [NamedRule n e]))
 getOneMatch _ _ [] = return Nothing
 getOneMatch sndRules rs1 (r:rs2) = do
   match <- getOneMatch_ r sndRules
@@ -49,7 +49,7 @@ getOneMatch sndRules rs1 (r:rs2) = do
     Nothing -> getOneMatch sndRules (r:rs1) rs2
     Just (m,r2,r1Name) -> return (Just (m,r2,r1Name,rs1 ++ rs2))
 
-getOneMatch_ :: NamedRule n e -> [Named2Rule n e] -> TGRuleCat n e (Maybe (RuleMorphism n e, Named2Rule n e, String))
+getOneMatch_ :: NamedRule n e -> [Named2Rule n e] -> TGRule.CatM n e (Maybe (TGRule.Morphism n e, Named2Rule n e, String))
 getOneMatch_ _ [] = return Nothing
 getOneMatch_ rule (r2:r2s) = do
   matches <- findApplicableMatches (snd r2) (snd rule)
@@ -59,7 +59,7 @@ getOneMatch_ rule (r2:r2s) = do
 
 -- | Apply "oneStep".
 -- All matches from 2-rules to rules are applied once.
-oneStep :: [Named2Rule n e] -> [NamedRule n e] -> TGRuleCat n e (String,[NamedRule n e])
+oneStep :: [Named2Rule n e] -> [NamedRule n e] -> TGRule.CatM n e (String,[NamedRule n e])
 oneStep sndRules fstRules = do
   info <- mapM (oneStep_ sndRules) fstRules
   let
@@ -67,7 +67,7 @@ oneStep sndRules fstRules = do
     rules = concatMap snd info
   return (logs,rules)
 
-oneStep_ :: [Named2Rule n e] -> NamedRule n e -> TGRuleCat n e (String,[NamedRule n e])
+oneStep_ :: [Named2Rule n e] -> NamedRule n e -> TGRule.CatM n e (String,[NamedRule n e])
 oneStep_ sndRules rule = do
   info <- mapM (applyAllMatches rule) sndRules
   let
@@ -75,7 +75,7 @@ oneStep_ sndRules rule = do
     rules = concatMap snd info
   return (logs,rules)
 
-applyAllMatches :: NamedRule n e -> Named2Rule n e -> TGRuleCat n e (String,[NamedRule n e])
+applyAllMatches :: NamedRule n e -> Named2Rule n e -> TGRule.CatM n e (String,[NamedRule n e])
 applyAllMatches r1 r2 = do
   matches <- findApplicableMatches (snd r2) (snd r1)
   newRules <- mapM (`rewrite` snd r2) matches
@@ -86,7 +86,7 @@ applyAllMatches r1 r2 = do
 
 -- | Apply "Specific" from a 2rule to a rule.
 -- Receives a 2-rule name and a rule name, and rewrites all matches between them.
-specific :: [Named2Rule n e] -> [NamedRule n e] -> String -> String -> TGRuleCat n e (String,[NamedRule n e])
+specific :: [Named2Rule n e] -> [NamedRule n e] -> String -> String -> TGRule.CatM n e (String,[NamedRule n e])
 specific sndRules fstRules name2Rule nameRule = applyAllMatches (nameRule,rule1) (name2Rule,rule2)
   where
     rule1 = getRule fstRules nameRule
