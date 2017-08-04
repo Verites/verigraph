@@ -7,6 +7,7 @@
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MonadComprehensions #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Abstract.Category.NewClasses 
   (
     -- * Category
@@ -123,10 +124,10 @@ isEpic = (`belongsToClass` epic @cat)
 isIsomorphism :: forall cat morph. Category cat morph => morph -> cat Bool
 isIsomorphism = (`belongsToClass` iso @cat)
 
--- | A span is a pair of morphisms with same domain (e.g. \(A \to C \leftarrow B \)).
+-- | A span is a pair of morphisms with same domain (e.g. \(A \leftarrow C \to B \)).
 type Span (cat :: * -> *) morph = (morph, morph)
 
--- | A cospan is a pair of morphisms with same codomain (e.g. \(A \leftarrow C \to B \)).
+-- | A cospan is a pair of morphisms with same codomain (e.g. \(A \to C \leftarrow B \)).
 type Cospan (cat :: * -> *) morph = (morph, morph)
 
 {- | Type class for categories where each object has a finite number of

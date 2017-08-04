@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 module Base.Isomorphic where
 
 import           Data.List.NonEmpty                 (NonEmpty)
