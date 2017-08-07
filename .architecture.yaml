@@ -1,0 +1,58 @@
+source-dir: src/library/Category/TypedGraphRule
+rules:
+  -
+    type: forbid-import
+    forbidden:
+      - Category.**
+      - Rewriting.**
+    within: Abstract.**
+    level: error
+    description: >
+      Abstract layer shouldn't import concrete code.
+  - 
+    type: forbid-import
+    forbidden: 
+      - Abstract.**
+      - Category.**
+      - Rewriting.**
+    within:
+      - Base.**
+      - Logic.**
+    level: error
+    description: >
+      Categorial concepts are restricted to categorial modules.
+  - 
+    type: forbid-import
+    forbidden: 
+      - Abstract.**
+      - Category.**
+      - Rewriting.**
+    within: Data.**
+    level: warning
+    description: >
+      Categorial concepts are not used in regular datastructures.
+  -
+    type: forbid-import
+    forbidden:
+      - Abstract.Rewriting.**
+      - Abstract.Constraint.**
+    within: Abstract.Category.**
+    level: error
+    description: >
+      Rewriting concepts are not used in pure categorial modules.
+  -
+    type: forbid-import
+    forbidden: Category.TypedGraph.*
+    outside: 
+      - Category.TypedGraph.**
+      - Category.TypedGraphRule.Category
+    level: warning
+    description: >
+      Implementation of TypedGraph category is properly encapsulated.
+  -
+    type: forbid-import
+    forbidden: Category.TypedGraphRule.*
+    outside: Category.TypedGraphRule.**
+    level: warning
+    description: >
+      Implementation of TypedGraphRule category is properly encapsulated.
