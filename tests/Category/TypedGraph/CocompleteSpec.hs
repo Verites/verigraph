@@ -1,6 +1,6 @@
 -- | Test Suite for GraphProcess Module
 
-module Abstract.Category.CocompleteSpec where
+module Category.TypedGraph.CocompleteSpec where
 
 import           Test.Hspec
 

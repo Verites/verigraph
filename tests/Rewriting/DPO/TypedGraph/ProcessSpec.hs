@@ -1,5 +1,5 @@
 -- | Test Suite for Process Module
-module Abstract.Rewriting.DPO.ProcessSpec where
+module Rewriting.DPO.TypedGraph.ProcessSpec where
 
 import           Data.Maybe                            (fromJust)
 import           Test.Hspec
