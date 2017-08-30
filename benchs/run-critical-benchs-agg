@@ -1,0 +1,82 @@
+#! /usr/bin/env bash
+
+# Script to run benchmarks of critical pairs analysis on agg.
+# For each grammar (ELEV, PACMAN, MED1, MED2, MED3) run critical pairs analysis the number of times defined on EXEC variable.
+# Results will be saved on path defined by SRC variable.
+# Outputs files and logs will be saved on path defined by OUTPUTS variable.
+
+PROJECT_ROOT="$(stack path --project-root)";
+SRC="$PROJECT_ROOT/benchs";
+OUTPUTS="$SRC/outputs/agg";
+EXEC=10;
+
+mkdir -p "$SRC"
+mkdir -p "$OUTPUTS"
+
+echo "\"AGG - Elevator\"" > "$SRC/agg-results.csv";
+echo "" >> "$SRC/agg-results.csv";
+
+echo "\"Tempo (s)\", \"Memória (KB)\"" >> "$SRC/agg-results.csv";
+for i in $(seq 1 $EXEC)
+do
+    (/usr/bin/time -f "%e, %M" \
+		   "$SRC/agg-cli" "-o" "$OUTPUTS/elevator_$i.cpx" "$PROJECT_ROOT/grammars/Elevator/elevator.ggx" > "$OUTPUTS/elevator_$i.log") \
+	2>> "$SRC/agg-results.csv"
+
+done
+
+echo "" >> "$SRC/agg-results.csv";
+echo "" >> "$SRC/agg-results.csv";
+echo "\"AGG - Pacman\"" >> "$SRC/agg-results.csv";
+echo "" >> "$SRC/agg-results.csv";
+
+echo "\"Tempo (s)\", \"Memória (KB)\"" >> "$SRC/agg-results.csv";
+for i in $(seq 1 $EXEC)
+do
+    (/usr/bin/time -f "%e, %M" \
+		   "$SRC/agg-cli" "-o" "$OUTPUTS/pacman_$i.cpx" "$PROJECT_ROOT/grammars/Pacman/pacman.ggx" > "$OUTPUTS/pacman_$i.log") \
+	2>> "$SRC/agg-results.csv"
+
+done
+
+echo "" >> "$SRC/agg-results.csv";
+echo "" >> "$SRC/agg-results.csv";
+echo "\"AGG - Instrutivo 1\"" >> "$SRC/agg-results.csv";
+echo "" >> "$SRC/agg-results.csv";
+
+echo "\"Tempo (s)\", \"Memória (KB)\"" >> "$SRC/agg-results.csv";
+for i in $(seq 1 $EXEC)
+do
+    (/usr/bin/time -f "%e, %M" \
+		   "$SRC/agg-cli" "-o" "$OUTPUTS/instrutivo1_$i.cpx" "$PROJECT_ROOT/grammars/MedicalGuideline/evolutionVersion/instrutivo-original-layer1.ggx" > "$OUTPUTS/instrutivo1_$i.log") \
+	2>> "$SRC/agg-results.csv"
+
+done
+
+echo "" >> "$SRC/agg-results.csv";
+echo "" >> "$SRC/agg-results.csv";
+echo "\"AGG - Instrutivo 2\"" >> "$SRC/agg-results.csv";
+echo "" >> "$SRC/agg-results.csv";
+
+echo "\"Tempo (s)\", \"Memória (KB)\"" >> "$SRC/agg-results.csv";
+for i in $(seq 1 $EXEC)
+do
+    (/usr/bin/time -f "%e, %M" \
+		   "$SRC/agg-cli" "-o" "$OUTPUTS/instrutivo2_$i.cpx" "$PROJECT_ROOT/grammars/MedicalGuideline/evolutionVersion/instrutivo-original-layer2.ggx" > "$OUTPUTS/intrutivo2_$i.log") \
+	2>> "$SRC/agg-results.csv"
+
+done
+
+echo "" >> "$SRC/agg-results.csv";
+echo "" >> "$SRC/agg-results.csv";
+echo "\"AGG - Instrutivo 3\"" >> "$SRC/agg-results.csv";
+echo "" >> "$SRC/agg-results.csv";
+
+echo "\"Tempo (s)\", \"Memória (KB)\"" >> "$SRC/agg-results.csv";
+for i in $(seq 1 $EXEC)
+do
+    (/usr/bin/time -f "%e, %M" \
+		   "$SRC/agg-cli" "-o" "$OUTPUTS/instrutivo3_$i.cpx" "$PROJECT_ROOT/grammars/MedicalGuideline/evolutionVersion/instrutivo-original-layer3.ggx" > "$OUTPUTS/instrutivo3_$i.log") \
+	2>> "$SRC/agg-results.csv"
+
+done

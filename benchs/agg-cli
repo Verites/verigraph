@@ -1,0 +1,22 @@
+#! /usr/bin/env bash
+
+#Please edit line below to set AGG download directory.
+#AGGDIR=
+
+#If your operational system don't set java home automatically,
+#edit the line below to adjust to your java home.
+#export JAVA_HOME=
+
+export PATH="$JAVA_HOME/bin:$PATH"
+export CLASSPATH="$AGGDIR/agg_V21_classes.jar"
+
+if [ -z $AGGDIR ]; then
+    (>&2 echo "Please edit AGGDIR variable to set AGG Download directory")
+    exit 1
+fi
+
+if [ -z $1 ]; then
+        echo "Usage: agg-cli [C | D] [nc] [ncc] [o outfile] file"
+fi
+
+java -Xmx13122M agg.parser.AGGComputeCriticalPairs $@

@@ -1,0 +1,82 @@
+#! /usr/bin/env bash
+
+# Script to run benchmarks of critical pairs analysis on verigraph.
+# For each grammar (ELEV, PACMAN, MED1, MED2, MED3) run critical pairs analysis the number of times defined on EXEC variable.
+# Results will be saved on path defined by SRC variable.
+# Outputs files and logs will be saved on path defined by OUTPUTS variable.
+
+PROJECT_ROOT="$(stack path --project-root)";
+SRC="$PROJECT_ROOT/benchs";
+OUTPUTS="$SRC/outputs/verigraph";
+EXEC=10;
+
+mkdir -p "$SRC";
+mkdir -p "$OUTPUTS";
+
+echo "\"Verigraph - Elevator\"" > "$SRC/verigraph-results.csv";
+echo "" >> "$SRC/verigraph-results.csv";
+
+echo "\"Tempo (s)\", \"Memória (KB)\"" >> "$SRC/verigraph-results.csv";
+for i in $(seq 1 $EXEC)
+do
+    (/usr/bin/time -f "%e, %M" \
+		   verigraph analysis -o "$OUTPUTS/elevator_$i.cpx" "$PROJECT_ROOT/grammars/Elevator/elevator.ggx" > "$OUTPUTS/elevator_$i.log") \
+	2>> "$SRC/verigraph-results.csv"
+
+done
+
+echo "" >> "$SRC/verigraph-results.csv";
+echo "" >> "$SRC/verigraph-results.csv";
+echo "\"Verigraph - Pacman\"" >> "$SRC/verigraph-results.csv";
+echo "" >> "$SRC/verigraph-results.csv";
+
+echo "\"Tempo (s)\", \"Memória (KB)\"" >> "$SRC/verigraph-results.csv";
+for i in $(seq 1 $EXEC)
+do
+    (/usr/bin/time -f "%e, %M" \
+		   verigraph analysis -o "$OUTPUTS/pacman_$i.cpx" "$PROJECT_ROOT/grammars/Pacman/pacman.ggx" > "$OUTPUTS/pacman_$i.log") \
+	2>> "$SRC/verigraph-results.csv"
+
+done
+
+echo "" >> "$SRC/verigraph-results.csv";
+echo "" >> "$SRC/verigraph-results.csv";
+echo "\"Verigraph - Instrutivo 1\"" >> "$SRC/verigraph-results.csv";
+echo "" >> "$SRC/verigraph-results.csv";
+
+echo "\"Tempo (s)\", \"Memória (KB)\"" >> "$SRC/verigraph-results.csv";
+for i in $(seq 1 $EXEC)
+do
+    (/usr/bin/time -f "%e, %M" \
+		   verigraph analysis -o "$OUTPUTS/instrutivo1_$i.cpx" "$PROJECT_ROOT/grammars/MedicalGuideline/evolutionVersion/instrutivo-original-layer1.ggx"  > "$OUTPUTS/instrutivo1_$i.log") \
+	2>> "$SRC/verigraph-results.csv"
+
+done
+
+echo "" >> "$SRC/verigraph-results.csv";
+echo "" >> "$SRC/verigraph-results.csv";
+echo "\"Verigraph - Instrutivo 2\"" >> "$SRC/verigraph-results.csv";
+echo "" >> "$SRC/verigraph-results.csv";
+
+echo "\"Tempo (s)\", \"Memória (KB)\"" >> "$SRC/verigraph-results.csv";
+for i in $(seq 1 $EXEC)
+do
+    (/usr/bin/time -f "%e, %M" \
+		   verigraph analysis -o "$OUTPUTS/instrutivo2_$i.cpx" "$PROJECT_ROOT/grammars/MedicalGuideline/evolutionVersion/instrutivo-original-layer2.ggx" > "$OUTPUTS/instrutivo2_$i.log") \
+	2>> "$SRC/verigraph-results.csv"
+
+done
+
+echo "" >> "$SRC/verigraph-results.csv";
+echo "" >> "$SRC/verigraph-results.csv";
+echo "\"Verigraph - Instrutivo 3\"" >> "$SRC/verigraph-results.csv";
+echo "" >> "$SRC/verigraph-results.csv";
+
+echo "\"Tempo (s)\", \"Memória (KB)\"" >> "$SRC/verigraph-results.csv";
+for i in $(seq 1 $EXEC)
+do
+    (/usr/bin/time -f "%e, %M" \
+		   verigraph analysis -o "$OUTPUTS/instrutivo3_$i.cpx" "$PROJECT_ROOT/grammars/MedicalGuideline/evolutionVersion/instrutivo-original-layer3.ggx" > "$OUTPUTS/instrutivo3_$i.log") \
+	2>> "$SRC/verigraph-results.csv"
+
+done

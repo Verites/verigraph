@@ -30,3 +30,7 @@ TAGS
 *#
 .vscode/
 .idea/
+
+#Benchmarks stuff
+*.log
+*.cpx
