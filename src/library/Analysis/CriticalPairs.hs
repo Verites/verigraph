@@ -22,6 +22,8 @@ import           Abstract.Rewriting.DPO                   hiding (calculateComat
 import           Abstract.Rewriting.DPO.DiagramAlgorithms
 import           Data.Maybe                               (mapMaybe)
 
+import           Util.List (parallelMap)
+
 -- | Data representing the type of a 'CriticalPair'
 data CriticalPairType =
     FreeOverlap
@@ -98,7 +100,7 @@ getNacIndexOfCriticalPair criticalPair =
 -- | Returns the Critical Pairs with rule names
 namedCriticalPairs :: (JointlyEpimorphisms morph, DPO morph) => MorphismsConfig -> [NamedRule morph] -> [NamedCriticalPairs morph]
 namedCriticalPairs conf namedRules =
-  map (uncurry getCPs) [(a,b) | a <- namedRules, b <- namedRules]
+  parallelMap (uncurry getCPs) [(a,b) | a <- namedRules, b <- namedRules]
     where
       getCPs (n1,r1) (n2,r2) =
         (n1, n2, findCriticalPairs conf r1 r2)

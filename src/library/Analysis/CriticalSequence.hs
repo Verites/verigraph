@@ -27,6 +27,7 @@ import           Abstract.Rewriting.DPO                   hiding (calculateComat
 import           Abstract.Rewriting.DPO.DiagramAlgorithms
 import           Analysis.CriticalPairs                   (findPotentialCriticalPairs)
 import           Data.Maybe                               (mapMaybe)
+import           Util.List                                (parallelMap)
 
 -- | Data representing the type of a 'CriticalPair'
 data CriticalSequenceType =
@@ -106,7 +107,7 @@ getNacIndexOfCriticalSequence cs =
 -- | Returns the Critical Sequences with rule names
 namedCriticalSequences :: (JointlyEpimorphisms morph, DPO morph) => MorphismsConfig -> [NamedRule morph] -> [NamedCriticalPairs morph]
 namedCriticalSequences conf rules =
-  map (uncurry getCSs) [(a,b) | a <- rules, b <- rules]
+  parallelMap (uncurry getCSs) [(a,b) | a <- rules, b <- rules]
   where
     getCSs (n1,r1) (n2,r2) = (n1, n2, findCriticalSequences conf r1 r2)
 

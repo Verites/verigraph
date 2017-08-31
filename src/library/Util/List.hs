@@ -6,11 +6,21 @@ module Util.List
 , replace
 , repeated
 , split
+, parallelMap
 )
 
 where
 
+import           Control.Parallel (par)
 import           Data.List (isPrefixOf)
+
+-- | Applies the given function to each element of the list, executing in parallel.
+--
+-- Each element will generate a new spark, so the parallel execution strategy may not be optimal.
+parallelMap :: (a -> b) -> [a] -> [b]
+parallelMap _ []      = []
+parallelMap f (x:xs) = let r = f x
+                        in r `par` r : parallelMap f xs
 
 -- TODO: Verify suitability for the use of Data.Sequence
 -- | Replaces the @idx@-th element by @new@ in the list @l@
