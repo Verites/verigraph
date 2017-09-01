@@ -114,7 +114,7 @@ writeConfDep essential conf ggs@(gg1,_) name names fileName = root [] [writeCpx 
       if essential
         then ECP.namedEssentialCriticalPairs conf (productions gg1)
         else CP.namedCriticalPairs conf (productions gg1)
-    css = CS.namedCriticalSequences conf (productions gg1)
+    css = CS.namedTriggeredCriticalSequences conf (productions gg1)
 
 writeConf :: Bool -> MorphismsConfig -> Grammars a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
 writeConf essential conf ggs@(gg1,_) name names fileName = root [] [writeCpx ggs cps [] name names] >>> writeDocument [withIndent yes] fileName
@@ -127,7 +127,7 @@ writeConf essential conf ggs@(gg1,_) name names fileName = root [] [writeCpx ggs
 writeDep :: MorphismsConfig -> Grammars a b -> String -> [(String,String)] -> String -> IOSLA (XIOState s) XmlTree XmlTree
 writeDep conf ggs@(gg1,_) name names fileName = root [] [writeCpx ggs [] cps name names] >>> writeDocument [withIndent yes] fileName
   where
-    cps = CS.namedCriticalSequences conf (productions gg1)
+    cps = CS.namedTriggeredCriticalSequences conf (productions gg1)
 
 --Functions to deal with ggx format specificities
 writeRoot :: ArrowXml a => Grammars b c -> String -> [(String,String)] -> a XmlTree XmlTree

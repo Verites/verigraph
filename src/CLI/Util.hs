@@ -1,6 +1,6 @@
 module Util where
 
-import           Control.Parallel (par)
+import           Control.Parallel                      (par)
 import           Data.Matrix
 
 import           Abstract.Category.JointlyEpimorphisms
@@ -44,13 +44,11 @@ printAnalysis essential action dpoConf rules =
       confMatrix = analysisMatrix dpoConf rules
         findAllDeleteUse findAllProduceDangling findAllProduceForbid
         "Delete-Use" "Produce-Dangling" "Produce-Forbid" "Conflicts"
-      depMatrix = triDepMatrix ++ irrDepMatrix
+      depMatrix = triDepMatrix
       triDepMatrix = analysisMatrix dpoConf rules
         findAllProduceUse findAllRemoveDangling findAllDeleteForbid
         "Produce-Use" "Remove-Dangling" "Deliver-Forbid" "Triggered Dependencies"
-      irrDepMatrix = analysisMatrix dpoConf rules
-        findAllDeliverDelete findAllDeliverDangling findAllForbidProduce
-        "Deliver-Delete" "Deliver-Dangling" "Forbid-Produce" "Irreversible Dependencies"
+
   in mapM_
        putStrLn $
        (case (essential, calculateConflicts action) of

@@ -10,6 +10,7 @@ module Analysis.CriticalSequence
    -- * Finding Critical Sequences
    findTriggeredCriticalSequences,
    findCriticalSequences,
+   namedTriggeredCriticalSequences,
    namedCriticalSequences,
    findAllProduceUse,
    findAllRemoveDangling,
@@ -103,6 +104,14 @@ getNacIndexOfCriticalSequence cs =
   case nac cs of
     Just (_,idx) -> Just idx
     Nothing      -> Nothing
+
+-- | Returns the Triggered Critical Sequences with rule names
+namedTriggeredCriticalSequences :: (JointlyEpimorphisms morph, DPO morph) => MorphismsConfig -> [NamedRule morph] -> [NamedCriticalPairs morph]
+namedTriggeredCriticalSequences conf rules =
+  parallelMap (uncurry getCSs) [(a,b) | a <- rules, b <- rules]
+  where
+    getCSs (n1,r1) (n2,r2) = (n1, n2, findTriggeredCriticalSequences conf r1 r2)
+
 
 -- | Returns the Critical Sequences with rule names
 namedCriticalSequences :: (JointlyEpimorphisms morph, DPO morph) => MorphismsConfig -> [NamedRule morph] -> [NamedCriticalPairs morph]
