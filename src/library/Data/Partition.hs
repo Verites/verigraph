@@ -2,6 +2,8 @@ module Data.Partition
   ( EquivalenceClass
   , Partition
   , discretePartition
+  , fromBlocks
+  , partitionToSurjection
   , allPartitionsOf
   , allRefinementsOf
   , addToPartition
@@ -13,6 +15,8 @@ module Data.Partition
   ) where
 
 import           Data.Foldable (find, foldl')
+import           Data.Map      (Map)
+import qualified Data.Map      as Map
 import           Data.Set      (Set)
 import qualified Data.Set      as Set
 
@@ -27,6 +31,22 @@ type Partition a = Set (EquivalenceClass a)
 -- partition, each element has its own equivalence class.
 discretePartition :: (Ord a) => [a] -> Partition a
 discretePartition = Set.fromList . map Set.singleton
+
+-- | Given a list of disjoint blocks, represented as lists of elements, create a partition.
+-- If the given blocks are not disjoint, creates a malformed partition.
+fromBlocks :: (Ord a) => [[a]] -> Partition a
+fromBlocks = Set.fromList . map Set.fromList
+
+-- | Obtain a surjective mapping that maps every element of the partitioned set to the
+-- representative of its equivalence class, given a function to select representatives.
+partitionToSurjection :: Ord a => Partition a -> (EquivalenceClass a -> b) -> Map a b
+partitionToSurjection partition pickRepresentative =
+  Map.fromList
+    [ (element, representative)
+        | equivalenceClass <- Set.toList partition
+        , let representative = pickRepresentative equivalenceClass
+        , element <- Set.toList equivalenceClass
+    ]
 
 -- | Create all partitions of the given set with a naive algorithm.
 allPartitionsOf :: Ord a => [a] -> [Partition a]
