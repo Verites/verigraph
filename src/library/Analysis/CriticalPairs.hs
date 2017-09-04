@@ -17,7 +17,7 @@ module Analysis.CriticalPairs
    findAllDeleteUseAndProduceDangling
    ) where
 
-import           Abstract.Category.JointlyEpimorphisms
+import           Abstract.Category.Finitary
 import           Abstract.Rewriting.DPO                   hiding (calculateComatch)
 import           Abstract.Rewriting.DPO.DiagramAlgorithms
 import           Data.Maybe                               (mapMaybe)
@@ -98,7 +98,7 @@ getNacIndexOfCriticalPair criticalPair =
     Nothing      -> Nothing
 
 -- | Returns the Critical Pairs with rule names
-namedCriticalPairs :: (JointlyEpimorphisms morph, DPO morph) => MorphismsConfig -> [NamedRule morph] -> [NamedCriticalPairs morph]
+namedCriticalPairs :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> [NamedRule morph] -> [NamedCriticalPairs morph]
 namedCriticalPairs conf namedRules =
   parallelMap (uncurry getCPs) [(a,b) | a <- namedRules, b <- namedRules]
     where
@@ -107,14 +107,14 @@ namedCriticalPairs conf namedRules =
 
 -- TODO: Use this as an auxiliary function to optimize the search for critical pairs
 -- | Returns a list of morphisms from left side of rules to all valid overlapping pairs
-findPotentialCriticalPairs :: (DPO morph, JointlyEpimorphisms morph) => MorphismsConfig -> Production morph -> Production morph -> [(morph,morph)]
+findPotentialCriticalPairs :: (DPO morph, E'PairCofinitary morph) => MorphismsConfig morph -> Production morph -> Production morph -> [(morph,morph)]
 findPotentialCriticalPairs conf p1 p2 = satisfyingPairs
   where
-    pairs = createJointlyEpimorphicPairsFromCodomains (matchRestriction conf) (getLHS p1) (getLHS p2)
+    pairs = findJointSurjections (matchRestriction conf, leftObject p1) (matchRestriction conf, leftObject p2)
     satisfyingPairs = filter (\(m1,m2) -> satisfyRewritingConditions conf (p1,m1) (p2,m2)) pairs
 
 -- | Finds all Critical Pairs between two given Productions
-findCriticalPairs :: (JointlyEpimorphisms morph, DPO morph) => MorphismsConfig -> Production morph -> Production morph -> [CriticalPair morph]
+findCriticalPairs :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> Production morph -> Production morph -> [CriticalPair morph]
 findCriticalPairs conf p1 p2 =
   findAllDeleteUseAndProduceDangling conf p1 p2 ++ findAllProduceForbid conf p1 p2
 
@@ -124,7 +124,7 @@ findCriticalPairs conf p1 p2 =
 
 -- | All DeleteUse caused by the derivation of @p1@ before @p2@.
 -- It occurs when @p1@ deletes something used by @p2@.
-findAllDeleteUse :: (JointlyEpimorphisms morph, DPO morph) => MorphismsConfig -> Production morph -> Production morph -> [CriticalPair morph]
+findAllDeleteUse :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> Production morph -> Production morph -> [CriticalPair morph]
 findAllDeleteUse conf p1 p2 =
   map (\m -> CriticalPair m Nothing Nothing DeleteUse) deleteUsePairs
   where
@@ -135,7 +135,7 @@ findAllDeleteUse conf p1 p2 =
 
 -- | All ProduceDangling caused by the derivation of @p1@ before @p2@.
 -- It occurs when @p1@ creates something that unable @p2@.
-findAllProduceDangling :: (JointlyEpimorphisms morph, DPO morph) => MorphismsConfig -> Production morph -> Production morph -> [CriticalPair morph]
+findAllProduceDangling :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> Production morph -> Production morph -> [CriticalPair morph]
 findAllProduceDangling conf p1 p2 =
   map (\m -> CriticalPair m Nothing Nothing ProduceDangling) produceDanglingPairs
   where
@@ -146,7 +146,7 @@ findAllProduceDangling conf p1 p2 =
 
 -- | Tests DeleteUse and ProduceDangling for the same pairs,
 -- more efficient than deal separately.
-findAllDeleteUseAndProduceDangling :: (JointlyEpimorphisms morph, DPO morph) => MorphismsConfig -> Production morph -> Production morph -> [CriticalPair morph]
+findAllDeleteUseAndProduceDangling :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> Production morph -> Production morph -> [CriticalPair morph]
 findAllDeleteUseAndProduceDangling conf p1 p2 =
   map categorizeConflict conflicts
   where
@@ -162,12 +162,12 @@ findAllDeleteUseAndProduceDangling conf p1 p2 =
 --
 -- Rule @p1@ causes a produce-forbid conflict with @p2@ if some
 -- NAC in @p2@ fails to be satisfied after the aplication of @p1@.
-findAllProduceForbid :: (JointlyEpimorphisms morph, DPO morph) => MorphismsConfig -> Production morph -> Production morph -> [CriticalPair morph]
+findAllProduceForbid :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> Production morph -> Production morph -> [CriticalPair morph]
 findAllProduceForbid conf p1 p2 =
-  concatMap (findProduceForbidForNAC conf p1 p2) (zip (getNACs p2) [0..])
+  concatMap (findProduceForbidForNAC conf p1 p2) (zip (nacs p2) [0..])
 
 -- | Check ProduceForbid for a NAC @n@ in @p2@.
-findProduceForbidForNAC :: (JointlyEpimorphisms morph, DPO morph) => MorphismsConfig -> Production morph -> Production morph -> (morph, Int) -> [CriticalPair morph]
+findProduceForbidForNAC :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> Production morph -> Production morph -> (morph, Int) -> [CriticalPair morph]
 findProduceForbidForNAC conf p1 p2 nac =
   map
     (\(morph,morph',nac) -> CriticalPair morph (Just morph') (Just nac) ProduceForbid)

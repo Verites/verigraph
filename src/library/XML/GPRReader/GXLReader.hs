@@ -33,7 +33,7 @@ import           System.IO
 
 import           Abstract.Rewriting.DPO
 import           Base.Valid
-import           Data.TypedGraph.Morphism       (TypedGraphMorphism, domainGraph)
+import           Data.TypedGraph.Morphism       (TypedGraphMorphism)
 import           XML.GPRReader.GXLInstatiator
 import           XML.GPRReader.GXLParseIn
 import           XML.GPRReader.GXLPreProcessing
@@ -67,7 +67,7 @@ readGrammar fileName = do
   let stateGraphPathName = fileName ++ "/" ++ stateGraphName ++ ".gst"
   stateGraph <- parseGPR stateGraphPathName
   let (_,stateRule) = instatiateRule typeGraph typesWithId stateGraph
-      initialState = domainGraph (getLHS stateRule)
+      initialState = interfaceObject stateRule
 
   -- rules
   let ruleNames = filter (\name -> takeExtension name == ".gpr") files

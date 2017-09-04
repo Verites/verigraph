@@ -2,13 +2,13 @@
 
 module Abstract.Category.CocompleteSpec where
 
-import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.Cocomplete
+import           Abstract.Category
+import           Abstract.Category.Limit
+import           Category.TypedGraph                   ()
 import           Data.Graphs
 import           Data.Graphs.Morphism
 import           Data.List.NonEmpty                    (fromList)
 import           Data.TypedGraph.Morphism
-import           Rewriting.DPO.TypedGraph.GraphProcess ()
 
 import           Test.Hspec
 
@@ -156,7 +156,7 @@ typedMorphismFThree = buildTypedGraphMorphism typedGraphAThree typedGraphBThree 
 typedMorphismGThree = buildTypedGraphMorphism typedGraphAThree typedGraphBThree mappingMorphismGThree
 typedMorphismHThree = buildTypedGraphMorphism typedGraphAThree typedGraphBThree mappingMorphismHThree
 
-testCaseThreePUSHOUT = Abstract.Category.AdhesiveHLR.calculatePushout typedMorphismFThree typedMorphismHThree
+testCaseThreePUSHOUT = calculatePushout typedMorphismFThree typedMorphismHThree
 
 testCaseThree = calculateCoequalizer typedMorphismFThree typedMorphismGThree
 

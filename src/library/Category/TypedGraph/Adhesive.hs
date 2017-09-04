@@ -1,16 +1,18 @@
-module Category.TypedGraph.AdhesiveHLR where
+module Category.TypedGraph.Adhesive (isDeleted) where
 
 import           Data.Maybe                         (fromJust, mapMaybe)
 
-import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.FinitaryCategory
-import           Category.TypedGraph.Cocomplete     ()
+import           Abstract.Category
+import           Abstract.Category.Adhesive
+import           Category.TypedGraph.Category
+import           Category.TypedGraph.Limit          ()
+import           Category.TypedGraph.Finitary       ()
 import           Data.Graphs                        as G
 import qualified Data.Graphs.Morphism               as GM
 import           Data.TypedGraph.Morphism
 
-instance AdhesiveHLR (TypedGraphMorphism a b) where
 
+instance MInitialPushout (TypedGraphMorphism a b) where
   -- @
   --        d
   --    B──────▶C
@@ -31,7 +33,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
   -- Two kinds of elements must be created: the nodes that potencially
   -- arises a dangling condition; and the elements that potencially
   -- arises an identification condition.
-  calculateInitialPushout f = (b,d,c)
+  calculateMInitialPushout f = (b,d,c)
     where
       -- 1. It defines b initially with an empty morphism to A, and then
       -- dangling nodes, collapsed nodes and collapsed edges are added.
@@ -43,7 +45,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
           addCollapsedNodes m = addNodes m collapsedNodes
           addCollapsedEdges m = addEdges m collapsedEdges
 
-      (d,c) = calculatePushoutComplement f b
+      (d,c) = calculatePushoutComplementAlongM b f
 
       -- 2. It just defines the names for the structures
       typeGraph = codomain typedGraphA
@@ -104,6 +106,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
             )
           )
 
+instance MAdhesive (TypedGraphMorphism a b) where
 
   {-
      PO complement algorithm:
@@ -113,7 +116,7 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
      3. delete all edges
      4. delete all nodes
   -}
-  calculatePushoutComplement m l =
+  calculatePushoutComplementAlongM l m =
     let ml       = m <&> l                                                -- compose l and m obtaining ml
         delEdges = mapMaybe (GM.applyEdgeId $ mapping m) (orphanTypedEdgeIds l) -- obtain list of edges to be deleted in G
         delNodes = mapMaybe (GM.applyNodeId $ mapping m) (orphanTypedNodeIds l) -- obtain list of nodes to be deleted in G
@@ -122,107 +125,8 @@ instance AdhesiveHLR (TypedGraphMorphism a b) where
                            delNodes
     in (k, idMap (codomain k) (codomain m))
 
-  -- @
-  --        g'
-  --     X──────▶A
-  --     │       │
-  --  f' │       │ f
-  --     ▼       ▼
-  --     B──────▶C
-  --        g
-  --
-  -- @
-  --
-  -- Pullback for typed graphs.
-  -- It starts getting all pairs for nodes and edges, this pairs will be
-  -- the elements of X.
-  -- It creates an empty X, and morphisms f' and g', and adds each pair
-  -- identifing them with ids.
-  calculatePullback f g = (f'',g'')
-    where
-      -- This first part just defines the names for the structures
-      nodeTypeInB = GM.applyNodeIdUnsafe typedGraphB
-      nodeTypeInA = GM.applyNodeIdUnsafe typedGraphA
-      edgeTypeInB = GM.applyEdgeIdUnsafe typedGraphB
-      edgeTypeInA = GM.applyEdgeIdUnsafe typedGraphA
-      typeGraph = codomain typedGraphC
-      typedGraphA = domain f
-      typedGraphB = domain g
-      typedGraphC = codomain f
-
-      nodesInA = nodesFromDomain f
-      nodesInB = nodesFromDomain g
-      edgesInA = edgesFromDomain f
-      edgesInB = edgesFromDomain g
-
-      -- Discover the nodes and edges of the X
-      nodesWithoutId = getPairs applyNodeIdUnsafe nodeId nodesInA nodesInB nodes
-      nodesWithId = zip nodesWithoutId ([0..]::[Int])
-
-      egdesWithoutId = getPairs applyEdgeIdUnsafe edgeId edgesInA edgesInB edges
-      edgesWithId = zip egdesWithoutId ([0..]::[Int])
-
-      -- Run the product for all elements that are mapped on the same element in C
-      getPairs apply getId elemA elemB list = concatMap product comb
-        where
-          comb =
-            map
-              (\n ->
-                (filter (\n' -> apply f (getId n') == getId n) elemA,
-                 filter (\n' -> apply g (getId n') == getId n) elemB))
-              (list (domain typedGraphC))
-
-          product (x,y) = [(a,b) | a <- x, b <- y]
-
-      -- Init X, f' and g' as empty
-      initX = GM.empty empty typeGraph
-      initF' = buildTypedGraphMorphism initX typedGraphB (GM.empty empty (domain typedGraphB))
-      initG' = buildTypedGraphMorphism initX typedGraphA (GM.empty empty (domain typedGraphA))
-
-      -- Add all elements on X and their morphisms
-      (g',f') = foldr updateNodes (initG',initF') nodesWithId
-      (g'',f'') = foldr updateEdges (g',f') edgesWithId
-
-      -- Add a node is just do it on the domain of f' and g'
-      updateNodes ((a,b),newId) (g',f') = (updateG',updateF')
-        where
-          newNode = NodeId newId
-          updateG' = createNodeOnDomain newNode (nodeTypeInA (nodeId a)) (nodeId a) g'
-          updateF' = createNodeOnDomain newNode (nodeTypeInB (nodeId b)) (nodeId b) f'
-
-      -- Add an edge on the domain of f' and g'
-      updateEdges ((a,b),newId) (g',f') = (updateG',updateF')
-        where
-          newEdge = EdgeId newId
-
-          -- To add an edge, their source and target nodes must be found (they already exists).
-          -- It searches the node in X that is mapped by f' and g' to the same source (resp. target) node of the related edges on A and B.
-          src1 =
-            filter
-              (\n ->
-                applyNodeIdUnsafe f' n == sourceId b &&
-                applyNodeIdUnsafe g' n == sourceId a)
-              (nodeIdsFromDomain f')
-          src = if Prelude.null src1 then error "src not found" else head src1
-
-          tgt1 =
-            filter
-              (\n ->
-                applyNodeIdUnsafe f' n == targetId b &&
-                applyNodeIdUnsafe g' n == targetId a)
-              (nodeIdsFromDomain f')
-          tgt = if Prelude.null tgt1 then error "tgt not found" else head tgt1
-
-          updateG' = createEdgeOnDomain newEdge src tgt (edgeTypeInA (edgeId a)) (edgeId a) g'
-          updateF' = createEdgeOnDomain newEdge src tgt (edgeTypeInB (edgeId b)) (edgeId b) f'
-
-
-  hasPushoutComplement (Monomorphism, g) (_, f) =
-    satisfiesDanglingCondition f g
-
-
-  hasPushoutComplement (_, g) (_, f) =
-    satisfiesDanglingCondition f g && satisfiesIdentificationCondition f g
+  hasPushoutComplementAlongM l m =
+    satisfiesDanglingCondition l m && satisfiesIdentificationCondition l m
 
 -- TODO: it looks like the function below shouldn't be in the module
 generateNewNodeInstances :: TypedGraphMorphism a b -> [(NodeId, NodeId)] -> TypedGraphMorphism a b
@@ -301,3 +205,112 @@ isDeleted l m apply list e = elementInL && not elementInK
 -- TODO: this function should not be here in this module
 isOrphanEdge :: TypedGraphMorphism a b -> EdgeId -> Bool
 isOrphanEdge m n = n `elem` orphanTypedEdgeIds m
+
+instance FinalPullbackComplement (TypedGraphMorphism a b) where
+  
+    -- @
+    --       l
+    --    K──────▶L
+    --    │       V
+    --  k │  (1)  │ m
+    --    ▼       ▼
+    --    D──────▶A
+    --       l'
+    -- @
+    --
+    -- This function receives m and l, it creates (k,l') as the
+    -- the final pullback complement on (1).
+    --
+    -- __morphism m must be injective__
+    --
+    -- The algorithm follows Construction 6 of Sesqui-pushout rewriting.
+    -- Available on:
+    -- http://www.ti.inf.uni-due.de/publications/koenig/icgt06b.pdf
+    --
+    -- It is a naive implementation focused on correction and not performance.
+    -- Performance may be reasonable for epi pairs rewrite, but poor when large contexts.
+    --
+    -- The resulting graph D contains a copy of K, a copy of the largest
+    -- subgraph of A which is not in the image of m, and a suitable number
+    -- of copies of each edge of A incident to a node in m(l(K)):
+    -- this has the effect of "cloning" part of A.
+    --
+    -- This function is divided in four steps,
+    -- first two for nodes and the lasts for edges.
+    calculateFinalPullbackComplement m l = step4
+      where
+        typedGraphK = domain l
+        typedGraphA = codomain m
+        graphK = domain typedGraphK
+        graphA = domain typedGraphA
+        edgeTypeInK = GM.applyEdgeIdUnsafe typedGraphK
+        edgeTypeInA = GM.applyEdgeIdUnsafe typedGraphA
+        nodeTypeInK = GM.applyNodeIdUnsafe typedGraphK
+        nodeTypeInA = GM.applyNodeIdUnsafe typedGraphA
+        typeGraph = codomain typedGraphK
+  
+        -- Inits (k:K->D, l':D->A) with D as empty.
+        initD = GM.empty empty typeGraph
+        initK = buildTypedGraphMorphism typedGraphK initD (GM.empty graphK empty)
+        initL' = buildTypedGraphMorphism initD typedGraphA (GM.empty empty graphA)
+  
+        -- Step1 adds in D a copy of the nodes of K.
+        step1 = foldr updateNodesFromK (initK,initL') nodesAddFromK
+        nodesAddFromK = zip (nodeIdsFromDomain l) ([0..]::[Int])
+        updateNodesFromK (n,newId) (k,l') = (updatedK2,updatedL')
+          where
+            newNode = NodeId newId
+            typeN = nodeTypeInK n
+            appliedL = applyNodeIdUnsafe l n
+            appliedA = applyNodeIdUnsafe m appliedL
+            updatedK = createNodeOnCodomain newNode typeN k
+            updatedK2 = untypedUpdateNodeRelation n newNode updatedK
+            updatedL' = createNodeOnDomain newNode typeN appliedA l'
+  
+        -- Step2 adds in D the nodes out of the image of m.
+        step2 = foldr updateNodesFromA step1 nodesAddFromMatch
+        nodesAddFromMatch = zip (orphanTypedNodeIds m) ([(length nodesAddFromK)..]::[Int])
+        updateNodesFromA (n,newId) (k,l') = (updatedK,updatedL')
+          where
+            newNode = NodeId newId
+            typeN = nodeTypeInA n
+            updatedK = createNodeOnCodomain newNode typeN k
+            updatedL' = createNodeOnDomain newNode typeN n l'
+  
+        -- Step3 adds in D a copy of the edges of K.
+        step3@(_,edgesL') = foldr updateEdgesFromK step2 edgesAddFromK
+        edgesAddFromK = zip (edgesFromDomain l) ([0..]::[Int])
+        updateEdgesFromK (e,newId) (k,l') = (updatedK2,updatedL')
+          where
+            newEdge = EdgeId newId
+            appliedL = applyEdgeIdUnsafe l (edgeId e)
+            appliedA = applyEdgeIdUnsafe m appliedL
+            typeE = edgeTypeInK (edgeId e)
+            src = applyNodeIdUnsafe k (sourceId e)
+            tgt = applyNodeIdUnsafe k (targetId e)
+            updatedK = createEdgeOnCodomain newEdge src tgt typeE k
+            updatedK2 = updateEdgeRelation (edgeId e) newEdge updatedK
+            updatedL' = createEdgeOnDomain newEdge src tgt typeE appliedA l'
+  
+        -- Step4 adds in D a replication of edges out of the image of m,
+        -- where source and target nodes may have been cloned in D.
+        step4 = foldr updateEdgesFromA step3 edgesAddFromMatch
+        edgesAddFromMatch = zip edgesFromA ([(length edgesAddFromK)..]::[Int])
+          where
+            edgesFromA = [(edgeId e, u, v) |
+                           e <- orphanTypedEdges m,
+                           u <- nodeIdsFromDomain edgesL',
+                           v <- nodeIdsFromDomain edgesL',
+                           sourceId e == applyNodeIdUnsafe edgesL' u,
+                           targetId e == applyNodeIdUnsafe edgesL' v]
+        updateEdgesFromA ((e,u,v),newId) (k,l') = (updatedK,updatedL')
+          where
+            newEdge = EdgeId newId
+            typeE = edgeTypeInA e
+            updatedK = createEdgeOnCodomain newEdge u v typeE k
+            updatedL' = createEdgeOnDomain newEdge u v typeE e l'
+  
+    hasFinalPullbackComplement (cls, _) _ 
+      | cls `isSubclassOf` monic = True
+      | otherwise = error "Final pullback complement is not implemented for non monomorphic matches"
+  

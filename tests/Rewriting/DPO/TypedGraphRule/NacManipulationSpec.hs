@@ -3,14 +3,17 @@ module Rewriting.DPO.TypedGraphRule.NacManipulationSpec where
 import           Data.Maybe                                   (fromMaybe)
 import           Test.Hspec
 
-import           Abstract.Category.FinitaryCategory
+import           Abstract.Category
+import           Abstract.Category.FindMorphism
 import           Abstract.Rewriting.DPO
 import           Data.TypedGraph.Morphism
 import           Rewriting.DPO.TypedGraphRule.NacManipulation
 import qualified XML.GGXReader                                as XML
 
 fileName = "tests/grammars/NacManipulation.ggx"
-dpoConf = MorphismsConfig Monomorphism MonomorphicNAC
+
+dpoConf :: Category morph => MorphismsConfig morph
+dpoConf = MorphismsConfig monic
 
 spec :: Spec
 spec = context "NAC Manipulation Test" nacmanipTest
@@ -32,8 +35,8 @@ checkNacManipulation gg =
         creation_modeledNACs_rule = getRule "creation_modeledNACs" gg
         creation_concreteNACs_rule = getRule "creation_concreteNACs" gg
 
-        match = head (find (getLHS creation_modeledNACs_rule) (getLHS creation_concreteNACs_rule))
-        creation_modeledNACs = getNACs creation_modeledNACs_rule
+        match = head (find (leftMorphism creation_modeledNACs_rule) (leftMorphism creation_concreteNACs_rule))
+        creation_modeledNACs = nacs creation_modeledNACs_rule
 
         createDisable = createStep DisableCreate match creation_modeledNACs
         createPO = createStep Pushout match creation_modeledNACs
@@ -43,8 +46,8 @@ checkNacManipulation gg =
         deletion_modeledNACs_rule = getRule "deletion_modeledNACs" gg
         deletion_concreteNACs_rule = getRule "deletion_concreteNACs" gg
 
-        deletion_modeledNACs = getNACs deletion_modeledNACs_rule
-        deletion_concreteNACs = getNACs deletion_concreteNACs_rule
+        deletion_modeledNACs = nacs deletion_modeledNACs_rule
+        deletion_concreteNACs = nacs deletion_concreteNACs_rule
 
         deleteDisable = deleteStep DisableDelete deletion_modeledNACs deletion_concreteNACs
         deleteMono = deleteStep Monomorphisms deletion_modeledNACs deletion_concreteNACs

@@ -1,6 +1,6 @@
 module Image.Dot where
 
-import           Abstract.Category.FinitaryCategory
+import           Abstract.Category
 import           Abstract.Rewriting.DPO.StateSpace
 import           Category.TypedGraphRule
 import           Data.Graphs                        hiding (Node (..))
@@ -156,8 +156,8 @@ printGraphRule context ruleName rule =
     []
     (printGraphRuleCore context leftName interfaceName rightName rule)
     (
-     map (mapNode False interfaceName leftName) (typedNodes (mapping (getLHS rule))) ++
-     map (mapNode True interfaceName rightName) (typedNodes (mapping (getRHS rule)))
+     map (mapNode False interfaceName leftName) (typedNodes (mapping (leftMorphism rule))) ++
+     map (mapNode True interfaceName rightName) (typedNodes (mapping (rightMorphism rule)))
     )
     []
 
@@ -176,8 +176,8 @@ printSubGraphRule context ruleName rule =
     []
     (printGraphRuleCore context leftName interfaceName rightName rule)
     (
-     map (mapNode False interfaceName leftName) (typedNodes (mapping (getLHS rule))) ++
-     map (mapNode True interfaceName rightName) (typedNodes (mapping (getRHS rule)))
+     map (mapNode False interfaceName leftName) (typedNodes (mapping (leftMorphism rule))) ++
+     map (mapNode True interfaceName rightName) (typedNodes (mapping (rightMorphism rule)))
     )
     []
 
@@ -191,9 +191,9 @@ printSubGraphRule context ruleName rule =
 
 printGraphRuleCore :: NamingContext -> String -> String -> String -> TypedGraphRule a b -> [Doc]
 printGraphRuleCore context leftName interfaceName rightName rule =
-  [ printSubTypedGraph context leftName (codomain (getLHS rule))
-  , printSubTypedGraph context interfaceName (domain (getLHS rule))
-  , printSubTypedGraph context rightName (codomain (getRHS rule))
+  [ printSubTypedGraph context leftName (leftObject rule)
+  , printSubTypedGraph context interfaceName (interfaceObject rule)
+  , printSubTypedGraph context rightName (rightObject rule)
   ]
 
 getRuleName :: String -> (String, String, String)
@@ -205,17 +205,17 @@ printSndOrderRule context ruleName rule =
   printDigraph
     ruleName
     []
-    [ printSubGraphRule context leftName (codomain (getLHS rule))
-    , printSubGraphRule context interfaceName (domain (getLHS rule))
-    , printSubGraphRule context rightName (codomain (getRHS rule))
+    [ printSubGraphRule context leftName (leftObject rule)
+    , printSubGraphRule context interfaceName (interfaceObject rule)
+    , printSubGraphRule context rightName (rightObject rule)
     ]
     (
-    map (mapNode False (ruleName ++ "K" ++ "L") (ruleName ++ "L" ++ "L")) (typedNodes (mapping (mappingLeft (getLHS rule)))) ++
-    map (mapNode False (ruleName ++ "K" ++ "K") (ruleName ++ "L" ++ "K")) (typedNodes (mapping (mappingInterface (getLHS rule)))) ++
-    map (mapNode False (ruleName ++ "K" ++ "R") (ruleName ++ "L" ++ "R")) (typedNodes (mapping (mappingRight (getLHS rule)))) ++
-    map (mapNode True  (ruleName ++ "K" ++ "L") (ruleName ++ "R" ++ "L")) (typedNodes (mapping (mappingLeft (getRHS rule)))) ++
-    map (mapNode True  (ruleName ++ "K" ++ "K") (ruleName ++ "R" ++ "K")) (typedNodes (mapping (mappingInterface (getRHS rule)))) ++
-    map (mapNode True  (ruleName ++ "K" ++ "R") (ruleName ++ "R" ++ "R")) (typedNodes (mapping (mappingRight (getRHS rule))))
+    map (mapNode False (ruleName ++ "K" ++ "L") (ruleName ++ "L" ++ "L")) (typedNodes (mapping (mappingLeft (leftMorphism rule)))) ++
+    map (mapNode False (ruleName ++ "K" ++ "K") (ruleName ++ "L" ++ "K")) (typedNodes (mapping (mappingInterface (leftMorphism rule)))) ++
+    map (mapNode False (ruleName ++ "K" ++ "R") (ruleName ++ "L" ++ "R")) (typedNodes (mapping (mappingRight (leftMorphism rule)))) ++
+    map (mapNode True  (ruleName ++ "K" ++ "L") (ruleName ++ "R" ++ "L")) (typedNodes (mapping (mappingLeft (rightMorphism rule)))) ++
+    map (mapNode True  (ruleName ++ "K" ++ "K") (ruleName ++ "R" ++ "K")) (typedNodes (mapping (mappingInterface (rightMorphism rule)))) ++
+    map (mapNode True  (ruleName ++ "K" ++ "R") (ruleName ++ "R" ++ "R")) (typedNodes (mapping (mappingRight (rightMorphism rule))))
     )
     []
 

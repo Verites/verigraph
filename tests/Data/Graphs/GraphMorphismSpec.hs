@@ -1,12 +1,7 @@
 module Data.Graphs.GraphMorphismSpec where
 
 import           Test.Hspec
-import           Test.Hspec.QuickCheck
-import           Test.QuickCheck
-import           Test.QuickCheck.Function
 
-import           Abstract.Category.FinitaryCategory
-import           Base.Valid
 import           Data.Graphs
 import           Data.Graphs.Morphism
 

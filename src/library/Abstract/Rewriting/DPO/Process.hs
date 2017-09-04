@@ -11,8 +11,9 @@ module Abstract.Rewriting.DPO.Process
   , eliminateSelfConflictsAndDependencies
   ) where
 
-import           Abstract.Category.Cocomplete
-import           Abstract.Category.FinitaryCategory
+import           Abstract.Category
+import           Abstract.Category.Limit
+import           Abstract.Category.FindMorphism
 import           Abstract.Rewriting.DPO
 import           Abstract.Rewriting.DPO.Derivation
 import           Data.List.NonEmpty                 (NonEmpty, fromList)
@@ -48,7 +49,7 @@ filterInducedByNacs conflictsAndDependencies =
 eliminateSelfConflictsAndDependencies :: [Interaction] -> [Interaction]
 eliminateSelfConflictsAndDependencies = filter (\i -> firstRule i /= secondRule i)
 
-class (DPO morph) => GenerateProcess morph where
+class (DPO morph, Cocomplete morph) => GenerateProcess morph where
 
   -- | Given a pair of morhisms with common codomain, it returns a new pair with morphism also with a
   -- a new codomain that does not contain the elements that were orphans in both original morphisms
@@ -116,7 +117,7 @@ class (DPO morph) => GenerateProcess morph where
       forgetRuleName (_,b,c) = (b,c)
     in zip ruleNames newRules
 
-objectFlowCoproduct :: (DPO morph) => [ObjectFlow morph] -> [morph]
+objectFlowCoproduct :: (DPO morph, Cocomplete morph) => [ObjectFlow morph] -> [morph]
 objectFlowCoproduct [] = []
 objectFlowCoproduct flows =
   let
@@ -124,10 +125,10 @@ objectFlowCoproduct flows =
   in calculateNCoproduct intersectionObjects
 
 getLefts :: [Production morph] -> [morph]
-getLefts = map getLHS
+getLefts = map leftMorphism
 
 getRights :: [Production morph] -> [morph]
-getRights = map getRHS
+getRights = map rightMorphism
 
 split :: [morph] -> [(morph,morph,morph)]
 split []         = []
@@ -157,7 +158,7 @@ snd' (_,b,_) = b
 thd' :: (a,b,c) -> c
 thd' (_,_,c) = c
 
-invertedCompose :: FinitaryCategory morph => morph -> morph -> morph
+invertedCompose :: Category morph => morph -> morph -> morph
 invertedCompose a b = b <&> a
 
 generateMorphismFamilies :: (DPO morph) => [Derivation morph] -> [morph] -> [morph] -> (morph,morph,morph)
@@ -172,24 +173,24 @@ generateMorphismFamilies ds fs gs=
       h3 = h $ zipWith invertedCompose rs g3s
   in (h1,h2,h3)
 
-ksCoproduct :: (DPO morph) => [Production morph] -> [morph]
+ksCoproduct :: (DPO morph, Cocomplete morph) => [Production morph] -> [morph]
 ksCoproduct = calculateNCoproduct . fromList . getKs
 
-allCoproduct :: (DPO morph) => [Production morph] -> [morph]
+allCoproduct :: (DPO morph, Cocomplete morph) => [Production morph] -> [morph]
 allCoproduct = calculateNCoproduct . fromList . getAllObjects
 
 getKs :: (DPO morph) => [Production morph] -> [Obj morph]
-getKs = map (domain . getLHS)
+getKs = map interfaceObject
 
 getAllObjects :: (DPO morph) => [Production morph] -> [Obj morph]
-getAllObjects = foldr (\x -> (++) [(codomain . getLHS) x, (domain . getLHS) x, (codomain . getRHS) x]) []
+getAllObjects = foldr (\x -> (++) [leftObject x, interfaceObject x, rightObject x]) []
 
 -- | Given a list of Derivation, it returns all the objects in the bottom part of the
 -- diagrams that are source of at least one Morphism
 getSources :: (DPO morph) => [Derivation morph] -> NonEmpty (Obj morph)
 getSources ds = fromList (getDObjects ds)
 
-sourcesCoproduct :: (DPO morph) => [Derivation morph] -> [morph]
+sourcesCoproduct :: (DPO morph, Cocomplete morph) => [Derivation morph] -> [morph]
 sourcesCoproduct = calculateNCoproduct . getSources
 
 -- | Given a list of Derivation, it returns all the objects in the bottom part of the
@@ -197,7 +198,7 @@ sourcesCoproduct = calculateNCoproduct . getSources
 getAll :: (DPO morph) => [Derivation morph] -> NonEmpty (Obj morph)
 getAll ds = fromList $ getAllBottomObjects ds
 
-allObjectsCoproduct :: (DPO morph) => [Derivation morph] -> [morph]
+allObjectsCoproduct :: (DPO morph, Cocomplete morph) => [Derivation morph] -> [morph]
 allObjectsCoproduct = calculateNCoproduct . getAll
 
 -- used to group the morphisms into families

@@ -1,20 +1,18 @@
 module GlobalOptions
-  ( GlobalOptions
+  ( GlobalOptions(..)
   , globalOpts
   , morphismsConf
-  , verbose
-  , inputFile
-  , useConstraints
   ) where
 
-import           Abstract.Category.FinitaryCategory (MorphismType(..))
-import           Abstract.Rewriting.DPO (MorphismsConfig (..),NacSatisfaction (..))
 import           Data.Monoid                   ((<>))
 import           Options.Applicative
 
+import           Abstract.Category
+import           Abstract.Rewriting.DPO (MorphismsConfig (..))
+import           Category.TypedGraph
+
 data GlobalOptions = GOpts
   { arbitraryMatches         :: MatchRestriction
-  , injectiveNacSatisfaction :: NacSatisfaction
   , verbose                  :: Bool
   , inputFile                :: String
   , useConstraints           :: Bool
@@ -24,15 +22,12 @@ data GlobalOptions = GOpts
 data MatchRestriction = MonoMatches | AnyMatches deriving (Eq, Show)
 
 -- | Converts a match restriction to the corresponding MorphismType
-matchRestrictionToMorphismType :: MatchRestriction -> MorphismType
-matchRestrictionToMorphismType MonoMatches = Monomorphism
-matchRestrictionToMorphismType AnyMatches  = GenericMorphism
+matchRestrictionToMorphismType :: MatchRestriction -> MorphismClass (TypedGraphMorphism a b)
+matchRestrictionToMorphismType MonoMatches = monic
+matchRestrictionToMorphismType AnyMatches  = anyMorphism
 
-mt :: GlobalOptions -> MorphismType
-mt = matchRestrictionToMorphismType . arbitraryMatches
-
-morphismsConf :: GlobalOptions -> MorphismsConfig
-morphismsConf opts = MorphismsConfig (mt opts) (injectiveNacSatisfaction opts)
+morphismsConf :: GlobalOptions -> MorphismsConfig (TypedGraphMorphism a b)
+morphismsConf = MorphismsConfig . matchRestrictionToMorphismType . arbitraryMatches
 
 
 globalOpts :: Parser GlobalOptions
@@ -40,10 +35,6 @@ globalOpts = GOpts
   <$> flag MonoMatches AnyMatches
     ( long "all-matches"
     <> help "Set the matches for arbitrary morphisms")
-  <*> flag MonomorphicNAC PartiallyMonomorphicNAC
-    ( long "partial-injective-nacs"
-    <> help ("Restrict the analysis of NAC satisfaction to partially injective " ++
-            "morphisms between the NAC graph and the instance graph"))
   <*> flag False True
     ( long "verbose" <> short 'v')
   <*> strArgument

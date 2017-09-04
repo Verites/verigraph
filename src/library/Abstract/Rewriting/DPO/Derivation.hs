@@ -9,7 +9,7 @@ module Abstract.Rewriting.DPO.Derivation
 
 where
 
-import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category
 import           Abstract.Rewriting.DPO
 
 data Derivation morph = Derivation
@@ -27,7 +27,7 @@ generateDerivationUnsafe morph p = Derivation p morph n k f g
     (k,n,f,g) = calculateDPO morph p
 
 -- | Given a match @m@ and a production @p@, it returns @Just d@, where @d@ is the corresponding Derivation if @m@ satisfies the rewriting conditions, or @Nothing@.
-generateDerivation :: (DPO morph) => MorphismsConfig -> morph -> Production morph -> Maybe (Derivation morph)
+generateDerivation :: (DPO morph) => MorphismsConfig morph -> morph -> Production morph -> Maybe (Derivation morph)
 generateDerivation conf morph p =
   if satisfiesRewritingConditions conf p morph then
      Just (generateDerivationUnsafe morph p)

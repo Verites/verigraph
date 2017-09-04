@@ -18,8 +18,9 @@ module Rewriting.DPO.TypedGraph.GraphProcess
 
 where
 
-import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.FinitaryCategory                       as FC
+import           Abstract.Category
+import           Abstract.Category.Adhesive
+import           Abstract.Category.FindMorphism
 import           Abstract.Rewriting.DPO
 import           Abstract.Rewriting.DPO.Derivation
 import           Abstract.Rewriting.DPO.DiagramAlgorithms
@@ -143,7 +144,7 @@ findConcreteTrigger ogg interaction@(Interaction a1 a2 t nacIdx) =
     p1Candidate = fromJust $ lookup a1 originalRules
     p1 = if t == DeleteForbid then p1Candidate else invert p1Candidate
     p2 = fromJust $ lookup a2 originalRules
-    triggeredNAC = getNACs (fst p2) !! fromJust nacIdx
+    triggeredNAC = nacs (fst p2) !! fromJust nacIdx
 
     (r1',m2) = getOverlapping p1 p2
     d1 = getUnderlyingDerivation p1 r1'
@@ -209,7 +210,7 @@ removeElements coreGraph elementsToRemove =
     (n,e) = S.partition isNode elementsToRemove
     nodes = S.map (\(Node x) -> x) n
     edges = S.map (\(Edge x) -> x) e
-  in S.foldr GM.removeNodeFromDomainForced (S.foldr GM.removeEdgeFromDomain (FC.identity coreGraph) edges) nodes
+  in S.foldr GM.removeNodeFromDomainForced (S.foldr GM.removeEdgeFromDomain (identity coreGraph) edges) nodes
 
 -- use with the retyped productions
 creationAndDeletionRelation :: NamedTypedGraphRule a b -> Relation
@@ -273,9 +274,9 @@ type RuleWithMatches a b = (TypedGraphRule a b, (TypedGraphMorphism a b, TypedGr
 getUnderlyingDerivation :: RuleWithMatches a b -> TypedGraphMorphism a b -> Derivation (TypedGraphMorphism a b)
 getUnderlyingDerivation (p1,(m1,_,_)) comatch =
   let
-    (_,dToH1Candidate) = calculatePushoutComplement comatch (getRHS p1)
+    (_,dToH1Candidate) = calculatePushoutComplementAlongM (rightMorphism p1) comatch
     dToH1 = reflectIdsFromCodomain dToH1Candidate
-    gluing = invert dToH1 <&> (comatch <&> getRHS p1)
+    gluing = invert dToH1 <&> (comatch <&> rightMorphism p1)
     core = codomain m1
     dToG1Candidate = findCoreMorphism (codomain gluing) core
     (match,dToG1) = restrictMorphisms (m1,dToG1Candidate)
@@ -311,8 +312,8 @@ isInGraph initial x = case x of
   Edge e -> isJust $ GM.applyEdgeId initial e
   _      -> error $ "case " ++ show x ++ "shouldn't occur"
 
-conf :: MorphismsConfig
-conf = MorphismsConfig Monomorphism MonomorphicNAC
+conf :: MorphismsConfig (TypedGraphMorphism a b)
+conf = MorphismsConfig monic
 
 findH21 :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 findH21 m2 d1 =
@@ -340,8 +341,8 @@ retypeProduction :: (Derivation (TypedGraphMorphism a b), (TypedGraphMorphism a 
 retypeProduction (derivation, (g1,_,g3)) = newProduction
   where
     p = production derivation
-    oldL = getLHS p
-    oldR = getRHS p
+    oldL = leftMorphism p
+    oldR = rightMorphism p
     mappingL = mapping oldL
     mappingR = mapping oldR
     m = match derivation
@@ -351,17 +352,17 @@ retypeProduction (derivation, (g1,_,g3)) = newProduction
     newKType = newLType <&> mappingL -- change it to use gluing and g2?
     newL = buildTypedGraphMorphism newKType newLType mappingL
     newR = buildTypedGraphMorphism newKType newRType mappingR
-    newProduction = buildProduction newL newR []
+    newProduction = Production newL newR []
 
 retype :: (TypedGraphRule a b, (TypedGraphMorphism a b,TypedGraphMorphism a b,TypedGraphMorphism a b)) ->  TypedGraphRule a b
 retype (p, (g1,g2,g3)) = newProduction
   where
-    oldL = getLHS p
-    oldR = getRHS p
+    oldL = leftMorphism p
+    oldR = rightMorphism p
     newKType = mapping g2
     newL = reflectIdsFromTypeGraph $ buildTypedGraphMorphism newKType (mapping g1) (mapping oldL)
     newR = reflectIdsFromTypeGraph $ buildTypedGraphMorphism newKType (mapping g3) (mapping oldR)
-    newProduction = buildProduction newL newR []
+    newProduction = Production newL newR []
 
 restrictMorphisms' :: (TypedGraphMorphism a b, TypedGraphMorphism a b) -> (TypedGraphMorphism a b, TypedGraphMorphism a b)
 restrictMorphisms' (a,b) = (removeOrphans a, removeOrphans b)

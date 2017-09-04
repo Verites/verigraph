@@ -6,7 +6,7 @@ module ParallelIndependence
 
 import           Abstract.Rewriting.DPO
 import           Analysis.ParallelIndependent
-import           Category.TypedGraphRule.JointlyEpimorphisms ()
+import           Rewriting.DPO.TypedGraphRule
 import           Control.Monad                               (unless, when)
 import           Data.Matrix                                 hiding ((<|>))
 import           Data.Monoid                                 ((<>))
@@ -70,9 +70,10 @@ execute globalOpts opts = do
         analysisC11 = pairwiseCompareUpperReflected (isIndependent algorithm Cond1 dpoConf) rules1
         analysisPB1 = pairwiseCompareUpperReflected (isIndependent algorithm Cond2 dpoConf) rules1
         analysisDU1 = pairwiseCompareUpperReflected (isIndependent algorithm Cond3 dpoConf) rules1
-        analysisC12 = pairwiseCompareUpperReflected (isIndependent algorithm Cond1 dpoConf) rules2
-        analysisPB2 = pairwiseCompareUpperReflected (isIndependent algorithm Cond2 dpoConf) rules2
-        analysisDU2 = pairwiseCompareUpperReflected (isIndependent algorithm Cond3 dpoConf) rules2
+        dpoConf' = toSndOrderMorphismsConfig dpoConf
+        analysisC12 = pairwiseCompareUpperReflected (isIndependent algorithm Cond1 dpoConf') rules2
+        analysisPB2 = pairwiseCompareUpperReflected (isIndependent algorithm Cond2 dpoConf') rules2
+        analysisDU2 = pairwiseCompareUpperReflected (isIndependent algorithm Cond3 dpoConf') rules2
 
         (analysisDU,analysisPB,analysisC1) =
           if sndOrder then

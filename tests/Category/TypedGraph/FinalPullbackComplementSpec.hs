@@ -5,10 +5,10 @@ module Category.TypedGraph.FinalPullbackComplementSpec where
 
 import           Test.Hspec
 
-import           Abstract.Category.FinalPullbackComplement
-import           Abstract.Category.FinitaryCategory
+import           Abstract.Category
+import           Abstract.Category.Adhesive
 import           Abstract.Rewriting.DPO
-import           Category.TypedGraph.FinalPullbackComplement
+import           Category.TypedGraph              ()
 import qualified Data.TypedGraph as TG
 import           Data.TypedGraph.Morphism
 import qualified Data.Graphs as G
@@ -42,28 +42,28 @@ fpbcTest =
 -- Gets rules and set them to appropriated morphisms tests
 prepareTest1 r1 = (m,l,k,l')
   where
-    m = getLHS r1
-    l = invert (getRHS r1)
+    m = leftMorphism r1
+    l = invert (rightMorphism r1)
     (k,l') = calculateFinalPullbackComplement m l
 
 prepareTest2 r2 = (m,l,k,l')
   where
-    m = getLHS r2
+    m = leftMorphism r2
     l = foldr
           removeNodeFromDomain
-          (invert (getRHS r2))
-          (nodeIdsFromCodomain (getRHS r2))
+          (invert (rightMorphism r2))
+          (nodeIdsFromCodomain (rightMorphism r2))
     (k,l') = calculateFinalPullbackComplement m l
 
 prepareTest3 r3 = (m,l,k,l')
   where
-    m = getLHS r3
-    node = head (nodeIdsFromCodomain (getRHS r3))
+    m = leftMorphism r3
+    node = head (nodeIdsFromCodomain (rightMorphism r3))
     l = createNodeOnDomain
           (node + G.NodeId 1)
-          (G.applyNodeIdUnsafe (codomain (getRHS r3)) node)
-          (head (nodeIdsFromDomain (getRHS r3)))
-          (invert (getRHS r3))
+          (G.applyNodeIdUnsafe (rightObject r3) node)
+          (head (nodeIdsFromDomain (rightMorphism r3)))
+          (invert (rightMorphism r3))
     (k,l') = calculateFinalPullbackComplement m l
 
 -- Generic tests for any pullback square
@@ -74,8 +74,8 @@ verifyAnyPullback (m,l,k,l') =
     codomain k `shouldBe` domain l'
     codomain m `shouldBe` codomain l'
     m <&> l `shouldBe` l' <&> k
-    isMonomorphism l `shouldBe` isMonomorphism l'
-    isMonomorphism m `shouldBe` isMonomorphism k
+    isMonic l `shouldBe` isMonic l'
+    isMonic m `shouldBe` isMonic k
 
 -- Specific tests
 

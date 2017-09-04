@@ -2,7 +2,7 @@ module Analysis.ParallelIndependentSpec where
 
 import           Data.Matrix                  hiding ((<|>))
 import           Test.Hspec
-import           Abstract.Category.FinitaryCategory (MorphismType(..))
+import           Abstract.Category
 import           Abstract.Rewriting.DPO
 import           Analysis.ParallelIndependent
 import qualified XML.GGXReader                as XML
@@ -17,7 +17,7 @@ filenames = ["tests/grammars/nacs2rule.ggx"
             ,"tests/grammars/secondOrderMatchTest.ggx"
             ,"tests/grammars/elevator.ggx"
             ,"tests/grammars/mutex.ggx"]
-dpoConf = MorphismsConfig GenericMorphism MonomorphicNAC
+dpoConf = MorphismsConfig anyMorphism
 
 spec :: Spec
 spec = context "Parallel Independence Test" parIndepTest

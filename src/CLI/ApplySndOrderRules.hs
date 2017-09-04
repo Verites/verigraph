@@ -7,7 +7,7 @@ module ApplySndOrderRules
 import           Data.Monoid                   ((<>))
 import           Options.Applicative
 
-import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category
 import           Abstract.Rewriting.DPO
 import           Control.Monad                 (when)
 import           Data.Graphs                   (Graph)
@@ -15,6 +15,7 @@ import           Data.TypedGraph.Morphism
 import           GlobalOptions
 import           Image.Dot
 import qualified Rewriting.DPO.TypedGraph      as GR
+import           Rewriting.DPO.TypedGraphRule  (toSndOrderMorphismsConfig)
 import qualified Rewriting.DPO.TypedGraphRule.Scheduling  as SO
 import qualified XML.GGXReader                 as XML
 import qualified XML.GGXWriter                 as GW
@@ -98,8 +99,7 @@ execute globalOpts opts = do
     putStrLn "Reading the second-order graph grammar..."
     putStrLn ""
 
-    putStrLn $ "injective satisfiability of nacs: " ++ show (nacSatisfaction dpoConf)
-    putStrLn $ "only injective matches morphisms: " ++ show (matchRestriction dpoConf)
+    putStrLn $ "only injective matches morphisms: " ++ show (arbitraryMatches globalOpts)
     putStrLn ""
 
     mapM_ putStrLn (XML.printMinimalSafetyNacsLog printNewNacs)
@@ -114,11 +114,13 @@ execute globalOpts opts = do
 
     putStrLn ("Utilizing the scheduling: " ++ show schedType)
 
-    let newRulesLog AsLongAsPossible = SO.asLongAsPossible dpoConf sndOrderRules fstRulesPlusEmpty limit
-        newRulesLog AllMatchesOneStep = SO.oneStep dpoConf sndOrderRules fstRulesPlusEmpty
-        newRulesLog Specific = SO.specific dpoConf sndOrderRules fstRulesPlusEmpty src tgt
-        (log, newRules_) = newRulesLog schedType
-        newRules = (if schedType `elem` [AllMatchesOneStep,Specific] then productions fstOrderGG else []) ++ newRules_
+    let 
+      dpoConf' = toSndOrderMorphismsConfig dpoConf
+      newRulesLog AsLongAsPossible = SO.asLongAsPossible dpoConf' sndOrderRules fstRulesPlusEmpty limit
+      newRulesLog AllMatchesOneStep = SO.oneStep dpoConf' sndOrderRules fstRulesPlusEmpty
+      newRulesLog Specific = SO.specific dpoConf' sndOrderRules fstRulesPlusEmpty src tgt
+      (log, newRules_) = newRulesLog schedType
+      newRules = (if schedType `elem` [AllMatchesOneStep,Specific] then productions fstOrderGG else []) ++ newRules_
 
     putStrLn log
     putStrLn ""

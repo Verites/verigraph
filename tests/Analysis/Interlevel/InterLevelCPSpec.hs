@@ -3,18 +3,19 @@ module Analysis.Interlevel.InterLevelCPSpec where
 import           Data.Maybe                         (fromMaybe)
 import           Test.Hspec
 
-import           Abstract.Category.FinitaryCategory
+import           Abstract.Category
 import           Abstract.Rewriting.DPO
 import           Analysis.Interlevel.InterLevelCP
-import           Category.TypedGraphRule
+import           Category.TypedGraphRule            ()
 import           Data.TypedGraph
-import           Data.TypedGraph.Morphism
 import           Util.List
 import qualified XML.GGXReader                      as XML
 
 fileName = "tests/grammars/secondOrderMatchTest.ggx"
-dpoConf1 = MorphismsConfig Monomorphism MonomorphicNAC
-dpoConf2 = MorphismsConfig GenericMorphism MonomorphicNAC
+
+dpoConf1, dpoConf2 :: Category morph => MorphismsConfig morph
+dpoConf1 = MorphismsConfig monic
+dpoConf2 = MorphismsConfig anyMorphism
 
 spec :: Spec
 spec = context "Inter-level Critical Pairs Test" dangextTest
@@ -37,10 +38,9 @@ checkDanglingExtension gg1 =
   do
     let ruleC = getRule "ruleC" gg1
 
-        left = getLHS ruleC
-        dangGraph = codomain (danglingExtension left)
+        dangGraph = codomain (danglingExtension (leftMorphism ruleC))
 
-        [(_,typeOfMsg),(_,typeOfData)] = typedNodes (codomain left)
+        [(_,typeOfMsg),(_,typeOfData)] = typedNodes (leftObject ruleC)
 
         msgsInDang = countElement typeOfMsg (map snd nods)
         dataInDang = countElement typeOfData (map snd nods)

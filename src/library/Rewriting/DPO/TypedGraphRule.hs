@@ -1,21 +1,19 @@
 {-# LANGUAGE TypeFamilies #-}
 module Rewriting.DPO.TypedGraphRule where
+-- TODO: write explicit list of exports
 
 import           Data.Maybe                            (fromMaybe, mapMaybe)
 
-import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.JointlyEpimorphisms
-import           Abstract.Category.FinitaryCategory
+import           Abstract.Category
+import           Abstract.Category.Adhesive
+import           Abstract.Category.Finitary
 import           Abstract.Rewriting.DPO
 import           Base.Valid
 import           Category.TypedGraphRule
-import qualified Category.TypedGraphRule.AdhesiveHLR   as SO ()
-import           Category.TypedGraphRule.FindMorphism  ()
-import           Category.TypedGraphRule.JointlyEpimorphisms
+import           Category.TypedGraphRule.Adhesive      (createSideRule)
 import           Data.Graphs                           as G
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
-import           Rewriting.DPO.TypedGraph
 
 -- | A second-order rule:
 --
@@ -54,11 +52,18 @@ import           Rewriting.DPO.TypedGraph
 -- right = interface rule, codomain rule, rightL, rightK, rightR
 type SndOrderRule a b = Production (RuleMorphism a b)
 
+toFstOrderMorphismsConfig :: MorphismsConfig (RuleMorphism a b) -> MorphismsConfig (TypedGraphMorphism a b)
+toFstOrderMorphismsConfig (MorphismsConfig cls) = MorphismsConfig (toFstOrderMorphismClass cls)
+
+toSndOrderMorphismsConfig :: MorphismsConfig (TypedGraphMorphism a b) -> MorphismsConfig (RuleMorphism a b)
+toSndOrderMorphismsConfig (MorphismsConfig cls) = MorphismsConfig (toSndOrderMorphismClass cls)
+
+
 instance DPO (RuleMorphism a b) where
   invertProduction conf r = addMinimalSafetyNacs conf newRule
     where
-      newRule = buildProduction (getRHS r) (getLHS r)
-                 (concatMap (shiftNacOverProduction conf r) (getNACs r))
+      newRule = Production (rightMorphism r) (leftMorphism r)
+                 (concatMap (shiftNacOverProduction conf r) (nacs r))
 
   -- | Needs the satisfiesNACs extra verification because
   -- not every satisfiesGluingConditions nac can be shifted
@@ -68,45 +73,46 @@ instance DPO (RuleMorphism a b) where
       satisfiesNACs conf ruleWithOnlyMinimalSafetyNacs n]
     where
       ruleWithOnlyMinimalSafetyNacs =
-        buildProduction (getLHS rule) (getRHS rule) (minimalSafetyNacs conf rule)
+        rule { nacs = minimalSafetyNacs conf rule }
 
-  createJointlyEpimorphicPairsFromNAC conf ruleR nac = ret
+  createJointlyEpimorphicPairsFromNAC conf' ruleR nac = ret
     where
+      conf = toFstOrderMorphismsConfig conf'
       createJointly x = createJointlyEpimorphicPairsFromNAC conf (codomain x)
 
       nL = mappingLeft nac
       nK = mappingInterface nac
       nR = mappingRight nac
-      leftR = getLHS ruleR
-      rightR = getRHS ruleR
-      rK = domain (getLHS ruleR)
+      leftR = leftMorphism ruleR
+      rightR = rightMorphism ruleR
+      rK = interfaceObject ruleR
       codNac = codomain nac
 
       interfaceEpiPairs = createJointlyEpimorphicPairsFromNAC conf rK nK
 
       lefts = concatMap
                 (\(kR,kN) ->
-                  let ls = createSideRule createJointly kR leftR leftR kN (getLHS codNac) nL
+                  let ls = createSideRule createJointly kR leftR leftR kN (leftMorphism codNac) nL
                   in map (\(ll1,ll2,m) -> (kR, kN, ll1, ll2, m)) ls)
                 interfaceEpiPairs
 
       rights = concatMap
                 (\(kR,kN,ll1,ll2,l) ->
-                  let rs = createSideRule createJointly kR rightR rightR kN (getRHS codNac) nR
+                  let rs = createSideRule createJointly kR rightR rightR kN (rightMorphism codNac) nR
                   in map (\(rr1,rr2,r) -> (kR,kN,ll1,ll2,l,rr1,rr2,r)) rs)
                 lefts
 
-      transposeNACs l = map (snd . calculatePushout l)
+      transposeNACs l = map (snd . calculatePushoutAlongM l)
 
       ret = map (\(k1,k2,ll1,ll2,l,r1,r2,r) ->
-                   let rule = buildProduction l r $ transposeNACs ll1 (getNACs ruleR) ++ transposeNACs ll2 (getNACs codNac)
+                   let rule = Production l r $ transposeNACs ll1 (nacs ruleR) ++ transposeNACs ll2 (nacs codNac)
                    in (ruleMorphism ruleR rule ll1 k1 r1,
                        ruleMorphism (codomain nac) rule ll2 k2 r2)) rights
 
 ---- Minimal Safety NACs
 
 -- | Configuration for the minimalSafetyNACs algorithms, it defines from
--- which side of the getLHS (second-order production) is being analyzed
+-- which side of the leftMorphism (second-order production) is being analyzed
 data Side = LeftSide | RightSide
 
 -- | Either: Node_ is only a NodeId | Edge_ is an Edge with: EdgeId plus source and target NodeIds
@@ -114,23 +120,19 @@ data NodeOrEdge b = Node_ NodeId | Edge_ (Edge b) deriving (Show)
 
 -- | Adds the minimal safety nacs needed to this production always produce a second-order rule.
 -- If the nacs that going to be added not satisfies the others nacs, then it do not need to be added.
-addMinimalSafetyNacs :: MorphismsConfig -> SndOrderRule a b -> SndOrderRule a b
+addMinimalSafetyNacs :: MorphismsConfig (RuleMorphism a b) -> SndOrderRule a b -> SndOrderRule a b
 addMinimalSafetyNacs conf sndRule =
-  buildProduction
-    (getLHS sndRule)
-    (getRHS sndRule)
-    (getNACs sndRule ++
-     filter (satisfiesNACs conf sndRule) (minimalSafetyNacs conf sndRule))
+  sndRule { nacs = nacs sndRule ++ filter (satisfiesNACs conf sndRule) (minimalSafetyNacs conf sndRule) }
 
 -- | Generates the minimal safety NACs of a 2-rule
-minimalSafetyNacs :: MorphismsConfig -> SndOrderRule a b -> [RuleMorphism a b]
+minimalSafetyNacs :: MorphismsConfig (RuleMorphism a b) -> SndOrderRule a b -> [RuleMorphism a b]
 minimalSafetyNacs conf sndRule =
   newNacsProb LeftSide sndRule ++
   newNacsProb RightSide sndRule ++
-  ( if matchRestriction conf == GenericMorphism then
-      newNacsPair LeftSide sndRule ++ newNacsPair RightSide sndRule
-    else
+  ( if matchRestriction conf `isSubclassOf` monic then
       []
+    else
+      newNacsPair LeftSide sndRule ++ newNacsPair RightSide sndRule
   )
 
 -- | Generate NACs that forbid deleting elements in L or R but not in K,
@@ -141,13 +143,13 @@ newNacsProb side sndRule = nacNodes ++ nacEdges
   where
     (mapSide, getSide) =
       case side of
-        LeftSide  -> (mappingLeft, getLHS)
-        RightSide -> (mappingRight, getRHS)
+        LeftSide  -> (mappingLeft, leftMorphism)
+        RightSide -> (mappingRight, rightMorphism)
 
     (ruleL, ruleK, ruleR) = getRulesFrom2Rule sndRule
 
-    f = mapSide (getLHS sndRule)
-    g = mapSide (getRHS sndRule)
+    f = mapSide (leftMorphism sndRule)
+    g = mapSide (rightMorphism sndRule)
 
     sa = getSide ruleL
     sb = getSide ruleK
@@ -172,8 +174,8 @@ newNacsProb side sndRule = nacNodes ++ nacEdges
 createNacProb :: Side -> TypedGraphRule a b -> NodeOrEdge (Maybe b) -> RuleMorphism a b
 createNacProb sideChoose ruleL x = ruleMorphism ruleL nacRule mapL mapK mapR
   where
-    l = getLHS ruleL
-    r = getRHS ruleL
+    l = leftMorphism ruleL
+    r = rightMorphism ruleL
 
     graphL = codomain l
     graphK = domain l
@@ -213,7 +215,7 @@ createNacProb sideChoose ruleL x = ruleMorphism ruleL nacRule mapL mapK mapR
                        (sourceId e) (typeSrc e) (srcInK e) (srcInR e)
                        (targetId e) (typeTgt e) (tgtInK e) (tgtInR e)
 
-    nacRule = buildProduction updateLeft updateRight []
+    nacRule = Production updateLeft updateRight []
     mapL = idMap graphL (codomain updateLeft)
     mapK = idMap graphK (domain updateLeft)
     mapR = idMap graphR (codomain updateRight)
@@ -258,11 +260,11 @@ newNacsPair sideChoose sndRule =
 
     (mapping, getSide) =
       case sideChoose of
-        LeftSide  -> (mappingLeft, getLHS)
-        RightSide -> (mappingRight, getRHS)
+        LeftSide  -> (mappingLeft, leftMorphism)
+        RightSide -> (mappingRight, rightMorphism)
 
-    fl = mapping (getLHS sndRule)
-    gl = mapping (getRHS sndRule)
+    fl = mapping (leftMorphism sndRule)
+    gl = mapping (rightMorphism sndRule)
 
     lb = getSide ruleK
     lc = getSide ruleR
@@ -302,18 +304,18 @@ newNacsPair sideChoose sndRule =
         nLeft = ruleMorphism ruleL ruleNacLeft e mapK mapR
         nRight = ruleMorphism ruleL ruleNacRight mapL mapK e
 
-        ruleNacLeft = buildProduction (e <&> getLHS ruleL) (getRHS ruleL) []
-        ruleNacRight = buildProduction (getLHS ruleL) (e <&> getRHS ruleL) []
+        ruleNacLeft = Production (e <&> leftMorphism ruleL) (rightMorphism ruleL) []
+        ruleNacRight = Production (leftMorphism ruleL) (e <&> rightMorphism ruleL) []
 
-        mapL = idMap (codomain (getLHS ruleL)) (codomain (getLHS ruleL))
-        mapK = idMap (domain (getLHS ruleL)) (domain (getLHS ruleL))
-        mapR = idMap (codomain (getRHS ruleL)) (codomain (getRHS ruleL))
+        mapL = idMap (leftObject ruleL) (leftObject ruleL)
+        mapK = idMap (interfaceObject ruleL) (interfaceObject ruleL)
+        mapR = idMap (rightObject ruleL) (rightObject ruleL)
 
 getRulesFrom2Rule :: SndOrderRule a b -> (TypedGraphRule a b, TypedGraphRule a b, Production (TypedGraphMorphism a b))
-getRulesFrom2Rule sndRule = (codomain (getLHS sndRule), domain (getLHS sndRule), codomain (getRHS sndRule))
+getRulesFrom2Rule sndRule = (leftObject sndRule, interfaceObject sndRule, rightObject sndRule)
 
-calculateAllPartitions :: JointlyEpimorphisms morph => Obj morph -> [morph]
-calculateAllPartitions = createAllQuotients
+calculateAllPartitions :: ECofinitary morph => Obj morph -> [morph]
+calculateAllPartitions = findAllQuotientsOf
 
 isOrphanNode :: TypedGraphMorphism a b -> NodeId -> Bool
 isOrphanNode m n = n `elem` orphanTypedNodeIds m

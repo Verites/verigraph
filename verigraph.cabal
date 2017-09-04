@@ -53,10 +53,7 @@ library
                        Base.Valid
                        Category.Graph
                        Category.TypedGraph
-                       Category.TypedGraph.FinalPullbackComplement
-                       Category.TypedGraph.FindMorphism
                        Category.TypedGraphRule
-                       Category.TypedGraphRule.JointlyEpimorphisms
                        Data.Graphs
                        Data.Graphs.Morphism
                        Data.Graphs.QuickCheck
@@ -75,19 +72,24 @@ library
                        Rewriting.DPO.TypedGraph
                        Util.Closures
                        Util.List
+                       Util.Map
                        Util.Monad
                        XML.GGXReader
                        XML.GGXWriter
                        XML.GPRReader.GXLReader
   other-modules:
                        Abstract.Rewriting.DPO.DiagramAlgorithms
-                       Category.TypedGraph.AdhesiveHLR
-                       Category.TypedGraph.Cocomplete
+                       Category.TypedGraph.Adhesive
+                       Category.TypedGraph.Category
                        Category.TypedGraph.CommutingSquares
-                       Category.TypedGraph.JointlyEpimorphisms
-                       Category.TypedGraphRule.AdhesiveHLR
-                       Category.TypedGraphRule.Cocomplete
+                       Category.TypedGraph.FindMorphism
+                       Category.TypedGraph.Finitary
+                       Category.TypedGraph.Limit
+                       Category.TypedGraphRule.Adhesive
+                       Category.TypedGraphRule.Category
                        Category.TypedGraphRule.FindMorphism
+                       Category.TypedGraphRule.Finitary
+                       Category.TypedGraphRule.Limit
                        Data.TypedGraph.Partition
                        Data.TypedGraph.Partition.FromVerigraph
                        Data.TypedGraph.Partition.Generator

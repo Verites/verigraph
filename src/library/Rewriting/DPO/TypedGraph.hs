@@ -3,10 +3,11 @@
 module Rewriting.DPO.TypedGraph
 (-- * Types
   TypedGraphRule
+, Production(..)
 , NamedTypedGraphRule
-, getLHS
-, getRHS
-, getNACs
+, leftObject
+, rightObject
+, interfaceObject
 
 -- * Basic Functions
 , invertProductionWithoutNacs
@@ -21,11 +22,11 @@ module Rewriting.DPO.TypedGraph
 , isDeleted
 ) where
 
-import           Abstract.Category.FinitaryCategory as FC
+import           Abstract.Category
 import           Abstract.Rewriting.DPO             as DPO
-import           Category.TypedGraph                ()
-import           Category.TypedGraph.AdhesiveHLR
-import           Category.TypedGraph.FindMorphism   ()
+import           Category.TypedGraph.Category       (toMorphismType, MorphismType(..))
+import           Category.TypedGraph                
+import           Category.TypedGraph.Adhesive       (isDeleted)
 import           Data.Graphs                        as G
 import qualified Data.Graphs.Morphism               as GM
 import           Data.TypedGraph                    as GM
@@ -39,25 +40,25 @@ type NamedTypedGraphRule a b = NamedProduction (TypedGraphMorphism a b)
 
 -- | Return the nodes deleted by a rule
 deletedNodes :: TypedGraphRule a b -> [G.NodeId]
-deletedNodes r = TGM.orphanTypedNodeIds (getLHS r)
+deletedNodes r = TGM.orphanTypedNodeIds (leftMorphism r)
 
 -- | Return the nodes created by a rule
 createdNodes :: TypedGraphRule a b -> [G.NodeId]
-createdNodes r = TGM.orphanTypedNodeIds (getRHS r)
+createdNodes r = TGM.orphanTypedNodeIds (rightMorphism r)
 
 -- | Return the edges deleted by a rule
 deletedEdges :: TypedGraphRule a b -> [G.EdgeId]
-deletedEdges r = TGM.orphanTypedEdgeIds (getLHS r)
+deletedEdges r = TGM.orphanTypedEdgeIds (leftMorphism r)
 
 -- | Return the edges created by a rule
 createdEdges :: TypedGraphRule a b -> [G.EdgeId]
-createdEdges = TGM.orphanTypedEdgeIds . getRHS
+createdEdges = TGM.orphanTypedEdgeIds . rightMorphism
 
 preservedNodes :: TypedGraphRule a b -> [G.NodeId]
-preservedNodes = nodeIdsFromDomain . getLHS
+preservedNodes = nodeIdsFromDomain . leftMorphism
 
 preservedEdges :: TypedGraphRule a b -> [G.EdgeId]
-preservedEdges = edgeIdsFromDomain . getLHS
+preservedEdges = edgeIdsFromDomain . leftMorphism
 
 -- | Returns an empty TypedGraphRule
 emptyGraphRule :: Graph (Maybe a) (Maybe b) -> TypedGraphRule a b
@@ -66,28 +67,28 @@ emptyGraphRule typegraph = emptyRule
     emptyGraph = empty
     emptyGM = GM.empty emptyGraph typegraph
     emptyTGM = idMap emptyGM emptyGM
-    emptyRule = buildProduction emptyTGM emptyTGM []
+    emptyRule = Production emptyTGM emptyTGM []
 
 -- | Checks if it is a null rule
 nullGraphRule :: TypedGraphRule a b -> Bool
 nullGraphRule rule = null l && null k && null r
   where
     null = G.null . untypedGraph
-    l = codomain $ getLHS rule
-    k = domain $ getLHS rule
-    r = codomain $ getRHS rule
+    l = codomain $ leftMorphism rule
+    k = domain $ leftMorphism rule
+    r = codomain $ rightMorphism rule
 
 instance DPO (TypedGraphMorphism a b) where
 
   invertProduction conf rule =
-    buildProduction (getRHS rule) (getLHS rule) (concatMap (shiftNacOverProduction conf rule) (getNACs rule))
+    Production (rightMorphism rule) (leftMorphism rule) (concatMap (shiftNacOverProduction conf rule) (nacs rule))
 
   shiftNacOverProduction conf rule nac = [calculateComatch nac rule | satisfiesGluingConditions conf rule nac]
 
   createJointlyEpimorphicPairsFromNAC conf r nac =
     map (mountTypedGraphMorphisms r (codomain nac)) (generateGraphPartitions labeled)
     where
-      injectiveMatch = matchRestriction conf == Monomorphism
-      totalInjectiveNac = nacSatisfaction conf == MonomorphicNAC
+      injectiveMatch = toMorphismType (matchRestriction conf) == Monomorphism
+      totalInjectiveNac = True
 
       labeled = createSatisfyingNacsDisjointUnion (r, injectiveMatch) (nac, totalInjectiveNac)
