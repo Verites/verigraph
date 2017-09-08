@@ -574,8 +574,8 @@
                 <Mapping image="I143" orig="I137"/>
                 <Mapping image="I144" orig="I135"/>
                 <Mapping image="I145" orig="I134"/>
-                <Mapping image="I146" orig="I139"/>
                 <Mapping image="I147" orig="I138"/>
+                <Mapping image="I146" orig="I139"/>
             </Morphism>
             <ApplCondition>
                 <NAC>
@@ -627,8 +627,8 @@
                         <Mapping image="I152" orig="I137"/>
                         <Mapping image="I153" orig="I135"/>
                         <Mapping image="I154" orig="I134"/>
-                        <Mapping image="I155" orig="I139"/>
                         <Mapping image="I156" orig="I138"/>
+                        <Mapping image="I155" orig="I139"/>
                     </Morphism>
                 </NAC>
             </ApplCondition>
@@ -849,8 +849,8 @@
                 <Mapping image="I199" orig="I193"/>
                 <Mapping image="I200" orig="I194"/>
                 <Mapping image="I201" orig="I195"/>
-                <Mapping image="I204" orig="I197"/>
                 <Mapping image="I203" orig="I196"/>
+                <Mapping image="I204" orig="I197"/>
             </Morphism>
             <ApplCondition>
                 <NAC>
@@ -895,8 +895,8 @@
                         <Mapping image="I207" orig="I193"/>
                         <Mapping image="I208" orig="I194"/>
                         <Mapping image="I209" orig="I195"/>
-                        <Mapping image="I212" orig="I197"/>
                         <Mapping image="I211" orig="I196"/>
+                        <Mapping image="I212" orig="I197"/>
                     </Morphism>
                 </NAC>
                 <NAC>
@@ -941,8 +941,8 @@
                         <Mapping image="I215" orig="I193"/>
                         <Mapping image="I216" orig="I194"/>
                         <Mapping image="I217" orig="I195"/>
-                        <Mapping image="I220" orig="I197"/>
                         <Mapping image="I219" orig="I196"/>
+                        <Mapping image="I220" orig="I197"/>
                     </Morphism>
                 </NAC>
             </ApplCondition>
@@ -1599,8 +1599,8 @@
                 <Mapping image="I357" orig="I351"/>
                 <Mapping image="I358" orig="I352"/>
                 <Mapping image="I359" orig="I353"/>
-                <Mapping image="I361" orig="I354"/>
                 <Mapping image="I362" orig="I355"/>
+                <Mapping image="I361" orig="I354"/>
             </Morphism>
             <ApplCondition>
                 <NAC>
@@ -1645,8 +1645,8 @@
                         <Mapping image="I365" orig="I351"/>
                         <Mapping image="I366" orig="I352"/>
                         <Mapping image="I367" orig="I353"/>
-                        <Mapping image="I369" orig="I354"/>
                         <Mapping image="I370" orig="I355"/>
+                        <Mapping image="I369" orig="I354"/>
                     </Morphism>
                 </NAC>
             </ApplCondition>
@@ -1710,8 +1710,8 @@
                 <Mapping image="I381" orig="I375"/>
                 <Mapping image="I382" orig="I376"/>
                 <Mapping image="I383" orig="I377"/>
-                <Mapping image="I386" orig="I379"/>
                 <Mapping image="I385" orig="I378"/>
+                <Mapping image="I386" orig="I379"/>
             </Morphism>
             <ApplCondition>
                 <NAC>
@@ -1756,8 +1756,8 @@
                         <Mapping image="I389" orig="I375"/>
                         <Mapping image="I390" orig="I376"/>
                         <Mapping image="I391" orig="I377"/>
-                        <Mapping image="I394" orig="I379"/>
                         <Mapping image="I393" orig="I378"/>
+                        <Mapping image="I394" orig="I379"/>
                     </Morphism>
                 </NAC>
             </ApplCondition>
@@ -1830,8 +1830,8 @@
                 <Mapping image="I408" orig="I400"/>
                 <Mapping image="I409" orig="I401"/>
                 <Mapping image="I410" orig="I402"/>
-                <Mapping image="I411" orig="I403"/>
                 <Mapping image="I412" orig="I404"/>
+                <Mapping image="I411" orig="I403"/>
             </Morphism>
             <ApplCondition>
                 <NAC>
@@ -1892,9 +1892,9 @@
                         <Mapping image="I416" orig="I400"/>
                         <Mapping image="I417" orig="I401"/>
                         <Mapping image="I418" orig="I402"/>
-                        <Mapping image="I420" orig="I403"/>
                         <Mapping image="I421" orig="I404"/>
                         <Mapping image="I422" orig="I405"/>
+                        <Mapping image="I420" orig="I403"/>
                     </Morphism>
                 </NAC>
             </ApplCondition>
@@ -2010,8 +2010,8 @@
                 <Mapping image="I444" orig="I432"/>
                 <Mapping image="I445" orig="I433"/>
                 <Mapping image="I449" orig="I437"/>
-                <Mapping image="I447" orig="I435"/>
                 <Mapping image="I448" orig="I436"/>
+                <Mapping image="I447" orig="I435"/>
             </Morphism>
             <TaggedValue Tag="layer" TagValue="0"/>
             <TaggedValue Tag="priority" TagValue="0"/>
@@ -2107,9 +2107,9 @@
                 <Mapping image="I468" orig="I458"/>
                 <Mapping image="I469" orig="I459"/>
                 <Mapping image="I470" orig="I460"/>
+                <Mapping image="I472" orig="I461"/>
                 <Mapping image="I474" orig="I464"/>
                 <Mapping image="I473" orig="I462"/>
-                <Mapping image="I472" orig="I461"/>
             </Morphism>
             <ApplCondition>
                 <NAC>
@@ -2186,10 +2186,10 @@
                         <Mapping image="I480" orig="I458"/>
                         <Mapping image="I481" orig="I459"/>
                         <Mapping image="I482" orig="I460"/>
-                        <Mapping image="I487" orig="I464"/>
-                        <Mapping image="I486" orig="I463"/>
-                        <Mapping image="I485" orig="I462"/>
                         <Mapping image="I484" orig="I461"/>
+                        <Mapping image="I487" orig="I464"/>
+                        <Mapping image="I485" orig="I462"/>
+                        <Mapping image="I486" orig="I463"/>
                     </Morphism>
                 </NAC>
             </ApplCondition>
@@ -2369,9 +2369,9 @@
                 <Mapping image="I528" orig="I517"/>
                 <Mapping image="I529" orig="I518"/>
                 <Mapping image="I530" orig="I519"/>
-                <Mapping image="I531" orig="I520"/>
-                <Mapping image="I532" orig="I522"/>
                 <Mapping image="I534" orig="I523"/>
+                <Mapping image="I532" orig="I522"/>
+                <Mapping image="I531" orig="I520"/>
             </Morphism>
             <ApplCondition>
                 <NAC>
@@ -2439,10 +2439,10 @@
                         <Mapping image="I539" orig="I517"/>
                         <Mapping image="I540" orig="I518"/>
                         <Mapping image="I541" orig="I519"/>
-                        <Mapping image="I542" orig="I520"/>
-                        <Mapping image="I544" orig="I522"/>
                         <Mapping image="I543" orig="I521"/>
                         <Mapping image="I545" orig="I523"/>
+                        <Mapping image="I544" orig="I522"/>
+                        <Mapping image="I542" orig="I520"/>
                     </Morphism>
                 </NAC>
             </ApplCondition>
@@ -2555,10 +2555,10 @@
                 <Mapping image="I564" orig="I553"/>
                 <Mapping image="I565" orig="I554"/>
                 <Mapping image="I566" orig="I555"/>
+                <Mapping image="I568" orig="I557"/>
                 <Mapping image="I567" orig="I556"/>
                 <Mapping image="I569" orig="I558"/>
                 <Mapping image="I570" orig="I559"/>
-                <Mapping image="I568" orig="I557"/>
             </Morphism>
             <ApplCondition>
                 <NAC>
@@ -2626,17 +2626,17 @@
                         <Mapping image="I578" orig="I553"/>
                         <Mapping image="I579" orig="I554"/>
                         <Mapping image="I580" orig="I555"/>
+                        <Mapping image="I582" orig="I557"/>
                         <Mapping image="I581" orig="I556"/>
                         <Mapping image="I583" orig="I558"/>
                         <Mapping image="I584" orig="I559"/>
-                        <Mapping image="I582" orig="I557"/>
                     </Morphism>
                 </NAC>
             </ApplCondition>
             <TaggedValue Tag="layer" TagValue="0"/>
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
-        <Rule ID="I586" formula="true" name="2-8-infiltrarGlucantime">
+        <Rule ID="I586" enabled="false" formula="true" name="2-8-infiltrarGlucantime">
             <Graph ID="I588" kind="LHS" name="LeftOf_2-8-infiltrarGlucantime">
                 <Node ID="I589" type="I8">
                     <NodeLayout X="273" Y="131"/>
@@ -2679,12 +2679,12 @@
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
                 <Edge ID="I599" source="I593" target="I593" type="I47">
-                    <EdgeLayout bendX="11" bendY="85" loopH="20"
+                    <EdgeLayout bendX="12" bendY="85" loopH="20"
                         loopW="20" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
                 <Edge ID="I600" source="I593" target="I593" type="I45">
-                    <EdgeLayout bendX="1" bendY="75" loopH="35"
+                    <EdgeLayout bendX="2" bendY="75" loopH="35"
                         loopW="35" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
@@ -2735,12 +2735,12 @@
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
                 <Edge ID="I613" source="I607" target="I607" type="I47">
-                    <EdgeLayout bendX="11" bendY="85" loopH="20"
+                    <EdgeLayout bendX="12" bendY="85" loopH="20"
                         loopW="20" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
                 <Edge ID="I614" source="I607" target="I607" type="I46">
-                    <EdgeLayout bendX="1" bendY="75" loopH="35"
+                    <EdgeLayout bendX="2" bendY="75" loopH="35"
                         loopW="35" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
@@ -3044,8 +3044,8 @@
                 <Mapping image="I676" orig="I669"/>
                 <Mapping image="I677" orig="I670"/>
                 <Mapping image="I678" orig="I671"/>
-                <Mapping image="I680" orig="I672"/>
                 <Mapping image="I681" orig="I673"/>
+                <Mapping image="I680" orig="I672"/>
             </Morphism>
             <ApplCondition>
                 <NAC>
@@ -3101,15 +3101,15 @@
                         <Mapping image="I684" orig="I669"/>
                         <Mapping image="I685" orig="I670"/>
                         <Mapping image="I686" orig="I671"/>
-                        <Mapping image="I688" orig="I672"/>
                         <Mapping image="I689" orig="I673"/>
+                        <Mapping image="I688" orig="I672"/>
                     </Morphism>
                 </NAC>
             </ApplCondition>
             <TaggedValue Tag="layer" TagValue="0"/>
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
-        <Rule ID="I692" formula="true" name="2-10-descartarMaterial">
+        <Rule ID="I692" enabled="false" formula="true" name="2-10-descartarMaterial">
             <Graph ID="I694" kind="LHS" name="LeftOf_2-10-descartarMaterial">
                 <Node ID="I695" type="I15">
                     <NodeLayout X="70" Y="57"/>
@@ -3148,12 +3148,12 @@
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Edge ID="I704" source="I698" target="I698" type="I47">
-                    <EdgeLayout bendX="6" bendY="110" loopH="20"
+                    <EdgeLayout bendX="7" bendY="110" loopH="20"
                         loopW="20" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
                 <Edge ID="I705" source="I698" target="I698" type="I46">
-                    <EdgeLayout bendX="0" bendY="100" loopH="35"
+                    <EdgeLayout bendX="-3" bendY="100" loopH="35"
                         loopW="35" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
@@ -3282,14 +3282,14 @@
                 <Mapping image="I722" orig="I701"/>
                 <Mapping image="I723" orig="I702"/>
                 <Mapping image="I724" orig="I703"/>
-                <Mapping image="I733" orig="I713"/>
-                <Mapping image="I730" orig="I710"/>
-                <Mapping image="I732" orig="I712"/>
                 <Mapping image="I731" orig="I711"/>
+                <Mapping image="I730" orig="I710"/>
+                <Mapping image="I733" orig="I713"/>
                 <Mapping image="I734" orig="I714"/>
-                <Mapping image="I728" orig="I708"/>
-                <Mapping image="I729" orig="I709"/>
                 <Mapping image="I725" orig="I706"/>
+                <Mapping image="I729" orig="I709"/>
+                <Mapping image="I728" orig="I708"/>
+                <Mapping image="I732" orig="I712"/>
             </Morphism>
             <TaggedValue Tag="layer" TagValue="0"/>
             <TaggedValue Tag="priority" TagValue="0"/>
@@ -3400,8 +3400,8 @@
                 <Mapping image="I754" orig="I741"/>
                 <Mapping image="I755" orig="I742"/>
                 <Mapping image="I756" orig="I743"/>
-                <Mapping image="I761" orig="I748"/>
                 <Mapping image="I757" orig="I746"/>
+                <Mapping image="I761" orig="I748"/>
                 <Mapping image="I760" orig="I749"/>
             </Morphism>
             <TaggedValue Tag="layer" TagValue="0"/>
@@ -3464,8 +3464,8 @@
                 <Mapping image="I771" orig="I765"/>
                 <Mapping image="I772" orig="I766"/>
                 <Mapping image="I773" orig="I767"/>
-                <Mapping image="I776" orig="I769"/>
                 <Mapping image="I775" orig="I768"/>
+                <Mapping image="I776" orig="I769"/>
             </Morphism>
             <ApplCondition>
                 <NAC>
@@ -3510,8 +3510,8 @@
                         <Mapping image="I779" orig="I765"/>
                         <Mapping image="I780" orig="I766"/>
                         <Mapping image="I781" orig="I767"/>
-                        <Mapping image="I784" orig="I769"/>
                         <Mapping image="I783" orig="I768"/>
+                        <Mapping image="I784" orig="I769"/>
                     </Morphism>
                 </NAC>
             </ApplCondition>
@@ -3763,9 +3763,9 @@
                 <Mapping image="I832" orig="I821"/>
                 <Mapping image="I833" orig="I822"/>
                 <Mapping image="I834" orig="I823"/>
+                <Mapping image="I839" orig="I827"/>
                 <Mapping image="I838" orig="I826"/>
                 <Mapping image="I837" orig="I825"/>
-                <Mapping image="I839" orig="I827"/>
             </Morphism>
             <TaggedValue Tag="layer" TagValue="0"/>
             <TaggedValue Tag="priority" TagValue="0"/>
@@ -3935,9 +3935,9 @@
                         <Mapping image="I869" orig="I848"/>
                         <Mapping image="I870" orig="I849"/>
                         <Mapping image="I871" orig="I850"/>
-                        <Mapping image="I876" orig="I854"/>
                         <Mapping image="I875" orig="I853"/>
                         <Mapping image="I874" orig="I852"/>
+                        <Mapping image="I876" orig="I854"/>
                         <Mapping image="I873" orig="I851"/>
                     </Morphism>
                 </NAC>
@@ -4020,8 +4020,8 @@
                 <Mapping image="I894" orig="I885"/>
                 <Mapping image="I895" orig="I886"/>
                 <Mapping image="I896" orig="I887"/>
-                <Mapping image="I898" orig="I889"/>
                 <Mapping image="I897" orig="I888"/>
+                <Mapping image="I898" orig="I889"/>
             </Morphism>
             <TaggedValue Tag="layer" TagValue="0"/>
             <TaggedValue Tag="priority" TagValue="0"/>
@@ -4118,9 +4118,9 @@
                 <Mapping image="I917" orig="I906"/>
                 <Mapping image="I918" orig="I907"/>
                 <Mapping image="I919" orig="I908"/>
-                <Mapping image="I920" orig="I909"/>
-                <Mapping image="I921" orig="I911"/>
                 <Mapping image="I922" orig="I912"/>
+                <Mapping image="I921" orig="I911"/>
+                <Mapping image="I920" orig="I909"/>
             </Morphism>
             <ApplCondition>
                 <NAC>
@@ -4188,10 +4188,10 @@
                         <Mapping image="I928" orig="I906"/>
                         <Mapping image="I929" orig="I907"/>
                         <Mapping image="I930" orig="I908"/>
-                        <Mapping image="I932" orig="I910"/>
-                        <Mapping image="I931" orig="I909"/>
-                        <Mapping image="I933" orig="I911"/>
                         <Mapping image="I934" orig="I912"/>
+                        <Mapping image="I932" orig="I910"/>
+                        <Mapping image="I933" orig="I911"/>
+                        <Mapping image="I931" orig="I909"/>
                     </Morphism>
                 </NAC>
             </ApplCondition>
@@ -4296,8 +4296,8 @@
                 <Mapping image="I952" orig="I942"/>
                 <Mapping image="I953" orig="I943"/>
                 <Mapping image="I954" orig="I944"/>
-                <Mapping image="I955" orig="I945"/>
                 <Mapping image="I956" orig="I946"/>
+                <Mapping image="I955" orig="I945"/>
                 <Mapping image="I957" orig="I947"/>
             </Morphism>
             <ApplCondition>
@@ -4361,8 +4361,8 @@
                         <Mapping image="I965" orig="I942"/>
                         <Mapping image="I966" orig="I943"/>
                         <Mapping image="I967" orig="I944"/>
-                        <Mapping image="I968" orig="I945"/>
                         <Mapping image="I969" orig="I946"/>
+                        <Mapping image="I968" orig="I945"/>
                         <Mapping image="I970" orig="I947"/>
                     </Morphism>
                 </NAC>
@@ -4493,11 +4493,11 @@
                 <Mapping image="I992" orig="I979"/>
                 <Mapping image="I993" orig="I980"/>
                 <Mapping image="I994" orig="I981"/>
-                <Mapping image="I997" orig="I984"/>
-                <Mapping image="I999" orig="I986"/>
+                <Mapping image="I998" orig="I985"/>
                 <Mapping image="I996" orig="I983"/>
                 <Mapping image="I995" orig="I982"/>
-                <Mapping image="I998" orig="I985"/>
+                <Mapping image="I999" orig="I986"/>
+                <Mapping image="I997" orig="I984"/>
             </Morphism>
             <ApplCondition>
                 <NAC>
@@ -4576,18 +4576,18 @@
                         <Mapping image="I1008" orig="I979"/>
                         <Mapping image="I1009" orig="I980"/>
                         <Mapping image="I1010" orig="I981"/>
-                        <Mapping image="I1013" orig="I984"/>
-                        <Mapping image="I1015" orig="I986"/>
+                        <Mapping image="I1014" orig="I985"/>
                         <Mapping image="I1012" orig="I983"/>
                         <Mapping image="I1011" orig="I982"/>
-                        <Mapping image="I1014" orig="I985"/>
+                        <Mapping image="I1015" orig="I986"/>
+                        <Mapping image="I1013" orig="I984"/>
                     </Morphism>
                 </NAC>
             </ApplCondition>
             <TaggedValue Tag="layer" TagValue="0"/>
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
-        <Rule ID="I1017" formula="true" name="3-9-infiltrarGlucantime">
+        <Rule ID="I1017" enabled="false" formula="true" name="3-9-infiltrarGlucantime">
             <Graph ID="I1019" kind="LHS" name="LeftOf_3-9-infiltrarGlucantime">
                 <Node ID="I1020" type="I8">
                     <NodeLayout X="324" Y="187"/>
@@ -4630,12 +4630,12 @@
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
                 <Edge ID="I1030" source="I1024" target="I1024" type="I47">
-                    <EdgeLayout bendX="95" bendY="161" loopH="20"
+                    <EdgeLayout bendX="96" bendY="161" loopH="20"
                         loopW="20" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
                 <Edge ID="I1031" source="I1024" target="I1024" type="I45">
-                    <EdgeLayout bendX="85" bendY="151" loopH="35"
+                    <EdgeLayout bendX="86" bendY="151" loopH="35"
                         loopW="35" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
@@ -4690,12 +4690,12 @@
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
                 <Edge ID="I1045" source="I1038" target="I1038" type="I47">
-                    <EdgeLayout bendX="95" bendY="161" loopH="20"
+                    <EdgeLayout bendX="96" bendY="161" loopH="20"
                         loopW="20" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
                 <Edge ID="I1046" source="I1038" target="I1038" type="I46">
-                    <EdgeLayout bendX="85" bendY="151" loopH="35"
+                    <EdgeLayout bendX="86" bendY="151" loopH="35"
                         loopW="35" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
@@ -4719,10 +4719,10 @@
                 <Mapping image="I1037" orig="I1023"/>
                 <Mapping image="I1038" orig="I1024"/>
                 <Mapping image="I1039" orig="I1025"/>
-                <Mapping image="I1042" orig="I1027"/>
-                <Mapping image="I1045" orig="I1030"/>
-                <Mapping image="I1043" orig="I1028"/>
                 <Mapping image="I1041" orig="I1026"/>
+                <Mapping image="I1045" orig="I1030"/>
+                <Mapping image="I1042" orig="I1027"/>
+                <Mapping image="I1043" orig="I1028"/>
                 <Mapping image="I1044" orig="I1029"/>
             </Morphism>
             <TaggedValue Tag="layer" TagValue="0"/>
@@ -4919,10 +4919,10 @@
                 <Mapping image="I1088" orig="I1077"/>
                 <Mapping image="I1089" orig="I1078"/>
                 <Mapping image="I1090" orig="I1079"/>
+                <Mapping image="I1095" orig="I1081"/>
                 <Mapping image="I1097" orig="I1083"/>
                 <Mapping image="I1096" orig="I1082"/>
                 <Mapping image="I1094" orig="I1080"/>
-                <Mapping image="I1095" orig="I1081"/>
             </Morphism>
             <ApplCondition>
                 <NAC>
@@ -5000,10 +5000,10 @@
                         <Mapping image="I1102" orig="I1077"/>
                         <Mapping image="I1103" orig="I1078"/>
                         <Mapping image="I1104" orig="I1079"/>
+                        <Mapping image="I1109" orig="I1081"/>
                         <Mapping image="I1111" orig="I1083"/>
                         <Mapping image="I1110" orig="I1082"/>
                         <Mapping image="I1108" orig="I1080"/>
-                        <Mapping image="I1109" orig="I1081"/>
                     </Morphism>
                 </NAC>
             </ApplCondition>
@@ -5106,10 +5106,10 @@
                 <Mapping image="I1129" orig="I1118"/>
                 <Mapping image="I1130" orig="I1119"/>
                 <Mapping image="I1131" orig="I1120"/>
-                <Mapping image="I1136" orig="I1124"/>
-                <Mapping image="I1134" orig="I1122"/>
-                <Mapping image="I1135" orig="I1123"/>
                 <Mapping image="I1133" orig="I1121"/>
+                <Mapping image="I1136" orig="I1124"/>
+                <Mapping image="I1135" orig="I1123"/>
+                <Mapping image="I1134" orig="I1122"/>
             </Morphism>
             <ApplCondition>
                 <NAC>
@@ -5177,17 +5177,17 @@
                         <Mapping image="I1141" orig="I1118"/>
                         <Mapping image="I1142" orig="I1119"/>
                         <Mapping image="I1143" orig="I1120"/>
-                        <Mapping image="I1148" orig="I1124"/>
-                        <Mapping image="I1146" orig="I1122"/>
-                        <Mapping image="I1147" orig="I1123"/>
                         <Mapping image="I1145" orig="I1121"/>
+                        <Mapping image="I1148" orig="I1124"/>
+                        <Mapping image="I1147" orig="I1123"/>
+                        <Mapping image="I1146" orig="I1122"/>
                     </Morphism>
                 </NAC>
             </ApplCondition>
             <TaggedValue Tag="layer" TagValue="0"/>
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
-        <Rule ID="I1149" formula="true" name="3-11-descartarMaterial">
+        <Rule ID="I1149" enabled="false" formula="true" name="3-11-descartarMaterial">
             <Graph ID="I1151" kind="LHS" name="LeftOf_3-11-descartarMaterial">
                 <Node ID="I1152" type="I15">
                     <NodeLayout X="67" Y="85"/>
@@ -5234,12 +5234,12 @@
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
                 <Edge ID="I1163" source="I1155" target="I1155" type="I47">
-                    <EdgeLayout bendX="10" bendY="153" loopH="20"
+                    <EdgeLayout bendX="11" bendY="153" loopH="20"
                         loopW="20" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
                 <Edge ID="I1164" source="I1155" target="I1155" type="I46">
-                    <EdgeLayout bendX="0" bendY="143" loopH="35"
+                    <EdgeLayout bendX="1" bendY="143" loopH="35"
                         loopW="35" textOffsetX="0" textOffsetY="-22"/>
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
@@ -5395,15 +5395,15 @@
                 <Mapping image="I1186" orig="I1161"/>
                 <Mapping image="I1187" orig="I1162"/>
                 <Mapping image="I1197" orig="I1173"/>
-                <Mapping image="I1198" orig="I1174"/>
-                <Mapping image="I1193" orig="I1169"/>
-                <Mapping image="I1199" orig="I1175"/>
-                <Mapping image="I1192" orig="I1168"/>
-                <Mapping image="I1196" orig="I1172"/>
                 <Mapping image="I1194" orig="I1170"/>
+                <Mapping image="I1196" orig="I1172"/>
+                <Mapping image="I1192" orig="I1168"/>
+                <Mapping image="I1193" orig="I1169"/>
+                <Mapping image="I1191" orig="I1167"/>
+                <Mapping image="I1199" orig="I1175"/>
                 <Mapping image="I1195" orig="I1171"/>
                 <Mapping image="I1190" orig="I1165"/>
-                <Mapping image="I1191" orig="I1167"/>
+                <Mapping image="I1198" orig="I1174"/>
             </Morphism>
             <TaggedValue Tag="layer" TagValue="0"/>
             <TaggedValue Tag="priority" TagValue="0"/>
@@ -5514,15 +5514,15 @@
                 <Mapping image="I1219" orig="I1206"/>
                 <Mapping image="I1220" orig="I1207"/>
                 <Mapping image="I1221" orig="I1208"/>
-                <Mapping image="I1226" orig="I1214"/>
                 <Mapping image="I1225" orig="I1213"/>
+                <Mapping image="I1226" orig="I1214"/>
                 <Mapping image="I1224" orig="I1211"/>
             </Morphism>
             <TaggedValue Tag="layer" TagValue="0"/>
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
         <Rule ID="I1227" formula="true" name="2rule_left_removeLesaoPequena">
-            <Graph ID="I1229" kind="LHS" name="LeftOf_2_rule_left_removeLesaoPequena">
+            <Graph ID="I1229" kind="LHS" name="LeftOf_2rule_left_removeLesaoPequena">
                 <Node ID="I1230" type="I13">
                     <NodeLayout X="209" Y="153"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
@@ -5536,7 +5536,7 @@
                     <additionalLayout aktlength="200" force="10" preflength="200"/>
                 </Edge>
             </Graph>
-            <Graph ID="I1233" kind="RHS" name="RightOf_2_rule_left_removeLesaoPequena">
+            <Graph ID="I1233" kind="RHS" name="RightOf_2rule_left_removeLesaoPequena">
                 <Node ID="I1234" type="I13">
                     <NodeLayout X="209" Y="153"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
@@ -5559,13 +5559,13 @@
             <TaggedValue Tag="priority" TagValue="0"/>
         </Rule>
         <Rule ID="I1237" formula="true" name="2rule_right_removeLesaoPequena">
-            <Graph ID="I1239" kind="LHS" name="LeftOf_2_rule_right_removeLesaoPequena">
+            <Graph ID="I1239" kind="LHS" name="LeftOf_2rule_right_removeLesaoPequena">
                 <Node ID="I1240" name="10" type="I6">
                     <NodeLayout X="108" Y="73"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
                 </Node>
             </Graph>
-            <Graph ID="I1241" kind="RHS" name="RightOf_2_rule_right_removeLesaoPequena">
+            <Graph ID="I1241" kind="RHS" name="RightOf_2rule_right_removeLesaoPequena">
                 <Node ID="I1242" name="10" type="I6">
                     <NodeLayout X="108" Y="73"/>
                     <additionalLayout age="0" force="10" frozen="true" zone="50"/>
