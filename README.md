@@ -1,3 +1,19 @@
+### Special release for performance comparison between Verigraph and [AGG](http://www.user.tu-berlin.de/o.runge/AGG/) as reported on a paper to appear in the book in memory of Hartmut Ehrig.
+
+In order to run the experiments:
+
+1. Install Verigraph as described below.
+2. Download the AGG Tool [here](http://www.user.tu-berlin.de/o.runge/agg/down_V21_java8/index.html) and extract the files to a directory of your choice.
+3. Edit the `benchs/agg-cli` file on Verigraph directory to provide the AGG path.
+4. On the root directory of Verigraph, execute:
+
+```bash
+  $ ./benchs/run-critical-benchs-verigraph # Will measure verigraph execution time.
+  $ ./benchs/run-critical-benchs-agg # Will measure agg execution time.
+```
+The tests results will be saved on files named `./benchs/verigraph-results.csv` and `./benchs/agg-results.csv`. Also, the critical pairs analysis output for each execution will be saved as `.cpx` and `.log` files in the directories `./benchs/outputs/verigraph` and `./benchs/outputs/agg`.
+
+
 # Verigraph
 
 [![Build Status](https://travis-ci.org/Verites/verigraph.svg?branch=master)](https://travis-ci.org/Verites/verigraph)
@@ -42,7 +58,7 @@ Once you have cloned this repository, install `verigraph` by running:
 
 ### Usage
 
-Run verigraph helper:
+Run Verigraph helper:
 
 ```bash
   $ verigraph --help
@@ -54,7 +70,7 @@ Some example grammars are provided in the `grammars` directory, try something li
   $ verigraph analysis grammars/Pacman/pacman.ggx
 ```
 
-If you use bash, you can enable autocompletion of verigraph options for the current
+If you use bash, you can enable autocompletion of Verigraph options for the current
 session by running the following command.
 
 ```bash
