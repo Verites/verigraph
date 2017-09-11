@@ -62,6 +62,8 @@ library
                        Data.Relation
                        Data.TypedGraph
                        Data.TypedGraph.Morphism
+                       GrLang.Metadata
+                       GrLang.Parser
                        Image.Dot.Prettyprint
                        Image.Dot.TypedGraph
                        Image.Dot.StateSpace

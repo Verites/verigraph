@@ -1,0 +1,11 @@
+node type Revision
+node type DirectDeps
+node type TransDeps
+
+edge type dirDeps : Revision -> DirectDeps
+edge type transDeps : Revision -> TransDeps
+edge type dep : DirectDeps -> Revision
+edge type tdep : TransDeps -> Revision
+
+node type Branch
+edge type Tip : Branch -> Revision
