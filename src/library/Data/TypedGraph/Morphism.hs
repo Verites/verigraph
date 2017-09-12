@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeFamilies #-}
 module Data.TypedGraph.Morphism where
+  -- TODO: write export list explicitly
 
 import           Base.Valid
 import           Data.Graphs
@@ -103,15 +104,15 @@ applyEdgeUnsafe m e = fromMaybe (error "Error, apply edge in a non total morphis
 applyEdgeIdUnsafe :: TypedGraphMorphism a b -> EdgeId -> EdgeId
 applyEdgeIdUnsafe m e = fromMaybe (error "Error, apply edge in a non total morphism") $ applyEdgeId m e
 
--- | Given a @TypedGraphMorphism@, return its orphan nodes ids
+-- | Return the nodes ids of the codomain which are not in the image of the given morphism.
 orphanTypedNodeIds :: TypedGraphMorphism a b -> [NodeId]
 orphanTypedNodeIds tgm = GM.orphanNodeIds (mapping tgm)
 
--- | Given a @TypedGraphMorphism@, return its orphan edges ids
+-- | Return the edge ids of the codomain which are not in the image of the given morphism.
 orphanTypedEdgeIds :: TypedGraphMorphism a b -> [EdgeId]
 orphanTypedEdgeIds tgm = GM.orphanEdgeIds (mapping tgm)
 
--- | Given a @TypedGraphMorphism@, return its orphan edges
+-- | Return the edges of the codomain which are not in the image of the given morphism.
 orphanTypedEdges :: TypedGraphMorphism a b -> [Edge (Maybe b)]
 orphanTypedEdges tgm = GM.orphanEdges (mapping tgm)
 

@@ -77,11 +77,11 @@ instance Show (GraphMorphism a b) where
          show e ++ " --> " ++ show (applyEdgeId m e)
          ++ " (from: " ++ show srcId ++ " to:" ++ show tgtId ++ ")\n"
 
--- | Return the orphan nodes ids in a graph morphism
+-- | Return the nodes ids of the codomain which are not in the image of the given morphism.
 orphanNodeIds :: GraphMorphism a b -> [G.NodeId]
 orphanNodeIds gm = R.orphans (nodeRelation gm)
 
--- | Return the orphan edges in a graph morphism
+-- | Return the edges of the codomain which are not in the image of the given morphism.
 orphanEdges :: GraphMorphism a b -> [G.Edge b]
 orphanEdges gm = map idToEdge (R.orphans (edgeRelation gm))
   where
@@ -90,7 +90,7 @@ orphanEdges gm = map idToEdge (R.orphans (edgeRelation gm))
         (error "orphanEdges: EdgeId is not in graph")
         (lookupEdge id (codomainGraph gm))
 
--- | Return the orphan edgesIds in a graph morphism
+-- | Return the edge ids of the codomain which are not in the image of the given morphism.
 orphanEdgeIds :: GraphMorphism a b -> [G.EdgeId]
 orphanEdgeIds gm = R.orphans (edgeRelation gm)
 
