@@ -1,13 +1,12 @@
 module Util.List
-( countElement
-, deleteByKey
-, insertByKey
-, listKeys
-, replace
-, repeated
-, split
-, parallelMap
-)
+  ( countElement
+  , deleteByKey
+  , insertByKey
+  , listKeys
+  , repeated
+  , split
+  , parallelMap
+  )
 
 where
 
@@ -21,11 +20,6 @@ parallelMap :: (a -> b) -> [a] -> [b]
 parallelMap _ []      = []
 parallelMap f (x:xs) = let r = f x
                         in r `par` r : parallelMap f xs
-
--- TODO: Verify suitability for the use of Data.Sequence
--- | Replaces the @idx@-th element by @new@ in the list @l@
-replace :: Int -> a -> [a] -> [a]
-replace idx new list = take idx list ++ [new] ++ drop (idx+1) list
 
 -- | Given a list, it verifies whether there are repeated elements on it
 repeated :: (Eq a) => [a] -> Bool

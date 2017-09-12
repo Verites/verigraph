@@ -6,8 +6,6 @@ module Data.TypedGraph.Partition.Generator
   ( generatePartitions
   ) where
 
-import           Util.List (replace)
-
 -- | Interface function to run the algorithm that generates the partitions
 generatePartitions :: (a -> [a] -> Bool) -> [a] -> [[[a]]]
 generatePartitions equivalenceChecker equivalenceList =
@@ -32,3 +30,13 @@ backtracking equivalenceChecker toAdd eqClasses =
   where
     initAdd = tail toAdd
     ad = head toAdd
+
+-- TODO: Verify suitability for the use of Data.Sequence to avoid using the `replace` function below
+
+-- | Replaces the @idx@-th element by @new@ in the list @l@
+--
+-- This should NOT go to Util.List because it is a very inneficient operation
+-- over lists. Whenever this is needed, another data structure should be
+-- considered.
+replace :: Int -> a -> [a] -> [a]
+replace idx new list = take idx list ++ [new] ++ drop (idx+1) list
