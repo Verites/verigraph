@@ -14,7 +14,8 @@ module XML.GGXReader
    printMinimalSafetyNacsLog
    ) where
 
-import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category
+import           Abstract.Constraint
 import           Abstract.Rewriting.DPO
 import           Base.Valid
 import           Category.TypedGraphRule
@@ -38,7 +39,7 @@ import           XML.XMLUtilities
 
 -- | Reads the grammar in the XML, adds the needed minimal safety nacs
 --   to second-order, and returns the grammar and a log
-readGrammar :: String -> Bool -> MorphismsConfig
+readGrammar :: String -> Bool -> MorphismsConfig (TypedGraphMorphism a b)
             -> IO (Grammar (TypedGraphMorphism a b), Grammar (RuleMorphism a b), [(String, Int)])
 readGrammar fileName useConstraints morphismsConf = do
   parsedTypeGraphs <- readTypeGraph fileName
@@ -74,8 +75,9 @@ readGrammar fileName useConstraints morphismsConf = do
       emptyRule = emptyGraphRule typeGraph
       sndOrderGrammar = grammar emptyRule [] sndOrderRules
 
+      morphismsConf' = toSndOrderMorphismsConfig morphismsConf
       (sndOrderGrammarWithMinimalSafetyNacs, logNewNacs) =
-        minimalSafetyNacsWithLog morphismsConf sndOrderGrammar
+        minimalSafetyNacsWithLog morphismsConf' sndOrderGrammar
 
 
   _ <- (case L.elemIndices False (map (isValid . snd) sndOrderRules) of
@@ -97,15 +99,15 @@ readGGName fileName = do
 -- Minimal Safety Nacs Logs
 
 -- FIX: find a better place for this two functions
-minimalSafetyNacsWithLog :: MorphismsConfig -> Grammar (RuleMorphism a b)
+minimalSafetyNacsWithLog :: MorphismsConfig (RuleMorphism a b) -> Grammar (RuleMorphism a b)
                          -> (Grammar (RuleMorphism a b), [(String, Int)])
 minimalSafetyNacsWithLog conf oldGG = (newGG, printNewNacs)
   where
     newNacs =
       map (\(n,r) ->
         let newRule = addMinimalSafetyNacs conf r
-            tamNewNacs = length (getNACs newRule)
-            tamNacs = length (getNACs r)
+            tamNewNacs = length (nacs newRule)
+            tamNacs = length (nacs r)
          in ((n, newRule), (n, tamNewNacs - tamNacs))
         ) (productions oldGG)
     newGG = oldGG {productions = map fst newNacs}
@@ -187,9 +189,7 @@ instantiateObjectsFlow [] _ = []
 instantiateObjectsFlow productions (o:os) =
   let
     createObject (idx,cons,prod,maps) = ObjectFlow idx prod cons (createSpan prod cons maps)
-    createSpan prod cons = instantiateSpan (rightGraph (searchRight prod)) (leftGraph (searchLeft cons))
-    leftGraph = codomain . getLHS
-    rightGraph = codomain . getRHS
+    createSpan prod cons = instantiateSpan (rightObject (searchRight prod)) (leftObject (searchLeft cons))
     searchLeft ruleName = fromJust $ L.lookup ruleName productions
     searchRight ruleName = fromJust $ L.lookup ruleName productions
   in createObject o : instantiateObjectsFlow productions os

@@ -1,11 +1,13 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 module Analysis.Processes
   ( generateGraphProcess
   , calculateRulesColimit
   , findConflictsAndDependencies
   ) where
 
-import           Abstract.Category.FinitaryCategory
+import           Abstract.Category
 import           Abstract.Rewriting.DPO
 import           Abstract.Rewriting.DPO.DiagramAlgorithms
 import           Abstract.Rewriting.DPO.Process
@@ -35,15 +37,15 @@ findDependencies pairs = map buildPU produceUse ++ map buildDF deleteForbidOneNa
     buildDF (a,(b,c)) = Interaction (getName a) (getName b) DeleteForbid (Just c)
 
 expandNACs :: NamedRuleWithMatches morph -> [(NamedRuleWithMatches morph, Int)]
-expandNACs (name,production,matches) = zip (map (buildNamedProduction (name,production,matches)) (getNACs production)) [0..]
+expandNACs (name,production,matches) = zip (map (buildNamedProduction (name,production,matches)) (nacs production)) [0..]
   where
-    buildNamedProduction (name,production,matches) n = (name, buildProduction (getLHS production) (getRHS production) [n], matches)
+    buildNamedProduction (name,production,matches) n = (name, production { nacs = [n] }, matches)
 
 expandeProductions :: (NamedRuleWithMatches morph, NamedRuleWithMatches morph) -> [(NamedRuleWithMatches morph, (NamedRuleWithMatches morph, Int))]
 expandeProductions (a,b) = map (\x -> (a,x)) (expandNACs b)
 
-conf :: MorphismsConfig
-conf = MorphismsConfig Monomorphism MonomorphicNAC
+conf :: forall morph. Category morph => MorphismsConfig morph
+conf = MorphismsConfig (monic @morph)
 
 validLeftRewritings :: GenerateProcess morph => Production morph -> Production morph-> (morph,morph) -> Bool
 validLeftRewritings p1 p2 (m1,m2) =

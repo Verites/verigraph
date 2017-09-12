@@ -1,4 +1,4 @@
-module Abstract.Category.AdhesiveHLR.Constraint
+module Abstract.Constraint
   ( AtomicConstraint (..)
   , buildNamedAtomicConstraint
   , satisfiesAtomicConstraint
@@ -8,7 +8,8 @@ module Abstract.Category.AdhesiveHLR.Constraint
   , satisfiesAllConstraints
   ) where
 
-import           Abstract.Category.FinitaryCategory
+import           Abstract.Category
+import           Abstract.Category.FindMorphism
 import           Base.Valid
 
 data AtomicConstraint morph = AtomicConstraint {
@@ -23,10 +24,10 @@ instance Valid morph => Valid (AtomicConstraint morph) where
 buildNamedAtomicConstraint :: String -> morph -> Bool -> AtomicConstraint morph
 buildNamedAtomicConstraint = AtomicConstraint
 
-premise :: (FinitaryCategory morph) => AtomicConstraint morph -> Obj morph
+premise :: (Category morph) => AtomicConstraint morph -> Obj morph
 premise = domain . morphism
 
-conclusion :: (FinitaryCategory morph) => AtomicConstraint morph -> Obj morph
+conclusion :: (Category morph) => AtomicConstraint morph -> Obj morph
 conclusion = codomain . morphism
 
 -- | Given an object @G@ and a AtomicConstraint @a : P -> C@, check whether @G@ satisfies the AtomicConstraint @a@

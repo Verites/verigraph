@@ -1,7 +1,7 @@
 module Data.TypedGraph.Morphism.FindMorphismSpec.FindMorphismsTest (findMorphismsTest) where
 
-import           Abstract.Category.FinitaryCategory
-import           Category.TypedGraph.FindMorphism
+import           Abstract.Category.FindMorphism
+import           Category.TypedGraph                ()
 import           Data.Graphs
 import qualified Data.Graphs.Morphism               as GM
 import           Data.List

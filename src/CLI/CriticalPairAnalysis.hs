@@ -5,15 +5,16 @@ module CriticalPairAnalysis
   ) where
 
 import           GHC.Conc                              (numCapabilities)
-
-import           Abstract.Rewriting.DPO
-import           Analysis.Interlevel.EvolutionarySpans
-import           Analysis.Interlevel.InterLevelCP
 import           Control.Monad                         (when)
 import           Data.Monoid                           ((<>))
 import qualified Data.Set                              as Set
-import           GlobalOptions
 import           Options.Applicative
+
+import           Abstract.Rewriting.DPO
+import           Category.TypedGraph                   (TypedGraphMorphism)
+import           Analysis.Interlevel.EvolutionarySpans
+import           Analysis.Interlevel.InterLevelCP
+import           GlobalOptions
 import           Rewriting.DPO.TypedGraphRule
 import           Util
 import           Util.List
@@ -83,13 +84,13 @@ execute globalOpts opts = do
         fstOrdRules = map snd namedFstOrdRules
         sndOrdRules = map snd namedSndOrdRules
 
-        interlevelCPs = applySecondOrderFunction (interLevelCP dpoConf) namedFstOrdRules namedSndOrdRules
+        dpoConf' = toSndOrderMorphismsConfig dpoConf
+        interlevelCPs = applySecondOrderFunction (interLevelCP dpoConf') namedFstOrdRules namedSndOrdRules
         interlevelWithoutCounting = Set.fromList $ map (\(x,y,_,_) -> (x,y)) interlevelCPs
-        evoConflicts = allEvolSpans dpoConf namedSndOrdRules
+        evoConflicts = allEvolSpans dpoConf' namedSndOrdRules
 
 
-    putStrLn $ "injective satisfiability of nacs: " ++ show (nacSatisfaction dpoConf)
-    putStrLn $ "only injective matches morphisms: " ++ show (matchRestriction dpoConf)
+    putStrLn $ "only injective matches morphisms: " ++ show (arbitraryMatches globalOpts)
     putStrLn ""
 
     when secondOrder $ mapM_ putStrLn (XML.printMinimalSafetyNacsLog printNewNacs)
@@ -98,7 +99,7 @@ execute globalOpts opts = do
     putStrLn ""
 
     let fstOrderAnalysis = printAnalysis essentialCP action dpoConf fstOrdRules
-        sndOrderAnalysis = printAnalysis essentialCP action dpoConf sndOrdRules
+        sndOrderAnalysis = printAnalysis essentialCP action dpoConf' sndOrdRules
     case outputFile opts of
       Just file ->
         do
@@ -146,7 +147,7 @@ printEvoConflicts = map printOneEvo
                        show (printConf (True,True) (thd e)) ++ ")"
     printConf str evos = countElement str (map cpe evos)
 
-defWriterFun :: Bool -> Bool -> MorphismsConfig -> AnalysisType
+defWriterFun :: Bool -> Bool -> MorphismsConfig (TypedGraphMorphism a b) -> AnalysisType
              -> GW.Grammars a b -> String
              -> [(String,String)] -> String -> IO ()
 defWriterFun essential secondOrder conf t =
@@ -154,7 +155,8 @@ defWriterFun essential secondOrder conf t =
     (False, Conflicts)    -> GW.writeConflictsFile essential conf
     (False, Dependencies) -> GW.writeDependenciesFile conf
     (False, Both)         -> GW.writeConfDepFile essential conf
-    (True, Conflicts)     -> GW.writeSndOderConflictsFile conf
-    (True, Dependencies)  -> GW.writeSndOderDependenciesFile conf
-    (True, Both)          -> GW.writeSndOderConfDepFile conf
+    (True, Conflicts)     -> GW.writeSndOderConflictsFile conf'
+    (True, Dependencies)  -> GW.writeSndOderDependenciesFile conf'
+    (True, Both)          -> GW.writeSndOderConfDepFile conf'
     (_, None)             -> GW.writeGrammarFile
+  where conf' = toSndOrderMorphismsConfig conf

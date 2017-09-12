@@ -4,7 +4,7 @@ import           Data.Monoid                        ((<>))
 import           GlobalOptions
 import           Options.Applicative
 
-import           Abstract.Category.FinitaryCategory
+import           Abstract.Category
 import           Abstract.Rewriting.DPO             as DPO hiding (NamedProduction)
 import           Abstract.Rewriting.DPO.StateSpace  as StateSpace
 import           Base.Valid
@@ -164,7 +164,7 @@ type NamedPredicate = (String, TypedGraphRule () ())
 type Space = StateSpace (TypedGraphMorphism () ())
 
 
-exploreStateSpace :: MorphismsConfig -> Int -> Grammar (TypedGraphMorphism () ()) -> [(String, TypedGraph () ())] -> ([Int], Space)
+exploreStateSpace :: MorphismsConfig (TypedGraphMorphism () ()) -> Int -> Grammar (TypedGraphMorphism () ()) -> [(String, TypedGraph () ())] -> ([Int], Space)
 exploreStateSpace conf maxDepth grammar graphs =
   let
     (productions, predicates) =
@@ -196,7 +196,7 @@ splitPredicates ((name, rule) : rest) =
     (productions, predicates) =
       splitPredicates rest
   in
-    if isIsomorphism (getLHS rule) && isIsomorphism (getRHS rule) then
+    if isIsomorphism (leftMorphism rule) && isIsomorphism (rightMorphism rule) then
       (productions, (name, rule):predicates)
     else
       ((name, rule):productions, predicates)

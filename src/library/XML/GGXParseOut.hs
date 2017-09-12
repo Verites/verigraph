@@ -8,8 +8,8 @@ module XML.GGXParseOut
  , getMappings
  ) where
 
-import           Abstract.Category.FinitaryCategory ((<&>))
-import qualified Abstract.Category.FinitaryCategory as FC hiding ((<&>))
+import           Abstract.Category ((<&>))
+import qualified Abstract.Category as FC
 import           Abstract.Rewriting.DPO
 import qualified Analysis.CriticalPairs             as CP
 import qualified Analysis.CriticalSequence          as CS
@@ -73,15 +73,15 @@ getTgmMappings prefix tgm = nodesMorph ++ edgesMorph
     edgesMorph = map (\e -> ("E" ++ show (edgeMap e), prefix, "E" ++ show e)) (edgeIdsFromDomain tgm)
 
 getLHS :: [Mapping] -> [Mapping] -> GR.TypedGraphRule a b -> ParsedTypedGraph
-getLHS objNameN objNameE rule = serializeGraph objNameN objNameE $ GR.getLHS rule
+getLHS objNameN objNameE rule = serializeGraph objNameN objNameE $ GR.leftMorphism rule
 
 getRHS :: [Mapping] -> [Mapping] -> GR.TypedGraphRule a b -> ParsedTypedGraph
-getRHS objNameN objNameE rule = serializeGraph objNameN objNameE $ GR.getRHS rule
+getRHS objNameN objNameE rule = serializeGraph objNameN objNameE $ GR.rightMorphism rule
 
 getNacs :: String -> GR.TypedGraphRule a b -> [(ParsedTypedGraph,[Mapping])]
 getNacs ruleName rule = map getNac nacsWithIds
   where
-    zipIds = zip ([0..]::[Int]) (getNACs rule)
+    zipIds = zip ([0..]::[Int]) (nacs rule)
     nacsWithIds = map (\(x,y) -> ("NAC_" ++ ruleName ++ "_" ++ show x, y)) zipIds
 
 getNac :: (String, TypedGraphMorphism a b) -> (ParsedTypedGraph, [Mapping])
@@ -95,8 +95,8 @@ getMappings :: GR.TypedGraphRule a b -> [Mapping]
 getMappings rule = nodesMorph ++ edgesMorph
   where
     no = Nothing
-    invL = invert (GR.getLHS rule)
-    lr = GR.getRHS rule <&> invL
+    invL = invert (GR.leftMorphism rule)
+    lr = GR.rightMorphism rule <&> invL
     nodeMap = applyNodeIdUnsafe lr
     nodes = filter (isJust . applyNodeId lr) (nodeIdsFromDomain lr)
     nodesMorph = map (\n -> ("N" ++ show (nodeMap n), no, "N" ++ show n)) nodes

@@ -1,12 +1,8 @@
-{-# LANGUAGE FlexibleContexts     #-}
-{-# LANGUAGE FlexibleInstances    #-}
-{-# LANGUAGE UndecidableInstances #-}
 module Base.Isomorphic where
 
 import           Data.List.NonEmpty                 (NonEmpty)
 import qualified Data.List.NonEmpty                 as NonEmpty
 
-import           Abstract.Category.FinitaryCategory
 
 
 -- | The 'Iso' class defines isomorphism ('~=') checks.
@@ -46,9 +42,3 @@ instance (Iso a, Iso b, Iso c, Iso d) => Iso (a, b, c, d) where
 instance (Iso a, Iso b, Iso c, Iso d, Iso e) => Iso (a, b, c, d, e) where
   (xa, xb, xc, xd, xe) ~= (ya, yb, yc, yd, ye) =
     xa ~= ya && xb ~= yb && xc ~= yc && xd ~= yd && xe ~= ye
-
-instance {-# OVERLAPPABLE #-} (FindMorphism morph, Iso (Obj morph)) => Iso morph where
-  f ~= g = not $ null
-    [ (domainIso, codomainIso)
-      | codomainIso <- findIsomorphisms (codomain f) (codomain g)
-      , domainIso <- findCospanCommuter Isomorphism (codomainIso <&> f) g ]

@@ -1,6 +1,6 @@
 module XML.GGXReader.Span where
 
-import           Abstract.Category.AdhesiveHLR
+import           Abstract.Category
 import           Abstract.Rewriting.DPO
 import qualified Data.Graphs                   as G
 import           Data.Graphs.Morphism          as GM
@@ -15,7 +15,7 @@ import           XML.Utilities
 type TypeGraph a b = G.Graph (Maybe a) (Maybe b)
 
 instantiateRule :: TypeGraph a b -> RuleWithNacs -> TypedGraphRule a b
-instantiateRule typeGraph ((_, lhs, rhs, mappings), nacs) = buildProduction lhsTgm rhsTgm nacsTgm
+instantiateRule typeGraph ((_, lhs, rhs, mappings), nacs) = Production lhsTgm rhsTgm nacsTgm
   where
     lm = instantiateTypedGraph lhs typeGraph
     rm = instantiateTypedGraph rhs typeGraph

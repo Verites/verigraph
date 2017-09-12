@@ -1,7 +1,8 @@
 module Data.TypedGraph.Morphism.FindMorphismSpec.FindCospanCommuterTest (findCospanCommuterTest) where
 
-import           Abstract.Category.FinitaryCategory
-import           Category.TypedGraph.FindMorphism   ()
+import           Abstract.Category
+import           Abstract.Category.FindMorphism
+import           Category.TypedGraph                ()
 import           Data.Graphs
 import qualified Data.Graphs.Morphism               as GM
 import qualified Data.TypedGraph.Morphism           as TGM
@@ -205,22 +206,17 @@ g8' = build [1,2] [(1,1,1),(2,2,2)]
 genericTest :: TGM a b -> TGM a b -> Expectation
 genericTest morphismOne morphismTwo =
   do
-    genericCompare GenericMorphism morphismOne morphismTwo
-    genericCompare Monomorphism morphismOne morphismTwo
-    genericCompare Epimorphism morphismOne morphismTwo
-    genericCompare Isomorphism morphismOne morphismTwo
+    genericCompare anyMorphism morphismOne morphismTwo
+    genericCompare monic morphismOne morphismTwo
+    genericCompare epic morphismOne morphismTwo
+    genericCompare iso morphismOne morphismTwo
 
-genericCompare :: MorphismType -> TGM a b -> TGM a b -> Expectation
+genericCompare :: MorphismClass (TGM a b) -> TGM a b -> TGM a b -> Expectation
 genericCompare conf morphismOne morphismTwo =
-  findCospanCommuter conf morphismOne morphismTwo
+  findCospanCommuters conf morphismOne morphismTwo
   `shouldBe` genericCommuter conf morphismOne morphismTwo
 
-genericCommuter :: MorphismType -> TGM a b -> TGM a b -> [TGM a b]
-genericCommuter conf morphismOne morphismTwo = filterCommuters $
-  case conf of
-    Monomorphism -> findMonomorphisms (domain morphismOne) (domain morphismTwo)
-    Epimorphism -> findEpimorphisms (domain morphismOne) (domain morphismTwo)
-    Isomorphism -> findIsomorphisms (domain morphismOne) (domain morphismTwo)
-    GenericMorphism -> findAllMorphisms (domain morphismOne) (domain morphismTwo)
-  where
-    filterCommuters = filter (\x -> morphismOne == morphismTwo <&> x)
+genericCommuter :: MorphismClass (TGM a b) -> TGM a b -> TGM a b -> [TGM a b]
+genericCommuter conf morphismOne morphismTwo = 
+  filter commutes $ findMorphisms conf (domain morphismOne) (domain morphismTwo)
+  where commutes x = morphismOne == morphismTwo <&> x

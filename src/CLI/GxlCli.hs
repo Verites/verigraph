@@ -4,9 +4,10 @@ import           Data.Monoid                           ((<>))
 import           GHC.Conc                              (numCapabilities)
 import           Options.Applicative
 
-import           Abstract.Category.FinitaryCategory
+import           Abstract.Category
 import           Abstract.Rewriting.DPO                as DPO
 import           GlobalOptions
+import           Category.TypedGraph
 import           Rewriting.DPO.TypedGraph
 import           Util
 import qualified XML.GGXWriter                         as GW
@@ -78,7 +79,7 @@ execute (globalOpts, options) =
         rules = map snd namedRules
 
         -- creates an empty second-order grammar for the writer function
-        typeGraph = codomain (codomain (getLHS (head rules)))
+        typeGraph = codomain (leftObject (head rules))
         emptySndOrderGrammar = grammar (emptyGraphRule typeGraph) [] []
 
     let analysis = printAnalysis essentialCP action dpoConf rules
@@ -94,7 +95,7 @@ execute (globalOpts, options) =
 
     return ()
 
-defWriterFun :: Bool -> MorphismsConfig -> AnalysisType
+defWriterFun :: Bool -> MorphismsConfig (TypedGraphMorphism a b) -> AnalysisType
              -> GW.Grammars a b -> String
              -> [(String,String)] -> String -> IO ()
 defWriterFun essential conf t =

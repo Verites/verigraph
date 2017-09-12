@@ -1,6 +1,5 @@
 dist/
 doc/
-.idea/
 org/
 tmp/
 .stack-work/
@@ -26,6 +25,8 @@ images/.directory
 .hspec-failures
 
 
-#Emacs stuff
+# Editor/IDE stuff
 TAGS
 *#
+.vscode/
+.idea/

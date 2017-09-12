@@ -4,9 +4,9 @@ module Category.TypedGraph.CommutingSquares (
   , commutingMorphismSameCodomain
   ) where
 
-import           Abstract.Category.FinitaryCategory
+import           Abstract.Category
+import           Abstract.Category.FindMorphism
 import           Category.TypedGraph                ()
-import           Category.TypedGraph.FindMorphism   ()
 import           Data.TypedGraph.Morphism
 
 ---- All functions in this file search the unique morphism in some diagram.

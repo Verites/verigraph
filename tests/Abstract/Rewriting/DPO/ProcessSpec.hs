@@ -1,18 +1,18 @@
 -- | Test Suite for Process Module
 module Abstract.Rewriting.DPO.ProcessSpec where
 
-import           Abstract.Category.AdhesiveHLR
-import           Abstract.Category.FinitaryCategory
+import           Data.Maybe                            (fromJust)
+import           Test.Hspec
+
+import           Abstract.Category
+import           Abstract.Category.FindMorphism
 import           Abstract.Rewriting.DPO
 import           Abstract.Rewriting.DPO.Derivation
 import           Abstract.Rewriting.DPO.Process
-import           Data.TypedGraph.Morphism
-import           Rewriting.DPO.TypedGraph.GraphProcess ()
-
 import           Data.Graphs
 import           Data.Graphs.Morphism
-import           Data.Maybe                            (fromJust)
-import           Test.Hspec
+import           Data.TypedGraph.Morphism
+import           Rewriting.DPO.TypedGraph.GraphProcess ()
 
 spec :: Spec
 spec =
@@ -43,7 +43,7 @@ kToRMappingSendMsg = buildGraphMorphism kSendMsg rSendMsg [(24,34),(23,33),(21,3
 leftSendMsg = buildTypedGraphMorphism kTypedSendMsg lTypedSendMsg kToLMappingSendMsg
 rightSendMsg = buildTypedGraphMorphism kTypedSendMsg rTypedSendMsg kToRMappingSendMsg
 
-sendMsg = buildProduction leftSendMsg rightSendMsg []
+sendMsg = Production leftSendMsg rightSendMsg []
 
 
 -- | GetData Rule
@@ -64,21 +64,21 @@ kToRMappingGetData = buildGraphMorphism kGetData rGetData [(54,64),(53,63),(52,6
 leftGetData = buildTypedGraphMorphism kTypedGetData lTypedGetData kToLMappingGetData
 rightGetData = buildTypedGraphMorphism kTypedGetData rTypedGetData kToRMappingGetData
 
-getData = buildProduction leftGetData rightGetData []
+getData = Production leftGetData rightGetData []
 
 -- | Test Instantiate
 
-morphismConfig = MorphismsConfig Monomorphism MonomorphicNAC
+morphismConfig = MorphismsConfig monic
 
 instanceGraph = build [1,2,3,4] [(1,2,1),(4,4,3)]
 typedInstanceGraph = buildGraphMorphism instanceGraph typeGraphRules [(3,4),(2,3),(1,1),(4,2)] [(1,1),(4,4)]
 
-matchSendMsg = head (findMonomorphisms lTypedSendMsg typedInstanceGraph :: [TypedGraphMorphism a b ])
+matchSendMsg = head (findMonomorphisms lTypedSendMsg typedInstanceGraph :: [TypedGraphMorphism () ()])
 derivationSendMsg =fromJust $  generateDerivation morphismConfig matchSendMsg sendMsg
 
 overlappingGraph = codomain $ comatch derivationSendMsg
 
-matchGetData = head (findMonomorphisms lTypedGetData overlappingGraph :: [TypedGraphMorphism a b])
+matchGetData = head (findMonomorphisms lTypedGetData overlappingGraph :: [TypedGraphMorphism () ()])
 derivationGetData = fromJust $ generateDerivation morphismConfig matchGetData getData
 
 processFromDerivations = calculateProcess [derivationSendMsg, derivationGetData]
@@ -86,9 +86,9 @@ processFromDerivations = calculateProcess [derivationSendMsg, derivationGetData]
 
 -- | Core Graph Result
 
-coreGraphDomain = build [1,2,3,4] [(1,2,1),(4,4,3),(50,2,3),(196,4,2)]
+coreGraphDomain = build [1,2,3,4] [(1,2,1),(4,4,3),(45,2,3),(150,4,2)]
 typedCoreGraph = buildGraphMorphism coreGraphDomain typeGraphRules
-                 [(1,1),(2,3),(3,4),(4,2)] [(1,1),(4,4),(50,5),(196,3)]
+                 [(1,1),(2,3),(3,4),(4,2)] [(1,1),(4,4),(45,5),(150,3)]
 
 
 -- | SendMsg Rule Result
@@ -103,7 +103,7 @@ kTypedSendMsgResult = buildGraphMorphism kSendMsgResult coreGraphDomain
 
 rSendMsgResult = build [31,33,34] [(35,33,34)]
 rTypedSendMsgResult = buildGraphMorphism rSendMsgResult coreGraphDomain
-                      [(31,1),(33,2),(34,3)] [(35,50)]
+                      [(31,1),(33,2),(34,3)] [(35,45)]
 
 kToLMappingSendMsgResult = buildGraphMorphism kSendMsgResult lSendMsgResult
                            [(21,11),(23,13),(24,14)] []
@@ -114,22 +114,22 @@ kToRMappingSendMsgResult = buildGraphMorphism kSendMsgResult rSendMsgResult
 leftSendMsgResult = buildTypedGraphMorphism kTypedSendMsgResult lTypedSendMsgResult kToLMappingSendMsgResult
 rightSendMsgResult = buildTypedGraphMorphism kTypedSendMsgResult rTypedSendMsgResult kToRMappingSendMsgResult
 
-sendMsgResult = buildProduction leftSendMsgResult rightSendMsgResult []
+sendMsgResult = Production leftSendMsgResult rightSendMsgResult []
 
 
 -- | GetData Rule Result
 
 lGetDataResult = build [42,43,44] [(44,42,44),(45,43,44)]
 lTypedGetDataResult = buildGraphMorphism lGetDataResult coreGraphDomain
-                      [(42,4),(43,2),(44,3)] [(44,4),(45,50)]
+                      [(42,4),(43,2),(44,3)] [(44,4),(45,45)]
 
 kGetDataResult = build [52,53,54] [(55,53,54)]
 kTypedGetDataResult = buildGraphMorphism kGetDataResult coreGraphDomain
-                      [(52,4),(53,2),(54,3)] [(55,50)]
+                      [(52,4),(53,2),(54,3)] [(55,45)]
 
 rGetDataResult = build [62,63,64] [(65,63,64),(63,62,63)]
 rTypedGetDataResult = buildGraphMorphism rGetDataResult coreGraphDomain
-                      [(62,4),(63,2),(64,3)] [(65,50),(63,196)]
+                      [(62,4),(63,2),(64,3)] [(65,45),(63,150)]
 
 kToLMappingGetDataResult = buildGraphMorphism kGetDataResult lGetDataResult
                            [(52,42),(53,43),(54,44)] [(55,45)]
@@ -140,7 +140,7 @@ kToRMappingGetDataResult = buildGraphMorphism kGetDataResult rGetDataResult
 leftGetDataResult = buildTypedGraphMorphism kTypedGetDataResult lTypedGetDataResult kToLMappingGetDataResult
 rightGetDataResult = buildTypedGraphMorphism kTypedGetDataResult rTypedGetDataResult kToRMappingGetDataResult
 
-getDataResult = buildProduction leftGetDataResult rightGetDataResult []
+getDataResult = Production leftGetDataResult rightGetDataResult []
 
 
 -- | Test Result

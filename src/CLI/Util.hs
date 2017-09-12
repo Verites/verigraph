@@ -3,7 +3,9 @@ module Util where
 import           Control.Parallel                      (par)
 import           Data.Matrix
 
-import           Abstract.Category.JointlyEpimorphisms
+import           Abstract.Category.Finitary
+import           Abstract.Category.Limit
+import           Abstract.Category.Adhesive
 import           Abstract.Rewriting.DPO
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
@@ -33,8 +35,8 @@ parallelMap f (x:xs) = let r = f x
                        in r `par` r : parallelMap f xs
 parallelMap _ _      = []
 
-printAnalysis :: (JointlyEpimorphisms morph, DPO morph) =>
-  Bool -> AnalysisType -> MorphismsConfig -> [Production morph] -> IO ()
+printAnalysis :: (E'PairCofinitary morph, DPO morph, MInitialPushout morph, Complete morph, Cocomplete morph) =>
+  Bool -> AnalysisType -> MorphismsConfig morph -> [Production morph] -> IO ()
 printAnalysis essential action dpoConf rules =
   let findAllEssentialProduceDangling _ _ _ = []
       findAllEssentialProduceForbid _ _ _ = []
@@ -60,10 +62,10 @@ printAnalysis essential action dpoConf rules =
 
 -- Receives functions and theirs names,
 -- and returns they applicated to the rules
-analysisMatrix :: MorphismsConfig -> [Production morph]
-  -> (MorphismsConfig -> Production morph -> Production morph -> [cps])
-  -> (MorphismsConfig -> Production morph -> Production morph -> [cps])
-  -> (MorphismsConfig -> Production morph -> Production morph -> [cps])
+analysisMatrix :: MorphismsConfig morph -> [Production morph]
+  -> (MorphismsConfig morph -> Production morph -> Production morph -> [cps])
+  -> (MorphismsConfig morph -> Production morph -> Production morph -> [cps])
+  -> (MorphismsConfig morph -> Production morph -> Production morph -> [cps])
   -> String -> String -> String -> String
   -> [String]
 analysisMatrix dpoConf rules f1 f2 f3 n1 n2 n3 n4 =

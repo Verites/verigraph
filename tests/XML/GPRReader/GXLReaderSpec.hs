@@ -4,12 +4,12 @@ import           Data.List
 import           Data.Matrix                                 hiding ((<|>))
 import           Test.Hspec
 
-import           Abstract.Category.FinitaryCategory (MorphismType(..))
+import           Abstract.Category
 import           Abstract.Rewriting.DPO
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
 import           Analysis.EssentialCriticalPairs
-import           Category.TypedGraphRule.JointlyEpimorphisms
+import           Category.TypedGraphRule
 import qualified XML.GGXReader                               as XML
 import qualified XML.GPRReader.GXLReader                     as GPR
 
@@ -21,7 +21,8 @@ fileName5 = "tests/grammars/elevator.ggx"
 fileName6 = "tests/grammars/elevator.gps"
 fileName7 = "tests/grammars/elevatorWithFlags.gps"
 
-dpoConf = MorphismsConfig GenericMorphism MonomorphicNAC
+dpoConf :: Category morph => MorphismsConfig morph
+dpoConf = MorphismsConfig monic
 
 spec :: Spec
 spec = context "GPR Reader Test - CPA/CSA analysis is equal on GGX and GPR files" gprTest

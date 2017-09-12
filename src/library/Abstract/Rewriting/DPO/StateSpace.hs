@@ -50,7 +50,8 @@ import qualified Data.IntMap                        as IntMap
 import           Data.Set                           (Set)
 import qualified Data.Set                           as Set
 
-import           Abstract.Category.FinitaryCategory
+import           Abstract.Category
+import           Abstract.Category.FindMorphism
 import           Abstract.Rewriting.DPO             hiding (productions)
 import qualified Logic.Model                        as Logic
 
@@ -70,7 +71,7 @@ data StateSpace morph = SS
   { states        :: IntMap (State morph) -- ^ Obtain the set of (explored) indexed states in a state space.
   , transitions   :: Set (Int, Int) -- ^ Obtain the set of (explored) transitions in a state space.
   , uid           :: Int -- ^ Provides an unused state index.
-  , morphismsConf :: MorphismsConfig -- ^ Obtain the configuration of DPO semantics for the state space.
+  , morphismsConf :: MorphismsConfig morph -- ^ Obtain the configuration of DPO semantics for the state space.
   , productions   :: [Production morph] -- ^ Obtain the productions of the HLR system of the state space.
   , predicates    :: [(String, Production morph)] -- ^ Obtain the predicates of the state space.
   }
@@ -82,7 +83,7 @@ type State morph = (Obj morph, [String])
 
 -- | An empty state space for the HLR system defined by the given productions, with the given
 -- configuration of the DPO semantics.
-empty :: MorphismsConfig -> [Production morph] -> [(String, Production morph)] -> StateSpace morph
+empty :: MorphismsConfig morph -> [Production morph] -> [(String, Production morph)] -> StateSpace morph
 empty = SS IntMap.empty Set.empty 0
 
 
@@ -155,7 +156,7 @@ execStateSpaceBuilder =
 
 
 -- | Gets the configuration of DPO semantics for this builder.
-getDpoConfig :: StateSpaceBuilder morph MorphismsConfig
+getDpoConfig :: StateSpaceBuilder morph (MorphismsConfig morph)
 getDpoConfig =
   Monad.gets morphismsConf
 

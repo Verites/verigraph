@@ -1,16 +1,18 @@
 module Analysis.EssentialCriticalPairsSpec where
 
-import           Abstract.Category.FinitaryCategory (MorphismType(..))
+import           Abstract.Category
 import           Abstract.Rewriting.DPO
 import           Analysis.EssentialCriticalPairs
-import           Category.TypedGraphRule.JointlyEpimorphisms ()
+import           Category.TypedGraphRule                     ()
 import           Data.Matrix                                 hiding ((<|>))
 import           Test.Hspec
 import qualified XML.GGXReader                               as XML
 
 fileName1 = "tests/grammars/elevator.ggx"
 fileName2 = "tests/grammars/secondOrderMatchTest.ggx"
-dpoConf = MorphismsConfig Monomorphism PartiallyMonomorphicNAC
+
+dpoConf :: Category morph => MorphismsConfig morph
+dpoConf = MorphismsConfig monic
 testCase findEssentialCP rules expected = expected `shouldBe` show (pairwise (findEssentialCP dpoConf) rules)
 
 spec :: Spec
