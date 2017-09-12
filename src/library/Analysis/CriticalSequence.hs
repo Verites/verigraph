@@ -25,8 +25,7 @@ module Analysis.CriticalSequence
 
 import           Abstract.Category.Finitary
 import           Abstract.Rewriting.DPO                   hiding (calculateComatch)
-import           Abstract.Rewriting.DPO.DiagramAlgorithms
-import           Data.Maybe                               (mapMaybe)
+import           Analysis.CriticalPairs hiding (matches, comatches)
 import           Util.List                                (parallelMap)
 
 -- | Data representing the type of a 'CriticalPair'
@@ -139,7 +138,18 @@ findCriticalSequences conf p1 p2 =
 -- It occurs when p1 enables p2.
 -- (ProduceUse, RemoveDangling, DeleteForbid)
 
--- *** ProduceUse
+-- Equavalent to conflicts between (inverse p1) and p2.
+
+asTriggeringDependency :: (DPO morph) => (MorphismsConfig morph -> Production morph -> Production morph -> [CriticalPair morph]) -> MorphismsConfig morph -> Production morph -> Production morph -> [CriticalSequence morph]
+asTriggeringDependency f conf p1 p2 = concatMap convertResult $ f conf (invertProduction conf p1) p2
+  where
+    convertResult (CriticalPair _ _ _ FreeOverlap) = []
+    convertResult (CriticalPair matches comatches nac kind) = 
+      [CriticalSequence comatches matches nac (convertKind kind)]
+    convertKind DeleteUse = ProduceUse
+    convertKind ProduceDangling = RemoveDangling
+    convertKind ProduceForbid = DeleteForbid
+    convertKind FreeOverlap = error "asTriggeringDependency: unreachable code"
 
 -- | All ProduceUse caused by the derivation of @l@ before @r@.
 --
@@ -147,59 +157,25 @@ findCriticalSequences conf p1 p2 =
 -- if rule @p1@ creates something that is used by @p2@.
 -- Verify the non existence of h21: L2 -> D1 such that d1 . h21 = m2'.
 findAllProduceUse :: (DPO morph, E'PairCofinitary morph) => MorphismsConfig morph -> Production morph -> Production morph -> [CriticalSequence morph]
-findAllProduceUse conf p1 p2 =
-  map (\m -> CriticalSequence Nothing m Nothing ProduceUse) prodUse
-  where
-    p1' = invertProduction conf p1
-    gluing = findJointSurjectiveApplicableMatches conf p1' p2
-    prodUse = filter (isDeleteUse conf p1') gluing
-
--- *** RemoveDangling
+findAllProduceUse = asTriggeringDependency findAllDeleteUse
 
 -- | All RemoveDangling caused by the derivation of @p1@ before @p2@.
 --
 -- Rule @p1@ causes a remove-dangling dependency with @p2@
 -- if rule @p1@ deletes something that enables @p2@.
 findAllRemoveDangling :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> Production morph -> Production morph -> [CriticalSequence morph]
-findAllRemoveDangling conf p1 p2 =
-  map (\m -> CriticalSequence Nothing m Nothing RemoveDangling) remDang
-  where
-    p1' = invertProduction conf p1
-    gluing = findJointSurjectiveApplicableMatches conf p1' p2
-    remDang = filter (isProduceDangling conf p1' p2) gluing
-
--- ProduceUse and RemoveDangling
+findAllRemoveDangling = asTriggeringDependency findAllProduceDangling
 
 -- | Tests ProduceUse and RemoveDangling for the same pairs,
 -- more efficient than deal separately.
 findAllProduceUseAndRemoveDangling :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> Production morph -> Production morph -> [CriticalSequence morph]
-findAllProduceUseAndRemoveDangling conf p1 p2 =
-  map categorizeDependency dependencies
-  where
-    p1' = invertProduction conf p1
-    gluing = findJointSurjectiveApplicableMatches conf p1' p2
-    dependencies = mapMaybe (deleteUseDangling conf p1' p2) gluing
-    categorizeDependency x = case x of
-      (Left m)  -> CriticalSequence Nothing m Nothing ProduceUse
-      (Right m) -> CriticalSequence Nothing m Nothing RemoveDangling
-
--- *** DeleteForbid
+findAllProduceUseAndRemoveDangling = asTriggeringDependency findAllDeleteUseAndProduceDangling
 
 -- | All DeleteForbid caused by the derivation of @p1@ before @r@.
 -- Rule @p1@ causes a delete-forbid dependency with @p2@ if
 -- some NAC in @p2@ turns satisfied after the aplication of @p1@
 findAllDeleteForbid :: (DPO morph, E'PairCofinitary morph) => MorphismsConfig morph -> Production morph -> Production morph -> [CriticalSequence morph]
-findAllDeleteForbid conf p1 p2 =
-  concatMap (findDeleteForbidForNAC conf p1' p2) (zip (nacs p2) [0..])
-  where
-    p1' = invertProduction conf p1
-
--- | Check DeleteForbid for a NAC @n@ in @p2@
-findDeleteForbidForNAC :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> Production morph -> Production morph -> (morph, Int) -> [CriticalSequence morph]
-findDeleteForbidForNAC conf p1' p2 nac =
-  map
-    (\(m',m,nac) -> CriticalSequence (Just m) m' (Just nac) DeleteForbid)
-    (produceForbidOneNac conf p1' p2 nac)
+findAllDeleteForbid = asTriggeringDependency findAllProduceForbid
 
 -- ** Irreversible Dependencies
 
@@ -207,7 +183,18 @@ findDeleteForbidForNAC conf p1' p2 nac =
 -- Capture cases of two rules only can be applied in a prefixed order.
 -- (DeliverDelete, DeliverDangling, ForbidProduce)
 
--- *** DeliverDelete
+-- Equavalent to conflicts between p2 and (inverse p1).
+
+asIrreversibleDependency :: (DPO morph) => (MorphismsConfig morph -> Production morph -> Production morph -> [CriticalPair morph]) -> MorphismsConfig morph -> Production morph -> Production morph -> [CriticalSequence morph]
+asIrreversibleDependency f conf p1 p2 = concatMap convertResult $ f conf p2 (invertProduction conf p1)
+  where
+    convertResult (CriticalPair _ _ _ FreeOverlap) = []
+    convertResult (CriticalPair matches comatches nac kind) = 
+      [CriticalSequence comatches matches nac (convertKind kind)]
+    convertKind DeleteUse = DeliverDelete
+    convertKind ProduceDangling = DeliverDangling
+    convertKind ProduceForbid = ForbidProduce
+    convertKind FreeOverlap = error "asIrreversibleDependency: unreachable code"
 
 -- | All DeliverDelete caused by the derivation of @p1@ before @r@.
 --
@@ -215,56 +202,22 @@ findDeleteForbidForNAC conf p1' p2 nac =
 -- rule @p2@ deletes something that is used by @p2@,
 -- Verify the non existence of h12: L1 -> D2 such that d2 . h12 = m1'.
 findAllDeliverDelete :: (DPO morph, E'PairCofinitary morph) => MorphismsConfig morph -> Production morph -> Production morph -> [CriticalSequence morph]
-findAllDeliverDelete conf p1 p2 =
-  map (\m -> CriticalSequence Nothing m Nothing DeliverDelete) delDel
-  where
-    p1' = invertProduction conf p1
-    gluing = findJointSurjectiveApplicableMatches conf p1' p2
-    delDel = filter (\(m1,m2) -> isDeleteUse conf p2 (m2,m1)) gluing
-
--- *** DeliverDangling
+findAllDeliverDelete = asIrreversibleDependency findAllDeleteUse
 
 -- | All DeliverDangling caused by the derivation of @p1@ before @p2@.
 --
 -- Rule @p1@ causes a deliver-delete dependency with @p2@ if
 -- rule @p2@ creates something that disables the inverse of @p1@.
 findAllDeliverDangling :: (DPO morph, E'PairCofinitary morph) => MorphismsConfig morph -> Production morph -> Production morph -> [CriticalSequence morph]
-findAllDeliverDangling conf p1 p2 =
-  map (\m -> CriticalSequence Nothing m Nothing DeliverDangling) delDang
-  where
-    p1' = invertProduction conf p1
-    gluing = findJointSurjectiveApplicableMatches conf p1' p2
-    delDang = filter (\(m1,m2) -> isProduceDangling conf p2 p1' (m2,m1)) gluing
-
--- DeliverDelete and DeliverDangling
+findAllDeliverDangling = asIrreversibleDependency findAllProduceDangling
 
 -- | Tests DeliverDelete and DeliverDangling for the same overlapping pairs
 findAllDeliverDeleteAndDeliverDangling :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> Production morph -> Production morph -> [CriticalSequence morph]
-findAllDeliverDeleteAndDeliverDangling conf p1 p2 =
-  map categorizeDependency dependencies
-  where
-    p1' = invertProduction conf p1
-    gluing = findJointSurjectiveApplicableMatches conf p1' p2
-    dependencies = mapMaybe (\(m1,m2) -> deleteUseDangling conf p2 p1' (m2,m1)) gluing
-    categorizeDependency x = case x of
-      (Left m)  -> CriticalSequence Nothing m Nothing DeliverDelete
-      (Right m) -> CriticalSequence Nothing m Nothing DeliverDangling
-
--- *** ForbidProduce
+findAllDeliverDeleteAndDeliverDangling = asIrreversibleDependency findAllDeleteUseAndProduceDangling
 
 -- | All ForbidProduce caused by the derivation of @p1@ before @p2@.
 --
 -- Rule @p1@ causes a forbid-produce dependency with @p2@ if some
 -- NAC in right of @p1@ turns satisfied after the aplication of @p2@.
 findAllForbidProduce :: (DPO morph, E'PairCofinitary morph) => MorphismsConfig morph -> Production morph -> Production morph -> [CriticalSequence morph]
-findAllForbidProduce conf p1 p2 =
-  concatMap (findForbidProduceForNAC conf p1' p2) (zip (nacs p1') [0..])
-    where
-      p1' = invertProduction conf p1
-
--- | Check ForbidProduce for a NAC @n@ in right of @p1@
-findForbidProduceForNAC :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> Production morph -> Production morph -> (morph, Int) -> [CriticalSequence morph]
-findForbidProduceForNAC conf p1' p2 nac =
-  map
-    (\(morph,morph',nac) -> CriticalSequence (Just morph) morph' (Just nac) ForbidProduce)
-    (produceForbidOneNac conf p2 p1' nac)
+findAllForbidProduce = asIrreversibleDependency findAllProduceForbid
