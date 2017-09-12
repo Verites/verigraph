@@ -223,8 +223,7 @@ satisfiesRewritingConditions conf production match =
 
 -- | Verifies if the gluing conditions for a production /p/ are satisfied by a match /m/
 satisfiesGluingConditions :: forall morph. DPO morph => MorphismsConfig morph -> Production morph -> morph -> Bool
-satisfiesGluingConditions _ production match =
-  hasPushoutComplementAlongM (leftMorphism production) match
+satisfiesGluingConditions _ production = hasPushoutComplementAlongM (leftMorphism production)
 
 -- | True if the given match satisfies all NACs of the given production.
 satisfiesNACs :: DPO morph => MorphismsConfig morph -> Production morph -> morph -> Bool
