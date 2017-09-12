@@ -85,8 +85,11 @@ execute globalOpts opts = do
         sndOrdRules = map snd namedSndOrdRules
 
         dpoConf' = toSndOrderMorphismsConfig dpoConf
-        interlevelCPs = applySecondOrderFunction (interLevelCP dpoConf') namedFstOrdRules namedSndOrdRules
-        interlevelWithoutCounting = Set.fromList $ map (\(x,y,_,_) -> (x,y)) interlevelCPs
+        interlevelWithoutCounting = Set.fromList 
+          [ (x,y)
+            | sndOrdRule <- namedSndOrdRules
+            , fstOrdRule <- namedFstOrdRules
+            , (x,y,_,_) <- interLevelCP dpoConf' sndOrdRule fstOrdRule ]
         evoConflicts = allEvolSpans dpoConf' namedSndOrdRules
 
 

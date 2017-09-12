@@ -1,6 +1,20 @@
 {-# LANGUAGE TypeFamilies #-}
-module Rewriting.DPO.TypedGraphRule where
--- TODO: write explicit list of exports
+module Rewriting.DPO.TypedGraphRule
+  ( SndOrderRule
+  , Production(..)
+  , leftObject
+  , interfaceObject
+  , rightObject
+
+  , MorphismsConfig(..)
+  , toFstOrderMorphismsConfig
+  , toSndOrderMorphismsConfig
+
+  -- * Minimal Safety NACs
+  -- TODO: document why minimal safety NACs exist
+  , minimalSafetyNacs
+  , addMinimalSafetyNacs
+  ) where
 
 import           Data.Maybe                            (fromMaybe, mapMaybe)
 
@@ -322,10 +336,3 @@ isOrphanNode m n = n `elem` orphanTypedNodeIds m
 
 isOrphanEdge :: TypedGraphMorphism a b -> EdgeId -> Bool
 isOrphanEdge m n = n `elem` orphanTypedEdgeIds m
-
--- | Receives a function that works with a second-order and a first-order rule.
--- Apply this function on all possible combinations of rules.
-applySecondOrderFunction ::
-     ((String, SndOrderRule a b) -> (String, TypedGraphRule a b) -> [t])
-  -> [(String, TypedGraphRule a b)] -> [(String, SndOrderRule a b)] -> [t]
-applySecondOrderFunction f fstRules = concatMap (\r -> concatMap (f r) fstRules)
