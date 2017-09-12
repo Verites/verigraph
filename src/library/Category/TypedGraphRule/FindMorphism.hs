@@ -3,58 +3,44 @@ module Category.TypedGraphRule.FindMorphism () where
 import           Abstract.Category
 import           Abstract.Category.FindMorphism
 import           Abstract.Rewriting.DPO
-import           Category.TypedGraph                (TypedGraphMorphism)
+import           Category.TypedGraph                ()
 import           Category.TypedGraphRule.Category
-
-type FstOrderMorphismClass n e = MorphismClass (TypedGraphMorphism n e)
 
 instance FindMorphism (RuleMorphism n e) where
   -- | A match between two first-order rules (desconsidering the NACs)
-  findMorphisms cls' l g = map (buildPair l g) rightMatch
-    where
-      cls = toFstOrderMorphismClass cls'
-      matchesK = findMorphisms cls (interfaceObject l) (interfaceObject g)
-      leftMatch = concatMap (leftM cls l g) matchesK
-      rightMatch = concatMap (rightM cls l g) leftMatch
+  findMorphisms cls' p1 p2 = 
+    [ ruleMorphism p1 p2 fL fK fR
+        | fK <- findMorphisms cls (interfaceObject p1) (interfaceObject p2)
+        , fL <- findSpanCommuters cls (leftMorphism p1) (leftMorphism p2 <&> fK) 
+        , fR <- findSpanCommuters cls (rightMorphism p1) (rightMorphism p2 <&> fK) ]
+    where cls = toFstOrderMorphismClass cls'
 
   induceSpanMorphism = error "induceSpanMorphism not implemented for RuleMorphism"
 
-  -- TODO: rewrite in terms of findSpanCommuters of first order morphisms, for efficiency
-  findSpanCommuters conf morphismOne morphismTwo = commuterMorphisms
+  -- Given span (p2 <-f- p1 -g-> p3), returns a list of (h : p2 -> p3) with (h <&> f = g)
+  findSpanCommuters cls' f g =
+    [ ruleMorphism p2 p3 hL hK hR
+        | hK <- findSpanCommuters cls (mappingInterface f) (mappingInterface g)
+        , hL <- findSpanCommuters cls (leftMorphism p2) (leftMorphism p3 <&> hK)
+        , hL <&> fL == gL
+        , hR <- findSpanCommuters cls (rightMorphism p2) (rightMorphism p3 <&> hK) 
+        , hR <&> fR == gR ]
     where
-      allMorphisms  = findMorphisms conf (domain morphismOne) (domain morphismTwo)
-      commuterMorphisms = filter (\x -> x <&> morphismOne == morphismTwo) allMorphisms
+      (p2, p3) = (codomain f, codomain g)
+      (fL, fR) = (mappingLeft f, mappingRight f)
+      (gL, gR) = (mappingLeft g, mappingRight g)
+      cls = toFstOrderMorphismClass cls'
 
-  -- TODO: rewrite in terms of findCospanCommuters of first order morphisms, for efficiency
-  findCospanCommuters conf morphismOne morphismTwo = commuterMorphisms
+  -- Given cospan (p2 -f-> p1 <-g- p3), returns a list of (h : p2 -> p3) with (f = g <&> h)
+  findCospanCommuters cls' f g = 
+    [ ruleMorphism p2 p3 hL hK hR
+        | hK <- findCospanCommuters cls (mappingInterface f) (mappingInterface g)
+        , hL <- findSpanCommuters cls (leftMorphism p2) (leftMorphism p3 <&> hK)
+        , fL == gL <&> hL
+        , hR <- findSpanCommuters cls (rightMorphism p2) (rightMorphism p3 <&> hK) 
+        , fR == gR <&> hR ]
     where
-      allMorphisms  = findMorphisms conf (domain morphismOne) (domain morphismTwo)
-      commuterMorphisms = filter (\x -> morphismOne == morphismTwo <&> x) allMorphisms
-
----- leftPartInj and leftM:
--- They receive a match between rule interfaces and build all pairs of
--- left and interface morphisms where the left morphisms form valid rule
-
-leftM :: FstOrderMorphismClass n e -> TypedGraphRule n e -> TypedGraphRule n e -> TypedGraphMorphism n e -> [(TypedGraphMorphism n e, TypedGraphMorphism n e)]
-leftM prop l g mapK = map (\m -> (m, mapK)) commuting
-  where
-    matchesL = findMorphisms prop (leftObject l) (leftObject g)
-    commuting = filter (\m -> m <&> leftMorphism l == leftMorphism g <&> mapK) matchesL
-
----- rightPartInj and rightM:
--- They receive a pair of left and interface morphisms between rules and
--- add all right morphisms where they respect a valid rule
-
-rightM :: FstOrderMorphismClass n e -> TypedGraphRule n e -> TypedGraphRule n e
-        -> (TypedGraphMorphism n e, TypedGraphMorphism n e)
-        -> [(TypedGraphMorphism n e, TypedGraphMorphism n e, TypedGraphMorphism n e)]
-rightM prop l g (mapL,mapK) = map (\m -> (mapL, mapK, m)) commuting
-  where
-    matchesR = findMorphisms prop (rightObject l) (rightObject g)
-    commuting = filter (\m -> m <&> rightMorphism l == rightMorphism g <&> mapK) matchesR
-
--- kind of curry for three arguments
-buildPair :: TypedGraphRule n e -> TypedGraphRule n e
-          -> (TypedGraphMorphism n e, TypedGraphMorphism n e, TypedGraphMorphism n e)
-          -> RuleMorphism n e
-buildPair l g (m1,m2,m3) = ruleMorphism l g m1 m2 m3
+      (p2, p3) = (domain f, domain g)
+      (fL, fR) = (mappingLeft f, mappingRight f)
+      (gL, gR) = (mappingLeft g, mappingRight g)
+      cls = toFstOrderMorphismClass cls'
