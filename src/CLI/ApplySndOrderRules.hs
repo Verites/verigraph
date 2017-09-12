@@ -4,21 +4,21 @@ module ApplySndOrderRules
   , execute
   ) where
 
-import           Data.Monoid                   ((<>))
+import           Control.Monad                           (when)
+import           Data.Monoid                             ((<>))
 import           Options.Applicative
 
 import           Abstract.Category
 import           Abstract.Rewriting.DPO
-import           Control.Monad                 (when)
-import           Data.Graphs                   (Graph)
+import           Data.Graphs                             (Graph)
 import           Data.TypedGraph.Morphism
 import           GlobalOptions
 import           Image.Dot
-import qualified Rewriting.DPO.TypedGraph      as GR
-import           Rewriting.DPO.TypedGraphRule  (toSndOrderMorphismsConfig)
-import qualified Rewriting.DPO.TypedGraphRule.Scheduling  as SO
-import qualified XML.GGXReader                 as XML
-import qualified XML.GGXWriter                 as GW
+import qualified Rewriting.DPO.TypedGraph                as GR
+import           Rewriting.DPO.TypedGraphRule            (toSndOrderMorphismsConfig)
+import qualified Rewriting.DPO.TypedGraphRule.Scheduling as SO
+import qualified XML.GGXReader                           as XML
+import qualified XML.GGXWriter                           as GW
 
 data SchedulingType = AsLongAsPossible | AllMatchesOneStep | Specific deriving (Eq, Show)
 
@@ -114,7 +114,7 @@ execute globalOpts opts = do
 
     putStrLn ("Utilizing the scheduling: " ++ show schedType)
 
-    let 
+    let
       dpoConf' = toSndOrderMorphismsConfig dpoConf
       newRulesLog AsLongAsPossible = SO.asLongAsPossible dpoConf' sndOrderRules fstRulesPlusEmpty limit
       newRulesLog AllMatchesOneStep = SO.oneStep dpoConf' sndOrderRules fstRulesPlusEmpty

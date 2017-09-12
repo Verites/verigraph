@@ -1,35 +1,36 @@
 module XML.GGXReader
- ( readGrammar,
-   readGGName,
-   readName,
-   readNames,
-   readTypeGraph,
-   readRules,
-   readGraphs,
-   readSequences,
-   readSequencesWithObjectFlow,
-   instantiateRule,
-   instantiateSpan,
-   minimalSafetyNacsWithLog,
-   printMinimalSafetyNacsLog
-   ) where
+  ( readGrammar
+  , readGGName
+  , readName
+  , readNames
+  , readTypeGraph
+  , readRules
+  , readGraphs
+  , readSequences
+  , readSequencesWithObjectFlow
+  , instantiateRule
+  , instantiateSpan
+  , minimalSafetyNacsWithLog
+  , printMinimalSafetyNacsLog
+  ) where
+
+import qualified Data.List                    as L
+import qualified Data.Map                     as M
+import           Data.Maybe                   (fromJust, fromMaybe, mapMaybe)
+import           Text.XML.HXT.Core
 
 import           Abstract.Category
 import           Abstract.Constraint
 import           Abstract.Rewriting.DPO
 import           Base.Valid
 import           Category.TypedGraphRule
-import qualified Data.Graphs                   as G
-import           Data.Graphs.Morphism          as GM
-import qualified Data.List                     as L
-import qualified Data.Map                      as M
-import           Data.Maybe                    (fromJust, fromMaybe, mapMaybe)
+import qualified Data.Graphs                  as G
+import           Data.Graphs.Morphism         as GM
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
-import           Rewriting.DPO.TypedGraph      as GR
+import           Rewriting.DPO.TypedGraph     as GR
 import           Rewriting.DPO.TypedGraphRule
-import           Text.XML.HXT.Core
-import qualified XML.Formulas                  as F
+import qualified XML.Formulas                 as F
 import           XML.GGXParseIn
 import           XML.GGXReader.SndOrder
 import           XML.GGXReader.Span

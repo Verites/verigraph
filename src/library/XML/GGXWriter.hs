@@ -1,31 +1,30 @@
 module XML.GGXWriter
- ( Grammars,
-   writeGrammarFile,
-   writeConfDepFile,
-   writeConflictsFile,
-   writeDependenciesFile,
-   writeSndOderConfDepFile,
-   writeSndOderConflictsFile,
-   writeSndOderDependenciesFile
- ) where
+  ( Grammars
+  , writeGrammarFile
+  , writeConfDepFile
+  , writeConflictsFile
+  , writeDependenciesFile
+  , writeSndOderConfDepFile
+  , writeSndOderConflictsFile
+  , writeSndOderDependenciesFile
+  ) where
 
 import           Data.Maybe
 import           Text.XML.HXT.Core
+import           Data.List
 
 import           Abstract.Category
 import           Abstract.Rewriting.DPO
-import qualified Analysis.CriticalPairs                      as CP
-import qualified Analysis.CriticalSequence                   as CS
-import qualified Analysis.EssentialCriticalPairs             as ECP
+import qualified Analysis.CriticalPairs                as CP
+import qualified Analysis.CriticalSequence             as CS
+import qualified Analysis.EssentialCriticalPairs       as ECP
 import           Category.TypedGraphRule
-import qualified Data.Graphs                                 as G
-import           Data.List
-import           Data.TypedGraph                             (TypedGraph)
+import qualified Data.Graphs                           as G
+import           Data.TypedGraph                       (TypedGraph)
 import           Data.TypedGraph.Morphism
-import qualified Rewriting.DPO.TypedGraph                    as GR
-import           Rewriting.DPO.TypedGraph.GraphProcess       ()
-import qualified Rewriting.DPO.TypedGraphRule                as SO
-
+import qualified Rewriting.DPO.TypedGraph              as GR
+import           Rewriting.DPO.TypedGraph.GraphProcess ()
+import qualified Rewriting.DPO.TypedGraphRule          as SO
 import           XML.GGXParseOut
 import           XML.ParsedTypes
 import           XML.ParseSndOrderRule

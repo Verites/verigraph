@@ -4,19 +4,18 @@ module ConcurrentRules
   , execute
   ) where
 
-import           Data.Monoid                   ((<>))
-import           GlobalOptions
+import           Control.Monad
+import           Data.Monoid              ((<>))
+import           Options.Applicative
 
 import           Abstract.Constraint
 import           Abstract.Rewriting.DPO
 import           Analysis.ConcurrentRules
-import           Control.Monad
 import           Data.TypedGraph.Morphism
-import           Options.Applicative
+import           GlobalOptions
 import           Rewriting.DPO.TypedGraph
-
-import qualified XML.GGXReader                 as XML
-import qualified XML.GGXWriter                 as GW
+import qualified XML.GGXReader            as XML
+import qualified XML.GGXWriter            as GW
 
 data Options = Options
   { outputFile     :: String

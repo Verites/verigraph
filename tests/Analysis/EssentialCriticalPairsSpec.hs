@@ -1,12 +1,13 @@
-module Analysis.EssentialCriticalPairsSpec where
+module Analysis.EssentialCriticalPairsSpec (spec) where
+
+import           Data.Matrix                     hiding ((<|>))
+import           Test.Hspec
 
 import           Abstract.Category
 import           Abstract.Rewriting.DPO
 import           Analysis.EssentialCriticalPairs
-import           Category.TypedGraphRule                     ()
-import           Data.Matrix                                 hiding ((<|>))
-import           Test.Hspec
-import qualified XML.GGXReader                               as XML
+import           Category.TypedGraphRule         ()
+import qualified XML.GGXReader                   as XML
 
 fileName1 = "tests/grammars/elevator.ggx"
 fileName2 = "tests/grammars/secondOrderMatchTest.ggx"

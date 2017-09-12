@@ -10,9 +10,9 @@ module Category.Graph
 
 
 import           Abstract.Category
-import           Data.Graphs                        as G
+import           Data.Graphs          as G
 import           Data.Graphs.Morphism
-import qualified Data.Relation                      as R
+import qualified Data.Relation        as R
 
 
 data MorphismType =
@@ -32,7 +32,7 @@ instance Category (GraphMorphism n e) where
 
     identity g = GraphMorphism g g (R.id $ nodeIds g) (R.id $ edgeIds g)
 
-    newtype MorphismClass (GraphMorphism n e) = 
+    newtype MorphismClass (GraphMorphism n e) =
         Cls { toMorphismType :: MorphismType }
         deriving Eq
 

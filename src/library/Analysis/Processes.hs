@@ -1,17 +1,18 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeApplications    #-}
 module Analysis.Processes
   ( generateGraphProcess
   , calculateRulesColimit
   , findConflictsAndDependencies
   ) where
 
+import           Data.List                                (partition)
+
 import           Abstract.Category
 import           Abstract.Rewriting.DPO
 import           Abstract.Rewriting.DPO.DiagramAlgorithms
 import           Abstract.Rewriting.DPO.Process
-import           Data.List                                (partition)
 
 findConflictsAndDependencies :: GenerateProcess morph => [NamedRuleWithMatches morph] -> [Interaction]
 findConflictsAndDependencies rulesWithMatches = findConflicts pairs ++ findDependencies pairs --concatMap createCritical pairs

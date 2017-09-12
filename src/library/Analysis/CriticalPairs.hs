@@ -1,28 +1,28 @@
 module Analysis.CriticalPairs
- ( CriticalPairType (..),
-   CriticalPair (..),
-   getCriticalPairMatches,
-   getCriticalPairComatches,
-   getNacIndexOfCriticalPair,
-   getNacMatchOfCriticalPair,
-   getCriticalPairType,
+  ( CriticalPairType (..)
+  , CriticalPair (..)
+  , getCriticalPairMatches
+  , getCriticalPairComatches
+  , getNacIndexOfCriticalPair
+  , getNacMatchOfCriticalPair
+  , getCriticalPairType
 
    -- * Finding Critical Pairs
-   findCriticalPairs,
-   findPotentialCriticalPairs,
-   namedCriticalPairs,
-   findAllDeleteUse,
-   findAllProduceForbid,
-   findAllProduceDangling,
-   findAllDeleteUseAndProduceDangling
-   ) where
+  , findCriticalPairs
+  , findPotentialCriticalPairs
+  , namedCriticalPairs
+  , findAllDeleteUse
+  , findAllProduceForbid
+  , findAllProduceDangling
+  , findAllDeleteUseAndProduceDangling
+  ) where
+
+import           Data.Maybe                               (mapMaybe)
 
 import           Abstract.Category.Finitary
 import           Abstract.Rewriting.DPO                   hiding (calculateComatch)
 import           Abstract.Rewriting.DPO.DiagramAlgorithms
-import           Data.Maybe                               (mapMaybe)
-
-import           Util.List (parallelMap)
+import           Util.List                                (parallelMap)
 
 -- | Data representing the type of a 'CriticalPair'
 data CriticalPairType =

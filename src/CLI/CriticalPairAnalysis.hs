@@ -4,16 +4,16 @@ module CriticalPairAnalysis
   , execute
   ) where
 
-import           GHC.Conc                              (numCapabilities)
 import           Control.Monad                         (when)
 import           Data.Monoid                           ((<>))
 import qualified Data.Set                              as Set
+import           GHC.Conc                              (numCapabilities)
 import           Options.Applicative
 
 import           Abstract.Rewriting.DPO
-import           Category.TypedGraph                   (TypedGraphMorphism)
 import           Analysis.Interlevel.EvolutionarySpans
 import           Analysis.Interlevel.InterLevelCP
+import           Category.TypedGraph                   (TypedGraphMorphism)
 import           GlobalOptions
 import           Rewriting.DPO.TypedGraphRule
 import           Util

@@ -12,7 +12,7 @@ module Util.List
 where
 
 import           Control.Parallel (par)
-import           Data.List (isPrefixOf)
+import           Data.List        (isPrefixOf)
 
 -- | Applies the given function to each element of the list, executing in parallel.
 --

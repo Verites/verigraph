@@ -1,4 +1,4 @@
-module Util.Monad 
+module Util.Monad
   ( -- * Boolean helpers
     andM
   , orM
@@ -16,11 +16,11 @@ module Util.Monad
   , guardM
   ) where
 
-import Control.Monad
-import Control.Monad.List
-import Control.Applicative
-import Data.Maybe (catMaybes)
-import Data.Foldable
+import           Control.Applicative
+import           Control.Monad
+import           Control.Monad.List
+import           Data.Foldable
+import           Data.Maybe          (catMaybes)
 
 andM :: Monad m => m Bool -> m Bool -> m Bool
 andM mp mq = do
@@ -37,7 +37,7 @@ allM _ [] = return True
 allM test (x:xs) = do
   result <- test x
   if result then allM test xs else return False
-  
+
 anyM :: Monad m => (a -> m Bool) -> [a] -> m Bool
 anyM _ [] = return False
 anyM test (x:xs) = do
@@ -72,8 +72,8 @@ breakM :: (Monad m) => (a -> m Bool) -> [a] -> m ([a], [a])
 breakM _ [] = return ([], [])
 breakM p xs@(x:xs') = do
   px <- p x
-  if px 
-    then return ([], xs) 
+  if px
+    then return ([], xs)
     else do
       (ys, zs) <- breakM p xs'
       return (x:ys, zs)

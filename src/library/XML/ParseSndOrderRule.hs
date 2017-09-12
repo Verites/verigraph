@@ -45,8 +45,8 @@ The translation from first-order rules in the SPO to DPO is straightforward,
 and additionally with object name maps, all second-order rule can be instantiated.
 -}
 
-module XML.ParseSndOrderRule (
-    parseSndOrderRules
+module XML.ParseSndOrderRule
+  ( parseSndOrderRules
   , getLeftObjNameMapping
   , getRightObjNameMapping
   , getObjectNacNameMorphism
@@ -55,16 +55,16 @@ module XML.ParseSndOrderRule (
   , getObjectNameMorphism
   ) where
 
+import           Data.Char                (toLower)
+import           Data.Function            (on)
+import           Data.List                (find, groupBy, intercalate, sortBy, sortOn, (\\))
+import           Data.Maybe               (fromMaybe, mapMaybe)
+
 import           Abstract.Category
-import           Category.Graph                     ()
-import           Data.Char                          (toLower)
-import           Data.Function                      (on)
+import           Category.Graph           ()
 import           Data.Graphs
-import           Data.Graphs.Morphism               as GM
-import           Data.List                          (find, groupBy, intercalate, sortBy, sortOn,
-                                                     (\\))
-import           Data.Maybe                         (fromMaybe, mapMaybe)
-import           Data.TypedGraph.Morphism           as TGM
+import           Data.Graphs.Morphism     as GM
+import           Data.TypedGraph.Morphism as TGM
 import           Util.List
 import           XML.ParsedTypes
 

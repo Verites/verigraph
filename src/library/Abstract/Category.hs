@@ -1,7 +1,7 @@
-{-# LANGUAGE AllowAmbiguousTypes    #-}
-{-# LANGUAGE ScopedTypeVariables    #-}
-{-# LANGUAGE TypeApplications       #-}
-{-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
+{-# LANGUAGE TypeFamilies        #-}
 module Abstract.Category
   (
     Category(..)
@@ -34,7 +34,7 @@ class (Eq morph) => Category morph where
   domain   :: morph -> Obj morph
   -- | Given a morphism \(f:A \to B\), return the object \(B\).
   codomain :: morph -> Obj morph
-  
+
   -- | Data type defining the different classes of morphism for this category.
   data MorphismClass morph :: *
   -- | Class containing all morphisms of the category.

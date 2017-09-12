@@ -8,17 +8,17 @@ module XML.GGXParseOut
  , getMappings
  ) where
 
-import           Abstract.Category ((<&>))
-import qualified Abstract.Category as FC
+import           Data.Maybe                (fromMaybe, isJust)
+
+import           Abstract.Category         ((<&>))
+import qualified Abstract.Category         as FC
 import           Abstract.Rewriting.DPO
-import qualified Analysis.CriticalPairs             as CP
-import qualified Analysis.CriticalSequence          as CS
-import qualified Data.Graphs                        as G
-import           Data.Maybe                         (fromMaybe, isJust)
+import qualified Analysis.CriticalPairs    as CP
+import qualified Analysis.CriticalSequence as CS
+import qualified Data.Graphs               as G
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
-import qualified Rewriting.DPO.TypedGraph           as GR
-
+import qualified Rewriting.DPO.TypedGraph  as GR
 import           XML.ParsedTypes
 
 parseCPGraph :: (String,String,[CP.CriticalPair (TypedGraphMorphism a b)]) -> Overlappings

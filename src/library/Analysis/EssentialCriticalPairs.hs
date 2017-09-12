@@ -7,14 +7,14 @@ classified with 'CriticalPairType', but each pair can be only a
 'DeleteUse'.
 -}
 module Analysis.EssentialCriticalPairs
- ( namedEssentialCriticalPairs,
-   findAllEssentialDeleteUse
-   ) where
+  ( namedEssentialCriticalPairs
+  , findAllEssentialDeleteUse
+  ) where
 
 import           Abstract.Category
 import           Abstract.Category.Adhesive
-import           Abstract.Category.Finitary
 import           Abstract.Category.FindMorphism
+import           Abstract.Category.Finitary
 import           Abstract.Category.Limit
 import           Abstract.Rewriting.DPO
 import           Analysis.CriticalPairs

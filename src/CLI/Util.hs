@@ -1,11 +1,11 @@
 module Util where
 
-import           Control.Parallel                      (par)
+import           Control.Parallel                (par)
 import           Data.Matrix
 
+import           Abstract.Category.Adhesive
 import           Abstract.Category.Finitary
 import           Abstract.Category.Limit
-import           Abstract.Category.Adhesive
 import           Abstract.Rewriting.DPO
 import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence

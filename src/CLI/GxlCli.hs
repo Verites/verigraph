@@ -1,17 +1,17 @@
 module Main (main) where
 
-import           Data.Monoid                           ((<>))
-import           GHC.Conc                              (numCapabilities)
+import           Data.Monoid              ((<>))
+import           GHC.Conc                 (numCapabilities)
 import           Options.Applicative
 
 import           Abstract.Category
-import           Abstract.Rewriting.DPO                as DPO
-import           GlobalOptions
+import           Abstract.Rewriting.DPO   as DPO
 import           Category.TypedGraph
+import           GlobalOptions
 import           Rewriting.DPO.TypedGraph
 import           Util
-import qualified XML.GGXWriter                         as GW
-import qualified XML.GPRReader.GXLReader               as GPR
+import qualified XML.GGXWriter            as GW
+import qualified XML.GPRReader.GXLReader  as GPR
 
 main :: IO ()
 main =

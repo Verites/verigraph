@@ -1,12 +1,13 @@
-module Analysis.CriticalPairsSpec where
+module Analysis.CriticalPairsSpec (spec) where
 
-import           Data.Matrix                                 hiding ((<|>))
+import           Data.Matrix             hiding ((<|>))
 import           Test.Hspec
+
 import           Abstract.Category
 import           Abstract.Rewriting.DPO
 import           Analysis.CriticalPairs
-import           Category.TypedGraphRule                     ()
-import qualified XML.GGXReader                               as XML
+import           Category.TypedGraphRule ()
+import qualified XML.GGXReader           as XML
 
 fileName1 = "tests/grammars/teseRodrigo.ggx"
 fileName2 = "tests/grammars/secondOrderMatchTest.ggx"

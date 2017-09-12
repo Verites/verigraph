@@ -9,8 +9,8 @@ module Category.TypedGraphRule
 ,  toSndOrderMorphismClass
 ) where
 
+import           Category.TypedGraphRule.Adhesive     ()
 import           Category.TypedGraphRule.Category
-import           Category.TypedGraphRule.Adhesive ()
 import           Category.TypedGraphRule.FindMorphism ()
-import           Category.TypedGraphRule.Finitary ()
-import           Category.TypedGraphRule.Limit ()
+import           Category.TypedGraphRule.Finitary     ()
+import           Category.TypedGraphRule.Limit        ()

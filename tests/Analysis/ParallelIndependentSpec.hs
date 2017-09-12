@@ -1,7 +1,8 @@
-module Analysis.ParallelIndependentSpec where
+module Analysis.ParallelIndependentSpec (spec) where
 
 import           Data.Matrix                  hiding ((<|>))
 import           Test.Hspec
+
 import           Abstract.Category
 import           Abstract.Rewriting.DPO
 import           Analysis.ParallelIndependent

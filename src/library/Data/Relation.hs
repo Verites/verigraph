@@ -57,7 +57,7 @@ fromList pairs =
     mapping = foldl' (\m (k,v) -> Map.insertWith (++) k [v] m) Map.empty pairs
     codomain = sort . nub $ map snd pairs
   in Relation (Map.keys mapping) codomain mapping
-  
+
 -- | Construct a relation from a map and a list of codomain elements.
 fromMapAndCodomain :: Ord a => Map.Map a a -> [a] -> Relation a
 fromMapAndCodomain mapping codomain =
@@ -145,7 +145,7 @@ insertOnCodomain x r = r { codomain = [x] `union` codomain r }
 
 -- | Remove the elements of the domain that don't pass the given test.
 filterDomain :: (a -> Bool) -> Relation a -> Relation a
-filterDomain test r = r 
+filterDomain test r = r
   { domain = L.filter test (domain r)
   , mapping = Map.filterWithKey (const . test) (mapping r)
   }

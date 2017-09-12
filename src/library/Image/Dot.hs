@@ -1,18 +1,17 @@
 module Image.Dot where
 
+import qualified Data.IntMap                       as IntMap
+import qualified Data.Set                          as Set
+import           Text.PrettyPrint.Leijen
+
 import           Abstract.Category
 import           Abstract.Rewriting.DPO.StateSpace
 import           Category.TypedGraphRule
-import           Data.Graphs                        hiding (Node (..))
+import           Data.Graphs                       hiding (Node (..))
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
 import           Rewriting.DPO.TypedGraph
 import           Rewriting.DPO.TypedGraphRule
-
-
-import qualified Data.IntMap                        as IntMap
-import qualified Data.Set                           as Set
-import           Text.PrettyPrint.Leijen
 
 
 data NamingContext = Ctx

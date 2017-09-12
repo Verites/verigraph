@@ -1,22 +1,23 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeApplications    #-}
 module Analysis.ConcurrentRules
-( CRDependencies (..),
-  allConcurrentRules,
-  maxConcurrentRules
-) where
+  ( CRDependencies (..)
+  , allConcurrentRules
+  , maxConcurrentRules
+  ) where
+
+import           Data.Maybe                 (mapMaybe)
 
 import           Abstract.Category
 import           Abstract.Category.Adhesive
 import           Abstract.Category.Finitary
 import           Abstract.Constraint
 import           Abstract.Rewriting.DPO
-import           Analysis.CriticalSequence             (findTriggeredCriticalSequences,
-                                                        getCriticalSequenceComatches)
+import           Analysis.CriticalSequence  (findTriggeredCriticalSequences,
+                                             getCriticalSequenceComatches)
 import           Base.Cardinality
 import           Base.Valid
-import           Data.Maybe                            (mapMaybe)
 
 data CRDependencies = AllOverlapings | OnlyDependency
 
@@ -78,7 +79,7 @@ concurrentRuleForPair conf constraints c n pair = if invalidSides then Nothing e
   where
     pocC = calculatePushoutComplementAlongM (rightMorphism c) (fst pair)
     pocN = calculatePushoutComplementAlongM (leftMorphism n) (snd pair)
-    poC = calculatePushoutAlongM (leftMorphism c) (fst pocC) 
+    poC = calculatePushoutAlongM (leftMorphism c) (fst pocC)
     poN = calculatePushoutAlongM (rightMorphism n) (fst pocN)
     pb = calculatePullbackAlongM (snd pocC) (snd pocN)
     l = fst poC <&> fst pb

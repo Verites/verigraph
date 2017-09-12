@@ -4,7 +4,7 @@ module GlobalOptions
   , morphismsConf
   ) where
 
-import           Data.Monoid                   ((<>))
+import           Data.Monoid            ((<>))
 import           Options.Applicative
 
 import           Abstract.Category
@@ -12,10 +12,10 @@ import           Abstract.Rewriting.DPO (MorphismsConfig (..))
 import           Category.TypedGraph
 
 data GlobalOptions = GOpts
-  { arbitraryMatches         :: MatchRestriction
-  , verbose                  :: Bool
-  , inputFile                :: String
-  , useConstraints           :: Bool
+  { arbitraryMatches :: MatchRestriction
+  , verbose          :: Bool
+  , inputFile        :: String
+  , useConstraints   :: Bool
   }
 
 -- | Flag indicating what restrictions are required or assumed of matches.
