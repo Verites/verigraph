@@ -39,7 +39,6 @@ module Abstract.Rewriting.DPO
   , satisfiesGluingConditions
   , satisfiesNACs
   , satisfiesRewritingConditions
-  , satisfyRewritingConditions
 
   -- *** Transformation
   -- | Given a production and a match for its left side, it may be possible
@@ -47,6 +46,7 @@ module Abstract.Rewriting.DPO
   -- This section provides functions that calculate such transformations.
   , findAllMatches
   , findApplicableMatches
+  , findJointSurjectiveApplicableMatches
   , calculateDPO
   , calculateComatch
   , rewrite
@@ -189,6 +189,13 @@ findApplicableMatches conf production obj =
   filter (satisfiesRewritingConditions conf production) (findAllMatches conf production obj)
 
 
+-- | Given rules \(\rho_1\) and \(\rho_2\), respectively, returns all jointly
+-- surjective pairs \(m_1 : L_1 \to E, m_2 : L_2 \to E\) of applicable matches.
+findJointSurjectiveApplicableMatches :: (DPO morph, E'PairCofinitary morph) => MorphismsConfig morph -> Production morph -> Production morph -> [(morph, morph)]
+findJointSurjectiveApplicableMatches conf p1 p2 =
+  filter (\(m1, m2) -> satisfiesRewritingConditions conf p1 m1 && satisfiesRewritingConditions conf p2 m2)
+  $ findJointSurjections (matchRestriction conf, leftObject p1) (matchRestriction conf, leftObject p2)
+
 
 -- | Given a match and a production, calculates the double-pushout diagram
 -- for the corresponding transformation.
@@ -271,13 +278,6 @@ invertProductionWithoutNacs p = Production (rightMorphism p) (leftMorphism p) []
 data MorphismsConfig morph = MorphismsConfig
   { matchRestriction :: MorphismClass morph }
 
-
--- TODO: deprecate? why do we need this __here__?
--- | Check gluing conditions and the NACs satisfaction for a pair of matches
--- @inj@ only indicates if the match is injective, this function does not checks it
-satisfyRewritingConditions :: DPO morph => MorphismsConfig morph -> (Production morph,morph) -> (Production morph,morph) -> Bool
-satisfyRewritingConditions conf (l,m1) (r,m2) =
-  satisfiesRewritingConditions conf l m1 && satisfiesRewritingConditions conf r m2
 
 -- TODO: Is this really a DPO feature?
 -- | Given a morphism /m : L -> L'/ and a NAC /n : L -> N/, obtains

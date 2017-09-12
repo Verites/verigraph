@@ -62,8 +62,8 @@ evolSpans conf' (n1,r1) (n2,r2) = (n1, n2, spans)
 
     conf = toFstOrderMorphismsConfig conf'
     xs = filter (\(m1,_) -> isValid (codomain m1)) pairs
-    xs' = filter (\(m1,m2) -> satisfyRewritingConditions conf (r1Left, mappingLeft m1) (r2Left, mappingLeft m2)) xs
-    xs'' = filter (\(m1,m2) -> satisfyRewritingConditions conf (r1Right, mappingLeft m1) (r2Right, mappingLeft m2)) xs'
+    xs' = filter (\(m1,m2) -> satisfiesRewritingConditions conf r1Left (mappingLeft m1) && satisfiesRewritingConditions conf r2Left (mappingLeft m2)) xs
+    xs'' = filter (\(m1,m2) -> satisfiesRewritingConditions conf r1Right (mappingLeft m1) && satisfiesRewritingConditions conf r2Right (mappingLeft m2)) xs'
 
 -- | Given two second-order rules and their matches overlaped, return their type
 classify :: MorphismsConfig (RuleMorphism a b) -> SndOrderRule a b -> SndOrderRule a b -> (RuleMorphism a b, RuleMorphism a b) -> CPE

@@ -26,7 +26,6 @@ module Analysis.CriticalSequence
 import           Abstract.Category.Finitary
 import           Abstract.Rewriting.DPO                   hiding (calculateComatch)
 import           Abstract.Rewriting.DPO.DiagramAlgorithms
-import           Analysis.CriticalPairs                   (findPotentialCriticalPairs)
 import           Data.Maybe                               (mapMaybe)
 import           Util.List                                (parallelMap)
 
@@ -152,7 +151,7 @@ findAllProduceUse conf p1 p2 =
   map (\m -> CriticalSequence Nothing m Nothing ProduceUse) prodUse
   where
     p1' = invertProduction conf p1
-    gluing = findPotentialCriticalPairs conf p1' p2
+    gluing = findJointSurjectiveApplicableMatches conf p1' p2
     prodUse = filter (isDeleteUse conf p1') gluing
 
 -- *** RemoveDangling
@@ -166,7 +165,7 @@ findAllRemoveDangling conf p1 p2 =
   map (\m -> CriticalSequence Nothing m Nothing RemoveDangling) remDang
   where
     p1' = invertProduction conf p1
-    gluing = findPotentialCriticalPairs conf p1' p2
+    gluing = findJointSurjectiveApplicableMatches conf p1' p2
     remDang = filter (isProduceDangling conf p1' p2) gluing
 
 -- ProduceUse and RemoveDangling
@@ -178,7 +177,7 @@ findAllProduceUseAndRemoveDangling conf p1 p2 =
   map categorizeDependency dependencies
   where
     p1' = invertProduction conf p1
-    gluing = findPotentialCriticalPairs conf p1' p2
+    gluing = findJointSurjectiveApplicableMatches conf p1' p2
     dependencies = mapMaybe (deleteUseDangling conf p1' p2) gluing
     categorizeDependency x = case x of
       (Left m)  -> CriticalSequence Nothing m Nothing ProduceUse
@@ -220,7 +219,7 @@ findAllDeliverDelete conf p1 p2 =
   map (\m -> CriticalSequence Nothing m Nothing DeliverDelete) delDel
   where
     p1' = invertProduction conf p1
-    gluing = findPotentialCriticalPairs conf p1' p2
+    gluing = findJointSurjectiveApplicableMatches conf p1' p2
     delDel = filter (\(m1,m2) -> isDeleteUse conf p2 (m2,m1)) gluing
 
 -- *** DeliverDangling
@@ -234,7 +233,7 @@ findAllDeliverDangling conf p1 p2 =
   map (\m -> CriticalSequence Nothing m Nothing DeliverDangling) delDang
   where
     p1' = invertProduction conf p1
-    gluing = findPotentialCriticalPairs conf p1' p2
+    gluing = findJointSurjectiveApplicableMatches conf p1' p2
     delDang = filter (\(m1,m2) -> isProduceDangling conf p2 p1' (m2,m1)) gluing
 
 -- DeliverDelete and DeliverDangling
@@ -245,7 +244,7 @@ findAllDeliverDeleteAndDeliverDangling conf p1 p2 =
   map categorizeDependency dependencies
   where
     p1' = invertProduction conf p1
-    gluing = findPotentialCriticalPairs conf p1' p2
+    gluing = findJointSurjectiveApplicableMatches conf p1' p2
     dependencies = mapMaybe (\(m1,m2) -> deleteUseDangling conf p2 p1' (m2,m1)) gluing
     categorizeDependency x = case x of
       (Left m)  -> CriticalSequence Nothing m Nothing DeliverDelete

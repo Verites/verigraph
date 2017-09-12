@@ -62,7 +62,7 @@ findPotentialEssentialCPs conf p1 p2 = satisfyingPairs
            in (l1', c, m1, m2)
         )
       pairs
-    satisfyingPairs = filter (\(_,_,m1,m2) -> satisfyRewritingConditions conf (p1,m1) (p2,m2)) shiftedPairs
+    satisfyingPairs = filter (\(_,_,m1,m2) -> satisfiesRewritingConditions conf p1 m1 && satisfiesRewritingConditions conf p2 m2) shiftedPairs
 
 -- | A pair of monomorphic matches (with precalcultated initial pushout (l1',c) elements)
 -- is an essential delete use when the

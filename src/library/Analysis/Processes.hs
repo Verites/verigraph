@@ -52,14 +52,14 @@ validLeftRewritings :: GenerateProcess morph => Production morph -> Production m
 validLeftRewritings p1 p2 (m1,m2) =
   let
     (m1'',m2'') = restrictMorphisms (m1,m2)
-  in satisfyRewritingConditions conf (p1,m1'') (p2,m2'')
+  in satisfiesRewritingConditions conf p1 m1'' && satisfiesRewritingConditions conf p2 m2''
 
 validRightLeftRewritings :: GenerateProcess morph => Production morph -> Production morph-> (morph,morph) -> Bool
 validRightLeftRewritings p1 p2 (m1',m2) =
   let
     p1' = invertProduction conf p1 -- should we invert the rule or just test the gluing conditiond
     (m1'',m2'') = restrictMorphisms (m1',m2)
-  in satisfyRewritingConditions conf (p1', m1'') (p2,m2'')
+  in satisfiesRewritingConditions conf p1' m1'' && satisfiesRewritingConditions conf p2 m2''
 
 isDeleteUse' :: GenerateProcess morph => Production morph -> (morph,morph) -> Bool
 isDeleteUse' p1 (m1,m2) =

@@ -9,7 +9,6 @@ module Analysis.CriticalPairs
 
    -- * Finding Critical Pairs
   , findCriticalPairs
-  , findPotentialCriticalPairs
   , namedCriticalPairs
   , findAllDeleteUse
   , findAllProduceForbid
@@ -105,14 +104,6 @@ namedCriticalPairs conf namedRules =
       getCPs (n1,r1) (n2,r2) =
         (n1, n2, findCriticalPairs conf r1 r2)
 
--- TODO: Use this as an auxiliary function to optimize the search for critical pairs
--- | Returns a list of morphisms from left side of rules to all valid overlapping pairs
-findPotentialCriticalPairs :: (DPO morph, E'PairCofinitary morph) => MorphismsConfig morph -> Production morph -> Production morph -> [(morph,morph)]
-findPotentialCriticalPairs conf p1 p2 = satisfyingPairs
-  where
-    pairs = findJointSurjections (matchRestriction conf, leftObject p1) (matchRestriction conf, leftObject p2)
-    satisfyingPairs = filter (\(m1,m2) -> satisfyRewritingConditions conf (p1,m1) (p2,m2)) pairs
-
 -- | Finds all Critical Pairs between two given Productions
 findCriticalPairs :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> Production morph -> Production morph -> [CriticalPair morph]
 findCriticalPairs conf p1 p2 =
@@ -128,7 +119,7 @@ findAllDeleteUse :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph
 findAllDeleteUse conf p1 p2 =
   map (\m -> CriticalPair m Nothing Nothing DeleteUse) deleteUsePairs
   where
-    satisfyingPairs = findPotentialCriticalPairs conf p1 p2
+    satisfyingPairs = findJointSurjectiveApplicableMatches conf p1 p2
     deleteUsePairs = filter (isDeleteUse conf p1) satisfyingPairs
 
 -- *** Produce-Dangling
@@ -139,7 +130,7 @@ findAllProduceDangling :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig
 findAllProduceDangling conf p1 p2 =
   map (\m -> CriticalPair m Nothing Nothing ProduceDangling) produceDanglingPairs
   where
-    satisfyingPairs = findPotentialCriticalPairs conf p1 p2
+    satisfyingPairs = findJointSurjectiveApplicableMatches conf p1 p2
     produceDanglingPairs = filter (isProduceDangling conf p1 p2) satisfyingPairs
 
 -- DeleteUse and Produce-Dangling
@@ -150,7 +141,7 @@ findAllDeleteUseAndProduceDangling :: (E'PairCofinitary morph, DPO morph) => Mor
 findAllDeleteUseAndProduceDangling conf p1 p2 =
   map categorizeConflict conflicts
   where
-    gluing = findPotentialCriticalPairs conf p1 p2
+    gluing = findJointSurjectiveApplicableMatches conf p1 p2
     conflicts = mapMaybe (deleteUseDangling conf p1 p2) gluing
     categorizeConflict x = case x of
       (Left m)  -> CriticalPair m Nothing Nothing DeleteUse
