@@ -128,19 +128,6 @@ instance MAdhesive (TypedGraphMorphism a b) where
   hasPushoutComplementAlongM l m =
     satisfiesDanglingCondition l m && satisfiesIdentificationCondition l m
 
--- TODO: it looks like the function below shouldn't be in the module
-generateNewNodeInstances :: TypedGraphMorphism a b -> [(NodeId, NodeId)] -> TypedGraphMorphism a b
-generateNewNodeInstances gf =
-  foldr (\(a,b) tgm -> let tp = fromJust $ GM.applyNodeId (domain gf) a
-                       in updateNodeRelation a b tp tgm) gf
-
-
-generateNewEdgeInstances :: TypedGraphMorphism a b -> [(EdgeId, NodeId, NodeId, EdgeId, NodeId, NodeId, EdgeId)]
-  -> TypedGraphMorphism a b
-generateNewEdgeInstances =
-  foldr (\(a,_,_,b,sb,tb,tp) tgm -> updateEdgeRelation a b (createEdgeOnCodomain b sb tb tp tgm) )
-
-
 
 ---- Gluing Conditions
 
