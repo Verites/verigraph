@@ -10,6 +10,7 @@ import re
 parser = argparse.ArgumentParser(description='Check if architecture rules are being broken.')
 parser.add_argument('configs', metavar='CONFIG_FILE', nargs='+',
                     help='YAML configuration file describing the architectural rules.')
+parser.add_argument('-v', '--verbose', action='store_true', default=False)
 args = parser.parse_args()
 
 MODULEPART = r"[A-Z][a-zA-Z0-9_']*"
@@ -54,19 +55,27 @@ class ForbidImport:
         self.forbidden = compile_module_patterns(rule['forbidden'])
         self.within = compile_module_patterns(rule['within']) if 'within' in rule else None
         self.outside = compile_module_patterns(rule['outside']) if 'outside' in rule else None
-        self.description = rule['description']
+        self.description = rule['description'].strip()
 
     def __str__(self):
         return '<ForbidImport level={} forbidden={} within={} outside={}>'.format(
                 self.level, self.forbidden, self.within, self.outside)
 
-    def check_module(self, module):
-        if self.should_check_module(module.name):
+    def check_module(self, module, verbose=False):
+        if self.__should_check_module(module.name):
+            if verbose: print('Checking module', module.name, '...', end=' ')
+
+            no_errors = True
             for imported in module.imports:
                 if self.forbidden.match(imported):
+                    if verbose: print('✗', end=' ')
+                    no_errors = False
                     yield {'level': self.level, 'description': 'Forbidden import of {} in {}'.format(imported, module.name)}
+            if verbose:
+              if no_errors: print('✓', end=' ')
+              print()
 
-    def should_check_module(self, module):
+    def __should_check_module(self, module):
         return ((self.within and self.within.match(module)) or
                 (self.outside and not self.outside.match(module)))
 
@@ -96,6 +105,7 @@ def compile_modules(path):
     elif path.suffix == '.hs':
         yield Module(path)
 
+verbose = args.verbose
 for config_file in args.configs:
     with open(config_file) as f:
         config = yaml.load(f)
@@ -112,14 +122,19 @@ for config_file in args.configs:
 
     any_errors = False
     for rule in compile_rules(config['rules']):
-        problems = [ problem for module in modules for problem in rule.check_module(module) ]
+        if verbose: print('Checking rule: ', rule.description)
+        problems = [ problem for module in modules for problem in rule.check_module(module, verbose=verbose) ]
+        if verbose: print()
+
         if len(problems) > 0:
             print(rule.level + ': rule violation')
             print('  ', rule.description)
+            print()
             for p in problems: 
                 print('  ', p['description'])
             if rule.level == 'error':
                 any_errors = True
+            print()
 
     if any_errors: sys.exit(1)
 
