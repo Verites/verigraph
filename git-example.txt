@@ -1,0 +1,35 @@
+import "git.tg"
+
+graph Foo {
+  r1, r2 : Revision
+  dr1, dr2 : DirectDeps
+  tr1, tr2 : TransDeps
+
+  r1 -:DirDeps-> dr1
+  r2 -:DirDeps-> dr2
+  r1 -:TransDeps-> tr1
+  r2 -:TransDeps-> tr2
+
+  dr2 -:Dep-> r1
+  tr2 -a:TDep, b:TDep, c:Dep-> r1
+  tr2 -a,b:TDep-> r1
+}
+
+rule Amend {
+  pattern {
+    r1 : Revision
+    tr1 : TransDeps
+    r1 -:TransDeps-> tr1
+  }
+
+  forbid {
+    tr2 : TransDeps
+    tr2 -:TDep-> r1
+  }
+
+  actions {
+    clone r1 as r2
+    clone tr1 as tr2
+    create r2 -:TDeps-> tr2
+  }
+}
