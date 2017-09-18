@@ -17,7 +17,7 @@ import           Image.Dot
 import qualified Rewriting.DPO.TypedGraph                as GR
 import           Rewriting.DPO.TypedGraphRule            (toSndOrderMorphismsConfig)
 import qualified Rewriting.DPO.TypedGraphRule.Scheduling as SO
-import qualified XML.GGXReader                           as XML
+import Util
 import qualified XML.GGXWriter                           as GW
 
 data SchedulingType = AsLongAsPossible | AllMatchesOneStep | Specific deriving (Eq, Show)
@@ -92,17 +92,7 @@ execute globalOpts opts = do
         limit = limitPar opts
         printDot = False --flag to test the print to .dot functions
 
-    (fstOrderGG, sndOrderGG, printNewNacs) <- XML.readGrammar (inputFile globalOpts) (useConstraints globalOpts) dpoConf
-    ggName <- XML.readGGName (inputFile globalOpts)
-    names <- XML.readNames (inputFile globalOpts)
-
-    putStrLn "Reading the second-order graph grammar..."
-    putStrLn ""
-
-    putStrLn $ "only injective matches morphisms: " ++ show (arbitraryMatches globalOpts)
-    putStrLn ""
-
-    mapM_ putStrLn (XML.printMinimalSafetyNacsLog printNewNacs)
+    (fstOrderGG, sndOrderGG, ggName, names) <- loadSndOrderGrammar globalOpts True
 
     -- It is adding an empty first-order rule as possible target rule,
     -- it allows the creation from "zero" of a new first-order rule.
@@ -110,8 +100,9 @@ execute globalOpts opts = do
         fstRulesPlusEmpty = addEmptyFstOrderRule (typeGraph fstOrderGG) (productions fstOrderGG)
         namingContext = makeNamingContext names
 
-    putStrLn ""
-
+    case arbitraryMatches globalOpts of
+      MonoMatches -> putStrLn "Only injective matches allowed."
+      AnyMatches  -> putStrLn "Non-injective matches allowed."
     putStrLn ("Utilizing the scheduling: " ++ show schedType)
 
     let

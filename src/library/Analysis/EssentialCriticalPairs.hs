@@ -8,6 +8,7 @@ classified with 'CriticalPairType', but each pair can be only a
 -}
 module Analysis.EssentialCriticalPairs
   ( namedEssentialCriticalPairs
+  , findEssentialCriticalPairs
   , findAllEssentialDeleteUse
   ) where
 

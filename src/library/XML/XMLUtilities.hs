@@ -5,6 +5,7 @@ module XML.XMLUtilities
 , text
 , textAtTag
 , parseXML
+, writeXML
 )
 
 where
@@ -23,3 +24,7 @@ textAtTag tag = atTag tag >>> text
 
 parseXML :: String -> IOStateArrow s b XmlTree
 parseXML = readDocument [withValidate no, withRemoveWS yes]
+
+
+writeXML :: IOStateArrow () XmlTree XmlTree -> String -> IO [XmlTree]
+writeXML doc file = runX $ root [] [doc] >>> writeDocument [withIndent yes] file

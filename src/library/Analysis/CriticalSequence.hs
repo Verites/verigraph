@@ -6,12 +6,18 @@ module Analysis.CriticalSequence
    getNacMatchOfCriticalSequence,
    getNacIndexOfCriticalSequence,
    getCriticalSequenceType,
+   isProduceUse, 
+   isRemoveDangling, 
+   isDeleteForbid, 
+   isDeliverDelete, 
+   isDeliverDangling, 
+   isForbidProduce, 
 
    -- * Finding Critical Sequences
+   namedCriticalSequences,
+   namedTriggeredCriticalSequences,
    findTriggeredCriticalSequences,
    findCriticalSequences,
-   namedTriggeredCriticalSequences,
-   namedCriticalSequences,
    findAllProduceUse,
    findAllRemoveDangling,
    findAllDeleteForbid,
@@ -27,6 +33,8 @@ import           Abstract.Category.Finitary
 import           Abstract.Rewriting.DPO                   hiding (calculateComatch)
 import           Analysis.CriticalPairs hiding (matches, comatches)
 import           Util.List                                (parallelMap)
+
+
 
 -- | Data representing the type of a 'CriticalPair'
 data CriticalSequenceType =
@@ -76,6 +84,31 @@ data CriticalSequence morph = CriticalSequence {
     nac       :: Maybe (morph, Int), --if is DeleteForbid or ForbidProduce, here is the index of the nac
     csType    :: CriticalSequenceType
     } deriving (Eq,Show)
+
+
+isProduceUse :: CriticalSequence morph -> Bool
+isProduceUse (CriticalSequence _ _ _ ProduceUse) = True
+isProduceUse _ = False
+
+isRemoveDangling :: CriticalSequence morph -> Bool
+isRemoveDangling (CriticalSequence _ _ _ RemoveDangling) = True
+isRemoveDangling _ = False
+
+isDeleteForbid :: CriticalSequence morph -> Bool
+isDeleteForbid (CriticalSequence _ _ _ DeleteForbid) = True
+isDeleteForbid _ = False
+
+isDeliverDelete :: CriticalSequence morph -> Bool
+isDeliverDelete (CriticalSequence _ _ _ DeliverDelete) = True
+isDeliverDelete _ = False
+
+isDeliverDangling :: CriticalSequence morph -> Bool
+isDeliverDangling (CriticalSequence _ _ _ DeliverDangling) = True
+isDeliverDangling _ = False
+
+isForbidProduce :: CriticalSequence morph -> Bool
+isForbidProduce (CriticalSequence _ _ _ ForbidProduce) = True
+isForbidProduce _ = False
 
 -- | Returns the matches (m1, m2)
 getCriticalSequenceMatches :: CriticalSequence morph -> Maybe (morph,morph)

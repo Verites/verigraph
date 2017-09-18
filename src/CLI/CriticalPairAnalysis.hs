@@ -1,3 +1,4 @@
+{-# LANGUAGE TupleSections #-}
 module CriticalPairAnalysis
   ( Options
   , options
@@ -5,21 +6,33 @@ module CriticalPairAnalysis
   ) where
 
 import           Control.Monad                         (when)
+import           Data.Matrix (Matrix)
+import qualified Data.Matrix as Matrix
+import Data.Maybe (maybe)
 import           Data.Monoid                           ((<>))
 import qualified Data.Set                              as Set
 import           GHC.Conc                              (numCapabilities)
 import           Options.Applicative
 
+import           Abstract.Category
 import           Abstract.Rewriting.DPO
 import           Analysis.Interlevel.EvolutionarySpans
 import           Analysis.Interlevel.InterLevelCP
+import           Analysis.CriticalPairs                (CriticalPair, findCriticalPairs, isDeleteUse, isProduceForbid, isProduceDangling)
+import qualified Analysis.CriticalPairs as CP
+import           Analysis.CriticalSequence             (CriticalSequence, findTriggeredCriticalSequences, isProduceUse, isRemoveDangling, isDeleteForbid)
+import qualified Analysis.CriticalSequence             as CS
+import           Analysis.EssentialCriticalPairs       (findEssentialCriticalPairs)
 import           Category.TypedGraph                   (TypedGraphMorphism)
+import           Category.TypedGraphRule               (RuleMorphism)
+import           Data.TypedGraph (typeGraph)
 import           GlobalOptions
+import           Rewriting.DPO.TypedGraph              (emptyGraphRule)
 import           Rewriting.DPO.TypedGraphRule
 import           Util
 import           Util.List
-import qualified XML.GGXReader                         as XML
 import qualified XML.GGXWriter                         as GW
+import           XML.XMLUtilities                      (writeXML)
 
 data Options = Options
   { outputFile    :: Maybe String
@@ -27,6 +40,8 @@ data Options = Options
   , essentialFlag :: Bool
   , analysisType  :: AnalysisType
   }
+
+data AnalysisType = Both | Conflicts | Dependencies deriving (Eq)
 
 options :: Parser Options
 options = Options
@@ -37,129 +52,161 @@ options = Options
     <> action "file"
     <> help ("CPX file that will be written, receiving the critical pairs " ++
              "for the grammar (if absent, a summary will be printed to stdout)")))
-  <*> cpOrder
-  <*> essentialCP
-  <*> cpAnalysisType
+  <*> flag False True
+        ( long "snd-order"
+        <> help "Set the analysis to the second-order rules")
+  <*> flag False True
+        ( long "essential"
+        <> help "Compute the Essential Critical Pairs analysis (Warning: not fully supported yet)")
+  <*> ( flag' Conflicts
+          ( long "conflicts-only"
+            <> help "Restrict to Critical Pair analysis")
+      <|> flag' Dependencies
+            ( long "dependencies-only"
+              <> help "Restrict to Critical Sequence analysis")
+      <|> pure Both)
 
-cpOrder :: Parser Bool
-cpOrder = flag False True
-    ( long "snd-order"
-    <> help "Set the analysis to the second-order rules")
-
-essentialCP :: Parser Bool
-essentialCP = flag False True
-    ( long "essential"
-    <> help "Compute the Essential Critical Pairs analysis (Warning: not fully supported yet)")
-
-cpAnalysisType :: Parser AnalysisType
-cpAnalysisType =
-      flag' Conflicts
-        ( long "conflicts-only"
-          <> help "Restrict to Critical Pair analysis")
-  <|> flag' Dependencies
-        ( long "dependencies-only"
-          <> help "Restrict to Critical Sequence analysis")
-  <|> pure Both
 
 execute :: GlobalOptions -> Options -> IO ()
 execute globalOpts opts = do
-    let dpoConf = morphismsConf globalOpts
-
     putStrLn $ "number of cores: " ++ show numCapabilities ++ "\n"
 
-    (fstOrderGG, sndOrderGG, printNewNacs) <- XML.readGrammar (inputFile globalOpts) (useConstraints globalOpts) dpoConf
-    ggName <- XML.readGGName (inputFile globalOpts)
-    names <- XML.readNames (inputFile globalOpts)
+    let dpoConf = morphismsConf globalOpts
+        dpoConf' = toSndOrderMorphismsConfig dpoConf
+    case arbitraryMatches globalOpts of
+      MonoMatches -> putStrLn "Only injective matches allowed."
+      AnyMatches  -> putStrLn "Non-injective matches allowed."
+    when (essentialFlag opts) $ 
+      putStrLn "Warning: essential critical pairs not fully supported"
+    putStrLn ""
 
     putStrLn "Analyzing the graph grammar..."
-    putStrLn ""
+    putStrLn ""    
+    if sndOrder opts
+      then do
+        (fstOrderGG, sndOrderGG, ggName, names) <- loadSndOrderGrammar globalOpts True
+        let fstOrderGG' = appendSndOrderConfsDeps fstOrderGG
+            appendSndOrderConfsDeps = case analysisType opts of
+              Conflicts -> appendSndOrderConflicts dpoConf' sndOrderGG
+              Dependencies -> appendSndOrderDependencies dpoConf' sndOrderGG
+              Both -> appendSndOrderDependencies dpoConf' sndOrderGG . appendSndOrderConflicts dpoConf' sndOrderGG
 
-    let action = analysisType opts
-        essentialCP = essentialFlag opts
-        secondOrder = sndOrder opts
-        writer = defWriterFun essentialCP secondOrder dpoConf action
-
-        namedFstOrdRules = productions fstOrderGG
-        namedSndOrdRules = productions sndOrderGG
-        fstOrdRules = map snd namedFstOrdRules
-        sndOrdRules = map snd namedSndOrdRules
-
-        dpoConf' = toSndOrderMorphismsConfig dpoConf
-        interlevelWithoutCounting = Set.fromList 
+        processFirstOrderGrammar opts dpoConf fstOrderGG' sndOrderGG ggName names
+        
+        putStrLn "Inter-level Critical Pairs Analysis"
+        putStrLn "This log shows a list of (first-order rule, second-order rule) that are in conflict:"
+        print $ Set.fromList
           [ (x,y)
-            | sndOrdRule <- namedSndOrdRules
-            , fstOrdRule <- namedFstOrdRules
+            | sndOrdRule <- productions sndOrderGG
+            , fstOrdRule <- productions fstOrderGG
             , (x,y,_,_) <- interLevelCP dpoConf' sndOrdRule fstOrdRule ]
-        evoConflicts = allEvolSpans dpoConf' namedSndOrdRules
+        putStrLn ""
+  
+        let evoConflicts = allEvolSpans dpoConf' (productions sndOrderGG)
+        putStrLn "Evolutionary Spans Inter-level CP:"
+        putStrLn "This log shows pairs of (second-order rule, second-order rule, number of FolFol, number of ConfFol, number of FolConf, number of ConfConf)"
+        print (printEvoConflicts evoConflicts)
 
-
-    putStrLn $ "only injective matches morphisms: " ++ show (arbitraryMatches globalOpts)
-    putStrLn ""
-
-    when secondOrder $ mapM_ putStrLn (XML.printMinimalSafetyNacsLog printNewNacs)
-
-    when essentialCP $ putStrLn "Warning: essential critical pairs not fully supported"
-    putStrLn ""
-
-    let fstOrderAnalysis = printAnalysis essentialCP action dpoConf fstOrdRules
-        sndOrderAnalysis = printAnalysis essentialCP action dpoConf' sndOrdRules
-    case outputFile opts of
-      Just file ->
-        do
-          putStrLn "Warning: exporting conflicts/dependencies to .cpx not fully supported."
-          writer (fstOrderGG, sndOrderGG) ggName names file
-      Nothing ->
-        if secondOrder
-          then sndOrderAnalysis
-          else fstOrderAnalysis
-
-    when secondOrder $
-      mapM_ putStrLn $
-        "Inter-level Critical Pairs Analysis" :
-        "This log shows a list of (first-order rule, second-order rule) that are in conflict:" :
-        [show interlevelWithoutCounting] --map printILCP interlevelCPs
-
-    putStrLn ""
-
-    when secondOrder $
-      mapM_ putStrLn $
-        "Evolutionary Spans Inter-level CP:" :
-        "This log shows pairs of (second-order rule, second-order rule, number of FolFol, number of ConfFol, number of FolConf, number of ConfConf)" :
-        printEvoConflicts evoConflicts
+      else do
+        (fstOrderGG, ggName, names) <- loadGrammar globalOpts
+        let tGraph = typeGraph . leftObject . snd . head $ productions fstOrderGG
+        let emptySndOrderGG = grammar (emptyGraphRule tGraph) [] []
+        processFirstOrderGrammar opts dpoConf fstOrderGG emptySndOrderGG ggName names
 
     putStrLn ""
     putStrLn "Critical Pair Analysis done!"
 
--- | Inter-level CP to Strings
---printILCP :: (String, String, Int, InterLevelCP a b) -> String
---printILCP (fstName, sndName, idx, _) =
---  fstName ++ " " ++ sndName ++ " (id:" ++ show idx ++ ") ... (conflict omitted)"
+processFirstOrderGrammar :: Options -> MorphismsConfig (TypedGraphMorphism b c) -> Grammar (TypedGraphMorphism b c) -> Grammar (RuleMorphism b c) -> String -> [(String, String)] -> IO ()
+processFirstOrderGrammar opts dpoConf fstOrderGrammar sndOrderGrammar ggName names = do
+  let
+    (conflicts, dependencies) = 
+      case analysisType opts of
+        Conflicts -> (Just conflicts', Nothing)
+        Dependencies -> (Nothing, Just dependencies')
+        Both -> (Just conflicts', Just dependencies')
+    conflicts' = pairwiseCompare (findConflicts dpoConf) (productions fstOrderGrammar)
+    findConflicts
+      | essentialFlag opts = findEssentialCriticalPairs
+      | otherwise          = findCriticalPairs
+    dependencies' = pairwiseCompare (findTriggeredCriticalSequences dpoConf) (productions fstOrderGrammar)
+
+  case outputFile opts of
+    Just file ->
+      do
+        putStrLn "Warning: exporting conflicts/dependencies to .cpx not fully supported."
+        let conflicts' = maybe [] Matrix.toList conflicts
+        let dependencies' = maybe [] Matrix.toList dependencies
+        _ <- writeXML (GW.writeCpx (fstOrderGrammar, sndOrderGrammar) conflicts' dependencies' ggName names) file
+        -- TODO: error handling for XML writes
+        return ()
+    Nothing -> do
+      mapM_ (printConflicts (essentialFlag opts)) conflicts 
+      mapM_ printDependencies dependencies
 
 -- | Evolutionary Spans to Strings
 printEvoConflicts :: [(String, String, [EvoSpan a b])] -> [String]
 printEvoConflicts = map printOneEvo
   where
-    fst (y,_,_) = y
-    snd (_,y,_) = y
-    thd (_,_,y) = y
-
-    printOneEvo e = "(" ++ fst e ++ ", " ++ snd e ++ ", " ++
-                       show (printConf (False,False) (thd e)) ++ ", " ++
-                       show (printConf (True,False) (thd e)) ++ ", " ++
-                       show (printConf (False,True) (thd e)) ++ ", " ++
-                       show (printConf (True,True) (thd e)) ++ ")"
+    printOneEvo (r1, r2, x) = "(" ++ r1 ++ ", " ++ r2 ++ ", " ++
+                       show (printConf (False,False) x) ++ ", " ++
+                       show (printConf (True,False) x) ++ ", " ++
+                       show (printConf (False,True) x) ++ ", " ++
+                       show (printConf (True,True) x) ++ ")"
     printConf str evos = countElement str (map cpe evos)
 
-defWriterFun :: Bool -> Bool -> MorphismsConfig (TypedGraphMorphism a b) -> AnalysisType
-             -> GW.Grammars a b -> String
-             -> [(String,String)] -> String -> IO ()
-defWriterFun essential secondOrder conf t =
-  case (secondOrder,t) of
-    (False, Conflicts)    -> GW.writeConflictsFile essential conf
-    (False, Dependencies) -> GW.writeDependenciesFile conf
-    (False, Both)         -> GW.writeConfDepFile essential conf
-    (True, Conflicts)     -> GW.writeSndOderConflictsFile conf'
-    (True, Dependencies)  -> GW.writeSndOderDependenciesFile conf'
-    (True, Both)          -> GW.writeSndOderConfDepFile conf'
-    (_, None)             -> GW.writeGrammarFile
-  where conf' = toSndOrderMorphismsConfig conf
+
+printConflicts :: Bool -> Matrix (String, String, [CriticalPair morph]) -> IO ()
+printConflicts isEssential conflicts' = do
+  printMatrixLengths (essential ++ "Delete-Use") (filterMatrix isDeleteUse conflicts)
+  printMatrixLengths (essential ++ "Produce-Dangling") (filterMatrix isProduceDangling conflicts)
+  printMatrixLengths (essential ++ "Produce-Forbid") (filterMatrix isProduceForbid conflicts)
+  printMatrixLengths (essential ++ "Conflicts") conflicts
+  where
+    conflicts = fmap (\(_,_,l) -> l) conflicts'
+    essential
+      | isEssential = "Essential "
+      | otherwise   = ""
+
+printDependencies :: Matrix (String, String, [CriticalSequence morph]) -> IO ()      
+printDependencies dependencies' = do
+  printMatrixLengths "Produce-Use" (filterMatrix isProduceUse dependencies)
+  printMatrixLengths "Remove-Dangling" (filterMatrix isRemoveDangling dependencies)
+  printMatrixLengths "Delete-Forbid" (filterMatrix isDeleteForbid dependencies)
+  printMatrixLengths "Dependencies" dependencies
+  putStrLn ""
+  where
+    dependencies = fmap (\(_,_,l) -> l) dependencies'
+
+
+filterMatrix :: Functor f => (a -> Bool) -> f [a] -> f [a]
+filterMatrix pred = fmap (filter pred)
+
+printMatrixLengths :: String -> Matrix [a] -> IO ()
+printMatrixLengths title matrix = do
+  putStrLn (title ++ ":")
+  print (fmap length matrix)
+
+pairwiseCompare :: (a -> a -> b) -> [(String, a)] -> Matrix (String, String, b)
+pairwiseCompare compare namedItems =
+  Matrix.fromList (length namedItems) (length namedItems)
+    (parallelMap (uncurry compare') [ (x, y) | x <- namedItems, y <- namedItems ])
+  where 
+    compare' (nameX, x) (nameY, y) = (nameX, nameY, compare x y)
+
+
+appendSndOrderConflicts :: MorphismsConfig (RuleMorphism a b) -> Grammar (RuleMorphism a b) -> Grammar (TypedGraphMorphism a b) -> Grammar (TypedGraphMorphism a b)
+appendSndOrderConflicts conf gg2 gg1 = newGG1
+  where
+    conflicts = CP.namedCriticalPairs conf (productions gg2)
+    matches = concatMap (\(n1,n2,c) -> map (\ol -> (n1, n2, CP.getCriticalPairType ol, codomain (fst (CP.getCriticalPairMatches ol)))) c) conflicts
+    conflictRules = map (\(idx,(n1,n2,tp,rule)) -> ("conflict_" ++ show tp ++ "_" ++ n1 ++ "_" ++ n2 ++ "_" ++ show idx, rule)) (zip ([0..]::[Int]) matches)
+    newGG1 = grammar (start gg1) [] (productions gg1 ++ conflictRules)
+
+appendSndOrderDependencies :: MorphismsConfig (RuleMorphism a b) -> Grammar (RuleMorphism a b) -> Grammar (TypedGraphMorphism a b) -> Grammar (TypedGraphMorphism a b)
+appendSndOrderDependencies conf gg2 gg1 = newGG1
+  where
+    conflicts = CS.namedCriticalSequences conf (productions gg2)
+    matches = concatMap (\(n1,n2,c) -> map (\ol -> (n1, n2, CS.getCriticalSequenceType ol, codomain (fst (CS.getCriticalSequenceComatches ol)))) c) conflicts
+    conflictRules = map (\(idx,(n1,n2,tp,rule)) -> ("dependency_" ++ show tp ++ "_" ++ n1 ++ "_" ++ n2 ++ "_" ++ show idx, rule)) (zip ([0..]::[Int]) matches)
+    newGG1 = grammar (start gg1) [] (productions gg1 ++ conflictRules)
+    
