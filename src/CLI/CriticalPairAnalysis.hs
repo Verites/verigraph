@@ -124,11 +124,11 @@ processFirstOrderGrammar opts dpoConf fstOrderGrammar sndOrderGrammar ggName nam
         Conflicts -> (Just conflicts', Nothing)
         Dependencies -> (Nothing, Just dependencies')
         Both -> (Just conflicts', Just dependencies')
-    conflicts' = pairwiseCompare (findConflicts dpoConf) (productions fstOrderGrammar)
+    conflicts' = pairwiseCompareIntoMatrix (findConflicts dpoConf) (productions fstOrderGrammar)
     findConflicts
       | essentialFlag opts = findEssentialCriticalPairs
       | otherwise          = findCriticalPairs
-    dependencies' = pairwiseCompare (findTriggeredCriticalSequences dpoConf) (productions fstOrderGrammar)
+    dependencies' = pairwiseCompareIntoMatrix (findTriggeredCriticalSequences dpoConf) (productions fstOrderGrammar)
 
   case outputFile opts of
     Just file ->
@@ -186,18 +186,19 @@ printMatrixLengths title matrix = do
   putStrLn (title ++ ":")
   print (fmap length matrix)
 
-pairwiseCompare :: (a -> a -> b) -> [(String, a)] -> Matrix (String, String, b)
-pairwiseCompare compare namedItems =
-  Matrix.fromList (length namedItems) (length namedItems)
-    (parallelMap (uncurry compare') [ (x, y) | x <- namedItems, y <- namedItems ])
-  where 
-    compare' (nameX, x) (nameY, y) = (nameX, nameY, compare x y)
+pairwiseCompareIntoMatrix :: (a -> a -> b) -> [(String, a)] -> Matrix (String, String, b)
+pairwiseCompareIntoMatrix compare namedItems =
+  Matrix.fromList (length namedItems) (length namedItems) (pairwiseCompareIntoList compare namedItems)
 
+pairwiseCompareIntoList :: (a -> a -> b) -> [(String, a)] -> [(String, String, b)]
+pairwiseCompareIntoList compare namedItems =
+  parallelMap (uncurry compare') [ (x, y) | x <- namedItems, y <- namedItems ]
+  where compare' (nameX, x) (nameY, y) = (nameX, nameY, compare x y)
 
 appendSndOrderConflicts :: MorphismsConfig (RuleMorphism a b) -> Grammar (RuleMorphism a b) -> Grammar (TypedGraphMorphism a b) -> Grammar (TypedGraphMorphism a b)
 appendSndOrderConflicts conf gg2 gg1 = newGG1
   where
-    conflicts = CP.namedCriticalPairs conf (productions gg2)
+    conflicts = pairwiseCompareIntoList (findCriticalPairs conf) (productions gg2)
     matches = concatMap (\(n1,n2,c) -> map (\ol -> (n1, n2, CP.getCriticalPairType ol, codomain (fst (CP.getCriticalPairMatches ol)))) c) conflicts
     conflictRules = map (\(idx,(n1,n2,tp,rule)) -> ("conflict_" ++ show tp ++ "_" ++ n1 ++ "_" ++ n2 ++ "_" ++ show idx, rule)) (zip ([0..]::[Int]) matches)
     newGG1 = grammar (start gg1) [] (productions gg1 ++ conflictRules)
@@ -205,7 +206,7 @@ appendSndOrderConflicts conf gg2 gg1 = newGG1
 appendSndOrderDependencies :: MorphismsConfig (RuleMorphism a b) -> Grammar (RuleMorphism a b) -> Grammar (TypedGraphMorphism a b) -> Grammar (TypedGraphMorphism a b)
 appendSndOrderDependencies conf gg2 gg1 = newGG1
   where
-    conflicts = CS.namedCriticalSequences conf (productions gg2)
+    conflicts = pairwiseCompareIntoList (findTriggeredCriticalSequences conf) (productions gg2)
     matches = concatMap (\(n1,n2,c) -> map (\ol -> (n1, n2, CS.getCriticalSequenceType ol, codomain (fst (CS.getCriticalSequenceComatches ol)))) c) conflicts
     conflictRules = map (\(idx,(n1,n2,tp,rule)) -> ("dependency_" ++ show tp ++ "_" ++ n1 ++ "_" ++ n2 ++ "_" ++ show idx, rule)) (zip ([0..]::[Int]) matches)
     newGG1 = grammar (start gg1) [] (productions gg1 ++ conflictRules)

@@ -11,7 +11,6 @@ module Analysis.CriticalPairs
   , isProduceForbid
 
    -- * Finding Critical Pairs
-  , namedCriticalPairs
   , findCriticalPairs
   , findAllDeleteUse
   , findAllProduceForbid
@@ -24,7 +23,6 @@ import           Data.Maybe                               (mapMaybe)
 import           Abstract.Category.Finitary
 import           Abstract.Rewriting.DPO                   hiding (calculateComatch)
 import qualified Abstract.Rewriting.DPO.DiagramAlgorithms as Diagram
-import           Util.List                                (parallelMap)
 
 -- | Data representing the type of a 'CriticalPair'
 data CriticalPairType =
@@ -33,9 +31,6 @@ data CriticalPairType =
   | ProduceForbid
   | ProduceDangling
   deriving(Eq,Show)
-
-type NamedRule morph = (String, Production morph)
-type NamedCriticalPairs morph = (String,String,[CriticalPair morph])
 
 -- | A Critical Pair is defined as two matches (m1,m2) from the left
 -- side of their productions to a same graph.
@@ -110,14 +105,6 @@ getNacIndexOfCriticalPair criticalPair =
   case nacMatch criticalPair of
     Just (_,idx) -> Just idx
     Nothing      -> Nothing
-
--- | Returns the Critical Pairs with rule names
-namedCriticalPairs :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> [NamedRule morph] -> [NamedCriticalPairs morph]
-namedCriticalPairs conf namedRules =
-  parallelMap (uncurry getCPs) [(a,b) | a <- namedRules, b <- namedRules]
-    where
-      getCPs (n1,r1) (n2,r2) =
-        (n1, n2, findCriticalPairs conf r1 r2)
 
 -- | Finds all Critical Pairs between two given Productions
 findCriticalPairs :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> Production morph -> Production morph -> [CriticalPair morph]

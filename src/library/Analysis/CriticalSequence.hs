@@ -14,8 +14,6 @@ module Analysis.CriticalSequence
    isForbidProduce, 
 
    -- * Finding Critical Sequences
-   namedCriticalSequences,
-   namedTriggeredCriticalSequences,
    findTriggeredCriticalSequences,
    findCriticalSequences,
    findAllProduceUse,
@@ -32,8 +30,6 @@ module Analysis.CriticalSequence
 import           Abstract.Category.Finitary
 import           Abstract.Rewriting.DPO                   hiding (calculateComatch)
 import           Analysis.CriticalPairs hiding (matches, comatches)
-import           Util.List                                (parallelMap)
-
 
 
 -- | Data representing the type of a 'CriticalPair'
@@ -46,8 +42,6 @@ data CriticalSequenceType =
   | ForbidProduce   -- ^ resp. inverted produce-forbid
   deriving (Eq,Show)
 
-type NamedRule morph = (String, Production morph)
-type NamedCriticalPairs morph = (String,String,[CriticalSequence morph])
 
 -- | A Critical Sequence is defined as two matches (m1,m2) from the
 -- left side of their rules to a same graph.
@@ -135,21 +129,6 @@ getNacIndexOfCriticalSequence cs =
   case nac cs of
     Just (_,idx) -> Just idx
     Nothing      -> Nothing
-
--- | Returns the Triggered Critical Sequences with rule names
-namedTriggeredCriticalSequences :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> [NamedRule morph] -> [NamedCriticalPairs morph]
-namedTriggeredCriticalSequences conf rules =
-  parallelMap (uncurry getCSs) [(a,b) | a <- rules, b <- rules]
-  where
-    getCSs (n1,r1) (n2,r2) = (n1, n2, findTriggeredCriticalSequences conf r1 r2)
-
-
--- | Returns the Critical Sequences with rule names
-namedCriticalSequences :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> [NamedRule morph] -> [NamedCriticalPairs morph]
-namedCriticalSequences conf rules =
-  parallelMap (uncurry getCSs) [(a,b) | a <- rules, b <- rules]
-  where
-    getCSs (n1,r1) (n2,r2) = (n1, n2, findCriticalSequences conf r1 r2)
 
 -- | Given two productions @p1@ and @p2@, finds the Critical sequences
 -- in which the application of @p1@ enables the application of @p2@
