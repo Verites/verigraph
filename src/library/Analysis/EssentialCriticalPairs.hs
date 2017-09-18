@@ -7,7 +7,7 @@ classified with 'CriticalPairType', but each pair can be only a
 'DeleteUse'.
 -}
 module Analysis.EssentialCriticalPairs
-  ( namedEssentialCriticalPairs
+  ( findEssentialCriticalPairs
   , findAllEssentialDeleteUse
   ) where
 
@@ -19,17 +19,6 @@ import           Abstract.Category.Limit
 import           Abstract.Rewriting.DPO
 import           Analysis.CriticalPairs
 
-type NamedRule morph = (String, Production morph)
-type NamedCriticalPairs morph = (String,String,[CriticalPair morph])
-
--- | Returns the Essential Critical Pairs with rule names
-namedEssentialCriticalPairs :: (E'PairCofinitary morph, DPO morph, MInitialPushout morph, Complete morph, Cocomplete morph) =>
-  MorphismsConfig morph -> [NamedRule morph] -> [NamedCriticalPairs morph]
-namedEssentialCriticalPairs conf namedRules =
-  map (uncurry getCPs) [(a,b) | a <- namedRules, b <- namedRules]
-    where
-      getCPs (n1,r1) (n2,r2) =
-        (n1, n2, findEssentialCriticalPairs conf r1 r2)
 
 -- | Finds all Essential Critical Pairs between two given Productions
 findEssentialCriticalPairs :: (E'PairCofinitary morph, DPO morph, MInitialPushout morph, Complete morph, Cocomplete morph) =>
@@ -62,7 +51,7 @@ findPotentialEssentialCPs conf p1 p2 = satisfyingPairs
            in (l1', c, m1, m2)
         )
       pairs
-    satisfyingPairs = filter (\(_,_,m1,m2) -> satisfyRewritingConditions conf (p1,m1) (p2,m2)) shiftedPairs
+    satisfyingPairs = filter (\(_,_,m1,m2) -> satisfiesRewritingConditions conf p1 m1 && satisfiesRewritingConditions conf p2 m2) shiftedPairs
 
 -- | A pair of monomorphic matches (with precalcultated initial pushout (l1',c) elements)
 -- is an essential delete use when the

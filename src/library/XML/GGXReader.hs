@@ -11,7 +11,7 @@ module XML.GGXReader
   , instantiateRule
   , instantiateSpan
   , minimalSafetyNacsWithLog
-  , printMinimalSafetyNacsLog
+  , showMinimalSafetyNacsLog
   ) where
 
 import qualified Data.List                    as L
@@ -114,11 +114,10 @@ minimalSafetyNacsWithLog conf oldGG = (newGG, printNewNacs)
     newGG = oldGG {productions = map fst newNacs}
     printNewNacs = map snd newNacs
 
-printMinimalSafetyNacsLog :: [(String, Int)] -> [String]
-printMinimalSafetyNacsLog printNewNacs =
-    ["Adding minimal safety nacs to second-order productions:"]
-    ++ map (\(r,n) -> "Rule " ++ r ++ ", added " ++ show n ++ " nacs") printNewNacs
-    ++ ["All minimal safety nacs added!"]
+
+showMinimalSafetyNacsLog :: [(String, Int)] -> [String]
+showMinimalSafetyNacsLog printNewNacs =
+    [ "Rule " ++ r ++ ", added " ++ show n ++ " nacs" | (r,n) <- printNewNacs ]
 
 
 -- | Reads the names of node/edge types and NACs, which are necessary when reexporting this grammar.

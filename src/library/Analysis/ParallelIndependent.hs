@@ -27,8 +27,7 @@ isIndependent ind algorithm conf p1' p2 = not $ conflict algorithm
            Parallel     -> p1'
            Sequentially -> invertProductionWithoutNacs p1'
 
-    pairs = findJointSurjections (matchRestriction conf, leftObject p1) (matchRestriction conf, leftObject p2)
-    satisfyingPairs = filter (\(m1,m2) -> satisfyRewritingConditions conf (p1,m1) (p2,m2)) pairs
+    satisfyingPairs = findJointSurjectiveApplicableMatches conf p1 p2
 
     conflict Cond1 = any (cond1 p1 p2) satisfyingPairs
     conflict Cond2 = any (cond2 p1 p2) satisfyingPairs

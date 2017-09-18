@@ -1,4 +1,4 @@
-source-dir: src/library/Category/TypedGraphRule
+source-dir: src/library/
 rules:
   -
     description: >
@@ -58,7 +58,7 @@ rules:
     outside: 
       - Category.TypedGraph.**
       - Category.TypedGraphRule.Category
-    level: warning
+    level: warning 
   -
     description: >
       Implementation of TypedGraphRule category is properly encapsulated.
@@ -66,3 +66,11 @@ rules:
     forbidden: Category.TypedGraphRule.*
     outside: Category.TypedGraphRule.**
     level: warning
+  - 
+    description: >
+      The XML parser does not contain any logic
+    type: forbid-import
+    forbidden: 
+      - Analysis.**
+    within: XML.**
+    level: error

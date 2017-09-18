@@ -1,5 +1,6 @@
 module GlobalOptions
   ( GlobalOptions(..)
+  , MatchRestriction(..)
   , globalOpts
   , morphismsConf
   ) where

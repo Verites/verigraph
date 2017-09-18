@@ -6,11 +6,12 @@ module Analysis.CriticalPairs
   , getNacIndexOfCriticalPair
   , getNacMatchOfCriticalPair
   , getCriticalPairType
+  , isDeleteUse
+  , isProduceDangling
+  , isProduceForbid
 
    -- * Finding Critical Pairs
   , findCriticalPairs
-  , findPotentialCriticalPairs
-  , namedCriticalPairs
   , findAllDeleteUse
   , findAllProduceForbid
   , findAllProduceDangling
@@ -21,8 +22,7 @@ import           Data.Maybe                               (mapMaybe)
 
 import           Abstract.Category.Finitary
 import           Abstract.Rewriting.DPO                   hiding (calculateComatch)
-import           Abstract.Rewriting.DPO.DiagramAlgorithms
-import           Util.List                                (parallelMap)
+import qualified Abstract.Rewriting.DPO.DiagramAlgorithms as Diagram
 
 -- | Data representing the type of a 'CriticalPair'
 data CriticalPairType =
@@ -31,9 +31,6 @@ data CriticalPairType =
   | ProduceForbid
   | ProduceDangling
   deriving(Eq,Show)
-
-type NamedRule morph = (String, Production morph)
-type NamedCriticalPairs morph = (String,String,[CriticalPair morph])
 
 -- | A Critical Pair is defined as two matches (m1,m2) from the left
 -- side of their productions to a same graph.
@@ -71,6 +68,18 @@ data CriticalPair morph = CriticalPair {
     cpType    :: CriticalPairType
     } deriving (Eq,Show)
 
+isDeleteUse :: CriticalPair morph -> Bool
+isDeleteUse (CriticalPair _ _ _ DeleteUse) = True
+isDeleteUse _ = False
+
+isProduceDangling :: CriticalPair morph -> Bool
+isProduceDangling (CriticalPair _ _ _ ProduceDangling) = True
+isProduceDangling _ = False
+
+isProduceForbid :: CriticalPair morph -> Bool
+isProduceForbid (CriticalPair _ _ _ ProduceForbid) = True
+isProduceForbid _ = False
+
 -- | Returns the matches (m1,m2)
 getCriticalPairMatches :: CriticalPair morph -> (morph,morph)
 getCriticalPairMatches = matches
@@ -97,22 +106,6 @@ getNacIndexOfCriticalPair criticalPair =
     Just (_,idx) -> Just idx
     Nothing      -> Nothing
 
--- | Returns the Critical Pairs with rule names
-namedCriticalPairs :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> [NamedRule morph] -> [NamedCriticalPairs morph]
-namedCriticalPairs conf namedRules =
-  parallelMap (uncurry getCPs) [(a,b) | a <- namedRules, b <- namedRules]
-    where
-      getCPs (n1,r1) (n2,r2) =
-        (n1, n2, findCriticalPairs conf r1 r2)
-
--- TODO: Use this as an auxiliary function to optimize the search for critical pairs
--- | Returns a list of morphisms from left side of rules to all valid overlapping pairs
-findPotentialCriticalPairs :: (DPO morph, E'PairCofinitary morph) => MorphismsConfig morph -> Production morph -> Production morph -> [(morph,morph)]
-findPotentialCriticalPairs conf p1 p2 = satisfyingPairs
-  where
-    pairs = findJointSurjections (matchRestriction conf, leftObject p1) (matchRestriction conf, leftObject p2)
-    satisfyingPairs = filter (\(m1,m2) -> satisfyRewritingConditions conf (p1,m1) (p2,m2)) pairs
-
 -- | Finds all Critical Pairs between two given Productions
 findCriticalPairs :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> Production morph -> Production morph -> [CriticalPair morph]
 findCriticalPairs conf p1 p2 =
@@ -126,10 +119,8 @@ findCriticalPairs conf p1 p2 =
 -- It occurs when @p1@ deletes something used by @p2@.
 findAllDeleteUse :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> Production morph -> Production morph -> [CriticalPair morph]
 findAllDeleteUse conf p1 p2 =
-  map (\m -> CriticalPair m Nothing Nothing DeleteUse) deleteUsePairs
-  where
-    satisfyingPairs = findPotentialCriticalPairs conf p1 p2
-    deleteUsePairs = filter (isDeleteUse conf p1) satisfyingPairs
+  let matchPairs = findJointSurjectiveApplicableMatches conf p1 p2
+  in [ CriticalPair mpair Nothing Nothing DeleteUse | mpair <- matchPairs, Diagram.isDeleteUse conf p1 mpair ]
 
 -- *** Produce-Dangling
 
@@ -137,10 +128,8 @@ findAllDeleteUse conf p1 p2 =
 -- It occurs when @p1@ creates something that unable @p2@.
 findAllProduceDangling :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> Production morph -> Production morph -> [CriticalPair morph]
 findAllProduceDangling conf p1 p2 =
-  map (\m -> CriticalPair m Nothing Nothing ProduceDangling) produceDanglingPairs
-  where
-    satisfyingPairs = findPotentialCriticalPairs conf p1 p2
-    produceDanglingPairs = filter (isProduceDangling conf p1 p2) satisfyingPairs
+  let matchPairs = findJointSurjectiveApplicableMatches conf p1 p2
+  in [ CriticalPair mpair Nothing Nothing ProduceDangling | mpair <- matchPairs, Diagram.isProduceDangling conf p1 p2 mpair ]
 
 -- DeleteUse and Produce-Dangling
 
@@ -148,10 +137,11 @@ findAllProduceDangling conf p1 p2 =
 -- more efficient than deal separately.
 findAllDeleteUseAndProduceDangling :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> Production morph -> Production morph -> [CriticalPair morph]
 findAllDeleteUseAndProduceDangling conf p1 p2 =
-  map categorizeConflict conflicts
+  let
+    matchPairs = findJointSurjectiveApplicableMatches conf p1 p2
+    conflicts = mapMaybe (Diagram.deleteUseDangling conf p1 p2) matchPairs
+  in map categorizeConflict conflicts
   where
-    gluing = findPotentialCriticalPairs conf p1 p2
-    conflicts = mapMaybe (deleteUseDangling conf p1 p2) gluing
     categorizeConflict x = case x of
       (Left m)  -> CriticalPair m Nothing Nothing DeleteUse
       (Right m) -> CriticalPair m Nothing Nothing ProduceDangling
@@ -164,11 +154,6 @@ findAllDeleteUseAndProduceDangling conf p1 p2 =
 -- NAC in @p2@ fails to be satisfied after the aplication of @p1@.
 findAllProduceForbid :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> Production morph -> Production morph -> [CriticalPair morph]
 findAllProduceForbid conf p1 p2 =
-  concatMap (findProduceForbidForNAC conf p1 p2) (zip (nacs p2) [0..])
-
--- | Check ProduceForbid for a NAC @n@ in @p2@.
-findProduceForbidForNAC :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> Production morph -> Production morph -> (morph, Int) -> [CriticalPair morph]
-findProduceForbidForNAC conf p1 p2 nac =
-  map
-    (\(morph,morph',nac) -> CriticalPair morph (Just morph') (Just nac) ProduceForbid)
-    (produceForbidOneNac conf p1 p2 nac)
+  let conflicts = concatMap (Diagram.produceForbidOneNac conf p1 p2) (zip (nacs p2) [0..])
+  in [ CriticalPair matches (Just comatches) (Just nac) ProduceForbid
+        | (matches, comatches, nac) <- conflicts ]
