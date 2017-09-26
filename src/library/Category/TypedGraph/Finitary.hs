@@ -25,9 +25,8 @@ instance MFinitary (TypedGraphMorphism n e) where
 
   getCanonicalSubobject f = 
     let
-      dom = untypedGraph (domain f)
-      subgraphNodes = [ n' | n <- Graph.nodes dom, Just n' <- [applyNode f n] ]
-      subgraphEdges = [ e' | e <- Graph.edges dom, Just e' <- [applyEdge f e] ]
+      subgraphNodes = [ n' | (n, _) <- nodes (domain f), Just n' <- [applyNode f n] ]
+      subgraphEdges = [ e' | (e, _) <- edges (domain f), Just e' <- [applyEdge f e] ]
     in assembleSubgraph subgraphNodes subgraphEdges (codomain f)
 
   getMorphismToCanonicalSubobject f =
@@ -37,7 +36,7 @@ instance MFinitary (TypedGraphMorphism n e) where
     in (morphismToCanonical, canonicalSubobject)
 
   findAllSubobjectsOf g = do
-    let untypedG = untypedGraph g
+    let untypedG = toUntypedGraph g
     includedNodeIds <- getAllSubsets (Graph.nodeIds untypedG)
     let 
       includedEdgeIds' = map edgeId . filter srcTgtInNodes' $ Graph.edges untypedG
@@ -60,7 +59,7 @@ assembleSubgraph subnodes subedges graph =
     subtyping = Untyped.GraphMorphism untypedSubgraph (typeGraph graph)
       (Relation.filterDomain (Graph.isNodeOf untypedSubgraph) $ Untyped.nodeRelation graph)
       (Relation.filterDomain (Graph.isEdgeOf untypedSubgraph) $ Untyped.edgeRelation graph)
-    inclusion = Untyped.fromGraphsAndLists untypedSubgraph (untypedGraph graph)
+    inclusion = Untyped.fromGraphsAndLists untypedSubgraph (toUntypedGraph graph)
       [ (n, n) | n <- Graph.nodeIds untypedSubgraph ]
       [ (e, e) | e <- Graph.edgeIds untypedSubgraph ]
   in TypedGraphMorphism subtyping graph inclusion
@@ -77,7 +76,7 @@ instance ECofinitary (TypedGraphMorphism n e) where
   getMorphismFromCanonicalQuotient f =
     let
       canonicalQuotient = getCanonicalQuotient f
-      untypedQuotient = untypedGraph (codomain canonicalQuotient)
+      untypedQuotient = toUntypedGraph (codomain canonicalQuotient)
       restrictedF = Untyped.GraphMorphism (domain $ mapping f) (codomain $ mapping f)
           (Relation.filterDomain (Graph.isNodeOf untypedQuotient) . Untyped.nodeRelation $ mapping f)
           (Relation.filterDomain (Graph.isEdgeOf untypedQuotient) . Untyped.edgeRelation $ mapping f)
@@ -95,29 +94,29 @@ assembleQuotient nodeBlocks edgeBlocks graph =
     nodeMap = Partition.partitionToSurjection (Partition.fromBlocks nodeBlocks) Set.findMin
     includedNodeIds = Set.fromList (Map.elems nodeMap)
     includedNodes = filter ((`Set.member` includedNodeIds) . nodeId) 
-                  . Graph.nodes $ untypedGraph graph
+                  . Graph.nodes $ toUntypedGraph graph
 
     edgeMap = Partition.partitionToSurjection (Partition.fromBlocks edgeBlocks) Set.findMin
     includedEdgeIds = Set.fromList (Map.elems edgeMap)
     includedEdges = map correctSrcTgt 
                   . filter ((`Set.member` includedEdgeIds) . edgeId)
-                  . Graph.edges $ untypedGraph graph
+                  . Graph.edges $ toUntypedGraph graph
     correctSrcTgt (Edge e srcId tgtId x) = Edge e (nodeMap Map.! srcId) (nodeMap Map.! tgtId) x
   
     untypedQuotient = Graph.fromNodesAndEdges includedNodes includedEdges
     typing = Untyped.GraphMorphism untypedQuotient (typeGraph graph)
       (Relation.filterDomain (Graph.isNodeOf untypedQuotient) $ Untyped.nodeRelation graph)
       (Relation.filterDomain (Graph.isEdgeOf untypedQuotient) $ Untyped.edgeRelation graph)
-    collapsing = Untyped.GraphMorphism (untypedGraph graph) untypedQuotient
-      (Relation.fromMapAndCodomain nodeMap (Graph.nodeIds $ untypedGraph graph))
-      (Relation.fromMapAndCodomain edgeMap (Graph.edgeIds $ untypedGraph graph))
+    collapsing = Untyped.GraphMorphism (toUntypedGraph graph) untypedQuotient
+      (Relation.fromMapAndCodomain nodeMap (Graph.nodeIds $ toUntypedGraph graph))
+      (Relation.fromMapAndCodomain edgeMap (Graph.edgeIds $ toUntypedGraph graph))
   in TypedGraphMorphism graph typing collapsing
 
 
 instance E'PairCofinitary (TypedGraphMorphism a b) where
   isJointSurjection (f, g) = 
-      jointSurjection (Untyped.nodeRelation . mapping) untypedNodes
-      && jointSurjection (Untyped.edgeRelation . mapping) untypedEdges
+      jointSurjection (Untyped.nodeRelation . mapping) nodeIds
+      && jointSurjection (Untyped.edgeRelation . mapping) edgeIds
     where
       jointSurjection mapComponent graphComponent =
         Set.fromList (Relation.image (mapComponent f) ++ Relation.image (mapComponent g))

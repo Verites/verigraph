@@ -31,13 +31,13 @@ spec = do
 
     it "has the correct domain" $ do
       domain f `shouldBe` g1
-      assertEqual "domain of node map" (Relation.domain . Graph.nodeRelation $ mapping f) (Graph.nodeIds $ untypedGraph g1)
-      assertEqual "domain of edge map" (Relation.domain . Graph.edgeRelation $ mapping f) (Graph.edgeIds $ untypedGraph g1)
+      assertEqual "domain of node map" (Relation.domain . Graph.nodeRelation $ mapping f) (nodeIds g1)
+      assertEqual "domain of edge map" (Relation.domain . Graph.edgeRelation $ mapping f) (edgeIds g1)
       
     it "has the correct codomain" $ do
       codomain f `shouldBe` g2
-      assertEqual "codomain of node map" (Relation.codomain . Graph.nodeRelation $ mapping f) (Graph.nodeIds $ untypedGraph g2)
-      assertEqual "codomain of edge map" (Relation.codomain . Graph.edgeRelation $ mapping f) (Graph.edgeIds $ untypedGraph g2)
+      assertEqual "codomain of node map" (Relation.codomain . Graph.nodeRelation $ mapping f) (nodeIds g2)
+      assertEqual "codomain of edge map" (Relation.codomain . Graph.edgeRelation $ mapping f) (edgeIds g2)
 
   describe "makeInclusion" $ do
     let testInclusion dom cod expected = do

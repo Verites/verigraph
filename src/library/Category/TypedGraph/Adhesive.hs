@@ -1,15 +1,16 @@
 module Category.TypedGraph.Adhesive (isDeleted) where
 
-import           Data.Maybe                         (fromJust, mapMaybe)
+import           Data.Maybe                         (mapMaybe)
 
 import           Abstract.Category
 import           Abstract.Category.Adhesive
 import           Category.TypedGraph.Category
 import           Category.TypedGraph.Limit          ()
 import           Category.TypedGraph.Finitary       ()
-import           Data.Graphs                        as G
+import qualified Data.Graphs                        as G
 import qualified Data.Graphs.Morphism               as GM
 import           Data.TypedGraph.Morphism
+import           Data.TypedGraph
 
 
 instance MInitialPushout (TypedGraphMorphism a b) where
@@ -54,13 +55,13 @@ instance MInitialPushout (TypedGraphMorphism a b) where
       edgeTypesInA = GM.applyEdgeIdUnsafe typedGraphA
       graphA = domain typedGraphA
       graphA' = domain (codomain f)
-      edgesOfA = edgesFromDomain f
-      nodeIdsOfA = nodeIdsFromDomain f
+      edgesOfA = map fst . edges $ domain f
+      nodeIdsOfA = nodeIds $ domain f
 
       emptyMorphismToA = buildTypedGraphMorphism emptyTypedGraph typedGraphA emptyMapToA
         where
-          emptyTypedGraph = GM.empty empty typeGraph
-          emptyMapToA = GM.empty empty graphA
+          emptyTypedGraph = GM.empty G.empty typeGraph
+          emptyMapToA = GM.empty G.empty graphA
 
 
       -- 3. Auxiliary functions
@@ -70,8 +71,8 @@ instance MInitialPushout (TypedGraphMorphism a b) where
         where
           checkExistsOrphanIncidentEdge n = any (\(_,e,_) -> isOrphanEdge f (edgeId e)) incEdges
             where
-              Just (_,ctx) = lookupNodeInContext (applyNodeIdUnsafe f n) graphA'
-              incEdges = incidentEdges ctx
+              Just (_,ctx) = G.lookupNodeInContext (applyNodeIdUnsafe f n) graphA'
+              incEdges = G.incidentEdges ctx
 
       -- It captures all nodes in A that are equally mapped by f
       collapsedNodes =
@@ -138,9 +139,9 @@ satisfiesIdentificationCondition l m =
   all (==True) (notIdentificatedNodes ++ notIdentificatedEdges)
   where
     notIdentificatedNodes =
-      map (notIdentificatedElement l m nodeIdsFromDomain applyNodeId) (nodeIdsFromCodomain m)
+      map (notIdentificatedElement l m (nodeIds . domain) applyNodeId) (nodeIds $ codomain m)
     notIdentificatedEdges =
-      map (notIdentificatedElement l m edgeIdsFromDomain applyEdgeId) (edgeIdsFromCodomain m)
+      map (notIdentificatedElement l m (edgeIds . domain) applyEdgeId) (edgeIds $ codomain m)
 
 
 -- | Given a left-hand-side morphism /l : K -> L/, a match /m : L -> G/, two functions /domain/ (to get all elements
@@ -161,21 +162,21 @@ notIdentificatedElement l m domain apply e = (length incidentElements <= 1) || n
 satisfiesDanglingCondition :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
 satisfiesDanglingCondition l m = Prelude.null incidentEdgesNotDeleted
   where
-    lhs = graphDomain m
-    instanceGraph = graphCodomain m
+    lhs = domain m
+    instanceGraph = codomain m
 
     deletedNodes =
-      [(n',ctx) |
-         (n',ctx) <- nodesInContext instanceGraph,
-         any (\n -> applyNodeIdUnsafe m n == nodeId n') (nodeIds lhs),
-         isDeleted l m applyNodeId nodeIdsFromDomain (nodeId n')]
+      [ n' |
+         n' <- nodeIds instanceGraph,
+         any (\n -> applyNodeIdUnsafe m n == n') (nodeIds lhs),
+         isDeleted l m applyNodeId (nodeIds . domain) n' ]
 
     incidentEdgesNotDeleted =
-      [edgeId e |
-         ((n1,_),e,(n2,_)) <- edgesInContext instanceGraph,
-         (n,_) <- deletedNodes,
-         nodeId n `elem` [nodeId n1, nodeId n2],
-         not (isDeleted l m applyEdgeId edgeIdsFromDomain (edgeId e))]
+      [ e |
+         (Edge e n1 n2 _, _) <- edges instanceGraph,
+         n <- deletedNodes,
+         n `elem` [n1, n2],
+         not (isDeleted l m applyEdgeId (edgeIds . domain) e)]
 
 -- TODO: this function should not be here in this module
 -- | Given the left-hand-side morphism of a rule /l : K -> L/, a match /m : L -> G/ of this rule, an element __/e/__
@@ -237,13 +238,13 @@ instance FinalPullbackComplement (TypedGraphMorphism a b) where
         typeGraph = codomain typedGraphK
   
         -- Inits (k:K->D, l':D->A) with D as empty.
-        initD = GM.empty empty typeGraph
-        initK = buildTypedGraphMorphism typedGraphK initD (GM.empty graphK empty)
-        initL' = buildTypedGraphMorphism initD typedGraphA (GM.empty empty graphA)
+        initD = GM.empty G.empty typeGraph
+        initK = buildTypedGraphMorphism typedGraphK initD (GM.empty graphK G.empty)
+        initL' = buildTypedGraphMorphism initD typedGraphA (GM.empty G.empty graphA)
   
         -- Step1 adds in D a copy of the nodes of K.
         step1 = foldr updateNodesFromK (initK,initL') nodesAddFromK
-        nodesAddFromK = zip (nodeIdsFromDomain l) ([0..]::[Int])
+        nodesAddFromK = zip (nodeIds $ domain l) ([0..]::[Int])
         updateNodesFromK (n,newId) (k,l') = (updatedK2,updatedL')
           where
             newNode = NodeId newId
@@ -266,7 +267,7 @@ instance FinalPullbackComplement (TypedGraphMorphism a b) where
   
         -- Step3 adds in D a copy of the edges of K.
         step3@(_,edgesL') = foldr updateEdgesFromK step2 edgesAddFromK
-        edgesAddFromK = zip (edgesFromDomain l) ([0..]::[Int])
+        edgesAddFromK = zip (map fst . edges $ domain l) ([0..]::[Int])
         updateEdgesFromK (e,newId) (k,l') = (updatedK2,updatedL')
           where
             newEdge = EdgeId newId
@@ -286,8 +287,8 @@ instance FinalPullbackComplement (TypedGraphMorphism a b) where
           where
             edgesFromA = [(edgeId e, u, v) |
                            e <- orphanTypedEdges m,
-                           u <- nodeIdsFromDomain edgesL',
-                           v <- nodeIdsFromDomain edgesL',
+                           u <- nodeIds (domain edgesL'),
+                           v <- nodeIds (domain edgesL'),
                            sourceId e == applyNodeIdUnsafe edgesL' u,
                            targetId e == applyNodeIdUnsafe edgesL' v]
         updateEdgesFromA ((e,u,v),newId) (k,l') = (updatedK,updatedL')

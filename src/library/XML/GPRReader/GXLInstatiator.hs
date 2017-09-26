@@ -6,9 +6,10 @@ module XML.GPRReader.GXLInstatiator
 
 import qualified Data.List                          as L
 
-import           Abstract.Category                  (identity)
+import           Abstract.Category                  
 import           Abstract.Rewriting.DPO
 import qualified Data.Graphs                        as G
+import           Data.TypedGraph                    hiding (NodeId, EdgeId)
 import           Data.TypedGraph.Morphism           as TGM
 import           Rewriting.DPO.TypedGraph           as GR
 import           XML.GPRReader.GXLParseIn
@@ -38,7 +39,7 @@ instatiateRule typeGraph types rule = (fst rule, ruleWithNacs)
 
     (nacsWithOnlyOneEdge,edgesInNacsWithNodes) =
       L.partition (\(_,src,tgt,_,_) -> G.NodeId src `elem` nodesL && G.NodeId tgt `elem` nodesL) forbiddenEdges
-    nodesL = nodeIdsFromCodomain (leftMorphism ruleWithoutNacs)
+    nodesL = nodeIds . codomain $ leftMorphism ruleWithoutNacs
 
     groupNodesByNac =
       L.groupBy
@@ -64,7 +65,7 @@ instatiateNacEdges _ [] = []
 instatiateNacEdges edges (n:nacs) = foldr insertEdge n edges : instatiateNacEdges edges nacs
   where
     insertEdge (e,src,tgt,tp,_) n =
-      if G.NodeId src `elem` nodeIdsFromCodomain n && G.NodeId tgt `elem` nodeIdsFromCodomain n
+      if G.NodeId src `elem` nodeIds (codomain n) && G.NodeId tgt `elem` nodeIds (codomain n)
         then TGM.createEdgeOnCodomain (G.EdgeId e) (G.NodeId src) (G.NodeId tgt) (G.EdgeId tp) n
         else n
 

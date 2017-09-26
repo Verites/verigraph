@@ -1,7 +1,7 @@
 module Data.TypedGraph.Subgraph (subgraphs, inducedSubgraphs) where
 
-import           Data.Graphs
-import           Data.Graphs.Morphism
+import qualified Data.Graphs as G
+import qualified Data.Graphs.Morphism as GM
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism as TGM hiding (createEdgeOnDomain, createNodeOnDomain)
 
@@ -9,18 +9,12 @@ import           Data.TypedGraph.Morphism as TGM hiding (createEdgeOnDomain, cre
 subgraphs :: TypedGraph a b -> [TypedGraph a b]
 subgraphs g = subEdges
   where
-    graph = untypedGraph g
-    emptyGraph = Data.Graphs.Morphism.empty Data.Graphs.empty (typeGraph g)
+    emptyGraph = GM.empty G.empty (typeGraph g)
 
-    listNodesToAdd = [(n, extractNodeType g n) | n <- nodeIds graph]
-
+    listNodesToAdd = [(n, nt) | (Node n _, nt) <- nodes g]
     subNodes = decisionTreeNodes listNodesToAdd emptyGraph
 
-    listEdgesToAdd =
-      [ (e, srcId, tgtId, extractEdgeType g e)
-          | (Edge e srcId tgtId _) <- edges graph
-      ]
-
+    listEdgesToAdd = [ (e, srcId, tgtId, et) | (Edge e srcId tgtId _, et) <- edges g ]
     subEdges = concatMap (decisionTreeEdges listEdgesToAdd) subNodes
 
 -- | Considering /m : X -> Y/,
@@ -47,13 +41,12 @@ decisionTreeNodes :: [(NodeId,NodeId)] -> TypedGraph a b -> [TypedGraph a b]
 decisionTreeNodes [] g = [g]
 decisionTreeNodes ((n,tp):ns) g = decisionTreeNodes ns g ++ decisionTreeNodes ns added
   where
-    added = createNodeOnDomain n tp g
+    added = GM.createNodeOnDomain n tp g
 
 decisionTreeEdges :: [(EdgeId,NodeId,NodeId,EdgeId)] -> TypedGraph a b -> [TypedGraph a b]
 decisionTreeEdges [] g = [g]
 decisionTreeEdges ((e,s,t,tp):es) g = decisionTreeEdges es g ++
-  if isNodeOf graph s && isNodeOf graph t
+  if isNodeOf g s && isNodeOf g t
     then decisionTreeEdges es added else []
   where
-    graph = untypedGraph g
-    added = createEdgeOnDomain e s t tp g
+    added = GM.createEdgeOnDomain e s t tp g

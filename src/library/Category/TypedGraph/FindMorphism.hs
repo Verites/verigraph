@@ -4,7 +4,7 @@ module Category.TypedGraph.FindMorphism () where
 import           Abstract.Category
 import           Abstract.Category.FindMorphism
 import           Category.TypedGraph.Category
-import           Data.Graphs                  as G
+import qualified Data.Graphs                  as G
 import qualified Data.Graphs.Morphism         as GM
 import qualified Data.Relation                as R
 import           Data.TypedGraph
@@ -59,18 +59,18 @@ findCospanCommuter' conf morphismF morphismG
   | codomain morphismF /= codomain morphismG = []
   | otherwise =
   let
-    typedDomainFromF   = domain morphismF
-    untypedDomainFromF = domain typedDomainFromF
+    domainFromF   = domain morphismF
+    untypedDomainFromF = domain domainFromF
     mappingFromF       = mapping morphismF
 
-    typedDomainFromG   = domain morphismG
-    untypedDomainFromG = domain typedDomainFromG
+    domainFromG   = domain morphismG
+    untypedDomainFromG = domain domainFromG
     mappingFromG       = mapping morphismG
 
-    nodesIdsFromF = nodeIds untypedDomainFromF
-    edgesIdsFromF = edgeIds untypedDomainFromF
-    nodesIdsFromG = nodeIds untypedDomainFromG
-    edgesIdsFromG = edgeIds untypedDomainFromG
+    nodesIdsFromF = nodeIds domainFromF
+    edgesIdsFromF = edgeIds domainFromF
+    nodesIdsFromG = nodeIds domainFromG
+    edgesIdsFromG = edgeIds domainFromG
 
     nodeRelationF = GM.nodeRelation mappingFromF
     edgeRelationF = GM.edgeRelation mappingFromF
@@ -80,8 +80,8 @@ findCospanCommuter' conf morphismF morphismG
     composedNodeRelation = R.compose nodeRelationF nodeRelationInvertedG
     composedEdgeRelation = R.compose edgeRelationF edgeRelationInvertedG
 
-    edgesOfDomain   = edges untypedDomainFromF
-    edgesOfCodomain = edges untypedDomainFromG
+    edgesOfDomain   = map fst (edges domainFromF)
+    edgesOfCodomain = map fst (edges domainFromG)
 
     initialState = CospanState
                    edgesOfDomain edgesOfCodomain
@@ -93,7 +93,7 @@ findCospanCommuter' conf morphismF morphismG
     edgesMapped = findCospanCommuterEdgeRelations conf initialState
     finalStates = concatMap (findCospanCommuterNodeRelations conf) edgesMapped
 
-    buildTGMFromState state = buildTypedGraphMorphism typedDomainFromF typedDomainFromG $
+    buildTGMFromState state = buildTypedGraphMorphism domainFromF domainFromG $
       GM.fromGraphsAndRelations untypedDomainFromF untypedDomainFromG
       (finalNodeRelation state) (finalEdgeRelation state)
 
@@ -256,14 +256,14 @@ buildSpanRelation morphismH (morphismF, morphismG) =
 buildSpanNodeRelation :: TypedGraphMorphism n e ->  (TypedGraphMorphism n e, TypedGraphMorphism n e) -> TypedGraphMorphism n e
 buildSpanNodeRelation morphismH (morphismF, morphismG) = foldr (uncurry untypedUpdateNodeRelation) morphismH newNodeRelation
   where
-    newNodeRelation = map (applyNodeIdUnsafe morphismF &&& applyNodeIdUnsafe morphismG ) $ nodeIdsFromDomain morphismF
+    newNodeRelation = map (applyNodeIdUnsafe morphismF &&& applyNodeIdUnsafe morphismG ) . nodeIds $ domain morphismF
 
 -- | Given a TypedGraphMorphism @h : B -> C@ and a tuple of TypedGraphMorphism (f : A -> B, g : A -> C)
 -- it updates @h@ with a mapping of edges from @B to C@ where @h . f = g@ (auxiliary function)
 buildSpanEdgeRelation :: TypedGraphMorphism n e ->  (TypedGraphMorphism n e, TypedGraphMorphism n e) -> TypedGraphMorphism n e
 buildSpanEdgeRelation morphismH (morphismF, morphismG) = foldr (uncurry updateEdgeRelation) morphismH newEdgeRelation
   where
-    newEdgeRelation = map (applyEdgeIdUnsafe morphismF &&& applyEdgeIdUnsafe morphismG ) $ edgeIdsFromDomain morphismF
+    newEdgeRelation = map (applyEdgeIdUnsafe morphismF &&& applyEdgeIdUnsafe morphismG ) . edgeIds $ domain morphismF
 
 
 
@@ -290,14 +290,14 @@ data SpanBuilderState n e =
 findSpanCommuter' :: MorphismType -> TypedGraphMorphism n e -> TypedGraphMorphism n e -> [TypedGraphMorphism n e]
 findSpanCommuter' prop morphismF morphismG  = do
   let
-    codomainNodes = nodeIdsFromCodomain morphismG
-    codomainEdges = edgeIdsFromCodomain morphismG
+    codomainNodes = nodeIds $ codomain morphismG
+    codomainEdges = edgeIds $ codomain morphismG
 
     initialMorphism = initialSpanMorphism morphismF morphismG
     initialState = SpanState morphismF morphismG initialMorphism codomainEdges codomainNodes
 
-    centerEdges = edgeIdsFromDomain morphismG
-    centerNodes = nodeIdsFromDomain morphismG
+    centerEdges = edgeIds $ domain morphismG
+    centerNodes = nodeIds $ domain morphismG
 
     state'' =
       do
@@ -313,8 +313,8 @@ findSpanCommuter' prop morphismF morphismG  = do
         (notMappedSourceNodes, notMappedSourceEdges) (notMappedTargetNodes, notMappedTargetEdges)
       where
         finalTGM = morphismH state'''
-        notMappedSourceNodes = filter (isNotMappedNode finalTGM) (nodeIdsFromDomain finalTGM)
-        notMappedSourceEdges = filter (isNotMappedEdge finalTGM . edgeId) (edgesFromDomain finalTGM)
+        notMappedSourceNodes = filter (isNotMappedNode finalTGM) (nodeIds $ domain finalTGM)
+        notMappedSourceEdges = filter (isNotMappedEdge finalTGM . edgeId) (map fst . edges $ domain finalTGM)
         notMappedTargetNodes = orphanTypedNodeIds finalTGM
         notMappedTargetEdges = orphanTypedEdges finalTGM
 
@@ -452,15 +452,13 @@ findMatches :: MorphismType -> GM.GraphMorphism (Maybe n) (Maybe e) -> GM.GraphM
 findMatches prop graph1 graph2 =
   completeMappings prop tgm (sourceNodes, sourceEdges) (targetNodes, targetEdges)
   where
-    sourceNodes = nodeIds $ domain graph1
-    targetNodes = nodeIds $ domain graph2
-    sourceEdges = edges $ domain graph1
-    targetEdges = edges $ domain graph2
+    sourceNodes = nodeIds graph1
+    targetNodes = nodeIds graph2
+    sourceEdges = map fst (edges graph1)
+    targetEdges = map fst (edges graph2)
 
-    d   = graph1
-    c   = graph2
     m   = GM.empty (domain graph1) (domain graph2)
-    tgm = buildTypedGraphMorphism d c m
+    tgm = buildTypedGraphMorphism graph1 graph2 m
 
 ---------------------------------------------------------------------------------
 

@@ -7,8 +7,8 @@ import           Text.PrettyPrint.Leijen
 import           Abstract.Category
 import           Abstract.Rewriting.DPO.StateSpace
 import           Category.TypedGraphRule
-import           Data.Graphs                       hiding (Node (..))
-import           Data.TypedGraph
+import qualified Data.Graphs                       as Graph
+import           Data.TypedGraph                   hiding (Node(..))
 import           Data.TypedGraph.Morphism
 import           Rewriting.DPO.TypedGraph
 import           Rewriting.DPO.TypedGraphRule
@@ -89,8 +89,8 @@ printTypedGraph context graphName graph =
     graphName
     ["node [shape=box]"]
     []
-    (map prettyNode $ typedNodes graph)
-    (map prettyEdge $ typedEdges graph)
+    (map prettyNode $ typedNodeIds graph)
+    (map prettyEdge $ edges graph)
 
   where
     prettyNode (node, nodeType) =
@@ -100,7 +100,7 @@ printTypedGraph context graphName graph =
       in
         printNode (nodeId node) [text "label=" <> dquotes (text typeName)]
 
-    prettyEdge (_, src, tgt, edgeType) =
+    prettyEdge (Edge _ src tgt _, edgeType) =
       let
         typeName =
           getEdgeTypeName context edgeType
@@ -113,8 +113,8 @@ printSubTypedGraph context graphName graph =
     graphName
     ["node [shape=box]"]
     []
-    (map prettyNode $ typedNodes graph)
-    (map prettyEdge $ typedEdges graph)
+    (map prettyNode $ typedNodeIds graph)
+    (map prettyEdge $ edges graph)
 
   where
     prettyNode (node, nodeType) =
@@ -124,7 +124,7 @@ printSubTypedGraph context graphName graph =
       in
         printNode (nodeSubId graphName node) [text "label=" <> dquotes label]
 
-    prettyEdge (edge, src, tgt, edgeType) =
+    prettyEdge (Edge edge src tgt _, edgeType) =
       let
         label =
           text (show edge ++ ":" ++ getEdgeTypeName context edgeType)
@@ -140,7 +140,7 @@ printTypedGraphMorphism context morphismName morphism =
     [ printSubTypedGraph context "src" (domain morphism)
     , printSubTypedGraph context "tgt" (codomain morphism)
     ]
-    (map mapNode $ typedNodes (mapping morphism))
+    (map mapNode $ typedNodeIds (mapping morphism))
     []
 
   where
@@ -155,8 +155,8 @@ printGraphRule context ruleName rule =
     []
     (printGraphRuleCore context leftName interfaceName rightName rule)
     (
-     map (mapNode False interfaceName leftName) (typedNodes (mapping (leftMorphism rule))) ++
-     map (mapNode True interfaceName rightName) (typedNodes (mapping (rightMorphism rule)))
+     map (mapNode False interfaceName leftName) (typedNodeIds (mapping (leftMorphism rule))) ++
+     map (mapNode True interfaceName rightName) (typedNodeIds (mapping (rightMorphism rule)))
     )
     []
 
@@ -175,8 +175,8 @@ printSubGraphRule context ruleName rule =
     []
     (printGraphRuleCore context leftName interfaceName rightName rule)
     (
-     map (mapNode False interfaceName leftName) (typedNodes (mapping (leftMorphism rule))) ++
-     map (mapNode True interfaceName rightName) (typedNodes (mapping (rightMorphism rule)))
+     map (mapNode False interfaceName leftName) (typedNodeIds (mapping (leftMorphism rule))) ++
+     map (mapNode True interfaceName rightName) (typedNodeIds (mapping (rightMorphism rule)))
     )
     []
 
@@ -209,12 +209,12 @@ printSndOrderRule context ruleName rule =
     , printSubGraphRule context rightName (rightObject rule)
     ]
     (
-    map (mapNode False (ruleName ++ "K" ++ "L") (ruleName ++ "L" ++ "L")) (typedNodes (mapping (mappingLeft (leftMorphism rule)))) ++
-    map (mapNode False (ruleName ++ "K" ++ "K") (ruleName ++ "L" ++ "K")) (typedNodes (mapping (mappingInterface (leftMorphism rule)))) ++
-    map (mapNode False (ruleName ++ "K" ++ "R") (ruleName ++ "L" ++ "R")) (typedNodes (mapping (mappingRight (leftMorphism rule)))) ++
-    map (mapNode True  (ruleName ++ "K" ++ "L") (ruleName ++ "R" ++ "L")) (typedNodes (mapping (mappingLeft (rightMorphism rule)))) ++
-    map (mapNode True  (ruleName ++ "K" ++ "K") (ruleName ++ "R" ++ "K")) (typedNodes (mapping (mappingInterface (rightMorphism rule)))) ++
-    map (mapNode True  (ruleName ++ "K" ++ "R") (ruleName ++ "R" ++ "R")) (typedNodes (mapping (mappingRight (rightMorphism rule))))
+    map (mapNode False (ruleName ++ "K" ++ "L") (ruleName ++ "L" ++ "L")) (typedNodeIds (mapping (mappingLeft (leftMorphism rule)))) ++
+    map (mapNode False (ruleName ++ "K" ++ "K") (ruleName ++ "L" ++ "K")) (typedNodeIds (mapping (mappingInterface (leftMorphism rule)))) ++
+    map (mapNode False (ruleName ++ "K" ++ "R") (ruleName ++ "L" ++ "R")) (typedNodeIds (mapping (mappingRight (leftMorphism rule)))) ++
+    map (mapNode True  (ruleName ++ "K" ++ "L") (ruleName ++ "R" ++ "L")) (typedNodeIds (mapping (mappingLeft (rightMorphism rule)))) ++
+    map (mapNode True  (ruleName ++ "K" ++ "K") (ruleName ++ "R" ++ "K")) (typedNodeIds (mapping (mappingInterface (rightMorphism rule)))) ++
+    map (mapNode True  (ruleName ++ "K" ++ "R") (ruleName ++ "R" ++ "R")) (typedNodeIds (mapping (mappingRight (rightMorphism rule))))
     )
     []
 

@@ -12,8 +12,8 @@ import           Category.TypedGraphRule.Category
 import           Category.TypedGraphRule.FindMorphism         ()
 import           Category.TypedGraphRule.Finitary             ()
 import           Category.TypedGraphRule.Limit                ()
-import           Data.Graphs                                  as G
 import qualified Data.Graphs.Morphism                         as GM
+import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
 import           Rewriting.DPO.TypedGraph                     ()
 import           Rewriting.DPO.TypedGraphRule.NacManipulation
@@ -44,11 +44,11 @@ instance MInitialPushout (RuleMorphism a b) where
       (bK, _, _) = calculateMInitialPushout fK
       (initBR, _, _) = calculateMInitialPushout fR
 
-      nodesBL = [n | n <- nodeIdsFromDomain fL, isOrphanNode (leftMorphism fA) n, not (isOrphanNode (leftMorphism fA') (applyNodeIdUnsafe fL n))]
-      edgesBL = [e | e <- edgesFromDomain fL, isOrphanEdge (leftMorphism fA) (edgeId e), not (isOrphanEdge (leftMorphism fA') (applyEdgeIdUnsafe fL (edgeId e)))]
+      nodesBL = [n | n <- nodeIds $ domain fL, isOrphanNode (leftMorphism fA) n, not (isOrphanNode (leftMorphism fA') (applyNodeIdUnsafe fL n))]
+      edgesBL = [e | (e, _) <- edges $ domain fL, isOrphanEdge (leftMorphism fA) (edgeId e), not (isOrphanEdge (leftMorphism fA') (applyEdgeIdUnsafe fL (edgeId e)))]
 
-      nodesBR = [n | n <- nodeIdsFromDomain fR, isOrphanNode (rightMorphism fA) n, not (isOrphanNode (rightMorphism fA') (applyNodeIdUnsafe fR n))]
-      edgesBR = [e | e <- edgesFromDomain fR, isOrphanEdge (rightMorphism fA) (edgeId e), not (isOrphanEdge (rightMorphism fA') (applyEdgeIdUnsafe fR (edgeId e)))]
+      nodesBR = [n | n <- nodeIds $ domain fR, isOrphanNode (rightMorphism fA) n, not (isOrphanNode (rightMorphism fA') (applyNodeIdUnsafe fR n))]
+      edgesBR = [e | (e, _) <- edges $ domain fR, isOrphanEdge (rightMorphism fA) (edgeId e), not (isOrphanEdge (rightMorphism fA') (applyEdgeIdUnsafe fR (edgeId e)))]
 
       prebL = foldr (\n -> createNodeOnDomain n (nodeTypesInAL n) n) initBL nodesBL
       bL = foldr (\e -> createEdgeOnDomain (edgeId e) (sourceId e) (targetId e) (edgeTypesInAL (edgeId e)) (edgeId e)) prebL edgesBL
@@ -146,13 +146,13 @@ instance MAdhesive (RuleMorphism a b) where
 danglingSpan :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b -> Bool
 danglingSpan matchRuleSide matchMorp matchK l k = deletedNodesInK && deletedEdgesInK
   where
-    deletedNodes = filter (isDeleted l matchMorp applyNodeId nodeIdsFromDomain) (nodeIdsFromCodomain matchMorp)
-    nodesInK = [a | a <- nodeIdsFromDomain matchRuleSide, applyNodeIdUnsafe matchRuleSide a `elem` deletedNodes]
-    deletedNodesInK = all (isDeleted k matchK applyNodeId nodeIdsFromDomain) nodesInK
+    deletedNodes = filter (isDeleted l matchMorp applyNodeId (nodeIds . domain)) (nodeIds $ codomain matchMorp)
+    nodesInK = [a | a <- nodeIds $ domain matchRuleSide, applyNodeIdUnsafe matchRuleSide a `elem` deletedNodes]
+    deletedNodesInK = all (isDeleted k matchK applyNodeId (nodeIds . domain)) nodesInK
 
-    deletedEdges = filter (isDeleted l matchMorp applyEdgeId edgeIdsFromDomain) (edgeIdsFromCodomain matchMorp)
-    edgesInK = [a | a <- edgeIdsFromDomain matchRuleSide, applyEdgeIdUnsafe matchRuleSide a `elem` deletedEdges]
-    deletedEdgesInK = all (isDeleted k matchK applyEdgeId edgeIdsFromDomain) edgesInK
+    deletedEdges = filter (isDeleted l matchMorp applyEdgeId (edgeIds . domain)) (edgeIds $ codomain matchMorp)
+    edgesInK = [a | a <- edgeIds $ domain matchRuleSide, applyEdgeIdUnsafe matchRuleSide a `elem` deletedEdges]
+    deletedEdgesInK = all (isDeleted k matchK applyEdgeId (edgeIds . domain)) edgesInK
 
 isOrphanNode :: TypedGraphMorphism a b -> NodeId -> Bool
 isOrphanNode m n = n `elem` orphanTypedNodeIds m

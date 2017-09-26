@@ -3,7 +3,7 @@ module Category.TypedGraph.Limit () where
 import           Abstract.Category
 import           Abstract.Category.Limit
 import           Category.TypedGraph.Category
-import           Data.Graphs                        as G
+import qualified Data.Graphs                        as G
 import qualified Data.Graphs.Morphism               as GM
 import qualified Data.List.NonEmpty                 as NE
 import           Data.List ((\\))
@@ -12,7 +12,7 @@ import           Data.Partition
 import           Data.Set                           (Set)
 import qualified Data.Set                           as DS
 import           Data.TypedGraph
-import           Data.TypedGraph.Morphism 
+import           Data.TypedGraph.Morphism
 
 
 instance Complete (TypedGraphMorphism a b) where
@@ -45,16 +45,16 @@ instance Complete (TypedGraphMorphism a b) where
       typedGraphB = domain g
       typedGraphC = codomain f
 
-      nodesInA = nodesFromDomain f
-      nodesInB = nodesFromDomain g
-      edgesInA = edgesFromDomain f
-      edgesInB = edgesFromDomain g
+      nodesInA = map fst . nodes $ typedGraphA
+      nodesInB = map fst . nodes $ typedGraphB
+      edgesInA = map fst . edges $ typedGraphA
+      edgesInB = map fst . edges $ typedGraphB
 
       -- Discover the nodes and edges of the X
-      nodesWithoutId = getPairs applyNodeIdUnsafe nodeId nodesInA nodesInB nodes
+      nodesWithoutId = getPairs applyNodeIdUnsafe nodeId nodesInA nodesInB G.nodes
       nodesWithId = zip nodesWithoutId ([0..]::[Int])
 
-      egdesWithoutId = getPairs applyEdgeIdUnsafe edgeId edgesInA edgesInB edges
+      egdesWithoutId = getPairs applyEdgeIdUnsafe edgeId edgesInA edgesInB G.edges
       edgesWithId = zip egdesWithoutId ([0..]::[Int])
 
       -- Run the product for all elements that are mapped on the same element in C
@@ -70,9 +70,9 @@ instance Complete (TypedGraphMorphism a b) where
           product (x,y) = [(a,b) | a <- x, b <- y]
 
       -- Init X, f' and g' as empty
-      initX = GM.empty empty typeGraph
-      initF' = buildTypedGraphMorphism initX typedGraphB (GM.empty empty (domain typedGraphB))
-      initG' = buildTypedGraphMorphism initX typedGraphA (GM.empty empty (domain typedGraphA))
+      initX = GM.empty G.empty typeGraph
+      initF' = buildTypedGraphMorphism initX typedGraphB (GM.empty G.empty (domain typedGraphB))
+      initG' = buildTypedGraphMorphism initX typedGraphA (GM.empty G.empty (domain typedGraphA))
 
       -- Add all elements on X and their morphisms
       (g',f') = foldr updateNodes (initG',initF') nodesWithId
@@ -97,7 +97,7 @@ instance Complete (TypedGraphMorphism a b) where
               (\n ->
                 applyNodeIdUnsafe f' n == sourceId b &&
                 applyNodeIdUnsafe g' n == sourceId a)
-              (nodeIdsFromDomain f')
+              (nodeIds $ domain f')
           src = if Prelude.null src1 then error "src not found" else head src1
 
           tgt1 =
@@ -105,7 +105,7 @@ instance Complete (TypedGraphMorphism a b) where
               (\n ->
                 applyNodeIdUnsafe f' n == targetId b &&
                 applyNodeIdUnsafe g' n == targetId a)
-              (nodeIdsFromDomain f')
+              (nodeIds $ domain f')
           tgt = if Prelude.null tgt1 then error "tgt not found" else head tgt1
 
           updateG' = createEdgeOnDomain newEdge src tgt (edgeTypeInA (edgeId a)) (edgeId a) g'
@@ -116,9 +116,9 @@ instance Complete (TypedGraphMorphism a b) where
 calculateEqualizer' :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 calculateEqualizer' f g = makeInclusion typedX typedA
   where
-    fNodes = nodeIdsFromDomain f
-    fEdges = edgeIdsFromDomain f
-    typedA = domainGraph f
+    fNodes = nodeIds $ domain f
+    fEdges = edgeIds $ domain f
+    typedA = domain f
     equivalentNodes = filter (\n -> applyNodeIdUnsafe f n == applyNodeIdUnsafe g n) fNodes
     equivalentEdges = filter (\e -> applyEdgeIdUnsafe f e == applyEdgeIdUnsafe g e) fEdges
     typedX = foldr GM.removeNodeFromDomain
@@ -198,23 +198,23 @@ addCoproductMorphisms (original, relabel) morph = addEdges
     addEdges = Prelude.foldr updateE addNodes graphEdges
     nodeName = fst relabel
     edgeName = snd relabel
-    graphNodes = typedNodes original
-    graphEdges = typedEdges original
+    graphNodes = typedNodeIds original
+    graphEdges = typedEdgeIds original
     updateN (n1,t) = updateNodeRelation n1 (nodeName n1) t
-    updateE (e1,_,_,_) = updateEdgeRelation e1 (edgeName e1)
+    updateE (e1,_) = updateEdgeRelation e1 (edgeName e1)
 
 calculateCoproductObject :: (TypedGraph a b, RelabelFunction) -> TypedGraph a b -> TypedGraph a b
 calculateCoproductObject (original,relabel) target = addEdges
   where
     addNodes = Prelude.foldr createNewNode target newNodes
     addEdges = Prelude.foldr createNewEdge addNodes newEdges
-    originalNodes = typedNodes original
+    originalNodes = typedNodeIds original
     newNodes = Prelude.map newNode originalNodes
     newNode (n,nt) = (fst relabel n, nt)
     createNewNode (n,nt) = GM.createNodeOnDomain n nt
-    originalEdges = typedEdges original
+    originalEdges = edges original
     newEdges = Prelude.map newEdge originalEdges
-    newEdge (e,s,t,et) = (snd relabel e, fst relabel s, fst relabel t, et)
+    newEdge (Edge e s t _, et) = (snd relabel e, fst relabel s, fst relabel t, et)
     createNewEdge (e,s,t,et) = GM.createEdgeOnDomain e s t et
 
 relablingFunctions :: [TypedGraph a b] -> (NodeId, EdgeId) -> [RelabelFunction] -> [RelabelFunction]
@@ -222,8 +222,8 @@ relablingFunctions [] _ functions = functions
 relablingFunctions (g:gs) (nodeSeed, edgeSeed) functions =
   relablingFunctions gs (nextNode g + nodeSeed, nextEdge g + edgeSeed) (functions ++ [((+) nodeSeed, (+) edgeSeed)])
   where
-    ns g = nodeIds (untypedGraph g)
-    es g = edgeIds (untypedGraph g)
+    ns g = nodeIds g
+    es g = edgeIds g
     nextNode g = if Prelude.null (ns g) then 1 else maximum (ns g) + 1
     nextEdge g = if Prelude.null (es g) then 1 else maximum (es g) + 1
 
@@ -232,40 +232,40 @@ createNodeNEquivalences fs = nodesOnX
   where
     representant = head fs
     equivalentNodes (n,nt) = DS.fromList $ Prelude.map (\f -> (fromJust $ applyNodeId f n,nt)) fs
-    nodesFromA = typedNodes (domainGraph representant)
+    nodesFromA = typedNodeIds (domain representant)
     nodesToGluingOnB = fmap equivalentNodes nodesFromA
-    initialNodesOnX = discretePartition (typedNodes (codomainGraph representant))
+    initialNodesOnX = discretePartition (typedNodeIds (codomainGraph representant))
     nodesOnX = mergeSets nodesToGluingOnB initialNodesOnX
 
 createEdgeNEquivalences :: [TypedGraphMorphism a b] -> Set (EquivalenceClass TypedEdge)
 createEdgeNEquivalences fs = edgesOnX
   where
     representant = head fs
-    equivalentEdges (e,s,t,et) = DS.fromList $ Prelude.map (\f -> (fromJust $ applyEdgeId f e, fromJust $ applyNodeId f s, fromJust $ applyNodeId f t,et)) fs
-    edgesFromA = typedEdges (domainGraph representant)
+    equivalentEdges (Edge e s t _, et) = DS.fromList $ Prelude.map (\f -> (fromJust $ applyEdgeId f e, fromJust $ applyNodeId f s, fromJust $ applyNodeId f t,et)) fs
+    edgesFromA = edges (domainGraph representant)
     edgesToGluingOnB = fmap equivalentEdges edgesFromA
-    initialEdgesOnX = discretePartition (typedEdges (codomainGraph representant))
+    initialEdgesOnX = discretePartition [ (e, src, tgt, et) | (Edge e src tgt _, et) <- edges (codomainGraph representant) ]
     edgesOnX = mergeSets edgesToGluingOnB initialEdgesOnX
 
 createNodeEquivalences :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Set (EquivalenceClass TypedNode)
 createNodeEquivalences f g = nodesOnX
   where
     equivalentNodes (n,nt) = ((fromJust $ applyNodeId f n,nt), (fromJust $ applyNodeId g n,nt))
-    nodesFromA = typedNodes (domainGraph f)
+    nodesFromA = typedNodeIds (domainGraph f)
     nodesToGluingOnB = fmap equivalentNodes nodesFromA
-    initialNodesOnX = discretePartition (typedNodes (codomainGraph f))
+    initialNodesOnX = discretePartition (typedNodeIds (codomainGraph f))
     nodesOnX = mergePairs nodesToGluingOnB initialNodesOnX
 
 createEdgeEquivalences :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> Set (EquivalenceClass TypedEdge)
 createEdgeEquivalences f g = edgesOnX
   where
-    equivalentEdges (e,s,t,et) =
+    equivalentEdges (Edge e s t _, et) =
       ((fromJust $ applyEdgeId f e, mapByF s, mapByF t,et), (fromJust $ applyEdgeId g e,mapByG s,mapByG t,et))
     mapByF = fromJust . applyNodeId f
     mapByG = fromJust . applyNodeId g
-    edgesFromA = typedEdges (domainGraph f)
+    edgesFromA = edges (domainGraph f)
     edgesToGluingOnB = fmap equivalentEdges edgesFromA
-    initialEdgesOnX = discretePartition (typedEdges (codomainGraph f))
+    initialEdgesOnX = discretePartition [ (e, src, tgt, et) | (Edge e src tgt _, et) <- edges (codomainGraph f) ] 
     edgesOnX = mergePairs edgesToGluingOnB initialEdgesOnX
 
 addNode :: EquivalenceClass TypedNode -> TypedGraphMorphism a b -> TypedGraphMorphism a b

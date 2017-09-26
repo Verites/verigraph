@@ -62,8 +62,10 @@ import           Data.Maybe               (fromMaybe, mapMaybe)
 
 import           Abstract.Category
 import           Category.Graph           ()
-import           Data.Graphs
+import           Category.TypedGraph      ()
+import qualified Data.Graphs              as G
 import           Data.Graphs.Morphism     as GM
+import           Data.TypedGraph
 import           Data.TypedGraph.Morphism as TGM
 import           Util.List
 import           XML.ParsedTypes
@@ -147,8 +149,8 @@ getObjectNacNameMorph :: GraphMorphism a b -> ([Mapping], [Mapping])
 getObjectNacNameMorph m = (nodesMap m, edgesMap m)
   where
     adjustNonMono = parseNonMonoObjNames . group . sort
-    nodesMap = adjustNonMono . getMap GM.applyNodeIdUnsafe . nodeIds . domain
-    edgesMap = adjustNonMono . getMap GM.applyEdgeIdUnsafe . edgeIds . domain
+    nodesMap = adjustNonMono . getMap GM.applyNodeIdUnsafe . G.nodeIds . domain
+    edgesMap = adjustNonMono . getMap GM.applyEdgeIdUnsafe . G.edgeIds . domain
 
     getMap f = map (\e -> (show (f m e), Nothing, show e))
     group = groupBy (\(x,_,_) (y,_,_) -> x == y)
@@ -182,6 +184,6 @@ parseNonMonoObjNames (x:xs) = (a,b,newObjName) : parseNonMonoObjNames xs
 getObjectNameMorphism :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> [Mapping]
 getObjectNameMorphism left right = nodesMap ++ edgesMap
   where
-    nodesMap = getMap TGM.applyNodeIdUnsafe (nodeIdsFromDomain left)
-    edgesMap = getMap TGM.applyEdgeIdUnsafe (edgeIdsFromDomain left)
+    nodesMap = getMap TGM.applyNodeIdUnsafe (nodeIds $ domain left)
+    edgesMap = getMap TGM.applyEdgeIdUnsafe (edgeIds $ domain left)
     getMap f = map (\e -> (show (f right e), Nothing, show (f left e)))

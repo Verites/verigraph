@@ -8,6 +8,8 @@ module Analysis.Interlevel.InterLevelCP
     danglingExtension
   ) where
 
+import           Data.List                             (nubBy)
+
 import           Abstract.Category
 import           Abstract.Category.Adhesive
 import           Abstract.Category.FindMorphism
@@ -15,10 +17,9 @@ import           Abstract.Category.Limit
 import           Abstract.Category.Finitary
 import           Abstract.Rewriting.DPO
 import           Category.TypedGraphRule
-import           Data.Graphs
+import qualified Data.Graphs as G
 import           Data.Graphs.Morphism                  hiding (createEdgeOnCodomain,
                                                         createNodeOnCodomain)
-import           Data.List                             (nubBy)
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
 import           Data.TypedGraph.Subgraph
@@ -127,10 +128,9 @@ danglingExtension l = tlUpdated
 
     typingMorphism = codomain l
     typeGraph = codomain typingMorphism
-    edgesOfTypeGraph = edges typeGraph
 
     -- Select edges to be added
-    dangT = [e | e <- edgesOfTypeGraph,
+    dangT = [e | e <- G.edges typeGraph,
                  sourceId e `elem` typesOfOrphanNodes ||
                  targetId e `elem` typesOfOrphanNodes]
 
@@ -152,18 +152,18 @@ danglingExtension l = tlUpdated
 
         createEdge src tgt newGraph = createEdgeOnCodomain newEdgeId src tgt (edgeId e) newGraph
           where
-            newEdgeId = head (newTypedEdges (codomain newGraph))
+            newEdgeId = head (newEdges (codomain newGraph))
 
         createSrcTgt morp = createTgt (createSrc morp)
 
         createSrc morp = createEdge n nodeId newGraph
           where
-            nodeId = head (newTypedNodes (codomain morp))
+            nodeId = head (newNodes (codomain morp))
             typeNewNode = targetId e
             newGraph = createNodeOnCodomain nodeId typeNewNode morp
 
         createTgt morp = createEdge nodeId n newGraph
           where
-            nodeId = head (newTypedNodes (codomain morp))
+            nodeId = head (newNodes (codomain morp))
             typeNewNode = sourceId e
             newGraph = createNodeOnCodomain nodeId typeNewNode morp

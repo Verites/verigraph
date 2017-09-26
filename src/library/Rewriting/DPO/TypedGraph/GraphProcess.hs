@@ -18,6 +18,14 @@ module Rewriting.DPO.TypedGraph.GraphProcess
 
 where
 
+
+import           Data.List                                                as L hiding (union)
+import           Data.Maybe                                               (fromJust, fromMaybe,
+                                                                            isJust)
+import           Data.Tuple                                               (swap)
+import           Data.Set                                                 (Set)
+import qualified Data.Set                                                 as S
+
 import           Abstract.Category
 import           Abstract.Category.Adhesive
 import           Abstract.Category.FindMorphism
@@ -27,13 +35,8 @@ import           Abstract.Rewriting.DPO.DiagramAlgorithms
 import           Abstract.Rewriting.DPO.Process                           hiding (productions)
 import           Data.Graphs                                              (Graph)
 import qualified Data.Graphs.Morphism                                     as GM
-import           Data.List                                                as L hiding (union)
-import           Data.Maybe                                               (fromJust, fromMaybe,
-                                                                           isJust)
 import           Data.Partition
-import           Data.Set                                                 as S
-import           Data.Tuple                                               (swap)
-import           Data.TypedGraph
+import           Data.TypedGraph                                          hiding (Node, Edge)
 import           Data.TypedGraph.Morphism                                 as TGM
 import           Rewriting.DPO.TypedGraph
 import           Rewriting.DPO.TypedGraph.GraphProcess.OccurrenceRelation
@@ -69,7 +72,7 @@ emptyRestrictions = S.null . restrictRelation
 
 -- | Given a rule sequence, it calculates its underlying doubly-typed graph grammar
 generateDoublyTypedGrammar :: RuleSequence (TypedGraphMorphism a b) -> DoublyTypedGrammar a b
-generateDoublyTypedGrammar sequence = DoublyTypedGrammar singleGrammar originalRulesWithMatches doubleType cdRelation relation empty
+generateDoublyTypedGrammar sequence = DoublyTypedGrammar singleGrammar originalRulesWithMatches doubleType cdRelation relation S.empty
   where
     originalRulesWithMatches = calculateRulesColimit sequence -- TODO: unify this two functions
     newRules = generateGraphProcess sequence
@@ -95,9 +98,9 @@ getElements :: DoublyTypedGrammar a b -> (Set RelationItem, Set RelationItem)
 getElements ogg =
   let
     (ns,rs) = unzip $ productions (singleTypedGrammar ogg)
-    ruleNames = S.map Rule (fromList ns)
+    ruleNames = S.map Rule (S.fromList ns)
     elements = L.map getRuleItems rs
-  in (ruleNames, unions elements)
+  in (ruleNames, S.unions elements)
 
 calculateNacRelations :: DoublyTypedGrammar a b -> Set Interaction -> DoublyTypedGrammar a b
 calculateNacRelations ogg is = newOgg
@@ -111,8 +114,8 @@ calculateNacRelations ogg is = newOgg
               (originalRulesWithMatches ogg)
               (doubleType ogg)
               (originRelation ogg)
-              (buildTransitivity (concreteRelation ogg `union` dfs `union` pfs)) -- do the reflexive and transitive Closure
-              (absDfs `union` absPfs)
+              (buildTransitivity (concreteRelation ogg `S.union` dfs `S.union` pfs)) -- do the reflexive and transitive Closure
+              (absDfs `S.union` absPfs)
 
 calculateDeleteForbids :: DoublyTypedGrammar a b -> Set Interaction -> (Relation, AbstractRelation)
 calculateDeleteForbids ogg dfs = (S.map toRelation concreteDF, S.map toAbstractRelation abstract)
@@ -169,7 +172,7 @@ getTrigger nac =
 uniqueOrigin :: [NamedTypedGraphRule a b] -> Bool
 uniqueOrigin productions = not (repeated createdList) && not (repeated deletedList)
   where
-    creationAndDeletion = S.filter isRuleAndElement $ unions $ L.map creationAndDeletionRelation productions
+    creationAndDeletion = S.filter isRuleAndElement $ S.unions $ L.map creationAndDeletionRelation productions
     isCreated a = case a of
       (Rule _, _) -> True
       _           -> False
@@ -178,7 +181,7 @@ uniqueOrigin productions = not (repeated createdList) && not (repeated deletedLi
     deletedList = S.toList $ S.map fst deleted
 
 strictRelation :: [NamedTypedGraphRule a b] -> Relation
-strictRelation = unions . L.map creationAndDeletionRelation
+strictRelation = S.unions . L.map creationAndDeletionRelation
 
 occurrenceRelation :: [NamedTypedGraphRule a b] -> Relation
 occurrenceRelation productions =
@@ -186,7 +189,7 @@ occurrenceRelation productions =
     b = strictRelation productions
     b' = creationAndPreservationRelation productions b
     b'' = preservationAndDeletionRelation productions b
-  in buildTransitivity (unions [b,b',b''])
+  in buildTransitivity (S.unions [b,b',b''])
 
 createdElements :: Relation -> Set RelationItem
 createdElements elementsRelation =
@@ -229,9 +232,9 @@ creationAndDeletionRelation (name,rule) =
 getRuleItems :: TypedGraphRule a b -> Set RelationItem
 getRuleItems rule =
   let
-    ns = fromList (deletedNodes rule ++ preservedNodes rule ++ createdNodes rule)
-    es = fromList (deletedEdges rule ++ preservedEdges rule ++ createdEdges rule)
-   in S.map Node ns `union` S.map Edge es
+    ns = S.fromList (deletedNodes rule ++ preservedNodes rule ++ createdNodes rule)
+    es = S.fromList (deletedEdges rule ++ preservedEdges rule ++ createdEdges rule)
+   in S.map Node ns `S.union` S.map Edge es
 
 creationAndPreservationRelation :: [NamedTypedGraphRule a b] -> Relation -> Relation
 creationAndPreservationRelation productions cdRelation =
@@ -257,7 +260,7 @@ relatedByCreationAndPreservation relation preservingRule
                                 Node x -> x `elem` nodes
                                 Edge x -> x `elem` edges
                                 _      -> False
-  in if related r nodes edges then singleton (fst r, Rule name) else relatedByCreationAndPreservation rs preservingRule
+  in if related r nodes edges then S.singleton (fst r, Rule name) else relatedByCreationAndPreservation rs preservingRule
 
 preservationAndDeletionRelation :: [NamedTypedGraphRule a b] -> Relation -> Relation
 preservationAndDeletionRelation productions cdRelation =
@@ -291,15 +294,15 @@ findMono a b =
 findCoreMorphism :: TypedGraph a b -> TypedGraph a b -> TypedGraphMorphism a b
 findCoreMorphism dom core =
   let
-    ns = L.map (\(n,_) -> (n,n)) (typedNodes dom)
-    es = L.map (\(a,_,_,_) -> (a,a)) (typedEdges dom)
+    ns = L.map (\n -> (n,n)) (nodeIds dom)
+    es = L.map (\e -> (e,e)) (edgeIds dom)
     initial = buildTypedGraphMorphism dom core (GM.empty (domain dom) (domain core))
   in L.foldr (uncurry updateEdgeRelation) (L.foldr (uncurry untypedUpdateNodeRelation) initial ns) es
 
 findRule :: Relation -> RelationItem -> RelationItem
 findRule rel e = fromMaybe (error $ "there should be an action related to " ++ show e) find
   where
-    find = lookup e $ toList rel
+    find = lookup e $ S.toList rel
 
 getOverlapping :: RuleWithMatches a b -> RuleWithMatches a b -> (TypedGraphMorphism a b, TypedGraphMorphism a b)
 getOverlapping (_,(_,_,comatch)) (_,(match,_,_)) = restrictMorphisms (comatch, match)
@@ -335,7 +338,7 @@ relatedByPreservationAndDeletion relation namedRule
                                 Node x -> nodes `intersect` [x] /= []
                                 Edge x -> edges `intersect` [x] /= []
                                 _      -> False
-  in if related r nodes edges then singleton (Rule name, snd r) else relatedByPreservationAndDeletion rs namedRule
+  in if related r nodes edges then S.singleton (Rule name, snd r) else relatedByPreservationAndDeletion rs namedRule
 
 retypeProduction :: (Derivation (TypedGraphMorphism a b), (TypedGraphMorphism a b,TypedGraphMorphism a b,TypedGraphMorphism a b)) ->  TypedGraphRule a b
 retypeProduction (derivation, (g1,_,g3)) = newProduction

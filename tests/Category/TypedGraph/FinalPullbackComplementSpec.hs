@@ -9,7 +9,7 @@ import           Abstract.Category
 import           Abstract.Category.Adhesive
 import           Abstract.Rewriting.DPO
 import           Category.TypedGraph              ()
-import qualified Data.TypedGraph as TG
+import           Data.TypedGraph as TG
 import           Data.TypedGraph.Morphism
 import qualified Data.Graphs as G
 import qualified Data.Graphs.Morphism as G
@@ -52,17 +52,17 @@ prepareTest2 r2 = (m,l,k,l')
     l = foldr
           removeNodeFromDomain
           (invert (rightMorphism r2))
-          (nodeIdsFromCodomain (rightMorphism r2))
+          (nodeIds . codomain $ rightMorphism r2)
     (k,l') = calculateFinalPullbackComplement m l
 
 prepareTest3 r3 = (m,l,k,l')
   where
     m = leftMorphism r3
-    node = head (nodeIdsFromCodomain (rightMorphism r3))
+    node = head (nodeIds . codomain $ rightMorphism r3)
     l = createNodeOnDomain
           (node + G.NodeId 1)
           (G.applyNodeIdUnsafe (rightObject r3) node)
-          (head (nodeIdsFromDomain (rightMorphism r3)))
+          (head (nodeIds . domain $ rightMorphism r3))
           (invert (rightMorphism r3))
     (k,l') = calculateFinalPullbackComplement m l
 
@@ -81,13 +81,13 @@ verifyAnyPullback (m,l,k,l') =
 
 verifyR1 (_,_,k,l') =
   do
-    length (nodeIdsFromCodomain k) `shouldBe` 1
-    length (edgeIdsFromCodomain k) `shouldBe` 1
+    length (nodeIds $ codomain k) `shouldBe` 1
+    length (edgeIds $ codomain k) `shouldBe` 1
     isIsomorphism l' `shouldBe` True
 
 verifyR2 (_,_,k,l') = TG.null (codomain k) `shouldBe` True
 
 verifyR3 (_,_,k,l') =
   do
-    length (nodeIdsFromCodomain k) `shouldBe` 2
-    length (edgeIdsFromCodomain k) `shouldBe` 4
+    length (nodeIds $ codomain k) `shouldBe` 2
+    length (edgeIds $ codomain k) `shouldBe` 4
