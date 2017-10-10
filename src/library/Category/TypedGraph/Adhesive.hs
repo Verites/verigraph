@@ -123,7 +123,7 @@ instance MAdhesive (TypedGraphMorphism a b) where
         k        = foldr removeNodeFromCodomain                               -- delete all edges, then all nodes from ml
                        (foldr removeEdgeFromCodomain ml delEdges)
                            delNodes
-    in (k, idMap (codomain k) (codomain m))
+    in (k, makeInclusion (codomain k) (codomain m))
 
   hasPushoutComplementAlongM l m =
     satisfiesDanglingCondition l m && satisfiesIdentificationCondition l m

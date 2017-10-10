@@ -230,9 +230,9 @@ createNacProb sideChoose ruleL x = ruleMorphism ruleL nacRule mapL mapK mapR
                        (targetId e) (typeTgt e) (tgtInK e) (tgtInR e)
 
     nacRule = Production updateLeft updateRight []
-    mapL = idMap graphL (codomain updateLeft)
-    mapK = idMap graphK (domain updateLeft)
-    mapR = idMap graphR (codomain updateRight)
+    mapL = makeInclusion graphL (codomain updateLeft)
+    mapK = makeInclusion graphK (domain updateLeft)
+    mapR = makeInclusion graphR (codomain updateRight)
 
     createNodes x x' x'' tp =
       case sideChoose of
@@ -321,9 +321,9 @@ newNacsPair sideChoose sndRule =
         ruleNacLeft = Production (e <&> leftMorphism ruleL) (rightMorphism ruleL) []
         ruleNacRight = Production (leftMorphism ruleL) (e <&> rightMorphism ruleL) []
 
-        mapL = idMap (leftObject ruleL) (leftObject ruleL)
-        mapK = idMap (interfaceObject ruleL) (interfaceObject ruleL)
-        mapR = idMap (rightObject ruleL) (rightObject ruleL)
+        mapL = makeInclusion (leftObject ruleL) (leftObject ruleL)
+        mapK = makeInclusion (interfaceObject ruleL) (interfaceObject ruleL)
+        mapR = makeInclusion (rightObject ruleL) (rightObject ruleL)
 
 getRulesFrom2Rule :: SndOrderRule a b -> (TypedGraphRule a b, TypedGraphRule a b, Production (TypedGraphMorphism a b))
 getRulesFrom2Rule sndRule = (leftObject sndRule, interfaceObject sndRule, rightObject sndRule)

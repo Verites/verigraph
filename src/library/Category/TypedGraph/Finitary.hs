@@ -60,9 +60,9 @@ assembleSubgraph subnodes subedges graph =
     subtyping = Untyped.GraphMorphism untypedSubgraph (typeGraph graph)
       (Relation.filterDomain (Graph.isNodeOf untypedSubgraph) $ Untyped.nodeRelation graph)
       (Relation.filterDomain (Graph.isEdgeOf untypedSubgraph) $ Untyped.edgeRelation graph)
-    inclusion = Untyped.GraphMorphism untypedSubgraph (untypedGraph graph)
-      (Relation.fromList [ (n, n) | n <- Graph.nodeIds untypedSubgraph ])
-      (Relation.fromList [ (e, e) | e <- Graph.edgeIds untypedSubgraph ])
+    inclusion = Untyped.fromGraphsAndLists untypedSubgraph (untypedGraph graph)
+      [ (n, n) | n <- Graph.nodeIds untypedSubgraph ]
+      [ (e, e) | e <- Graph.edgeIds untypedSubgraph ]
   in TypedGraphMorphism subtyping graph inclusion
 
 instance ECofinitary (TypedGraphMorphism n e) where

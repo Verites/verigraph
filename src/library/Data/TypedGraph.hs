@@ -5,6 +5,7 @@ module Data.TypedGraph
   , extractEdgeType
   , typeGraph
   , Data.TypedGraph.null
+  , fromNodesAndEdges
   , newTypedNodes
   , newTypedEdges
   , typedNodes
@@ -14,7 +15,8 @@ module Data.TypedGraph
   ) where
 
 import           Base.Cardinality
-import           Data.Graphs          as G
+import           Data.Graphs          hiding (fromNodesAndEdges)
+import qualified Data.Graphs          as G
 import           Data.Graphs.Morphism
 import           Data.Maybe           (fromMaybe)
 
@@ -69,3 +71,13 @@ untypedNodes tg = nodeIds $ untypedGraph tg
 -- | Obtain the list of untyped edges, i.e., the list of edge ids from the typed graph domain
 untypedEdges :: TypedGraph a b -> [EdgeId]
 untypedEdges tg = edgeIds $ untypedGraph tg
+
+-- | Build a graph from lists of nodes and edges. Edges with undefined source or target are ignored
+-- and omitted from the resulting graph. Elements with undefined types are also ignored. /O(v + e*v)/
+fromNodesAndEdges :: Graph (Maybe n) (Maybe e) -> [(Node (Maybe n), NodeId)] -> [(Edge (Maybe e), EdgeId)] -> TypedGraph n e
+fromNodesAndEdges typeGraph nodes edges =
+  let
+    untypedGraph = G.fromNodesAndEdges (map fst nodes) (map fst edges)
+  in fromGraphsAndLists untypedGraph typeGraph
+    [ (nodeId n, nt) | (n, nt) <- nodes, G.isNodeOf typeGraph nt ]
+    [ (edgeId e, et) | (e, et) <- edges, G.isEdgeOf typeGraph et ]

@@ -114,7 +114,7 @@ instance Complete (TypedGraphMorphism a b) where
   calculateEqualizer = calculateEqualizer'
 
 calculateEqualizer' :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
-calculateEqualizer' f g = idMap typedX typedA
+calculateEqualizer' f g = makeInclusion typedX typedA
   where
     fNodes = nodeIdsFromDomain f
     fEdges = edgeIdsFromDomain f

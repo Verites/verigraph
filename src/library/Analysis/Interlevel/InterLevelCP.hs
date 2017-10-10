@@ -120,7 +120,7 @@ relevantMatches conf dangFl dangGl = concatMap createQuotients allSubgraphs
 danglingExtension :: TypedGraphMorphism a b -> TypedGraphMorphism a b
 danglingExtension l = tlUpdated
   where
-    initObject = idMap (codomain l) (codomain l)
+    initObject = makeInclusion (codomain l) (codomain l)
 
     orphanNodes = orphanTypedNodeIds l
     typesOfOrphanNodes = map (extractNodeType typingMorphism) orphanNodes

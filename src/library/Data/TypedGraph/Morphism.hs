@@ -23,6 +23,10 @@ compose t2 t1 = TypedGraphMorphism (domainGraph t1) (codomainGraph t2) $ GM.comp
 buildTypedGraphMorphism :: TypedGraph a b -> TypedGraph a b -> GraphMorphism (Maybe a) (Maybe b) -> TypedGraphMorphism a b
 buildTypedGraphMorphism = TypedGraphMorphism
 
+fromGraphsAndLists :: TypedGraph a b -> TypedGraph a b -> [(NodeId, NodeId)] -> [(EdgeId, EdgeId)] -> TypedGraphMorphism a b
+fromGraphsAndLists dom cod nodeMapping edgeMapping = TypedGraphMorphism dom cod $
+  GM.fromGraphsAndLists (untypedGraph dom) (untypedGraph cod) nodeMapping edgeMapping
+
 instance Valid (TypedGraphMorphism a b) where
     validate (TypedGraphMorphism dom cod m) =
       mconcat
@@ -205,13 +209,11 @@ removeEdgeFromCodomain e tgm =
       , mapping = GM.removeEdgeFromCodomain e (mapping tgm) }
 
 -- | Creates a TypedGraphMorphism mapping nodes and edges according to their identifiers.
-idMap :: TypedGraph a b -> TypedGraph a b -> TypedGraphMorphism a b
-idMap gm1 gm2 =
-  buildTypedGraphMorphism gm1 gm2 edgesUpdate
-    where
-      initialGraph = GM.empty (untypedGraph gm1) (untypedGraph gm2)
-      nodesUpdate = foldr (\n -> GM.updateNodes n n) initialGraph (nodeIds (untypedGraph gm1))
-      edgesUpdate = foldr (\e -> GM.updateEdges e e) nodesUpdate (edgeIds (untypedGraph gm2))
+makeInclusion :: TypedGraph a b -> TypedGraph a b -> TypedGraphMorphism a b
+makeInclusion g1 g2 =
+  fromGraphsAndLists g1 g2
+    [ (n, n) | n <- nodeIds (untypedGraph g1) ]
+    [ (e, e) | e <- edgeIds (untypedGraph g1) ]
 
 -- | Given a TypedGraphMorphism tgm, creates an isomorphic TypedGraphMorphism tgm' where the mapping between the domain and codomain can be seen as explicit inclusion (the same ids)
 -- Attention: It works only when the typing morphism is injective, otherwise it will produce an invalid TypedGraphMorphism

@@ -26,7 +26,7 @@ subgraphs g = subEdges
 -- | Considering /m : X -> Y/,
 -- generates all subgraphs of /Y/ containing the graph /X/ via m.
 inducedSubgraphs :: TypedGraphMorphism a b -> [TypedGraphMorphism a b]
-inducedSubgraphs m = map (idMap (TGM.domainGraph m)) subEdges
+inducedSubgraphs m = map (makeInclusion (TGM.domainGraph m)) subEdges
   where
     g = TGM.codomainGraph m
 

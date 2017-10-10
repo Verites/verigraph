@@ -66,7 +66,7 @@ emptyGraphRule typegraph = emptyRule
   where
     emptyGraph = empty
     emptyGM = GM.empty emptyGraph typegraph
-    emptyTGM = idMap emptyGM emptyGM
+    emptyTGM = makeInclusion emptyGM emptyGM
     emptyRule = Production emptyTGM emptyTGM []
 
 -- | Checks if it is a null rule
