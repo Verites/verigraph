@@ -7,13 +7,15 @@ module ApplySndOrderRules
 import           Control.Monad                           (when)
 import           Data.Monoid                             ((<>))
 import           Options.Applicative
+import Data.Text.Prettyprint.Doc (Pretty(..))
+import System.IO (hPrint, stderr)
 
 import           Abstract.Category
 import           Abstract.Rewriting.DPO
 import           Data.Graphs                             (Graph)
 import           Data.TypedGraph.Morphism
 import           GlobalOptions
-import           Image.Dot
+import qualified Image.Dot.TypedGraph as Dot
 import qualified Rewriting.DPO.TypedGraph                as GR
 import           Rewriting.DPO.TypedGraphRule            (toSndOrderMorphismsConfig)
 import qualified Rewriting.DPO.TypedGraphRule.Scheduling as SO
@@ -90,7 +92,7 @@ execute globalOpts opts = do
         tgtMaybe = tgtRule opts
         (Just tgt) = tgtMaybe
         limit = limitPar opts
-        printDot = False --flag to test the print to .dot functions
+        printDot = True --flag to test the print to .dot functions
 
     (fstOrderGG, sndOrderGG, ggName, names) <- loadSndOrderGrammar globalOpts True
 
@@ -98,7 +100,7 @@ execute globalOpts opts = do
     -- it allows the creation from "zero" of a new first-order rule.
     let sndOrderRules = productions sndOrderGG
         fstRulesPlusEmpty = addEmptyFstOrderRule (typeGraph fstOrderGG) (productions fstOrderGG)
-        namingContext = makeNamingContext names
+        namingContext = Dot.makeNamingContext names
 
     case arbitraryMatches globalOpts of
       MonoMatches -> putStrLn "Only injective matches allowed."
@@ -116,8 +118,8 @@ execute globalOpts opts = do
     putStrLn log
     putStrLn ""
 
-    let dots = map (uncurry (printSndOrderRule namingContext)) (productions sndOrderGG)
-    when printDot $ mapM_ print dots
+    let dots = [ Dot.sndOrderRule namingContext (pretty ruleName) rule | (ruleName, rule) <- productions sndOrderGG ]
+    when printDot $ mapM_ (hPrint stderr) dots
 
     let newGG = fstOrderGG {productions = newRules}
 

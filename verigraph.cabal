@@ -25,11 +25,12 @@ library
                        mtl >=2.2 && <2.3,
                        parallel >= 3.2,
                        parsec >=3.1 && <3.2,
+                       prettyprinter >=1.1 && <1.2,
                        QuickCheck >=2.8 && <2.10,
                        semigroups >= 0.18,
                        set-monad >= 0.2,
                        split >= 0.2,
-                       wl-pprint >=1.2 && <1.3
+                       text >=1.2 && <1.3
   exposed-modules:     Abstract.Category.Adhesive
                        Abstract.Category.FindMorphism
                        Abstract.Category.Finitary
@@ -61,7 +62,9 @@ library
                        Data.Relation
                        Data.TypedGraph
                        Data.TypedGraph.Morphism
-                       Image.Dot
+                       Image.Dot.Prettyprint
+                       Image.Dot.TypedGraph
+                       Image.Dot.StateSpace
                        Logic.Model
                        Logic.Ctl
                        Rewriting.DPO.TypedGraphRule.NacManipulation
@@ -126,6 +129,7 @@ executable verigraph
                        matrix >= 0.3,
                        optparse-applicative>=0.12 && < 0.14,
                        parallel >= 3.2,
+                       prettyprinter,
                        split >= 0.2
   other-modules:       ApplySndOrderRules
                        ConcurrentRules
@@ -145,7 +149,7 @@ executable verigraph-mcheck
                        containers,
                        hxt,
                        optparse-applicative>=0.12 && < 0.14,
-                       wl-pprint
+                       prettyprinter
   other-modules:       GlobalOptions
 
 
@@ -159,7 +163,7 @@ test-suite HSpecTests
                        containers,
                        combinat >= 0.2.8,
                        matrix >= 0.3.4,
-                       wl-pprint,
+                       prettyprinter,
                        QuickCheck,
                        hspec >=2.4,
                        hspec-discover >=2.4,

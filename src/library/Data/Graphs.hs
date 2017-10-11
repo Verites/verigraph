@@ -1,4 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-|
 An implementation of labeled directed graphs, allowing multiple parallel edges.
 
@@ -80,23 +81,26 @@ module Data.Graphs (
     , newEdges
 ) where
 
-import           Base.Cardinality
-import           Base.Valid
 import           Data.List
 import           Data.Maybe       (fromJust, fromMaybe)
+import Data.Text.Prettyprint.Doc (Pretty(..), (<+>))
+import qualified Data.Text.Prettyprint.Doc as PP
+
+import           Base.Cardinality
+import           Base.Valid
 import           Util.List
 
 
 -- | Type of node identifiers, which are essentially integers.
 newtype NodeId =
   NodeId Int
-  deriving (Eq, Ord, Num, Real, Integral)
+  deriving (Eq, Ord, Num, Real, Integral, Pretty)
 
 
 -- | Type of edge identifiers, which are essentially integers.
 newtype EdgeId
   = EdgeId Int
-  deriving (Eq, Ord, Num, Real, Integral)
+  deriving (Eq, Ord, Num, Real, Integral, Pretty)
 
 
 instance Show NodeId where
@@ -178,7 +182,20 @@ instance Show (Graph n e) where
         showEdge (e, Edge _ src tgt _) =
           "\t" ++ show e ++ " (" ++ show src ++ "->" ++ show tgt ++ ")\n"
 
+instance (Pretty n, Pretty e) => Pretty (Graph n e) where
+  pretty (Graph nodes edges) = PP.hsep
+    [ "Nodes:"
+    , PP.nest 2 $ PP.hsep (map pretty nodes)
+    , "Edges:"
+    , PP.nest 2 $ PP.hsep (map pretty edges)
+    ]
 
+instance {-# OVERLAPPABLE #-} Pretty n => Pretty (Node n) where
+  pretty (Node n p) = pretty n <+> PP.brackets (pretty p)
+
+instance {-# OVERLAPPABLE #-} Pretty e => Pretty (Edge e) where
+  pretty (Edge e src tgt p) = 
+    PP.hsep [pretty e, PP.brackets (pretty p), ":", pretty src, "->", pretty tgt]
 
 instance Cardinality (Graph n e) where
   cardinality = cardinality'

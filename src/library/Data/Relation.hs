@@ -31,6 +31,10 @@ module Data.Relation
     , isInjective
     , isSurjective
     , isTotal
+    -- * Conversion
+    -- ** Lists
+    , fromLists
+    , toList
     ) where
 
 
@@ -60,6 +64,9 @@ fromLists dom cod pairs =
     domain = sort . nub $ dom ++ map fst pairs
     codomain = sort . nub $ cod ++ map snd pairs
   in Relation domain codomain mapping
+
+toList :: Relation a -> [(a, a)]
+toList r = [ (x, y) | (x, ys) <- Map.toList (mapping r), y <- ys ] 
 
 -- | Construct a relation from a map and a list of codomain elements.
 fromMapAndCodomain :: Ord a => Map.Map a a -> [a] -> Relation a

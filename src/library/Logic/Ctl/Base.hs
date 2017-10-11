@@ -1,10 +1,11 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Logic.Ctl.Base
   ( Expr(..)
   , PathQuantified(..)
   , StateQuantified(..)
   ) where
 
-import           Text.PrettyPrint.Leijen as PP
+import Data.Text.Prettyprint.Doc
 
 
 -- | CTL expressions
@@ -37,104 +38,49 @@ data StateQuantified e
 
 
 instance Pretty Expr where
-  pretty =
-    ppImplicative
+  pretty = ppImplicative
 
 
-ppImplicative :: Expr -> Doc
-ppImplicative (Implies e1 e2) =
-  let
-    ppImplication (Implies e1 e2) =
-      ppBoolean e1 </> text "->" <+> ppImplication e2
+ppImplicative :: Expr -> Doc ann
+ppImplicative (Implies e1 e2) = group . align $ vsep [ppBoolean e1, "->" <+> ppImplication e2]
+  where
+    ppImplication (Implies e1 e2) = vsep [ppBoolean e1, "->" <+> ppImplication e2]
+    ppImplication e = ppBoolean e
+ppImplicative (Equiv e1 e2) = ppInfix (ppBoolean e1) "<->" (ppBoolean e2)
+ppImplicative e = ppBoolean e
 
-    ppImplication e =
-      ppBoolean e
-  in
-    ppBoolean e1 </> align (text "->" <+> ppImplication e2)
+ppBoolean :: Expr -> Doc ann
+ppBoolean e@(And _ _) = group . align $ ppAnd e
+  where
+    ppAnd (And e1 e2) = vsep [ppUnary e1, "&&" <+> ppAnd e2]
+    ppAnd e = ppUnary e
+ppBoolean e@(Or _ _) = group . align $ ppOr e
+  where
+    ppOr (Or e1 e2) = vsep [ppUnary e1, "||" <+> ppOr e2]
+    ppOr e = ppUnary e
+ppBoolean e = ppUnary e
 
-ppImplicative (Equiv e1 e2) =
-  ppInfix (ppBoolean e1) "<->" (ppBoolean e2)
+ppUnary :: Expr -> Doc ann
+ppUnary (Not e) = "~" <> ppUnary e
+ppUnary (Temporal e) = ppTemporal e
+ppUnary e = ppAtomic e
 
-ppImplicative e =
-  ppBoolean e
+ppAtomic :: Expr -> Doc ann
+ppAtomic (Literal True) = "true"
+ppAtomic (Literal False) = "false"
+ppAtomic (Atom prop) = pretty prop
+ppAtomic e = parens (pretty e)
 
+ppTemporal :: PathQuantified Expr -> Doc ann
+ppTemporal (A e) = "A" <> ppTemporal' e
+ppTemporal (E e) = "E" <> ppTemporal' e
 
-ppBoolean :: Expr -> Doc
-ppBoolean (And e1 e2) =
-  let
-    ppAnd (And e1 e2) =
-      ppUnary e1 </> text "&&" <+> ppAnd e2
+ppTemporal' :: StateQuantified Expr -> Doc ann
+ppTemporal' (X e) = "X" <+> ppUnary e
+ppTemporal' (F e) = "F" <+> ppUnary e
+ppTemporal' (G e) = "G" <+> ppUnary e
+ppTemporal' (U e1 e2) =
+  brackets $ sep [pretty e1, "U" <+> pretty e2]
 
-    ppAnd e =
-      ppUnary e
-  in
-    ppUnary e1 </> align (text "&&" <+> ppAnd e2)
-
-ppBoolean (Or e1 e2) =
-  let
-    ppOr (Or e1 e2) =
-      ppUnary e1 </> text "||" <+> ppOr e2
-
-    ppOr e =
-      ppUnary e
-  in
-    ppUnary e1 </> align (text "||" <+> ppOr e2)
-
-ppBoolean e =
-  ppUnary e
-
-
-ppUnary :: Expr -> Doc
-ppUnary (Not e) =
-  text "~" <> ppUnary e
-
-ppUnary (Temporal e) =
-  ppTemporal e
-
-ppUnary e =
-  ppAtomic e
-
-
-ppAtomic :: Expr -> Doc
-ppAtomic (Literal True) =
-  text "true"
-
-ppAtomic (Literal False) =
-  text "false"
-
-ppAtomic (Atom prop) =
-  text prop
-
-ppAtomic e =
-  parens (pretty e)
-
-
-ppTemporal :: PathQuantified Expr -> Doc
-ppTemporal (A e) =
-  ppTemporal' 'A' e
-
-ppTemporal (E e) =
-  ppTemporal' 'E' e
-
-
-ppTemporal' :: Char -> StateQuantified Expr -> Doc
-ppTemporal' pathQuant (X e) =
-  text (pathQuant:"X") <+> ppUnary e
-
-ppTemporal' pathQuant (F e) =
-  text (pathQuant:"F") <+> ppUnary e
-
-ppTemporal' pathQuant (G e) =
-  text (pathQuant:"G") <+> ppUnary e
-
-ppTemporal' pathQuant (U e1 e2) =
-  let
-    infixExpr = pretty e1 </> char 'U' <+> pretty e2
-    withBrackets = align . brackets
-  in
-    char pathQuant <> withBrackets infixExpr
-
-
-ppInfix :: Doc -> String -> Doc -> Doc
-ppInfix e1 op e2 =
-  e1 </> text op <+> e2
+ppInfix :: Doc ann -> Doc ann -> Doc ann -> Doc ann
+ppInfix e1 op e2 = align $ sep [e1, op <+> e2]

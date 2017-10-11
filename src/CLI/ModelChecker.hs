@@ -7,7 +7,9 @@ import           Data.Monoid                       ((<>))
 import           Options.Applicative
 import           System.Exit
 import           System.IO
-import           Text.PrettyPrint.Leijen           (hPutDoc)
+import           Data.Text.Prettyprint.Doc (Pretty(..))
+import qualified Data.Text.Prettyprint.Doc as PP
+import           Data.Text.Prettyprint.Doc.Render.Text (renderIO)
 
 import           Abstract.Category
 import           Abstract.Rewriting.DPO            as DPO hiding (NamedProduction)
@@ -16,7 +18,8 @@ import           Base.Valid
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
 import           GlobalOptions
-import qualified Image.Dot                         as Dot
+import qualified Image.Dot.StateSpace              as Dot
+import qualified Image.Dot.TypedGraph              as Dot
 import qualified Logic.Ctl                         as Logic
 import qualified Logic.Model                       as Logic
 import           Rewriting.DPO.TypedGraph
@@ -143,18 +146,19 @@ modelCheck model expr initialStates =
 -- | Creates .dot files for the given state space in the given directory.
 --
 -- Uses the naming context for labeling nodes and edges of instance graphs with their types.
-drawStateSpace :: FilePath -> Dot.NamingContext -> StateSpace (TypedGraphMorphism a b) -> IO ()
+drawStateSpace :: FilePath -> Dot.NamingContext a b -> StateSpace (TypedGraphMorphism a b) -> IO ()
 drawStateSpace dir namingContext stateSpace =
   do
     withFile (fileFor "stateSpace") WriteMode $ \file ->
-      hPutDoc file (Dot.printStateSpace stateSpace)
+      renderIO file . layout $ Dot.stateSpace stateSpace
 
     forM_ (IntMap.toList $ states stateSpace) $ \(idx, (graph, _)) -> do
       let name = show idx
       withFile (fileFor name) WriteMode $ \file ->
-        hPutDoc file (Dot.printTypedGraph namingContext name graph)
+        renderIO file . layout $ Dot.typedGraph namingContext (pretty name) graph
   where
     fileFor name = dir ++ "/" ++ name ++ ".dot"
+    layout = PP.layoutSmart PP.defaultLayoutOptions
 
 type NamedProduction = (String, TypedGraphRule () ())
 

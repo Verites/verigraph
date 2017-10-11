@@ -4,7 +4,7 @@ module Logic.Ctl.ParserSpec where
 import           Test.Hspec
 import qualified Test.HUnit              as HUnit
 import           Test.QuickCheck
-import           Text.PrettyPrint.Leijen
+import           Data.Text.Prettyprint.Doc (Pretty(..))
 
 import           Logic.Ctl
 import           Logic.Ctl.TestUtils     ()
@@ -14,12 +14,8 @@ spec :: Spec
 spec = do
 
   it "always parses the result of pretty printing" $
-    property $ \expr ->
-      let
-        prettyPrint expr =
-            displayS (renderPretty 0.7 100 (pretty expr)) ""
-      in
-      parseExpr "" (prettyPrint expr) == Right expr
+    property $ \expr -> 
+      parseExpr "" (show $ pretty expr) == Right expr
 
 
   context "with atomic expressions" $ do

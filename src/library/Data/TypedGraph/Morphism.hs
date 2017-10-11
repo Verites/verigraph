@@ -12,6 +12,7 @@ import           Data.Graphs.Morphism (GraphMorphism)
 import qualified Data.Graphs.Morphism as GM
 import           Data.TypedGraph
 import Data.Relation (Relation)
+import qualified Data.Relation as Relation
 
 data TypedGraphMorphism a b = TypedGraphMorphism {
     domainGraph   :: TypedGraph a b
@@ -41,6 +42,12 @@ instance Valid (TypedGraphMorphism a b) where
         , withContext "codomain" (validate cod)
         , ensure (dom == GM.compose cod m) "Morphism doesn't preserve typing"
         ]
+
+nodeMapping :: TypedGraphMorphism a b -> [(NodeId, NodeId)]
+nodeMapping = Relation.toList . GM.nodeRelation . mapping
+
+edgeMapping :: TypedGraphMorphism a b -> [(EdgeId, EdgeId)]
+edgeMapping = Relation.toList . GM.edgeRelation . mapping
 
 -- | Given a TypedGraphMorphism @/__t__: G1 -> G2/@ and a node @__n__@ in @G1@, it returns the node in @G2@ to which @__n__@ gets mapped
 applyNode :: TypedGraphMorphism a b -> Node (Maybe a) -> Maybe (Node (Maybe a))
