@@ -9,7 +9,7 @@ module Data.TypedGraph.Partition.FromVerigraph
 
 import           Data.Graphs                     as G
 import           Data.Graphs.Morphism            as GM
-import           Data.TypedGraph
+import           Data.TypedGraph                 as TG
 import           Data.TypedGraph.Morphism        as TGM
 import qualified Data.TypedGraph.Partition.Types as GP
 
@@ -35,10 +35,10 @@ createSatisfyingNacsDisjointUnion (g,injG) (n,injN) = disjointUnionGraphs left r
   where
     nodes = fst
     edges = snd
-    injNodes = filter (\x -> (all (\n' -> TGM.applyNodeIdUnsafe n n' /= x) (nodeIdsFromDomain n))) (nodeIdsFromCodomain n)
-    injEdges = filter (\x -> (all (\e' -> TGM.applyEdgeIdUnsafe n e' /= x) (edgeIdsFromDomain n))) (edgeIdsFromCodomain n)
+    injNodes = filter (\x -> (all (\n' -> TGM.applyNodeIdUnsafe n n' /= x) (TG.nodeIds $ TGM.domainGraph n))) (TG.nodeIds $ TGM.codomainGraph n)
+    injEdges = filter (\x -> (all (\e' -> TGM.applyEdgeIdUnsafe n e' /= x) (TG.edgeIds $ TGM.domainGraph n))) (TG.edgeIds $ TGM.codomainGraph n)
     injectiveR = if injG then (G.nodeIds (GM.domainGraph g), G.edgeIds (GM.domainGraph g)) else ([],[])
-    injectiveN = if injN then (nodeIdsFromCodomain n, edgeIdsFromCodomain n) else (injNodes, injEdges)
+    injectiveN = if injN then (TG.nodeIds $ TGM.codomainGraph n, TG.edgeIds $ TGM.codomainGraph n) else (injNodes, injEdges)
     (left,nextId) = graphMorphismToPartitionGraph injectiveR g True startId
     (right,_) = graphMorphismToPartitionGraph injectiveN (TGM.codomainGraph n) False nextId
     disjointUnionGraphs a b = (nodes a ++ nodes b, edges a ++ edges b)
@@ -47,9 +47,9 @@ graphMorphismToPartitionGraph :: ([NodeId],[EdgeId]) -> GraphMorphism (Maybe a) 
 graphMorphismToPartitionGraph inj@(injNodes,_) morfL side id = ((nodes',edges'), nextId)
   where
     graphL = GM.domainGraph morfL
-    nodes_ = zip (nodeIds graphL) [id..]
+    nodes_ = zip (G.nodeIds graphL) [id..]
     nodes' = map (nodeToPartitionNode injNodes morfL side) nodes_
-    edges_ = zip (edges graphL) [id..]
+    edges_ = zip (G.edges graphL) [id..]
     edges' = map (edgeToPartitionEdge inj morfL side) edges_
     nextId = max (length nodes') (length edges')
 

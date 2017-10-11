@@ -22,6 +22,7 @@ module Data.Graphs (
     , EdgeInContext
     , NodeContext
 
+    , contextGraph
     , incidentEdges
     , incomingEdges
     , outgoingEdges
@@ -249,6 +250,9 @@ edgeInContext graph edge =
     , nodeInContext graph (fromJust $ lookup (targetId edge) nodes)
     )
 
+-- | Get the graph that contains the node of the given context.
+contextGraph :: NodeContext n e -> Graph n e
+contextGraph (NodeCtx _ graph) = graph
 
 -- | Get the edges that are incident on the current node.
 -- /O(e)/, plus the cost of evaluating the nodes of the result (see 'EdgeInContext').

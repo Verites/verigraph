@@ -10,8 +10,7 @@ module XML.GGXParseOut
 
 import           Data.Maybe                (fromMaybe, isJust)
 
-import           Abstract.Category         ((<&>))
-import qualified Abstract.Category         as FC
+import           Abstract.Category         as FC
 import           Abstract.Rewriting.DPO
 import qualified Analysis.CriticalPairs    as CP
 import qualified Analysis.CriticalSequence as CS
@@ -69,8 +68,8 @@ getTgmMappings prefix tgm = nodesMorph ++ edgesMorph
   where
     nodeMap = applyNodeIdUnsafe tgm
     edgeMap = applyEdgeIdUnsafe tgm
-    nodesMorph = map (\n -> ("N" ++ show (nodeMap n), prefix, "N" ++ show n)) (nodeIdsFromDomain tgm)
-    edgesMorph = map (\e -> ("E" ++ show (edgeMap e), prefix, "E" ++ show e)) (edgeIdsFromDomain tgm)
+    nodesMorph = map (\n -> ("N" ++ show (nodeMap n), prefix, "N" ++ show n)) (nodeIds $ domain tgm)
+    edgesMorph = map (\e -> ("E" ++ show (edgeMap e), prefix, "E" ++ show e)) (edgeIds $ domain tgm)
 
 getLHS :: [Mapping] -> [Mapping] -> GR.TypedGraphRule a b -> ParsedTypedGraph
 getLHS objNameN objNameE rule = serializeGraph objNameN objNameE $ GR.leftMorphism rule
@@ -98,10 +97,10 @@ getMappings rule = nodesMorph ++ edgesMorph
     invL = invert (GR.leftMorphism rule)
     lr = GR.rightMorphism rule <&> invL
     nodeMap = applyNodeIdUnsafe lr
-    nodes = filter (isJust . applyNodeId lr) (nodeIdsFromDomain lr)
+    nodes = filter (isJust . applyNodeId lr) (nodeIds $ domain lr)
     nodesMorph = map (\n -> ("N" ++ show (nodeMap n), no, "N" ++ show n)) nodes
     edgeMap = applyEdgeIdUnsafe lr
-    edges = filter (isJust . applyEdgeId lr) (edgeIdsFromDomain lr)
+    edges = filter (isJust . applyEdgeId lr) (edgeIds $ domain lr)
     edgesMorph = map (\e -> ("E" ++ show (edgeMap e), no, "E" ++ show e)) edges
 
 parseNacName :: String -> (t -> Maybe Int) -> t -> String

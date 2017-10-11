@@ -137,14 +137,14 @@ writeReachableGraphs :: ArrowXml a => Grammar (TypedGraphMorphism b c) -> [a Xml
 writeReachableGraphs gg = map writeHostGraph (reachableGraphs gg)
 --    write (name,graph) writeGraph "initial_graph" "HOST" "Init" nodes edges
 --    -- Reuses the serialize for productions to serialize the initial graph
---    tgm = idMap initial initial
+--    tgm = makeInclusion initial initial
 --    (_, nodes, edges) = serializeGraph [] [] tgm
 
 writeHostGraph :: ArrowXml a => (String,TypedGraph b c) -> a XmlTree XmlTree
 writeHostGraph (name,graph) = writeGraph ("graph_" ++ name) "HOST" name nodes edges
   where
     -- Reuses the serialize for productions to serialize the initial graph
-    tgm = idMap graph graph
+    tgm = makeInclusion graph graph
     (_, nodes, edges) = serializeGraph [] [] tgm
 
 writeTypes :: ArrowXml a => G.Graph b c -> [(String,String)] -> a XmlTree XmlTree
@@ -400,8 +400,8 @@ writeSndOrderRule (name, sndOrderRule) =
       graphLRuleL = codomain (mappingLeft (leftMorphism sndOrderRule))
       graphRRuleL = codomain (mappingRight (leftMorphism sndOrderRule))
       twice f x = f x x
-      objNameMapLeftLeft = twice getObjectNameMorphism (idMap graphLRuleL graphLRuleL)
-      objNameMapLeftRight = twice getObjectNameMorphism (idMap graphRRuleL graphRRuleL)
+      objNameMapLeftLeft = twice getObjectNameMorphism (makeInclusion graphLRuleL graphLRuleL)
+      objNameMapLeftRight = twice getObjectNameMorphism (makeInclusion graphRRuleL graphRRuleL)
 
 writeSndOrderRuleSide :: ArrowXml a => String -> [Mapping] -> [Mapping] -> [Mapping] -> [Mapping] -> RuleMorphism b c -> a XmlTree XmlTree
 writeSndOrderRuleSide name objLeftN objLeftE objRightN objRightE ruleMorphism = writeRule objLeftN objLeftE objRightN objRightE [] (name, codomain ruleMorphism)

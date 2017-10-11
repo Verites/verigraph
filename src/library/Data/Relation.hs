@@ -8,7 +8,7 @@ module Data.Relation
       Relation
     -- * Construction
     , empty
-    , fromList
+    , fromLists
     , fromMapAndCodomain
     -- * Transformation
     , compose
@@ -50,13 +50,16 @@ instance (Eq a, Ord a) => Eq (Relation a) where
                sort(codomain r1) == sort(codomain r2) &&
                mapping r1 == mapping r2
 
--- | Construct a relation from a list of pairs of related elements.
-fromList :: Ord a => [(a, a)] -> Relation a
-fromList pairs =
+-- | Construct a relation from the domain elements, the codomain elements, and
+-- pairs of related elements, respectively. If a pair `(x,y)` is related, `x` is
+-- added to the domain and `y` to the codomain.
+fromLists :: Ord a => [a] -> [a] -> [(a, a)] -> Relation a
+fromLists dom cod pairs =
   let
     mapping = foldl' (\m (k,v) -> Map.insertWith (++) k [v] m) Map.empty pairs
-    codomain = sort . nub $ map snd pairs
-  in Relation (Map.keys mapping) codomain mapping
+    domain = sort . nub $ dom ++ map fst pairs
+    codomain = sort . nub $ cod ++ map snd pairs
+  in Relation domain codomain mapping
 
 -- | Construct a relation from a map and a list of codomain elements.
 fromMapAndCodomain :: Ord a => Map.Map a a -> [a] -> Relation a

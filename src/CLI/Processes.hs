@@ -142,8 +142,8 @@ mainFunction opts sq gg2 ggName names = do
 buildNewNames :: [(String,String)] -> TG.TypedGraph a b -> [(String,String)]
 buildNewNames oldNames tg = newNs ++ newEs
   where
-    ns = map (\(n,t) -> (n, "I" ++ show t)) (TG.typedNodes tg)
-    es = map (\(e,_,_,t) -> (e, "I" ++ show t)) (TG.typedEdges tg)
+    ns = map (\(n,t) -> (n, "I" ++ show t)) (TG.typedNodeIds tg)
+    es = map (\(e,t) -> (e, "I" ++ show t)) (TG.typedEdgeIds tg)
     newNs = map (\(n,it) -> ("I" ++ show n, rename (show n,it))) ns
     newEs = map (\(e,it) -> ("I" ++ show e, rename (show e,it))) es
     rename (z,it) = (\(x,y) -> x ++ "-" ++ z ++ y) (break (=='%') (find it))

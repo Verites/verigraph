@@ -40,12 +40,12 @@ checkDanglingExtension gg1 =
 
         dangGraph = codomain (danglingExtension (leftMorphism ruleC))
 
-        [(_,typeOfMsg),(_,typeOfData)] = typedNodes (leftObject ruleC)
+        [(_,typeOfMsg),(_,typeOfData)] = nodes (leftObject ruleC)
 
         msgsInDang = countElement typeOfMsg (map snd nods)
         dataInDang = countElement typeOfData (map snd nods)
-        nods = typedNodes dangGraph
-        edgs = typedEdges dangGraph
+        nods = nodes dangGraph
+        edgs = edges dangGraph
 
     msgsInDang  `shouldBe` 3
     dataInDang  `shouldBe` 3

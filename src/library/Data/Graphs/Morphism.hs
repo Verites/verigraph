@@ -8,6 +8,7 @@ module Data.Graphs.Morphism (
     , Data.Graphs.Morphism.empty
     , buildGraphMorphism
     , fromGraphsAndRelations
+    , fromGraphsAndLists
     -- * Transformation
     , invertGraphMorphism
     , updateCodomain
@@ -151,6 +152,13 @@ buildGraphMorphism gA gB n = foldr (uncurry updateEdges . (EdgeId *** EdgeId)) g
 -- | Constructs a @GraphMorphism@ from two Graphs, a node relation and a edge relation.
 fromGraphsAndRelations :: Graph a b -> Graph a b -> R.Relation NodeId -> R.Relation EdgeId -> GraphMorphism a b
 fromGraphsAndRelations = GraphMorphism
+
+-- | Constructs a @GraphMorphism@ from two Graphs, and lists describing the node and edge mappings.
+fromGraphsAndLists :: Graph a b -> Graph a b -> [(NodeId, NodeId)] -> [(EdgeId, EdgeId)] -> GraphMorphism a b
+fromGraphsAndLists dom cod nodes edges = GraphMorphism dom cod nodeRelation edgeRelation
+  where
+    nodeRelation = R.fromLists (nodeIds dom) (nodeIds cod) nodes
+    edgeRelation = R.fromLists (edgeIds dom) (edgeIds cod) edges
 
 -- | The inverse graph morphism.
 invertGraphMorphism :: GraphMorphism a b -> GraphMorphism a b

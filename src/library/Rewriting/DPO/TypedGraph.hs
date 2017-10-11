@@ -27,7 +27,8 @@ import           Abstract.Rewriting.DPO             as DPO
 import           Category.TypedGraph.Category       (toMorphismType, MorphismType(..))
 import           Category.TypedGraph                
 import           Category.TypedGraph.Adhesive       (isDeleted)
-import           Data.Graphs                        as G
+import  Data.Graphs                        (Graph)
+import qualified Data.Graphs                        as G
 import qualified Data.Graphs.Morphism               as GM
 import           Data.TypedGraph                    as GM
 import           Data.TypedGraph.Morphism           as TGM
@@ -55,25 +56,24 @@ createdEdges :: TypedGraphRule a b -> [G.EdgeId]
 createdEdges = TGM.orphanTypedEdgeIds . rightMorphism
 
 preservedNodes :: TypedGraphRule a b -> [G.NodeId]
-preservedNodes = nodeIdsFromDomain . leftMorphism
+preservedNodes = nodeIds . domain . leftMorphism
 
 preservedEdges :: TypedGraphRule a b -> [G.EdgeId]
-preservedEdges = edgeIdsFromDomain . leftMorphism
+preservedEdges = edgeIds . domain . leftMorphism
 
 -- | Returns an empty TypedGraphRule
 emptyGraphRule :: Graph (Maybe a) (Maybe b) -> TypedGraphRule a b
 emptyGraphRule typegraph = emptyRule
   where
-    emptyGraph = empty
-    emptyGM = GM.empty emptyGraph typegraph
-    emptyTGM = idMap emptyGM emptyGM
+    emptyGM = GM.empty G.empty typegraph
+    emptyTGM = makeInclusion emptyGM emptyGM
     emptyRule = Production emptyTGM emptyTGM []
 
 -- | Checks if it is a null rule
 nullGraphRule :: TypedGraphRule a b -> Bool
 nullGraphRule rule = null l && null k && null r
   where
-    null = G.null . untypedGraph
+    null = G.null . toUntypedGraph
     l = codomain $ leftMorphism rule
     k = domain $ leftMorphism rule
     r = codomain $ rightMorphism rule

@@ -25,7 +25,6 @@ import           Abstract.Rewriting.DPO
 import           Base.Valid
 import           Category.TypedGraphRule
 import           Category.TypedGraphRule.Adhesive      (createSideRule)
-import           Data.Graphs                           as G
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
 
@@ -170,13 +169,13 @@ newNacsProb side sndRule = nacNodes ++ nacEdges
     sc = getSide ruleR
 
     nodeProb = [applyNodeIdUnsafe f n |
-                 n <- nodeIdsFromCodomain sb
+                 n <- nodeIds (codomain sb)
                , isOrphanNode sa (applyNodeIdUnsafe f n)
                , isOrphanNode sb n
                , not (isOrphanNode sc (applyNodeIdUnsafe g n))]
 
     edgeProb = [applyEdgeUnsafe f e |
-                 e <- edgesFromCodomain sb
+                 (e, _) <- edges (codomain sb)
                , isOrphanEdge sa (applyEdgeIdUnsafe f (edgeId e))
                , isOrphanEdge sb (edgeId e)
                , not (isOrphanEdge sc (applyEdgeIdUnsafe g (edgeId e)))]
@@ -206,14 +205,14 @@ createNacProb sideChoose ruleL x = ruleMorphism ruleL nacRule mapL mapK mapR
     typeSrc x = extractNodeType otherSideGraph (sourceId x)
     typeTgt x = extractNodeType otherSideGraph (targetId x)
 
-    n' = head (newNodes (domain graphK))
-    n'' = head (newNodes (domain graphSide))
+    n' = head (newNodes graphK)
+    n'' = head (newNodes graphSide)
 
-    e' = head (newEdges (domain graphK))
-    e'' = head (newEdges (domain graphSide))
+    e' = head (newEdges graphK)
+    e'' = head (newEdges graphSide)
 
-    newNodesK = newNodes (domain graphK)
-    newNodesSide = newNodes (domain graphSide)
+    newNodesK = newNodes graphK
+    newNodesSide = newNodes graphSide
 
     invertSide = invert side
 
@@ -230,9 +229,9 @@ createNacProb sideChoose ruleL x = ruleMorphism ruleL nacRule mapL mapK mapR
                        (targetId e) (typeTgt e) (tgtInK e) (tgtInR e)
 
     nacRule = Production updateLeft updateRight []
-    mapL = idMap graphL (codomain updateLeft)
-    mapK = idMap graphK (domain updateLeft)
-    mapR = idMap graphR (codomain updateRight)
+    mapL = makeInclusion graphL (codomain updateLeft)
+    mapK = makeInclusion graphK (domain updateLeft)
+    mapR = makeInclusion graphR (codomain updateRight)
 
     createNodes x x' x'' tp =
       case sideChoose of
@@ -286,8 +285,8 @@ newNacsPair sideChoose sndRule =
     --pairsNodes = pairs applyNode isOrphanNode nodeIds
     pairsNodes =
       [(applyNode fl x, applyNode fl y) |
-          x <- nodeIds $ domain $ codomain lb
-        , y <- nodeIds $ domain $ codomain lb
+          x <- nodeIds $ codomain lb
+        , y <- nodeIds $ codomain lb
         , x /= y
         , isOrphanNode lb x
         , not (isOrphanNode lc (applyNode gl x))
@@ -297,8 +296,8 @@ newNacsPair sideChoose sndRule =
     --pairsEdges = pairs applyEdge isOrphanEdge edgeIds
     pairsEdges =
       [(applyEdge fl x, applyEdge fl y) |
-          x <- edgeIds $ domain $ codomain lb
-        , y <- edgeIds $ domain $ codomain lb
+          x <- edgeIds $ codomain lb
+        , y <- edgeIds $ codomain lb
         , x /= y
         , isOrphanEdge lb x
         , not (isOrphanEdge lc (applyEdge gl x))
@@ -321,9 +320,9 @@ newNacsPair sideChoose sndRule =
         ruleNacLeft = Production (e <&> leftMorphism ruleL) (rightMorphism ruleL) []
         ruleNacRight = Production (leftMorphism ruleL) (e <&> rightMorphism ruleL) []
 
-        mapL = idMap (leftObject ruleL) (leftObject ruleL)
-        mapK = idMap (interfaceObject ruleL) (interfaceObject ruleL)
-        mapR = idMap (rightObject ruleL) (rightObject ruleL)
+        mapL = makeInclusion (leftObject ruleL) (leftObject ruleL)
+        mapK = makeInclusion (interfaceObject ruleL) (interfaceObject ruleL)
+        mapR = makeInclusion (rightObject ruleL) (rightObject ruleL)
 
 getRulesFrom2Rule :: SndOrderRule a b -> (TypedGraphRule a b, TypedGraphRule a b, Production (TypedGraphMorphism a b))
 getRulesFrom2Rule sndRule = (leftObject sndRule, interfaceObject sndRule, rightObject sndRule)
