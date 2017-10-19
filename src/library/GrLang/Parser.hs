@@ -1,132 +1,108 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-module GrLang.Parser where
+module GrLang.Parser (parseTopLevel) where
 
 import           Data.Functor.Identity
-import           Data.Map              (Map)
-import qualified Data.Map              as Map
 import           Data.Maybe            (mapMaybe)
 import           Data.Text             (Text)
 import qualified Data.Text             as Text
-import           Text.Parsec
+import           Text.Parsec           hiding (optional)
 import qualified Text.Parsec.Token     as P
 
-import           Data.Graphs           (Edge (..), EdgeId, Graph, Node (..), NodeId)
-import qualified Data.Graphs           as Graph
-import           Data.TypedGraph
-import           GrLang.Metadata
+import Base.Annotation (Annotated(..), Located)
+import qualified Base.Annotation as Ann
+import           GrLang.AST
+
+parseTopLevel :: SourceName -> String -> Either ParseError [TopLevelDeclaration]
+parseTopLevel = parse (whiteSpace *> many topLevelDecl <* eof)
+
+topLevelDecl :: Stream s Identity Char => Parsec s u TopLevelDeclaration
+topLevelDecl = choice
+  [ importDecl <?> "import"
+  , nodeType <?> "node type"
+  , edgeType <?> "edge type"
+  , graph <?> "graph" ]
+  where
+    importDecl =
+      reserved "import" >> Import <$> located filePath
+
+    nodeType =
+      reserved "node" >> reserved "type" >> DeclNodeType <$> located identifier
+
+    edgeType =
+      reserved "edge" >> reserved "type" >>
+      DeclEdgeType 
+        <$> located identifier
+        <*> (reservedOp ":" *> located identifier)
+        <*> (reservedOp "->" *> located identifier)
+    
+    graph =
+      reserved "graph" >>
+      DeclGraph
+        <$> located identifier
+        <*> braces (many graphDecl)
+
+graphDecl :: Stream s Identity Char => Parsec s u GraphDeclaration
+graphDecl = (located identifier >>= \n -> edge n <|> node n) <?> "node or edge"
+  where
+    node n = do
+      ns <- many (comma *> located identifier)
+      DeclNodes (n:ns) <$> (reservedOp ":" *> located identifier)
+
+    edge src =
+      DeclEdges src
+        <$> (reservedOp "-" *> (try multipleTypes <|> singleType) <* reservedOp "->")
+        <*> located identifier
+    
+    singleType =
+      SingleType
+        <$> commaSep1 (located identifier)
+        <*> (reservedOp ":" *> located identifier)
+    
+    multipleTypes =
+      MultipleTypes <$> commaSep1 (located singleEdge)
+    
+    singleEdge =
+      (,) <$> optional identifier <*> (reservedOp ":" *> identifier)
 
 
-type Parser a = Parsec String ParserState a
-
-
-data ParserState = St
-  { currTypeGraph :: TypeGraph
-  , nodeTypes     :: Map Text NodeId
-  , edgeTypes     :: Map (Text, NodeId, NodeId) EdgeId
-  }
-
-findNodeType name = do
-  st <- getState
-  return $ do
-    nodeId <- Map.lookup name (nodeTypes st)
-    Graph.lookupNode nodeId (currTypeGraph st)
-
-findEdgeType name srcId tgtId = do
-  st <- getState
-  return $ do
-    edgeId <- Map.lookup (name, srcId, tgtId) (edgeTypes st)
-    Graph.lookupEdge edgeId (currTypeGraph st)
-
-parseTypeGraph :: SourceName -> String -> Either ParseError TypeGraph
-parseTypeGraph = runParser (whiteSpace *> pTypeGraph <* eof) (St Graph.empty Map.empty Map.empty)
-
-
-pTypeGraph :: Parser TypeGraph
-pTypeGraph = many (nodeType <|> edgeType) *> (currTypeGraph <$> getState)
-
-nodeType :: Parser ()
-nodeType = do
-  pos <- getPosition
-  typeName <- reserved "node" *> reserved "type" *> identifier
-  existingNodeType <- findNodeType typeName
-  case existingNodeType of
-    Just (Node _ maybeData) ->
-      fail $ "Duplicate declaration of node type " ++ show typeName ++
-        case maybeData of
-          Just n -> ", already declared at " ++ show (sourcePos n)
-          Nothing -> ""
-    Nothing -> do
-      st <- getState
-      let id:_ = Graph.newNodes (currTypeGraph st)
-      setState $ st
-        { currTypeGraph = Graph.insertNodeWithPayload id (Just $ Metadata typeName pos) (currTypeGraph st)
-        , nodeTypes = Map.insert typeName id (nodeTypes st)
-        }
-
-edgeType :: Parser ()
-edgeType = do
-  pos <- getPosition
-  typeName <- reserved "edge" *> reserved "type" *> identifier
-  (Node srcType _) <- reservedOp ":" *> existingNodeType
-  (Node tgtType _) <- reservedOp "->" *> existingNodeType
-
-  existingEdgeType <- findEdgeType typeName srcType tgtType
-  case existingEdgeType of
-    Just (Edge _ _ _ maybeData) ->
-      fail $ "Duplicate declaration of edge type " ++ show typeName ++
-        case maybeData of
-          Just e -> ", already declared at " ++ show (sourcePos e)
-          Nothing -> ""
-    Nothing -> do
-      st <- getState
-      let id:_ = Graph.newEdges (currTypeGraph st)
-      setState $ st
-        { currTypeGraph = Graph.insertEdgeWithPayload id srcType tgtType (Just $ Metadata typeName pos) (currTypeGraph st)
-        , edgeTypes = Map.insert (typeName, srcType, tgtType) id (edgeTypes st)
-        }
-
-existingNodeType :: Parser (Node (Maybe Metadata))
-existingNodeType = do
-  name <- identifier
-  maybeType <- findNodeType name
-  case maybeType of
-    Just node -> return node
-    Nothing -> fail $ "Undefined node type " ++ show name
-
-lexer :: (Stream s Identity Char) => P.GenTokenParser s u Identity
+lexer :: Stream s Identity Char => P.GenTokenParser s u Identity
 lexer =
-  P.makeTokenParser ctlDef
+  P.makeTokenParser langDef
+
+optional :: Stream s Identity Char => Parsec s u a -> Parsec s u (Maybe a) 
+optional = optionMaybe . try
+
+located :: Stream s Identity Char => Parsec s u a -> Parsec s u (Located a)
+located parser = annotate <$> getPosition <*> parser
+  where annotate pos = A $ Just (Ann.Position (sourceLine pos) (sourceColumn pos), sourceName pos)
+
+parens, brackets, braces :: Stream s Identity Char => Parsec s u a -> Parsec s u a
+parens = P.parens lexer
+brackets = P.brackets lexer
+braces = P.braces lexer
+
+commaSep, commaSep1 :: Stream s Identity Char => Parsec s u a -> Parsec s u [a]
+commaSep = P.commaSep lexer
+commaSep1 = P.commaSep1 lexer
+
+reserved, reservedOp :: Stream s Identity Char => String -> Parsec s u ()
+reserved = P.reserved lexer
+reservedOp = P.reservedOp lexer
+
+identifier :: Stream s Identity Char => Parsec s u Text
+identifier = Text.pack <$> P.identifier lexer
+
+filePath :: Stream s Identity Char => Parsec s u FilePath
+filePath = P.stringLiteral lexer
+
+whiteSpace, comma :: Stream s Identity Char => Parsec s u ()
+whiteSpace = P.whiteSpace lexer
+comma = P.comma lexer *> pure ()
 
 
-brackets, parens :: Parser a -> Parser a
-brackets =
-  P.brackets lexer
-
-parens =
-  P.parens lexer
-
-
-reserved, reservedOp :: String -> Parser ()
-reserved =
-  P.reserved lexer
-
-reservedOp =
-  P.reservedOp lexer
-
-
-identifier :: Parser Text
-identifier =
-  Text.pack <$> P.identifier lexer
-
-
-whiteSpace :: Parser ()
-whiteSpace =
-  P.whiteSpace lexer
-
-
-ctlDef :: (Stream s Identity Char) => P.GenLanguageDef s u Identity
-ctlDef =
+langDef :: (Stream s Identity Char) => P.GenLanguageDef s u Identity
+langDef =
   P.LanguageDef
     { P.commentStart =
         "{-"
@@ -147,17 +123,16 @@ ctlDef =
         alphaNum <|> oneOf "_'"
 
     , P.opStart =
-        oneOf "&|-<~"
+        oneOf ":-"
 
     , P.opLetter =
-        oneOf "&|->"
+        oneOf ">"
 
     , P.reservedOpNames =
-        ["&&", "||", "~", "->", "<->"]
+        [":", "-", "->"]
 
     , P.reservedNames =
-        ["true", "false", "A", "E", "U", "W"]
-        ++ [pq++sq | pq <- ["A", "E"], sq <- ["X", "F", "G"]]
+        ["graph", "node", "edge", "type"]
 
     , P.caseSensitive =
         True

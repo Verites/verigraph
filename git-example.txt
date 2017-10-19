@@ -13,6 +13,7 @@ graph Foo {
   dr2 -:Dep-> r1
   tr2 -a:TDep, b:TDep, c:Dep-> r1
   tr2 -a,b:TDep-> r1
+  tr2 -:TDep,:TDep->r1
 }
 
 rule Amend {
