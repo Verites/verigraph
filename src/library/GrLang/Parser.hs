@@ -9,8 +9,8 @@ import qualified Data.Text             as Text
 import           Text.Parsec           hiding (optional)
 import qualified Text.Parsec.Token     as P
 
-import Base.Annotation (Annotated(..), Located)
-import qualified Base.Annotation as Ann
+import           Base.Annotation       (Annotated (..), Located)
+import qualified Base.Annotation       as Ann
 import           GrLang.AST
 
 parseTopLevel :: SourceName -> String -> Either ParseError [TopLevelDeclaration]
@@ -31,11 +31,11 @@ topLevelDecl = choice
 
     edgeType =
       reserved "edge" >> reserved "type" >>
-      DeclEdgeType 
+      DeclEdgeType
         <$> located identifier
         <*> (reservedOp ":" *> located identifier)
         <*> (reservedOp "->" *> located identifier)
-    
+
     graph =
       reserved "graph" >>
       DeclGraph
@@ -53,15 +53,15 @@ graphDecl = (located identifier >>= \n -> edge n <|> node n) <?> "node or edge"
       DeclEdges src
         <$> (reservedOp "-" *> (try multipleTypes <|> singleType) <* reservedOp "->")
         <*> located identifier
-    
+
     singleType =
       SingleType
         <$> commaSep1 (located identifier)
         <*> (reservedOp ":" *> located identifier)
-    
+
     multipleTypes =
       MultipleTypes <$> commaSep1 (located singleEdge)
-    
+
     singleEdge =
       (,) <$> optional identifier <*> (reservedOp ":" *> identifier)
 
@@ -70,7 +70,7 @@ lexer :: Stream s Identity Char => P.GenTokenParser s u Identity
 lexer =
   P.makeTokenParser langDef
 
-optional :: Stream s Identity Char => Parsec s u a -> Parsec s u (Maybe a) 
+optional :: Stream s Identity Char => Parsec s u a -> Parsec s u (Maybe a)
 optional = optionMaybe . try
 
 located :: Stream s Identity Char => Parsec s u a -> Parsec s u (Located a)
@@ -117,7 +117,7 @@ langDef =
         True
 
     , P.identStart =
-        letter <|> oneOf "_"
+        letter <|> oneOf "_?"
 
     , P.identLetter =
         alphaNum <|> oneOf "_'"

@@ -1,13 +1,13 @@
 module GrLang.QuickCheck where
 
+import qualified Data.Char                 as Char
+import           Data.Text                 (Text)
+import qualified Data.Text                 as Text
+import           Data.Text.Prettyprint.Doc (Pretty (..))
 import           Test.QuickCheck
-import Data.Text (Text)
-import qualified Data.Text as Text
-import qualified Data.Char as Char
-import Data.Text.Prettyprint.Doc (Pretty(..))
 
-import Base.Annotation (Annotated(..), Located)
-import qualified Base.Annotation as Ann
+import           Base.Annotation           (Annotated (..), Located)
+import qualified Base.Annotation           as Ann
 import           GrLang.AST
 
 instance Arbitrary TopLevelDeclaration where
@@ -16,16 +16,16 @@ instance Arbitrary TopLevelDeclaration where
     , DeclNodeType <$> located genIdentifier
     , DeclEdgeType <$> located genIdentifier <*> located genIdentifier <*> located genIdentifier
     , DeclGraph <$> located genIdentifier <*> listOf arbitrary ]
-  
+
   shrink (DeclGraph g body) = [ DeclGraph g body' | body' <- shrink body ]
-  shrink _ = []
+  shrink _                  = []
 
 instance Arbitrary GraphDeclaration where
   arbitrary = oneof
     [ DeclNodes <$> listOf1 (located genIdentifier) <*> located genIdentifier
     , DeclEdges <$> located genIdentifier <*> arbitrary <*> located genIdentifier ]
 
-  shrink (DeclNodes ns t) = [ DeclNodes ns' t | ns' <- shrinkList1 ns ]
+  shrink (DeclNodes ns t)   = [ DeclNodes ns' t | ns' <- shrinkList1 ns ]
   shrink (DeclEdges s es t) = [ DeclEdges s es' t | es' <- shrink es ]
 
 instance Arbitrary ParallelEdgesDeclaration where
@@ -35,14 +35,14 @@ instance Arbitrary ParallelEdgesDeclaration where
     where
       edge = (,) <$> optional genIdentifier <*> genIdentifier
       listOf2 gen = (:) <$> gen <*> listOf1 gen
-  
-  shrink (SingleType es t) = [ SingleType es' t | es' <- shrinkList1 es ]
+
+  shrink (SingleType es t)  = [ SingleType es' t | es' <- shrinkList1 es ]
   shrink (MultipleTypes es) = [ MultipleTypes es' | es' <- shrinkList1 es ]
 
 shrinkList1 :: [a] -> [[a]]
-shrinkList1 [] = []
+shrinkList1 []  = []
 shrinkList1 [_] = []
-shrinkList1 l = filter (not . null) $ shrinkList (:[]) l
+shrinkList1 l   = filter (not . null) $ shrinkList (:[]) l
 
 optional :: Gen a -> Gen (Maybe a)
 optional gen = oneof [ Just <$> gen, pure Nothing ]
@@ -71,7 +71,7 @@ genIdentifier :: Gen Text
 genIdentifier =
   Text.pack <$> ((:) <$> startChar <*> listOf midChar)
   where
-    startChar = elements startChars
+    startChar = elements ('?' : startChars)
     startChars = ['a'..'z'] ++ "_"
 
     midChar = elements midChars
