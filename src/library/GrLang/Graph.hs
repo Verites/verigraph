@@ -26,7 +26,8 @@ import           Data.Maybe      (fromMaybe, isJust, mapMaybe)
 import           Data.Text       (Text)
 import qualified Data.Text       as Text
 
-import           Base.Annotation (Annotated (..), Location)
+import           Base.Annotation (Annotated (..))
+import           Base.Location   (Location (..))
 import           Data.Graphs     (Graph)
 import qualified Data.Graphs     as TypeGraph
 import           Data.TypedGraph

@@ -14,7 +14,6 @@ import           Data.TypedGraph
 import           GrLang.AST
 import           GrLang.Graph
 import           GrLang.Compiler
-import           GrLang.Metadata
 
 loc :: a -> Located a
 loc = A Nothing

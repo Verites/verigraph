@@ -52,6 +52,7 @@ library
                        Base.Annotation
                        Base.Cardinality
                        Base.Isomorphic
+                       Base.Location
                        Base.Valid
                        Category.Graph
                        Category.TypedGraph

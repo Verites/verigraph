@@ -1,13 +1,12 @@
 module GrLang.QuickCheck where
 
-import qualified Data.Char                 as Char
-import           Data.Text                 (Text)
-import qualified Data.Text                 as Text
-import           Data.Text.Prettyprint.Doc (Pretty (..))
+import qualified Data.Char       as Char
+import           Data.Text       (Text)
+import qualified Data.Text       as Text
 import           Test.QuickCheck
 
-import           Base.Annotation           (Annotated (..), Located)
-import qualified Base.Annotation           as Ann
+import           Base.Annotation (Annotated (..), Located)
+import           Base.Location
 import           GrLang.AST
 
 instance Arbitrary TopLevelDeclaration where
@@ -48,15 +47,14 @@ optional :: Gen a -> Gen (Maybe a)
 optional gen = oneof [ Just <$> gen, pure Nothing ]
 
 located :: Gen a -> Gen (Located a)
-located x = A <$> location <*> x
-  where location = optional ((,) <$> arbitrary <*> pure "<QuickCheck>")
+located x = A <$> optional (Location "QuickCheck" <$> arbitrary) <*> x
 
 instance (Arbitrary info, Arbitrary a) => Arbitrary (Annotated info a) where
   arbitrary = A <$> arbitrary <*> arbitrary
   shrink (A i x) = [ A i x' | x' <- shrink x ]
 
-instance Arbitrary Ann.Position where
-  arbitrary = Ann.Position <$> arbitrary <*> arbitrary
+instance Arbitrary Position where
+  arbitrary = Position <$> arbitrary <*> arbitrary
 
 instance Arbitrary Text where
   arbitrary = Text.pack <$> arbitrary

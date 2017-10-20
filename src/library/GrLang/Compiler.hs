@@ -27,7 +27,8 @@ import qualified Data.Text            as Text
 import           System.IO            (IOMode (..), hGetContents, withFile)
 import           System.IO.Error      (ioeGetErrorString, tryIOError)
 
-import           Base.Annotation      (Annotated (..), Located, Location, reportLocation)
+import Base.Annotation (Annotated(..), Located)
+import Base.Location
 import qualified Data.Graphs          as TypeGraph
 import           Data.TypedGraph      (Edge (..), EdgeId, Node (..), NodeId, TypedGraph)
 import qualified Data.TypedGraph      as TGraph

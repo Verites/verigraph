@@ -9,8 +9,8 @@ import qualified Data.Text             as Text
 import           Text.Parsec           hiding (optional)
 import qualified Text.Parsec.Token     as P
 
-import           Base.Annotation       (Annotated (..), Located)
-import qualified Base.Annotation       as Ann
+import           Base.Annotation       (Located, at)
+import           Base.Location
 import           GrLang.AST
 
 parseTopLevel :: SourceName -> String -> Either ParseError [TopLevelDeclaration]
@@ -74,8 +74,11 @@ optional :: Stream s Identity Char => Parsec s u a -> Parsec s u (Maybe a)
 optional = optionMaybe . try
 
 located :: Stream s Identity Char => Parsec s u a -> Parsec s u (Located a)
-located parser = annotate <$> getPosition <*> parser
-  where annotate pos = A $ Just (Ann.Position (sourceLine pos) (sourceColumn pos), sourceName pos)
+located parser = do
+  pos <- getPosition
+  val <- parser
+  let pos' = Position (sourceLine pos) (sourceColumn pos)
+  return (val `at` Location (sourceName pos) pos')
 
 parens, brackets, braces :: Stream s Identity Char => Parsec s u a -> Parsec s u a
 parens = P.parens lexer
