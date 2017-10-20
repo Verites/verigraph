@@ -1,18 +1,23 @@
 module Util.List
   ( countElement
   , correspondsOneToOne
+  , parallelMap
+  , hasRepeatedElem
+  -- * Sublists
+  , split
+  , chunksOf
+  , chunksBy
+  -- * Association Lists
   , deleteByKey
   , insertByKey
   , listKeys
-  , repeated
-  , split
-  , parallelMap
   )
 
 where
 
 import           Control.Parallel (par)
-import           Data.List        (isPrefixOf)
+import           Data.List
+import           Data.Function (on)
 
 -- | Applies the given function to each element of the list, executing in parallel.
 --
@@ -23,9 +28,9 @@ parallelMap f (x:xs) = let r = f x
                         in r `par` r : parallelMap f xs
 
 -- | Given a list, it verifies whether there are repeated elements on it
-repeated :: (Eq a) => [a] -> Bool
-repeated []     = False
-repeated (x:xs) = x `elem` xs || repeated xs
+hasRepeatedElem :: (Eq a) => [a] -> Bool
+hasRepeatedElem []     = False
+hasRepeatedElem (x:xs) = x `elem` xs || hasRepeatedElem xs
 
 -- | Given a relation and two lists, check if the elements of the lists are in
 -- one-to-one correspondence. That is, check if every element of the first list
@@ -81,3 +86,14 @@ split delim str =
                                         then [[]]
                                         else split delim
                                                  (drop (length delim) x)
+
+-- | Split the list into chunks with the given length. The last chunk may be
+-- shorter than the given length, but no chunk will be empty.
+chunksOf :: Int -> [a] -> [[a]]
+chunksOf _ [] = []
+chunksOf n l =
+  let (chunk, rest) = splitAt n l
+  in chunk : chunksOf n rest
+
+chunksBy :: Ord b => (a -> b) -> [a] -> [[a]]
+chunksBy proj = groupBy ((==) `on` proj) . sortBy (compare `on` proj)

@@ -65,7 +65,7 @@ library
                        Data.TypedGraph.Morphism
                        GrLang.AST
                        GrLang.Compiler
-                       GrLang.Metadata
+                       GrLang.Graph
                        GrLang.Parser
                        Image.Dot.Prettyprint
                        Image.Dot.TypedGraph

@@ -17,11 +17,9 @@ import           Control.Arrow
 import           Control.Monad
 import           Control.Monad.Except
 import           Control.Monad.State
-import           Data.Function        (on)
 import qualified Data.List            as List
 import           Data.Map             (Map)
 import qualified Data.Map             as Map
-import           Data.Maybe           (fromMaybe, isJust, mapMaybe)
 import           Data.Set             (Set)
 import qualified Data.Set             as Set
 import           Data.Text            (Text)
@@ -34,70 +32,8 @@ import qualified Data.Graphs          as TypeGraph
 import           Data.TypedGraph      (Edge (..), EdgeId, Node (..), NodeId, TypedGraph)
 import qualified Data.TypedGraph      as TGraph
 import           GrLang.AST
-import           GrLang.Metadata
+import           GrLang.Graph
 import           GrLang.Parser
-
-import           Debug.Trace
-
-generateTypes :: TypeGraph -> [TopLevelDeclaration]
-generateTypes tgraph = nodeTypes ++ edgeTypes
-  where
-    nodeTypes =
-      [ DeclNodeType (A Nothing $ nodeName n) | n <- TypeGraph.nodes tgraph ]
-    edgeTypes =
-      [ DeclEdgeType (A Nothing $ edgeName e) (A Nothing $ nodeName src) (A Nothing $ nodeName tgt)
-          | ((src, _), e, (tgt, _)) <- TypeGraph.edgesInContext tgraph ]
-
-generateGraph :: Text -> TypedGraph Metadata Metadata -> TopLevelDeclaration
-generateGraph graphName graph = DeclGraph (A Nothing graphName) (nodes ++ edges)
-  where
-    (minElemsPerDecl, maxElemsPerDecl) = (3, 5)
-
-    nodes = concatMap (mapMaybe generateNodes . chunksOf maxElemsPerDecl) nodesByType
-    nodesByType = chunksBy (\(_,t,_) -> nodeId t) $ TGraph.nodesInContext graph
-    generateNodes [] = Nothing
-    generateNodes ns@((_, ntype, _):_) =
-      Just $ DeclNodes [ A Nothing (nodeName n) | (n, _, _) <- ns ] (A Nothing $ nodeName ntype)
-
-    edges = concatMap generateEdges . chunksBy sourceTarget $ TGraph.edgesInContext graph
-      where sourceTarget ((s,_,_),_,_,(t,_,_)) = (nodeId s, nodeId t)
-    generateEdges es =
-      let
-        (namedEdges, anonEdges) = List.partition (\(_,Edge _ _ _ metadata,_,_) -> isJust (name =<< metadata)) es
-        namedEdgesByType = chunksBy edgeType namedEdges
-        (namedEdgesByType', smallChunks) = List.partition (\l -> length l > minElemsPerDecl) namedEdgesByType
-        mixedEdges = List.sortBy (compare `on` edgeType) (concat smallChunks ++ anonEdges)
-      in
-        concatMap (mapMaybe generateSingleType . chunksOf maxElemsPerDecl) namedEdgesByType'
-        ++ (mapMaybe generateMultipleTypes . chunksOf maxElemsPerDecl) mixedEdges
-      where edgeType (_,_,t,_) = edgeId t
-    generateSingleType = generateEdgeDecl $ \es etype ->
-      SingleType [A Nothing (edgeName e) | (_,e,_,_) <- es] (A Nothing $ edgeName etype)
-    generateMultipleTypes = generateEdgeDecl $ \es _ ->
-      MultipleTypes [A Nothing (maybeEdgeName e, edgeName t) | (_,e,t,_) <- es]
-      where maybeEdgeName (Edge _ _ _ metadata) = name =<< metadata
-    generateEdgeDecl _ [] = Nothing
-    generateEdgeDecl makeEdges es@(e:_) =
-      let ((s,_,_),_,etype,(t,_,_)) = e
-      in Just $ DeclEdges (A Nothing $ nodeName s) (makeEdges es etype) (A Nothing $ nodeName t)
-
-chunksBy :: Ord b => (a -> b) -> [a] -> [[a]]
-chunksBy proj = List.groupBy ((==) `on` proj) . List.sortBy (compare `on` proj)
-
-chunksOf :: Int -> [a] -> [[a]]
-chunksOf _ [] = []
-chunksOf n l =
-  let (chunk, rest) = splitAt n l
-  in chunk : chunksOf n rest
-
-nodeName :: Node (Maybe Metadata) -> Text
-nodeName (Node n metadata) = nameOrId n metadata
-
-edgeName :: Edge (Maybe Metadata) -> Text
-edgeName (Edge e _ _ metadata) = nameOrId e metadata
-
-nameOrId :: Show id => id -> Maybe Metadata -> Text
-nameOrId id metadata = fromMaybe (Text.pack $ '?' : show id) (name =<< metadata)
 
 data CompilerResult = Result
   { compiledTypeGraph :: TypeGraph
@@ -241,8 +177,8 @@ createNodeType :: Monad m => Located Text -> CompilerT inner m ()
 createNodeType (A loc name) = do
   existingType <- lookupNodeType name
   case existingType of
-    Just (Node _ metadata) ->
-      registerAlreadyDefined loc "Node type" (Text.unpack name) (sourcePos =<< metadata)
+    Just n ->
+      registerAlreadyDefined loc "Node type" (Text.unpack name) (nodeLocation n)
     Nothing -> modify . first $ \state ->
       let newId:_ = TypeGraph.newNodes (typeGraph state)
           metadata = Metadata (Just name) loc
@@ -256,8 +192,8 @@ createEdgeType (A loc name) srcName tgtName = do
   tgtType <- getNodeType tgtName
   existingType <- lookupEdgeType name srcType tgtType
   case existingType of
-    Just (Edge _ _ _ metadata) ->
-      registerAlreadyDefined loc "Edge type" (showEdgeType name srcType tgtType) (sourcePos =<< metadata)
+    Just e ->
+      registerAlreadyDefined loc "Edge type" (showEdgeType name srcType tgtType) (edgeLocation e)
     Nothing -> modify . first $ \state ->
       let newId:_ = TypeGraph.newEdges (typeGraph state)
           metadata = Metadata (Just name) loc
@@ -331,8 +267,8 @@ createNode :: Monad m => NodeType -> Located Text -> CompilerT GraphState m ()
 createNode nodeType (A loc name) = do
   prevNode <- lookupNode name
   case prevNode of
-    Just (Node _ metadata, _) ->
-      registerAlreadyDefined loc "Node" (Text.unpack name) (sourcePos =<< metadata)
+    Just (n, _) ->
+      registerAlreadyDefined loc "Node" (Text.unpack name) (nodeLocation n)
     Nothing -> modify . second $ \state ->
       let newId = grNodeId state
           node = Node newId (Just (Metadata (Just name) loc))
@@ -344,8 +280,8 @@ createEdge :: Monad m => EdgeType -> Node (Maybe Metadata) -> Node (Maybe Metada
 createEdge edgeType src tgt loc (Just name) = do
   prevEdge <- lookupEdge name
   case prevEdge of
-    Just (Edge _ _ _ metadata, _) ->
-      registerAlreadyDefined loc "Edge" (Text.unpack name) (sourcePos =<< metadata)
+    Just (e, _) ->
+      registerAlreadyDefined loc "Edge" (Text.unpack name) (edgeLocation e)
     Nothing -> modify . second $ \state ->
       let newId = grEdgeId state
           edge = Edge newId (nodeId src) (nodeId tgt) (Just $ Metadata (Just name) loc)

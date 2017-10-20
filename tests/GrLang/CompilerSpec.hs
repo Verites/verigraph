@@ -12,6 +12,7 @@ import           Base.Annotation (Annotated (..), Located)
 import qualified Data.Graphs     as TypeGraph
 import           Data.TypedGraph
 import           GrLang.AST
+import           GrLang.Graph
 import           GrLang.Compiler
 import           GrLang.Metadata
 
