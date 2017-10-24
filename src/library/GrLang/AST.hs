@@ -7,8 +7,12 @@ import           Data.Text                 (Text)
 import           Data.Text.Prettyprint.Doc (Pretty (..), (<+>), (<>))
 import qualified Data.Text.Prettyprint.Doc as PP
 
-import Base.Annotation (Annotated(..), Located)
+import           Base.Annotation           (Annotated (..), Located)
 
+data Command
+  = CDecl TopLevelDeclaration
+  | CSaveDot (Located Text) (Located FilePath)
+  deriving (Eq, Show)
 
 data TopLevelDeclaration
   = Import (Located FilePath)
@@ -31,9 +35,9 @@ data ParallelEdgesDeclaration
 instance Pretty TopLevelDeclaration where
   pretty (Import (A _ p)) = "import" <+> PP.dquotes (pretty p)
   pretty (DeclNodeType (A _ n)) = "node type" <+> pretty n
-  pretty (DeclEdgeType (A _ e) (A _ src) (A _ tgt)) = 
+  pretty (DeclEdgeType (A _ e) (A _ src) (A _ tgt)) =
     PP.hsep ["edge type", pretty e, ":", pretty src, "->", pretty tgt]
-  pretty (DeclGraph (A _ name) body) = PP.vsep 
+  pretty (DeclGraph (A _ name) body) = PP.vsep
     [ "graph" <+> pretty name <+> "{"
     , PP.indent 2 prettyBody
     , "}" ]
@@ -55,5 +59,5 @@ instance Pretty GraphDeclaration where
     where
       prettyEdges (SingleType es (A _ t)) = PP.punctuate "," [ pretty e | A _ e <- es ] ++ [":" <+> pretty t]
       prettyEdges (MultipleTypes es) = PP.punctuate ", " [ prettyEdge e | A _ e <- es ]
-      prettyEdge (Just e, t) = pretty e <> ":" <> pretty t
+      prettyEdge (Just e, t)  = pretty e <> ":" <> pretty t
       prettyEdge (Nothing, t) = ":" <> pretty t

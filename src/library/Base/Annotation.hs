@@ -17,7 +17,10 @@ module Base.Annotation
     -- * Source dile locations
   , Located
   , at
+  , locationOf
   ) where
+
+import           Prelude       hiding (drop)
 
 import           Base.Location
 import           Prelude       hiding (drop)
@@ -48,3 +51,7 @@ type Located a = Annotated (Maybe Location) a
 -- | Helper creating located values.
 at :: a -> Location -> Located a
 at x loc = A (Just loc) x
+
+-- | Get the location of a located value.
+locationOf :: Located a -> Maybe Location
+locationOf (A loc _) = loc

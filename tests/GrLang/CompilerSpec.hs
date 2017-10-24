@@ -12,8 +12,9 @@ import           Base.Annotation (Annotated (..), Located)
 import qualified Data.Graphs     as TypeGraph
 import           Data.TypedGraph
 import           GrLang.AST
-import           GrLang.Graph
 import           GrLang.Compiler
+import           GrLang.Monad
+import           GrLang.Value
 
 loc :: a -> Located a
 loc = A Nothing
@@ -63,5 +64,5 @@ spec = do
     case result of
       Left err -> expectationFailure (showErrors err)
       Right result' -> do
-        Map.keys (compiledGraphs result') `shouldBe` ["g"]
-        compiledGraphs result' Map.! "g" `shouldBe` loc g
+        Map.keys (compiledValues result') `shouldBe` ["g"]
+        compiledValues result' Map.! "g" `shouldBe` loc (VGraph g)

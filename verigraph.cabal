@@ -57,6 +57,7 @@ library
                        Category.Graph
                        Category.TypedGraph
                        Category.TypedGraphRule
+                       Data.DList
                        Data.Graphs
                        Data.Graphs.Morphism
                        Data.Graphs.QuickCheck
@@ -66,8 +67,9 @@ library
                        Data.TypedGraph.Morphism
                        GrLang.AST
                        GrLang.Compiler
-                       GrLang.Graph
+                       GrLang.Monad
                        GrLang.Parser
+                       GrLang.Value
                        Image.Dot.Prettyprint
                        Image.Dot.TypedGraph
                        Image.Dot.StateSpace

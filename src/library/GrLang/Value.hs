@@ -1,7 +1,9 @@
-module GrLang.Graph
+{-# LANGUAGE OverloadedStrings #-}
+module GrLang.Value
   (
+    Value(..)
     -- * Graphs
-    GrGraph
+  , GrGraph
   , GrNode
   , GrEdge
   , Metadata(..)
@@ -11,17 +13,21 @@ module GrLang.Graph
   , edgeName
   , edgeExactName
   , edgeLocation
-    -- * Types
+    -- ** Types
   , TypeGraph
   , NodeType
   , EdgeType
-    -- * Conversion
+  , nodeTypeName
+  , edgeTypeName
+  , formatEdgeType
+    -- ** Conversion
   , generateTypes
   , generateGraph
   ) where
 
 import           Data.Function   (on)
 import qualified Data.List       as List
+import           Data.Map        (Map)
 import           Data.Maybe      (fromMaybe, isJust, mapMaybe)
 import           Data.Text       (Text)
 import qualified Data.Text       as Text
@@ -33,6 +39,9 @@ import qualified Data.Graphs     as TypeGraph
 import           Data.TypedGraph
 import           GrLang.AST
 import qualified Util.List       as List
+
+data Value = VGraph GrGraph
+    deriving (Show, Eq)
 
 data Metadata = Metadata
   { mdName     :: Maybe Text
@@ -72,6 +81,15 @@ edgeLocation (Edge _ _ _ metadata) = mdLocation =<< metadata
 type TypeGraph = Graph (Maybe Metadata) (Maybe Metadata)
 type NodeType = GrNode
 type EdgeType = GrEdge
+
+nodeTypeName :: NodeType -> Text
+nodeTypeName = nodeName
+
+edgeTypeName :: EdgeType -> NodeType -> NodeType -> Text
+edgeTypeName e src tgt = formatEdgeType (edgeName e) (nodeTypeName src) (nodeTypeName tgt)
+
+formatEdgeType :: Text -> Text -> Text -> Text
+formatEdgeType e src tgt = Text.concat [ e, ": ", src, " -> ", tgt ]
 
 -- | Generate declarations for the node/edge types of the given type graph.
 --
