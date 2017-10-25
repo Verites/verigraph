@@ -1,11 +1,14 @@
 {- | Utilities for dealing with the location of parsed entities in their source files.
 -}
+{-# LANGUAGE OverloadedStrings #-}
 module Base.Location
   ( Location(..)
   , Position(..)
-  , showLocation
-  , reportLocation
   ) where
+
+import           Data.Monoid
+import           Data.Text.Prettyprint.Doc (Pretty (..))
+
 
 -- | Position within a text file.
 data Position =
@@ -15,24 +18,14 @@ data Position =
 instance Ord Position where
   Position l1 c1 <= Position l2 c2 = l1 < l2 || (l1 == l2 && c1 <= c2)
 
+instance Pretty Position where
+  pretty (Position l1 c1) = pretty l1 <> ":" <> pretty c1
+
 data Location = Location
   { sourceFile :: FilePath
   , position   :: Position }
   deriving (Show, Eq, Ord)
 
--- | Create a human- and machine-readable string expressing the given location.
-showLocation :: Location -> String
-showLocation (Location path (Position l c)) =
-  path ++ ':' : show l ++ ':' : show c
+instance Pretty Location where
+  pretty (Location path pos) = pretty path <> ":" <> pretty pos
 
--- | Create a human- and machine-readable string expressing the given location,
--- which can be used to qualify a statement. If there is no location, returns an empty string.
---
--- >>> reportLocation $ Just (Location "foo/bar.baz" (Position 42 12))
--- " at foo/bar.baz:42:12"
---
--- >>> reportLocation Nothing
--- ""
-reportLocation :: Maybe Location -> String
-reportLocation Nothing    = ""
-reportLocation (Just loc) = " at " ++ showLocation loc

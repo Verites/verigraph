@@ -9,21 +9,27 @@ This module is intended to be imported qualified, as follows.
     import Base.Annotation (Annotated(..), Located, at)
     import qualified Base.Annotation as Ann
 -}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 module Base.Annotation
   ( -- * Annotated datatypes
     Annotated(..)
   , drop
 
-    -- * Source dile locations
+    -- * Source File locations
   , Located
   , at
   , locationOf
+  , locatedDoc
   ) where
 
-import           Prelude       hiding (drop)
+import           Prelude                   hiding (drop)
+
+import           Data.Text.Prettyprint.Doc (Doc, Pretty (..))
+import qualified Data.Text.Prettyprint.Doc as PP
 
 import           Base.Location
-import           Prelude       hiding (drop)
 
 -- | An version of type @a@ annotated with values of type @info@.
 --
@@ -55,3 +61,10 @@ at x loc = A (Just loc) x
 -- | Get the location of a located value.
 locationOf :: Located a -> Maybe Location
 locationOf (A loc _) = loc
+
+instance Pretty a => Pretty (Located a) where
+  pretty = locatedDoc . fmap pretty
+
+locatedDoc :: Located (Doc ann) -> Doc ann
+locatedDoc (A Nothing x)    = x
+locatedDoc (A (Just loc) x) = PP.group . PP.hang 2 $ PP.vsep [x, "(at ", pretty loc, ")"]

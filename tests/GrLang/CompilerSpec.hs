@@ -3,13 +3,14 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 module GrLang.CompilerSpec where
 
-import qualified Data.Map        as Map
+import qualified Data.Map                  as Map
 import           Data.String
-import           Data.Text       (Text)
+import           Data.Text                 (Text)
+import           Data.Text.Prettyprint.Doc as PP
 import           Test.Hspec
 
-import           Base.Annotation (Annotated (..), Located)
-import qualified Data.Graphs     as TypeGraph
+import           Base.Annotation           (Annotated (..), Located)
+import qualified Data.Graphs               as TypeGraph
 import           Data.TypedGraph
 import           GrLang.AST
 import           GrLang.Compiler
@@ -24,6 +25,9 @@ instance IsString a => IsString (Located a) where
 
 instance IsString (Maybe Text) where
   fromString = Just . fromString
+
+showErrors :: [Error] -> String
+showErrors = show . PP.vsep . map prettyError
 
 spec :: Spec
 spec = do

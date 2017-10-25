@@ -27,7 +27,6 @@ module GrLang.Value
 
 import           Data.Function   (on)
 import qualified Data.List       as List
-import           Data.Map        (Map)
 import           Data.Maybe      (fromMaybe, isJust, mapMaybe)
 import           Data.Text       (Text)
 import qualified Data.Text       as Text

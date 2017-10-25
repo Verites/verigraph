@@ -13,19 +13,23 @@ module GrLang.Compiler
 
 import           Control.Monad
 import           Control.Monad.State
-import qualified Data.List           as List
-import           Data.Map            (Map)
-import qualified Data.Map            as Map
-import           Data.Set            (Set)
-import qualified Data.Set            as Set
-import           Data.Text           (Text)
-import           System.IO           (IOMode (..), hGetContents, withFile)
-import           System.IO.Error     (ioeGetErrorString, tryIOError)
+import qualified Data.List                 as List
+import           Data.Map                  (Map)
+import qualified Data.Map                  as Map
+import           Data.Set                  (Set)
+import qualified Data.Set                  as Set
+import           Data.Text                 (Text)
+import           Data.Text.Prettyprint.Doc (Doc, Pretty (..))
+import qualified Data.Text.Prettyprint.Doc as PP
+import           System.IO                 (IOMode (..), hGetContents, withFile)
+import           System.IO.Error           (ioeGetErrorString, tryIOError)
+import qualified Text.Parsec.Error         as Parsec
+import qualified Text.Parsec.Pos           as Parsec
 
-import           Base.Annotation     (Annotated (..), Located)
+import           Base.Annotation           (Annotated (..), Located)
 import           Base.Location
-import           Data.TypedGraph     (Edge (..), EdgeId, Node (..), NodeId, TypedGraph)
-import qualified Data.TypedGraph     as TGraph
+import           Data.TypedGraph           (Edge (..), EdgeId, Node (..), NodeId, TypedGraph)
+import qualified Data.TypedGraph           as TGraph
 import           GrLang.AST
 import           GrLang.Monad
 import           GrLang.Parser
@@ -58,8 +62,16 @@ loadFile loc path = do
     parseTopLevel path <$> hGetContents file
   case result of
     Right (Right decls) -> return decls
-    Right (Left parseError) -> throwSingleError loc (show parseError)
-    Left ioError -> throwSingleError loc (ioeGetErrorString ioError)
+    Right (Left parseError) -> throwErrors (Just $ locationFromParsec (Parsec.errorPos parseError))
+      [ reflow (Parsec.messageString msg) | msg <- Parsec.errorMessages parseError ]
+    Left ioError -> throwError loc (reflow $ ioeGetErrorString ioError)
+
+locationFromParsec :: Parsec.SourcePos -> Location
+locationFromParsec pos =
+  Location (Parsec.sourceName pos) $ Position (Parsec.sourceLine pos) (Parsec.sourceColumn pos)
+
+reflow :: String -> Doc ann
+reflow = PP.fillSep . map pretty . words
 
 resolveImports :: MonadIO m => [TopLevelDeclaration] -> GrLangT (Set FilePath) m [TopLevelDeclaration]
 resolveImports decls = concat <$> mapM resolveImport decls

@@ -2,11 +2,12 @@
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
 module GrLang.Monad
   ( GrLangT
-  , Error
   , runGrLangT
-  , showErrors
+  , Error
+  , prettyError
   , GrLangState
   , emptyState
 
@@ -14,7 +15,8 @@ module GrLang.Monad
   , withLocalState
 
   -- * Error handling
-  , throwSingleError
+  , throwError
+  , throwErrors
   , registerError
   , suspendErrors
   , throwingPendingErrors
@@ -37,23 +39,24 @@ module GrLang.Monad
   , getValueContext
   ) where
 
-import           Control.Arrow
-import           Control.Monad.Except
+import           Control.Arrow             (first)
+import           Control.Monad.Except      (ExceptT, runExceptT)
+import qualified Control.Monad.Except      as ExceptT
 import           Control.Monad.State
-import qualified Data.List            as List
-import           Data.Map             (Map)
-import qualified Data.Map             as Map
+import           Data.Map                  (Map)
+import qualified Data.Map                  as Map
 import           Data.Monoid
-import           Data.Text            (Text)
-import qualified Data.Text            as Text
+import           Data.Text                 (Text)
+import           Data.Text.Prettyprint.Doc (Doc, Pretty (..), (<+>))
+import qualified Data.Text.Prettyprint.Doc as PP
 
-import           Base.Annotation      (Annotated (..), Located, locationOf)
-import qualified Base.Annotation      as Ann
+import           Base.Annotation           (Annotated (..), Located, locatedDoc, locationOf)
+import qualified Base.Annotation           as Ann
 import           Base.Location
-import           Data.DList           (DList)
-import qualified Data.DList           as DList
-import qualified Data.Graphs          as TypeGraph
-import           Data.TypedGraph      (EdgeId, Node (..), NodeId)
+import           Data.DList                (DList)
+import qualified Data.DList                as DList
+import qualified Data.Graphs               as TypeGraph
+import           Data.TypedGraph           (EdgeId, Node (..), NodeId)
 import           GrLang.Value
 
 -- | A monad transformer for compiling or interpreting the GrLang.
@@ -62,7 +65,10 @@ newtype GrLangT u m a =
   GrLangT { unGrLangT :: ExceptT (DList Error) (StateT (GrLangState, u) m) a }
   deriving (Functor, Applicative, Monad)
 
-type Error = Located String
+type Error = Located (Doc ())
+
+prettyError :: Error -> Doc ()
+prettyError = locatedDoc
 
 instance Monad m => MonadState u (GrLangT u m) where
   state f = GrLangT (state f')
@@ -76,12 +82,6 @@ instance MonadIO m => MonadIO (GrLangT u m) where
 
 instance MonadTrans (GrLangT u) where
   lift = GrLangT . lift . lift
-
-showErrors :: [Error] -> String
-showErrors [] = ""
-showErrors es = List.intercalate "\n\t" ("Compilation errors:" : map showError es)
-  where
-    showError (A loc descr) = reportLocation loc ++ descr
 
 data GrLangState = St
   { typeGraph     :: TypeGraph
@@ -108,7 +108,7 @@ runGrLangT st (GrLangT action) = do
 -- | Run a computation with additional local state, starting with the given
 -- initial state. Discards the local state when the computation is finished.
 withLocalState :: Monad m => u -> GrLangT u m a -> GrLangT s m a
-withLocalState inner = GrLangT . mapExceptT changeState . unGrLangT
+withLocalState inner = GrLangT . ExceptT.mapExceptT changeState . unGrLangT
   where changeState action = do
           (prevState, outer) <- gets id
           (result, (newState, _)) <- lift $ runStateT action (prevState, inner)
@@ -117,14 +117,21 @@ withLocalState inner = GrLangT . mapExceptT changeState . unGrLangT
 
 -- | Register the given error and fail the computation.
 --
--- Fails with the current error as well as all pending errors.
-throwSingleError :: Monad m => Maybe Location -> String -> GrLangT u m a
-throwSingleError src descr = GrLangT $ do
+-- Fails with the given error as well as all pending errors.
+throwError :: Monad m => Maybe Location -> Doc () -> GrLangT u m a
+throwError src descr = GrLangT $ do
   pending <- gets (pendingErrors . fst)
-  throwError (pending `DList.snoc` A src descr)
+  ExceptT.throwError (pending `DList.snoc` A src descr)
 
+-- | Register the given errors and fail the computation.
+--
+-- Fails with the given errors as well as all pending errors.
+throwErrors :: Monad m => Maybe Location -> [Doc ()] -> GrLangT u m a
+throwErrors src descrs = GrLangT $ do
+  pending <- gets (pendingErrors . fst)
+  ExceptT.throwError (pending <> DList.fromList [A src d | d <- descrs])
 -- | Register the given error but don't fail the computation yet.
-registerError :: Monad m => Maybe Location -> String -> GrLangT u m ()
+registerError :: Monad m => Maybe Location -> Doc () -> GrLangT u m ()
 registerError src descr = GrLangT .  modify . first $ \state ->
   state { pendingErrors = pendingErrors state `DList.snoc` A src descr }
 
@@ -132,7 +139,7 @@ registerError src descr = GrLangT .  modify . first $ \state ->
 -- and return @Nothing@.
 suspendErrors :: Monad m => GrLangT u m a -> GrLangT u m (Maybe a)
 suspendErrors (GrLangT action) = GrLangT $
-  catchError (Just <$> action) $ \errors -> do
+  ExceptT.catchError (Just <$> action) $ \errors -> do
     modify . first $ \state -> state { pendingErrors = pendingErrors state <> errors }
     return Nothing
 
@@ -151,7 +158,7 @@ throwingPendingErrors (GrLangT action) = GrLangT $ do
   modify . first $ \state -> state { pendingErrors = prevErrors }
   if DList.null newErrors
     then return result
-    else throwError (prevErrors <> newErrors)
+    else ExceptT.throwError (prevErrors <> newErrors)
 
 -- | Obtain the current type graph.
 getTypeGraph :: Monad m => GrLangT u m TypeGraph
@@ -239,8 +246,7 @@ getOrError loc kind name getter = do
   result <- getter
   case result of
     Just x -> return x
-    Nothing -> throwSingleError loc $
-      "Undefined " ++ kind ++ " '" ++ Text.unpack name ++ "'"
+    Nothing -> throwError loc $ "Undefined" <+> pretty kind <+> PP.squotes (pretty name)
 
 addNew :: Monad m => Maybe Location -> String -> Text -> Maybe (Maybe Location) -> (GrLangState -> GrLangState) -> GrLangT u m ()
 addNew loc kind name existingLocation addToState =
@@ -250,4 +256,7 @@ addNew loc kind name existingLocation addToState =
 
 registerAlreadyDefined :: Monad m => Maybe Location -> String -> Text -> Maybe Location -> GrLangT u m ()
 registerAlreadyDefined loc kind name prevLoc = registerError loc $
-  kind ++ " '" ++ Text.unpack name ++ "' already defined" ++ reportLocation prevLoc
+  pretty kind <+> PP.squotes (pretty name) <+> "already defined" <>
+    case prevLoc of
+      Nothing -> PP.emptyDoc
+      Just loc' -> " at" <+> pretty loc'
