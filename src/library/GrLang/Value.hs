@@ -2,6 +2,7 @@
 module GrLang.Value
   (
     Value(..)
+  , updateTypeGraph
     -- * Graphs
   , GrGraph
   , GrNode
@@ -35,12 +36,20 @@ import           Base.Annotation (Annotated (..))
 import           Base.Location   (Location (..))
 import           Data.Graphs     (Graph)
 import qualified Data.Graphs     as TypeGraph
+import qualified Data.Graphs.Morphism as Graph
 import           Data.TypedGraph
 import           GrLang.AST
 import qualified Util.List       as List
 
 data Value = VGraph GrGraph
     deriving (Show, Eq)
+
+-- | Update values when new node/edge types have been created. Only works if the
+-- current type graph of the values is a subgraph of the new type graph.
+updateTypeGraph :: TypeGraph -> Value -> Value
+updateTypeGraph tgraph (VGraph g) = VGraph . fromGraphMorphism . update . toGraphMorphism $ g
+  where update morphism = morphism { Graph.codomainGraph = tgraph }
+
 
 data Metadata = Metadata
   { mdName     :: Maybe Text

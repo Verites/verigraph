@@ -250,7 +250,11 @@ addNew :: Monad m => Maybe Location -> String -> Text -> Maybe (Maybe Location) 
 addNew loc kind name existingLocation addToState =
   case existingLocation of
     Just loc' -> registerAlreadyDefined loc kind name loc'
-    Nothing -> GrLangT $ modify (first addToState)
+    Nothing -> GrLangT . modify . first $ \state ->
+      let state' = addToState state
+          tgraph = typeGraph state'
+      in state' { valueContext = fmap (fmap $ updateTypeGraph tgraph) (valueContext state') }
+
 
 registerAlreadyDefined :: Monad m => Maybe Location -> String -> Text -> Maybe Location -> GrLangT u m ()
 registerAlreadyDefined loc kind name prevLoc = registerError loc . PP.fillSep $

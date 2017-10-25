@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings #-}
 module GrLang.Compiler
   (
     -- * Generating GrLang from graphs.
@@ -6,9 +7,9 @@ module GrLang.Compiler
   , generateGraph
 
     -- * Compiling GrLang into graphs.
-  , compile
   , compileFile
-  , CompilerResult(..)
+  , compile
+  , compileDecl
   ) where
 
 import           Control.Monad
@@ -19,9 +20,11 @@ import qualified Data.Map                  as Map
 import           Data.Set                  (Set)
 import qualified Data.Set                  as Set
 import           Data.Text                 (Text)
-import           Data.Text.Prettyprint.Doc (Doc, Pretty (..))
+import           Data.Text.Prettyprint.Doc (Pretty (..), (<>))
 import qualified Data.Text.Prettyprint.Doc as PP
-import           System.IO                 (IOMode (..), hGetContents, withFile)
+import qualified Data.Text.Prettyprint.Doc.Util as PP
+import           System.FilePath           ((</>), takeDirectory)
+import Data.Text.Lazy.IO as Text
 import           System.IO.Error           (ioeGetErrorString, tryIOError)
 
 import           Base.Annotation           (Annotated (..), Located)
@@ -33,60 +36,32 @@ import           GrLang.Monad
 import           GrLang.Parser
 import           GrLang.Value
 
-data CompilerResult = Result
-  { compiledTypeGraph :: TypeGraph
-  , compiledValues    :: Map Text (Located Value) }
+compileFile :: MonadIO m => FilePath -> GrLangT (Set FilePath) m ()
+compileFile path = loadModule (A Nothing path) >>= compile
 
-compileFile :: FilePath -> IO (Either [Error] CompilerResult)
-compileFile path = runGrLangT emptyState $
-  loadFile Nothing path
-  >>= withLocalState (Set.singleton path) . resolveImports
-  >>= compileResolvedDecls
+compile :: MonadIO m => [TopLevelDeclaration] -> GrLangT (Set FilePath) m ()
+compile = throwingPendingErrors . mapM_ (suspendErrors . compileDecl)
 
-compile :: [TopLevelDeclaration] -> IO (Either [Error] CompilerResult)
-compile decls = runGrLangT emptyState $
-  withLocalState Set.empty (resolveImports decls)
-  >>= compileResolvedDecls
-
-compileResolvedDecls :: Monad m => [TopLevelDeclaration] -> GrLangT u m CompilerResult
-compileResolvedDecls decls = do
-  decls1 <- compileTypeGraph decls
-  mapM_ (suspendErrors . compileTopLevelDecl) decls1
-  Result <$> getTypeGraph <*> getValueContext
-
-loadFile :: MonadIO m => Maybe Location -> FilePath -> GrLangT u m [TopLevelDeclaration]
-loadFile loc path = do
-  textOrError <- liftIO . tryIOError . withFile path ReadMode $ hGetContents
+compileDecl :: MonadIO m => TopLevelDeclaration -> GrLangT (Set FilePath) m ()
+compileDecl (DeclNodeType n) = addNodeType n
+compileDecl (DeclEdgeType e s t) = addEdgeType e s t
+compileDecl (DeclGraph name graphDecls) = putValue name . VGraph =<< compileGraph graphDecls
+compileDecl (Import (A loc path)) = do
+  -- Interpret the imported path relative to the directory of the current path
+  let path' = case loc of
+        Nothing -> path
+        Just (Location currPath _) -> takeDirectory currPath </> path
+  alreadyImported <- gets (Set.member path')
+  unless alreadyImported $
+    loadModule (A loc path') >>= compile
+  
+loadModule :: MonadIO m => Located FilePath -> GrLangT u m [TopLevelDeclaration]
+loadModule (A loc path) = do
+  textOrError <- liftIO . tryIOError $ Text.readFile path
   case textOrError of
     Right text -> parseModule path text
-    Left ioError -> throwError loc (reflow $ ioeGetErrorString ioError)
-
-reflow :: String -> Doc ann
-reflow = PP.fillSep . map pretty . words
-
-resolveImports :: MonadIO m => [TopLevelDeclaration] -> GrLangT (Set FilePath) m [TopLevelDeclaration]
-resolveImports decls = concat <$> mapM resolveImport decls
-  where
-    resolveImport (Import (A loc file)) = do
-      alreadyImported <- gets (Set.member file)
-      if alreadyImported
-        then return []
-        else loadFile loc file >>= resolveImports
-    resolveImport decl = return [decl]
-
-compileTypeGraph :: Monad m => [TopLevelDeclaration] -> GrLangT u m [TopLevelDeclaration]
-compileTypeGraph decls = throwingPendingErrors (compile decls)
-  where
-    compile []                           = return []
-    compile (DeclNodeType n : decls)     = suspendErrors (addNodeType n) >> compile decls
-    compile (DeclEdgeType e s t : decls) = suspendErrors (addEdgeType e s t) >> compile decls
-    compile (d : decls)                  = (d:) <$> compile decls
-
-compileTopLevelDecl :: Monad m => TopLevelDeclaration -> GrLangT u m ()
-compileTopLevelDecl (DeclNodeType n) = addNodeType n
-compileTopLevelDecl (DeclEdgeType e s t) = addEdgeType e s t
-compileTopLevelDecl (DeclGraph name graphDecls) = putValue name . VGraph =<< compileGraph graphDecls
-
+    Left ioError -> throwError loc . PP.fillSep $
+      PP.words "Error reading file" ++ [ PP.dquotes (pretty path) <> PP.colon, pretty (ioeGetErrorString ioError) ]
 
 data GraphState = GrSt
   { grNodes          :: Map Text (Node (Maybe Metadata), NodeType)

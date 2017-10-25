@@ -1,0 +1,3 @@
+import "node.grl"
+
+edge type Edge : Node -> Node
