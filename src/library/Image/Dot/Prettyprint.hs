@@ -4,7 +4,7 @@
  This contains only the basic building blocks of to Dot syntax,
  and it does __not__ provide conventions to print particular
  kinds of graphs.
- 
+
  This module is intended to be imported qualified, e.g.
  >  import qualified Data.Map as Map
 
@@ -13,7 +13,7 @@
 module Image.Dot.Prettyprint
   (graph, digraph, node, undirEdge, dirEdge, attrList, subgraph, anonSubgraph) where
 
-import Data.Text.Prettyprint.Doc
+import           Data.Text.Prettyprint.Doc
 
 -- | Pretty prints a (undirected) graph with the given name and list of statements.
 graph :: Doc ann -> [Doc ann] -> Doc ann
@@ -39,7 +39,7 @@ genericGraph kind name body = vsep
 
 -- | Pretty prints a node statement with given identifier and list of attributes.
 node :: Doc ann -> [(Doc ann, Doc ann)] -> Doc ann
-node nId [] = nId
+node nId []    = nId
 node nId attrs = nId <+> attrList attrs
 
 -- | Pretty prints an undirected edge with given source, target and list of attributes.
@@ -51,8 +51,8 @@ dirEdge :: Doc ann -> Doc ann -> [(Doc ann, Doc ann)] -> Doc ann
 dirEdge = genericEdge "->"
 
 genericEdge :: Doc ann -> Doc ann -> Doc ann -> [(Doc ann, Doc ann)] -> Doc ann
-genericEdge kind src tgt [] = hsep [ src, kind, tgt ]
-genericEdge kind src tgt attrs = hsep [ src, kind, tgt, attrList attrs ]
+genericEdge kind src tgt []    = hang 2 $ fillSep [ src, kind, tgt ]
+genericEdge kind src tgt attrs = hang 2 $ fillSep [ src, kind, tgt, attrList attrs ]
 
 -- | Pretty prints a list of attributes.
 attrList :: [(Doc ann, Doc ann)] -> Doc ann

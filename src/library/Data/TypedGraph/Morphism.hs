@@ -2,17 +2,17 @@
 module Data.TypedGraph.Morphism where
   -- TODO: write export list explicitly
 
+import           Data.Function        (on)
 import           Data.List            (nubBy)
-import Data.Function (on)
 import           Data.Maybe           (fromMaybe, isJust)
 
 import           Base.Valid
-import qualified Data.Graphs as Untyped
+import qualified Data.Graphs          as Untyped
 import           Data.Graphs.Morphism (GraphMorphism)
 import qualified Data.Graphs.Morphism as GM
+import           Data.Relation        (Relation)
+import qualified Data.Relation        as Relation
 import           Data.TypedGraph
-import Data.Relation (Relation)
-import qualified Data.Relation as Relation
 
 data TypedGraphMorphism a b = TypedGraphMorphism {
     domainGraph   :: TypedGraph a b

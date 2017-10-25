@@ -6,20 +6,21 @@ module ApplySndOrderRules
 
 import           Control.Monad                           (when)
 import           Data.Monoid                             ((<>))
+import           Data.Text.Prettyprint.Doc               (Pretty (..))
 import           Options.Applicative
-import Data.Text.Prettyprint.Doc (Pretty(..))
-import System.IO (hPrint, stderr)
+import           System.IO                               (hPrint, stderr)
+import           System.IO                               (hPrint, stderr)
 
 import           Abstract.Category
 import           Abstract.Rewriting.DPO
 import           Data.Graphs                             (Graph)
 import           Data.TypedGraph.Morphism
 import           GlobalOptions
-import qualified Image.Dot.TypedGraph as Dot
+import qualified Image.Dot.TypedGraph                    as Dot
 import qualified Rewriting.DPO.TypedGraph                as GR
 import           Rewriting.DPO.TypedGraphRule            (toSndOrderMorphismsConfig)
 import qualified Rewriting.DPO.TypedGraphRule.Scheduling as SO
-import Util
+import           Util
 import qualified XML.GGXWriter                           as GW
 
 data SchedulingType = AsLongAsPossible | AllMatchesOneStep | Specific deriving (Eq, Show)

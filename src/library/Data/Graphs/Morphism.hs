@@ -41,6 +41,8 @@ module Data.Graphs.Morphism (
     ) where
 
 import           Control.Arrow
+import           Data.Function (on)
+import qualified Data.List     as List
 
 import           Base.Valid
 import           Data.Graphs   as G
@@ -67,16 +69,16 @@ instance Eq (GraphMorphism a b) where
                edgeRelation m1 == edgeRelation m2
 
 instance Show (GraphMorphism a b) where
-    show m =
-      "\nNode mappings: \n" ++ concatMap showNode (G.nodeIds $ domainGraph m)
-      ++ "\nEdge mappings: \n" ++ concatMap showEdge (G.edges $ domainGraph m)
-     where
-       showNode n =
-         show n ++ " --> " ++ show (applyNodeId m n) ++ "\n"
+    show m = concat $
+        "\nNode mappings: \n" : (map showNode . List.sort) (G.nodeIds $ domainGraph m)
+        ++ "\nEdge mappings: \n" : (map showEdge . List.sortBy (compare `on` edgeId)) (G.edges $ domainGraph m)
+      where
+        showNode n =
+          show n ++ " --> " ++ show (applyNodeId m n) ++ "\n"
 
-       showEdge (Edge e srcId tgtId _) =
-         show e ++ " --> " ++ show (applyEdgeId m e)
-         ++ " (from: " ++ show srcId ++ " to:" ++ show tgtId ++ ")\n"
+        showEdge (Edge e srcId tgtId _) =
+          show e ++ " --> " ++ show (applyEdgeId m e)
+          ++ " (from: " ++ show srcId ++ " to:" ++ show tgtId ++ ")\n"
 
 -- | Return the nodes ids of the codomain which are not in the image of the given morphism.
 orphanNodeIds :: GraphMorphism a b -> [G.NodeId]

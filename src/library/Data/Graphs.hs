@@ -1,5 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings          #-}
 {-|
 An implementation of labeled directed graphs, allowing multiple parallel edges.
 
@@ -81,9 +81,10 @@ module Data.Graphs (
     , newEdges
 ) where
 
+import           Data.Function             (on)
 import           Data.List
-import           Data.Maybe       (fromJust, fromMaybe)
-import Data.Text.Prettyprint.Doc (Pretty(..), (<+>))
+import           Data.Maybe                (fromJust, fromMaybe)
+import           Data.Text.Prettyprint.Doc (Pretty (..), (<+>))
 import qualified Data.Text.Prettyprint.Doc as PP
 
 import           Base.Cardinality
@@ -170,11 +171,9 @@ instance Eq (Graph n e) where
 
 
 instance Show (Graph n e) where
-    show (Graph nodes edges) =
-        "Nodes:\n"
-        ++ concatMap showNode nodes
-        ++ "Edges:\n"
-        ++ concatMap showEdge edges
+    show (Graph nodes edges) = concat $
+        "Nodes:\n" : map showNode (sortBy (compare `on` fst) nodes)
+        ++ "Edges:\n" : map showEdge (sortBy (compare `on` fst) edges)
       where
         showNode (n, _) =
           "\t" ++ show n ++ "\n"
@@ -194,7 +193,7 @@ instance {-# OVERLAPPABLE #-} Pretty n => Pretty (Node n) where
   pretty (Node n p) = pretty n <+> PP.brackets (pretty p)
 
 instance {-# OVERLAPPABLE #-} Pretty e => Pretty (Edge e) where
-  pretty (Edge e src tgt p) = 
+  pretty (Edge e src tgt p) =
     PP.hsep [pretty e, PP.brackets (pretty p), ":", pretty src, "->", pretty tgt]
 
 instance Cardinality (Graph n e) where

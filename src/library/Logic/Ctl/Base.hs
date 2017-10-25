@@ -5,7 +5,7 @@ module Logic.Ctl.Base
   , StateQuantified(..)
   ) where
 
-import Data.Text.Prettyprint.Doc
+import           Data.Text.Prettyprint.Doc
 
 
 -- | CTL expressions
@@ -42,34 +42,34 @@ instance Pretty Expr where
 
 
 ppImplicative :: Expr -> Doc ann
-ppImplicative (Implies e1 e2) = group . align $ vsep [ppBoolean e1, "->" <+> ppImplication e2]
+ppImplicative (Implies e1 e2) = group . align $ fillSep [ppBoolean e1, "->" <+> ppImplication e2]
   where
-    ppImplication (Implies e1 e2) = vsep [ppBoolean e1, "->" <+> ppImplication e2]
-    ppImplication e = ppBoolean e
+    ppImplication (Implies e1 e2) = fillSep [ppBoolean e1, "->" <+> ppImplication e2]
+    ppImplication e               = ppBoolean e
 ppImplicative (Equiv e1 e2) = ppInfix (ppBoolean e1) "<->" (ppBoolean e2)
 ppImplicative e = ppBoolean e
 
 ppBoolean :: Expr -> Doc ann
 ppBoolean e@(And _ _) = group . align $ ppAnd e
   where
-    ppAnd (And e1 e2) = vsep [ppUnary e1, "&&" <+> ppAnd e2]
-    ppAnd e = ppUnary e
+    ppAnd (And e1 e2) = fillSep [ppUnary e1, "&&" <+> ppAnd e2]
+    ppAnd e           = ppUnary e
 ppBoolean e@(Or _ _) = group . align $ ppOr e
   where
-    ppOr (Or e1 e2) = vsep [ppUnary e1, "||" <+> ppOr e2]
-    ppOr e = ppUnary e
+    ppOr (Or e1 e2) = fillSep [ppUnary e1, "||" <+> ppOr e2]
+    ppOr e          = ppUnary e
 ppBoolean e = ppUnary e
 
 ppUnary :: Expr -> Doc ann
-ppUnary (Not e) = "~" <> ppUnary e
+ppUnary (Not e)      = "~" <> ppUnary e
 ppUnary (Temporal e) = ppTemporal e
-ppUnary e = ppAtomic e
+ppUnary e            = ppAtomic e
 
 ppAtomic :: Expr -> Doc ann
-ppAtomic (Literal True) = "true"
+ppAtomic (Literal True)  = "true"
 ppAtomic (Literal False) = "false"
-ppAtomic (Atom prop) = pretty prop
-ppAtomic e = parens (pretty e)
+ppAtomic (Atom prop)     = pretty prop
+ppAtomic e               = parens (pretty e)
 
 ppTemporal :: PathQuantified Expr -> Doc ann
 ppTemporal (A e) = "A" <> ppTemporal' e

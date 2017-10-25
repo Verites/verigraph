@@ -1,12 +1,12 @@
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE FlexibleContexts #-}
 {-| Basic building blocks for writing graphs with the Dot syntax.
 
 This contains only the basic building blocks of to Dot syntax,
 and it does __not__ provide conventions to print particular
 kinds of graphs.
 -}
-module Image.Dot.TypedGraph 
+module Image.Dot.TypedGraph
   ( NamingContext(..)
   , makeNamingContext
   , typedGraph
@@ -15,16 +15,16 @@ module Image.Dot.TypedGraph
   , sndOrderRule
   ) where
 
-import Data.Maybe (fromMaybe)
-import           Data.Text.Prettyprint.Doc (Pretty(..), Doc, (<>), (<+>))
-import qualified Data.Text.Prettyprint.Doc as PP
+import           Data.Maybe                   (fromMaybe)
+import           Data.Text.Prettyprint.Doc    (Doc, Pretty (..), (<+>), (<>))
+import qualified Data.Text.Prettyprint.Doc    as PP
 
 import           Abstract.Category
 import           Category.TypedGraphRule
-import qualified Image.Dot.Prettyprint as Dot
-import qualified Data.Graphs as Graph
+import qualified Data.Graphs                  as Graph
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
+import qualified Image.Dot.Prettyprint        as Dot
 import           Rewriting.DPO.TypedGraph
 import           Rewriting.DPO.TypedGraphRule
 
@@ -73,7 +73,7 @@ typedGraphMorphismBody context morphism =
   Dot.subgraph "dom" (typedGraphBody context "dom" (domain morphism))
   : Dot.subgraph "cod" (typedGraphBody context "cod" (codomain morphism))
   : map (prettyNodeMapping [("style", "dotted")] "dom" "cod") (nodeMapping morphism)
-  
+
 prettyNodeMapping :: (Pretty a) => [(Doc ann, Doc ann)] -> Doc ann -> Doc ann -> (a, a) -> Doc ann
 prettyNodeMapping attrs idSrc idTgt (src, tgt) =
   Dot.dirEdge (idSrc <> pretty src) (idTgt <> pretty tgt) attrs

@@ -1,30 +1,30 @@
 module Main (main) where
 
 import           Control.Monad
-import qualified Data.IntMap                       as IntMap
-import qualified Data.List                         as List
-import           Data.Monoid                       ((<>))
+import qualified Data.IntMap                           as IntMap
+import qualified Data.List                             as List
+import           Data.Monoid                           ((<>))
+import           Data.Text.Prettyprint.Doc             (Pretty (..))
+import qualified Data.Text.Prettyprint.Doc             as PP
+import           Data.Text.Prettyprint.Doc.Render.Text (renderIO)
 import           Options.Applicative
 import           System.Exit
 import           System.IO
-import           Data.Text.Prettyprint.Doc (Pretty(..))
-import qualified Data.Text.Prettyprint.Doc as PP
-import           Data.Text.Prettyprint.Doc.Render.Text (renderIO)
 
 import           Abstract.Category
-import           Abstract.Rewriting.DPO            as DPO hiding (NamedProduction)
-import           Abstract.Rewriting.DPO.StateSpace as StateSpace
+import           Abstract.Rewriting.DPO                as DPO hiding (NamedProduction)
+import           Abstract.Rewriting.DPO.StateSpace     as StateSpace
 import           Base.Valid
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
 import           GlobalOptions
-import qualified Image.Dot.StateSpace              as Dot
-import qualified Image.Dot.TypedGraph              as Dot
-import qualified Logic.Ctl                         as Logic
-import qualified Logic.Model                       as Logic
+import qualified Image.Dot.StateSpace                  as Dot
+import qualified Image.Dot.TypedGraph                  as Dot
+import qualified Logic.Ctl                             as Logic
+import qualified Logic.Model                           as Logic
 import           Rewriting.DPO.TypedGraph
 
-import qualified XML.GGXReader                     as XML
+import qualified XML.GGXReader                         as XML
 
 
 main :: IO ()
