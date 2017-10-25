@@ -45,14 +45,14 @@ instance Pretty TopLevelDeclaration where
 
 instance Pretty GraphDeclaration where
   pretty (DeclNodes [] _) = PP.emptyDoc
-  pretty (DeclNodes ns (A _ t)) = PP.group . PP.nest 4 . PP.vsep $ nodeNames ++ typeSig
+  pretty (DeclNodes ns (A _ t)) = PP.group . PP.nest 4 . PP.fillSep $ nodeNames ++ typeSig
     where
       nodeNames = PP.punctuate "," [ pretty n | A _ n <- ns ]
       typeSig = [":" <+> pretty t]
   pretty (DeclEdges _ (SingleType [] _) _) = PP.emptyDoc
   pretty (DeclEdges _ (MultipleTypes []) _) = PP.emptyDoc
   pretty (DeclEdges (A _ src) es (A _ tgt)) =
-    PP.group . PP.nest 4 . PP.vsep $
+    PP.group . PP.nest 4 . PP.fillSep $
       [ pretty src <+> "-" ]
       ++ prettyEdges es
       ++ [ "->" <+> pretty tgt ]

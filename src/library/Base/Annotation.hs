@@ -26,7 +26,7 @@ module Base.Annotation
 
 import           Prelude                   hiding (drop)
 
-import           Data.Text.Prettyprint.Doc (Doc, Pretty (..))
+import           Data.Text.Prettyprint.Doc (Doc, Pretty (..), (<+>))
 import qualified Data.Text.Prettyprint.Doc as PP
 
 import           Base.Location
@@ -67,4 +67,4 @@ instance Pretty a => Pretty (Located a) where
 
 locatedDoc :: Located (Doc ann) -> Doc ann
 locatedDoc (A Nothing x)    = x
-locatedDoc (A (Just loc) x) = PP.group . PP.hang 2 $ PP.vsep [x, "(at ", pretty loc, ")"]
+locatedDoc (A (Just loc) x) = PP.fillSep [x, PP.parens ("at" <+> pretty loc) ]
