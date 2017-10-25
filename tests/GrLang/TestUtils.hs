@@ -1,13 +1,43 @@
-module GrLang.QuickCheck where
+module GrLang.TestUtils (showErrors, withResultOf, runSuccess, runFailure) where
 
-import qualified Data.Char       as Char
-import           Data.Text       (Text)
-import qualified Data.Text       as Text
+import qualified Data.Char                 as Char
+import           Data.Functor.Identity
+import           Data.Text                 (Text)
+import qualified Data.Text                 as Text
+import           Data.Text.Prettyprint.Doc as PP
+import           Test.Hspec
 import           Test.QuickCheck
 
-import           Base.Annotation (Annotated (..), Located)
+import           Base.Annotation           (Annotated (..), Located)
 import           Base.Location
 import           GrLang.AST
+import           GrLang.Monad
+
+showErrors :: [Error] -> String
+showErrors = show . PP.vsep . map prettyError
+
+withResultOf :: Testable prop => GrLangT () Identity a -> (a -> prop) -> Property
+withResultOf action prop =
+  case runIdentity (runGrLangT emptyState action) of
+    Left errs -> counterexample (showErrors errs) False
+    Right result -> property $ prop result
+
+runSuccess :: GrLangT () IO a -> IO a
+runSuccess action = do
+  result <- runGrLangT emptyState action
+  case result of
+    Left errs -> expectationFailure (showErrors errs) >> fail "error"
+    Right result' -> return result'
+
+runFailure :: Show a => GrLangT () IO a -> IO [Error]
+runFailure action = do
+  result <- runGrLangT emptyState action
+  case result of
+    Left errs -> return errs
+    Right result' -> do
+      expectationFailure ("Expected the computation to fail, but it suceeded with:\n\t" ++ show result')
+      fail "error"
+
 
 instance Arbitrary TopLevelDeclaration where
   arbitrary = oneof

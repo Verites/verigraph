@@ -68,7 +68,7 @@ newtype GrLangT u m a =
 type Error = Located (Doc ())
 
 prettyError :: Error -> Doc ()
-prettyError = locatedDoc
+prettyError = PP.hang 2 . PP.group . locatedDoc
 
 instance Monad m => MonadState u (GrLangT u m) where
   state f = GrLangT (state f')
@@ -94,13 +94,11 @@ data GrLangState = St
 emptyState :: GrLangState
 emptyState = St TypeGraph.empty Map.empty Map.empty Map.empty DList.empty
 
-data Void
-
 -- | Run a GrLang computation with the given initial state. If the computation
 -- fails, produce a list of errors.
-runGrLangT :: Monad m => GrLangState -> GrLangT Void m a -> m (Either [Error] a)
+runGrLangT :: Monad m => GrLangState -> GrLangT () m a -> m (Either [Error] a)
 runGrLangT st (GrLangT action) = do
-  (result, (st', _)) <- runStateT (runExceptT action) (st, undefined)
+  (result, (st', _)) <- runStateT (runExceptT action) (st, ())
   return $ case (result, DList.null (pendingErrors st')) of
     (Right val, True) -> Right val
     (Left errs, _) -> Left $ DList.toList (pendingErrors st' <> errs)
@@ -246,7 +244,7 @@ getOrError loc kind name getter = do
   result <- getter
   case result of
     Just x -> return x
-    Nothing -> throwError loc $ "Undefined" <+> pretty kind <+> PP.squotes (pretty name)
+    Nothing -> throwError loc . PP.fillSep $ ["Undefined", pretty kind, PP.squotes (pretty name)]
 
 addNew :: Monad m => Maybe Location -> String -> Text -> Maybe (Maybe Location) -> (GrLangState -> GrLangState) -> GrLangT u m ()
 addNew loc kind name existingLocation addToState =
@@ -255,8 +253,8 @@ addNew loc kind name existingLocation addToState =
     Nothing -> GrLangT $ modify (first addToState)
 
 registerAlreadyDefined :: Monad m => Maybe Location -> String -> Text -> Maybe Location -> GrLangT u m ()
-registerAlreadyDefined loc kind name prevLoc = registerError loc $
-  pretty kind <+> PP.squotes (pretty name) <+> "already defined" <>
-    case prevLoc of
-      Nothing -> PP.emptyDoc
-      Just loc' -> " at" <+> pretty loc'
+registerAlreadyDefined loc kind name prevLoc = registerError loc . PP.fillSep $
+  [ pretty kind, PP.squotes (pretty name), "already", "defined" ]
+  ++ case prevLoc of
+        Nothing -> []
+        Just loc' -> ["at" <+> pretty loc']

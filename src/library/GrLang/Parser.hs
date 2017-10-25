@@ -1,27 +1,37 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-module GrLang.Parser (parseTopLevel) where
+module GrLang.Parser (parseModule) where
 
 import           Data.Functor.Identity
-import           Data.Maybe            (mapMaybe)
-import           Data.Text             (Text)
-import qualified Data.Text             as Text
-import           Text.Parsec           hiding (optional)
-import qualified Text.Parsec.Token     as P
+import           Data.Text                 (Text)
+import qualified Data.Text                 as Text
+import           Data.Text.Prettyprint.Doc (Pretty (..))
+import qualified Data.Text.Prettyprint.Doc as PP
+import           Text.Parsec
+import           Text.Parsec.Error
+import qualified Text.Parsec.Token         as P
 
-import           Base.Annotation       (Located, at)
+import           Base.Annotation           (Located, at)
 import           Base.Location
 import           GrLang.AST
+import           GrLang.Monad
 
-parseTopLevel :: SourceName -> String -> Either ParseError [TopLevelDeclaration]
-parseTopLevel = parse (whiteSpace *> many topLevelDecl <* eof)
+parseModule :: (Monad m, Stream s Identity Char) => SourceName -> s -> GrLangT u m [TopLevelDeclaration]
+parseModule srcName source =
+  case parse (whiteSpace *> many topLevelDecl <* eof) srcName source of
+    Right result -> return result
+    Left err -> throwError (Just . locationFromParsec $ errorPos err) . reflow $
+      showErrorMessages "or" "unknown parse error" "expecting" "unexpected" "end of input" (errorMessages err)
+  where
+    locationFromParsec pos = Location (sourceName pos) $ Position (sourceLine pos) (sourceColumn pos)
+    reflow = PP.fillSep . map pretty . words
 
 topLevelDecl :: Stream s Identity Char => Parsec s u TopLevelDeclaration
 topLevelDecl = choice
   [ importDecl <?> "import"
   , nodeType <?> "node type"
   , edgeType <?> "edge type"
-  , graph <?> "graph" ]
+  , graph <?> "graph" ] <* optional semi
   where
     importDecl =
       reserved "import" >> Import <$> located filePath
@@ -43,7 +53,7 @@ topLevelDecl = choice
         <*> braces (many graphDecl)
 
 graphDecl :: Stream s Identity Char => Parsec s u GraphDeclaration
-graphDecl = (located identifier >>= \n -> edge n <|> node n) <?> "node or edge"
+graphDecl = (located identifier >>= \n -> edge n <|> node n) <* optional semi <?> "node or edge"
   where
     node n = do
       ns <- many (comma *> located identifier)
@@ -63,15 +73,12 @@ graphDecl = (located identifier >>= \n -> edge n <|> node n) <?> "node or edge"
       MultipleTypes <$> commaSep1 (located singleEdge)
 
     singleEdge =
-      (,) <$> optional identifier <*> (reservedOp ":" *> identifier)
+      (,) <$> optionMaybe identifier <*> (reservedOp ":" *> identifier)
 
 
 lexer :: Stream s Identity Char => P.GenTokenParser s u Identity
 lexer =
   P.makeTokenParser langDef
-
-optional :: Stream s Identity Char => Parsec s u a -> Parsec s u (Maybe a)
-optional = optionMaybe . try
 
 located :: Stream s Identity Char => Parsec s u a -> Parsec s u (Located a)
 located parser = do
@@ -84,6 +91,9 @@ parens, brackets, braces :: Stream s Identity Char => Parsec s u a -> Parsec s u
 parens = P.parens lexer
 brackets = P.brackets lexer
 braces = P.braces lexer
+
+semi :: Stream s Identity Char => Parsec s u String
+semi = P.semi lexer
 
 commaSep, commaSep1 :: Stream s Identity Char => Parsec s u a -> Parsec s u [a]
 commaSep = P.commaSep lexer

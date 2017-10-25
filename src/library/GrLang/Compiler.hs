@@ -23,8 +23,6 @@ import           Data.Text.Prettyprint.Doc (Doc, Pretty (..))
 import qualified Data.Text.Prettyprint.Doc as PP
 import           System.IO                 (IOMode (..), hGetContents, withFile)
 import           System.IO.Error           (ioeGetErrorString, tryIOError)
-import qualified Text.Parsec.Error         as Parsec
-import qualified Text.Parsec.Pos           as Parsec
 
 import           Base.Annotation           (Annotated (..), Located)
 import           Base.Location
@@ -58,17 +56,10 @@ compileResolvedDecls decls = do
 
 loadFile :: MonadIO m => Maybe Location -> FilePath -> GrLangT u m [TopLevelDeclaration]
 loadFile loc path = do
-  result <- liftIO . tryIOError . withFile path ReadMode $ \file ->
-    parseTopLevel path <$> hGetContents file
-  case result of
-    Right (Right decls) -> return decls
-    Right (Left parseError) -> throwErrors (Just $ locationFromParsec (Parsec.errorPos parseError))
-      [ reflow (Parsec.messageString msg) | msg <- Parsec.errorMessages parseError ]
+  textOrError <- liftIO . tryIOError . withFile path ReadMode $ hGetContents
+  case textOrError of
+    Right text -> parseModule path text
     Left ioError -> throwError loc (reflow $ ioeGetErrorString ioError)
-
-locationFromParsec :: Parsec.SourcePos -> Location
-locationFromParsec pos =
-  Location (Parsec.sourceName pos) $ Position (Parsec.sourceLine pos) (Parsec.sourceColumn pos)
 
 reflow :: String -> Doc ann
 reflow = PP.fillSep . map pretty . words

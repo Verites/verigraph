@@ -1,18 +1,21 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE FlexibleInstances #-}
 module GrLang.ParserSpec where
 
+import           Data.Functor.Identity
+import           Data.String               (IsString (..))
+import           Data.Text                 (Text)
+import           Data.Text.Prettyprint.Doc (Pretty (..), vsep)
 import           Test.Hspec
-import Test.Hspec.QuickCheck (modifyMaxSuccess)
+import           Test.Hspec.QuickCheck     (modifyMaxSuccess)
 import           Test.QuickCheck
-import           Data.Text.Prettyprint.Doc (Pretty(..), vsep)
-import Data.String
 
-import Base.Annotation (Annotated(..), Located)
+import           Base.Annotation           (Annotated (..), Located)
 import           GrLang.AST
+import           GrLang.Monad
 import           GrLang.Parser
-import           GrLang.QuickCheck ()
+import           GrLang.TestUtils
 
 loc :: a -> Located a
 loc = A Nothing
@@ -20,22 +23,32 @@ loc = A Nothing
 instance IsString a => IsString (Located a) where
   fromString = loc . fromString
 
+parse :: String -> Either [Error] [TopLevelDeclaration]
+parse = runIdentity . runGrLangT emptyState . parseModule "<test>"
+
+shouldParseTo :: String -> [TopLevelDeclaration] -> Expectation
+shouldParseTo src expected = do
+  result <- runSuccess $ parseModule "<test>" src
+  result `shouldBe` expected
+
 spec :: Spec
 spec = do
 
   modifyMaxSuccess (const 50) $
     it "always parses the result of pretty printing" $
-    property $ \topLevel -> 
-      parseTopLevel "" (show . vsep . map pretty $ topLevel) == Right topLevel
+    property $ \topLevel ->
+      let printed = show . vsep . map pretty $ topLevel
+      in withResultOf (parseModule "<test>" printed) $ \result ->
+          result == topLevel
 
   it "parses node and edge types" $
-    parseTopLevel "" "node type foo edge type bar : foo -> foo" `shouldBe` Right 
+    "node type foo; edge type bar : foo -> foo" `shouldParseTo`
       [ DeclNodeType "foo"
       , DeclEdgeType "bar" "foo" "foo"
       ]
 
   it "parses a graph with individual nodes and edges" $
-    parseTopLevel "" "graph g { n1 : N n2 : N n1 -e1:E-> n1 n2 -e2:E-> n1 }" `shouldBe` Right 
+    "graph g { n1 : N; n2 : N; n1 -e1:E-> n1; n2 -e2:E-> n1 }" `shouldParseTo`
       [ DeclGraph "g"
         [ DeclNodes ["n1"] "N"
         , DeclNodes ["n2"] "N"
@@ -43,18 +56,18 @@ spec = do
         , DeclEdges "n2" (MultipleTypes [loc (Just "e2", "E")]) "n1"
         ]
       ]
-      
+
   it "parses a graph with multiple nodes and edges" $
-    parseTopLevel "" "graph g { n1, n2 : N n1 -e1,e2:E-> n1 n2 -e3:E,e4:E'-> n1 }" `shouldBe` Right 
+    "graph g { n1, n2 : N; n1 -e1,e2:E-> n1; n2 -e3:E,e4:E'-> n1 }" `shouldParseTo`
       [ DeclGraph "g"
         [ DeclNodes ["n1", "n2"] "N"
         , DeclEdges "n1" (SingleType ["e1", "e2"] "E") "n1"
         , DeclEdges "n2" (MultipleTypes [loc (Just "e3", "E"), loc (Just "e4", "E'")]) "n1"
         ]
       ]
-      
+
   it "parses a graph with anonymous edges" $
-    parseTopLevel "" "graph g { n1, n2 : N n1 -:E-> n1 n2 -:E,:E'-> n1 }" `shouldBe` Right 
+    "graph g { n1, n2 : N; n1 -:E-> n1; n2 -:E,:E'-> n1 }" `shouldParseTo`
       [ DeclGraph "g"
         [ DeclNodes ["n1", "n2"] "N"
         , DeclEdges "n1" (MultipleTypes [loc (Nothing, "E")]) "n1"
