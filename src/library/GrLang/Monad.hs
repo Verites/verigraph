@@ -24,6 +24,9 @@ module GrLang.Monad
   , getOrError
   , registerAlreadyDefined
 
+  -- * Imported/Visible Modules
+  , importIfNeeded
+
   -- * Type Graph
   , getTypeGraph
   , lookupNodeType
@@ -43,12 +46,15 @@ import           Control.Arrow             (first)
 import           Control.Monad.Except      (ExceptT, runExceptT)
 import qualified Control.Monad.Except      as ExceptT
 import           Control.Monad.State
+import           Data.Set                  (Set)
+import qualified Data.Set                  as Set
 import           Data.Map                  (Map)
 import qualified Data.Map                  as Map
 import           Data.Monoid
 import           Data.Text                 (Text)
 import           Data.Text.Prettyprint.Doc (Doc, Pretty (..), (<+>))
 import qualified Data.Text.Prettyprint.Doc as PP
+import qualified Data.Text.Prettyprint.Doc.Util as PP
 
 import           Base.Annotation           (Annotated (..), Located, locatedDoc, locationOf)
 import qualified Base.Annotation           as Ann
@@ -88,11 +94,21 @@ data GrLangState = St
   , nodeTypes     :: Map Text NodeId
   , edgeTypes     :: Map (Text, NodeId, NodeId) EdgeId
   , valueContext  :: Map Text (Located Value)
+  , importedModules :: Set FilePath
+  , visibleModules :: Set FilePath
   , pendingErrors :: DList Error
   }
 
 emptyState :: GrLangState
-emptyState = St TypeGraph.empty Map.empty Map.empty Map.empty DList.empty
+emptyState = St
+  { typeGraph = TypeGraph.empty
+  , nodeTypes = Map.empty
+  , edgeTypes = Map.empty
+  , valueContext = Map.empty
+  , importedModules = Set.empty
+  , visibleModules = Set.empty
+  , pendingErrors = DList.empty
+  }
 
 -- | Run a GrLang computation with the given initial state. If the computation
 -- fails, produce a list of errors.
@@ -101,6 +117,7 @@ runGrLangT st (GrLangT action) = do
   (result, (st', _)) <- runStateT (runExceptT action) (st, ())
   return $ case (result, DList.null (pendingErrors st')) of
     (Right val, True) -> Right val
+    (Right _, False) -> Left $ DList.toList (pendingErrors st')
     (Left errs, _) -> Left $ DList.toList (pendingErrors st' <> errs)
 
 -- | Run a computation with additional local state, starting with the given
@@ -158,6 +175,24 @@ throwingPendingErrors (GrLangT action) = GrLangT $ do
     then return result
     else ExceptT.throwError (prevErrors <> newErrors)
 
+-- | Given the path to a module and an action that imports it, executes the
+-- action unless the module was already imported, and make the module visible as
+-- well as its transitive imports.
+importIfNeeded :: Monad m => FilePath -> GrLangT u m () -> GrLangT u m ()
+importIfNeeded path importAction = do
+  isImported <- GrLangT $ gets (Set.member path . importedModules . fst)
+  if isImported
+    then GrLangT . modify . first $ \state ->
+      state { visibleModules = Set.insert path (visibleModules state) }
+    else do
+      outerVisible <- GrLangT $ gets (visibleModules . fst)
+      GrLangT . modify . first $ \state -> 
+        state 
+          { importedModules = Set.insert path (importedModules state) 
+          , visibleModules = Set.singleton path }
+      importAction
+      GrLangT . modify . first $ \state -> state { visibleModules = Set.union outerVisible (visibleModules state) }
+
 -- | Obtain the current type graph.
 getTypeGraph :: Monad m => GrLangT u m TypeGraph
 getTypeGraph = GrLangT $ gets (typeGraph . fst)
@@ -180,13 +215,13 @@ lookupEdgeType name (Node srcId _) (Node tgtId _) = GrLangT $ do
 -- none exists.
 getNodeType :: Monad m => Located Text -> GrLangT u m NodeType
 getNodeType (A loc name) =
-  getOrError loc "node type" name (lookupNodeType name)
+  getOrError loc "node type" name (lookupNodeType name) nodeLocation
 
 -- | Get the edge type that has the given name, source type and target type or
 -- throw an error and fail if none exists.
 getEdgeType :: Monad m => Located Text -> NodeType -> NodeType -> GrLangT u m EdgeType
 getEdgeType (A loc name) srcType tgtType =
-  getOrError loc "edge type" (showEdgeType name srcType tgtType) (lookupEdgeType name srcType tgtType)
+  getOrError loc "edge type" (showEdgeType name srcType tgtType) (lookupEdgeType name srcType tgtType) edgeLocation
 
 -- | Create a new node type with given name. If such a type already exists, fails.
 addNodeType :: Monad m => Located Text -> GrLangT u m ()
@@ -223,7 +258,8 @@ lookupValue key = fmap Ann.drop . Map.lookup key <$> getValueContext
 
 -- | Obtain the value associated to the given name, or fail if there is none.
 getValue :: Monad m => Located Text -> GrLangT u m Value
-getValue (A loc name) = getOrError loc "value" name (lookupValue name)
+getValue (A loc name) = Ann.drop <$>
+  getOrError loc "value" name (Map.lookup name <$> getValueContext) locationOf
 
 -- | Bind the given value to the given name. If the name is already bound,
 -- fails.
@@ -239,12 +275,20 @@ getValueContext = GrLangT $ gets (valueContext . fst)
 showEdgeType :: Text -> GrNode -> GrNode -> Text
 showEdgeType e src tgt = formatEdgeType e (nodeName src) (nodeName tgt)
 
-getOrError :: Monad m => Maybe Location -> String -> Text -> GrLangT u m (Maybe a) -> GrLangT u m a
-getOrError loc kind name getter = do
+getOrError :: Monad m => Maybe Location -> String -> Text -> GrLangT u m (Maybe a) -> (a -> Maybe Location) -> GrLangT u m a
+getOrError loc kind name getter getLocation = do
   result <- getter
+  let undefError = PP.fillSep ["Undefined", pretty kind, PP.squotes (pretty name)]
   case result of
-    Just x -> return x
-    Nothing -> throwError loc . PP.fillSep $ ["Undefined", pretty kind, PP.squotes (pretty name)]
+    Nothing -> throwError loc undefError 
+    Just x ->
+      case getLocation x of
+        Nothing -> return x
+        Just (Location srcPath _) -> do
+          isVisible <- GrLangT $ gets (Set.member srcPath . visibleModules . fst)
+          if isVisible
+            then return x
+            else throwError loc . PP.fillSep $ undefError : PP.words "(you must import" ++ [PP.squotes (pretty srcPath) <> ")"]
 
 addNew :: Monad m => Maybe Location -> String -> Text -> Maybe (Maybe Location) -> (GrLangState -> GrLangState) -> GrLangT u m ()
 addNew loc kind name existingLocation addToState =

@@ -21,6 +21,7 @@ import           GrLang.AST
 import           GrLang.Compiler
 import           GrLang.Monad
 import           GrLang.Value
+import GrLang.TestUtils
 
 loc :: a -> Located a
 loc = A Nothing
@@ -32,14 +33,11 @@ instance IsString (Maybe Text) where
   fromString = Just . fromString
 
 compileSuccess :: FilePath -> IO (TypeGraph, Map Text (Located Value))
-compileSuccess path = do
-  result <- ioCompile path
-  case result of
-    Left err -> expectationFailure (show . PP.vsep . map prettyError $ err) >> fail "error"
-    Right result' -> return result'
+compileSuccess = runSuccess . ioCompile
 
-ioCompile :: FilePath -> IO (Either [Error] (TypeGraph, Map Text (Located Value)))
-ioCompile path = runGrLangT emptyState $ do
+compileFailure = runFailure . ioCompile
+
+ioCompile path = do
   withLocalState Set.empty (compileFile $ "tests/GrLang/CompilerSpec" </> path)
   (,) <$> getTypeGraph <*> getValueContext
 
@@ -97,3 +95,17 @@ spec = do
       , (Node 1 $ Just $ Metadata "n2" Nothing, 1) ]
       [ (Edge 0 0 1 $ Just $ Metadata "e1" Nothing, 1)
       , (Edge 1 0 1 $ Just $ Metadata "e2" Nothing, 1) ]
+  
+  it "imports each module only once" $ do
+    (tgraph, values) <- compileSuccess "case5/main.grl"
+    Map.keys values `shouldBe` ["g"]
+    let VGraph g = Ann.drop $ values Map.! "g"
+    g `shouldBe` fromNodesAndEdges tgraph 
+      [ (Node 0 $ Just $ Metadata "n1" Nothing, 1)
+      , (Node 1 $ Just $ Metadata "n2" Nothing, 1) ]
+      [ (Edge 0 0 1 $ Just $ Metadata "e1" Nothing, 1)
+      , (Edge 1 0 1 $ Just $ Metadata "e2" Nothing, 1) ]
+
+  it "hides elements that weren't explicitly imported by the current module" $ do
+    _ <- compileFailure "case6/main.grl"
+    return ()

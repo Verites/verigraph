@@ -14,11 +14,8 @@ module GrLang.Compiler
 
 import           Control.Monad
 import           Control.Monad.State
-import qualified Data.List                 as List
 import           Data.Map                  (Map)
 import qualified Data.Map                  as Map
-import           Data.Set                  (Set)
-import qualified Data.Set                  as Set
 import           Data.Text                 (Text)
 import           Data.Text.Prettyprint.Doc (Pretty (..), (<>))
 import qualified Data.Text.Prettyprint.Doc as PP
@@ -36,13 +33,13 @@ import           GrLang.Monad
 import           GrLang.Parser
 import           GrLang.Value
 
-compileFile :: MonadIO m => FilePath -> GrLangT (Set FilePath) m ()
-compileFile path = loadModule (A Nothing path) >>= compile
+compileFile :: MonadIO m => FilePath -> GrLangT u m ()
+compileFile path = importIfNeeded path $ loadModule (A Nothing path) >>= compile
 
-compile :: MonadIO m => [TopLevelDeclaration] -> GrLangT (Set FilePath) m ()
+compile :: MonadIO m => [TopLevelDeclaration] -> GrLangT u m ()
 compile = throwingPendingErrors . mapM_ (suspendErrors . compileDecl)
 
-compileDecl :: MonadIO m => TopLevelDeclaration -> GrLangT (Set FilePath) m ()
+compileDecl :: MonadIO m => TopLevelDeclaration -> GrLangT u m ()
 compileDecl (DeclNodeType n) = addNodeType n
 compileDecl (DeclEdgeType e s t) = addEdgeType e s t
 compileDecl (DeclGraph name graphDecls) = putValue name . VGraph =<< compileGraph graphDecls
@@ -51,8 +48,7 @@ compileDecl (Import (A loc path)) = do
   let path' = case loc of
         Nothing -> path
         Just (Location currPath _) -> takeDirectory currPath </> path
-  alreadyImported <- gets (Set.member path')
-  unless alreadyImported $
+  importIfNeeded path' $
     loadModule (A loc path') >>= compile
   
 loadModule :: MonadIO m => Located FilePath -> GrLangT u m [TopLevelDeclaration]
@@ -75,7 +71,7 @@ emptyGraphState :: GraphState
 emptyGraphState = GrSt Map.empty 0 Map.empty [] 0
 
 getNode :: Monad m => Located Text -> GrLangT GraphState m (Node (Maybe Metadata), NodeType)
-getNode (A loc name) = getOrError loc "node" name $ gets (Map.lookup name . grNodes)
+getNode (A loc name) = getOrError loc "node" name (gets (Map.lookup name . grNodes)) (nodeLocation . fst)
 
 compileGraph :: Monad m => [GraphDeclaration] -> GrLangT inner m (TypedGraph Metadata Metadata)
 compileGraph decls = throwingPendingErrors . withLocalState emptyGraphState $ do
