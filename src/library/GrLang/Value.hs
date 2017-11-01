@@ -46,7 +46,7 @@ data Value = VGraph GrGraph
     deriving (Show, Eq)
 
 instance Pretty Value where
-  pretty (VGraph graph) = pretty (generateGraph "graph" graph)
+  pretty (VGraph graph) = pretty (generateGraph "" graph)
 
 -- | Update values when new node/edge types have been created. Only works if the
 -- current type graph of the values is a subgraph of the new type graph.

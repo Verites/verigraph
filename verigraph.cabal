@@ -166,10 +166,16 @@ executable verigraph-repl
   main-is:             Main.hs
   ghc-options:         -Wall -fno-warn-name-shadowing -fno-warn-unused-do-bind
   build-depends:       base, verigraph,
+                       array >=0.5 && <1.0,
                        bytestring >=0.10 && <1.0,
+                       containers,
                        haskeline >=0.7 && <1.0,
                        hslua >=0.9 && <1.0,
-                       mtl
+                       mtl,
+                       prettyprinter,
+                       text
+  other-modules:       GrLang
+                       Util.Lua
 
 
 test-suite HSpecTests
