@@ -183,6 +183,7 @@ test-suite HSpecTests
                        combinat >= 0.2.8,
                        filepath,
                        matrix >= 0.3.4,
+                       mtl,
                        prettyprinter,
                        QuickCheck,
                        hspec >=2.4,

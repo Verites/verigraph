@@ -14,13 +14,21 @@ module Util.Monad
   , pickOne
   , pickFromList
   , guardM
+    -- * ExceptT helpers
+  , tryError
+  , mapMCollectErrors
+  , mapMCollectErrors_
+  , forMCollectErrors
+  , forMCollectErrors_
   ) where
 
 import           Control.Applicative
 import           Control.Monad
+import           Control.Monad.Except
 import           Control.Monad.List
+import           Data.Either          (partitionEithers)
 import           Data.Foldable
-import           Data.Maybe          (catMaybes)
+import           Data.Maybe           (catMaybes)
 
 andM :: Monad m => m Bool -> m Bool -> m Bool
 andM mp mq = do
@@ -87,3 +95,24 @@ nubByM eq l = nubBy' l []
       if hasDuplicate
         then nubBy' ys alreadyAdded
         else (y:) <$> nubBy' ys (y : alreadyAdded)
+
+mapMCollectErrors :: (Monoid e, MonadError e m) => (a -> m b) -> [a] -> m [b]
+mapMCollectErrors fn xs = do
+  results <- mapM (tryError . fn) xs
+  let (errors, values) = partitionEithers results
+  if null errors
+    then return values
+    else throwError (mconcat errors)
+
+mapMCollectErrors_ :: (Monoid e, MonadError e m) => (a -> m b) -> [a] -> m ()
+mapMCollectErrors_ fn xs = mapMCollectErrors fn xs >> return ()
+
+forMCollectErrors :: (Monoid e, MonadError e m) => [a] -> (a -> m b) -> m [b]
+forMCollectErrors = flip mapMCollectErrors
+
+forMCollectErrors_ :: (Monoid e, MonadError e m) => [a] -> (a -> m b) -> m ()
+forMCollectErrors_ = flip mapMCollectErrors_
+
+tryError :: MonadError e m => m a -> m (Either e a)
+tryError action =
+  (Right <$> action) `catchError` (return . Left)

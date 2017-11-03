@@ -3,9 +3,10 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 module GrLang.ParserSpec where
 
+import           Control.Monad.Except      (runExceptT)
 import           Data.Functor.Identity
 import           Data.String               (IsString (..))
-import           Data.Text                 (Text)
+import           Data.Text                 ()
 import           Data.Text.Prettyprint.Doc (Pretty (..), vsep)
 import           Test.Hspec
 import           Test.Hspec.QuickCheck     (modifyMaxSuccess)
@@ -23,13 +24,14 @@ loc = A Nothing
 instance IsString a => IsString (Located a) where
   fromString = loc . fromString
 
-parse :: String -> Either [Error] [TopLevelDeclaration]
-parse = runIdentity . runGrLangT emptyState . parseModule "<test>"
+parse :: String -> Either Error [TopLevelDeclaration]
+parse = runIdentity . runExceptT . parseModule "<test>"
 
 shouldParseTo :: String -> [TopLevelDeclaration] -> Expectation
-shouldParseTo src expected = do
-  result <- runSuccess $ parseModule "<test>" src
-  result `shouldBe` expected
+shouldParseTo src expected =
+  case parse src of
+    Left err -> failWithError err
+    Right val -> val `shouldBe` expected
 
 spec :: Spec
 spec = do
@@ -38,8 +40,9 @@ spec = do
     it "always parses the result of pretty printing" $
     property $ \topLevel ->
       let printed = show . vsep . map pretty $ topLevel
-      in withResultOf (parseModule "<test>" printed) $ \result ->
-          result == topLevel
+      in case parse printed of
+        Left errs -> quickCheckError errs
+        Right result -> property $ result == topLevel
 
   it "parses node and edge types" $
     "node type foo; edge type bar : foo -> foo" `shouldParseTo`

@@ -3,25 +3,24 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 module GrLang.CompilerSpec where
 
-import Data.Map                  (Map)
-import qualified Data.Map                  as Map
-import qualified Data.Set                  as Set
+import           Control.Monad.Except (ExceptT)
+import           Control.Monad.Trans
+import           Data.Map             (Map)
+import qualified Data.Map             as Map
 import           Data.String
-import           Data.Text                 (Text)
-import           Data.Text.Prettyprint.Doc as PP
+import           Data.Text            (Text)
+import           System.FilePath
 import           Test.Hspec
-import System.FilePath
 
-import Base.Valid
-import           Base.Annotation           (Annotated (..), Located)
-import qualified Base.Annotation as Ann
-import qualified Data.Graphs               as TypeGraph
+import           Base.Annotation      (Annotated (..), Located)
+import qualified Base.Annotation      as Ann
+import           Base.Valid
+import qualified Data.Graphs          as TypeGraph
 import           Data.TypedGraph
-import           GrLang.AST
 import           GrLang.Compiler
 import           GrLang.Monad
+import           GrLang.TestUtils
 import           GrLang.Value
-import GrLang.TestUtils
 
 loc :: a -> Located a
 loc = A Nothing
@@ -35,10 +34,12 @@ instance IsString (Maybe Text) where
 compileSuccess :: FilePath -> IO (TypeGraph, Map Text (Located Value))
 compileSuccess = runSuccess . ioCompile
 
+compileFailure :: FilePath -> IO Error
 compileFailure = runFailure . ioCompile
 
+ioCompile :: MonadIO m => FilePath -> ExceptT Error (GrLangT m) (TypeGraph, Map Text (Located Value))
 ioCompile path = do
-  withLocalState Set.empty (compileFile $ "tests/GrLang/CompilerSpec" </> path)
+  compileFile $ "tests/GrLang/CompilerSpec" </> path
   (,) <$> getTypeGraph <*> getValueContext
 
 spec :: Spec
@@ -80,7 +81,7 @@ spec = do
     (tgraph, values) <- compileSuccess "case3/main.grl"
     Map.keys values `shouldBe` ["g"]
     let VGraph g = Ann.drop $ values Map.! "g"
-    g `shouldBe` fromNodesAndEdges tgraph 
+    g `shouldBe` fromNodesAndEdges tgraph
       [ (Node 0 $ Just $ Metadata "n1" Nothing, 1)
       , (Node 1 $ Just $ Metadata "n2" Nothing, 1) ]
       [ (Edge 0 0 1 $ Just $ Metadata "e1" Nothing, 1)
@@ -90,17 +91,17 @@ spec = do
     (tgraph, values) <- compileSuccess "case4/main.grl"
     Map.keys values `shouldBe` ["g"]
     let VGraph g = Ann.drop $ values Map.! "g"
-    g `shouldBe` fromNodesAndEdges tgraph 
+    g `shouldBe` fromNodesAndEdges tgraph
       [ (Node 0 $ Just $ Metadata "n1" Nothing, 1)
       , (Node 1 $ Just $ Metadata "n2" Nothing, 1) ]
       [ (Edge 0 0 1 $ Just $ Metadata "e1" Nothing, 1)
       , (Edge 1 0 1 $ Just $ Metadata "e2" Nothing, 1) ]
-  
+
   it "imports each module only once" $ do
     (tgraph, values) <- compileSuccess "case5/main.grl"
     Map.keys values `shouldBe` ["g"]
     let VGraph g = Ann.drop $ values Map.! "g"
-    g `shouldBe` fromNodesAndEdges tgraph 
+    g `shouldBe` fromNodesAndEdges tgraph
       [ (Node 0 $ Just $ Metadata "n1" Nothing, 1)
       , (Node 1 $ Just $ Metadata "n2" Nothing, 1) ]
       [ (Edge 0 0 1 $ Just $ Metadata "e1" Nothing, 1)

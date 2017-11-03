@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-module GrLang.Parser (parseModule) where
+module GrLang.Parser (parseModule, parseGraph) where
 
 import           Data.Functor.Identity
 import           Data.Text                 (Text)
@@ -16,13 +16,19 @@ import           Base.Location
 import           GrLang.AST
 import           GrLang.Monad
 
-parseModule :: (Monad m, Stream s Identity Char) => SourceName -> s -> GrLangT u m [TopLevelDeclaration]
-parseModule srcName source =
-  case parse (whiteSpace *> many topLevelDecl <* eof) srcName source of
+parseModule :: (Monad m, Stream s Identity Char) => SourceName -> s -> ExceptT Error m [TopLevelDeclaration]
+parseModule = parseGrLang (many topLevelDecl)
+
+parseGraph :: (Monad m, Stream s Identity Char) => SourceName -> s -> ExceptT Error m [GraphDeclaration]
+parseGraph = parseGrLang (many graphDecl)
+
+parseGrLang :: (Monad m, Stream s Identity Char) => Parsec s () a -> SourceName -> s -> ExceptT Error m a
+parseGrLang parser srcName source =
+  case parse (whiteSpace *> parser <* eof) srcName source of
     Right result -> return result
-    Left err -> throwError (Just . locationFromParsec $ errorPos err) . reflow $
-      showErrorMessages "or" "unknown parse error" "expecting" "unexpected" "end of input" (errorMessages err)
+    Left err -> throwError (Just . locationFromParsec $ errorPos err) (errorFromParsec err)
   where
+    errorFromParsec = reflow . showErrorMessages "or" "unknown parse error" "expecting" "unexpected" "end of input" . errorMessages
     locationFromParsec pos = Location (sourceName pos) $ Position (sourceLine pos) (sourceColumn pos)
     reflow = PP.fillSep . map pretty . words
 
@@ -87,16 +93,13 @@ located parser = do
   let pos' = Position (sourceLine pos) (sourceColumn pos)
   return (val `at` Location (sourceName pos) pos')
 
-parens, brackets, braces :: Stream s Identity Char => Parsec s u a -> Parsec s u a
-parens = P.parens lexer
-brackets = P.brackets lexer
+braces :: Stream s Identity Char => Parsec s u a -> Parsec s u a
 braces = P.braces lexer
 
 semi :: Stream s Identity Char => Parsec s u String
 semi = P.semi lexer
 
-commaSep, commaSep1 :: Stream s Identity Char => Parsec s u a -> Parsec s u [a]
-commaSep = P.commaSep lexer
+commaSep1 :: Stream s Identity Char => Parsec s u a -> Parsec s u [a]
 commaSep1 = P.commaSep1 lexer
 
 reserved, reservedOp :: Stream s Identity Char => String -> Parsec s u ()

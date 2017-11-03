@@ -31,6 +31,7 @@ import qualified Data.List       as List
 import           Data.Maybe      (fromMaybe, isJust, mapMaybe)
 import           Data.Text       (Text)
 import qualified Data.Text       as Text
+import           Data.Text.Prettyprint.Doc (Pretty (..))
 
 import           Base.Annotation (Annotated (..))
 import           Base.Location   (Location (..))
@@ -43,6 +44,9 @@ import qualified Util.List       as List
 
 data Value = VGraph GrGraph
     deriving (Show, Eq)
+
+instance Pretty Value where
+  pretty (VGraph graph) = pretty (generateGraph "graph" graph)
 
 -- | Update values when new node/edge types have been created. Only works if the
 -- current type graph of the values is a subgraph of the new type graph.
