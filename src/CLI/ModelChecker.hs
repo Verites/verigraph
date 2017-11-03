@@ -146,7 +146,7 @@ modelCheck model expr initialStates =
 -- | Creates .dot files for the given state space in the given directory.
 --
 -- Uses the naming context for labeling nodes and edges of instance graphs with their types.
-drawStateSpace :: FilePath -> Dot.NamingContext a b -> StateSpace (TypedGraphMorphism a b) -> IO ()
+drawStateSpace :: FilePath -> Dot.NamingContext a b ann -> StateSpace (TypedGraphMorphism a b) -> IO ()
 drawStateSpace dir namingContext stateSpace =
   do
     withFile (fileFor "stateSpace") WriteMode $ \file ->

@@ -20,3 +20,5 @@ foo = graph [[
 ]]
 
 print(foo)
+print(foo:to_dot('foo'))
+foo:view()

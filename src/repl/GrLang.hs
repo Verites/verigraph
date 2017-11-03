@@ -1,34 +1,35 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
-module GrLang where
+module GrLang (initialize) where
 
 import           Control.Monad
-import           Control.Monad.Except        (ExceptT (..), runExceptT)
+import           Control.Monad.Except      (ExceptT (..), runExceptT)
 import           Control.Monad.Reader
-import           Control.Monad.Trans         (lift)
+import           Control.Monad.Trans       (lift)
 import           Data.Array.IO
 import           Data.IORef
-import           Data.Map                    (Map)
-import qualified Data.Map                    as Map
-import           Data.Set                    (Set)
-import qualified Data.Set                    as Set
-import           Data.Text                   (Text)
-import qualified Data.Text                   as Text
-import           Foreign.Lua                 (Lua)
-import qualified Foreign.Lua                 as Lua
-import qualified Foreign.Lua.FunctionCalling as Lua
-import Data.Text.Prettyprint.Doc (Pretty(..))
+import           Data.Map                  (Map)
+import qualified Data.Map                  as Map
+import           Data.Monoid
+import           Data.Set                  (Set)
+import qualified Data.Set                  as Set
+import           Data.Text                 (Text)
+import qualified Data.Text                 as Text
+import qualified Data.Text.Encoding        as Text
+import           Data.Text.Prettyprint.Doc (Pretty (..))
+import           Foreign.Lua               (Lua)
+import qualified Foreign.Lua               as Lua
 
-import           Base.Annotation             (Annotated (..))
-import           Base.Location               (Location)
-import qualified Data.Graphs                 as TypeGraph
-import           Data.TypedGraph             (EdgeId, Node (..), NodeId)
-import qualified GrLang.Compiler             as GrLang
-import           GrLang.Monad                (MonadGrLang)
-import qualified GrLang.Monad                as GrLang
-import qualified GrLang.Parser               as GrLang
+import           Base.Annotation           (Annotated (..))
+import qualified Data.Graphs               as TypeGraph
+import           Data.TypedGraph           (EdgeId, Node (..), NodeId)
+import qualified GrLang.Compiler           as GrLang
+import           GrLang.Monad              (MonadGrLang)
+import qualified GrLang.Monad              as GrLang
+import qualified GrLang.Parser             as GrLang
 import           GrLang.Value
+import qualified Image.Dot.TypedGraph      as Dot
 import           Util.Lua
 
 data GrLangState = GrLangState
@@ -86,7 +87,6 @@ instance MonadGrLang (ReaderT GrLangState Lua) where
 
   getEdgeType (A loc name) srcType tgtType =
     GrLang.getOrError loc "edge type" (showEdgeType name srcType tgtType) (lookupEdgeType name srcType tgtType) edgeLocation
-    where showEdgeType e src tgt = formatEdgeType e (nodeName src) (nodeName tgt)
 
   addNodeType (A loc name) = do
     existingType <- lift $ lookupNodeType name
@@ -106,7 +106,6 @@ instance MonadGrLang (ReaderT GrLangState Lua) where
           (Node srcId _, Node tgtId _) = (srcType, tgtType)
       modify typeGraph $ TypeGraph.insertEdgeWithPayload newId srcId tgtId (Just metadata)
       modify edgeTypes $ Map.insert (name, srcId, tgtId) newId
-    where showEdgeType e src tgt = formatEdgeType e (nodeName src) (nodeName tgt)
 
   getValue (A _ name) = do
     liftLua $ Lua.getglobal (Text.unpack name)
@@ -120,6 +119,8 @@ instance MonadGrLang (ReaderT GrLangState Lua) where
         state { valueContext = Map.insert name (A loc val) (valueContext state) }
     -}
 
+showEdgeType :: Text -> GrNode -> GrNode -> Text
+showEdgeType e src tgt = formatEdgeType e (nodeName src) (nodeName tgt)
 
 toGrLangValue :: Lua.StackIndex -> ExceptT GrLang.Error LuaGrLang Value
 toGrLangValue stackIdx = do
@@ -129,6 +130,7 @@ toGrLangValue stackIdx = do
     else do
       liftLua $ Lua.getfield stackIdx indexKey
       result <- liftLua $ Lua.tointegerx (-1)
+      liftLua $ Lua.pop 1
       case result of
         Nothing -> GrLang.throwError Nothing $ "Value has no index"
         Just memIndex' -> do
@@ -213,6 +215,19 @@ initialize = do
 
   return ()
 
+grLangNamingContext :: Dot.NamingContext Metadata Metadata ann
+grLangNamingContext = Dot.Ctx
+  { Dot.getNodeTypeName = \(n, _) -> pretty $ nodeTypeName n
+  , Dot.getEdgeTypeName = \((s,_), e, (t,_)) -> pretty $ showEdgeType (edgeName e) s t
+  , Dot.getNodeName = \_ (node, _, _) -> pretty (nodeName node)
+  , Dot.getNodeLabel = \_ (node, ntype, _) ->
+      Just $ pretty (nodeName node) <> ":" <> pretty (nodeTypeName ntype)
+  , Dot.getEdgeLabel = \_ (_, edge, etype, _) ->
+      Just $ case edgeExactName edge of
+        Nothing -> pretty $ edgeName etype
+        Just name -> (pretty name) <> ":" <> pretty (edgeName etype)
+  }
+
 initGrLang :: GrLangState -> Lua ()
 initGrLang globalState = do
   createTable
@@ -222,6 +237,14 @@ initGrLang globalState = do
           )
         , ("__eq", Lua.pushHaskellFunction $ \g1 g2 ->
               return $ (Map.lookup indexKey g1 :: Maybe Lua.LuaInteger) == Map.lookup indexKey g2 :: Lua Bool)
+        , ("__index", createTable
+            [ ("to_dot", Lua.pushHaskellFunction . runGrLang' globalState $ do
+                  VGraph graph <- toGrLangValue 1
+                  name <- liftLua $ Lua.tostring 2
+                  return . show $ Dot.typedGraph grLangNamingContext (pretty $ Text.decodeUtf8 name) graph
+              )
+            ]
+          )
         ]
       )
     , ("_addNodeType", Lua.pushHaskellFunction $ \name -> runGrLang' globalState $
@@ -267,16 +290,17 @@ initGrLang globalState = do
     \   local g = {index = idx} \
     \   setmetatable(g, GrLang.mt) \
     \   return g \
-    \ end"
+    \ end \
+    \ function GrLang.mt.__index.view(graph) \
+    \   local file_name = '/tmp/verigraph-dot' .. os.date() \
+    \   local file = io.open(file_name, 'w') \
+    \   file:write(graph:to_dot('')) \
+    \   file:close() \
+    \   os.execute('xdot \"' .. file_name .. '\"') \
+    \ end "
 
 indexKey :: String
 indexKey = "index" :: String
-
-pushGrLangFunction :: Lua.ToHaskellFunction (Lua a) => GrLangState -> (Value -> Lua a) -> Lua ()
-pushGrLangFunction globalState fn = Lua.pushHaskellFunction $ \wrapperTable -> do
-  let Just idx = Map.lookup indexKey wrapperTable :: Maybe Lua.LuaInteger
-  Just value <- liftIO $ readArray (values globalState) (fromIntegral idx :: Int)
-  fn value
 
 createTable :: Foldable t => t (String, Lua ()) -> Lua ()
 createTable contents = do
