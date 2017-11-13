@@ -37,7 +37,9 @@ topLevelDecl = choice
   [ importDecl <?> "import"
   , nodeType <?> "node type"
   , edgeType <?> "edge type"
-  , graph <?> "graph" ] <* optional semi
+  , graph <?> "graph"
+  , rule <?> "rule"
+  ] <* optional semi
   where
     importDecl =
       reserved "import" >> Import <$> located filePath
@@ -57,6 +59,12 @@ topLevelDecl = choice
       DeclGraph
         <$> located identifier
         <*> braces (many graphDecl)
+
+    rule =
+      reserved "rule" >>
+      DeclRule
+        <$> located identifier
+        <*> braces (many ruleDecl)
 
 graphDecl :: Stream s Identity Char => Parsec s u GraphDeclaration
 graphDecl = (located identifier >>= \n -> edge n <|> node n) <* optional semi <?> "node or edge"
@@ -80,6 +88,26 @@ graphDecl = (located identifier >>= \n -> edge n <|> node n) <* optional semi <?
 
     singleEdge =
       (,) <$> optionMaybe identifier <*> (reservedOp ":" *> identifier)
+
+ruleDecl :: Stream s Identity Char => Parsec s u RuleDeclaration
+ruleDecl = choice
+  [ reserved "match" >> DeclMatch <$> graphFragment <?> "match"
+  , reserved "forbid" >> DeclForbid <$> optionMaybe (located identifier) <*> graphFragment <?> "forbid"
+  , reserved "create" >> DeclCreate <$> graphFragment <?> "create"
+  , reserved "delete" >> DeclDelete <$> commaSep1 deletedElem <?> "delete"
+  , clone <?> "clone"
+  ] <* optional semi
+  where
+    clone = DeclClone
+      <$> (reserved "clone" *> located identifier)
+      <*> (reserved "as" *> commaSep1 (located identifier))
+
+    deletedElem = (,) <$> located identifier <*> deleteMode
+    deleteMode =
+      (reserved "with" >> reserved "matched" >> reserved "edges" *> pure WithMatchedEdges)
+      <|> pure Isolated
+
+    graphFragment = braces (many graphDecl) <|> ((:[]) <$> graphDecl)
 
 
 lexer :: Stream s Identity Char => P.GenTokenParser s u Identity
@@ -147,8 +175,9 @@ langDef =
     , P.reservedOpNames =
         [":", "-", "->"]
 
-    , P.reservedNames =
-        ["graph", "node", "edge", "type"]
+    , P.reservedNames = words
+        " graph node edge type \
+        \ match forbid create delete with matched edges clone "
 
     , P.caseSensitive =
         True

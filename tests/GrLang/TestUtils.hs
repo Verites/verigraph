@@ -31,7 +31,7 @@ runFailure action = do
   case result of
     Left errs -> return errs
     Right result' -> do
-      expectationFailure ("Expected the computation to fail, but it suceeded with:\n\t" ++ show result')
+      expectationFailure ("Expected the computation to fail, but it succeeded with:\n\t" ++ show result')
       fail "error"
 
 instance Arbitrary TopLevelDeclaration where
@@ -39,7 +39,8 @@ instance Arbitrary TopLevelDeclaration where
     [ Import <$> located genFilePath
     , DeclNodeType <$> located genIdentifier
     , DeclEdgeType <$> located genIdentifier <*> located genIdentifier <*> located genIdentifier
-    , DeclGraph <$> located genIdentifier <*> listOf arbitrary ]
+    , DeclGraph <$> located genIdentifier <*> listOf arbitrary
+    , DeclRule <$> located genIdentifier <*> listOf arbitrary ]
 
   shrink (DeclGraph g body) = [ DeclGraph g body' | body' <- shrink body ]
   shrink _                  = []
@@ -62,6 +63,23 @@ instance Arbitrary ParallelEdgesDeclaration where
 
   shrink (SingleType es t)  = [ SingleType es' t | es' <- shrinkList1 es ]
   shrink (MultipleTypes es) = [ MultipleTypes es' | es' <- shrinkList1 es ]
+
+instance Arbitrary RuleDeclaration where
+  arbitrary = oneof
+    [ DeclMatch <$> listOf1 arbitrary
+    , DeclForbid <$> optional (located genIdentifier) <*> listOf1 arbitrary
+    , DeclCreate <$> listOf1 arbitrary
+    , DeclDelete <$> listOf1 ((,) <$> located genIdentifier <*> arbitrary)
+    , DeclClone <$> located genIdentifier <*> listOf1 (located genIdentifier) ]
+
+  shrink (DeclMatch es)    = DeclMatch <$> shrinkList1 es
+  shrink (DeclForbid n es) = DeclForbid n <$> shrinkList1 es
+  shrink (DeclCreate es)   = DeclCreate <$> shrinkList1 es
+  shrink (DeclDelete ns)   = DeclDelete <$> shrinkList1 ns
+  shrink (DeclClone e cs)  = DeclClone e <$> shrinkList1 cs
+
+instance Arbitrary DeletionMode where
+  arbitrary = elements [Isolated, WithMatchedEdges]
 
 shrinkList1 :: [a] -> [[a]]
 shrinkList1 []  = []
