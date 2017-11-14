@@ -24,7 +24,6 @@ module GrLang.Monad
 
 import           Control.Monad.Except           (ExceptT (..), mapExceptT, runExceptT)
 import qualified Control.Monad.Except           as ExceptT
-import           Control.Monad.State            (StateT)
 import           Control.Monad.State
 import           Data.DList                     (DList)
 import qualified Data.DList                     as DList
@@ -115,7 +114,7 @@ instance MonadGrLang m => MonadGrLang (StateT s m) where
     checkIfImported = lift' . checkIfImported
     checkIfVisible = lift' . checkIfVisible
     unsafeMakeVisible = lift . unsafeMakeVisible
-    getTypeGraph = lift' $ getTypeGraph
+    getTypeGraph = lift' getTypeGraph
     getNodeType = lift' . getNodeType
     getEdgeType name src = lift' . getEdgeType name src
     addNodeType = lift' . addNodeType
@@ -133,7 +132,7 @@ lift' = mapExceptT lift
 -- When running the import action, the only visible module will be the
 -- one being imported.
 importIfNeeded_ :: MonadGrLang m => FilePath -> ExceptT Error m a -> ExceptT Error m ()
-importIfNeeded_ path action = importIfNeeded path action >> return ()
+importIfNeeded_ path action = void $ importIfNeeded path action
 
 -- | Given the path to a module, mark it as visible. Fails when the path was not yet
 -- imported.
@@ -188,7 +187,7 @@ instance Monad m => MonadGrLang (GrLangT m) where
       then do
         lift . GrLangT . modify $ \state ->
           state { visibleModules = Set.insert path (visibleModules state) }
-        return $ Nothing
+        return Nothing
       else do
         outerVisible <- lift . GrLangT $ gets visibleModules
         lift . GrLangT . modify $ \state ->
@@ -286,7 +285,7 @@ getOrError loc kind name getter getLocation = do
         Just (Location srcPath _) -> do
           isVisible <- checkIfVisible srcPath
           if isVisible
-            then return $ x
+            then return x
             else throwError loc . PP.fillSep $
               undefError : PP.words "(you must import" ++ [PP.squotes (pretty srcPath) <> ")"]
 
