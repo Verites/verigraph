@@ -2,13 +2,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module GrLang.Compiler
   ( compileFile
-  , compileFile'
   , compile
-  , compile'
   , compileDecl
-  , compileDecl'
   , compileGraph
-  , compileGraph'
   ) where
 
 import           Control.Monad.Except           (ExceptT (..), mapExceptT, runExceptT)
@@ -31,23 +27,15 @@ import           GrLang.AST
 import           GrLang.Monad
 import           GrLang.Parser
 import           GrLang.Value
+import qualified Util.Map                       as Map
 import           Util.Monad
-
-compileFile' :: (MonadIO m, MonadGrLang m) => FilePath -> m (Maybe Error)
-compileFile' = fmap errorToMaybe . runExceptT . compileFile
 
 compileFile :: (MonadIO m, MonadGrLang m) => FilePath -> ExceptT Error m ()
 compileFile path = importIfNeeded_ path $
   loadModule (A Nothing path) >>= compile
 
-compile' :: (MonadIO m, MonadGrLang m) => [TopLevelDeclaration] -> m (Maybe Error)
-compile' = fmap errorToMaybe . runExceptT . compile
-
 compile :: (MonadIO m, MonadGrLang m) => [TopLevelDeclaration] -> ExceptT Error m ()
 compile = mapMCollectErrors_ compileDecl
-
-compileDecl' :: (MonadIO m, MonadGrLang m) => TopLevelDeclaration -> m (Maybe Error)
-compileDecl' = fmap errorToMaybe . runExceptT . compileDecl
 
 errorToMaybe :: Either a t -> Maybe a
 errorToMaybe (Left err) = Just err
@@ -74,83 +62,91 @@ loadModule (A loc path) = do
     Left ioError -> throwError loc . PP.fillSep $
       PP.words "Error reading file" ++ [ PP.dquotes (pretty path) <> PP.colon, pretty (ioeGetErrorString ioError) ]
 
+type GrElem = Either (GrNode, NodeType) (GrEdge, EdgeType)
+
 data GraphState = GrSt
-  { grNodes          :: Map Text (Node (Maybe Metadata), NodeType)
-  , grNodeId         :: NodeId
-  , grEdges          :: Map Text (Edge (Maybe Metadata), EdgeType)
-  , grAnonymousEdges :: [(Edge (Maybe Metadata), EdgeType)]
-  , grEdgeId         :: EdgeId
+  { grNamedElements  :: Map Text GrElem
+  , grAnonymousEdges :: [(GrEdge, EdgeType)]
+  , grFreeNodeId     :: NodeId
+  , grFreeEdgeId     :: EdgeId
   }
 
 type GraphT m a = ExceptT Error (StateT GraphState m) a
 
 emptyGraphState :: GraphState
-emptyGraphState = GrSt Map.empty 0 Map.empty [] 0
+emptyGraphState = GrSt Map.empty [] 0 0
 
 getNode :: MonadGrLang m => Located Text -> GraphT m (GrNode, NodeType)
 getNode (A loc name) = do
-  existingNode <- gets (Map.lookup name . grNodes)
+  existingElem <- gets (Map.lookup name . grNamedElements)
+  let existingNode = getLeft =<< existingElem
   getOrError loc "node" name (pure existingNode) (nodeLocation . fst)
+  where getLeft = either Just (const Nothing)
+
+assembleGraph :: MonadGrLang m => GraphT m GrGraph
+assembleGraph = do
+  tgraph <- getTypeGraph
+  (nodes, edges) <- gets (Map.partitionEithers . grNamedElements)
+  anonEdges <- gets grAnonymousEdges
+  return $ TGraph.fromNodesAndEdges tgraph
+    [ (node, nodeId ntype) | (node, ntype) <- Map.elems nodes ]
+    [ (edge, edgeId etype) | (edge, etype) <- Map.elems edges ++ anonEdges ]
 
 compileGraph' :: MonadGrLang m => [GraphDeclaration] -> m (Result GrGraph)
 compileGraph' = runExceptT . compileGraph
 
 compileGraph :: MonadGrLang m => [GraphDeclaration] -> ExceptT Error m GrGraph
 compileGraph decls = mapExceptT (`evalStateT` emptyGraphState) $ do
-    mapMCollectErrors_ compileGraphDecl' decls
-    tgraph <- getTypeGraph
-    nodes <- gets grNodes
-    edges <- gets grEdges
-    anonEdges <- gets grAnonymousEdges
-    return $ TGraph.fromNodesAndEdges tgraph
-      [ (node, nodeId ntype) | (node, ntype) <- Map.elems nodes ]
-      [ (edge, edgeId etype) | (edge, etype) <- Map.elems edges ++ anonEdges ]
-  where
-    compileGraphDecl' :: MonadGrLang m => GraphDeclaration -> GraphT m ()
-    compileGraphDecl' (DeclNodes nodes typeName) = do
-      nodeType <- getNodeType typeName
-      mapMCollectErrors_ (createNode' nodeType) nodes
+  mapMCollectErrors_ compileGraphDecl decls
+  assembleGraph
 
-    compileGraphDecl' (DeclEdges srcName edges tgtName) = do
-      (src, srcType) <- getNode srcName
-      (tgt, tgtType) <- getNode tgtName
-      case edges of
-        SingleType edges' typeName -> do
-          edgeType <- getEdgeType typeName srcType tgtType
-          forMCollectErrors_ edges' $ \(A loc name) ->
-            createEdge' edgeType src tgt loc (Just name)
-        MultipleTypes edges' ->
-          forMCollectErrors_ edges' $ \(A loc (name, typeName)) -> do
-            edgeType <- getEdgeType (A loc typeName) srcType tgtType
-            createEdge' edgeType src tgt loc name
+compileGraphDecl :: MonadGrLang m => GraphDeclaration -> GraphT m ()
+compileGraphDecl (DeclNodes nodes typeName) = do
+  nodeType <- getNodeType typeName
+  mapMCollectErrors_ (createNode nodeType) nodes
 
-createNode' :: MonadGrLang m => NodeType -> Located Text -> GraphT m ()
-createNode' nodeType (A loc name) = do
-  prevNode <- gets (Map.lookup name . grNodes)
+compileGraphDecl (DeclEdges srcName edges tgtName) = do
+  (src, srcType) <- getNode srcName
+  (tgt, tgtType) <- getNode tgtName
+  case edges of
+    SingleType edges' typeName -> do
+      edgeType <- getEdgeType typeName srcType tgtType
+      forMCollectErrors_ edges' $ \(A loc name) ->
+        createEdge edgeType src tgt loc (Just name)
+    MultipleTypes edges' ->
+      forMCollectErrors_ edges' $ \(A loc (name, typeName)) -> do
+        edgeType <- getEdgeType (A loc typeName) srcType tgtType
+        createEdge edgeType src tgt loc name
+
+createNode :: MonadGrLang m => NodeType -> Located Text -> GraphT m ()
+createNode nodeType (A loc name) = do
+  prevNode <- gets (Map.lookup name . grNamedElements)
   case prevNode of
-    Just (n, _) -> reportAlreadyDefined loc "Node" name (nodeLocation n)
+    Just (Left (n, _)) -> reportAlreadyDefined loc "Node" name (nodeLocation n)
+    Just (Right (e, _)) -> reportAlreadyDefined loc "An edge" name (edgeLocation e)
     Nothing -> modify $ \state ->
-      let newId = grNodeId state
+      let newId = grFreeNodeId state
           node = Node newId (Just (Metadata (Just name) loc))
       in state
-        { grNodes = Map.insert name (node, nodeType) (grNodes state)
-        , grNodeId = newId + 1 }
+        { grNamedElements = Map.insert name (Left (node, nodeType)) (grNamedElements state)
+        , grFreeNodeId = newId + 1 }
 
-createEdge' :: Monad m => EdgeType -> Node (Maybe Metadata) -> Node (Maybe Metadata) -> Maybe Location -> Maybe Text -> GraphT m ()
-createEdge' edgeType src tgt loc (Just name) = do
-  prevEdge <- gets (Map.lookup name . grEdges)
+createEdge :: Monad m => EdgeType -> GrNode -> GrNode -> Maybe Location -> Maybe Text -> GraphT m ()
+createEdge edgeType src tgt loc (Just name) = do
+  prevEdge <- gets (Map.lookup name . grNamedElements)
   case prevEdge of
-    Just (e, _) -> reportAlreadyDefined loc "Edge" name (edgeLocation e)
+    Just (Right (e,_)) -> reportAlreadyDefined loc "Edge" name (edgeLocation e)
+    Just (Left (n,_)) -> reportAlreadyDefined loc "A node" name (nodeLocation n)
     Nothing -> modify $ \state ->
-      let newId = grEdgeId state
+      let newId = grFreeEdgeId state
           edge = Edge newId (nodeId src) (nodeId tgt) (Just $ Metadata (Just name) loc)
       in state
-        { grEdges = Map.insert name (edge, edgeType) (grEdges state)
-        , grEdgeId = newId + 1 }
+        { grNamedElements = Map.insert name (Right (edge, edgeType)) (grNamedElements state)
+        , grFreeEdgeId = newId + 1 }
 
-createEdge' edgeType src tgt loc Nothing = modify $ \state ->
-  let newId = grEdgeId state
+createEdge edgeType src tgt loc Nothing = modify $ \state ->
+  let newId = grFreeEdgeId state
       edge = Edge newId (nodeId src) (nodeId tgt) (Just $ Metadata Nothing loc)
   in state
     { grAnonymousEdges = (edge, edgeType) : grAnonymousEdges state
-    , grEdgeId = newId + 1 }
+    , grFreeEdgeId = newId + 1 }
