@@ -26,27 +26,29 @@ module GrLang.Value
   , generateGraph
   ) where
 
-import           Data.Function   (on)
-import qualified Data.List       as List
-import           Data.Maybe      (fromMaybe, isJust, mapMaybe)
-import           Data.Text       (Text)
-import qualified Data.Text       as Text
+import           Data.Function             (on)
+import qualified Data.List                 as List
+import           Data.Maybe                (fromMaybe, isJust, mapMaybe)
+import           Data.Text                 (Text)
+import qualified Data.Text                 as Text
 import           Data.Text.Prettyprint.Doc (Pretty (..))
 
-import           Base.Annotation (Annotated (..))
-import           Base.Location   (Location (..))
-import           Data.Graphs     (Graph)
-import qualified Data.Graphs     as TypeGraph
-import qualified Data.Graphs.Morphism as Graph
+import           Base.Annotation           (Annotated (..))
+import           Base.Location             (Location (..))
+import           Category.TypedGraph       ()
+import           Data.Graphs               (Graph)
+import qualified Data.Graphs               as TypeGraph
+import qualified Data.Graphs.Morphism      as Graph
 import           Data.TypedGraph
 import           GrLang.AST
-import qualified Util.List       as List
+import           Rewriting.DPO.TypedGraph  ()
+import qualified Util.List                 as List
 
 data Value = VGraph GrGraph
     deriving (Show, Eq)
 
 instance Pretty Value where
-  pretty (VGraph graph) = pretty (generateGraph "" graph)
+  pretty (VGraph graph) = pretty . DeclGraph (A Nothing "") . generateGraph $ graph
 
 -- | Update values when new node/edge types have been created. Only works if the
 -- current type graph of the values is a subgraph of the new type graph.
@@ -118,8 +120,8 @@ generateTypes tgraph = nodeTypes ++ edgeTypes
 -- | Generate declarations for the given graph.
 --
 -- Uses the metadata to define the names of nodes/edges and their types.
-generateGraph :: Text -> TypedGraph Metadata Metadata -> TopLevelDeclaration
-generateGraph graphName graph = DeclGraph (A Nothing graphName) (nodes ++ edges)
+generateGraph :: GrGraph -> [GraphDeclaration]
+generateGraph graph = nodes ++ edges
   where
     (minElemsPerDecl, maxElemsPerDecl) = (3, 5)
 

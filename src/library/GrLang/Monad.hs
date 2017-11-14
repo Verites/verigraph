@@ -16,9 +16,11 @@ module GrLang.Monad
   , addNew
   , reportAlreadyDefined
   , GrLangT
-  , GrLangState
+  , GrLangState(..)
   , emptyState
+  , initState
   , runGrLangT
+  , evalGrLang
   , getValueContext
   ) where
 
@@ -27,6 +29,7 @@ import qualified Control.Monad.Except           as ExceptT
 import           Control.Monad.State
 import           Data.DList                     (DList)
 import qualified Data.DList                     as DList
+import           Data.Functor.Identity
 import           Data.Map                       (Map)
 import qualified Data.Map                       as Map
 import           Data.Monoid
@@ -41,7 +44,7 @@ import           Base.Annotation                (Annotated (..), Located, locate
 import qualified Base.Annotation                as Ann
 import           Base.Location
 import qualified Data.Graphs                    as TypeGraph
-import           Data.TypedGraph                (EdgeId, Node (..), NodeId)
+import           Data.TypedGraph                (Edge (..), EdgeId, Node (..), NodeId)
 import           GrLang.Value
 
 type Error = DList (Located (Doc ()))
@@ -170,11 +173,19 @@ emptyState = GrLangState
   , visibleModules = Set.empty
   }
 
+initState :: TypeGraph -> GrLangState
+initState graph = emptyState
+  { typeGraph = graph
+  , nodeTypes = Map.fromList [ (nodeName n, nodeId n) | n <- TypeGraph.nodes graph ]
+  , edgeTypes = Map.fromList [ ((edgeName e, sourceId e, targetId e), edgeId e) | e <- TypeGraph.edges graph ]
+  }
+
 -- | Run a GrLang computation with the given initial state.
 runGrLangT :: Monad m => GrLangState -> GrLangT m a -> m (a, GrLangState)
-runGrLangT st (GrLangT action) = do
-  (result, (st')) <- runStateT action st
-  return (result, st')
+runGrLangT st (GrLangT action) = runStateT action st
+
+evalGrLang :: GrLangState -> ExceptT Error (GrLangT Identity) a -> Either Error a
+evalGrLang st action = runIdentity $ evalStateT (unGrLangT $ runExceptT action) st
 
 instance MonadIO m => MonadIO (GrLangT m) where
   liftIO = lift . liftIO
@@ -294,7 +305,7 @@ showEdgeType e src tgt = formatEdgeType e (nodeName src) (nodeName tgt)
 
 reportAlreadyDefined :: Monad m => Maybe Location -> String -> Text -> Maybe Location -> ExceptT Error m a
 reportAlreadyDefined loc kind name prevLoc = throwError loc . PP.fillSep $
-  [ pretty kind, PP.squotes (pretty name), "already", "defined" ]
+  [ pretty kind, PP.squotes (pretty name), "was", "already", "defined" ]
   ++ case prevLoc of
         Nothing -> []
         Just loc' -> ["at" <+> pretty loc']
