@@ -14,7 +14,7 @@ fileName2 = "tests/grammars/secondOrderMatchTest.ggx"
 
 dpoConf :: Category morph => MorphismsConfig morph
 dpoConf = MorphismsConfig monic
-testCase findConflicts rules expected = show (pairwise (findConflicts dpoConf) rules) `shouldBe` expected
+testCase findConflicts rules expected = show (pairwise (findConflicts dpoConf []) rules) `shouldBe` expected
 
 spec :: Spec
 spec = context "Critical Pairs Test" cpaTest
@@ -35,8 +35,8 @@ cpaTest = do
           "( 0 0 0 0 0 0 0 0 )\n"++
           "( 0 0 0 0 0 0 0 0 )\n"++
           "( 0 0 0 0 0 0 0 0 )\n"
-      
-      it "produce-dangling" $ 
+
+      it "produce-dangling" $
         testCase findAllProduceDangling rules $
           "( 0 0 0 0 0 0 0 0 )\n"++
           "( 0 0 0 0 0 0 0 0 )\n"++
@@ -46,8 +46,8 @@ cpaTest = do
           "( 0 0 0 0 0 0 0 0 )\n"++
           "( 0 0 0 0 0 0 0 0 )\n"++
           "( 0 0 0 0 0 0 0 0 )\n"
-      
-      it "delete-use and produce-dangling" $ 
+
+      it "delete-use and produce-dangling" $
         testCase findAllDeleteUseAndProduceDangling rules $
           "( 2 0 0 0 0 0 0 0 )\n"++
           "( 0 3 0 0 0 0 0 0 )\n"++
@@ -58,7 +58,7 @@ cpaTest = do
           "( 0 0 0 0 0 0 0 0 )\n"++
           "( 0 0 0 0 0 0 0 0 )\n"
 
-      it "produce-forbid" $ 
+      it "produce-forbid" $
         testCase findAllProduceForbid rules $
           "( 0 0 0 0 0 0 0 0 )\n"++
           "( 2 0 0 0 0 0 0 0 )\n"++
@@ -72,7 +72,7 @@ cpaTest = do
     describe "second-order" $ do
       (_,gg2,_) <- runIO $ XML.readGrammar fileName2 False dpoConf
       let rules = map snd (productions gg2)
-      
+
       it "delete-use" $
         testCase findAllDeleteUse rules $
             "( 0 0 0 0 0 )\n"++
@@ -81,7 +81,7 @@ cpaTest = do
             "( 0 0 0 3 0 )\n"++
             "( 0 0 0 0 3 )\n"
 
-      it "produce-dangling" $ 
+      it "produce-dangling" $
         testCase findAllProduceDangling rules $
             "( 0 0 0 0 0 )\n"++
             "( 0 0 0 0 0 )\n"++

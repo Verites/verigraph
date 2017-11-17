@@ -3,7 +3,7 @@
 
 module Data.TypedGraph.PartitionSpec where
 
-import           Math.Combinat.Numbers                 (bellNumber)
+import           Math.Combinat.Numbers      (bellNumber)
 import           Test.Hspec
 
 import           Abstract.Category
@@ -14,7 +14,7 @@ import           Category.TypedGraphRule
 import           Data.Graphs
 import           Data.Graphs.Morphism
 import           Data.TypedGraph.Morphism
-import qualified XML.GGXReader                         as XML
+import qualified XML.GGXReader              as XML
 
 fileName1 = "tests/grammars/sndOrderEpi.ggx"
 fileName2 = "tests/grammars/partialInjectivity.ggx"
@@ -49,7 +49,7 @@ testProduceForbid conf gg n =
   do
     let rL = snd (head (productions gg))
         rR = snd (head (tail (productions gg)))
-        proFor = findAllProduceForbid conf rL rR
+        proFor = findAllProduceForbid conf [] rL rR
 
     length proFor `shouldBe` n
 
