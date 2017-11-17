@@ -14,7 +14,7 @@ fileName2 = "tests/grammars/secondOrderMatchTest.ggx"
 
 dpoConf :: Category morph => MorphismsConfig morph
 dpoConf = MorphismsConfig anyMorphism
-testCase findDependencies rules expected = expected `shouldBe` show (pairwise (findDependencies dpoConf) rules)
+testCase findDependencies rules expected = expected `shouldBe` show (pairwise (findDependencies dpoConf []) rules)
 
 spec :: Spec
 spec = context "Critical Sequences Test" csaTest

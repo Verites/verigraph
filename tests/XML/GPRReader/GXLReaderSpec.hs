@@ -1,7 +1,7 @@
 module XML.GPRReader.GXLReaderSpec where
 
 import           Data.List
-import           Data.Matrix                                 hiding ((<|>))
+import           Data.Matrix                     hiding ((<|>))
 import           Test.Hspec
 
 import           Abstract.Category
@@ -10,8 +10,8 @@ import           Analysis.CriticalPairs
 import           Analysis.CriticalSequence
 import           Analysis.EssentialCriticalPairs
 import           Category.TypedGraphRule
-import qualified XML.GGXReader                               as XML
-import qualified XML.GPRReader.GXLReader                     as GPR
+import qualified XML.GGXReader                   as XML
+import qualified XML.GPRReader.GXLReader         as GPR
 
 fileName1 = "tests/grammars/pacman2.ggx"
 fileName2 = "tests/grammars/pacman.gps"
@@ -54,12 +54,12 @@ gprTest = do
 
     let (elevatorRulesGGX,elevatorRulesGPR,elevatorRulesGPRFlag) = getRules ggGGX ggGPR ggGPRFlag
 
-    runAnalysis findAllEssentialDeleteUse elevatorRulesGPRFlag elevatorRulesGGX
+    runAnalysis (\conf _ -> findAllEssentialDeleteUse conf) elevatorRulesGPRFlag elevatorRulesGGX
     runAnalysis findCriticalPairs elevatorRulesGPR elevatorRulesGGX
     runAnalysis findCriticalSequences elevatorRulesGPR elevatorRulesGGX
 
 runAnalysis algorithm rules1 rules2 =
-  pairwise (algorithm dpoConf) rules1 `shouldBe` pairwise (algorithm dpoConf) rules2
+  pairwise (algorithm dpoConf []) rules1 `shouldBe` pairwise (algorithm dpoConf []) rules2
 
 getRules a b c = (f a, f b, f c)
   where

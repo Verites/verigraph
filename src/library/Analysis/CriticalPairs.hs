@@ -20,7 +20,9 @@ module Analysis.CriticalPairs
 
 import           Data.Maybe                               (mapMaybe)
 
+import           Abstract.Category
 import           Abstract.Category.Finitary
+import           Abstract.Constraint
 import           Abstract.Rewriting.DPO                   hiding (calculateComatch)
 import qualified Abstract.Rewriting.DPO.DiagramAlgorithms as Diagram
 
@@ -70,15 +72,15 @@ data CriticalPair morph = CriticalPair {
 
 isDeleteUse :: CriticalPair morph -> Bool
 isDeleteUse (CriticalPair _ _ _ DeleteUse) = True
-isDeleteUse _ = False
+isDeleteUse _                              = False
 
 isProduceDangling :: CriticalPair morph -> Bool
 isProduceDangling (CriticalPair _ _ _ ProduceDangling) = True
-isProduceDangling _ = False
+isProduceDangling _                                    = False
 
 isProduceForbid :: CriticalPair morph -> Bool
 isProduceForbid (CriticalPair _ _ _ ProduceForbid) = True
-isProduceForbid _ = False
+isProduceForbid _                                  = False
 
 -- | Returns the matches (m1,m2)
 getCriticalPairMatches :: CriticalPair morph -> (morph,morph)
@@ -106,40 +108,59 @@ getNacIndexOfCriticalPair criticalPair =
     Just (_,idx) -> Just idx
     Nothing      -> Nothing
 
--- | Finds all Critical Pairs between two given Productions
-findCriticalPairs :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> Production morph -> Production morph -> [CriticalPair morph]
-findCriticalPairs conf p1 p2 =
-  findAllDeleteUseAndProduceDangling conf p1 p2 ++ findAllProduceForbid conf p1 p2
+-- | Finds all Critical Pairs between two given Productions, excluding those
+-- whose initial graph violates some of the given constraints.
+findCriticalPairs :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> [Constraint morph] -> Production morph -> Production morph -> [CriticalPair morph]
+findCriticalPairs conf constraints p1 p2 =
+  findAllDeleteUseAndProduceDangling conf constraints p1 p2 ++ findAllProduceForbid conf constraints p1 p2
 
 -- ** Conflicts
 
 -- *** Delete-Use
 
--- | All DeleteUse caused by the derivation of @p1@ before @p2@.
--- It occurs when @p1@ deletes something used by @p2@.
-findAllDeleteUse :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> Production morph -> Production morph -> [CriticalPair morph]
-findAllDeleteUse conf p1 p2 =
+-- | Enumerate all delete-use conflicts caused by the application of the first
+-- given rule before the second, excluding those whose initial graph violates
+-- some of the given constraints.
+--
+-- This occurs when the first rule deletes some element that the second rule
+-- uses.
+findAllDeleteUse :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> [Constraint morph] -> Production morph -> Production morph -> [CriticalPair morph]
+findAllDeleteUse conf constraints p1 p2 =
   let matchPairs = findJointSurjectiveApplicableMatches conf p1 p2
-  in [ CriticalPair mpair Nothing Nothing DeleteUse | mpair <- matchPairs, Diagram.isDeleteUse conf p1 mpair ]
+  in [ CriticalPair (m1,m2) Nothing Nothing DeleteUse
+        | (m1,m2) <- matchPairs, codomain m1 `satisfiesAllConstraints` constraints
+        , Diagram.isDeleteUse conf p1 (m1,m2) ]
 
 -- *** Produce-Dangling
 
--- | All ProduceDangling caused by the derivation of @p1@ before @p2@.
--- It occurs when @p1@ creates something that unable @p2@.
-findAllProduceDangling :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> Production morph -> Production morph -> [CriticalPair morph]
-findAllProduceDangling conf p1 p2 =
+-- | Enumerate all produce-dangling conflicts caused by the application of the
+-- first given rule before the second, excluding those whose initial graph
+-- violates some of the given constraints.
+--
+-- This occurs when the first rule creates an edge onto a node that is deleted
+-- by the second.
+findAllProduceDangling :: (E'PairCofinitary morph, DPO morph) =>  MorphismsConfig morph -> [Constraint morph] -> Production morph -> Production morph -> [CriticalPair morph]
+findAllProduceDangling conf constraints p1 p2 =
   let matchPairs = findJointSurjectiveApplicableMatches conf p1 p2
-  in [ CriticalPair mpair Nothing Nothing ProduceDangling | mpair <- matchPairs, Diagram.isProduceDangling conf p1 p2 mpair ]
+  in [ CriticalPair (m1,m2) Nothing Nothing ProduceDangling
+        | (m1,m2) <- matchPairs, codomain m1 `satisfiesAllConstraints` constraints
+        , Diagram.isProduceDangling conf p1 p2 (m1,m2) ]
 
 -- DeleteUse and Produce-Dangling
 
--- | Tests DeleteUse and ProduceDangling for the same pairs,
--- more efficient than deal separately.
-findAllDeleteUseAndProduceDangling :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> Production morph -> Production morph -> [CriticalPair morph]
-findAllDeleteUseAndProduceDangling conf p1 p2 =
+-- | Enumerate all delete-use and produce-dangling conflicts caused by the
+-- application of the first given rule before the second, excluding those whose
+-- initial graph violates some of the given constraints.
+--
+-- This is more efficient than calculating each kind of conflict separately.
+findAllDeleteUseAndProduceDangling :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> [Constraint morph] -> Production morph -> Production morph -> [CriticalPair morph]
+findAllDeleteUseAndProduceDangling conf constraints p1 p2 =
   let
     matchPairs = findJointSurjectiveApplicableMatches conf p1 p2
-    conflicts = mapMaybe (Diagram.deleteUseDangling conf p1 p2) matchPairs
+    isValidPair (m1,_)
+      | null constraints = True
+      | otherwise = codomain m1 `satisfiesAllConstraints` constraints
+    conflicts = mapMaybe (Diagram.deleteUseDangling conf p1 p2) $ filter isValidPair matchPairs
   in map categorizeConflict conflicts
   where
     categorizeConflict x = case x of
@@ -148,12 +169,14 @@ findAllDeleteUseAndProduceDangling conf p1 p2 =
 
 -- *** Produce-Forbid
 
--- | All ProduceForbid caused by the derivation of @p1@ before @p2@.
+-- | Enumerate all produce-forbid conflicts caused by the application of the
+-- first given rule before the second, excluding those whose initial graph
+-- violates some of the given constraints.
 --
--- Rule @p1@ causes a produce-forbid conflict with @p2@ if some
--- NAC in @p2@ fails to be satisfied after the aplication of @p1@.
-findAllProduceForbid :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> Production morph -> Production morph -> [CriticalPair morph]
-findAllProduceForbid conf p1 p2 =
-  let conflicts = concatMap (Diagram.produceForbidOneNac conf p1 p2) (zip (nacs p2) [0..])
+-- These are caused when the application of the first rule causes
+-- the violation of a NAC for the second rule.
+findAllProduceForbid :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> [Constraint morph] -> Production morph -> Production morph -> [CriticalPair morph]
+findAllProduceForbid conf constraints p1 p2 =
+  let conflicts = concatMap (Diagram.produceForbidOneNac conf constraints p1 p2) (zip (nacs p2) [0..])
   in [ CriticalPair matches (Just comatches) (Just nac) ProduceForbid
         | (matches, comatches, nac) <- conflicts ]

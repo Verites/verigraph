@@ -14,6 +14,7 @@ module XML.GGXReader
   , showMinimalSafetyNacsLog
   ) where
 
+import           Data.Function                (on)
 import qualified Data.List                    as L
 import qualified Data.Map                     as M
 import           Data.Maybe                   (fromJust, fromMaybe, mapMaybe)
@@ -64,9 +65,19 @@ readGrammar fileName useConstraints morphismsConf = do
   parsedAtomicConstraints <- readAtomicConstraints fileName
   parsedGraphConstraints  <- readGraphConstraints fileName
 
-  let cons = if useConstraints then
-               instantiateConstraints parsedGraphConstraints (map (instantiateAtomicConstraint typeGraph) parsedAtomicConstraints)
-             else []
+  let cons
+        | useConstraints =
+            let namedAtomic = L.groupBy ((==) `on` fst) $ map (instantiateAtomicConstraint typeGraph) parsedAtomicConstraints
+                atomic = map (joinConstraints . map snd) namedAtomic
+            in instantiateConstraints parsedGraphConstraints atomic
+        | otherwise = []
+        where
+          -- We join positive constraints with "or", which is the behaviour of AGG.
+          -- We join negative constraints with "and", which is the behaviour of NACs.
+          joinConstraints [x] = Atomic x
+          joinConstraints (x:xs)
+            | positive x = Or (Atomic x) (joinConstraints xs)
+            | otherwise = And (Atomic x) (joinConstraints xs)
 
   -- gets only the first graph as initial, because verigraph supports only one initial graph per grammar.
   let initGraph = head (map snd parsedGraphs)
@@ -214,8 +225,8 @@ lookupNodes nodes n = fromMaybe
   where
     changeToListOfPairs = map (\(x,_,y) -> (x,y)) nodes
 
-instantiateAtomicConstraint :: TypeGraph a b -> ParsedAtomicConstraint -> AtomicConstraint (TypedGraphMorphism a b)
-instantiateAtomicConstraint tg (name, premise, conclusion, maps) = buildNamedAtomicConstraint name (buildTypedGraphMorphism p c m) isPositive
+instantiateAtomicConstraint :: TypeGraph a b -> ParsedAtomicConstraint -> (String, AtomicConstraint (TypedGraphMorphism a b))
+instantiateAtomicConstraint tg (name, premise, conclusion, maps) = (name, buildNamedAtomicConstraint name (buildTypedGraphMorphism p c m) isPositive)
   where
     p = instantiateTypedGraph premise tg
     c = instantiateTypedGraph conclusion tg
@@ -225,19 +236,19 @@ instantiateAtomicConstraint tg (name, premise, conclusion, maps) = buildNamedAto
     pNodes = G.nodeIds (domain p)
     (mNodes,mEdges) = L.partition (\(_,_,x) -> G.NodeId (toN x) `elem` pNodes) maps
 
-instantiateConstraints :: [(String, F.Formula)] -> [AtomicConstraint (TypedGraphMorphism a b)] -> [Constraint (TypedGraphMorphism a b)]
+instantiateConstraints :: [(String, F.Formula)] -> [Constraint (TypedGraphMorphism a b)] -> [Constraint (TypedGraphMorphism a b)]
 instantiateConstraints formulas atomicConstraints = map (translateFormula mappings) f
   where
     f = map snd formulas
     mappings = M.fromAscList $ zip [1..] atomicConstraints
 
-translateFormula :: M.Map Int (AtomicConstraint (TypedGraphMorphism a b)) -> F.Formula -> Constraint (TypedGraphMorphism a b)
+translateFormula :: M.Map Int (Constraint (TypedGraphMorphism a b)) -> F.Formula -> Constraint (TypedGraphMorphism a b)
 translateFormula m formula =
   let
     get = (m M.!) . fromIntegral
   in
     case formula of
-      F.IntConst n             -> Atomic (get n)
+      F.IntConst n             -> get n
       F.Not formula'           -> Not (translateFormula m formula')
       F.Or formula' formula''  -> Or (translateFormula m formula') (translateFormula m formula'')
       F.And formula' formula'' -> And (translateFormula m formula') (translateFormula m formula'')

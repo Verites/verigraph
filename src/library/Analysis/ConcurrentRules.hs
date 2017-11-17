@@ -64,7 +64,7 @@ epiPairsForConcurrentRule :: (DPO morph, E'PairCofinitary morph)
   => CRDependencies -> MorphismsConfig morph -> [Constraint morph] -> Production morph -> Production morph -> [(morph,morph)]
 -- it only considers triggered dependencies because is the most intuitive and natural behaviour expected until now.
 epiPairsForConcurrentRule OnlyDependency conf constraints c n =
-  let dependencies = map getCriticalSequenceComatches (findTriggeredCriticalSequences conf c n)
+  let dependencies = map getCriticalSequenceComatches (findTriggeredCriticalSequences conf constraints c n)
       validDependency (lp, _) = satisfiesAllConstraints (codomain lp) constraints
   in filter validDependency dependencies
 

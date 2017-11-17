@@ -46,20 +46,18 @@ satisfiesAllAtomicConstraints :: (FindMorphism morph) => Obj morph -> [AtomicCon
 satisfiesAllAtomicConstraints object = all (satisfiesAtomicConstraint object)
 
 data Constraint morph =
-    Atomic { atomic :: AtomicConstraint morph }
-  | And { lc :: Constraint morph,
-          rc :: Constraint morph}
-  | Or{ lc :: Constraint morph,
-        rc :: Constraint morph}
-  | Not { nc :: Constraint morph }
+    Atomic (AtomicConstraint morph)
+  | And (Constraint morph) (Constraint morph)
+  | Or  (Constraint morph) (Constraint morph)
+  | Not (Constraint morph)
   deriving (Show)
 
 instance Valid morph => Valid (Constraint morph) where
     validate cons = case cons of
       Atomic a -> validate a
-      Not b    -> validate (nc b)
-      And a b  -> mconcat [validate (lc a), validate (rc b)]
-      Or a b   -> mconcat [validate (lc a), validate (rc b)]
+      Not b    -> validate b
+      And a b  -> mconcat [validate a, validate b]
+      Or a b   -> mconcat [validate a, validate b]
 
 -- | Given an object @G@ and a Constraint @c@ (a Boolean formula over atomic constraints), check whether @G@ satisfies @c@
 satisfiesConstraint :: (FindMorphism morph) => Obj morph -> Constraint morph -> Bool

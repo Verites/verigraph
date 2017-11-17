@@ -38,8 +38,9 @@ module Abstract.Rewriting.DPO.DiagramAlgorithms (
 
 import           Abstract.Category
 import           Abstract.Category.Adhesive
-import           Abstract.Category.Finitary
 import           Abstract.Category.FindMorphism
+import           Abstract.Category.Finitary
+import           Abstract.Constraint
 import           Abstract.Rewriting.DPO
 import           Control.Applicative
 import           Control.Monad
@@ -120,10 +121,11 @@ deleteUseDangling conf p1 p2 (m1,m2) =
 -- | Rule @p1@ is in a produce-forbid conflict with @p2@ if @p1@
 -- produces something that enables some nac of @p2@.
 --
--- Checks produce-forbid for a NAC @n@ in @p2@
-produceForbidOneNac :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> Production morph
-                    -> Production morph -> (morph, Int) -> [((morph,morph), (morph,morph), (morph,Int))]
-produceForbidOneNac conf p1 p2 (n2,idx) = do
+-- Enumerate all produce-forbids for a NAC @n@ in @p2@, as long as
+-- the overlapping of matches doesn't violate any of the given constraints.
+produceForbidOneNac :: (E'PairCofinitary morph, DPO morph) => MorphismsConfig morph -> [Constraint morph]
+                    -> Production morph -> Production morph -> (morph, Int) -> [((morph,morph), (morph,morph), (morph,Int))]
+produceForbidOneNac conf constraints p1 p2 (n2,idx) = do
   let p1' = invertProduction conf p1
 
   -- Pick a jointly epi pair /R1 -m1'-> P1 <-q21- N2/
@@ -133,6 +135,7 @@ produceForbidOneNac conf p1 p2 (n2,idx) = do
   guard (satisfiesRewritingConditions conf p1' m1')
   let (k1, m1, e1, d1) = calculateDPO m1' p1'
   guard (satisfiesNACs conf p1 m1)
+  guard (codomain m1 `satisfiesAllConstraints` constraints)
 
   -- Look for morphisms /h21 : L2 -> D1/
   let h21Candidates = findMorphisms (matchRestriction conf) (domain n2) (codomain k1)
