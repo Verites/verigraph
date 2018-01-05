@@ -394,7 +394,7 @@ updateEdgesSpanState prop state edge = do
 -- |        \_________/
 -- |             h
 -- |
--- | verify edges mapping on f:B <- A and g:A -> C to build a h:B -> C
+-- | verify nodes mapping on f:B <- A and g:A -> C to build a h:B -> C
 -- | partial nodes morphism
 preBuildNodes :: MorphismType -> SpanBuilderState n e -> [G.NodeId] -> Maybe (SpanBuilderState n e)
 preBuildNodes _ state []    = return state
@@ -416,7 +416,7 @@ updateNodesSpanState prop state node = do
 
       updatedGenericState = state { morphismH = updatedMapping }
 
-      monoCondition = nodeOnG `elem` availableSpanCodomainNodes state
+      monoCondition = nodeOnG `elem` availableSpanCodomainNodes state || (applyNodeIdUnsafe (morphismH state) nodeOnF == nodeOnG)
 
   if (extractNodeType (domain $ morphismH state) nodeOnF == extractNodeType (codomain $ morphismH state) nodeOnG) &&
      (isNothing (applyNodeId (morphismH state) nodeOnF) || (applyNodeId (morphismH state) nodeOnF == Just nodeOnG))
