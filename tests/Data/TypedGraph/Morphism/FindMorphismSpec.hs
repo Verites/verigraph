@@ -1,6 +1,7 @@
 module Data.TypedGraph.Morphism.FindMorphismSpec where
 
 import           Data.TypedGraph.Morphism.FindMorphismSpec.FindCospanCommuterTest
+import           Data.TypedGraph.Morphism.FindMorphismSpec.FindSpanCommuterTest
 import           Data.TypedGraph.Morphism.FindMorphismSpec.FindMorphismsTest
 import           Test.Hspec
 
@@ -11,3 +12,6 @@ spec = do
 
   context "findCospanCommuter"
     findCospanCommuterTest
+
+  context "findSpanCommuter"
+    findSpanCommuterTest
