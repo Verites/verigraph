@@ -33,7 +33,6 @@ module Data.Relation
     , isTotal
     -- * Conversion
     -- ** Lists
-    , fromLists
     , toList
     ) where
 
@@ -137,7 +136,7 @@ intermidiaryCompose r1 r2 a m =
             apply r2 b
   in Map.insert a im m
 
--- | Remove an element from the domain of the relation
+-- | Remove an element from the domain of the relation, as well as any mappings involving it.
 removeFromDomain :: Ord a => a -> Relation a -> Relation a
 removeFromDomain x r = r { domain = L.delete x (domain r)
                          , mapping = Map.delete x (mapping r)
