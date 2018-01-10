@@ -1,5 +1,6 @@
 module Util.List
   ( countElement
+  , correspondsOneToOne
   , deleteByKey
   , insertByKey
   , listKeys
@@ -26,6 +27,16 @@ repeated :: (Eq a) => [a] -> Bool
 repeated []     = False
 repeated (x:xs) = x `elem` xs || repeated xs
 
+-- | Given a relation and two lists, check if the elements of the lists are in
+-- one-to-one correspondence. That is, check if every element of the first list
+-- is related to a single element of the second and vice versa.
+correspondsOneToOne :: (a -> b -> Bool) -> [a] -> [b] -> Bool
+correspondsOneToOne _ [] [] = True
+correspondsOneToOne _ _ [] = False
+correspondsOneToOne _ [] _ = False
+correspondsOneToOne r (x:xs) ys = case break (r x) ys of
+  (_, []) -> False
+  (ys1, _:ys2) -> correspondsOneToOne r xs (ys1 ++ ys2)
 
 -- | Given a list of pairs of the form (key, value), it returns a list containg onlying the listKeys
 listKeys :: [(key, a)] -> [key]

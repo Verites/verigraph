@@ -56,12 +56,16 @@ module Abstract.Rewriting.DPO
   , nacDownwardShift
   ) where
 
+import qualified Data.List as List
+
 import           Abstract.Category
 import           Abstract.Category.Adhesive
 import           Abstract.Category.FindMorphism
 import           Abstract.Category.Finitary
 import           Abstract.Constraint
 import           Base.Valid
+import Base.Isomorphic
+import qualified Util.List as List
 
 
 
@@ -99,6 +103,17 @@ instance (MAdhesive morph, Valid morph, Eq (Obj morph)) => Valid (Production mor
           [ withContext ("NAC #" ++ show index) (validate nac)
           , ensure (codomain l == domain nac) ("The domain of NAC #" ++ show index ++ " is not the left side of the production")
           ]
+
+instance {-# OVERLAPS #-} (Iso (Obj morph), FindMorphism morph, Show morph) => Iso (Production morph) where
+  (Production l1 r1 nacs1) ~= (Production l2 r2 nacs2) =
+    any isomorphismExtends $ findMorphisms iso (domain l1) (domain l2)
+    where
+      isomorphismExtends fK = any extendsToNacs leftExtensions && not (List.null rightExtensions)
+        where
+          rightExtensions = findSpanCommuters iso r1 (r2 <&> fK)
+          leftExtensions = findSpanCommuters iso l1 (l2 <&> fK)
+      extendsToNacs fL = List.correspondsOneToOne (equivalentNac fL) nacs1 nacs2
+      equivalentNac fL n1 n2 = not . List.null $ findSpanCommuters iso n1 (n2 <&> fL)
 
 
 type NamedProduction morph = (String, Production morph)

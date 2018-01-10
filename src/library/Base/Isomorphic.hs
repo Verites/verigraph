@@ -3,6 +3,7 @@ module Base.Isomorphic where
 import           Data.List.NonEmpty (NonEmpty)
 import qualified Data.List.NonEmpty as NonEmpty
 
+import qualified Util.List as List
 
 
 -- | The 'Iso' class defines isomorphism ('~=') checks.
@@ -14,12 +15,7 @@ infix 4 ~=
 
 
 instance Iso a => Iso [a] where
-  [] ~= [] = True
-  [] ~= _ = False
-  _ ~= [] = False
-  (x:xs) ~= ys = case break (~=x) ys of
-    (_, []) -> False
-    (ys1, _:ys2) -> xs ~= (ys1++ys2)
+  (~=) = List.correspondsOneToOne (~=)
 
 instance Iso a => Iso (Maybe a) where
   Nothing ~= Nothing = True
