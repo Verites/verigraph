@@ -4,6 +4,8 @@ module GrLang.Value
     Value(..)
   , updateTypeGraph
     -- * Graphs
+  , GrRule
+  , GrMorphism
   , GrGraph
   , GrNode
   , GrEdge
@@ -24,15 +26,20 @@ module GrLang.Value
     -- ** Conversion
   , generateTypes
   , generateGraph
+  , generateRule
   ) where
 
 import           Data.Function             (on)
 import qualified Data.List                 as List
+import qualified Data.Map                  as Map
 import           Data.Maybe                (fromMaybe, isJust, mapMaybe)
+import           Data.Set                  (Set)
+import qualified Data.Set                  as Set
 import           Data.Text                 (Text)
 import qualified Data.Text                 as Text
 import           Data.Text.Prettyprint.Doc (Pretty (..))
 
+import           Abstract.Category
 import           Base.Annotation           (Annotated (..))
 import           Base.Location             (Location (..))
 import           Category.TypedGraph       ()
@@ -40,27 +47,48 @@ import           Data.Graphs               (Graph)
 import qualified Data.Graphs               as TypeGraph
 import qualified Data.Graphs.Morphism      as Graph
 import           Data.TypedGraph
+import           Data.TypedGraph.Morphism
 import           GrLang.AST
+import           Rewriting.DPO.TypedGraph
 import           Rewriting.DPO.TypedGraph  ()
 import qualified Util.List                 as List
+import qualified Util.Map                  as Map
 
-data Value = VGraph GrGraph
-    deriving (Show, Eq)
+import           Debug.Trace
+
+data Value
+  = VGraph GrGraph
+  | VRule GrRule
+  deriving (Show, Eq)
 
 instance Pretty Value where
   pretty (VGraph graph) = pretty . DeclGraph (A Nothing "") . generateGraph $ graph
+  pretty (VRule rule)   = pretty $ DeclRule (A Nothing "") (generateRule rule)
 
 -- | Update values when new node/edge types have been created. Only works if the
 -- current type graph of the values is a subgraph of the new type graph.
 updateTypeGraph :: TypeGraph -> Value -> Value
-updateTypeGraph tgraph (VGraph g) = VGraph . fromGraphMorphism . update . toGraphMorphism $ g
+updateTypeGraph tgraph (VGraph g) =
+  VGraph . updateTypedGraph tgraph $ g
+updateTypeGraph tgraph (VRule (Production l r ns)) =
+  VRule $ Production (updateTypedMorphism tgraph l) (updateTypedMorphism tgraph r) (map (updateTypedMorphism tgraph) ns)
+
+updateTypedGraph :: TypeGraph -> GrGraph -> GrGraph
+updateTypedGraph tgraph = fromGraphMorphism . update . toGraphMorphism
   where update morphism = morphism { Graph.codomainGraph = tgraph }
+
+updateTypedMorphism :: TypeGraph -> GrMorphism -> GrMorphism
+updateTypedMorphism tgraph (TypedGraphMorphism dom cod morph) =
+  TypedGraphMorphism (updateTypedGraph tgraph dom)  (updateTypedGraph tgraph cod) morph
 
 
 data Metadata = Metadata
   { mdName     :: Maybe Text
   , mdLocation :: Maybe Location }
+  deriving Show
 
+type GrRule = Production GrMorphism
+type GrMorphism = TypedGraphMorphism Metadata Metadata
 type GrGraph = TypedGraph Metadata Metadata
 type GrNode = Node (Maybe Metadata)
 type GrEdge = Edge (Maybe Metadata)
@@ -105,6 +133,9 @@ edgeTypeName e src tgt = formatEdgeType (edgeName e) (nodeTypeName src) (nodeTyp
 formatEdgeType :: Text -> Text -> Text -> Text
 formatEdgeType e src tgt = Text.concat [ e, ": ", src, " -> ", tgt ]
 
+minElemsPerDecl, maxElemsPerDecl :: Int
+(minElemsPerDecl, maxElemsPerDecl) = (3, 5)
+
 -- | Generate declarations for the node/edge types of the given type graph.
 --
 -- Uses the metadata to define the names of node/edge types.
@@ -121,19 +152,21 @@ generateTypes tgraph = nodeTypes ++ edgeTypes
 --
 -- Uses the metadata to define the names of nodes/edges and their types.
 generateGraph :: GrGraph -> [GraphDeclaration]
-generateGraph graph = nodes ++ edges
-  where
-    (minElemsPerDecl, maxElemsPerDecl) = (3, 5)
+generateGraph graph = generateNodes (nodesInContext graph) ++ generateEdges (edgesInContext graph)
 
-    nodes = concatMap (mapMaybe generateNodes . List.chunksOf maxElemsPerDecl) nodesByType
-    nodesByType = List.chunksBy (\(_,t,_) -> nodeId t) $ nodesInContext graph
-    generateNodes [] = Nothing
-    generateNodes ns@((_, ntype, _):_) =
+generateNodes :: [NodeInContext Metadata Metadata] -> [GraphDeclaration]
+generateNodes nodes = concatMap (mapMaybe generateChunk . List.chunksOf maxElemsPerDecl) nodesByType
+  where
+    nodesByType = List.chunksBy (\(_,t,_) -> nodeId t) nodes
+    generateChunk [] = Nothing
+    generateChunk ns@((_, ntype, _):_) =
       Just $ DeclNodes [ A Nothing (nodeName n) | (n, _, _) <- ns ] (A Nothing $ nodeName ntype)
 
-    edges = concatMap generateEdges . List.chunksBy sourceTarget $ edgesInContext graph
-      where sourceTarget ((s,_,_),_,_,(t,_,_)) = (nodeId s, nodeId t)
-    generateEdges es =
+generateEdges :: [EdgeInContext Metadata Metadata] -> [GraphDeclaration]
+generateEdges = concatMap generateChunk . List.chunksBy sourceTarget
+  where
+    sourceTarget ((s,_,_),_,_,(t,_,_)) = (nodeId s, nodeId t)
+    generateChunk es =
       let
         (namedEdges, anonEdges) = List.partition (\(_,e,_,_) -> isJust (edgeExactName e)) es
         namedEdgesByType = List.chunksBy edgeType namedEdges
@@ -143,6 +176,7 @@ generateGraph graph = nodes ++ edges
         concatMap (mapMaybe generateSingleType . List.chunksOf maxElemsPerDecl) namedEdgesByType'
         ++ (mapMaybe generateMultipleTypes . List.chunksOf maxElemsPerDecl) mixedEdges
       where edgeType (_,_,t,_) = edgeId t
+
     generateSingleType = generateEdgeDecl $ \es etype ->
       SingleType [A Nothing (edgeName e) | (_,e,_,_) <- es] (A Nothing $ edgeName etype)
     generateMultipleTypes = generateEdgeDecl $ \es _ ->
@@ -152,3 +186,64 @@ generateGraph graph = nodes ++ edges
       let ((s,_,_),_,etype,(t,_,_)) = e
       in Just $ DeclEdges (A Nothing $ nodeName s) (makeEdges es etype) (A Nothing $ nodeName t)
 
+-- | Generate declarations for the given rule.
+--
+-- Uses the metadata to define the names of nodes/edges and their types.
+generateRule :: GrRule -> [RuleDeclaration]
+generateRule rule = match : forbids ++ deletes ++ clones ++ creates
+  where
+    match = DeclMatch (generateGraph $ leftObject rule)
+
+    forbids = map generateNac (nacs rule)
+    generateNac nac =
+      let (nodes, edges) = elementsOutsideImage nac
+      in DeclForbid Nothing $ generateNodes nodes ++ generateEdges edges
+
+    deletes =
+      let
+        (deletedNodes, deletedEdges) = elementsOutsideImage (leftMorphism rule)
+        (deletedIsolatedNodes, deletedNodesWithEdges) = List.partition isIsolated deletedNodes
+          where isIsolated (_, _, ctx) = List.null (incidentEdges ctx)
+        deletedEdgesWithoutNode = filter (not . adjacentToDeletedNode) deletedEdges
+          where
+            adjacentToDeletedNode ((s,_,_),_,_,(t,_,_)) = nodeId s `Set.member` deletedIds || nodeId t `Set.member` deletedIds
+            deletedIds = Set.fromList [ nodeId n | (n,_,_) <- deletedNodesWithEdges ]
+      in
+        [ DeclDelete [(A Nothing (nodeName n), WithMatchedEdges)] | (n,_,_) <- deletedNodesWithEdges ]
+        ++ [ DeclDelete [(A Nothing (nodeName n), Isolated) | (n,_,_) <- chunk]
+              | chunk <- List.chunksOf maxElemsPerDecl deletedIsolatedNodes ]
+        ++ [ DeclDelete [(A Nothing (edgeName e), Isolated) | (_,e,_,_) <- chunk]
+              | chunk <- List.chunksOf maxElemsPerDecl deletedEdgesWithoutNode ]
+
+    clones =
+      let
+        identifiedNodeSets = identifiedElementSets (nodeMapping $ leftMorphism rule) (`lookupNode` interfaceObject rule) (`lookupNode` leftObject rule)
+        identifiedEdgeSets = identifiedElementSets (edgeMapping $ leftMorphism rule) (`lookupEdge` interfaceObject rule) (`lookupEdge` leftObject rule)
+      in
+        [ DeclClone (A Nothing $ nodeName n) [ A Nothing $ nodeName c | c <- clones, nodeName c /= nodeName n ]
+            | (n, clones) <- identifiedNodeSets ]
+        ++ [ DeclClone (A Nothing $ edgeName e) [ A Nothing $ edgeName c | c <- clones, edgeName c /= edgeName e ]
+              | (e, clones) <- identifiedEdgeSets ]
+
+    creates = case elementsOutsideImage (rightMorphism rule) of
+      ([], []) -> []
+      (createdNodes, createdEdges) -> [DeclCreate $ generateNodes createdNodes ++ generateEdges createdEdges]
+
+elementsOutsideImage :: GrMorphism -> ([NodeInContext Metadata Metadata], [EdgeInContext Metadata Metadata])
+elementsOutsideImage morph = (filter (not . isNodeInImage) $ nodesInContext cod, filter (not . isEdgeInImage) $ edgesInContext cod)
+  where
+    cod = codomain morph
+    isNodeInImage (n,_,_) = nodeId n `Map.member` inverseNodeMap
+    isEdgeInImage (_,e,_,_) = edgeId e `Map.member` inverseEdgeMap
+
+    inverseNodeMap = Map.inverse (nodeMapping morph)
+    inverseEdgeMap = Map.inverse (edgeMapping morph)
+
+identifiedElementSets :: (Show k, Show a, Show b, Show c, Ord k) => [(a, k)] -> (a -> Maybe b) -> (k -> Maybe c) -> [(c, [b])]
+identifiedElementSets mapping lookupDom lookupCod =
+  [ (lookupUnsafeCod n, map lookupUnsafeDom clones)
+      | (n, clones) <- Map.toList $ Map.inverse mapping
+      , length clones >= 2 ]
+  where
+    lookupUnsafeDom = fromMaybe (error "generateRule: malformed graph morphism") . lookupDom
+    lookupUnsafeCod = fromMaybe (error "generateRule: malformed graph morphism") . lookupCod

@@ -5,7 +5,7 @@ module Data.TypedGraph (
   , EdgeId(..)
   , Node(..)
   , Edge(..)
-  
+
   -- * Contexts and Graph Traversal
   , NodeContext
   , NodeInContext
@@ -36,6 +36,11 @@ module Data.TypedGraph (
   , empty
   , fromNodesAndEdges
 
+  -- ** Delete
+  , removeIsolatedNode
+  , removeNodeAndIncidentEdges
+  , removeEdge
+
   -- * Conversion
   -- ** Untyped Graphs and Morphisms
   , toGraphMorphism
@@ -55,12 +60,15 @@ module Data.TypedGraph (
   , newEdges
   ) where
 
+
+import qualified Data.List            as List
+import           Data.Maybe           (fromJust, fromMaybe, isJust)
+
 import           Base.Cardinality
-import Data.Graphs (Graph, NodeId, EdgeId, Node(..), Edge(..))
+import           Data.Graphs          (Edge (..), EdgeId, Graph, Node (..), NodeId)
 import qualified Data.Graphs          as Graph
 import           Data.Graphs.Morphism
-import           Data.Maybe           (fromMaybe, fromJust)
-
+import qualified Data.Relation        as Relation
 
 -- | A typed graph is a morphism whose codomain is the type graph.
 type TypedGraph n e = GraphMorphism (Maybe n) (Maybe e)
@@ -142,9 +150,9 @@ edgeInContext graph edge =
   )
   where
     nodes = Graph.nodeMap (toUntypedGraph graph)
-    fromJust Nothing = error "edgeInContext: malformed graph"
+    fromJust Nothing  = error "edgeInContext: malformed graph"
     fromJust (Just x) = x
-  
+
 -- | Get the edges that are incident on the current node.
 -- /O(e*log(e))/, plus the cost of evaluating the nodes of the result (see 'EdgeInContext').
 incidentEdges :: NodeContext n e -> [EdgeInContext n e]
@@ -204,7 +212,7 @@ isAdjacentTo = Graph.isAdjacentTo . toUntypedGraph
 -- | Test if the given edge has given node as source or target. /O(e)/.
 isIncidentTo :: TypedGraph n e -> NodeId -> EdgeId -> Bool
 isIncidentTo = Graph.isIncidentTo . toUntypedGraph
-  
+
 -- | Look up the node with given identifier in the graph. /O(v)/.
 lookupNode :: NodeId -> TypedGraph n e -> Maybe (Node (Maybe n))
 lookupNode id = Graph.lookupNode id . toUntypedGraph
@@ -224,7 +232,7 @@ lookupEdgeInContext id graph = edgeInContext graph <$> lookupEdge id graph
 
 -- | List of all node id's from from the graph. /O(v)/.
 nodeIds :: TypedGraph n e -> [NodeId]
-nodeIds = Graph.nodeIds . toUntypedGraph 
+nodeIds = Graph.nodeIds . toUntypedGraph
 
 -- | List of all edge id's from from the graph. /O(e)/.
 edgeIds :: TypedGraph n e -> [EdgeId]
@@ -275,3 +283,31 @@ newNodes = Graph.newNodes . toUntypedGraph
 -- | Infinite list of edge IDs that are not in a typed graph
 newEdges :: TypedGraph n e -> [EdgeId]
 newEdges = Graph.newEdges . toUntypedGraph
+
+-- | Removes the given node from the graph, unless it has any incident edges. /O(v + e²)/.
+removeIsolatedNode :: NodeId -> TypedGraph n e -> TypedGraph n e
+removeIsolatedNode nodeId g@(GraphMorphism dom cod nodeMap edgeMap) =
+  case lookupNodeInContext nodeId g of
+    Nothing -> g
+    Just (_,_,nodeCtx)
+      | List.null (incidentEdges nodeCtx) ->
+        GraphMorphism (Graph.removeNodeForced nodeId dom) cod (Relation.removeFromDomain nodeId nodeMap) edgeMap
+      | otherwise -> g
+
+-- | Removes the given node and all incident edges from the graph. /O(v + e²)/
+removeNodeAndIncidentEdges :: NodeId -> TypedGraph n e -> TypedGraph n e
+removeNodeAndIncidentEdges nodeId g@(GraphMorphism dom cod nodeMap edgeMap) =
+  case lookupNodeInContext nodeId g of
+    Nothing -> g
+    Just (_,_,nodeCtx) ->
+      let
+        dom' = Graph.removeNodeAndIncidentEdges nodeId dom
+        notRemoved e = isJust (Graph.lookupEdge e dom')
+      in GraphMorphism dom' cod
+        (Relation.removeFromDomain nodeId nodeMap)
+        (Relation.filterDomain notRemoved edgeMap)
+
+-- | Remove the given edge from the graph. /O(e)/.
+removeEdge :: EdgeId -> TypedGraph n e -> TypedGraph n e
+removeEdge e g@(GraphMorphism dom cod nodeMap edgeMap) =
+  GraphMorphism (Graph.removeEdge e dom) cod nodeMap (Relation.removeFromDomain e edgeMap)
