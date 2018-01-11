@@ -1,5 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
-module GrLang.AST where
+module GrLang.AST 
+  ( Command(..)
+  , TopLevelDeclaration(..)
+  , GraphDeclaration(..)
+  , RuleDeclaration(..)
+  , DeletionMode(..)
+  , ParallelEdgesDeclaration(..)
+  ) where
 
 import           Data.Text                 (Text)
 import           Data.Text.Prettyprint.Doc (Doc, Pretty (..), (<+>), (<>))
@@ -102,10 +109,6 @@ block prefix body = PP.vsep
   [ prefix <+> "{"
   , PP.indent 2 (PP.vsep body)
   , "}" ]
-
-nonEmptyBlock :: Doc ann -> [Doc ann] -> Doc ann
-nonEmptyBlock _ []        = PP.emptyDoc
-nonEmptyBlock prefix body = block prefix body
 
 blockOrSingle :: Doc ann -> [Doc ann] -> Doc ann
 blockOrSingle _ []        = PP.emptyDoc
