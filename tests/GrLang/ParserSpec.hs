@@ -123,4 +123,9 @@ spec = do
         ]
       ]
 
-
+  it "parses a rule with joined elements" $
+    "rule r { join n1, n2 as n; join n3, n4, n5 }" `shouldParseTo`
+      [ DeclRule "r"
+        [ DeclJoin ["n1", "n2"] "n"
+        , DeclJoin ["n3", "n4", "n5"] Nothing ]
+      ]

@@ -77,6 +77,7 @@ instance Arbitrary RuleDeclaration where
   shrink (DeclCreate es)   = DeclCreate <$> shrinkList1 es
   shrink (DeclDelete ns)   = DeclDelete <$> shrinkList1 ns
   shrink (DeclClone e cs)  = DeclClone e <$> shrinkList1 cs
+  shrink (DeclJoin es j)   = DeclJoin <$> shrinkList1 es <*> pure j
 
 instance Arbitrary DeletionMode where
   arbitrary = elements [Isolated, WithMatchedEdges]

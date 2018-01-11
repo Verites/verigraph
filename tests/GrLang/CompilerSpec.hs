@@ -7,7 +7,6 @@ module GrLang.CompilerSpec where
 import           Control.Monad
 import           Control.Monad.Except      (ExceptT)
 import           Control.Monad.Trans
-import           Data.Either               (rights)
 import           Data.Functor.Identity
 import           Data.Map                  (Map)
 import qualified Data.Map                  as Map
@@ -196,6 +195,10 @@ spec = do
               , [ DeclMatch [DeclNodes ["n1"] "N"]
                   , DeclClone "n1" ["n1'"]
                 ]
+              , [ DeclMatch [DeclNodes ["n1","n2","n3","n4","n5"] "N"]
+                , DeclJoin ["n1", "n2"] "n"
+                , DeclJoin ["n3", "n4", "n5"] Nothing
+                ]
               ]
         decls <- pick (elements testCases)
         let Right rule = evalGrLang (initState tgraph) (compileRule decls)
@@ -300,7 +303,54 @@ spec = do
       assertBool "rhs morphism is not iso" (not . isIsomorphism $ rightMorphism r)
       assertEqual "NACs" [] (nacs r)
 
-    it "compiles a rule with joining" pending
+    it "compiles a rule with joining" $ do
+      (tgraph, values) <- compileSuccess "case19.grl"
+      Map.keys values `shouldBe` ["merge"]
+      let VRule r = Ann.drop $ values Map.! "merge"
+      assertValidRule r
+      assertEqual "LHS"
+        (fromNodesAndEdges tgraph
+          [ (Node 0 . Just $ Metadata "r1" Nothing, 1)
+          , (Node 1 . Just $ Metadata "r2" Nothing, 1)
+          , (Node 2 . Just $ Metadata "d1" Nothing, 2)
+          , (Node 3 . Just $ Metadata "d2" Nothing, 2) ]
+          [ (Edge 0 0 2 . Just $ Metadata Nothing Nothing, 1)
+          , (Edge 1 1 3 . Just $ Metadata Nothing Nothing, 1) ])
+        (leftObject r)
+      assertEqual "interface"
+        (fromNodesAndEdges tgraph
+          [ (Node 0 . Just $ Metadata "r1" Nothing, 1)
+          , (Node 1 . Just $ Metadata "r2" Nothing, 1)
+          , (Node 2 . Just $ Metadata "d1" Nothing, 2)
+          , (Node 3 . Just $ Metadata "d2" Nothing, 2)
+          , (Node 4 . Just $ Metadata "d1'" Nothing, 2)
+          , (Node 5 . Just $ Metadata "d2'" Nothing, 2)]
+          [ (Edge 0 0 2 . Just $ Metadata Nothing Nothing, 1)
+          , (Edge 1 1 3 . Just $ Metadata Nothing Nothing, 1) ])
+        (interfaceObject r)
+      assertEqual "RHS"
+        (fromNodesAndEdges tgraph
+          [ (Node 0 . Just $ Metadata "r1" Nothing, 1)
+          , (Node 1 . Just $ Metadata "r2" Nothing, 1)
+          , (Node 2 . Just $ Metadata "d1" Nothing, 2)
+          , (Node 3 . Just $ Metadata "d2" Nothing, 2)
+          , (Node 6 . Just $ Metadata "d3" Nothing, 2)
+          , (Node 7 . Just $ Metadata "r3" Nothing, 1)]
+          [ (Edge 0 0 2 . Just $ Metadata Nothing Nothing, 1)
+          , (Edge 1 1 3 . Just $ Metadata Nothing Nothing, 1)
+          , (Edge 2 7 6 . Just $ Metadata Nothing Nothing, 1)
+          , (Edge 3 6 0 . Just $ Metadata Nothing Nothing, 2)
+          , (Edge 4 6 1 . Just $ Metadata Nothing Nothing, 2) ])
+        (rightObject r)
+      assertEqual "LHS morphism applied to d1'" (Just 2) (TGraph.applyNodeId (leftMorphism r) 4)
+      assertEqual "LHS morphism applied to d2'" (Just 3) (TGraph.applyNodeId (leftMorphism r) 5)
+      assertEqual "RHS morphism applied to d1'" (Just 6) (TGraph.applyNodeId (rightMorphism r) 4)
+      assertEqual "RHS morphism applied to d2'" (Just 6) (TGraph.applyNodeId (rightMorphism r) 5)
+
+      assertBool "lhs morphism is not monic" (not . isMonic $ leftMorphism r)
+      assertBool "lhs morphism is epic" (isEpic $ leftMorphism r)
+      assertBool "rhs morphism is not monic" (not . isMonic $ rightMorphism r)
+      assertBool "rhs morphism is not epic" (not . isEpic $ rightMorphism r)
 
     it "compiles a no-op rule with NACs" $ do
       (tgraph, values) <- compileSuccess "case12.grl"
@@ -370,6 +420,10 @@ spec = do
       errors <- compileFailure "case14.grl"
       length (DList.toList errors) `shouldBe` 1
 
+    it "fails when joining unknown elements" $ do
+      errors <- compileFailure "case23.grl"
+      length (DList.toList errors) `shouldBe` 1
+
     it "fails when create has a name clash" $ do
       errors <- compileFailure "case15.grl"
       length (DList.toList errors) `shouldBe` 3
@@ -377,6 +431,10 @@ spec = do
     it "fails when clone has a name clash" $ do
       errors <- compileFailure "case16.grl"
       length (DList.toList errors) `shouldBe` 3
+
+    it "fails when join has a name clash" $ do
+      errors <- compileFailure "case24.grl"
+      length (DList.toList errors) `shouldBe` 1
 
     it "fails when deleting leaves dangling edges" $ do
       errors <- compileFailure "case17.grl"
@@ -386,9 +444,17 @@ spec = do
       errors <- compileFailure "case18.grl"
       length (DList.toList errors) `shouldBe` 2
 
-    it "fails when joining nodes of different types" pending
+    it "fails when joining nodes of different types" $ do
+      errors <- compileFailure "case20.grl"
+      length (DList.toList errors) `shouldBe` 1
 
-    it "fails when joining edges of different types, sources or targets" pending
+    it "fails when joining edges of different types, sources or targets" $ do
+      errors <- compileFailure "case21.grl"
+      length (DList.toList errors) `shouldBe` 3
+
+    it "fails when joining a node with an edge" $ do
+      errors <- compileFailure "case22.grl"
+      length (DList.toList errors) `shouldBe` 1
 
 testRoundTrip :: (Iso val, Valid val, Show val, Pretty ast, Show ast, Monad m) =>
                   (val -> ast)

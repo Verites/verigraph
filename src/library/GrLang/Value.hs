@@ -33,7 +33,6 @@ import           Data.Function             (on)
 import qualified Data.List                 as List
 import qualified Data.Map                  as Map
 import           Data.Maybe                (fromMaybe, isJust, mapMaybe)
-import           Data.Set                  (Set)
 import qualified Data.Set                  as Set
 import           Data.Text                 (Text)
 import qualified Data.Text                 as Text
@@ -50,11 +49,8 @@ import           Data.TypedGraph
 import           Data.TypedGraph.Morphism
 import           GrLang.AST
 import           Rewriting.DPO.TypedGraph
-import           Rewriting.DPO.TypedGraph  ()
 import qualified Util.List                 as List
 import qualified Util.Map                  as Map
-
-import           Debug.Trace
 
 data Value
   = VGraph GrGraph
@@ -190,7 +186,7 @@ generateEdges = concatMap generateChunk . List.chunksBy sourceTarget
 --
 -- Uses the metadata to define the names of nodes/edges and their types.
 generateRule :: GrRule -> [RuleDeclaration]
-generateRule rule = match : forbids ++ deletes ++ clones ++ creates
+generateRule rule = match : forbids ++ deletes ++ clones ++ creates ++ joins
   where
     match = DeclMatch (generateGraph $ leftObject rule)
 
@@ -228,6 +224,16 @@ generateRule rule = match : forbids ++ deletes ++ clones ++ creates
     creates = case elementsOutsideImage (rightMorphism rule) of
       ([], []) -> []
       (createdNodes, createdEdges) -> [DeclCreate $ generateNodes createdNodes ++ generateEdges createdEdges]
+
+    joins =
+      let
+        identifiedNodeSets = identifiedElementSets (nodeMapping $ rightMorphism rule) (`lookupNode` interfaceObject rule) (`lookupNode` rightObject rule)
+        identifiedEdgeSets = identifiedElementSets (edgeMapping $ rightMorphism rule) (`lookupEdge` interfaceObject rule) (`lookupEdge` rightObject rule)
+      in
+        [ DeclJoin [ A Nothing $ nodeName j | j <- joined ] (Just . A Nothing $ nodeName n)
+            | (n, joined) <- identifiedNodeSets ]
+        ++ [ DeclJoin [ A Nothing $ edgeName j | j <- joined ] (Just . A Nothing $ edgeName e)
+              | (e, joined) <- identifiedEdgeSets ]
 
 elementsOutsideImage :: GrMorphism -> ([NodeInContext Metadata Metadata], [EdgeInContext Metadata Metadata])
 elementsOutsideImage morph = (filter (not . isNodeInImage) $ nodesInContext cod, filter (not . isEdgeInImage) $ edgesInContext cod)

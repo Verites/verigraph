@@ -1,8 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module GrLang.AST where
 
-import           Prelude                   hiding (drop)
-
 import           Data.Text                 (Text)
 import           Data.Text.Prettyprint.Doc (Doc, Pretty (..), (<+>), (<>))
 import qualified Data.Text.Prettyprint.Doc as PP
@@ -34,6 +32,7 @@ data RuleDeclaration
   | DeclCreate [GraphDeclaration]
   | DeclDelete [(Located Text, DeletionMode)]
   | DeclClone (Located Text) [Located Text]
+  | DeclJoin [Located Text] (Maybe (Located Text))
   deriving (Eq, Show)
 
 data DeletionMode = Isolated | WithMatchedEdges
@@ -79,12 +78,21 @@ instance Pretty RuleDeclaration where
             Nothing -> PP.emptyDoc
             Just (A _ name) -> PP.space <> pretty name
   pretty (DeclCreate elems) = blockOrSingle "create" (map pretty elems)
+  pretty (DeclDelete []) = PP.emptyDoc
   pretty (DeclDelete names) = PP.fillSep $ "delete" : PP.punctuate "," (map prettyDeleted names)
     where
       prettyDeleted (A _ name, Isolated)         = pretty name
       prettyDeleted (A _ name, WithMatchedEdges) = pretty name <+> "with matched edges"
   pretty (DeclClone (A _ name) clones) =
     PP.fillSep $ "clone" : pretty name : "as" : PP.punctuate "," (map (pretty . Ann.drop) clones)
+  pretty (DeclJoin [] _) = PP.emptyDoc
+  pretty (DeclJoin [_] _) = PP.emptyDoc
+  pretty (DeclJoin joined name) = PP.fillSep $ "join" : prettyJoined ++ prettyName
+    where
+      prettyJoined = PP.punctuate "," $ map (pretty . Ann.drop) joined
+      prettyName = case name of
+        Just (A _ n) -> ["as", pretty n]
+        Nothing -> []
 
 namedBlock :: (Pretty a) => Doc ann -> Located a -> [Doc ann] -> Doc ann
 namedBlock kind (A _ name) = block (kind <+> pretty name)

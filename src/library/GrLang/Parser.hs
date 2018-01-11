@@ -96,11 +96,20 @@ ruleDecl = choice
   , reserved "create" >> DeclCreate <$> graphFragment <?> "create"
   , reserved "delete" >> DeclDelete <$> commaSep1 deletedElem <?> "delete"
   , clone <?> "clone"
+  , join <?> "join"
   ] <* optional semi
   where
     clone = DeclClone
       <$> (reserved "clone" *> located identifier)
       <*> (reserved "as" *> commaSep1 (located identifier))
+
+    join = DeclJoin
+      <$> (reserved "join" *> commaSep2 (located identifier))
+      <*> optionMaybe (reserved "as" *> located identifier)
+      where commaSep2 p = commaSep1 p >>= \elems ->
+              if length elems < 2
+              then fail $ "Expected at least two elements to be joined" ++ show elems
+              else return elems
 
     deletedElem = (,) <$> located identifier <*> deleteMode
     deleteMode =

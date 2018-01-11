@@ -214,6 +214,8 @@ test-suite HSpecTests
                        Data.TypedGraph.Morphism.FindMorphismSpec.FindMorphismsTest
                        Data.TypedGraph.PartitionSpec
                        GrLang.CompilerSpec
+                       GrLang.ParserSpec
+                       GrLang.TestUtils
                        HSpecTests
                        Logic.Ctl.ModelCheckerSpec
                        Logic.Ctl.ParserSpec
