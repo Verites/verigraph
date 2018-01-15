@@ -1,16 +1,16 @@
 ---[[
-node_type('Revision')
-node_type('TransDeps')
-node_type('Branch')
+GrLang.add_node_type('Revision')
+GrLang.add_node_type('TransDeps')
+GrLang.add_node_type('Branch')
 
-edge_type('transDeps', 'Revision', 'TransDeps')
-edge_type('dep', 'TransDeps', 'Revision')
-edge_type('tip', 'Branch', 'Revision') 
+GrLang.add_edge_type('transDeps', 'Revision', 'TransDeps')
+GrLang.add_edge_type('dep', 'TransDeps', 'Revision')
+GrLang.add_edge_type('tip', 'Branch', 'Revision') 
 --]]
 
 -- require "git.tg"
 
-foo = graph [[
+foo = Graph [[
   head : Branch
   r1 r2 : Revision
   d1 d2 : TransDeps
@@ -25,4 +25,5 @@ foo = graph [[
 
 print(foo)
 print(foo:to_dot('foo'))
-foo:view()
+--foo:view()
+help(foo)

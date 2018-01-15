@@ -126,19 +126,19 @@ toGrLangValue :: Lua.StackIndex -> ExceptT GrLang.Error LuaGrLang Value
 toGrLangValue stackIdx = do
   gotTable <- liftLua $ Lua.istable stackIdx
   if not gotTable
-    then GrLang.throwError Nothing $ "Value is not a table"
+    then GrLang.throwError Nothing "Value is not a table"
     else do
       liftLua $ Lua.getfield stackIdx indexKey
       result <- liftLua $ Lua.tointegerx (-1)
       liftLua $ Lua.pop 1
       case result of
-        Nothing -> GrLang.throwError Nothing $ "Value has no index"
+        Nothing -> GrLang.throwError Nothing "Value has no index"
         Just memIndex' -> do
           let memIndex = fromEnum memIndex'
           arr <- lift $ asks values
           result <- liftIO $ readArray arr memIndex
           case result of
-            Nothing -> GrLang.throwError Nothing $ "Value has unallocated index"
+            Nothing -> GrLang.throwError Nothing "Value has unallocated index"
             Just val -> return val
 
 lookupNodeType :: Text -> LuaGrLang (Maybe NodeType)
@@ -201,17 +201,12 @@ initialize :: Lua ()
 initialize = do
   globalState <- liftIO (initState 255)
 
-  initGrLang globalState
-
   execLua
-    " function catch_haskell(result, error_msg) \
-    \   if result == \"_HASKELLERR\" then \
-    \     error(error_msg) \
-    \     return \
-    \   else \
-    \     return result \
-    \   end \
-    \ end "
+    " package.path = package.path .. ';./src/repl/lua/?.lua' \
+    \ require 'help' \
+    \ require 'grlang' "
+
+  initGrLang globalState
 
   return ()
 
@@ -225,79 +220,52 @@ grLangNamingContext = Dot.Ctx
   , Dot.getEdgeLabel = \_ (_, edge, etype, _) ->
       Just $ case edgeExactName edge of
         Nothing -> pretty $ edgeName etype
-        Just name -> (pretty name) <> ":" <> pretty (edgeName etype)
+        Just name -> pretty name <> ":" <> pretty (edgeName etype)
   }
 
 initGrLang :: GrLangState -> Lua ()
 initGrLang globalState = do
+  Lua.getglobal "GrLang"
+  tableIdx <- Lua.gettop
   createTable
-    [ ("mt", createTable
-        [ ("__tostring", Lua.pushHaskellFunction . runGrLang' globalState $
-              show . pretty <$> toGrLangValue (-1)
-          )
-        , ("__eq", Lua.pushHaskellFunction $ \g1 g2 ->
-              return $ (Map.lookup indexKey g1 :: Maybe Lua.LuaInteger) == Map.lookup indexKey g2 :: Lua Bool)
-        , ("__index", createTable
-            [ ("to_dot", Lua.pushHaskellFunction . runGrLang' globalState $ do
-                  VGraph graph <- toGrLangValue 1
-                  name <- liftLua $ Lua.tostring 2
-                  return . show $ Dot.typedGraph grLangNamingContext (pretty $ Text.decodeUtf8 name) graph
-              )
-            ]
-          )
-        ]
-      )
-    , ("_addNodeType", Lua.pushHaskellFunction $ \name -> runGrLang' globalState $
-          GrLang.addNodeType (A Nothing name)
-      )
-    , ("_addEdgeType", Lua.pushHaskellFunction $ \name srcName tgtName -> runGrLang' globalState $
-          GrLang.addEdgeType (A Nothing name) (A Nothing srcName) (A Nothing tgtName)
-      )
-    , ("_getNodeTypes", Lua.pushHaskellFunction $
+    [ ("getNodeTypes", Lua.pushHaskellFunction
           (map Text.unpack . Map.keys <$> liftIO (readIORef $ nodeTypes globalState) :: Lua [String])
       )
-    , ("_getEdgeTypes", Lua.pushHaskellFunction . runGrLang' globalState $ do
-          types <- Map.keys <$> get edgeTypes
-          forM types $ \(name, srcId, tgtId) -> do
-            tgraph <- get typeGraph
-            let Just srcType = TypeGraph.lookupNode srcId tgraph
-                Just tgtType = TypeGraph.lookupNode tgtId tgraph
-            return . Text.unpack $ formatEdgeType name (nodeName srcType) (nodeName tgtType)
+    , ("getEdgeTypes", Lua.pushHaskellFunction . runGrLang' globalState $ do
+        types <- Map.keys <$> get edgeTypes
+        forM types $ \(name, srcId, tgtId) -> do
+          tgraph <- get typeGraph
+          let Just srcType = TypeGraph.lookupNode srcId tgraph
+              Just tgtType = TypeGraph.lookupNode tgtId tgraph
+          return . Text.unpack $ formatEdgeType name (nodeName srcType) (nodeName tgtType)
       )
-    , ("_parseGraph", Lua.pushHaskellFunction $ \string -> runGrLang' globalState $ do
+    , ("addNodeType", Lua.pushHaskellFunction $ \name -> runGrLang' globalState $
+          GrLang.addNodeType (A Nothing name)
+      )
+    , ("addEdgeType", Lua.pushHaskellFunction $ \name srcName tgtName -> runGrLang' globalState $
+          GrLang.addEdgeType (A Nothing name) (A Nothing srcName) (A Nothing tgtName)
+      )
+    , ("toString", Lua.pushHaskellFunction . runGrLang' globalState $
+        show . pretty <$> toGrLangValue (-1)
+      )
+    , ("toDot", Lua.pushHaskellFunction . runGrLang' globalState $ do
+          VGraph graph <- toGrLangValue 1
+          name <- liftLua $ Lua.tostring 2
+          return . show $ Dot.typedGraph grLangNamingContext (pretty $ Text.decodeUtf8 name) graph
+      )
+    ]
+  Lua.setfield tableIdx "native"
+
+  Lua.getglobal "Graph"
+  tableIdx <- Lua.gettop
+  createTable
+    [ ("parseGraph", Lua.pushHaskellFunction $ \string -> runGrLang' globalState $ do
           graph <- GrLang.compileGraph =<< GrLang.parseGraph "<repl>" (string :: String)
           idx <- allocateGrLang (VGraph graph)
           return (fromIntegral idx :: Lua.LuaInteger)
       )
     ]
-  Lua.setglobal "GrLang"
-
-  execLua
-    " function GrLang.node_types() \
-    \   return catch_haskell(GrLang._getNodeTypes()) \
-    \ end \
-    \ function GrLang.edge_types() \
-    \   return catch_haskell(GrLang._getEdgeTypes()) \
-    \ end \
-    \ function node_type(name) \
-    \   return catch_haskell(GrLang._addNodeType(name)) \
-    \ end \
-    \ function edge_type(name, srcName, tgtName) \
-    \   return catch_haskell(GrLang._addEdgeType(name, srcName, tgtName)) \
-    \ end \
-    \ function graph(str) \
-    \   local idx = catch_haskell(GrLang._parseGraph(str)) \
-    \   local g = {index = idx} \
-    \   setmetatable(g, GrLang.mt) \
-    \   return g \
-    \ end \
-    \ function GrLang.mt.__index.view(graph) \
-    \   local file_name = '/tmp/verigraph-dot' .. os.date() \
-    \   local file = io.open(file_name, 'w') \
-    \   file:write(graph:to_dot('')) \
-    \   file:close() \
-    \   os.execute('xdot \"' .. file_name .. '\"') \
-    \ end "
+  Lua.setfield tableIdx "native"
 
 indexKey :: String
 indexKey = "index" :: String
