@@ -7,5 +7,5 @@ rule merge {
     r1 -m11:MDeps-> d1
   }
 
-  join r1, m11
+  join r1 m11
 }

@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
-module GrLang.AST 
-  ( Command(..)
-  , TopLevelDeclaration(..)
+module GrLang.AST
+  ( TopLevelDeclaration(..)
   , GraphDeclaration(..)
   , RuleDeclaration(..)
   , DeletionMode(..)
@@ -15,39 +14,35 @@ import qualified Data.Text.Prettyprint.Doc as PP
 import           Base.Annotation           (Annotated (..), Located)
 import qualified Base.Annotation           as Ann
 
-data Command
-  = CDecl TopLevelDeclaration
-  | CSaveDot (Located Text) (Located FilePath)
-  deriving (Eq, Show)
-
 data TopLevelDeclaration
-  = Import (Located FilePath)
-  | DeclNodeType (Located Text)
-  | DeclEdgeType (Located Text) (Located Text) (Located Text)
-  | DeclGraph (Located Text) [GraphDeclaration]
-  | DeclRule (Located Text) [RuleDeclaration]
+  = Import (Located FilePath) -- ^ Declares that another file should be imported, with a path relative to the current file.
+  | DeclNodeType (Located Text) -- ^ Declares a node type.
+  | DeclEdgeType (Located Text) (Located Text) (Located Text) -- ^ Declares an edge type with source and target node types.
+  | DeclGraph (Located Text) [GraphDeclaration] -- ^ Declares a graph whose elements are declared in its body.
+  | DeclRule (Located Text) [RuleDeclaration] -- ^ Declares a rule whose elements are declared in its body.
   deriving (Eq, Show)
 
 data GraphDeclaration
-  = DeclNodes [Located Text] (Located Text)
-  | DeclEdges (Located Text) ParallelEdgesDeclaration (Located Text)
+  = DeclNodes [Located Text] (Located Text) -- ^ Declares nodes of a given type, with the given names.
+  | DeclEdges (Located Text) [(ParallelEdgesDeclaration, Located Text)] (Located Text) -- ^ Declares edges with given source and targets.
+  deriving (Eq, Show)
+
+data ParallelEdgesDeclaration = AnonymousEdge | NamedEdges [Located Text]
   deriving (Eq, Show)
 
 data RuleDeclaration
-  = DeclMatch [GraphDeclaration]
-  | DeclForbid (Maybe (Located Text)) [GraphDeclaration]
-  | DeclCreate [GraphDeclaration]
-  | DeclDelete [(Located Text, DeletionMode)]
-  | DeclClone (Located Text) [Located Text]
-  | DeclJoin [Located Text] (Maybe (Located Text))
+  = DeclMatch [GraphDeclaration] -- ^ Declares elements that must be matched by the rule.
+  | DeclForbid (Maybe (Located Text)) [GraphDeclaration] -- ^ Declares elements that must not be matched by the rule.
+  | DeclCreate [GraphDeclaration] -- ^ Declares elements that will be created by the rule.
+  | DeclDelete [Located Text] DeletionMode -- ^ Declares elements that were matched and will be deleted by the rule.
+  | DeclClone (Located Text) [Located Text] -- ^ Declares clones of a matched element with given names.
+  | DeclJoin [Located Text] (Maybe (Located Text)) -- ^ Declares that matched elements will be joined into a single one.
   deriving (Eq, Show)
 
+-- | When deleting nodes, they may be deleted with all incident matched edges.
+-- If this is not explicitly declared, and the node is not isolated, then the
+-- rule declaration is invalid.
 data DeletionMode = Isolated | WithMatchedEdges
-  deriving (Eq, Show)
-
-data ParallelEdgesDeclaration
-  = SingleType [Located Text] (Located Text)
-  | MultipleTypes [Located (Maybe Text, Text)]
   deriving (Eq, Show)
 
 
@@ -61,22 +56,21 @@ instance Pretty TopLevelDeclaration where
 
 instance Pretty GraphDeclaration where
   pretty (DeclNodes [] _) = PP.emptyDoc
-  pretty (DeclNodes ns (A _ t)) = PP.group . PP.nest 4 . PP.fillSep $ nodeNames ++ typeSig
+  pretty (DeclNodes ns (A _ t)) = PP.group . PP.nest 4 . PP.fillSep $
+    [ pretty n | A _ n <- ns ] ++ [":" <+> pretty t]
+  pretty (DeclEdges (A _ src) edgeDecls (A _ tgt))
+    | null nonEmptyDecls =  PP.emptyDoc
+    | otherwise = PP.group . PP.nest 4 . PP.fillSep $
+        [ pretty src <+> "-" ]
+        ++ PP.punctuate "," (map prettyEdges nonEmptyDecls)
+        ++ [ "->" <+> pretty tgt ]
     where
-      nodeNames = PP.punctuate "," [ pretty n | A _ n <- ns ]
-      typeSig = [":" <+> pretty t]
-  pretty (DeclEdges _ (SingleType [] _) _) = PP.emptyDoc
-  pretty (DeclEdges _ (MultipleTypes []) _) = PP.emptyDoc
-  pretty (DeclEdges (A _ src) es (A _ tgt)) =
-    PP.group . PP.nest 4 . PP.fillSep $
-      [ pretty src <+> "-" ]
-      ++ prettyEdges es
-      ++ [ "->" <+> pretty tgt ]
-    where
-      prettyEdges (SingleType es (A _ t)) = PP.punctuate "," [ pretty e | A _ e <- es ] ++ [":" <+> pretty t]
-      prettyEdges (MultipleTypes es) = PP.punctuate ", " [ prettyEdge e | A _ e <- es ]
-      prettyEdge (Just e, t)  = pretty e <> ":" <> pretty t
-      prettyEdge (Nothing, t) = ":" <> pretty t
+      nonEmptyDecls = filter (not . isEmpty) edgeDecls
+      isEmpty (AnonymousEdge, _) = False
+      isEmpty (NamedEdges es, _) = null es
+
+      prettyEdges (AnonymousEdge, A _ t) = ":" <+> pretty t
+      prettyEdges (NamedEdges es, A _ t) = PP.hsep $ [ pretty e | A _ e <- es ] ++ [":" <+> pretty t]
 
 instance Pretty RuleDeclaration where
   pretty (DeclMatch elems) = blockOrSingle "match" (map pretty elems)
@@ -85,18 +79,18 @@ instance Pretty RuleDeclaration where
             Nothing -> PP.emptyDoc
             Just (A _ name) -> PP.space <> pretty name
   pretty (DeclCreate elems) = blockOrSingle "create" (map pretty elems)
-  pretty (DeclDelete []) = PP.emptyDoc
-  pretty (DeclDelete names) = PP.fillSep $ "delete" : PP.punctuate "," (map prettyDeleted names)
+  pretty (DeclDelete [] _) = PP.emptyDoc
+  pretty (DeclDelete names mode) = PP.fillSep $ "delete" : map (pretty . Ann.drop) names ++ prettyMode mode
     where
-      prettyDeleted (A _ name, Isolated)         = pretty name
-      prettyDeleted (A _ name, WithMatchedEdges) = pretty name <+> "with matched edges"
+      prettyMode Isolated         = []
+      prettyMode WithMatchedEdges = ["with matched edges"]
   pretty (DeclClone (A _ name) clones) =
-    PP.fillSep $ "clone" : pretty name : "as" : PP.punctuate "," (map (pretty . Ann.drop) clones)
+    PP.fillSep $ "clone" : pretty name : "as" : map (pretty . Ann.drop) clones
   pretty (DeclJoin [] _) = PP.emptyDoc
   pretty (DeclJoin [_] _) = PP.emptyDoc
   pretty (DeclJoin joined name) = PP.fillSep $ "join" : prettyJoined ++ prettyName
     where
-      prettyJoined = PP.punctuate "," $ map (pretty . Ann.drop) joined
+      prettyJoined = map (pretty . Ann.drop) joined
       prettyName = case name of
         Just (A _ n) -> ["as", pretty n]
         Nothing -> []

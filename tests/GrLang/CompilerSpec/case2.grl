@@ -1,7 +1,7 @@
 import "vcs-types.grl"
 
 graph g {
-  r1,r2 : Revision
+  r1 r2 : Revision
 }
 
 node type Branch

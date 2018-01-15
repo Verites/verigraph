@@ -122,15 +122,13 @@ compileGraphDecl (DeclNodes nodes typeName) = do
 compileGraphDecl (DeclEdges srcName edges tgtName) = do
   (src, srcType) <- getNode srcName
   (tgt, tgtType) <- getNode tgtName
-  case edges of
-    SingleType edges' typeName -> do
-      edgeType <- getEdgeType typeName srcType tgtType
-      forMCollectErrors_ edges' $ \(A loc name) ->
+  forMCollectErrors_ edges $ \(edges', typeName) -> do
+    edgeType <- getEdgeType typeName srcType tgtType
+    case edges' of
+      AnonymousEdge ->
+        () <$ createEdge edgeType (nodeId src) (nodeId tgt) (Ann.locationOf typeName) Nothing
+      NamedEdges names -> forMCollectErrors_ names $ \(A loc name) ->
         createEdge edgeType (nodeId src) (nodeId tgt) loc (Just name)
-    MultipleTypes edges' ->
-      forMCollectErrors_ edges' $ \(A loc (name, typeName)) -> do
-        edgeType <- getEdgeType (A loc typeName) srcType tgtType
-        createEdge edgeType (nodeId src) (nodeId tgt) loc name
 
 createNode :: MonadGrLang m => NodeType -> Located Text -> GraphT m NodeId
 createNode nodeType (A loc name) = do
@@ -241,25 +239,23 @@ compileClone _ = return $ Left []
 -- in Isolated mode, compilation fails; in WithMatchedEdges mode, incident edges
 -- are removed from the state as well.
 compileDelete :: MonadGrLang m => RuleDeclaration -> GraphT m ()
-compileDelete (DeclDelete deleted) = forMCollectErrors_ deleted $ \(A loc name, mode) -> do
+compileDelete (DeclDelete deleted mode) = forMCollectErrors_ deleted $ \(A loc name) -> do
   elem <- getElem (A loc name)
-  case elem of
-    Left (node, _) -> do
-      let isIncident (edge, _) = sourceId edge == nodeId node || targetId edge == nodeId node
-      case mode of
-        Isolated -> do
-          incidentEdges <- gets (filter isIncident . grAllEdges)
-          unless (null incidentEdges) . throwError loc . PP.fillSep $
-              PP.words "Cannot delete node" ++ pretty name : PP.words "without deleting its incident edges: "
-              ++ PP.punctuate ", " (map (pretty . edgeName . fst) incidentEdges)
-        WithMatchedEdges ->
-          modify $ \state -> state
-            { grNamedElements = Map.filter (either (const True) (not . isIncident)) (grNamedElements state)
-            , grAnonymousEdges = filter (not . isIncident) (grAnonymousEdges state)
-            }
-    Right _ -> return ()
+  case (elem, mode) of
+    (Left (node, _), Isolated) -> do
+      incidentEdges <- gets $ filter (isIncidentTo node) . grAllEdges
+      unless (null incidentEdges) . throwError loc . PP.fillSep $
+          PP.words "Cannot delete node" ++ pretty name : PP.words "without deleting its incident edges: "
+          ++ PP.punctuate ", " (map (pretty . edgeName . fst) incidentEdges)
+    (Left (node, _), WithMatchedEdges) ->
+      modify $ \state -> state
+        { grNamedElements = Map.filter (either (const True) (not . isIncidentTo node)) (grNamedElements state)
+        , grAnonymousEdges = filter (not . isIncidentTo node) (grAnonymousEdges state)
+        }
+    (Right _, _) -> return ()
   modify $ \state -> state
     { grNamedElements = Map.delete name (grNamedElements state) }
+  where isIncidentTo node (edge, _) = sourceId edge == nodeId node || targetId edge == nodeId node
 compileDelete _ = return ()
 
 -- | Given a create declaration, add all declared elements to the state.

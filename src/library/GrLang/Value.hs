@@ -174,9 +174,13 @@ generateEdges = concatMap generateChunk . List.chunksBy sourceTarget
       where edgeType (_,_,t,_) = edgeId t
 
     generateSingleType = generateEdgeDecl $ \es etype ->
-      SingleType [A Nothing (edgeName e) | (_,e,_,_) <- es] (A Nothing $ edgeName etype)
+      [ ( NamedEdges [A Nothing (edgeName e) | (_,e,_,_) <- es]
+        , A Nothing (edgeName etype)) ]
     generateMultipleTypes = generateEdgeDecl $ \es _ ->
-      MultipleTypes [A Nothing (edgeExactName e, edgeName t) | (_,e,t,_) <- es]
+      [ ( namedOrAnonymous (edgeExactName e), A Nothing (edgeName t) ) | (_,e,t,_) <- es ]
+      where
+        namedOrAnonymous Nothing  = AnonymousEdge
+        namedOrAnonymous (Just n) = NamedEdges [A Nothing n]
     generateEdgeDecl _ [] = Nothing
     generateEdgeDecl makeEdges es@(e:_) =
       let ((s,_,_),_,etype,(t,_,_)) = e
@@ -205,10 +209,11 @@ generateRule rule = match : forbids ++ deletes ++ clones ++ creates ++ joins
             adjacentToDeletedNode ((s,_,_),_,_,(t,_,_)) = nodeId s `Set.member` deletedIds || nodeId t `Set.member` deletedIds
             deletedIds = Set.fromList [ nodeId n | (n,_,_) <- deletedNodesWithEdges ]
       in
-        [ DeclDelete [(A Nothing (nodeName n), WithMatchedEdges)] | (n,_,_) <- deletedNodesWithEdges ]
-        ++ [ DeclDelete [(A Nothing (nodeName n), Isolated) | (n,_,_) <- chunk]
+        [ DeclDelete [A Nothing (nodeName n) | (n,_,_) <- chunk] WithMatchedEdges
+            | chunk <- List.chunksOf maxElemsPerDecl deletedNodesWithEdges ]
+        ++ [ DeclDelete [A Nothing (nodeName n) | (n,_,_) <- chunk] Isolated
               | chunk <- List.chunksOf maxElemsPerDecl deletedIsolatedNodes ]
-        ++ [ DeclDelete [(A Nothing (edgeName e), Isolated) | (_,e,_,_) <- chunk]
+        ++ [ DeclDelete [A Nothing (edgeName e)| (_,e,_,_) <- chunk] Isolated
               | chunk <- List.chunksOf maxElemsPerDecl deletedEdgesWithoutNode ]
 
     clones =

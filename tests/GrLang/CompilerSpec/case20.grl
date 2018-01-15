@@ -6,5 +6,5 @@ rule merge {
     d1: Deps
   }
 
-  join r1, d1
+  join r1 d1
 }

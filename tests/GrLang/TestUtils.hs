@@ -2,6 +2,7 @@ module GrLang.TestUtils (failWithError, quickCheckError, runSuccess, runFailure)
 
 import           Control.Monad.Except (ExceptT (..), runExceptT)
 import qualified Data.Char            as Char
+import qualified Data.List            as List
 import           Data.Text            (Text)
 import qualified Data.Text            as Text
 import           Test.Hspec
@@ -11,6 +12,7 @@ import           Base.Annotation      (Annotated (..), Located)
 import           Base.Location
 import           GrLang.AST
 import           GrLang.Monad
+import           GrLang.Parser        (reservedNames)
 
 quickCheckError :: Error -> Property
 quickCheckError errs = counterexample (show $ prettyError errs) False
@@ -48,36 +50,33 @@ instance Arbitrary TopLevelDeclaration where
 instance Arbitrary GraphDeclaration where
   arbitrary = oneof
     [ DeclNodes <$> listOf1 (located genIdentifier) <*> located genIdentifier
-    , DeclEdges <$> located genIdentifier <*> arbitrary <*> located genIdentifier ]
+    , DeclEdges <$> located genIdentifier <*> listOf1 edges <*> located genIdentifier ]
+    where
+      edges = (,) <$> arbitrary <*> located genIdentifier
 
   shrink (DeclNodes ns t)   = [ DeclNodes ns' t | ns' <- shrinkList1 ns ]
-  shrink (DeclEdges s es t) = [ DeclEdges s es' t | es' <- shrink es ]
+  shrink (DeclEdges s es t) = [ DeclEdges s es' t | es' <- shrinkList1 es ]
 
 instance Arbitrary ParallelEdgesDeclaration where
-  arbitrary = oneof
-    [ SingleType <$> listOf2 (located genIdentifier) <*> located genIdentifier
-    , MultipleTypes <$> listOf1 (located edge) ]
-    where
-      edge = (,) <$> optional genIdentifier <*> genIdentifier
-      listOf2 gen = (:) <$> gen <*> listOf1 gen
+  arbitrary = oneof [ pure AnonymousEdge, NamedEdges <$> listOf1 (located genIdentifier) ]
 
-  shrink (SingleType es t)  = [ SingleType es' t | es' <- shrinkList1 es ]
-  shrink (MultipleTypes es) = [ MultipleTypes es' | es' <- shrinkList1 es ]
+  shrink AnonymousEdge   = []
+  shrink (NamedEdges es) = NamedEdges <$> shrinkList1 es
 
 instance Arbitrary RuleDeclaration where
   arbitrary = oneof
     [ DeclMatch <$> listOf1 arbitrary
     , DeclForbid <$> optional (located genIdentifier) <*> listOf1 arbitrary
     , DeclCreate <$> listOf1 arbitrary
-    , DeclDelete <$> listOf1 ((,) <$> located genIdentifier <*> arbitrary)
+    , DeclDelete <$> listOf1 (located genIdentifier) <*> arbitrary
     , DeclClone <$> located genIdentifier <*> listOf1 (located genIdentifier) ]
 
-  shrink (DeclMatch es)    = DeclMatch <$> shrinkList1 es
-  shrink (DeclForbid n es) = DeclForbid n <$> shrinkList1 es
-  shrink (DeclCreate es)   = DeclCreate <$> shrinkList1 es
-  shrink (DeclDelete ns)   = DeclDelete <$> shrinkList1 ns
-  shrink (DeclClone e cs)  = DeclClone e <$> shrinkList1 cs
-  shrink (DeclJoin es j)   = DeclJoin <$> shrinkList1 es <*> pure j
+  shrink (DeclMatch es)       = DeclMatch <$> shrinkList1 es
+  shrink (DeclForbid n es)    = DeclForbid n <$> shrinkList1 es
+  shrink (DeclCreate es)      = DeclCreate <$> shrinkList1 es
+  shrink (DeclDelete ns mode) = DeclDelete <$> shrinkList1 ns <*> pure mode
+  shrink (DeclClone e cs)     = DeclClone e <$> shrinkList1 cs
+  shrink (DeclJoin es j)      = DeclJoin <$> shrinkList1 es <*> pure j
 
 instance Arbitrary DeletionMode where
   arbitrary = elements [Isolated, WithMatchedEdges]
@@ -111,7 +110,7 @@ genFilePath = listOf (arbitrary `suchThat` isValid)
 
 genIdentifier :: Gen Text
 genIdentifier =
-  Text.pack <$> ((:) <$> startChar <*> listOf midChar)
+  Text.pack <$> ((:) <$> startChar <*> listOf midChar) `suchThat` (`List.notElem` reservedNames)
   where
     startChar = elements ('?' : startChars)
     startChars = ['a'..'z'] ++ "_"

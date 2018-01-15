@@ -1,7 +1,8 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-module GrLang.Parser (parseModule, parseGraph) where
+module GrLang.Parser (parseModule, parseGraph, reservedNames) where
 
+import           Data.Functor              (($>))
 import           Data.Functor.Identity
 import           Data.Text                 (Text)
 import qualified Data.Text                 as Text
@@ -70,50 +71,45 @@ graphDecl :: Stream s Identity Char => Parsec s u GraphDeclaration
 graphDecl = (located identifier >>= \n -> edge n <|> node n) <* optional semi <?> "node or edge"
   where
     node n = do
-      ns <- many (comma *> located identifier)
+      ns <- many (located identifier)
       DeclNodes (n:ns) <$> (reservedOp ":" *> located identifier)
 
     edge src =
       DeclEdges src
-        <$> (reservedOp "-" *> (try multipleTypes <|> singleType) <* reservedOp "->")
+        <$> (reservedOp "-" *> commaSep1 edgesWithTypes <* reservedOp "->")
         <*> located identifier
 
-    singleType =
-      SingleType
-        <$> commaSep1 (located identifier)
-        <*> (reservedOp ":" *> located identifier)
+    edgesWithTypes =
+      (,) <$> (edgesSameType <|> pure AnonymousEdge) <*> (reservedOp ":" *> located identifier)
 
-    multipleTypes =
-      MultipleTypes <$> commaSep1 (located singleEdge)
+    edgesSameType =
+      NamedEdges <$> many1 (located identifier)
 
-    singleEdge =
-      (,) <$> optionMaybe identifier <*> (reservedOp ":" *> identifier)
 
 ruleDecl :: Stream s Identity Char => Parsec s u RuleDeclaration
 ruleDecl = choice
   [ reserved "match" >> DeclMatch <$> graphFragment <?> "match"
   , reserved "forbid" >> DeclForbid <$> optionMaybe (located identifier) <*> graphFragment <?> "forbid"
   , reserved "create" >> DeclCreate <$> graphFragment <?> "create"
-  , reserved "delete" >> DeclDelete <$> commaSep1 deletedElem <?> "delete"
+  , reserved "delete" >> DeclDelete <$> many1 (located identifier) <*> deleteMode <?> "delete"
   , clone <?> "clone"
   , join <?> "join"
   ] <* optional semi
   where
     clone = DeclClone
       <$> (reserved "clone" *> located identifier)
-      <*> (reserved "as" *> commaSep1 (located identifier))
+      <*> (reserved "as" *> many1 (located identifier))
 
     join = DeclJoin
-      <$> (reserved "join" *> commaSep2 (located identifier))
+      <$> (reserved "join" *> many2 (located identifier))
       <*> optionMaybe (reserved "as" *> located identifier)
-      where commaSep2 p = commaSep1 p >>= \elems ->
+      where many2 p = many1 p >>= \elems ->
               if length elems < 2
               then fail $ "Expected at least two elements to be joined" ++ show elems
               else return elems
 
-    deletedElem = (,) <$> located identifier <*> deleteMode
     deleteMode =
-      (reserved "with" >> reserved "matched" >> reserved "edges" *> pure WithMatchedEdges)
+      (reserved "with" *> reserved "matched" *> reserved "edges" $> WithMatchedEdges)
       <|> pure Isolated
 
     graphFragment = braces (many graphDecl) <|> ((:[]) <$> graphDecl)
@@ -149,9 +145,8 @@ identifier = Text.pack <$> P.identifier lexer
 filePath :: Stream s Identity Char => Parsec s u FilePath
 filePath = P.stringLiteral lexer
 
-whiteSpace, comma :: Stream s Identity Char => Parsec s u ()
+whiteSpace :: Stream s Identity Char => Parsec s u ()
 whiteSpace = P.whiteSpace lexer
-comma = P.comma lexer *> pure ()
 
 
 langDef :: (Stream s Identity Char) => P.GenLanguageDef s u Identity
@@ -184,10 +179,14 @@ langDef =
     , P.reservedOpNames =
         [":", "-", "->"]
 
-    , P.reservedNames = words
-        " graph node edge type \
-        \ match forbid create delete with matched edges clone "
+    , P.reservedNames =
+        reservedNames
 
     , P.caseSensitive =
         True
     }
+
+reservedNames :: [String]
+reservedNames = words
+  " graph node edge type \
+  \ match forbid create delete with matched edges clone join as "
