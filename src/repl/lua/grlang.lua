@@ -118,3 +118,18 @@ setmetatable(Graph, {
     return instance
   end
 })
+
+--[[ Requiring GrLang files ]]
+
+local function loader(modname, path)
+  catch_haskell(GrLang.native.compileFile(path))
+  return
+end
+
+package.searchers[#package.searchers + 1] =
+  function(modname)
+    path = package.searchpath(modname, './?.tg;./?.grl')
+    if path and (path:find('%.tg$') or path.find('%.grl$')) then
+      return loader, path
+    end
+  end

@@ -253,6 +253,9 @@ initGrLang globalState = do
           name <- liftLua $ Lua.tostring 2
           return . show $ Dot.typedGraph grLangNamingContext (pretty $ Text.decodeUtf8 name) graph
       )
+    , ("compileFile", Lua.pushHaskellFunction $ \path -> runGrLang' globalState $
+          GrLang.compileFile path
+      )
     ]
   Lua.setfield tableIdx "native"
 

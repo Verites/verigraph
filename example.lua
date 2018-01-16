@@ -1,29 +1,36 @@
----[[
-GrLang.add_node_type('Revision')
-GrLang.add_node_type('TransDeps')
-GrLang.add_node_type('Branch')
-
-GrLang.add_edge_type('transDeps', 'Revision', 'TransDeps')
-GrLang.add_edge_type('dep', 'TransDeps', 'Revision')
-GrLang.add_edge_type('tip', 'Branch', 'Revision') 
---]]
-
--- require "git.tg"
+require "git-types"
 
 foo = Graph [[
   head : Branch
   r1 r2 : Revision
-  d1 d2 : TransDeps
+  d1 d2 : Dependencies
 
   head -:tip-> r2
 
-  r1 -:transDeps-> d1
-  r2 -:transDeps-> d2
+  r1 -:deps-> d1
+  r2 -:deps-> d2
 
-  d2 -:dep-> r1
+  d2 -:dependsOn-> r1
+]]
+
+bar = Graph [[
+  head : Branch
+  r1 r2 : Revision
+  d1 d2 : Dependencies
+
+  head -:tip-> r2
+
+  r1 -:deps-> d1
+  r2 -:deps-> d2
+
+  d2 -:dependsOn-> r1
 ]]
 
 print(foo)
+print()
+--print('foo == bar -> ', foo == bar)
+print()
 print(foo:to_dot('foo'))
 --foo:view()
+print()
 help(foo)
