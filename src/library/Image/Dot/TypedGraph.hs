@@ -27,8 +27,6 @@ import qualified Image.Dot.Prettyprint        as Dot
 import           Rewriting.DPO.TypedGraph
 import           Rewriting.DPO.TypedGraphRule
 
-import           Debug.Trace
-
 data NamingContext n e ann = Ctx
   { getNodeTypeName :: Graph.NodeInContext (Maybe n) (Maybe e) -> Doc ann
   , getEdgeTypeName :: Graph.EdgeInContext (Maybe n) (Maybe e) -> Doc ann
@@ -57,7 +55,7 @@ makeNamingContext assocList = Ctx
 
 -- | Create a dotfile representation of the given typed graph, labeling nodes with their types
 typedGraph :: NamingContext n e ann -> Doc ann -> TypedGraph n e -> Doc ann
-typedGraph context name graph = Dot.digraph (traceShowId name) (typedGraphBody context name graph)
+typedGraph context name graph = Dot.digraph name (typedGraphBody context name graph)
 
 typedGraphBody :: NamingContext n e ann -> Doc ann -> TypedGraph n e -> [Doc ann]
 typedGraphBody context idPrefix graph =
