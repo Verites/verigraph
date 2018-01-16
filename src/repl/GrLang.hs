@@ -5,6 +5,7 @@ module GrLang (initialize) where
 
 import           Control.Monad
 import           Control.Monad.Except      (ExceptT (..), runExceptT)
+import qualified Control.Monad.Except      as ExceptT
 import           Control.Monad.Reader
 import           Control.Monad.Trans       (lift)
 import           Data.Array.IO
@@ -66,13 +67,16 @@ instance MonadGrLang (ReaderT GrLangState Lua) where
     prevImported <- get importedModules
     if Set.member path prevImported
       then do
-        modify importedModules (Set.insert path)
+        modify visibleModules (Set.insert path)
         return Nothing
       else do
         outerVisible <- get visibleModules
         put visibleModules (Set.singleton path)
         modify importedModules (Set.insert path)
-        result <- importAction
+        result <- importAction `ExceptT.catchError` \err -> do
+          modify importedModules (Set.delete path)
+          put visibleModules (Set.insert path outerVisible)
+          ExceptT.throwError err
         put visibleModules (Set.insert path outerVisible)
         return (Just result)
 
@@ -129,7 +133,7 @@ instance MonadGrLang (ReaderT GrLangState Lua) where
       Lua.setglobal (Text.unpack name)
     where
       metatableFor (VGraph _) = "Graph"
-      metatableFor _ = "GrLang"
+      metatableFor _          = "GrLang"
 
 indexKey :: String
 indexKey = "index" :: String

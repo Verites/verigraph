@@ -1,8 +1,8 @@
-import "git.tg"
+import "git-types.tg"
 
 graph Foo {
-  r1, r2 : Revision
-  dr1, dr2 : Dependencies
+  r1 r2 : Revision
+  dr1 dr2 : Dependencies
 
   r1 -:deps-> dr1
   r2 -:deps-> dr2
@@ -27,10 +27,11 @@ rule Amend {
   create r2 -:deps-> tr2
 }
 
+{-
 rule Bar {
   require r1 : Revision
   require tr1 : Dependencies
   require r1 -:Deps-> tr1
 
   forbid tr1-:dependsOn->r1
-}
+}-}
