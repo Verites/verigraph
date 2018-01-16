@@ -133,7 +133,7 @@ instance MonadGrLang (ReaderT GrLangState Lua) where
       Lua.setglobal (Text.unpack name)
     where
       metatableFor (VGraph _) = "Graph"
-      metatableFor _          = "GrLang"
+      metatableFor (VRule _)  = "Rule"
 
 indexKey :: String
 indexKey = "index" :: String
@@ -241,9 +241,7 @@ grLangNamingContext = Dot.Ctx
 
 initGrLang :: GrLangState -> Lua ()
 initGrLang globalState = do
-  Lua.getglobal "GrLang"
-  tableIdx <- Lua.gettop
-  createTable
+  setNative "GrLang"
     [ ("getNodeTypes", Lua.pushHaskellFunction
           (map Text.unpack . Map.keys <$> liftIO (readIORef $ nodeTypes globalState) :: Lua [String])
       )
@@ -275,18 +273,30 @@ initGrLang globalState = do
           GrLang.compileFile path
       )
     ]
-  Lua.setfield tableIdx "native"
 
-  Lua.getglobal "Graph"
-  tableIdx <- Lua.gettop
-  createTable
-    [ ("parseGraph", Lua.pushHaskellFunction $ \string -> runGrLang' globalState $ do
+  setNative "Graph"
+    [ ("parse", Lua.pushHaskellFunction $ \string -> runGrLang' globalState $ do
           graph <- GrLang.compileGraph =<< GrLang.parseGraph "<repl>" (string :: String)
           idx <- allocateGrLang (VGraph graph)
           return (fromIntegral idx :: Lua.LuaInteger)
       )
     ]
-  Lua.setfield tableIdx "native"
+
+  setNative "Rule"
+    [ ("parse", Lua.pushHaskellFunction $ \string -> runGrLang' globalState $ do
+          rule <- GrLang.compileRule =<< GrLang.parseRule "<repl>" (string :: String)
+          idx <- allocateGrLang (VRule rule)
+          return (fromIntegral idx :: Lua.LuaInteger)
+      )
+      -- TODO: implement missing methods for rules
+    ]
+  where
+    setNative className entries = do
+      Lua.getglobal className
+      tableIdx <- Lua.gettop
+      createTable entries
+      Lua.setfield tableIdx "native"
+      Lua.pop 1
 
 createTable :: Foldable t => t (String, Lua ()) -> Lua ()
 createTable contents = do

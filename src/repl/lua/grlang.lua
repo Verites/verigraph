@@ -29,6 +29,12 @@ All instances of this class are wrappers of Haskell values.
   }
 } .. {__index = {}}
 
+local function newGrLang(class, idx)
+  local instance = { index = idx }
+  setmetatable(instance, class)
+  return instance
+end
+
 GrLang.node_types = docstring[==[
 List the names of all registered node types.
 ]==] .. function ()
@@ -98,7 +104,16 @@ end
 
 local function subclass_of_GrLang()
   local class = { __index = {}, __tostring = GrLang.__tostring, __eq = GrLang.__eq, __gc = GrLang.__gc }
+
   setmetatable(class.__index, { __index = GrLang.__index })
+
+  setmetatable(class, {
+    __call = function (cls, str)
+      local idx = catch_haskell(cls.native.parse(str))
+      return newGrLang(cls, idx)
+    end
+  })
+
   return class
 end
 
@@ -108,20 +123,44 @@ Graph = docstring{[==[
 Class for GrLang graphs, subclass of GrLang.
 
 Instances can be constructed as follows:
-    Graph[[
+    Graph [[
       n1 n2 : NodeType
       n1 -:EdgeType1, f g:EdgeType2-> n2
     ]]
 ]==]} .. subclass_of_GrLang()
 
-setmetatable(Graph, {
-  __call = function (cls, str)
-    local idx = catch_haskell(Graph.native.parseGraph(str))
-    local instance = { index = idx }
-    setmetatable(instance, cls)
-    return instance
+
+--[[ Rule class ]]
+
+Rule = docstring{[==[
+Class for GrLang rules, subclass of GrLang.
+
+Instances can be constructed as follows:
+    Rule [[
+      match {
+        n1 n2 : NodeType
+        n1 -:EdgeType1, f g:EdgeType2-> n2
+      }
+      forbid n2 -:EdgeType1-> n1
+      delete f
+      clone n2 as n3
+      -- also create and join
+    ]]
+]==],
+  methods = {
+    'find_matches'
+  }
+} .. subclass_of_GrLang()
+
+
+Rule.__index.find_matches = docstring[==[
+Find all applicable matches into the given graph.
+]==] .. function(rule, graph)
+  if type(graph) ~= 'table' or getmetatable(graph) ~= Graph then
+    error('Rule.find_matches must be called with a graph.')
   end
-})
+  return catch_haskell(Rule.native.findMatches(rule.index, graph.index))
+end
 
 --[[ Requiring GrLang files ]]
 

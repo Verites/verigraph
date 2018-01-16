@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-module GrLang.Parser (parseModule, parseGraph, reservedNames) where
+module GrLang.Parser (parseModule, parseGraph, parseRule, reservedNames) where
 
 import           Data.Functor              (($>))
 import           Data.Functor.Identity
@@ -22,6 +22,9 @@ parseModule = parseGrLang (many topLevelDecl)
 
 parseGraph :: (Monad m, Stream s Identity Char) => SourceName -> s -> ExceptT Error m [GraphDeclaration]
 parseGraph = parseGrLang (many graphDecl)
+
+parseRule :: (Monad m, Stream s Identity Char) => SourceName -> s -> ExceptT Error m [RuleDeclaration]
+parseRule = parseGrLang (many ruleDecl)
 
 parseGrLang :: (Monad m, Stream s Identity Char) => Parsec s () a -> SourceName -> s -> ExceptT Error m a
 parseGrLang parser srcName source =
