@@ -73,6 +73,10 @@ function GrLang.__eq(value1, value2)
   return value1.index == value2.index
 end
 
+function GrLang.__gc(value)
+  return catch_haskell(GrLang.native.deallocate(value.index))
+end
+
 GrLang.__index.to_dot = docstring[==[
 Write the value in the dot format for graph drawing.
 ]==] .. function (value)

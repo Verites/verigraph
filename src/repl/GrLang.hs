@@ -188,6 +188,13 @@ allocateGrLang value = do
         Nothing -> return idx
         Just _ -> findFreeValue (idx+1)
 
+freeGrLang :: Int -> ExceptT GrLang.Error LuaGrLang ()
+freeGrLang idx = do
+  arr <- asks values
+  liftIO $ writeArray arr idx Nothing
+  modify numFreeValues (+1)
+  modify nextFreeValue $ Just . maybe idx (min idx)
+
 runGrLang' :: Lua.ToLuaStack a => GrLangState -> ExceptT GrLang.Error LuaGrLang a -> Lua Lua.NumResults
 runGrLang' globalState action = do
   result <- runReaderT (runExceptT action) globalState
@@ -247,6 +254,9 @@ initGrLang globalState = do
       )
     , ("toString", Lua.pushHaskellFunction . runGrLang' globalState $
         show . pretty <$> toGrLangValue (-1)
+      )
+    , ("deallocate", Lua.pushHaskellFunction $ \idx -> runGrLang' globalState $
+        freeGrLang (fromIntegral (idx :: Lua.LuaInteger))
       )
     , ("toDot", Lua.pushHaskellFunction . runGrLang' globalState $ do
           VGraph graph <- toGrLangValue 1
