@@ -69,7 +69,7 @@ instance Pretty GraphDeclaration where
       isEmpty (AnonymousEdge, _) = False
       isEmpty (NamedEdges es, _) = null es
 
-      prettyEdges (AnonymousEdge, A _ t) = ":" <+> pretty t
+      prettyEdges (AnonymousEdge, A _ t) = ":" <> pretty t
       prettyEdges (NamedEdges es, A _ t) = PP.hsep $ [ pretty e | A _ e <- es ] ++ [":" <+> pretty t]
 
 instance Pretty RuleDeclaration where
