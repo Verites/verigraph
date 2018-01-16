@@ -4,7 +4,6 @@ local docstring = help.docstring
 function catch_haskell(result, error_msg)
   if result == '_HASKELLERR' then
     error(error_msg)
-    return
   else
     return result
   end
@@ -66,7 +65,7 @@ Given a name and the node types for source and target, register a new edge type.
 end
 
 function GrLang.__tostring(value)
-  return catch_haskell(GrLang.native.toString(value))
+  return catch_haskell(GrLang.native.toString(value.index))
 end
 
 function GrLang.__eq(value1, value2)
@@ -79,8 +78,9 @@ end
 
 GrLang.__index.to_dot = docstring[==[
 Write the value in the dot format for graph drawing.
-]==] .. function (value)
-  return catch_haskell(GrLang.native.toDot(value))
+Optionally receives a name for the given value.
+]==] .. function (value, name)
+  return catch_haskell(GrLang.native.toDot(value.index, name or ''))
 end
 
 GrLang.__index.view = docstring[==[
@@ -133,7 +133,7 @@ end
 package.searchers[#package.searchers + 1] =
   function(modname)
     path = package.searchpath(modname, './?.tg;./?.grl')
-    if path and (path:find('%.tg$') or path.find('%.grl$')) then
+    if path then
       return loader, path
     end
   end

@@ -41,7 +41,6 @@ data GrLangState = GrLangState
   , values          :: IOArray Int (Maybe Value)
   , numFreeValues   :: IORef Int
   , nextFreeValue   :: IORef (Maybe Int)
-  , capacity        :: Int
   }
 
 type LuaGrLang = ReaderT GrLangState Lua
@@ -109,37 +108,43 @@ instance MonadGrLang (ReaderT GrLangState Lua) where
 
   getValue (A _ name) = do
     liftLua $ Lua.getglobal (Text.unpack name)
-    toGrLangValue (-1)
+    hasTable <- liftLua $ Lua.istable (-1)
+    if not hasTable
+      then GrLang.throwError Nothing "Value is not a table"
+      else do
+        liftLua $ Lua.getfield (-1) indexKey
+        result <- liftLua $ Lua.tointegerx (-1)
+        liftLua $ Lua.pop 2
+        case result of
+          Nothing -> GrLang.throwError Nothing "Value has no index"
+          Just memIndex' -> lookupGrLangValue memIndex'
 
-  putValue (A _ name) val = undefined
-  {-
-    putValue (A loc name) val = do
-      prevVal <- GrLangT $ gets (Map.lookup name . valueContext)
-      addNew loc "Value" name (locationOf <$> prevVal) $ \state ->
-        state { valueContext = Map.insert name (A loc val) (valueContext state) }
-    -}
+  putValue (A _ name) val = do
+    memIdx <- allocateGrLang val
+    liftLua $ do
+      createTable [(indexKey, Lua.pushinteger $ toEnum memIdx)]
+      tblIdx <- Lua.gettop
+      Lua.getglobal (metatableFor val)
+      Lua.setmetatable tblIdx
+      Lua.setglobal (Text.unpack name)
+    where
+      metatableFor (VGraph _) = "Graph"
+      metatableFor _ = "GrLang"
+
+indexKey :: String
+indexKey = "index" :: String
 
 showEdgeType :: Text -> GrNode -> GrNode -> Text
 showEdgeType e src tgt = formatEdgeType e (nodeName src) (nodeName tgt)
 
-toGrLangValue :: Lua.StackIndex -> ExceptT GrLang.Error LuaGrLang Value
-toGrLangValue stackIdx = do
-  gotTable <- liftLua $ Lua.istable stackIdx
-  if not gotTable
-    then GrLang.throwError Nothing "Value is not a table"
-    else do
-      liftLua $ Lua.getfield stackIdx indexKey
-      result <- liftLua $ Lua.tointegerx (-1)
-      liftLua $ Lua.pop 1
-      case result of
-        Nothing -> GrLang.throwError Nothing "Value has no index"
-        Just memIndex' -> do
-          let memIndex = fromEnum memIndex'
-          arr <- lift $ asks values
-          result <- liftIO $ readArray arr memIndex
-          case result of
-            Nothing -> GrLang.throwError Nothing "Value has unallocated index"
-            Just val -> return val
+lookupGrLangValue :: Lua.LuaInteger -> ExceptT GrLang.Error LuaGrLang Value
+lookupGrLangValue memIndex' = do
+  let memIndex = fromEnum memIndex'
+  arr <- lift $ asks values
+  result <- liftIO $ readArray arr memIndex
+  case result of
+    Nothing -> GrLang.throwError Nothing "Value has unallocated index"
+    Just val -> return val
 
 lookupNodeType :: Text -> LuaGrLang (Maybe NodeType)
 lookupNodeType name = do
@@ -164,7 +169,6 @@ initState maxValues = GrLangState
   <*> newArray (0, maxValues-1) Nothing
   <*> newIORef maxValues
   <*> newIORef (Just 0)
-  <*> pure maxValues
 
 allocateGrLang :: Value -> ExceptT GrLang.Error LuaGrLang Int
 allocateGrLang value = do
@@ -188,8 +192,9 @@ allocateGrLang value = do
         Nothing -> return idx
         Just _ -> findFreeValue (idx+1)
 
-freeGrLang :: Int -> ExceptT GrLang.Error LuaGrLang ()
-freeGrLang idx = do
+freeGrLang :: Lua.LuaInteger -> ExceptT GrLang.Error LuaGrLang ()
+freeGrLang idx' = do
+  let idx = fromEnum idx'
   arr <- asks values
   liftIO $ writeArray arr idx Nothing
   modify numFreeValues (+1)
@@ -252,15 +257,14 @@ initGrLang globalState = do
     , ("addEdgeType", Lua.pushHaskellFunction $ \name srcName tgtName -> runGrLang' globalState $
           GrLang.addEdgeType (A Nothing name) (A Nothing srcName) (A Nothing tgtName)
       )
-    , ("toString", Lua.pushHaskellFunction . runGrLang' globalState $
-        show . pretty <$> toGrLangValue (-1)
+    , ("toString", Lua.pushHaskellFunction $ \idx -> runGrLang' globalState $
+          show . pretty <$> lookupGrLangValue idx
       )
     , ("deallocate", Lua.pushHaskellFunction $ \idx -> runGrLang' globalState $
-        freeGrLang (fromIntegral (idx :: Lua.LuaInteger))
+          freeGrLang idx
       )
-    , ("toDot", Lua.pushHaskellFunction . runGrLang' globalState $ do
-          VGraph graph <- toGrLangValue 1
-          name <- liftLua $ Lua.tostring 2
+    , ("toDot", Lua.pushHaskellFunction $ \idx name -> runGrLang' globalState $ do
+          VGraph graph <- lookupGrLangValue idx
           return . show $ Dot.typedGraph grLangNamingContext (pretty $ Text.decodeUtf8 name) graph
       )
     , ("compileFile", Lua.pushHaskellFunction $ \path -> runGrLang' globalState $
@@ -279,9 +283,6 @@ initGrLang globalState = do
       )
     ]
   Lua.setfield tableIdx "native"
-
-indexKey :: String
-indexKey = "index" :: String
 
 createTable :: Foldable t => t (String, Lua ()) -> Lua ()
 createTable contents = do
