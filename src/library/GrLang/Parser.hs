@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-module GrLang.Parser (parseModule, parseGraph, parseRule, reservedNames) where
+module GrLang.Parser (parseModule, parseGraph, parseMorphism, parseRule, reservedNames) where
 
 import           Data.Functor              (($>))
 import           Data.Functor.Identity
@@ -23,6 +23,9 @@ parseModule = parseGrLang (many topLevelDecl)
 parseGraph :: (Monad m, Stream s Identity Char) => SourceName -> s -> ExceptT Error m [GraphDeclaration]
 parseGraph = parseGrLang (many graphDecl)
 
+parseMorphism :: (Monad m, Stream s Identity Char) => SourceName -> s -> ExceptT Error m [MorphismDeclaration]
+parseMorphism = parseGrLang (many morphismDecl)
+
 parseRule :: (Monad m, Stream s Identity Char) => SourceName -> s -> ExceptT Error m [RuleDeclaration]
 parseRule = parseGrLang (many ruleDecl)
 
@@ -41,8 +44,9 @@ topLevelDecl = choice
   [ importDecl <?> "import"
   , nodeType <?> "node type"
   , edgeType <?> "edge type"
-  , graph <?> "graph"
-  , rule <?> "rule"
+  , namedBlock "graph" DeclGraph graphDecl <?> "graph"
+  , namedBlock "morphism" DeclMorphism morphismDecl <?> "morphism"
+  , namedBlock "rule" DeclRule ruleDecl <?> "rule"
   ] <* optional semi
   where
     importDecl =
@@ -58,17 +62,12 @@ topLevelDecl = choice
         <*> (reservedOp ":" *> located identifier)
         <*> (reservedOp "->" *> located identifier)
 
-    graph =
-      reserved "graph" >>
-      DeclGraph
-        <$> located identifier
-        <*> braces (many graphDecl)
-
-    rule =
-      reserved "rule" >>
-      DeclRule
-        <$> located identifier
-        <*> braces (many ruleDecl)
+namedBlock :: Stream s Identity Char => String -> (Located Text -> [a] -> b) -> ParsecT s u Identity a -> ParsecT s u Identity b
+namedBlock kind build item =
+  reserved kind >>
+  build
+   <$> located identifier
+   <*> braces (many item)
 
 graphDecl :: Stream s Identity Char => Parsec s u GraphDeclaration
 graphDecl = (located identifier >>= \n -> edge n <|> node n) <* optional semi <?> "node or edge"
@@ -88,6 +87,20 @@ graphDecl = (located identifier >>= \n -> edge n <|> node n) <* optional semi <?
     edgesSameType =
       NamedEdges <$> many1 (located identifier)
 
+morphismDecl :: Stream s Identity Char => Parsec s u MorphismDeclaration
+morphismDecl = choice
+  [ (reserved "domain" >> DeclDomain <$> nameOrBody) <?> "domain"
+  , (reserved "codomain" >> DeclCodomain <$> nameOrBody) <?> "codomain"
+  , mapping <?> "mapping of elements"
+  ] <* optional semi
+  where
+    nameOrBody =
+      (Left <$> located identifier)
+      <|> braces (Right <$> many graphDecl)
+
+    mapping = DeclMapping
+      <$> many1 (located identifier)
+      <*> (reservedOp "->" *> located identifier <* optional semi)
 
 ruleDecl :: Stream s Identity Char => Parsec s u RuleDeclaration
 ruleDecl = choice
@@ -191,5 +204,5 @@ langDef =
 
 reservedNames :: [String]
 reservedNames = words
-  " graph node edge type \
+  " graph morphism node edge type rule \
   \ match forbid create delete with matched edges clone join as "

@@ -212,6 +212,7 @@ test-suite HSpecTests
                        Data.TypedGraph.Morphism.FindMorphismSpec
                        Data.TypedGraph.Morphism.FindMorphismSpec.FindCospanCommuterTest
                        Data.TypedGraph.Morphism.FindMorphismSpec.FindMorphismsTest
+                       Data.TypedGraph.MorphismSpec
                        Data.TypedGraph.PartitionSpec
                        GrLang.CompilerSpec
                        GrLang.ParserSpec

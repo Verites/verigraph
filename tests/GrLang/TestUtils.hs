@@ -1,18 +1,19 @@
-module GrLang.TestUtils (failWithError, quickCheckError, runSuccess, runFailure) where
+module GrLang.TestUtils (failWithError, quickCheckError, runSuccess, runFailure, fromSuccess) where
 
-import           Control.Monad.Except (ExceptT (..), runExceptT)
-import qualified Data.Char            as Char
-import qualified Data.List            as List
-import           Data.Text            (Text)
-import qualified Data.Text            as Text
+import           Control.Monad.Except  (ExceptT (..), runExceptT)
+import qualified Data.Char             as Char
+import           Data.Functor.Identity
+import qualified Data.List             as List
+import           Data.Text             (Text)
+import qualified Data.Text             as Text
 import           Test.Hspec
 import           Test.QuickCheck
 
-import           Base.Annotation      (Annotated (..), Located)
+import           Base.Annotation       (Annotated (..), Located)
 import           Base.Location
 import           GrLang.AST
 import           GrLang.Monad
-import           GrLang.Parser        (reservedNames)
+import           GrLang.Parser         (reservedNames)
 
 quickCheckError :: Error -> Property
 quickCheckError errs = counterexample (show $ prettyError errs) False
@@ -20,16 +21,20 @@ quickCheckError errs = counterexample (show $ prettyError errs) False
 failWithError :: Error -> Expectation
 failWithError = expectationFailure . show . prettyError
 
+fromSuccess :: Either Error a -> a
+fromSuccess (Right x)  = x
+fromSuccess (Left err) =  error . show . prettyError $ err
+
 runSuccess :: ExceptT Error (GrLangT IO) a -> IO a
 runSuccess action = do
-  (result, _) <- runGrLangT emptyState $ runExceptT action
+  result <- evalGrLangT emptyState action
   case result of
     Left errs -> failWithError errs >> fail "error"
     Right result' -> return result'
 
 runFailure :: Show a => ExceptT Error (GrLangT IO) a -> IO Error
 runFailure action = do
-  (result, _) <- runGrLangT emptyState $ runExceptT action
+  result <- evalGrLangT emptyState action
   case result of
     Left errs -> return errs
     Right result' -> do
@@ -44,8 +49,12 @@ instance Arbitrary TopLevelDeclaration where
     , DeclGraph <$> located genIdentifier <*> listOf arbitrary
     , DeclRule <$> located genIdentifier <*> listOf arbitrary ]
 
-  shrink (DeclGraph g body) = [ DeclGraph g body' | body' <- shrink body ]
-  shrink _                  = []
+  shrink Import{}              = []
+  shrink DeclNodeType{}        = []
+  shrink DeclEdgeType{}        = []
+  shrink (DeclGraph g body)    = DeclGraph g <$> shrink body
+  shrink (DeclMorphism f body) = DeclMorphism f <$> shrink body
+  shrink (DeclRule r body)     = DeclRule r <$> shrink body
 
 instance Arbitrary GraphDeclaration where
   arbitrary = oneof
@@ -56,6 +65,24 @@ instance Arbitrary GraphDeclaration where
 
   shrink (DeclNodes ns t)   = [ DeclNodes ns' t | ns' <- shrinkList1 ns ]
   shrink (DeclEdges s es t) = [ DeclEdges s es' t | es' <- shrinkList1 es ]
+
+instance Arbitrary MorphismDeclaration where
+  arbitrary = oneof
+    [ DeclDomain <$> genNameOrBody
+    , DeclCodomain <$> genNameOrBody
+    , DeclMapping <$> listOf1 (located genIdentifier) <*> located genIdentifier ]
+    where
+      genNameOrBody = oneof
+        [ Left <$> located genIdentifier
+        , Right <$> listOf arbitrary ]
+
+  shrink (DeclDomain nameOrBody)   = DeclDomain <$> shrinkNameOrBody nameOrBody
+  shrink (DeclCodomain nameOrBody) = DeclCodomain <$> shrinkNameOrBody nameOrBody
+  shrink (DeclMapping froms to)    = DeclMapping <$> shrinkList1 froms <*> pure to
+
+shrinkNameOrBody :: Arbitrary b => Either a b -> [Either a b]
+shrinkNameOrBody (Left _)     = []
+shrinkNameOrBody (Right body) = Right <$> shrink body
 
 instance Arbitrary ParallelEdgesDeclaration where
   arbitrary = oneof [ pure AnonymousEdge, NamedEdges <$> listOf1 (located genIdentifier) ]

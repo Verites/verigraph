@@ -26,6 +26,7 @@ module GrLang.Value
     -- ** Conversion
   , generateTypes
   , generateGraph
+  , generateMorphism
   , generateRule
   ) where
 
@@ -54,18 +55,22 @@ import qualified Util.Map                  as Map
 
 data Value
   = VGraph GrGraph
+  | VMorph GrMorphism
   | VRule GrRule
   deriving (Show, Eq)
 
 instance Pretty Value where
-  pretty (VGraph graph) = pretty . DeclGraph (A Nothing "") . generateGraph $ graph
-  pretty (VRule rule)   = pretty $ DeclRule (A Nothing "") (generateRule rule)
+  pretty (VGraph graph) = pretty . DeclGraph (A Nothing "") $ generateGraph graph
+  pretty (VMorph morph) = pretty . DeclMorphism (A Nothing "") $ generateMorphism morph
+  pretty (VRule rule)   = pretty . DeclRule (A Nothing "") $ generateRule rule
 
 -- | Update values when new node/edge types have been created. Only works if the
 -- current type graph of the values is a subgraph of the new type graph.
 updateTypeGraph :: TypeGraph -> Value -> Value
 updateTypeGraph tgraph (VGraph g) =
   VGraph . updateTypedGraph tgraph $ g
+updateTypeGraph tgraph (VMorph f) =
+  VMorph . updateTypedMorphism tgraph $ f
 updateTypeGraph tgraph (VRule (Production l r ns)) =
   VRule $ Production (updateTypedMorphism tgraph l) (updateTypedMorphism tgraph r) (map (updateTypedMorphism tgraph) ns)
 
@@ -186,6 +191,23 @@ generateEdges = concatMap generateChunk . List.chunksBy sourceTarget
       let ((s,_,_),_,etype,(t,_,_)) = e
       in Just $ DeclEdges (A Nothing $ nodeName s) (makeEdges es etype) (A Nothing $ nodeName t)
 
+-- | Generate declarations for the given morphism.
+--
+-- Uses the metadata to define the names of nodes/edges and their types.
+-- Will always generate inline domains and codomain.
+generateMorphism :: GrMorphism -> [MorphismDeclaration]
+generateMorphism morph = dom : cod : mappingsFor nodeName inverseNodeMap ++ mappingsFor edgeName inverseEdgeMap
+  where
+    dom = DeclDomain . Right . generateGraph $ domain morph
+    cod = DeclCodomain . Right . generateGraph $ codomain morph
+
+    inverseNodeMap = preimagesOf (nodeMapping morph) (`lookupNode` domain morph) (`lookupNode` codomain morph)
+    inverseEdgeMap = preimagesOf (edgeMapping morph) (`lookupEdge` domain morph) (`lookupEdge` codomain morph)
+
+    mappingsFor nameOf = map (makeMapping nameOf)
+    makeMapping nameOf (image, preimages) =
+      DeclMapping [ A Nothing $ nameOf x | x <- preimages ] (A Nothing $ nameOf image)
+
 -- | Generate declarations for the given rule.
 --
 -- Uses the metadata to define the names of nodes/edges and their types.
@@ -218,13 +240,13 @@ generateRule rule = match : forbids ++ deletes ++ clones ++ creates ++ joins
 
     clones =
       let
-        identifiedNodeSets = identifiedElementSets (nodeMapping $ leftMorphism rule) (`lookupNode` interfaceObject rule) (`lookupNode` leftObject rule)
-        identifiedEdgeSets = identifiedElementSets (edgeMapping $ leftMorphism rule) (`lookupEdge` interfaceObject rule) (`lookupEdge` leftObject rule)
+        nodePreimages = preimagesOf (nodeMapping $ leftMorphism rule) (`lookupNode` interfaceObject rule) (`lookupNode` leftObject rule)
+        edgePreimages = preimagesOf (edgeMapping $ leftMorphism rule) (`lookupEdge` interfaceObject rule) (`lookupEdge` leftObject rule)
       in
         [ DeclClone (A Nothing $ nodeName n) [ A Nothing $ nodeName c | c <- clones, nodeName c /= nodeName n ]
-            | (n, clones) <- identifiedNodeSets ]
+            | (n, clones) <- nodePreimages, length clones >= 2 ]
         ++ [ DeclClone (A Nothing $ edgeName e) [ A Nothing $ edgeName c | c <- clones, edgeName c /= edgeName e ]
-              | (e, clones) <- identifiedEdgeSets ]
+              | (e, clones) <- edgePreimages, length clones >= 2 ]
 
     creates = case elementsOutsideImage (rightMorphism rule) of
       ([], []) -> []
@@ -232,13 +254,13 @@ generateRule rule = match : forbids ++ deletes ++ clones ++ creates ++ joins
 
     joins =
       let
-        identifiedNodeSets = identifiedElementSets (nodeMapping $ rightMorphism rule) (`lookupNode` interfaceObject rule) (`lookupNode` rightObject rule)
-        identifiedEdgeSets = identifiedElementSets (edgeMapping $ rightMorphism rule) (`lookupEdge` interfaceObject rule) (`lookupEdge` rightObject rule)
+        nodePreimages = preimagesOf (nodeMapping $ rightMorphism rule) (`lookupNode` interfaceObject rule) (`lookupNode` rightObject rule)
+        edgePreimages = preimagesOf (edgeMapping $ rightMorphism rule) (`lookupEdge` interfaceObject rule) (`lookupEdge` rightObject rule)
       in
         [ DeclJoin [ A Nothing $ nodeName j | j <- joined ] (Just . A Nothing $ nodeName n)
-            | (n, joined) <- identifiedNodeSets ]
+            | (n, joined) <- nodePreimages, length joined >= 2 ]
         ++ [ DeclJoin [ A Nothing $ edgeName j | j <- joined ] (Just . A Nothing $ edgeName e)
-              | (e, joined) <- identifiedEdgeSets ]
+              | (e, joined) <- edgePreimages, length joined >= 2]
 
 elementsOutsideImage :: GrMorphism -> ([NodeInContext Metadata Metadata], [EdgeInContext Metadata Metadata])
 elementsOutsideImage morph = (filter (not . isNodeInImage) $ nodesInContext cod, filter (not . isEdgeInImage) $ edgesInContext cod)
@@ -250,11 +272,10 @@ elementsOutsideImage morph = (filter (not . isNodeInImage) $ nodesInContext cod,
     inverseNodeMap = Map.inverse (nodeMapping morph)
     inverseEdgeMap = Map.inverse (edgeMapping morph)
 
-identifiedElementSets :: (Show k, Show a, Show b, Show c, Ord k) => [(a, k)] -> (a -> Maybe b) -> (k -> Maybe c) -> [(c, [b])]
-identifiedElementSets mapping lookupDom lookupCod =
+preimagesOf :: Ord idB => [(idA, idB)] -> (idA -> Maybe a) -> (idB -> Maybe b) -> [(b, [a])]
+preimagesOf mapping lookupDom lookupCod =
   [ (lookupUnsafeCod n, map lookupUnsafeDom clones)
-      | (n, clones) <- Map.toList $ Map.inverse mapping
-      , length clones >= 2 ]
+      | (n, clones) <- Map.toList $ Map.inverse mapping ]
   where
     lookupUnsafeDom = fromMaybe (error "generateRule: malformed graph morphism") . lookupDom
     lookupUnsafeCod = fromMaybe (error "generateRule: malformed graph morphism") . lookupCod

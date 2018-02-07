@@ -5,14 +5,14 @@
 module GrLang.CompilerSpec where
 
 import           Control.Monad
-import           Control.Monad.Except      (ExceptT)
+import           Control.Monad.Except           (ExceptT)
 import           Control.Monad.Trans
 import           Data.Functor.Identity
-import           Data.Map                  (Map)
-import qualified Data.Map                  as Map
+import           Data.Map                       (Map)
+import qualified Data.Map                       as Map
 import           Data.String
-import           Data.Text                 (Text)
-import           Data.Text.Prettyprint.Doc (Pretty (..))
+import           Data.Text                      (Text)
+import           Data.Text.Prettyprint.Doc      (Pretty (..))
 import           System.FilePath
 import           Test.Hspec
 import           Test.HUnit
@@ -20,18 +20,21 @@ import           Test.QuickCheck
 import           Test.QuickCheck.Monadic
 
 import           Abstract.Category
-import           Base.Annotation           (Annotated (..), Located)
-import qualified Base.Annotation           as Ann
+import           Abstract.Category.FindMorphism
+import           Base.Annotation                (Annotated (..), Located)
+import qualified Base.Annotation                as Ann
 import           Base.Isomorphic
 import           Base.Valid
-import qualified Data.DList                as DList
-import qualified Data.Graphs               as TypeGraph
+import           Category.TypedGraph            ()
+import qualified Data.DList                     as DList
+import qualified Data.Graphs                    as TypeGraph
 import           Data.TypedGraph
-import qualified Data.TypedGraph.Morphism  as TGraph
+import qualified Data.TypedGraph.Morphism       as TGraph
 import           GrLang.AST
 import           GrLang.Compiler
-import           GrLang.Monad              hiding (GrLangState (..))
-import qualified GrLang.Monad              as GrLang
+import           GrLang.Monad                   hiding (GrLangState (..))
+import qualified GrLang.Monad                   as GrLang
+import           GrLang.Parser                  (parseGraph)
 import           GrLang.TestUtils
 import           GrLang.Value
 import           Rewriting.DPO.TypedGraph
@@ -50,6 +53,13 @@ compileSuccess = runSuccess . ioCompile
 
 compileFailure :: FilePath -> IO Error
 compileFailure = runFailure . ioCompile
+
+shouldProduceNumberOfErrors :: FilePath -> Int -> Expectation
+shouldProduceNumberOfErrors path expected = do
+  errors <- compileFailure path
+  let obtained = length (DList.toList errors)
+  unless (obtained == expected) . assertFailure $
+    "Expected " ++ show expected ++ " errors but got only " ++ show obtained ++ ":\n" ++ show (prettyError errors)
 
 ioCompile :: MonadIO m => FilePath -> ExceptT Error (GrLangT m) (TypeGraph, Map Text (Located Value))
 ioCompile path = do
@@ -155,9 +165,79 @@ spec = do
       _ <- compileFailure "case6/main.grl"
       return ()
 
-    it "fails when source or target of edges have invalid types" $ do
-      errors <- compileFailure "case7.grl"
-      length (DList.toList errors) `shouldBe` 2
+    it "fails when source or target of edges have invalid types" $
+      "case7.grl" `shouldProduceNumberOfErrors` 2
+
+  describe "compileMorphism" $ do
+
+    it "always compiles the result of generation" .
+      property . monadic runIdentity $ do
+        let tgraph = TypeGraph.fromNodesAndEdges
+              [ Node 1 . Just $ Metadata "M" Nothing, Node 2 . Just $ Metadata "N" Nothing ]
+              [ Edge 1 1 1 . Just $ Metadata "MM" Nothing
+              , Edge 2 1 2 . Just $ Metadata "MN" Nothing ]
+        -- TODO: replace explicit test cases with pseudo-random generation
+        let g1 = fromSuccess . evalGrLang (initState tgraph) $
+              compileGraph =<< lift (GrLang.unsafeMakeVisible "<test>") *> parseGraph "<test>"
+                (" m1 m2 : M; n1 n2: N \
+                \ m1 -m12:MM-> m2; m2 -m22:MM-> m2 \
+                \ m1 -n11:MN-> n1; m2 -n22:MN-> n2 " :: Text)
+        let g2 = fromSuccess . evalGrLang (initState tgraph) $
+              compileGraph =<< lift (GrLang.unsafeMakeVisible "<test>") *> parseGraph "<test>"
+                (" m1 m2 m3 m4 : M \
+                \ n1 n2 n3 n4 : N \
+                \ m1 -m11:MM-> m1; m1 -m12:MM-> m2; m1 -m13:MM-> m3; m1 -n11:MN-> n1 \
+                \ m2 -m22:MM-> m2; m2 -m23:MM-> m3; m2 -n22:MN-> n2; m2 -n12:MN-> n3 \
+                \ m3 -m33:MM-> m3; m3 -m34:MM-> m4; m3 -n34:MN-> n4 \
+                \ m4 -m44:MM-> m4; m4 -m41:MM-> m1; m4 -n44:MN-> n4" :: Text)
+        let testCases = findAllMorphisms g1 g2 :: [GrMorphism] -- This should generate around 14 morphisms
+        morph <- pick (elements testCases)
+        testRoundTrip generateMorphism (compileMorphism Nothing) validate (typeGraph . domain) tgraph morph
+
+    it "compiles a morphism with named domain and codomain" $ do
+      (tgraph, values) <- compileSuccess "case25.grl"
+      Map.keys values `shouldBe` ["f", "g", "h"]
+      let VMorph f = Ann.drop $ values Map.! "f"
+          VGraph g = Ann.drop $ values Map.! "g"
+          VGraph h = Ann.drop $ values Map.! "h"
+      validate f `shouldBe` IsValid
+      domain f `shouldBe` g
+      codomain f `shouldBe` h
+      TGraph.applyNodeId f 0 `shouldBe` Just 0
+      TGraph.applyNodeId f 1 `shouldBe` Just 1
+      TGraph.applyEdgeId f 0 `shouldBe` Just 0
+      TGraph.applyEdgeId f 1 `shouldBe` Just 0
+
+    it "compiles a morphism with inline domain and codomain" $ do
+      (tgraph, values) <- compileSuccess "case26.grl"
+      Map.keys values `shouldBe` ["f"]
+      let VMorph f = Ann.drop $ values Map.! "f"
+      validate f `shouldBe` IsValid
+      TGraph.applyNodeId f 0 `shouldBe` Just 0
+      TGraph.applyNodeId f 1 `shouldBe` Just 1
+      TGraph.applyEdgeId f 0 `shouldBe` Just 0
+      TGraph.applyEdgeId f 1 `shouldBe` Just 0
+
+    it "fails when the named domain or codomain is unknown" $
+      "case27.grl" `shouldProduceNumberOfErrors` 2
+
+    it "fails when a domain or codomain is missing" $
+      "case28.grl" `shouldProduceNumberOfErrors` 2
+
+    it "fails when given multiple domains or codomains" $
+      "case29.grl" `shouldProduceNumberOfErrors` 2
+
+    it "fails when the mapping doesn't preserve types" $
+      "case30.grl" `shouldProduceNumberOfErrors` 4
+
+    it "fails when the mapping doesn't preserve incidence" $
+      "case32.grl" `shouldProduceNumberOfErrors` 3
+
+    it "fails when the mapping involves unknown elements" $
+      "case31.grl" `shouldProduceNumberOfErrors` 4
+
+    it "fails when the mapping isn't total" $
+       "case33.grl" `shouldProduceNumberOfErrors` 2
 
   describe "compileRule" $ do
 
@@ -412,49 +492,38 @@ spec = do
           , (Edge 5 6 0 . Just $ Metadata Nothing Nothing, 2) ])
         (codomain n2)
 
-    it "fails when deleting unknown elements" $ do
-      errors <- compileFailure "case13.grl"
-      length (DList.toList errors) `shouldBe` 1
+    it "fails when deleting unknown elements" $
+      "case13.grl" `shouldProduceNumberOfErrors` 1
 
-    it "fails when cloning unknown elements" $ do
-      errors <- compileFailure "case14.grl"
-      length (DList.toList errors) `shouldBe` 1
+    it "fails when cloning unknown elements" $
+      "case14.grl" `shouldProduceNumberOfErrors` 1
 
-    it "fails when joining unknown elements" $ do
-      errors <- compileFailure "case23.grl"
-      length (DList.toList errors) `shouldBe` 1
+    it "fails when joining unknown elements" $
+      "case23.grl" `shouldProduceNumberOfErrors` 1
 
-    it "fails when create has a name clash" $ do
-      errors <- compileFailure "case15.grl"
-      length (DList.toList errors) `shouldBe` 3
+    it "fails when create has a name clash" $
+      "case15.grl" `shouldProduceNumberOfErrors` 3
 
-    it "fails when clone has a name clash" $ do
-      errors <- compileFailure "case16.grl"
-      length (DList.toList errors) `shouldBe` 3
+    it "fails when clone has a name clash" $
+      "case16.grl" `shouldProduceNumberOfErrors` 3
 
-    it "fails when join has a name clash" $ do
-      errors <- compileFailure "case24.grl"
-      length (DList.toList errors) `shouldBe` 1
+    it "fails when join has a name clash" $
+      "case24.grl" `shouldProduceNumberOfErrors` 1
 
-    it "fails when deleting leaves dangling edges" $ do
-      errors <- compileFailure "case17.grl"
-      length (DList.toList errors) `shouldBe` 2
+    it "fails when deleting leaves dangling edges" $
+      "case17.grl" `shouldProduceNumberOfErrors` 2
 
-    it "fails when source or target of created edge have invalid type" $ do
-      errors <- compileFailure "case18.grl"
-      length (DList.toList errors) `shouldBe` 2
+    it "fails when source or target of created edge have invalid type" $
+      "case18.grl" `shouldProduceNumberOfErrors` 2
 
-    it "fails when joining nodes of different types" $ do
-      errors <- compileFailure "case20.grl"
-      length (DList.toList errors) `shouldBe` 1
+    it "fails when joining nodes of different types" $
+      "case20.grl" `shouldProduceNumberOfErrors` 1
 
-    it "fails when joining edges of different types, sources or targets" $ do
-      errors <- compileFailure "case21.grl"
-      length (DList.toList errors) `shouldBe` 3
+    it "fails when joining edges of different types, sources or targets" $
+      "case21.grl" `shouldProduceNumberOfErrors` 3
 
-    it "fails when joining a node with an edge" $ do
-      errors <- compileFailure "case22.grl"
-      length (DList.toList errors) `shouldBe` 1
+    it "fails when joining a node with an edge" $
+      "case22.grl" `shouldProduceNumberOfErrors` 1
 
 testRoundTrip :: (Iso val, Valid val, Show val, Pretty ast, Show ast, Monad m) =>
                   (val -> ast)
@@ -466,7 +535,7 @@ testRoundTrip :: (Iso val, Valid val, Show val, Pretty ast, Show ast, Monad m) =
                   -> PropertyM m b
 testRoundTrip generate compile validateValue getTypeGraph tgraph value = do
   let generated = generate value
-  --monitor (counterexample . show . pretty $ generated)
+  monitor (counterexample . show . pretty $ generated)
   monitor (counterexample . show $ value)
   case validateValue value of
     IsInvalid errors -> stop . counterexample "Invalid value!" $ counterexample (show errors) False

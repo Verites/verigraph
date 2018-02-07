@@ -5,6 +5,7 @@ module GrLang.Compiler
   , compile
   , compileDecl
   , compileGraph
+  , compileMorphism
   , compileRule
   ) where
 
@@ -13,7 +14,8 @@ import           Control.Monad.State
 import           Data.Either                    (lefts, rights)
 import           Data.Map                       (Map)
 import qualified Data.Map                       as Map
-import           Data.Maybe                     (catMaybes)
+import           Data.Maybe                     (catMaybes, fromJust)
+import qualified Data.Set                       as Set
 import           Data.Text                      (Text)
 import qualified Data.Text                      as Text
 import           Data.Text.Lazy.IO              as Text
@@ -49,6 +51,8 @@ compileDecl (DeclNodeType n) = addNodeType n
 compileDecl (DeclEdgeType e s t) = addEdgeType e s t
 compileDecl (DeclGraph name graphDecls) =
   putValue name . VGraph =<< compileGraph graphDecls
+compileDecl (DeclMorphism name morphDecls) =
+  putValue name . VMorph =<< compileMorphism (Ann.locationOf name) morphDecls
 compileDecl (DeclRule name ruleDecls) =
   putValue name . VRule =<< compileRule ruleDecls
 compileDecl (Import (A loc path)) = do
@@ -166,6 +170,100 @@ createEdge edgeType src tgt loc Nothing = do
     , grFreeEdgeId = newId + 1 }
   return newId
 
+
+compileMorphism :: MonadGrLang m => Maybe Location -> [MorphismDeclaration] -> ExceptT Error m GrMorphism
+compileMorphism loc decls = do
+  (domain, codomain) <- findDomainCodomain loc decls
+
+  let domElems = namedElementsOf domain
+      codElems = namedElementsOf codomain
+  mappings <- mapMCollectErrors (compileMapping domElems codElems) decls
+
+  let nodeMapping = Map.fromList [ (nodeId domNode, nodeId codNode) | (_, domNode, codNode) <- concat (lefts mappings) ]
+  let edgeMapping' = concat (rights mappings)
+  mapMCollectErrors_ (validateEdgeMapping nodeMapping) edgeMapping'
+  let edgeMapping = Map.fromList [ (edgeId domEdge, edgeId codEdge) | (_, domEdge, codEdge) <- edgeMapping' ]
+
+  let missingNodes = Set.difference (Set.fromList $ TGraph.nodeIds domain) (Map.keysSet nodeMapping)
+      missingEdges = Set.difference (Set.fromList $ TGraph.edgeIds domain) (Map.keysSet edgeMapping)
+  unless (Set.null missingNodes && Set.null missingEdges) $ do
+    let missingMsg ids kind getName
+          | Set.null ids = []
+          | otherwise = [PP.fillSep $ kind : map (pretty . getName) (Set.toList ids)]
+    throwError loc . PP.fillSep $
+      PP.words "The morphism is not total: missing mappings for" ++
+      PP.punctuate "; "
+        ( missingMsg missingNodes "nodes" (nodeName . fromJust . (`TGraph.lookupNode` domain))
+        ++ missingMsg missingEdges "edges" (edgeName . fromJust . (`TGraph.lookupEdge` domain)) )
+
+  return $ TGraph.fromGraphsAndLists domain codomain (Map.toList nodeMapping) (Map.toList edgeMapping)
+
+  where
+    validateEdgeMapping nodeMapping (loc, domEdge, codEdge) = do
+      unless (Map.lookup (sourceId domEdge) nodeMapping == Just (sourceId codEdge)) . throwError loc . PP.fillSep $
+        PP.words "Source mismatch when mapping edge."
+      unless (Map.lookup (targetId domEdge) nodeMapping == Just (targetId codEdge)) . throwError loc . PP.fillSep $
+        PP.words "Target mismatch when mapping edge."
+
+    compileMapping domElems codElems (DeclMapping domNames (A codLoc codName)) = do
+      let maybeCodElem = Map.lookup codName codElems
+      codElem <- getOrError codLoc "node or edge" codName (pure maybeCodElem) (either (nodeLocation . fst) (edgeLocation . fst))
+      case codElem of
+          Left (codNode, codType) -> fmap Left . forMCollectErrors domNames $ \(A domLoc domName) -> do
+            let maybeDomNode = maybeLeft =<< Map.lookup domName domElems
+            (domNode, domType) <- getOrError domLoc "node" domName (pure maybeDomNode) (nodeLocation . fst)
+            unless (domType == codType) . throwError domLoc . PP.fillSep $
+              PP.words "Type mismatch when mapping node."
+            return (domLoc, domNode, codNode)
+          Right (codEdge, codType) -> fmap Right . forMCollectErrors domNames $ \(A domLoc domName) -> do
+            let maybeDomEdge = maybeRight =<< Map.lookup domName domElems
+            (domEdge, domType) <- getOrError domLoc "edge" domName (pure maybeDomEdge) (edgeLocation . fst)
+            unless (domType == codType) . throwError domLoc . PP.fillSep $
+              PP.words "Type mismatch when mapping edge."
+            return (domLoc, domEdge, codEdge)
+    compileMapping _ _ _ = return (Left [])
+
+namedElementsOf :: GrGraph -> Map Text (Either (GrNode, NodeId) (GrEdge, EdgeId))
+namedElementsOf graph = Map.fromList $ namedNodes ++ namedEdges
+  where
+    namedNodes = [ (nodeName node, Left (node, ntype)) | (node, ntype) <- TGraph.nodes graph]
+    namedEdges = [ (edgeName edge, Right (edge, etype)) | (edge, etype) <- TGraph.edges graph ]
+
+maybeLeft :: Either a b -> Maybe a
+maybeLeft = either Just (const Nothing)
+
+maybeRight :: Either a b -> Maybe b
+maybeRight = either (const Nothing) Just
+
+findDomainCodomain :: MonadGrLang m => Maybe Location -> [MorphismDeclaration] -> ExceptT Error m (GrGraph, GrGraph)
+findDomainCodomain loc = go (Nothing, Nothing)
+  where
+    go (Just dom, Just cod) [] = return (dom, cod)
+    go (Nothing, Nothing) [] = throwError loc . PP.fillSep $ PP.words "The morphism is missing a domain and a codomain."
+    go (Nothing, _) []  = throwError loc . PP.fillSep $ PP.words "The morphism is missing a domain."
+    go (_, Nothing) []  = throwError loc . PP.fillSep $ PP.words "The morphism is missing a codomain."
+
+    go (Just _, _) (DeclDomain _ : _) = throwError loc . PP.fillSep $
+      PP.words "The morphism has multiple domains, it must have only one."
+    go (_, Just _) (DeclCodomain _ : _) = throwError loc . PP.fillSep $
+      PP.words "The morphism has multiple codomains, it must have only one."
+
+    go (Nothing, cod) (DeclDomain nameOrBody : decls) = do
+      dom <- compileNameOrBody nameOrBody
+      go (Just dom, cod) decls
+    go (dom, Nothing) (DeclCodomain nameOrBody : decls) = do
+      cod <- compileNameOrBody nameOrBody
+      go (dom, Just cod) decls
+
+    go (dom, cod) (_ : decls) = go (dom, cod) decls
+
+    compileNameOrBody (Left name) = do
+      val <- getValue name
+      case val of
+        VGraph g -> return g
+        VMorph _ -> throwError loc . PP.fillSep $ PP.words "Cannot use a morphism as domain."
+        VRule _ -> throwError loc . PP.fillSep $ PP.words "Cannot use a rule as domain."
+    compileNameOrBody (Right body) = compileGraph body
 
 compileRule :: MonadGrLang m => [RuleDeclaration] -> ExceptT Error m GrRule
 compileRule decls = do

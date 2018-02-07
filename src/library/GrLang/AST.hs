@@ -2,6 +2,7 @@
 module GrLang.AST
   ( TopLevelDeclaration(..)
   , GraphDeclaration(..)
+  , MorphismDeclaration(..)
   , RuleDeclaration(..)
   , DeletionMode(..)
   , ParallelEdgesDeclaration(..)
@@ -19,12 +20,19 @@ data TopLevelDeclaration
   | DeclNodeType (Located Text) -- ^ Declares a node type.
   | DeclEdgeType (Located Text) (Located Text) (Located Text) -- ^ Declares an edge type with source and target node types.
   | DeclGraph (Located Text) [GraphDeclaration] -- ^ Declares a graph whose elements are declared in its body.
+  | DeclMorphism (Located Text) [MorphismDeclaration] -- ^ Declares a morphism whose domain, codomain and elements are declared in its body
   | DeclRule (Located Text) [RuleDeclaration] -- ^ Declares a rule whose elements are declared in its body.
   deriving (Eq, Show)
 
 data GraphDeclaration
   = DeclNodes [Located Text] (Located Text) -- ^ Declares nodes of a given type, with the given names.
   | DeclEdges (Located Text) [(ParallelEdgesDeclaration, Located Text)] (Located Text) -- ^ Declares edges with given source and targets.
+  deriving (Eq, Show)
+
+data MorphismDeclaration
+  = DeclDomain (Either (Located Text) [GraphDeclaration]) -- ^ Declares that the domain is a named or inline graph
+  | DeclCodomain (Either (Located Text) [GraphDeclaration]) -- ^ Declares that the codomain is a named or inline graph
+  | DeclMapping [Located Text] (Located Text) -- ^ Declares that a group of elements of the domain is mapped to an element of the codomain.
   deriving (Eq, Show)
 
 data ParallelEdgesDeclaration = AnonymousEdge | NamedEdges [Located Text]
@@ -52,6 +60,7 @@ instance Pretty TopLevelDeclaration where
   pretty (DeclEdgeType (A _ e) (A _ src) (A _ tgt)) =
     PP.hsep ["edge type", pretty e, ":", pretty src, "->", pretty tgt]
   pretty (DeclGraph name body) = namedBlock "graph" name (map pretty body)
+  pretty (DeclMorphism name body) = namedBlock "morphism" name (map pretty body)
   pretty (DeclRule name body) = namedBlock "rule" name (map pretty body)
 
 instance Pretty GraphDeclaration where
@@ -71,6 +80,12 @@ instance Pretty GraphDeclaration where
 
       prettyEdges (AnonymousEdge, A _ t) = ":" <> pretty t
       prettyEdges (NamedEdges es, A _ t) = PP.hsep $ [ pretty e | A _ e <- es ] ++ [":" <+> pretty t]
+
+instance Pretty MorphismDeclaration where
+  pretty (DeclDomain nameOrBody) = nameOrBlock "domain" nameOrBody
+  pretty (DeclCodomain nameOrBody) = nameOrBlock "codomain" nameOrBody
+  pretty (DeclMapping [] _) = PP.emptyDoc
+  pretty (DeclMapping froms (A _ to)) = PP.hsep [ pretty e | A _ e <- froms ] <+> "->" <+> pretty to
 
 instance Pretty RuleDeclaration where
   pretty (DeclMatch elems) = blockOrSingle "match" (map pretty elems)
@@ -103,6 +118,10 @@ block prefix body = PP.vsep
   [ prefix <+> "{"
   , PP.indent 2 (PP.vsep body)
   , "}" ]
+
+nameOrBlock :: (Pretty a, Pretty b) => Doc ann -> Either (Located a) [b] -> Doc ann
+nameOrBlock kind (Left (A _ name)) = kind <+> pretty name
+nameOrBlock kind (Right body)      = block kind (map pretty body)
 
 blockOrSingle :: Doc ann -> [Doc ann] -> Doc ann
 blockOrSingle _ []        = PP.emptyDoc

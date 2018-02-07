@@ -20,6 +20,7 @@ module GrLang.Monad
   , emptyState
   , initState
   , runGrLangT
+  , evalGrLangT
   , evalGrLang
   , getValueContext
   ) where
@@ -184,8 +185,11 @@ initState graph = emptyState
 runGrLangT :: Monad m => GrLangState -> GrLangT m a -> m (a, GrLangState)
 runGrLangT st (GrLangT action) = runStateT action st
 
+evalGrLangT :: Monad m => GrLangState -> ExceptT Error (GrLangT m) a -> m (Either Error a)
+evalGrLangT st action = evalStateT (unGrLangT $ runExceptT action) st
+
 evalGrLang :: GrLangState -> ExceptT Error (GrLangT Identity) a -> Either Error a
-evalGrLang st action = runIdentity $ evalStateT (unGrLangT $ runExceptT action) st
+evalGrLang st action = runIdentity $ evalGrLangT st action
 
 instance MonadIO m => MonadIO (GrLangT m) where
   liftIO = lift . liftIO
@@ -214,7 +218,7 @@ instance Monad m => MonadGrLang (GrLangT m) where
   checkIfVisible srcPath = lift . GrLangT $ gets (Set.member srcPath . visibleModules)
 
   unsafeMakeVisible srcPath = GrLangT . modify $ \state ->
-    state { importedModules = Set.insert srcPath (importedModules state) }
+    state { visibleModules = Set.insert srcPath (visibleModules state) }
 
   getTypeGraph = lift . GrLangT $ gets typeGraph
 
@@ -284,6 +288,12 @@ addNew loc kind name existingLocation addToState =
       _ <- addToState
       return ()
 
+-- | Try to lookup a named element, throwing an error if there is none.
+--
+-- Receives, in this order: the location which caused the lookup, a string
+-- describing the kind of value (e.g. "node or edge"), the name being looked up,
+-- an action that looks up the name, and a function that extracts locations from
+-- values of the kind being looked up.
 getOrError :: MonadGrLang m => Maybe Location -> String -> Text -> m (Maybe a) -> (a -> Maybe Location) -> ExceptT Error m a
 getOrError loc kind name getter getLocation = do
   result <- lift getter
