@@ -1,4 +1,8 @@
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Abstract.Category.Limit (Complete(..), Cocomplete(..)) where
+
+import Data.Proxy
 
 import           Abstract.Category
 import           Data.List.NonEmpty (NonEmpty(..))
@@ -35,13 +39,18 @@ class (Category morph) => Complete morph where
   calculateNProduct (x :| []) = [identity x]
   calculateNProduct (x :| [y]) = [px, py]
     where (px, py) = calculateProduct x y
-  calculateNProduct (x :| y : ys) = 
+  calculateNProduct (x :| y : ys) =
     let
       qs = calculateNProduct (y :| ys)
       (px, pys) = calculateProduct x (domain $ head qs)
     in px : map (<&> pys) qs
 
   finalObject :: morph -> Obj morph
+
+  morphismToFinalFrom :: Obj morph -> morph
+
+  isFinal :: Proxy morph -> Obj morph -> Bool
+  isFinal _ = isIsomorphism . morphismToFinalFrom @morph
 
   calculatePullback :: morph -> morph -> (morph,morph)
   calculatePullback f g = (f',g')
@@ -64,11 +73,11 @@ class (Category morph) => Complete morph where
 -- Note that for performance reasons, verigraph assumes that the parameters
 -- are valid for all functions in this module.
 class (Category morph) => Cocomplete morph where
-  
+
     -- | Given two morphisms @/f : A -> B/@ and @/g : A -> B/@ retuns the coequalizer morphism
     -- @/h : B -> X/@
     calculateCoequalizer :: morph -> morph -> morph
-  
+
     -- | Given a non-empty list of morphisms of the form @/f : A -> B/@ returns the coequalizer Morphism
     -- @/h : B -> X/@
     calculateNCoequalizer :: NonEmpty morph -> morph
@@ -79,10 +88,10 @@ class (Category morph) => Cocomplete morph where
         k = calculateNCoequalizer (g :| gs)
         j = calculateCoequalizer (k <&> f) (k <&> g)
       in j <&> k
-  
+
     -- | Given two objects @A@ and @B@ it returns the coproduct @(A+B, f: A -> A+B, g: B -> A+B)@
     calculateCoproduct :: Obj morph -> Obj morph -> (morph,morph)
-  
+
     -- | Given a non-empty list of objects @Bi@ it returns the coproduct @fi : Bi -> SUM(Bi)@
     calculateNCoproduct :: NonEmpty (Obj morph) -> [morph]
     calculateNCoproduct (x :| []) = [identity x]
@@ -93,9 +102,14 @@ class (Category morph) => Cocomplete morph where
         ks = calculateNCoproduct (y :| ys)
         (jx, jys) = calculateCoproduct x (codomain $ head ks)
       in jx : map (jys <&>) ks
-  
+
     initialObject :: morph -> Obj morph
-  
+
+    morphismFromInitialTo :: Obj morph -> morph
+
+    isInitial :: Proxy morph -> Obj morph -> Bool
+    isInitial _ = isIsomorphism . morphismFromInitialTo @morph
+
     calculatePushout :: morph -> morph -> (morph,morph)
     calculatePushout f g = (f', g')
       where
@@ -107,4 +121,3 @@ class (Category morph) => Cocomplete morph where
         h = calculateCoequalizer fb' gc'
         g' = h <&> b'
         f' = h <&> c'
-  

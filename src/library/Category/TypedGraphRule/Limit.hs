@@ -6,8 +6,8 @@ module Category.TypedGraphRule.Limit where
 import           Abstract.Category
 import           Abstract.Category.Limit
 import           Abstract.Rewriting.DPO
-import           Category.TypedGraph     
-import           Category.TypedGraph.CommutingSquares     
+import           Category.TypedGraph
+import           Category.TypedGraph.CommutingSquares
 import           Category.TypedGraphRule.Category
 
 instance Complete (RuleMorphism a b) where
@@ -75,9 +75,17 @@ instance Cocomplete (RuleMorphism a b) where
 
   calculateNCoproduct = error "calculateNCoproduct for Second-order not implemented"
 
-  initialObject morph = Production (identity initGraph) (identity initGraph) []
-    where
-      initGraph = initialObject (leftMorphism (domain morph))
+  initialObject = initialRule . leftMorphism . domain
+
+  morphismFromInitialTo rule =
+    RuleMorphism (initialRule $ leftMorphism rule) rule
+      (morphismFromInitialTo $ leftObject rule)
+      (morphismFromInitialTo $ interfaceObject rule)
+      (morphismFromInitialTo $ rightObject rule)
+
+initialRule :: TypedGraphMorphism a b -> TypedGraphRule a b
+initialRule morph = Production idInitial idInitial []
+  where idInitial = identity (initialObject morph)
 
 coequalizerTGM :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 coequalizerTGM = calculateCoequalizer

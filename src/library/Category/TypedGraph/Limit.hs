@@ -1,22 +1,22 @@
 module Category.TypedGraph.Limit () where
 
+import qualified Data.List.NonEmpty                 as NE
+import           Data.List ((\\))
+import           Data.Maybe                         (fromJust)
+import           Data.Set                           (Set)
+import qualified Data.Set                           as DS
+
 import           Abstract.Category
 import           Abstract.Category.Limit
 import           Category.TypedGraph.Category
 import qualified Data.Graphs                        as G
 import qualified Data.Graphs.Morphism               as GM
-import qualified Data.List.NonEmpty                 as NE
-import           Data.List ((\\))
-import           Data.Maybe                         (fromJust)
 import           Data.Partition
-import           Data.Set                           (Set)
-import qualified Data.Set                           as DS
-import           Data.TypedGraph
-import           Data.TypedGraph.Morphism
-
+import           Data.TypedGraph                    as TG
+import           Data.TypedGraph.Morphism           as TG
 
 instance Complete (TypedGraphMorphism a b) where
-  
+
   -- @
   --        g'
   --     X──────▶A
@@ -124,7 +124,7 @@ calculateEqualizer' f g = makeInclusion typedX typedA
     typedX = foldr GM.removeNodeFromDomain
                   (foldr GM.removeEdgeFromDomain typedA (fEdges \\ equivalentEdges))
                   (fNodes \\ equivalentNodes)
-  
+
 
 
 type TypedNode = (NodeId,NodeId)
@@ -136,10 +136,12 @@ instance Cocomplete (TypedGraphMorphism a b) where
   calculateNCoequalizer = calculateNCoequalizer'
   calculateCoproduct = calculateCoproduct'
   calculateNCoproduct = calculateNCoproduct'
-  initialObject = initialObject'
+  initialObject = initialObject' . typeGraph . domainGraph
+  morphismFromInitialTo g = TG.makeInclusion (initialObject' (typeGraph g)) g
+  isInitial _ = TG.null
 
-initialObject' :: TypedGraphMorphism a b -> TypedGraph a b
-initialObject' tgm = GM.empty G.empty (typeGraph (domainGraph tgm))
+initialObject' :: G.Graph (Maybe a) (Maybe b) -> TypedGraph a b
+initialObject' = GM.empty G.empty
 
 calculateCoequalizer' :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 calculateCoequalizer' f g = initCoequalizerMorphism b nodeEquivalences edgeEquivalences
@@ -265,7 +267,7 @@ createEdgeEquivalences f g = edgesOnX
     mapByG = fromJust . applyNodeId g
     edgesFromA = edges (domainGraph f)
     edgesToGluingOnB = fmap equivalentEdges edgesFromA
-    initialEdgesOnX = discretePartition [ (e, src, tgt, et) | (Edge e src tgt _, et) <- edges (codomainGraph f) ] 
+    initialEdgesOnX = discretePartition [ (e, src, tgt, et) | (Edge e src tgt _, et) <- edges (codomainGraph f) ]
     edgesOnX = mergePairs edgesToGluingOnB initialEdgesOnX
 
 addNode :: EquivalenceClass TypedNode -> TypedGraphMorphism a b -> TypedGraphMorphism a b
