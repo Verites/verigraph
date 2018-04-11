@@ -2,9 +2,11 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE DefaultSignatures #-}
 module Abstract.Category.Adhesive
-  ( 
+  (
     -- * \(\mathcal{M}\)-adhesive categories
     MAdhesive(..)
+  , subobjectIntersection
+  , subobjectUnion
     -- * Related Constructions
   , MInitialPushout(..)
   , FinalPullbackComplement(..)
@@ -12,6 +14,7 @@ module Abstract.Category.Adhesive
 
 import           Abstract.Category
 import           Abstract.Category.Limit
+import           Abstract.Category.FindMorphism
 import           Abstract.Category.Finitary
 
 {- Type class for \(\mathcal{M}\)-adhesive categories.
@@ -95,6 +98,25 @@ class MFinitary morph => MAdhesive morph where
   -- or if the pushout complement doesn't exist.
   calculatePushoutComplementAlongM :: morph -> morph -> (morph, morph)
 
+-- | Given two \(\mathcal{M}\)-subobjects of the same object X, calculate their
+-- intersection (by taking a pullback)
+subobjectIntersection :: MAdhesive morph => morph -> morph -> morph
+subobjectIntersection a b =
+  let (_, b') = calculatePullbackAlongM a b
+  in a <&> b'
+
+-- | Given two \(\mathcal{M}\)-subobjects of the same object X, calculate their
+-- union as the pushout over their intersection
+subobjectUnion :: (FindMorphism morph, MAdhesive morph) => morph -> morph -> morph
+subobjectUnion a b =
+  let
+    (a'', b'') = calculatePullbackAlongM a b
+    (a', b') = calculatePushoutAlongM a'' b''
+    candidates = findSpanCommuters monic a' a
+  in case filter (\h -> h <&> b' == b) candidates of
+    [] -> error "subobjectUnion: no union found"
+    [h] -> h
+    _ -> error "subobjectUnion: multiple unions foind"
 
 class MFinitary morph => MInitialPushout morph where
   -- | Calculate the \(\mathcal{M}\)-initial pushout of the given morphism.
@@ -115,10 +137,10 @@ class MFinitary morph => MInitialPushout morph where
   -- @
   calculateMInitialPushout :: morph -> (morph, morph, morph)
 
-  
+
 -- | Type class for morphisms whose category has the final pullback complement operation
 class (Category morph) => FinalPullbackComplement morph where
-  
+
     -- | Checks if the given sequential morphisms have a final pullback
     -- complement, assuming they satisfy the given restriction.
     --
@@ -136,7 +158,7 @@ class (Category morph) => FinalPullbackComplement morph where
     --        f'
     -- @
     hasFinalPullbackComplement :: (MorphismClass morph, morph) -> (MorphismClass morph, morph) -> Bool
-  
+
     -- | Calculate the final pullback complement for two sequential morphisms, __assumes it exists__.
     --
     -- In order to test if the final pullback complement exists, use 'hasFinalPullbackComplement'.
@@ -155,4 +177,3 @@ class (Category morph) => FinalPullbackComplement morph where
     --        f'
     -- @
     calculateFinalPullbackComplement :: morph -> morph -> (morph,morph)
-  
