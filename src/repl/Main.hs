@@ -3,33 +3,69 @@ module Main where
 
 import           Control.Monad
 import           Control.Monad.Trans
+import Data.Monoid ((<>))
 import qualified Data.ByteString          as ByteString
 import           Foreign.Lua              (Lua, runLua)
 import qualified Foreign.Lua              as Lua
 import qualified System.Console.Haskeline as Haskeline
+import Options.Applicative
 
 import           GrLang                   (initialize)
 import           Util.Lua
+
+data Options = Options
+  { repl :: Bool
+  , scriptToRun :: Maybe String
+  }
+
+shouldRunRepl :: Options -> Bool
+shouldRunRepl (Options _ Nothing) = True
+shouldRunRepl (Options repl (Just _)) = repl 
+
+options :: Parser Options
+options = Options
+  <$> switch
+    ( long "repl"
+    <> help "Open a REPL even if given a script, in which case the script is run before entering the REPL.")
+  <*> optional (strArgument
+    ( metavar "FILE"
+    <> help "Lua script to run before entering the REPL."))
+
+fullOptions :: ParserInfo Options
+fullOptions = info (options <**> helper)
+  ( fullDesc
+  <> progDesc "Lua interpreter with bindings to Verigraph." )
 
 main :: IO ()
 main = runLua $ do
   Lua.openlibs
   initialize
 
-  liftIO $ putStrLn "Verigraph REPL"
-  liftIO $ putStrLn ""
+  options <- liftIO $ execParser fullOptions
 
-  loop
+  when (shouldRunRepl options) $ do
+    liftIO $ putStrLn "Verigraph REPL"
+    liftIO $ putStrLn ""
+
+  case scriptToRun options of
+    Just path -> do
+      loaded <- checkStatus =<< Lua.loadfile path
+      when loaded . void $
+        checkStatus =<< Lua.pcall 0 Lua.multret Nothing
+    Nothing -> return ()
+
+  when (shouldRunRepl options)
+    readEvalPrintLoop
   where
-    loop = do
+    readEvalPrintLoop = do
       hasRead <- read'
       case hasRead of
-        RError -> loop
+        RError -> readEvalPrintLoop
         REnd -> return ()
         ROk -> do
           hasEvaled <- eval'
           when hasEvaled print'
-          loop
+          readEvalPrintLoop
 
 data ReaderResult = ROk | RError | REnd
 getInputLine :: String -> Lua (Maybe String)

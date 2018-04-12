@@ -172,6 +172,7 @@ executable verigraph-repl
                        haskeline >=0.7 && <1.0,
                        hslua >=0.9 && <1.0,
                        mtl,
+                       optparse-applicative>=0.12 && < 0.15,
                        prettyprinter,
                        text
   other-modules:       GrLang
