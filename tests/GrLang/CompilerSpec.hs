@@ -1,8 +1,6 @@
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE OverloadedStrings    #-}
-{-# LANGUAGE ScopedTypeVariables  #-}
-{-# LANGUAGE TypeApplications     #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 module GrLang.CompilerSpec where
 
@@ -20,7 +18,6 @@ import           Test.Hspec
 import           Test.HUnit
 import           Test.QuickCheck
 import           Test.QuickCheck.Monadic
-import qualified Test.QuickCheck.Property       as QuickCheck
 
 import           Abstract.Category
 import           Abstract.Category.FindMorphism
@@ -37,7 +34,6 @@ import           GrLang.AST
 import           GrLang.Compiler
 import           GrLang.Monad                   hiding (GrLangState (..))
 import qualified GrLang.Monad                   as GrLang
-import           GrLang.Parser                  (parseGraph)
 import           GrLang.TestUtils
 import           GrLang.Value
 import           Rewriting.DPO.TypedGraph
@@ -76,14 +72,18 @@ spec = do
         [ Edge 1 1 2 . Just $ Metadata "MDeps" Nothing
         , Edge 2 2 1 . Just $ Metadata "Dep" Nothing ]
 
+  it "compiles a type graph" $ do
+    (compiledTGraph, _) <- compileSuccess "vcs-types.grl"
+    compiledTGraph `shouldBe` vcsTypes
+
   describe "compileGraph" $ do
     it "always compiles the result of generation" .
       property . monadic runIdentity $ do
-        let tgraph = TypeGraph.fromNodesAndEdges
-              [ Node 1 . Just $ Metadata "Revision" Nothing, Node 2 . Just $ Metadata "Deps" Nothing ]
-              [ Edge 1 1 2 . Just $ Metadata "MDeps" Nothing
-              , Edge 2 2 1 . Just $ Metadata "Dep" Nothing
-              , Edge 3 1 1 . Just $ Metadata "Foo" Nothing ]
+        let tgraph = makeTypeGraph
+              ["Revision", "Deps"]
+              [ ("MDeps", "Revision", "Deps")
+              , ("Dep", "Deps", "Revision")
+              , ("Foo", "Revision", "Revision") ]
         -- TODO: replace explicit test cases with pseudo-random generation
         let testCases =
               [ fromNodesAndEdges tgraph
@@ -105,10 +105,6 @@ spec = do
               ]
         graph <- pick (elements testCases)
         testRoundTrip generateGraph compileGraph validate typeGraph tgraph graph
-
-    it "compiles a type graph" $ do
-      (compiledTGraph, _) <- compileSuccess "vcs-types.grl"
-      compiledTGraph `shouldBe` vcsTypes
 
     it "compiles a graph" $ do
       (tgraph, values) <- compileSuccess "case1.grl"
@@ -175,30 +171,27 @@ spec = do
 
     it "always compiles the result of generation" .
       property . monadic runIdentity $ do
-        let tgraph = TypeGraph.fromNodesAndEdges
-              [ Node 1 . Just $ Metadata "M" Nothing, Node 2 . Just $ Metadata "N" Nothing ]
-              [ Edge 1 1 1 . Just $ Metadata "MM" Nothing
-              , Edge 2 1 2 . Just $ Metadata "MN" Nothing ]
+        let tgraph = makeTypeGraph
+              ["M", "N"]
+              [("MM", "M", "M"), ("MN", "M", "N")]
         -- TODO: replace explicit test cases with pseudo-random generation
-        let g1 = fromSuccess . evalGrLang (initState tgraph) $
-              compileGraph =<< lift (GrLang.unsafeMakeVisible "<test>") *> parseGraph "<test>"
-                (" m1 m2 : M; n1 n2: N \
-                \ m1 -m12:MM-> m2; m2 -m22:MM-> m2 \
-                \ m1 -n11:MN-> n1; m2 -n22:MN-> n2 " :: Text)
-        let g2 = fromSuccess . evalGrLang (initState tgraph) $
-              compileGraph =<< lift (GrLang.unsafeMakeVisible "<test>") *> parseGraph "<test>"
-                (" m1 m2 m3 m4 : M \
-                \ n1 n2 n3 n4 : N \
-                \ m1 -m11:MM-> m1; m1 -m12:MM-> m2; m1 -m13:MM-> m3; m1 -n11:MN-> n1 \
-                \ m2 -m22:MM-> m2; m2 -m23:MM-> m3; m2 -n22:MN-> n2; m2 -n12:MN-> n3 \
-                \ m3 -m33:MM-> m3; m3 -m34:MM-> m4; m3 -n34:MN-> n4 \
-                \ m4 -m44:MM-> m4; m4 -m41:MM-> m1; m4 -n44:MN-> n4" :: Text)
+        let g1 = parseGraph tgraph
+                  " m1 m2 : M; n1 n2: N \
+                  \ m1 -m12:MM-> m2; m2 -m22:MM-> m2 \
+                  \ m1 -n11:MN-> n1; m2 -n22:MN-> n2 "
+        let g2 = parseGraph tgraph
+                  " m1 m2 m3 m4 : M \
+                  \ n1 n2 n3 n4 : N \
+                  \ m1 -m11:MM-> m1; m1 -m12:MM-> m2; m1 -m13:MM-> m3; m1 -n11:MN-> n1 \
+                  \ m2 -m22:MM-> m2; m2 -m23:MM-> m3; m2 -n22:MN-> n2; m2 -n12:MN-> n3 \
+                  \ m3 -m33:MM-> m3; m3 -m34:MM-> m4; m3 -n34:MN-> n4 \
+                  \ m4 -m44:MM-> m4; m4 -m41:MM-> m1; m4 -n44:MN-> n4"
         let testCases = findAllMorphisms g1 g2 :: [GrMorphism] -- This should generate around 14 morphisms
         morph <- pick (elements testCases)
         testRoundTrip generateMorphism (compileMorphism Nothing g1 g2) validate (typeGraph . domain) tgraph morph
 
     it "compiles a morphism" $ do
-      (tgraph, values) <- compileSuccess "case25.grl"
+      (_, values) <- compileSuccess "case25.grl"
       Map.keys values `shouldBe` ["f", "g", "h"]
       let VMorph f = Ann.drop $ values Map.! "f"
           VGraph g = Ann.drop $ values Map.! "g"
@@ -233,9 +226,7 @@ spec = do
 
     it "always compiles the result of generation" .
       property . monadic runIdentity $ do
-        let tgraph = TypeGraph.fromNodesAndEdges
-              [ Node 1 . Just $ Metadata "N" Nothing ]
-              [ Edge 1 1 1 . Just $ Metadata "E" Nothing ]
+        let tgraph = makeTypeGraph ["N"] [("E","N","N")]
         -- TODO: replace explicit test cases with pseudo-random generation
         let testCases =
               [ [ DeclMatch [DeclNodes ["n1"] "N"]

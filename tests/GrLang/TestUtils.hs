@@ -1,19 +1,58 @@
-module GrLang.TestUtils (failWithError, quickCheckError, runSuccess, runFailure, fromSuccess) where
+module GrLang.TestUtils
+  ( makeTypeGraph
+  , parseGraph
+  , parseMorphism
+  , parseRule
+  , failWithError
+  , quickCheckError
+  , runSuccess
+  , runFailure
+  , fromSuccess
+  ) where
 
-import           Control.Monad.Except  (ExceptT (..), runExceptT)
-import qualified Data.Char             as Char
-import           Data.Functor.Identity
-import qualified Data.List             as List
-import           Data.Text             (Text)
-import qualified Data.Text             as Text
+import           Control.Monad
+import           Control.Monad.Except (ExceptT (..))
+import           Control.Monad.Trans
+import qualified Data.Char            as Char
+import qualified Data.List            as List
+import           Data.Text            (Text)
+import qualified Data.Text            as Text
 import           Test.Hspec
 import           Test.QuickCheck
 
-import           Base.Annotation       (Annotated (..), Located)
+import           Base.Annotation      (Annotated (..), Located)
 import           Base.Location
+import qualified Data.TypedGraph      as TG
 import           GrLang.AST
+import qualified GrLang.Compiler      as GrLang
 import           GrLang.Monad
-import           GrLang.Parser         (reservedNames)
+import           GrLang.Parser        (reservedNames)
+import qualified GrLang.Parser        as GrLang
+import           GrLang.Value
+
+makeTypeGraph :: [Text] -> [(Text, Text, Text)] -> TypeGraph
+makeTypeGraph nodeTypes edgeTypes = fromSuccess . evalGrLang emptyState $ do
+  forM_ nodeTypes (addNodeType . A Nothing)
+  forM_ edgeTypes (\(e, s, t) -> addEdgeType (A Nothing e) (A Nothing s) (A Nothing t))
+  getTypeGraph
+
+parseGraph :: TypeGraph -> String -> GrGraph
+parseGraph tgraph string = fromSuccess . evalGrLang (initState tgraph) $ do
+  parsed <- GrLang.parseGraph "<test>" string
+  lift $ unsafeMakeVisible "<test>"
+  GrLang.compileGraph parsed
+
+parseMorphism :: GrGraph -> GrGraph -> String -> GrMorphism
+parseMorphism dom cod string = fromSuccess . evalGrLang (initState $ TG.typeGraph dom) $ do
+  parsed <- GrLang.parseMorphism "<test>" string
+  lift $ unsafeMakeVisible "<test>"
+  GrLang.compileMorphism Nothing dom cod parsed
+
+parseRule :: TypeGraph -> String -> GrRule
+parseRule tgraph string = fromSuccess . evalGrLang (initState tgraph) $ do
+  parsed <- GrLang.parseRule "<test>" string
+  lift $ unsafeMakeVisible "<test>"
+  GrLang.compileRule parsed
 
 quickCheckError :: Error -> Property
 quickCheckError errs = counterexample (show $ prettyError errs) False
@@ -70,10 +109,6 @@ instance Arbitrary GraphDeclaration where
 instance Arbitrary MorphismDeclaration where
   arbitrary = DeclMapping <$> listOf1 (located genIdentifier) <*> located genIdentifier
   shrink (DeclMapping froms to)    = DeclMapping <$> shrinkList1 froms <*> pure to
-
-shrinkNameOrBody :: Arbitrary b => Either a b -> [Either a b]
-shrinkNameOrBody (Left _)     = []
-shrinkNameOrBody (Right body) = Right <$> shrink body
 
 instance Arbitrary ParallelEdgesDeclaration where
   arbitrary = oneof [ pure AnonymousEdge, NamedEdges <$> listOf1 (located genIdentifier) ]
