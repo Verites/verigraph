@@ -228,9 +228,34 @@ local function loader(modname, path)
   return
 end
 
+-- Memoize the search path using a weak table, so no memory leak
+local search_path = {}
+setmetatable(search_path, {__mode = 'k'})
+
+local function get_search_path()
+  if not search_path[package.path] then
+    local path = ''
+    
+    local i
+    for i in package.path:gmatch('[^;]*;') do
+      if i:match('%?%.lua') then
+        path = path .. i:gsub('%?%.lua', '?.tg') .. i:gsub('%?%.lua', '?.grl')
+      end
+    end
+
+    i = package.path:match('[^;]*$')
+    if i:match('%?%.lua') then
+      path = path .. i:gsub('%?%.lua', '?.tg') .. ';' .. i:gsub('%?%.lua', '?.grl')
+    end
+
+    search_path[package.path] = path
+  end
+  return search_path[package.path]
+end
+
 package.searchers[#package.searchers + 1] =
   function(modname)
-    path = package.searchpath(modname, './?.tg;./?.grl')
+    path = package.searchpath(modname, get_search_path())
     if path then
       return loader, path
     end

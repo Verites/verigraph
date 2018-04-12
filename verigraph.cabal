@@ -169,6 +169,7 @@ executable verigraph-repl
                        array >=0.5 && <1.0,
                        bytestring >=0.10 && <1.0,
                        containers,
+                       filepath,
                        haskeline >=0.7 && <1.0,
                        hslua >=0.9 && <1.0,
                        mtl,
@@ -192,6 +193,7 @@ test-suite HSpecTests
                        matrix >= 0.3.4,
                        mtl,
                        prettyprinter,
+                       process >=1.4,
                        QuickCheck,
                        hspec >=2.4,
                        hspec-discover >=2.4,
@@ -217,6 +219,7 @@ test-suite HSpecTests
                        Data.TypedGraph.PartitionSpec
                        GrLang.CompilerSpec
                        GrLang.ParserSpec
+                       GrLang.ReplIntegrationSpec
                        GrLang.TestUtils
                        HSpecTests
                        Logic.Ctl.ModelCheckerSpec

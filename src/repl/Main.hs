@@ -3,24 +3,26 @@ module Main where
 
 import           Control.Monad
 import           Control.Monad.Trans
-import Data.Monoid ((<>))
 import qualified Data.ByteString          as ByteString
+import qualified Data.ByteString          as BS
+import           Data.Monoid              ((<>))
 import           Foreign.Lua              (Lua, runLua)
 import qualified Foreign.Lua              as Lua
+import           Options.Applicative
 import qualified System.Console.Haskeline as Haskeline
-import Options.Applicative
+import           System.FilePath          (takeDirectory)
 
 import           GrLang                   (initialize)
 import           Util.Lua
 
 data Options = Options
-  { repl :: Bool
+  { repl        :: Bool
   , scriptToRun :: Maybe String
   }
 
 shouldRunRepl :: Options -> Bool
-shouldRunRepl (Options _ Nothing) = True
-shouldRunRepl (Options repl (Just _)) = repl 
+shouldRunRepl (Options _ Nothing)     = True
+shouldRunRepl (Options repl (Just _)) = repl
 
 options :: Parser Options
 options = Options
@@ -48,9 +50,9 @@ main = runLua $ do
     liftIO $ putStrLn ""
 
   case scriptToRun options of
-    Just path -> do
-      loaded <- checkStatus =<< Lua.loadfile path
-      when loaded . void $
+    Just script -> do
+      loaded <- checkStatus =<< Lua.loadfile script
+      when loaded . addingToPath (takeDirectory script) . void $
         checkStatus =<< Lua.pcall 0 Lua.multret Nothing
     Nothing -> return ()
 
@@ -66,6 +68,23 @@ main = runLua $ do
           hasEvaled <- eval'
           when hasEvaled print'
           readEvalPrintLoop
+
+    addingToPath dir action = do
+      Lua.getglobal "package"
+      Lua.getfield (-1) "path"
+      oldPath <- Lua.tostring (-1)
+      let newPath = stringToByteString (dir ++ "/?.lua;") <> oldPath
+      Lua.pushstring newPath
+      Lua.setfield (-3) "path"
+      Lua.pop 2
+      result <- action
+      Lua.getglobal "package"
+      Lua.pushstring oldPath
+      Lua.setfield (-2) "path"
+      return result
+
+stringToByteString :: String -> BS.ByteString
+stringToByteString = BS.pack . map (fromIntegral . fromEnum)
 
 data ReaderResult = ROk | RError | REnd
 getInputLine :: String -> Lua (Maybe String)
