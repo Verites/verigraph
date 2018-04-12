@@ -17,7 +17,7 @@ library
   hs-source-dirs:      src/library/
   ghc-options:         -O -Wall -fno-warn-name-shadowing -fno-warn-unused-do-bind -fno-warn-orphans
   other-extensions:    TypeFamilies, MultiParamTypeClasses, FlexibleContexts
-  build-depends:       base >=4.8 && <4.10,
+  build-depends:       base >=4.8 && <4.11,
                        containers >=0.4 && <0.6,
                        directory >= 1.3,
                        filepath >= 1.4,
@@ -26,7 +26,7 @@ library
                        parallel >= 3.2,
                        parsec >=3.1 && <3.2,
                        prettyprinter >=1.1 && <1.2,
-                       QuickCheck >=2.8 && <2.10,
+                       QuickCheck >=2.8 && <2.11,
                        semigroups >= 0.18,
                        set-monad >= 0.2,
                        split >= 0.2,
@@ -127,7 +127,7 @@ executable verigraph
                        filepath >=1.4 && <2,
                        hxt,
                        matrix >= 0.3,
-                       optparse-applicative>=0.12 && < 0.14,
+                       optparse-applicative>=0.12 && < 0.15,
                        parallel >= 3.2,
                        prettyprinter,
                        split >= 0.2
@@ -148,7 +148,7 @@ executable verigraph-mcheck
   build-depends:       base, verigraph,
                        containers,
                        hxt,
-                       optparse-applicative>=0.12 && < 0.14,
+                       optparse-applicative>=0.12 && < 0.15,
                        prettyprinter
   other-modules:       GlobalOptions
 
@@ -180,6 +180,7 @@ test-suite HSpecTests
                        Data.Graphs.GraphMorphismSpec
                        Data.GraphsSpec
                        Data.PartitionSpec
+                       Data.TypedGraph.MorphismSpec
                        Data.TypedGraph.Morphism.FindMorphismSpec
                        Data.TypedGraph.Morphism.FindMorphismSpec.FindCospanCommuterTest
                        Data.TypedGraph.Morphism.FindMorphismSpec.FindMorphismsTest
