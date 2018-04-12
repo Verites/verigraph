@@ -12,18 +12,13 @@ graph h {
   rr -e:MDeps-> dd
 }
 
-morphism f1 {
-  domain g
-
+morphism f1 : g -> foo {
   r -> rr
   d -> dd
   e1 e2 -> e
 }
 
-
-morphism f2 {
-  codomain h
-
+morphism f2 : foo -> h {
   r -> rr
   d -> dd
   e1 e2 -> e

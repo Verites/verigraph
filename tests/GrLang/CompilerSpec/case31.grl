@@ -12,10 +12,7 @@ graph h {
   rr -e:MDeps-> dd
 }
 
-morphism f {
-  domain g
-  codomain h
-
+morphism f : g -> h {
   rr -> rr -- Unknown domain node
   r -> r -- Unkown codomain node
   e -> e -- Unknown domain edge

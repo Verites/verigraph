@@ -61,7 +61,7 @@ data Value
 
 instance Pretty Value where
   pretty (VGraph graph) = pretty . DeclGraph (A Nothing "") $ generateGraph graph
-  pretty (VMorph morph) = pretty . DeclMorphism (A Nothing "") $ generateMorphism morph
+  pretty (VMorph morph) = pretty . DeclMorphism (A Nothing "")  (A Nothing "dom") (A Nothing "cod") $ generateMorphism morph
   pretty (VRule rule)   = pretty . DeclRule (A Nothing "") $ generateRule rule
 
 -- | Update values when new node/edge types have been created. Only works if the
@@ -192,15 +192,12 @@ generateEdges = concatMap generateChunk . List.chunksBy sourceTarget
       in Just $ DeclEdges (A Nothing $ nodeName s) (makeEdges es etype) (A Nothing $ nodeName t)
 
 -- | Generate declarations for the given morphism.
---
 -- Uses the metadata to define the names of nodes/edges and their types.
--- Will always generate inline domains and codomain.
+--
+-- Note: will not handle domain and codomain
 generateMorphism :: GrMorphism -> [MorphismDeclaration]
-generateMorphism morph = dom : cod : mappingsFor nodeName inverseNodeMap ++ mappingsFor edgeName inverseEdgeMap
+generateMorphism morph = mappingsFor nodeName inverseNodeMap ++ mappingsFor edgeName inverseEdgeMap
   where
-    dom = DeclDomain . Right . generateGraph $ domain morph
-    cod = DeclCodomain . Right . generateGraph $ codomain morph
-
     inverseNodeMap = preimagesOf (nodeMapping morph) (`lookupNode` domain morph) (`lookupNode` codomain morph)
     inverseEdgeMap = preimagesOf (edgeMapping morph) (`lookupEdge` domain morph) (`lookupEdge` codomain morph)
 

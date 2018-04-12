@@ -82,22 +82,10 @@ spec = do
       ]
 
   it "parses a morphism with individual and group mappings" $
-    "morphism f { n1 -> m1; e1 e2 -> e12 }" `shouldParseTo`
-      [ DeclMorphism "f"
+    "morphism f : dom -> cod { n1 -> m1; e1 e2 -> e12 }" `shouldParseTo`
+      [ DeclMorphism "f" "dom" "cod"
         [ DeclMapping ["n1"] "m1"
         , DeclMapping ["e1", "e2"] "e12"
-        ]
-      ]
-
-  it "parses a morphism with named domain and codomain" $
-    "morphism f { domain foo; codomain bar }" `shouldParseTo`
-      [ DeclMorphism "f" [ DeclDomain (Left "foo"), DeclCodomain (Left "bar")] ]
-
-  it "parses a morphism with inline domain and codomain" $
-    "morphism f { domain { n1 : N; n1 -e1 e2:E-> n1 }; codomain { m1 : N; m1 -e12:E-> m1 } }" `shouldParseTo`
-      [ DeclMorphism "f"
-        [ DeclDomain $ Right [ DeclNodes ["n1"] "N", DeclEdges "n1" [(NamedEdges ["e1", "e2"], "E")] "n1" ]
-        , DeclCodomain $ Right [ DeclNodes ["m1"] "N", DeclEdges "m1" [(NamedEdges ["e12"], "E")] "m1" ]
         ]
       ]
 

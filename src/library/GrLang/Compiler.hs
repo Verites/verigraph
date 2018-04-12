@@ -51,8 +51,8 @@ compileDecl (DeclNodeType n) = addNodeType n
 compileDecl (DeclEdgeType e s t) = addEdgeType e s t
 compileDecl (DeclGraph name graphDecls) =
   putValue name . VGraph =<< compileGraph graphDecls
-compileDecl (DeclMorphism name morphDecls) =
-  putValue name . VMorph =<< compileMorphism (Ann.locationOf name) morphDecls
+compileDecl (DeclMorphism name dom cod morphDecls) =
+  putValue name . VMorph =<< compileMorphism' (Ann.locationOf name) dom cod morphDecls
 compileDecl (DeclRule name ruleDecls) =
   putValue name . VRule =<< compileRule ruleDecls
 compileDecl (Import (A loc path)) = do
@@ -171,10 +171,20 @@ createEdge edgeType src tgt loc Nothing = do
   return newId
 
 
-compileMorphism :: MonadGrLang m => Maybe Location -> [MorphismDeclaration] -> ExceptT Error m GrMorphism
-compileMorphism loc decls = do
-  (domain, codomain) <- findDomainCodomain loc decls
+compileMorphism' :: MonadGrLang m => Maybe Location -> Located Text -> Located Text -> [MorphismDeclaration] -> ExceptT Error m GrMorphism
+compileMorphism' loc domName codName decls = do
+  [domain, codomain] <- mapMCollectErrors getGraph [(domName, "domain"), (codName, "codomain")]
+  compileMorphism loc domain codomain decls
+  where
+    getGraph (name, descr) = do
+      val <- getValue name
+      case val of
+        VGraph g -> return g
+        (VMorph _) -> throwError loc . PP.fillSep . PP.words $ "Cannot use a morphism as " <> descr <> "."
+        (VRule _) -> throwError loc . PP.fillSep . PP.words $ "Cannot use a rule as " <> descr <> "."
 
+compileMorphism :: MonadGrLang m => Maybe Location -> GrGraph -> GrGraph -> [MorphismDeclaration] -> ExceptT Error m GrMorphism
+compileMorphism loc domain codomain decls = do
   let domElems = namedElementsOf domain
       codElems = namedElementsOf codomain
   mappings <- mapMCollectErrors (compileMapping domElems codElems) decls
@@ -221,7 +231,6 @@ compileMorphism loc decls = do
             unless (domType == codType) . throwError domLoc . PP.fillSep $
               PP.words "Type mismatch when mapping edge."
             return (domLoc, domEdge, codEdge)
-    compileMapping _ _ _ = return (Left [])
 
 namedElementsOf :: GrGraph -> Map Text (Either (GrNode, NodeId) (GrEdge, EdgeId))
 namedElementsOf graph = Map.fromList $ namedNodes ++ namedEdges
@@ -234,36 +243,6 @@ maybeLeft = either Just (const Nothing)
 
 maybeRight :: Either a b -> Maybe b
 maybeRight = either (const Nothing) Just
-
-findDomainCodomain :: MonadGrLang m => Maybe Location -> [MorphismDeclaration] -> ExceptT Error m (GrGraph, GrGraph)
-findDomainCodomain loc = go (Nothing, Nothing)
-  where
-    go (Just dom, Just cod) [] = return (dom, cod)
-    go (Nothing, Nothing) [] = throwError loc . PP.fillSep $ PP.words "The morphism is missing a domain and a codomain."
-    go (Nothing, _) []  = throwError loc . PP.fillSep $ PP.words "The morphism is missing a domain."
-    go (_, Nothing) []  = throwError loc . PP.fillSep $ PP.words "The morphism is missing a codomain."
-
-    go (Just _, _) (DeclDomain _ : _) = throwError loc . PP.fillSep $
-      PP.words "The morphism has multiple domains, it must have only one."
-    go (_, Just _) (DeclCodomain _ : _) = throwError loc . PP.fillSep $
-      PP.words "The morphism has multiple codomains, it must have only one."
-
-    go (Nothing, cod) (DeclDomain nameOrBody : decls) = do
-      dom <- compileNameOrBody nameOrBody
-      go (Just dom, cod) decls
-    go (dom, Nothing) (DeclCodomain nameOrBody : decls) = do
-      cod <- compileNameOrBody nameOrBody
-      go (dom, Just cod) decls
-
-    go (dom, cod) (_ : decls) = go (dom, cod) decls
-
-    compileNameOrBody (Left name) = do
-      val <- getValue name
-      case val of
-        VGraph g -> return g
-        VMorph _ -> throwError loc . PP.fillSep $ PP.words "Cannot use a morphism as domain."
-        VRule _ -> throwError loc . PP.fillSep $ PP.words "Cannot use a rule as domain."
-    compileNameOrBody (Right body) = compileGraph body
 
 compileRule :: MonadGrLang m => [RuleDeclaration] -> ExceptT Error m GrRule
 compileRule decls = do

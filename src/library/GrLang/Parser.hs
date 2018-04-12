@@ -45,7 +45,7 @@ topLevelDecl = choice
   , nodeType <?> "node type"
   , edgeType <?> "edge type"
   , namedBlock "graph" DeclGraph graphDecl <?> "graph"
-  , namedBlock "morphism" DeclMorphism morphismDecl <?> "morphism"
+  , block "morphism" (nameFromTo DeclMorphism) morphismDecl <?> "morphism"
   , namedBlock "rule" DeclRule ruleDecl <?> "rule"
   ] <* optional semi
   where
@@ -56,18 +56,21 @@ topLevelDecl = choice
       reserved "node" >> reserved "type" >> DeclNodeType <$> located identifier
 
     edgeType =
-      reserved "edge" >> reserved "type" >>
-      DeclEdgeType
-        <$> located identifier
-        <*> (reservedOp ":" *> located identifier)
-        <*> (reservedOp "->" *> located identifier)
+      reserved "edge" >> reserved "type" >> nameFromTo DeclEdgeType
 
-namedBlock :: Stream s Identity Char => String -> (Located Text -> [a] -> b) -> ParsecT s u Identity a -> ParsecT s u Identity b
-namedBlock kind build item =
-  reserved kind >>
+nameFromTo :: Stream s Identity Char => (Located Text -> Located Text -> Located Text -> a) -> Parsec s u a
+nameFromTo build =
   build
-   <$> located identifier
-   <*> braces (many item)
+    <$> located identifier
+    <*> (reservedOp ":" *> located identifier)
+    <*> (reservedOp "->" *> located identifier)
+
+namedBlock :: Stream s Identity Char => String -> (Located Text -> [a] -> b) -> Parsec s u a -> Parsec s u b
+namedBlock kind build = block kind (build <$> located identifier)
+
+block :: Stream s Identity Char => String -> Parsec s u ([a] -> b) -> Parsec s u a -> Parsec s u b
+block kind header item =
+  reserved kind >> header <*> braces (many item)
 
 graphDecl :: Stream s Identity Char => Parsec s u GraphDeclaration
 graphDecl = (located identifier >>= \n -> edge n <|> node n) <* optional semi <?> "node or edge"
@@ -88,16 +91,8 @@ graphDecl = (located identifier >>= \n -> edge n <|> node n) <* optional semi <?
       NamedEdges <$> many1 (located identifier)
 
 morphismDecl :: Stream s Identity Char => Parsec s u MorphismDeclaration
-morphismDecl = choice
-  [ (reserved "domain" >> DeclDomain <$> nameOrBody) <?> "domain"
-  , (reserved "codomain" >> DeclCodomain <$> nameOrBody) <?> "codomain"
-  , mapping <?> "mapping of elements"
-  ] <* optional semi
+morphismDecl = (mapping <?> "mapping of elements") <* optional semi
   where
-    nameOrBody =
-      (Left <$> located identifier)
-      <|> braces (Right <$> many graphDecl)
-
     mapping = DeclMapping
       <$> many1 (located identifier)
       <*> (reservedOp "->" *> located identifier <* optional semi)

@@ -1,6 +1,8 @@
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE OverloadedStrings    #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
+{-# LANGUAGE TypeApplications     #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 module GrLang.CompilerSpec where
 
@@ -18,6 +20,7 @@ import           Test.Hspec
 import           Test.HUnit
 import           Test.QuickCheck
 import           Test.QuickCheck.Monadic
+import qualified Test.QuickCheck.Property       as QuickCheck
 
 import           Abstract.Category
 import           Abstract.Category.FindMorphism
@@ -192,9 +195,9 @@ spec = do
                 \ m4 -m44:MM-> m4; m4 -m41:MM-> m1; m4 -n44:MN-> n4" :: Text)
         let testCases = findAllMorphisms g1 g2 :: [GrMorphism] -- This should generate around 14 morphisms
         morph <- pick (elements testCases)
-        testRoundTrip generateMorphism (compileMorphism Nothing) validate (typeGraph . domain) tgraph morph
+        testRoundTrip generateMorphism (compileMorphism Nothing g1 g2) validate (typeGraph . domain) tgraph morph
 
-    it "compiles a morphism with named domain and codomain" $ do
+    it "compiles a morphism" $ do
       (tgraph, values) <- compileSuccess "case25.grl"
       Map.keys values `shouldBe` ["f", "g", "h"]
       let VMorph f = Ann.drop $ values Map.! "f"
@@ -208,24 +211,11 @@ spec = do
       TGraph.applyEdgeId f 0 `shouldBe` Just 0
       TGraph.applyEdgeId f 1 `shouldBe` Just 0
 
-    it "compiles a morphism with inline domain and codomain" $ do
-      (tgraph, values) <- compileSuccess "case26.grl"
-      Map.keys values `shouldBe` ["f"]
-      let VMorph f = Ann.drop $ values Map.! "f"
-      validate f `shouldBe` IsValid
-      TGraph.applyNodeId f 0 `shouldBe` Just 0
-      TGraph.applyNodeId f 1 `shouldBe` Just 1
-      TGraph.applyEdgeId f 0 `shouldBe` Just 0
-      TGraph.applyEdgeId f 1 `shouldBe` Just 0
-
     it "fails when the named domain or codomain is unknown" $
       "case27.grl" `shouldProduceNumberOfErrors` 2
 
     it "fails when a domain or codomain is missing" $
       "case28.grl" `shouldProduceNumberOfErrors` 2
-
-    it "fails when given multiple domains or codomains" $
-      "case29.grl" `shouldProduceNumberOfErrors` 2
 
     it "fails when the mapping doesn't preserve types" $
       "case30.grl" `shouldProduceNumberOfErrors` 4
@@ -532,7 +522,7 @@ testRoundTrip :: (Iso val, Valid val, Show val, Pretty ast, Show ast, Monad m) =
                   -> (val -> TypeGraph)
                   -> TypeGraph
                   -> val
-                  -> PropertyM m b
+                  -> PropertyM m ()
 testRoundTrip generate compile validateValue getTypeGraph tgraph value = do
   let generated = generate value
   monitor (counterexample . show . pretty $ generated)
@@ -540,7 +530,7 @@ testRoundTrip generate compile validateValue getTypeGraph tgraph value = do
   case validateValue value of
     IsInvalid errors -> stop . counterexample "Invalid value!" $ counterexample (show errors) False
     IsValid -> return ()
-  let recompiled = evalGrLang (initState tgraph) (compile generated)
+  let recompiled = evalGrLang (initState tgraph) (lift (GrLang.unsafeMakeVisible "<test>") >> compile generated)
   case recompiled of
     Left error -> stop .
       counterexample "Cannot compile generated value!" $

@@ -17,10 +17,7 @@ graph h {
   r2 -e22:MDeps-> d2
 }
 
-morphism f {
-  domain g
-  codomain h
-
+morphism f: g -> h {
   r -> r1
   d -> d1
 

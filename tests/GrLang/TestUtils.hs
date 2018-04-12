@@ -47,14 +47,15 @@ instance Arbitrary TopLevelDeclaration where
     , DeclNodeType <$> located genIdentifier
     , DeclEdgeType <$> located genIdentifier <*> located genIdentifier <*> located genIdentifier
     , DeclGraph <$> located genIdentifier <*> listOf arbitrary
+    , DeclMorphism <$> located genIdentifier <*> located genIdentifier <*> located genIdentifier <*> listOf arbitrary
     , DeclRule <$> located genIdentifier <*> listOf arbitrary ]
 
-  shrink Import{}              = []
-  shrink DeclNodeType{}        = []
-  shrink DeclEdgeType{}        = []
-  shrink (DeclGraph g body)    = DeclGraph g <$> shrink body
-  shrink (DeclMorphism f body) = DeclMorphism f <$> shrink body
-  shrink (DeclRule r body)     = DeclRule r <$> shrink body
+  shrink Import{}                      = []
+  shrink DeclNodeType{}                = []
+  shrink DeclEdgeType{}                = []
+  shrink (DeclGraph g body)            = DeclGraph g <$> shrink body
+  shrink (DeclMorphism f dom cod body) = DeclMorphism f dom cod <$> shrink body
+  shrink (DeclRule r body)             = DeclRule r <$> shrink body
 
 instance Arbitrary GraphDeclaration where
   arbitrary = oneof
@@ -67,17 +68,7 @@ instance Arbitrary GraphDeclaration where
   shrink (DeclEdges s es t) = [ DeclEdges s es' t | es' <- shrinkList1 es ]
 
 instance Arbitrary MorphismDeclaration where
-  arbitrary = oneof
-    [ DeclDomain <$> genNameOrBody
-    , DeclCodomain <$> genNameOrBody
-    , DeclMapping <$> listOf1 (located genIdentifier) <*> located genIdentifier ]
-    where
-      genNameOrBody = oneof
-        [ Left <$> located genIdentifier
-        , Right <$> listOf arbitrary ]
-
-  shrink (DeclDomain nameOrBody)   = DeclDomain <$> shrinkNameOrBody nameOrBody
-  shrink (DeclCodomain nameOrBody) = DeclCodomain <$> shrinkNameOrBody nameOrBody
+  arbitrary = DeclMapping <$> listOf1 (located genIdentifier) <*> located genIdentifier
   shrink (DeclMapping froms to)    = DeclMapping <$> shrinkList1 froms <*> pure to
 
 shrinkNameOrBody :: Arbitrary b => Either a b -> [Either a b]

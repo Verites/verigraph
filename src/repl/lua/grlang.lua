@@ -75,7 +75,7 @@ function GrLang.__tostring(value)
 end
 
 function GrLang.__eq(value1, value2)
-  return value1.index == value2.index
+  return value1.index == value2.index or GrLang.native.equals(value1.index, value2.index)
 end
 
 function GrLang.__gc(value)
@@ -102,13 +102,13 @@ end
 
 --[[ Creating subclasses ]]
 
-local function subclass_of_GrLang()
+local function subclass_of_GrLang(factory)
   local class = { __index = {}, __tostring = GrLang.__tostring, __eq = GrLang.__eq, __gc = GrLang.__gc }
 
   setmetatable(class.__index, { __index = GrLang.__index })
 
   setmetatable(class, {
-    __call = function (cls, str)
+    __call = factory or function (cls, str)
       local idx = catch_haskell(cls.native.parse(str))
       return newGrLang(cls, idx)
     end
@@ -127,8 +127,67 @@ Instances can be constructed as follows:
       n1 n2 : NodeType
       n1 -:EdgeType1, f g:EdgeType2-> n2
     ]]
-]==]} .. subclass_of_GrLang()
+]==],
+  methods = { 'identity' }
+} .. subclass_of_GrLang()
 
+Graph.__index.identity = docstring "Returns the identity morphism"
+  .. function(graph)
+    if not graph.__identity then
+      local idx = catch_haskell(Graph.native.identity(graph.index))
+      graph.__identity = newMorphism(Morphism, idx, graph, graph)
+    end
+    return graph.__identity
+  end
+
+--[[ Morphism class ]]
+
+Morphism = docstring{[==[
+Class for GrLang morphisms, subclass of GrLang.
+
+Instances can be constructed as follows:
+    Morphism(domain, codomain) [[
+      n1 -> n2 -- indicate that element n1 is mapped to n2
+      e1 e2 -> e3 -- you can map multiple elements at once
+    ]]
+
+Note that morphisms can be composed with the concatenation
+operator, that is, `f .. g` returns the composite of `f` and `g`
+when the domain of `f` is the same as the codomain of `g`.
+]==],
+  methods = {
+    'domain', 'codomain', '..'
+  }
+} .. subclass_of_GrLang(
+  function (cls, domain, codomain)
+    return function (str)
+      local idx = catch_haskell(
+        cls.native.parse(domain.index, codomain.index, str))
+      return newMorphism(cls, idx, domain, codomain)
+    end
+  end)
+
+function newMorphism(cls, idx, domain, codomain)
+  local result = newGrLang(cls, idx)
+  result.__domain = domain
+  result.__codomain = codomain
+  return result
+end
+
+Morphism.__index.domain = docstring "Returns the domain graph."
+  .. function(morphism) return morphism.__domain end
+
+Morphism.__index.codomain = docstring "Returns the codomain graph."
+  .. function(morphism) return morphism.__codomain end
+
+Morphism.__concat = function(m1, m2)
+  if m1.__domain ~= m2.__codomain then
+    error("Given morphisms are not composable.")
+  else
+    local idx = catch_haskell(Morphism.native.compose(m1.index, m2.index))
+    return newMorphism(Morphism, idx, m2.__domain, m1.__codomain)
+  end
+end
 
 --[[ Rule class ]]
 

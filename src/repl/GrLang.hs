@@ -22,6 +22,7 @@ import           Data.Text.Prettyprint.Doc (Pretty (..))
 import           Foreign.Lua               (Lua)
 import qualified Foreign.Lua               as Lua
 
+import           Abstract.Category
 import           Base.Annotation           (Annotated (..))
 import qualified Data.Graphs               as TypeGraph
 import           Data.TypedGraph           (EdgeId, Node (..), NodeId)
@@ -134,6 +135,7 @@ instance MonadGrLang (ReaderT GrLangState Lua) where
     where
       metatableFor (VGraph _) = "Graph"
       metatableFor (VRule _)  = "Rule"
+      metatableFor (VMorph _) = "Morphism"
 
 indexKey :: String
 indexKey = "index" :: String
@@ -262,6 +264,11 @@ initGrLang globalState = do
     , ("toString", Lua.pushHaskellFunction $ \idx -> runGrLang' globalState $
           show . pretty <$> lookupGrLangValue idx
       )
+    , ("equals", Lua.pushHaskellFunction $ \idxA idxB -> runGrLang' globalState $ do
+          valA <- lookupGrLangValue idxA
+          valB <- lookupGrLangValue idxB
+          return (valA == valB)
+      )
     , ("deallocate", Lua.pushHaskellFunction $ \idx -> runGrLang' globalState $
           freeGrLang idx
       )
@@ -278,6 +285,27 @@ initGrLang globalState = do
     [ ("parse", Lua.pushHaskellFunction $ \string -> runGrLang' globalState $ do
           graph <- GrLang.compileGraph =<< GrLang.parseGraph "<repl>" (string :: String)
           idx <- allocateGrLang (VGraph graph)
+          return (fromIntegral idx :: Lua.LuaInteger)
+      ),
+      ("identity", Lua.pushHaskellFunction $ \idx -> runGrLang' globalState $ do
+          VGraph graph <- lookupGrLangValue idx
+          idx <- allocateGrLang (VMorph $ identity graph)
+          return (fromIntegral idx :: Lua.LuaInteger)
+      )
+    ]
+
+  setNative "Morphism"
+    [ ("parse", Lua.pushHaskellFunction $ \domIdx codIdx string -> runGrLang' globalState $ do
+          VGraph dom <- lookupGrLangValue domIdx
+          VGraph cod <- lookupGrLangValue codIdx
+          morphism <- GrLang.compileMorphism Nothing dom cod =<< GrLang.parseMorphism "<repl>" (string :: String)
+          idx <- allocateGrLang (VMorph morphism)
+          return (fromIntegral idx :: Lua.LuaInteger)
+      ),
+      ("compose", Lua.pushHaskellFunction $ \idF idG -> runGrLang' globalState $ do
+          VMorph f <- lookupGrLangValue idF
+          VMorph g <- lookupGrLangValue idG
+          idx <- allocateGrLang (VMorph $ f <&> g)
           return (fromIntegral idx :: Lua.LuaInteger)
       )
     ]

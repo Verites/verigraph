@@ -14,10 +14,7 @@ graph h {
   r1 -e11:MDeps, f:Foo-> d1
 }
 
-morphism f {
-  domain g
-  codomain h
-
+morphism f : g -> h {
   r -> d1 -- Violates node type
   d -> e11 -- Maps node to edge
   e1 -> f -- Violates edge type
