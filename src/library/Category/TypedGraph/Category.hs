@@ -9,7 +9,7 @@ module Category.TypedGraph.Category
     ) where
 
 import           Abstract.Category
-import           Category.Graph                     (GraphMorphism, MorphismType(..))
+import           Category.Graph                     (MorphismType(..))
 import qualified Category.Graph                     as Graph
 import           Data.TypedGraph
 import           Data.TypedGraph.Morphism

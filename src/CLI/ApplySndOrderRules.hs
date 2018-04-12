@@ -9,7 +9,6 @@ import           Data.Monoid                             ((<>))
 import           Data.Text.Prettyprint.Doc               (Pretty (..))
 import           Options.Applicative
 import           System.IO                               (hPrint, stderr)
-import           System.IO                               (hPrint, stderr)
 
 import           Abstract.Category
 import           Abstract.Rewriting.DPO

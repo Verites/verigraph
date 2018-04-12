@@ -112,7 +112,7 @@ updateRelation x y (Relation dom cod m) = Relation ([x] `union` dom) ([y] `union
 inverseRelation :: (Ord a) => Relation a -> Relation a
 inverseRelation (Relation dom cod m) = Relation cod dom m'
   where
-    m' = Map.foldWithKey
+    m' = Map.foldrWithKey
         (\x ys m -> foldr (\y mp -> Map.insertWith (++) y [x] mp) m ys)
         Map.empty
         m
