@@ -1,0 +1,10 @@
+node type Revision
+node type Dependencies
+
+edge type deps : Revision -> Dependencies
+edge type dependsOn : Dependencies -> Revision
+
+node type Branch
+edge type tip : Branch -> Revision
+
+

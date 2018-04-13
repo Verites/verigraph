@@ -1,0 +1,8 @@
+import "vcs-types.grl"
+
+graph g {
+  r1 r2 : Revision
+}
+
+node type Branch
+edge type Tip : Branch -> Branch

@@ -1,0 +1,17 @@
+import "vcs-types.grl"
+
+rule commit {
+  create r2 : Revision
+
+  match {
+    r1 : Revision
+    d1 : Deps
+    r1 -:MDeps-> d1
+  }
+
+  clone d1 as d2
+  create {
+    r2 -:MDeps-> d2
+    d2 -:Dep-> r1
+  }
+}

@@ -1,0 +1,20 @@
+import "vcs-types.grl"
+
+graph g {
+  r : Revision
+  d : Deps
+  r -e1 e2:MDeps-> d
+}
+
+graph h {
+  rr : Revision
+  dd : Deps
+  rr -e:MDeps-> dd
+}
+
+morphism f : g -> h {
+  rr -> rr -- Unknown domain node
+  r -> r -- Unkown codomain node
+  e -> e -- Unknown domain edge
+  e1 -> e1 -- Unknown codomain edge
+}

@@ -1,0 +1,29 @@
+import "vcs-types.grl"
+
+rule rebaseStart {
+  match {
+    r1 r2 rRoot : Revision
+    d1 d2 dRoot : Deps
+    r1 -:MDeps-> d1
+    r2 -:MDeps-> d2
+    rRoot -:MDeps-> dRoot
+
+    d1 -:Dep-> rRoot
+    d2 -:Dep-> rRoot
+  }
+
+  forbid {
+    rRoot' : Revision
+    dRoot' : Deps
+    rRoot' -:MDeps-> dRoot'
+
+    d1 -:Dep-> rRoot'
+    d2 -:Dep-> rRoot'
+    dRoot' -:Dep-> rRoot
+  }
+
+  forbid extraNac {
+    d3 : Deps
+    d3 -:Dep-> r1
+  }
+}

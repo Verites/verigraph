@@ -4,4 +4,8 @@ packages:
 - '.'
 extra-deps:
 - combinat-0.2.8.2
+- hslua-0.9.0
 resolver: lts-10.5
+
+ghc-options:
+  '$everything': -threaded

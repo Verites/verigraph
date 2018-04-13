@@ -1,0 +1,10 @@
+import "vcs-types.grl"
+
+rule merge {
+  match {
+    r1: Revision
+    d1: Deps
+  }
+
+  join r1 d1
+}

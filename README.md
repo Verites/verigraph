@@ -30,6 +30,14 @@ Once you have cloned this repository, install `verigraph` by running:
   $ source ~/.bashrc
 ```
 
+If there is an error saying `recompile with -fPIC`, it can be fixed by the following command
+(see https://github.com/commercialhaskell/stack/issues/2712).
+
+```bash
+  $ shopt -s globstar && sed -i 's/-fno-PIE/-no-pie/g' ~/.stack/programs/**/ghc-*/settings`
+```
+
+
 ### Installing via Cabal
 
 Once you have cloned this repository, install `verigraph` by running:

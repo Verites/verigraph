@@ -1,0 +1,28 @@
+import "vcs-types.grl"
+
+edge type Foo : Revision -> Deps
+
+graph g {
+  r : Revision
+  d : Deps
+  r -e1 e2 e3 e4:MDeps-> d
+}
+
+graph h {
+  r1 r2 : Revision
+  d1 d2: Deps
+  r1 -e11:MDeps, f:Foo-> d1
+  r1 -e12:MDeps-> d2
+  r2 -e21:MDeps-> d1
+  r2 -e22:MDeps-> d2
+}
+
+morphism f: g -> h {
+  r -> r1
+  d -> d1
+
+  e1 -> e12 -- Violates codomain
+  e2 -> e21 -- Violates domain
+  e3 -> e22 -- Violates domain and codomain
+  e4 -> e11
+}

@@ -1,0 +1,22 @@
+import "vcs-types.grl"
+
+edge type Foo : Revision -> Deps
+
+graph g {
+  r : Revision
+  d : Deps
+  r -e1 e2:MDeps-> d
+}
+
+graph h {
+  r1 r2 : Revision
+  d1 d2: Deps
+  r1 -e11:MDeps, f:Foo-> d1
+}
+
+morphism f : g -> h {
+  r -> d1 -- Violates node type
+  d -> e11 -- Maps node to edge
+  e1 -> f -- Violates edge type
+  e2 -> d2 -- Maps edge to node
+}

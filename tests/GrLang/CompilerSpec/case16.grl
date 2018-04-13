@@ -1,0 +1,17 @@
+import "vcs-types.grl"
+
+rule rebaseStart {
+  match {
+    r1 r2 rRoot : Revision
+    d1 d2 dRoot : Deps
+    r1 -:MDeps-> d1
+    r2 -:MDeps-> d2
+    rRoot -:MDeps-> dRoot
+
+    d1 -d:Dep-> rRoot
+    d2 -:Dep-> rRoot
+  }
+
+  clone r1 as r2 r3
+  clone d as d d1 x
+}

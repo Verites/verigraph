@@ -1,0 +1,11 @@
+import "vcs-types.grl"
+
+-- Fails because edges have src/tgt of invalid type
+
+graph g {
+  r1 r2 r3 : Revision
+  d1 d2 d3 : Deps
+
+  d1 -d12:Dep-> d2
+  r2 -d23:Dep-> r3
+}

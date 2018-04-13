@@ -1,0 +1,22 @@
+import "vcs-types.grl"
+
+rule merge {
+  match {
+    r1 r2 : Revision
+    d1 d2 : Deps
+
+    r1 -:MDeps-> d1
+    r2 -:MDeps-> d2
+  }
+
+  clone d1 as d1'
+  clone d2 as d2'
+  join d1' d2' as d3
+  create {
+    r3: Revision
+    r3 -:MDeps-> d3
+
+    d3 -:Dep-> r1
+    d3 -:Dep-> r2
+  }
+}

@@ -1,0 +1,17 @@
+import "vcs-types.grl"
+
+edge type Foo : Revision -> Revision
+
+graph g {
+  r1 r2 : Revision
+  d1 d2 : Deps
+
+  r1 -:MDeps-> d1
+  r2 -:MDeps-> d2
+
+  r3 : Revision
+
+  d1 -d12:Dep-> r2
+  d2 -:Dep-> r3
+  r1 -f1 f2 f3:Foo-> r1
+}

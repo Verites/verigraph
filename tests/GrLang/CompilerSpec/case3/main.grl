@@ -1,0 +1,6 @@
+import "edge.grl"
+
+graph g {
+  n1 n2 : Node
+  n1 -e1 e2:Edge-> n2
+}

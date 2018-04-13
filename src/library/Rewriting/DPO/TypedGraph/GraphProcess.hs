@@ -19,7 +19,7 @@ module Rewriting.DPO.TypedGraph.GraphProcess
 where
 
 
-import           Data.List                                                as L hiding (union)
+import           Data.List                                                as L
 import           Data.Maybe                                               (fromJust, fromMaybe,
                                                                             isJust)
 import           Data.Tuple                                               (swap)
@@ -170,7 +170,7 @@ getTrigger nac =
   in if L.null orphanEdges then Node $ head orphanNodes else Edge $ head orphanEdges
 
 uniqueOrigin :: [NamedTypedGraphRule a b] -> Bool
-uniqueOrigin productions = not (repeated createdList) && not (repeated deletedList)
+uniqueOrigin productions = not (hasRepeatedElem createdList) && not (hasRepeatedElem deletedList)
   where
     creationAndDeletion = S.filter isRuleAndElement $ S.unions $ L.map creationAndDeletionRelation productions
     isCreated a = case a of

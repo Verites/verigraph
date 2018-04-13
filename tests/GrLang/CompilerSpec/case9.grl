@@ -1,0 +1,15 @@
+import "vcs-types.grl"
+
+rule r {
+  match r1 r2 : Revision
+
+  match {
+    d1 d2 : Deps
+    r1 -:MDeps-> d1
+  }
+
+  match r2 -e:MDeps-> d2
+
+  delete d1 with matched edges
+  delete e
+}

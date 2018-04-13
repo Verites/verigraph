@@ -14,13 +14,21 @@ module Util.Monad
   , pickOne
   , pickFromList
   , guardM
+    -- * ExceptT helpers
+  , tryError
+  , mapMCollectErrors
+  , mapMCollectErrors_
+  , forMCollectErrors
+  , forMCollectErrors_
   ) where
 
 import           Control.Applicative
 import           Control.Monad
+import           Control.Monad.Except
 import           Control.Monad.List
+import           Data.Either          (partitionEithers)
 import           Data.Foldable
-import           Data.Maybe          (catMaybes)
+import           Data.Maybe           (catMaybes)
 
 andM :: Monad m => m Bool -> m Bool -> m Bool
 andM mp mq = do
@@ -87,3 +95,40 @@ nubByM eq l = nubBy' l []
       if hasDuplicate
         then nubBy' ys alreadyAdded
         else (y:) <$> nubBy' ys (y : alreadyAdded)
+
+-- | Given an action that may fail throwing and error, execute it for every item
+-- of the list regardless if any action fails, accumulating the results or
+-- errors. If any action fails, accumulates all errors and throw them together.
+--
+-- Be /very careful/ when using this: any side effects that happen for any
+-- sucessful item will /not/ be rolled back.
+--
+-- Unlike 'mapM', this doesn't stop when the first error is thrown. Instead, the
+-- action is still executed with the remaining items of the list, accumulating
+-- errors instead of results. Then, at the very end, the accumulated errors are
+-- thrown.
+mapMCollectErrors :: (Monoid e, MonadError e m) => (a -> m b) -> [a] -> m [b]
+mapMCollectErrors fn xs = do
+  results <- mapM (tryError . fn) xs
+  let (errors, values) = partitionEithers results
+  if null errors
+    then return values
+    else throwError (mconcat errors)
+
+-- | Like 'mapMCollectErrors', but doesn't return the result list.
+mapMCollectErrors_ :: (Monoid e, MonadError e m) => (a -> m b) -> [a] -> m ()
+mapMCollectErrors_ fn xs = mapMCollectErrors fn xs >> return ()
+
+-- | Like 'mapMCollectErrors', but with the arguments fliped.
+forMCollectErrors :: (Monoid e, MonadError e m) => [a] -> (a -> m b) -> m [b]
+forMCollectErrors = flip mapMCollectErrors
+
+-- | Like 'mapMCollectErrors', but has the arguments fliped and doesn't return
+-- the result list.
+forMCollectErrors_ :: (Monoid e, MonadError e m) => [a] -> (a -> m b) -> m ()
+forMCollectErrors_ = flip mapMCollectErrors_
+
+-- | Execute the action and catch any thrown errors.
+tryError :: MonadError e m => m a -> m (Either e a)
+tryError action =
+  (Right <$> action) `catchError` (return . Left)

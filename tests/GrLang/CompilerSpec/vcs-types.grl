@@ -1,0 +1,5 @@
+node type Revision
+node type Deps
+
+edge type MDeps : Revision -> Deps
+edge type Dep : Deps -> Revision

@@ -1,5 +1,6 @@
-module Util.Map (inverse, lookupMaybe) where
+module Util.Map (inverse, lookupMaybe, partitionEithers) where
 
+import           Control.Arrow
 import           Data.Foldable
 import           Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
@@ -13,3 +14,11 @@ inverse = foldl' addInverse Map.empty
 -- | @lookupMaybe x m@ is shorthand for @x >>= (`lookup` m)@
 lookupMaybe :: Ord k => Maybe k -> Map k v -> Maybe v
 lookupMaybe x m = x >>= (`Map.lookup` m)
+
+-- | Partition a map of 'Either's into a map containing only left-values and
+-- another containing right-values.
+partitionEithers :: Ord k => Map k (Either a b) -> (Map k a, Map k b)
+partitionEithers = (Map.fromList *** Map.fromList) . foldr insert ([], []) . Map.toList
+  where
+    insert (k, Left x) (lefts, rights)  = ((k,x):lefts, rights)
+    insert (k, Right y) (lefts, rights) = (lefts, (k,y):rights)
