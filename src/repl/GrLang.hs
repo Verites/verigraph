@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications  #-}
 module GrLang (initialize) where
 
 import           Control.Monad
@@ -19,7 +20,7 @@ import           Data.Text                  (Text)
 import qualified Data.Text                  as Text
 import qualified Data.Text.Encoding         as Text
 import           Data.Text.Prettyprint.Doc  (Pretty (..))
-import           Foreign.Lua                (FromLuaStack, Lua, ToLuaStack)
+import           Foreign.Lua                (FromLuaStack, Lua, ToHaskellFunction)
 import qualified Foreign.Lua                as Lua
 
 import           Abstract.Category
@@ -225,14 +226,13 @@ allocateGrLang = withMemSpace values . allocateMemSpace
 freeGrLang :: Lua.LuaInteger -> ExceptT GrLang.Error LuaGrLang ()
 freeGrLang = withMemSpace values . freeMemSpace
 
-runGrLang' :: Lua.ToLuaStack a => GrLangState -> ExceptT GrLang.Error LuaGrLang a -> Lua Lua.NumResults
+runGrLang' :: ToHaskellFunction (Lua a) =>
+  GrLangState -> ExceptT GrLang.Error LuaGrLang a -> Lua Lua.NumResults
 runGrLang' globalState action = do
   result <- runReaderT (runExceptT action) globalState
   case result of
     Left errs -> luaError (show $ GrLang.prettyError errs)
-    Right val -> do
-      Lua.push val
-      return 1
+    Right val -> Lua.toHaskellFunction (return @Lua val)
 
 initialize :: Lua ()
 initialize = do
@@ -340,36 +340,24 @@ initGrLang globalState = do
           VMorph f <- lookupGrLangValue idF
           VMorph g <- lookupGrLangValue idG
           let (f', g') = calculatePullback f g
-          (,,)
-            <$> allocateGrLang (VGraph $ domain f')
-            <*> allocateGrLang (VMorph f')
-            <*> allocateGrLang (VMorph g')
+          returnVals [VGraph (domain f'), VMorph f', VMorph g']
       ),
       ("calculateInitialPushout", haskellFn1 globalState $ \idx -> do
           VMorph f <- lookupGrLangValue idx
           let (b, f', c) = calculateMInitialPushout f
-          (,,,,)
-            <$> allocateGrLang (VGraph $ domain b)
-            <*> allocateGrLang (VGraph $ domain c)
-            <*> allocateGrLang (VMorph b)
-            <*> allocateGrLang (VMorph f')
-            <*> allocateGrLang (VMorph c)
+          returnVals [VGraph (domain b), VGraph (domain c), VMorph b, VMorph f', VMorph c]
       ),
       ("subobjectIntersection", haskellFn2 globalState $ \idA idB -> do
           VMorph a <- lookupGrLangValue idA
           VMorph b <- lookupGrLangValue idB
           let c = subobjectIntersection a b
-          (,)
-            <$> (allocateGrLang . VGraph $ domain c)
-            <*> (allocateGrLang . VMorph $ c)
+          returnVals [VGraph (domain c), VMorph c]
       ),
       ("subobjectUnion", haskellFn2 globalState $ \idA idB -> do
           VMorph a <- lookupGrLangValue idA
           VMorph b <- lookupGrLangValue idB
           let c = subobjectUnion a b
-          (,)
-            <$> (allocateGrLang . VGraph $ domain c)
-            <*> (allocateGrLang . VMorph $ c)
+          returnVals [VGraph (domain c), VMorph c]
       )
     ]
 
@@ -408,21 +396,26 @@ initGrLang globalState = do
       Lua.setfield tableIdx "native"
       Lua.pop 1
 
-haskellFn0 :: ToLuaStack a => GrLangState -> ExceptT GrLang.Error LuaGrLang a -> Lua ()
+returnVals :: [Value] -> ExceptT GrLang.Error LuaGrLang Lua.NumResults
+returnVals vals = do
+  mapM_ (liftLua . Lua.push <=< allocateGrLang) vals
+  return . fromIntegral $ length vals
+
+haskellFn0 :: ToHaskellFunction (Lua a) => GrLangState -> ExceptT GrLang.Error LuaGrLang a -> Lua ()
 haskellFn0 globalState f = pushFunction (runGrLang' globalState f)
 
 haskellFn1 ::
-  (FromLuaStack a, ToLuaStack b) =>
+  (FromLuaStack a, ToHaskellFunction (Lua b)) =>
   GrLangState -> (a -> ExceptT GrLang.Error LuaGrLang b) -> Lua ()
 haskellFn1 globalState f = pushFunction (runGrLang' globalState . f)
 
 haskellFn2 ::
-  (FromLuaStack a, FromLuaStack b, ToLuaStack c) =>
+  (FromLuaStack a, FromLuaStack b, ToHaskellFunction (Lua c)) =>
   GrLangState -> (a -> b -> ExceptT GrLang.Error LuaGrLang c) -> Lua ()
 haskellFn2 globalState f = pushFunction (\x y -> runGrLang' globalState (f x y))
 
 haskellFn3 ::
-  (FromLuaStack a, FromLuaStack b, FromLuaStack c, ToLuaStack d) =>
+  (FromLuaStack a, FromLuaStack b, FromLuaStack c, ToHaskellFunction (Lua d)) =>
   GrLangState -> (a -> b -> c -> ExceptT GrLang.Error LuaGrLang d) -> Lua ()
 haskellFn3 globalState f = pushFunction (\x y z -> runGrLang' globalState (f x y z))
 

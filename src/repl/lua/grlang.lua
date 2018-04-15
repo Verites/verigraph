@@ -218,8 +218,7 @@ the call `f:pullback(g)` returns `h, k`.
     if f.__codomain ~= g.__codomain then
       error('Given morphisms are not a span.')
     end
-    local objIdx, ffIdx, ggIdx = 
-      table.unpack(Morphism.native.calculatePullback(f.index, g.index))
+    local objIdx, ffIdx, ggIdx = Morphism.native.calculatePullback(f.index, g.index)
     local dom = newGrLang(Graph, objIdx)
     return newMorphism(Morphism, ggIdx, dom, f:dom()), newMorphism(Morphism, ffIdx, dom, g:dom())
   end
@@ -233,7 +232,7 @@ and ff the remaining morphism of the pushout square.
 ]==]
   .. function(f)
     local bObjIdx, cObjIdx, bIdx, ffIdx, cIdx =
-      table.unpack(Morphism.native.calculateInitialPushout(f.index))
+      Morphism.native.calculateInitialPushout(f.index)
     local B, C = newGrLang(Graph, bObjIdx), newGrLang(Graph, cObjIdx)
     return
       newMorphism(Morphism, bIdx, B, f:dom()),
@@ -249,8 +248,7 @@ Morphism.subobject_inter = docstring "Given two monomorphisms with same codomain
     if a.__codomain ~= b.__codomain then
       error("The given monos don't share a codomain.")
     end
-    local objIdx, morphIdx =
-      table.unpack(Morphism.native.subobjectIntersection(a.index, b.index))
+    local objIdx, morphIdx = Morphism.native.subobjectIntersection(a.index, b.index)
     local C = newGrLang(Graph, objIdx)
     return newMorphism(Morphism, morphIdx, C, a:cod())
   end
@@ -263,8 +261,7 @@ Morphism.subobject_union = docstring "Given two monomorphisms with same codomain
     if a.__codomain ~= b.__codomain then
       error("The given monos don't share a codomain.")
     end
-    local objIdx, morphIdx =
-      table.unpack(Morphism.native.subobjectUnion(a.index, b.index))
+    local objIdx, morphIdx = Morphism.native.subobjectUnion(a.index, b.index)
     local C = newGrLang(Graph, objIdx)
     return newMorphism(Morphism, morphIdx, C, a:cod())
   end
