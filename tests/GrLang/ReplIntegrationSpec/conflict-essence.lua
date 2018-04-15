@@ -24,7 +24,7 @@ function print_span(p1, p2)
 end
 
 GrLang.add_node_type('N')
-GrLang.add_edge_type('E')
+GrLang.add_edge_type('E', 'N', 'N')
 
 rule1 = Rule [[
   match { n1 n2 : N }

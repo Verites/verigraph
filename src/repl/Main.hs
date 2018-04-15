@@ -71,16 +71,16 @@ main = runLua $ do
 
     addingToPath dir action = do
       Lua.getglobal "package"
-      Lua.getfield (-1) "path"
-      oldPath <- Lua.tostring (-1)
+      Lua.getfield Lua.stackTop "path"
+      oldPath <- Lua.tostring Lua.stackTop
       let newPath = stringToByteString (dir ++ "/?.lua;") <> oldPath
       Lua.pushstring newPath
-      Lua.setfield (-3) "path"
+      Lua.setfield (Lua.nthFromTop 3) "path"
       Lua.pop 2
       result <- action
       Lua.getglobal "package"
       Lua.pushstring oldPath
-      Lua.setfield (-2) "path"
+      Lua.setfield (Lua.nthFromTop 2) "path"
       return result
 
 stringToByteString :: String -> BS.ByteString
@@ -120,7 +120,7 @@ read' = do
             else checkStatus status >> return RError
         _ -> checkStatus status >> return RError
 
-    testIfIncomplete = ("<eof>" `ByteString.isSuffixOf`) <$> Lua.tostring (-1)
+    testIfIncomplete = ("<eof>" `ByteString.isSuffixOf`) <$> Lua.tostring Lua.stackTop
 
 eval' :: Lua Bool
 eval' = Lua.pcall 0 Lua.multret Nothing >>= checkStatus
@@ -131,7 +131,7 @@ print' = do
   let numValues = fromIntegral (fromEnum stackTop)
   when (numValues > 0) $ do
     Lua.getglobal "print"
-    Lua.insert 1
+    Lua.insert Lua.stackBottom
     status <- Lua.pcall numValues 0 Nothing
     case status of
       Lua.OK -> return ()

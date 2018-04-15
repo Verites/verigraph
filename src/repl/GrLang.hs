@@ -4,37 +4,37 @@
 module GrLang (initialize) where
 
 import           Control.Monad
-import           Control.Monad.Except      (ExceptT (..), runExceptT)
-import qualified Control.Monad.Except      as ExceptT
+import           Control.Monad.Except       (ExceptT (..), runExceptT)
+import qualified Control.Monad.Except       as ExceptT
 import           Control.Monad.Reader
-import           Control.Monad.Trans       (lift)
+import           Control.Monad.Trans        (lift)
 import           Data.Array.IO
 import           Data.IORef
-import           Data.Map                  (Map)
-import qualified Data.Map                  as Map
+import           Data.Map                   (Map)
+import qualified Data.Map                   as Map
 import           Data.Monoid
-import           Data.Set                  (Set)
-import qualified Data.Set                  as Set
-import           Data.Text                 (Text)
-import qualified Data.Text                 as Text
-import qualified Data.Text.Encoding        as Text
-import           Data.Text.Prettyprint.Doc (Pretty (..))
-import           Foreign.Lua               (Lua)
-import qualified Foreign.Lua               as Lua
+import           Data.Set                   (Set)
+import qualified Data.Set                   as Set
+import           Data.Text                  (Text)
+import qualified Data.Text                  as Text
+import qualified Data.Text.Encoding         as Text
+import           Data.Text.Prettyprint.Doc  (Pretty (..))
+import           Foreign.Lua                (FromLuaStack, Lua, ToLuaStack)
+import qualified Foreign.Lua                as Lua
 
 import           Abstract.Category
+import           Abstract.Category.Adhesive
 import           Abstract.Category.Limit
-import Abstract.Category.Adhesive
-import Abstract.Rewriting.DPO
-import           Base.Annotation           (Annotated (..))
-import qualified Data.Graphs               as TypeGraph
-import           Data.TypedGraph           (EdgeId, Node (..), NodeId)
-import qualified GrLang.Compiler           as GrLang
-import           GrLang.Monad              (MonadGrLang)
-import qualified GrLang.Monad              as GrLang
-import qualified GrLang.Parser             as GrLang
+import           Abstract.Rewriting.DPO
+import           Base.Annotation            (Annotated (..))
+import qualified Data.Graphs                as TypeGraph
+import           Data.TypedGraph            (EdgeId, Node (..), NodeId)
+import qualified GrLang.Compiler            as GrLang
+import           GrLang.Monad               (MonadGrLang)
+import qualified GrLang.Monad               as GrLang
+import qualified GrLang.Parser              as GrLang
 import           GrLang.Value
-import qualified Image.Dot.TypedGraph      as Dot
+import qualified Image.Dot.TypedGraph       as Dot
 import           Util.Lua
 
 data GrLangState = GrLangState
@@ -116,12 +116,12 @@ instance MonadGrLang (ReaderT GrLangState Lua) where
 
   getValue (A _ name) = do
     liftLua $ Lua.getglobal (Text.unpack name)
-    hasTable <- liftLua $ Lua.istable (-1)
+    hasTable <- liftLua $ Lua.istable Lua.stackTop
     if not hasTable
       then GrLang.throwError Nothing "Value is not a table"
       else do
-        liftLua $ Lua.getfield (-1) indexKey
-        result <- liftLua $ Lua.tointegerx (-1)
+        liftLua $ Lua.getfield Lua.stackTop indexKey
+        result <- liftLua $ Lua.tointegerx Lua.stackTop
         liftLua $ Lua.pop 2
         case result of
           Nothing -> GrLang.throwError Nothing "Value has no index"
@@ -247,79 +247,80 @@ grLangNamingContext = Dot.Ctx
 initGrLang :: GrLangState -> Lua ()
 initGrLang globalState = do
   setNative "GrLang"
-    [ ("getNodeTypes", Lua.pushHaskellFunction
-          (map Text.unpack . Map.keys <$> liftIO (readIORef $ nodeTypes globalState) :: Lua [String])
+    [ ("getNodeTypes", haskellFn0 globalState $ do
+          types <- get nodeTypes
+          return . map Text.unpack $ Map.keys types
       )
-    , ("getEdgeTypes", Lua.pushHaskellFunction . runGrLang' globalState $ do
-        types <- Map.keys <$> get edgeTypes
-        forM types $ \(name, srcId, tgtId) -> do
-          tgraph <- get typeGraph
-          let Just srcType = TypeGraph.lookupNode srcId tgraph
-              Just tgtType = TypeGraph.lookupNode tgtId tgraph
-          return . Text.unpack $ formatEdgeType name (nodeName srcType) (nodeName tgtType)
+    , ("getEdgeTypes", haskellFn0 globalState $ do
+          types <- Map.keys <$> get edgeTypes
+          forM types $ \(name, srcId, tgtId) -> do
+            tgraph <- get typeGraph
+            let Just srcType = TypeGraph.lookupNode srcId tgraph
+                Just tgtType = TypeGraph.lookupNode tgtId tgraph
+            return . Text.unpack $ formatEdgeType name (nodeName srcType) (nodeName tgtType)
       )
-    , ("addNodeType", Lua.pushHaskellFunction $ \name -> runGrLang' globalState $
+    , ("addNodeType", haskellFn1 globalState $ \name ->
           GrLang.addNodeType (A Nothing name)
       )
-    , ("addEdgeType", Lua.pushHaskellFunction $ \name srcName tgtName -> runGrLang' globalState $
+    , ("addEdgeType", haskellFn3 globalState $ \name srcName tgtName ->
           GrLang.addEdgeType (A Nothing name) (A Nothing srcName) (A Nothing tgtName)
       )
-    , ("toString", Lua.pushHaskellFunction $ \idx -> runGrLang' globalState $
+    , ("toString", haskellFn1 globalState $ \idx ->
           show . pretty <$> lookupGrLangValue idx
       )
-    , ("equals", Lua.pushHaskellFunction $ \idxA idxB -> runGrLang' globalState $ do
+    , ("equals", haskellFn2 globalState $ \idxA idxB -> do
           valA <- lookupGrLangValue idxA
           valB <- lookupGrLangValue idxB
           return (valA == valB)
       )
-    , ("deallocate", Lua.pushHaskellFunction $ \idx -> runGrLang' globalState $
+    , ("deallocate", haskellFn1 globalState $ \idx ->
           freeGrLang idx
       )
-    , ("toDot", Lua.pushHaskellFunction $ \idx name -> runGrLang' globalState $ do
+    , ("toDot", haskellFn2 globalState $ \idx name -> do
           VGraph graph <- lookupGrLangValue idx
           return . show $ Dot.typedGraph grLangNamingContext (pretty $ Text.decodeUtf8 name) graph
       )
-    , ("compileFile", Lua.pushHaskellFunction $ \path -> runGrLang' globalState $
+    , ("compileFile", haskellFn1 globalState $ \path ->
           GrLang.compileFile path
       )
     ]
 
   setNative "Graph"
-    [ ("parse", Lua.pushHaskellFunction $ \string -> runGrLang' globalState $ do
+    [ ("parse", haskellFn1 globalState $ \string -> do
           graph <- GrLang.compileGraph =<< GrLang.parseGraph "<repl>" (string :: String)
           allocateGrLang (VGraph graph)
       ),
-      ("identity", Lua.pushHaskellFunction $ \idx -> runGrLang' globalState $ do
+      ("identity", haskellFn1 globalState $ \idx -> do
           VGraph graph <- lookupGrLangValue idx
           allocateGrLang (VMorph $ identity graph)
       )
     ]
 
   setNative "Morphism"
-    [ ("parse", Lua.pushHaskellFunction $ \domIdx codIdx string -> runGrLang' globalState $ do
+    [ ("parse", haskellFn3 globalState $ \domIdx codIdx string -> do
           VGraph dom <- lookupGrLangValue domIdx
           VGraph cod <- lookupGrLangValue codIdx
           morphism <- GrLang.compileMorphism Nothing dom cod =<< GrLang.parseMorphism "<repl>" (string :: String)
           allocateGrLang (VMorph morphism)
       ),
-      ("compose", Lua.pushHaskellFunction $ \idF idG -> runGrLang' globalState $ do
+      ("compose", haskellFn2 globalState $ \idF idG -> do
           VMorph f <- lookupGrLangValue idF
           VMorph g <- lookupGrLangValue idG
           allocateGrLang (VMorph $ f <&> g)
       ),
-      ("isMonic", Lua.pushHaskellFunction $ \idx -> runGrLang' globalState $ do
+      ("isMonic", haskellFn1 globalState $ \idx -> do
           VMorph f <- lookupGrLangValue idx
           return (isMonic f)
       ),
-      ("isEpic", Lua.pushHaskellFunction $ \idx -> runGrLang' globalState $ do
+      ("isEpic", haskellFn1 globalState $ \idx -> do
           VMorph f <- lookupGrLangValue idx
           return (isEpic f)
       ),
-      ("isIsomorphism", Lua.pushHaskellFunction $ \idx -> runGrLang' globalState $ do
+      ("isIsomorphism", haskellFn1 globalState $ \idx -> do
           VMorph f <- lookupGrLangValue idx
           return (isIsomorphism f)
       ),
-      ("calculatePullback", Lua.pushHaskellFunction $ \idF idG -> runGrLang' globalState $ do
+      ("calculatePullback", haskellFn2 globalState $ \idF idG -> do
           VMorph f <- lookupGrLangValue idF
           VMorph g <- lookupGrLangValue idG
           let (f', g') = calculatePullback f g
@@ -328,7 +329,7 @@ initGrLang globalState = do
             <*> allocateGrLang (VMorph f')
             <*> allocateGrLang (VMorph g')
       ),
-      ("calculateInitialPushout", Lua.pushHaskellFunction $ \idx -> runGrLang' globalState $ do
+      ("calculateInitialPushout", haskellFn1 globalState $ \idx -> do
           VMorph f <- lookupGrLangValue idx
           let (b, f', c) = calculateMInitialPushout f
           (,,,,)
@@ -338,7 +339,7 @@ initGrLang globalState = do
             <*> allocateGrLang (VMorph f')
             <*> allocateGrLang (VMorph c)
       ),
-      ("subobjectIntersection", Lua.pushHaskellFunction $ \idA idB -> runGrLang' globalState $ do
+      ("subobjectIntersection", haskellFn2 globalState $ \idA idB -> do
           VMorph a <- lookupGrLangValue idA
           VMorph b <- lookupGrLangValue idB
           let c = subobjectIntersection a b
@@ -346,7 +347,7 @@ initGrLang globalState = do
             <$> (allocateGrLang . VGraph $ domain c)
             <*> (allocateGrLang . VMorph $ c)
       ),
-      ("subobjectUnion", Lua.pushHaskellFunction $ \idA idB -> runGrLang' globalState $ do
+      ("subobjectUnion", haskellFn2 globalState $ \idA idB -> do
           VMorph a <- lookupGrLangValue idA
           VMorph b <- lookupGrLangValue idB
           let c = subobjectUnion a b
@@ -357,27 +358,27 @@ initGrLang globalState = do
     ]
 
   setNative "Rule"
-    [ ("parse", Lua.pushHaskellFunction $ \string -> runGrLang' globalState $ do
+    [ ("parse", haskellFn1 globalState $ \string -> do
           rule <- GrLang.compileRule =<< GrLang.parseRule "<repl>" (string :: String)
           allocateGrLang (VRule rule)
       )
-    , ("getLeftObject", Lua.pushHaskellFunction $ \idRule -> runGrLang' globalState $ do
+    , ("getLeftObject", haskellFn1 globalState $ \idRule -> do
           VRule rule <- lookupGrLangValue idRule
           allocateGrLang (VGraph $ leftObject rule)
       )
-    , ("getRightObject", Lua.pushHaskellFunction $ \idRule -> runGrLang' globalState $ do
+    , ("getRightObject", haskellFn1 globalState $ \idRule -> do
           VRule rule <- lookupGrLangValue idRule
           allocateGrLang (VGraph $ rightObject rule)
       )
-    , ("getInterface", Lua.pushHaskellFunction $ \idRule -> runGrLang' globalState $ do
+    , ("getInterface", haskellFn1 globalState $ \idRule -> do
           VRule rule <- lookupGrLangValue idRule
           allocateGrLang (VGraph $ interfaceObject rule)
       )
-    , ("getLeftMorphism", Lua.pushHaskellFunction $ \idRule -> runGrLang' globalState $ do
+    , ("getLeftMorphism", haskellFn1 globalState $ \idRule -> do
           VRule rule <- lookupGrLangValue idRule
           allocateGrLang (VMorph $ leftMorphism rule)
       )
-    , ("getRightMorphism", Lua.pushHaskellFunction $ \idRule -> runGrLang' globalState $ do
+    , ("getRightMorphism", haskellFn1 globalState $ \idRule -> do
           VRule rule <- lookupGrLangValue idRule
           allocateGrLang (VMorph $ rightMorphism rule)
       )
@@ -390,6 +391,24 @@ initGrLang globalState = do
       createTable entries
       Lua.setfield tableIdx "native"
       Lua.pop 1
+
+haskellFn0 :: ToLuaStack a => GrLangState -> ExceptT GrLang.Error LuaGrLang a -> Lua ()
+haskellFn0 globalState f = pushFunction (runGrLang' globalState f)
+
+haskellFn1 ::
+  (FromLuaStack a, ToLuaStack b) =>
+  GrLangState -> (a -> ExceptT GrLang.Error LuaGrLang b) -> Lua ()
+haskellFn1 globalState f = pushFunction (runGrLang' globalState . f)
+
+haskellFn2 ::
+  (FromLuaStack a, FromLuaStack b, ToLuaStack c) =>
+  GrLangState -> (a -> b -> ExceptT GrLang.Error LuaGrLang c) -> Lua ()
+haskellFn2 globalState f = pushFunction (\x y -> runGrLang' globalState (f x y))
+
+haskellFn3 ::
+  (FromLuaStack a, FromLuaStack b, FromLuaStack c, ToLuaStack d) =>
+  GrLangState -> (a -> b -> c -> ExceptT GrLang.Error LuaGrLang d) -> Lua ()
+haskellFn3 globalState f = pushFunction (\x y z -> runGrLang' globalState (f x y z))
 
 createTable :: Foldable t => t (String, Lua ()) -> Lua ()
 createTable contents = do
