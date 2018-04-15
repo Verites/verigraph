@@ -37,15 +37,60 @@ import           GrLang.Value
 import qualified Image.Dot.TypedGraph       as Dot
 import           Util.Lua
 
+data MemSpace a = MemSpace
+  { cells         :: IOArray Int (Maybe a)
+  , numFreeValues :: IORef Int
+  , nextFreeValue :: IORef (Maybe Int)
+  }
+
+emptyMemSpace :: Int -> IO (MemSpace a)
+emptyMemSpace capacity = MemSpace
+  <$> newArray (0, capacity - 1) Nothing
+  <*> newIORef capacity
+  <*> newIORef (Just 0)
+
+lookupMemSpace :: Lua.LuaInteger -> MemSpace a -> ExceptT GrLang.Error LuaGrLang a
+lookupMemSpace idx' memSpace = do
+  let idx = fromEnum idx'
+  result <- liftIO $ readArray (cells memSpace) idx
+  case result of
+    Nothing -> GrLang.throwError Nothing "Value has unallocated index"
+    Just val -> return val
+
+allocateMemSpace :: a -> MemSpace a -> ExceptT GrLang.Error LuaGrLang Lua.LuaInteger
+allocateMemSpace value memSpace = do
+  freeIdx <- liftIO $ readIORef (nextFreeValue memSpace)
+  case freeIdx of
+    Nothing -> GrLang.throwError Nothing "Out of GrLang memory"
+    Just idx -> liftIO $ do
+      writeArray (cells memSpace) idx (Just value)
+      freeVals <- readIORef (numFreeValues memSpace)
+      let freeVals' = freeVals - 1
+      writeIORef (numFreeValues memSpace) freeVals'
+      next <- if freeVals' < 1 then return Nothing else Just <$> findFreeValue (idx+1)
+      writeIORef (nextFreeValue memSpace) next
+      return (fromIntegral idx)
+  where
+    findFreeValue idx = do
+      val <- readArray (cells memSpace) idx
+      case val of
+        Nothing -> return idx
+        Just _ -> findFreeValue (idx+1)
+
+freeMemSpace :: Lua.LuaInteger -> MemSpace a -> ExceptT GrLang.Error LuaGrLang ()
+freeMemSpace idx' memSpace = liftIO $ do
+  let idx = fromEnum idx'
+  writeArray (cells memSpace) idx Nothing
+  modifyIORef (numFreeValues memSpace) (+1)
+  modifyIORef (nextFreeValue memSpace) $ Just . maybe idx (min idx)
+
 data GrLangState = GrLangState
   { typeGraph       :: IORef TypeGraph
   , nodeTypes       :: IORef (Map Text NodeId)
   , edgeTypes       :: IORef (Map (Text, NodeId, NodeId) EdgeId)
   , importedModules :: IORef (Set FilePath)
   , visibleModules  :: IORef (Set FilePath)
-  , values          :: IOArray Int (Maybe Value)
-  , numFreeValues   :: IORef Int
-  , nextFreeValue   :: IORef (Maybe Int)
+  , values          :: MemSpace Value
   }
 
 type LuaGrLang = ReaderT GrLangState Lua
@@ -65,6 +110,9 @@ modify f x = do
 
 liftLua :: Lua a -> ExceptT GrLang.Error LuaGrLang a
 liftLua = lift . lift
+
+withMemSpace :: (GrLangState -> MemSpace a) -> (MemSpace a -> ExceptT GrLang.Error LuaGrLang b) -> ExceptT GrLang.Error LuaGrLang b
+withMemSpace space action = asks space >>= action
 
 instance MonadGrLang (ReaderT GrLangState Lua) where
   importIfNeeded path importAction = do
@@ -147,13 +195,7 @@ showEdgeType :: Text -> GrNode -> GrNode -> Text
 showEdgeType e src tgt = formatEdgeType e (nodeName src) (nodeName tgt)
 
 lookupGrLangValue :: Lua.LuaInteger -> ExceptT GrLang.Error LuaGrLang Value
-lookupGrLangValue memIndex' = do
-  let memIndex = fromEnum memIndex'
-  arr <- lift $ asks values
-  result <- liftIO $ readArray arr memIndex
-  case result of
-    Nothing -> GrLang.throwError Nothing "Value has unallocated index"
-    Just val -> return val
+lookupGrLangValue = withMemSpace values . lookupMemSpace
 
 lookupNodeType :: Text -> LuaGrLang (Maybe NodeType)
 lookupNodeType name = do
@@ -175,39 +217,13 @@ initState maxValues = GrLangState
   <*> newIORef Map.empty
   <*> newIORef (Set.singleton "<repl>")
   <*> newIORef (Set.singleton "<repl>")
-  <*> newArray (0, maxValues-1) Nothing
-  <*> newIORef maxValues
-  <*> newIORef (Just 0)
+  <*> emptyMemSpace maxValues
 
 allocateGrLang :: Value -> ExceptT GrLang.Error LuaGrLang Lua.LuaInteger
-allocateGrLang value = do
-  freeIdx <- get nextFreeValue
-  case freeIdx of
-    Nothing -> GrLang.throwError Nothing "Out of GrLang memory"
-    Just idx -> do
-      arr <- asks values
-      liftIO $ writeArray arr idx (Just value)
-      freeVals <- get numFreeValues
-      let freeVals' = freeVals - 1
-      put numFreeValues freeVals'
-      next <- if freeVals' < 1 then return Nothing else Just <$> findFreeValue (idx+1)
-      put nextFreeValue next
-      return (fromIntegral idx)
-  where
-    findFreeValue idx = do
-      arr <- asks values
-      val <- liftIO $ readArray arr idx
-      case val of
-        Nothing -> return idx
-        Just _ -> findFreeValue (idx+1)
+allocateGrLang = withMemSpace values . allocateMemSpace
 
 freeGrLang :: Lua.LuaInteger -> ExceptT GrLang.Error LuaGrLang ()
-freeGrLang idx' = do
-  let idx = fromEnum idx'
-  arr <- asks values
-  liftIO $ writeArray arr idx Nothing
-  modify numFreeValues (+1)
-  modify nextFreeValue $ Just . maybe idx (min idx)
+freeGrLang = withMemSpace values . freeMemSpace
 
 runGrLang' :: Lua.ToLuaStack a => GrLangState -> ExceptT GrLang.Error LuaGrLang a -> Lua Lua.NumResults
 runGrLang' globalState action = do
