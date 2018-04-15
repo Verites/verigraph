@@ -120,6 +120,32 @@ local function memoizing(field_name, fn)
   end
 end
 
+
+--[[ HsList class ]]
+
+HsListIterator = {__index = {}}
+
+setmetatable(HsListIterator, {
+  __call = function (cls, idx, itemFactory)
+    local instance = {index = idx, __itemFactory = itemFactory}
+    setmetatable(instance, cls)
+    return instance
+  end
+})
+
+function HsListIterator.__gc(list)
+  HsListIterator.native.deallocate(list.index)
+end
+
+function HsListIterator.__call(list)
+  local itemIdx = HsListIterator.native.getNextItem(list.index)
+  if itemIdx == nil then
+    return
+  else
+    return list.__itemFactory(itemIdx)
+  end 
+end
+
 --[[ Graph class ]]
 
 Graph = docstring{[==[
@@ -131,7 +157,7 @@ Instances can be constructed as follows:
       n1 -:EdgeType1, f g:EdgeType2-> n2
     ]]
 ]==],
-  methods = { 'identity' }
+  methods = { 'identity', 'morphisms_to' }
 } .. subclass_of_GrLang()
 
 Graph.__index.identity = docstring "Returns the identity morphism"
@@ -139,6 +165,30 @@ Graph.__index.identity = docstring "Returns the identity morphism"
     local idx = Graph.native.identity(graph.index)
     return newMorphism(Morphism, idx, graph, graph)
   end)
+
+Graph.__index.morphisms_to = docstring [==[
+Iterate over all morphisms between two graphs.
+
+The call `G:morphisms_to(H, kind)` returns an iterator
+for all morphisms from G to H. The optional kind parameter
+may be one of 'all', 'monic', 'epic' or 'iso', defaulting
+to 'all'.
+]==] .. function(G, H, kind)
+  local listIdx
+  if kind == 'all' or kind == nil then
+    listIdx = Graph.native.findAllMorphisms(G.index, H.index)
+  elseif kind == 'monic' then
+    listIdx = Graph.native.findAllMonomorphisms(G.index, H.index)
+  elseif kind == 'epic' then
+    listIdx = Graph.native.findAllEpimorphisms(G.index, H.index)
+  elseif kind == 'iso' then
+    listIdx = Graph.native.findAllIsomorphisms(G.index, H.index)
+  else
+    error('Invalid kind "' + kind + '" for morphism search.')
+  end
+  
+  return HsListIterator(listIdx, function(idx) return newMorphism(Morphism, idx, G, H) end)
+end
 
 --[[ Morphism class ]]
 

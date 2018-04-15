@@ -46,3 +46,16 @@ m2 = Morphism(rule2:lhs(), G) [[ n1 -> n2; n2 -> n1 ]]
 print_span(disabling_essence(rule1, m1, m2))
 print_span(disabling_essence(rule2, m2, m1))
 print_span(conflict_essence(rule1, rule2, m1, m2))
+
+
+print()
+print('All morphisms')
+for f in rule1:lhs():morphisms_to(G) do
+  print(f)
+end
+
+print()
+print('Monomorphisms')
+for f in rule1:lhs():morphisms_to(G, 'monic') do
+  print(f)
+end

@@ -25,6 +25,7 @@ import qualified Foreign.Lua                as Lua
 
 import           Abstract.Category
 import           Abstract.Category.Adhesive
+import           Abstract.Category.FindMorphism
 import           Abstract.Category.Limit
 import           Abstract.Rewriting.DPO
 import           Base.Annotation            (Annotated (..))
@@ -57,6 +58,11 @@ lookupMemSpace idx' memSpace = do
   case result of
     Nothing -> GrLang.throwError Nothing "Value has unallocated index"
     Just val -> return val
+
+putMemSpace :: Lua.LuaInteger -> a -> MemSpace a -> ExceptT GrLang.Error LuaGrLang ()
+putMemSpace idx' val memSpace = do
+  let idx = fromEnum idx'
+  liftIO $ writeArray (cells memSpace) idx (Just val)
 
 allocateMemSpace :: a -> MemSpace a -> ExceptT GrLang.Error LuaGrLang Lua.LuaInteger
 allocateMemSpace value memSpace = do
@@ -92,6 +98,7 @@ data GrLangState = GrLangState
   , importedModules :: IORef (Set FilePath)
   , visibleModules  :: IORef (Set FilePath)
   , values          :: MemSpace Value
+  , iterLists       :: MemSpace [Value]
   }
 
 type LuaGrLang = ReaderT GrLangState Lua
@@ -211,14 +218,15 @@ lookupEdgeType name srcType tgtType = do
   return $ (`TypeGraph.lookupEdge` tgraph)
     =<< Map.lookup (name, nodeId srcType, nodeId tgtType) etypes
 
-initState :: Int -> IO GrLangState
-initState maxValues = GrLangState
+initState :: Int -> Int -> IO GrLangState
+initState maxValues maxLists = GrLangState
   <$> newIORef TypeGraph.empty
   <*> newIORef Map.empty
   <*> newIORef Map.empty
   <*> newIORef (Set.singleton "<repl>")
   <*> newIORef (Set.singleton "<repl>")
   <*> emptyMemSpace maxValues
+  <*> emptyMemSpace maxLists
 
 allocateGrLang :: Value -> ExceptT GrLang.Error LuaGrLang Lua.LuaInteger
 allocateGrLang = withMemSpace values . allocateMemSpace
@@ -236,7 +244,7 @@ runGrLang' globalState action = do
 
 initialize :: Lua ()
 initialize = do
-  globalState <- liftIO (initState 255)
+  globalState <- liftIO (initState 256 64)
 
   execLua
     " package.path = package.path .. ';./src/repl/lua/?.lua' \
@@ -301,6 +309,20 @@ initGrLang globalState = do
       )
     ]
 
+  setNative "HsListIterator"
+    [ ("deallocate", haskellFn1 globalState $ \idx ->
+          withMemSpace iterLists $ freeMemSpace idx
+      )
+    , ("getNextItem", haskellFn1 globalState $ \listIdx -> do
+          list <- withMemSpace iterLists $ lookupMemSpace listIdx
+          case list of
+            [] -> return (0 :: Lua.NumResults)
+            (x:xs) -> do
+              withMemSpace iterLists $ putMemSpace listIdx xs
+              returnVals [x]
+      )
+    ]
+
   setNative "Graph"
     [ ("parse", haskellFn1 globalState $ \string -> do
           graph <- GrLang.compileGraph =<< GrLang.parseGraph "<repl>" (string :: String)
@@ -309,6 +331,30 @@ initGrLang globalState = do
       ("identity", haskellFn1 globalState $ \idx -> do
           VGraph graph <- lookupGrLangValue idx
           allocateGrLang (VMorph $ identity graph)
+      ),
+      ("findAllMorphisms", haskellFn2 globalState $ \idG idH -> do
+          VGraph g <- lookupGrLangValue idG
+          VGraph h <- lookupGrLangValue idH
+          withMemSpace iterLists $
+            allocateMemSpace (map VMorph $ findAllMorphisms g h)
+      ),
+      ("findAllMonomorphisms", haskellFn2 globalState $ \idG idH -> do
+          VGraph g <- lookupGrLangValue idG
+          VGraph h <- lookupGrLangValue idH
+          withMemSpace iterLists $
+            allocateMemSpace (map VMorph $ findMonomorphisms g h)
+      ),
+      ("findAllEpimorphisms", haskellFn2 globalState $ \idG idH -> do
+          VGraph g <- lookupGrLangValue idG
+          VGraph h <- lookupGrLangValue idH
+          withMemSpace iterLists $
+            allocateMemSpace (map VMorph $ findEpimorphisms g h)
+      ),
+      ("findAllIsomorphisms", haskellFn2 globalState $ \idG idH -> do
+          VGraph g <- lookupGrLangValue idG
+          VGraph h <- lookupGrLangValue idH
+          withMemSpace iterLists $
+            allocateMemSpace (map VMorph $ findIsomorphisms g h)
       )
     ]
 
