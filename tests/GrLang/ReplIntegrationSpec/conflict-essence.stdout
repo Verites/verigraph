@@ -1,0 +1,44 @@
+graph  {
+  ?0 : N
+}	morphism  : dom -> cod {
+  ?0 -> n1
+}	morphism  : dom -> cod {
+  ?0 -> n1
+}
+graph  {
+  ?0 : N
+}	morphism  : dom -> cod {
+  ?0 -> n1
+}	morphism  : dom -> cod {
+  ?0 -> n1
+}
+graph  {
+  ?0 : ?1
+}	morphism  : dom -> cod {
+  ?0 -> n1
+}	morphism  : dom -> cod {
+  ?0 -> n1
+}
+graph  {
+  ?1 : N
+}	morphism  : dom -> cod {
+  ?1 -> n1
+}	morphism  : dom -> cod {
+  ?1 -> n2
+}
+graph  {
+  ?0 : N
+}	morphism  : dom -> cod {
+  ?0 -> n1
+}	morphism  : dom -> cod {
+  ?0 -> n2
+}
+graph  {
+  ?0 ?2 : ?1
+}	morphism  : dom -> cod {
+  ?2 -> n1
+  ?0 -> n2
+}	morphism  : dom -> cod {
+  ?0 -> n1
+  ?2 -> n2
+}

@@ -41,10 +41,10 @@ bf = Morphism(Bar, Foo) [[
   d22 -> d22; d21 -> d21
 ]]
 
-print("Foo == fb.domain()", Foo == fb:domain())
-print("Foo ~= fb.codomain()", Foo ~= fb:codomain())
-print("fb .. bf ~= Bar.identity()", fb .. bf ~= Bar:identity())
-print("bf .. fb = Foo.identity()", bf .. fb == Foo:identity())
+print("Foo == fb:dom()", Foo == fb:dom())
+print("Foo ~= fb:cod()", Foo ~= fb:cod())
+print("fb .. bf ~= Bar:identity()", fb .. bf ~= Bar:identity())
+print("bf .. fb = Foo:identity()", bf .. fb == Foo:identity())
 
 Amend = Rule [[
   match {

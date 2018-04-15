@@ -1,4 +1,4 @@
-Foo == fb.domain()	true
-Foo ~= fb.codomain()	true
-fb .. bf ~= Bar.identity()	true
-bf .. fb = Foo.identity()	true
+Foo == fb:dom()	true
+Foo ~= fb:cod()	true
+fb .. bf ~= Bar:identity()	true
+bf .. fb = Foo:identity()	true

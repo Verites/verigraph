@@ -23,6 +23,9 @@ import           Foreign.Lua               (Lua)
 import qualified Foreign.Lua               as Lua
 
 import           Abstract.Category
+import           Abstract.Category.Limit
+import Abstract.Category.Adhesive
+import Abstract.Rewriting.DPO
 import           Base.Annotation           (Annotated (..))
 import qualified Data.Graphs               as TypeGraph
 import           Data.TypedGraph           (EdgeId, Node (..), NodeId)
@@ -127,7 +130,7 @@ instance MonadGrLang (ReaderT GrLangState Lua) where
   putValue (A _ name) val = do
     memIdx <- allocateGrLang val
     liftLua $ do
-      createTable [(indexKey, Lua.pushinteger $ toEnum memIdx)]
+      createTable [(indexKey, Lua.pushinteger memIdx)]
       tblIdx <- Lua.gettop
       Lua.getglobal (metatableFor val)
       Lua.setmetatable tblIdx
@@ -176,7 +179,7 @@ initState maxValues = GrLangState
   <*> newIORef maxValues
   <*> newIORef (Just 0)
 
-allocateGrLang :: Value -> ExceptT GrLang.Error LuaGrLang Int
+allocateGrLang :: Value -> ExceptT GrLang.Error LuaGrLang Lua.LuaInteger
 allocateGrLang value = do
   freeIdx <- get nextFreeValue
   case freeIdx of
@@ -189,7 +192,7 @@ allocateGrLang value = do
       put numFreeValues freeVals'
       next <- if freeVals' < 1 then return Nothing else Just <$> findFreeValue (idx+1)
       put nextFreeValue next
-      return idx
+      return (fromIntegral idx)
   where
     findFreeValue idx = do
       arr <- asks values
@@ -284,13 +287,11 @@ initGrLang globalState = do
   setNative "Graph"
     [ ("parse", Lua.pushHaskellFunction $ \string -> runGrLang' globalState $ do
           graph <- GrLang.compileGraph =<< GrLang.parseGraph "<repl>" (string :: String)
-          idx <- allocateGrLang (VGraph graph)
-          return (fromIntegral idx :: Lua.LuaInteger)
+          allocateGrLang (VGraph graph)
       ),
       ("identity", Lua.pushHaskellFunction $ \idx -> runGrLang' globalState $ do
           VGraph graph <- lookupGrLangValue idx
-          idx <- allocateGrLang (VMorph $ identity graph)
-          return (fromIntegral idx :: Lua.LuaInteger)
+          allocateGrLang (VMorph $ identity graph)
       )
     ]
 
@@ -299,22 +300,86 @@ initGrLang globalState = do
           VGraph dom <- lookupGrLangValue domIdx
           VGraph cod <- lookupGrLangValue codIdx
           morphism <- GrLang.compileMorphism Nothing dom cod =<< GrLang.parseMorphism "<repl>" (string :: String)
-          idx <- allocateGrLang (VMorph morphism)
-          return (fromIntegral idx :: Lua.LuaInteger)
+          allocateGrLang (VMorph morphism)
       ),
       ("compose", Lua.pushHaskellFunction $ \idF idG -> runGrLang' globalState $ do
           VMorph f <- lookupGrLangValue idF
           VMorph g <- lookupGrLangValue idG
-          idx <- allocateGrLang (VMorph $ f <&> g)
-          return (fromIntegral idx :: Lua.LuaInteger)
+          allocateGrLang (VMorph $ f <&> g)
+      ),
+      ("isMonic", Lua.pushHaskellFunction $ \idx -> runGrLang' globalState $ do
+          VMorph f <- lookupGrLangValue idx
+          return (isMonic f)
+      ),
+      ("isEpic", Lua.pushHaskellFunction $ \idx -> runGrLang' globalState $ do
+          VMorph f <- lookupGrLangValue idx
+          return (isEpic f)
+      ),
+      ("isIsomorphism", Lua.pushHaskellFunction $ \idx -> runGrLang' globalState $ do
+          VMorph f <- lookupGrLangValue idx
+          return (isIsomorphism f)
+      ),
+      ("calculatePullback", Lua.pushHaskellFunction $ \idF idG -> runGrLang' globalState $ do
+          VMorph f <- lookupGrLangValue idF
+          VMorph g <- lookupGrLangValue idG
+          let (f', g') = calculatePullback f g
+          (,,)
+            <$> allocateGrLang (VGraph $ domain f')
+            <*> allocateGrLang (VMorph f')
+            <*> allocateGrLang (VMorph g')
+      ),
+      ("calculateInitialPushout", Lua.pushHaskellFunction $ \idx -> runGrLang' globalState $ do
+          VMorph f <- lookupGrLangValue idx
+          let (b, f', c) = calculateMInitialPushout f
+          (,,,,)
+            <$> allocateGrLang (VGraph $ domain b)
+            <*> allocateGrLang (VGraph $ domain c)
+            <*> allocateGrLang (VMorph b)
+            <*> allocateGrLang (VMorph f')
+            <*> allocateGrLang (VMorph c)
+      ),
+      ("subobjectIntersection", Lua.pushHaskellFunction $ \idA idB -> runGrLang' globalState $ do
+          VMorph a <- lookupGrLangValue idA
+          VMorph b <- lookupGrLangValue idB
+          let c = subobjectIntersection a b
+          (,)
+            <$> (allocateGrLang . VGraph $ domain c)
+            <*> (allocateGrLang . VMorph $ c)
+      ),
+      ("subobjectUnion", Lua.pushHaskellFunction $ \idA idB -> runGrLang' globalState $ do
+          VMorph a <- lookupGrLangValue idA
+          VMorph b <- lookupGrLangValue idB
+          let c = subobjectUnion a b
+          (,)
+            <$> (allocateGrLang . VGraph $ domain c)
+            <*> (allocateGrLang . VMorph $ c)
       )
     ]
 
   setNative "Rule"
     [ ("parse", Lua.pushHaskellFunction $ \string -> runGrLang' globalState $ do
           rule <- GrLang.compileRule =<< GrLang.parseRule "<repl>" (string :: String)
-          idx <- allocateGrLang (VRule rule)
-          return (fromIntegral idx :: Lua.LuaInteger)
+          allocateGrLang (VRule rule)
+      )
+    , ("getLeftObject", Lua.pushHaskellFunction $ \idRule -> runGrLang' globalState $ do
+          VRule rule <- lookupGrLangValue idRule
+          allocateGrLang (VGraph $ leftObject rule)
+      )
+    , ("getRightObject", Lua.pushHaskellFunction $ \idRule -> runGrLang' globalState $ do
+          VRule rule <- lookupGrLangValue idRule
+          allocateGrLang (VGraph $ rightObject rule)
+      )
+    , ("getInterface", Lua.pushHaskellFunction $ \idRule -> runGrLang' globalState $ do
+          VRule rule <- lookupGrLangValue idRule
+          allocateGrLang (VGraph $ interfaceObject rule)
+      )
+    , ("getLeftMorphism", Lua.pushHaskellFunction $ \idRule -> runGrLang' globalState $ do
+          VRule rule <- lookupGrLangValue idRule
+          allocateGrLang (VMorph $ leftMorphism rule)
+      )
+    , ("getRightMorphism", Lua.pushHaskellFunction $ \idRule -> runGrLang' globalState $ do
+          VRule rule <- lookupGrLangValue idRule
+          allocateGrLang (VMorph $ rightMorphism rule)
       )
       -- TODO: implement missing methods for rules
     ]
