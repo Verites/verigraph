@@ -1,15 +1,6 @@
 require 'help'
 local docstring = help.docstring
 
-function catch_haskell(result, error_msg)
-  if result == '_HASKELLERR' then
-    error(error_msg)
-  else
-    return result
-  end
-end
-
-
 --[[ GrLang class ]]
 
 GrLang = docstring{[==[
@@ -38,13 +29,13 @@ end
 GrLang.node_types = docstring[==[
 List the names of all registered node types.
 ]==] .. function ()
-  return catch_haskell(GrLang.native.getNodeTypes())
+  return GrLang.native.getNodeTypes()
 end
 
 GrLang.edge_types = docstring[==[
 List the names of all registered edge types.
 ]==] .. function ()
-  return catch_haskell(GrLang.native.getEdgeTypes())
+  return GrLang.native.getEdgeTypes()
 end
 
 GrLang.print_types = docstring[==[
@@ -61,17 +52,17 @@ end
 GrLang.add_node_type = docstring[==[
 Given a name, register a new node type.
 ]==] .. function (name)
-  return catch_haskell(GrLang.native.addNodeType(name))
+  return GrLang.native.addNodeType(name)
 end
 
 GrLang.add_edge_type = docstring[==[
 Given a name and the node types for source and target, register a new edge type.
 ]==] .. function (name, srcName, tgtName)
-  return catch_haskell(GrLang.native.addEdgeType(name, srcName, tgtName))
+  return GrLang.native.addEdgeType(name, srcName, tgtName)
 end
 
 function GrLang.__tostring(value)
-  return catch_haskell(GrLang.native.toString(value.index))
+  return GrLang.native.toString(value.index)
 end
 
 function GrLang.__eq(value1, value2)
@@ -79,14 +70,14 @@ function GrLang.__eq(value1, value2)
 end
 
 function GrLang.__gc(value)
-  return catch_haskell(GrLang.native.deallocate(value.index))
+  return GrLang.native.deallocate(value.index)
 end
 
 GrLang.__index.to_dot = docstring[==[
 Write the value in the dot format for graph drawing.
 Optionally receives a name for the given value.
 ]==] .. function (value, name)
-  return catch_haskell(GrLang.native.toDot(value.index, name or ''))
+  return GrLang.native.toDot(value.index, name or '')
 end
 
 GrLang.__index.view = docstring[==[
@@ -105,16 +96,54 @@ end
 local function subclass_of_GrLang(factory)
   local class = { __index = {}, __tostring = GrLang.__tostring, __eq = GrLang.__eq, __gc = GrLang.__gc }
 
+  -- Set up the inheritance of GrLang methods
   setmetatable(class.__index, { __index = GrLang.__index })
 
+  -- Set up the class constructor
   setmetatable(class, {
     __call = factory or function (cls, str)
-      local idx = catch_haskell(cls.native.parse(str))
+      local idx = cls.native.parse(str)
       return newGrLang(cls, idx)
     end
   })
 
   return class
+end
+
+-- Creates a method that saves its result to avoid recomputing it.
+local function memoizing(field_name, fn)
+  return function(object)
+    if object[field_name] == nil then
+      object[field_name] = fn(object)
+    end
+    return object[field_name]
+  end
+end
+
+
+--[[ HsList class ]]
+
+HsListIterator = {__index = {}}
+
+setmetatable(HsListIterator, {
+  __call = function (cls, idx, itemFactory)
+    local instance = {index = idx, __itemFactory = itemFactory}
+    setmetatable(instance, cls)
+    return instance
+  end
+})
+
+function HsListIterator.__gc(list)
+  HsListIterator.native.deallocate(list.index)
+end
+
+function HsListIterator.__call(list)
+  local itemIdx = HsListIterator.native.getNextItem(list.index)
+  if itemIdx == nil then
+    return
+  else
+    return list.__itemFactory(itemIdx)
+  end 
 end
 
 --[[ Graph class ]]
@@ -128,17 +157,38 @@ Instances can be constructed as follows:
       n1 -:EdgeType1, f g:EdgeType2-> n2
     ]]
 ]==],
-  methods = { 'identity' }
+  methods = { 'identity', 'morphisms_to' }
 } .. subclass_of_GrLang()
 
 Graph.__index.identity = docstring "Returns the identity morphism"
-  .. function(graph)
-    if not graph.__identity then
-      local idx = catch_haskell(Graph.native.identity(graph.index))
-      graph.__identity = newMorphism(Morphism, idx, graph, graph)
-    end
-    return graph.__identity
+  .. memoizing('__identity', function(graph)
+    local idx = Graph.native.identity(graph.index)
+    return newMorphism(Morphism, idx, graph, graph)
+  end)
+
+Graph.__index.morphisms_to = docstring [==[
+Iterate over all morphisms between two graphs.
+
+The call `G:morphisms_to(H, kind)` returns an iterator
+for all morphisms from G to H. The optional kind parameter
+may be one of 'all', 'monic', 'epic' or 'iso', defaulting
+to 'all'.
+]==] .. function(G, H, kind)
+  local listIdx
+  if kind == 'all' or kind == nil then
+    listIdx = Graph.native.findAllMorphisms(G.index, H.index)
+  elseif kind == 'monic' then
+    listIdx = Graph.native.findAllMonomorphisms(G.index, H.index)
+  elseif kind == 'epic' then
+    listIdx = Graph.native.findAllEpimorphisms(G.index, H.index)
+  elseif kind == 'iso' then
+    listIdx = Graph.native.findAllIsomorphisms(G.index, H.index)
+  else
+    error('Invalid kind "' + kind + '" for morphism search.')
   end
+  
+  return HsListIterator(listIdx, function(idx) return newMorphism(Morphism, idx, G, H) end)
+end
 
 --[[ Morphism class ]]
 
@@ -156,13 +206,17 @@ operator, that is, `f .. g` returns the composite of `f` and `g`
 when the domain of `f` is the same as the codomain of `g`.
 ]==],
   methods = {
-    'domain', 'codomain', '..'
+    'dom', 'cod', '..',
+    'is_monic', 'is_epic', 'is_iso',
+    'pullback', 'initial_pushout'
+  },
+  functions = {
+    'subobject_inter', 'subobject_union'
   }
 } .. subclass_of_GrLang(
   function (cls, domain, codomain)
     return function (str)
-      local idx = catch_haskell(
-        cls.native.parse(domain.index, codomain.index, str))
+      local idx = cls.native.parse(domain.index, codomain.index, str)
       return newMorphism(cls, idx, domain, codomain)
     end
   end)
@@ -174,20 +228,93 @@ function newMorphism(cls, idx, domain, codomain)
   return result
 end
 
-Morphism.__index.domain = docstring "Returns the domain graph."
+Morphism.__index.dom = docstring "Returns the domain graph."
   .. function(morphism) return morphism.__domain end
 
-Morphism.__index.codomain = docstring "Returns the codomain graph."
+Morphism.__index.cod = docstring "Returns the codomain graph."
   .. function(morphism) return morphism.__codomain end
-
+ 
 Morphism.__concat = function(m1, m2)
   if m1.__domain ~= m2.__codomain then
     error("Given morphisms are not composable.")
   else
-    local idx = catch_haskell(Morphism.native.compose(m1.index, m2.index))
+    local idx = Morphism.native.compose(m1.index, m2.index)
     return newMorphism(Morphism, idx, m2.__domain, m1.__codomain)
   end
 end
+
+Morphism.__index.is_monic = 
+  memoizing('__monic', function(morphism)
+    return Morphism.native.isMonic(morphism.index)
+  end)
+
+Morphism.__index.is_epic = 
+  memoizing('__epic', function(morphism)
+    return Morphism.native.isEpic(morphism.index)
+  end)
+
+Morphism.__index.is_iso = 
+  memoizing('__iso', function(morphism)
+    return Morphism.native.isIsomorphism(morphism.index)
+  end)
+
+Morphism.__index.pullback = docstring [==[
+Given another morphism, computes their pullback.
+
+Given X -f-> Z <-g- Y with pullback X <-h- W -k-> Y,
+the call `f:pullback(g)` returns `h, k`.
+]==]
+  .. function (f, g)
+    if f.__codomain ~= g.__codomain then
+      error('Given morphisms are not a span.')
+    end
+    local objIdx, ffIdx, ggIdx = Morphism.native.calculatePullback(f.index, g.index)
+    local dom = newGrLang(Graph, objIdx)
+    return newMorphism(Morphism, ggIdx, dom, f:dom()), newMorphism(Morphism, ffIdx, dom, g:dom())
+  end
+
+Morphism.__index.initial_pushout = docstring [==[
+Calculates the initial pushout of a morphism.
+
+The call `f:initial_pushout()` returns `b, ff, c`
+where b is the boundary morphism, c is the context morhpism
+and ff the remaining morphism of the pushout square.
+]==]
+  .. function(f)
+    local bObjIdx, cObjIdx, bIdx, ffIdx, cIdx =
+      Morphism.native.calculateInitialPushout(f.index)
+    local B, C = newGrLang(Graph, bObjIdx), newGrLang(Graph, cObjIdx)
+    return
+      newMorphism(Morphism, bIdx, B, f:dom()),
+      newMorphism(Morphism, ffIdx, B, C),
+      newMorphism(Morphism, cIdx, C, f:cod())
+  end
+
+Morphism.subobject_inter = docstring "Given two monomorphisms with same codomain, calculate their intersection."
+  .. function (a, b)
+    if not a:is_monic() or not b:is_monic() then
+      error("The given morphisms are not all monic.")
+    end
+    if a.__codomain ~= b.__codomain then
+      error("The given monos don't share a codomain.")
+    end
+    local objIdx, morphIdx = Morphism.native.subobjectIntersection(a.index, b.index)
+    local C = newGrLang(Graph, objIdx)
+    return newMorphism(Morphism, morphIdx, C, a:cod())
+  end
+
+Morphism.subobject_union = docstring "Given two monomorphisms with same codomain, calculate their union."
+  .. function (a, b)
+    if not a:is_monic() or not b:is_monic() then
+      error("The given morphisms are not all monic.")
+    end
+    if a.__codomain ~= b.__codomain then
+      error("The given monos don't share a codomain.")
+    end
+    local objIdx, morphIdx = Morphism.native.subobjectUnion(a.index, b.index)
+    local C = newGrLang(Graph, objIdx)
+    return newMorphism(Morphism, morphIdx, C, a:cod())
+  end
 
 --[[ Rule class ]]
 
@@ -207,10 +334,40 @@ Instances can be constructed as follows:
     ]]
 ]==],
   methods = {
+    'lhs', 'rhs', 'interface', 'l', 'r',
     'find_matches'
   }
 } .. subclass_of_GrLang()
 
+Rule.__index.lhs = docstring "Get the LHS graph of the rule"
+  .. memoizing('__lhs', function(rule)
+    local idx = Rule.native.getLeftObject(rule.index)
+    return newGrLang(Graph, idx)
+  end)
+
+Rule.__index.rhs = docstring "Get the RHS graph of the rule"
+  .. memoizing('__rhs', function (rule)
+    local idx = Rule.native.getRightObject(rule.index)
+    return newGrLang(Graph, idx)
+  end)
+
+Rule.__index.interface = docstring "Get the interface graph of the rule"
+  .. memoizing('__interface', function (rule)
+    local idx = Rule.native.getInterface(rule.index)
+    return newGrLang(Graph, idx)
+  end)
+
+Rule.__index.l = docstring "Get the left morphism of the rule"
+  .. memoizing('__l', function(rule)
+    local idx = Rule.native.getLeftMorphism(rule.index)
+    return newMorphism(Morphism, idx, rule:interface(), rule:lhs())
+  end)
+
+Rule.__index.r = docstring "Get the right morphism of the rule"
+  .. memoizing('__r', function(rule)
+    local idx = Rule.native.getRightMorphism(rule.index)
+    return newMorphism(Morphism, idx, rule:interface(), rule:rhs())
+  end)
 
 Rule.__index.find_matches = docstring[==[
 Find all applicable matches into the given graph.
@@ -218,13 +375,13 @@ Find all applicable matches into the given graph.
   if type(graph) ~= 'table' or getmetatable(graph) ~= Graph then
     error('Rule.find_matches must be called with a graph.')
   end
-  return catch_haskell(Rule.native.findMatches(rule.index, graph.index))
+  return Rule.native.findMatches(rule.index, graph.index)
 end
 
 --[[ Requiring GrLang files ]]
 
 local function loader(modname, path)
-  catch_haskell(GrLang.native.compileFile(path))
+  GrLang.native.compileFile(path)
   return
 end
 

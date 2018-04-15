@@ -5,6 +5,7 @@ import           Control.Monad.Trans
 import qualified Data.ByteString     as ByteString
 import           Foreign.Lua
 import qualified Foreign.Lua         as Lua
+import           System.IO           (hPutStr, hPutStrLn, stderr)
 
 checkStatus :: Lua.Status -> Lua Bool
 checkStatus Lua.OK = return True
@@ -15,17 +16,23 @@ checkStatus status = showError prefix >> return False
           Lua.ErrRun -> "Error: "
           _ -> "Critical error: "
 
+pushFunction :: ToHaskellFunction a => a -> Lua ()
+pushFunction f =
+  Lua.pushHaskellFunction f >> Lua.wrapHaskellFunction
+
 showError :: String -> Lua ()
 showError prefix = do
-  msg <- Lua.tostring (-1)
-  liftIO $ putStr prefix >> ByteString.putStr msg >> putStrLn ""
+  msg <- Lua.tostring Lua.stackTop
+  liftIO $ do
+    hPutStr stderr prefix
+    ByteString.hPutStr stderr msg
+    hPutStrLn stderr ""
   Lua.pop 1
 
 luaError :: String -> Lua NumResults
 luaError msg = do
-  Lua.push "_HASKELLERR"
   Lua.push msg
-  return 2
+  fromIntegral <$> Lua.lerror
 
 execLua :: String -> Lua ()
 execLua code = do

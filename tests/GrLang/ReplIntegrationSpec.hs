@@ -6,7 +6,7 @@ import           Test.Hspec
 
 spec :: Spec
 spec = mapM_ testCase
-  [ "graph-morphism-rule" ]
+  [ "graph-morphism-rule", "conflict-essence" ]
 
 testCase :: String -> SpecWith (Arg (IO ()))
 testCase name = it name $ do
