@@ -156,7 +156,12 @@ Instances can be constructed as follows:
       n1 -:EdgeType1, f g:EdgeType2-> n2
     ]]
 ]==],
-  methods = { 'identity', 'morphisms_to' }
+  methods = { 
+    'identity',
+    'morphisms_to',
+    'subgraphs', 'quotients', 
+    'disjoint_union', 'overlappings_with' 
+  }
 } .. subclass_of_GrLang()
 
 Graph.__index.identity = docstring "Returns the identity morphism"
@@ -187,6 +192,50 @@ to 'all'.
   end
   
   return HsListIterator(listIdx, function(idx) return newMorphism(Morphism, idx, G, H) end)
+end
+
+Graph.__index.subgraphs = docstring 'Iterate over all subgraphs of the graph.'
+.. function(G)
+  local listIdx = Graph.native.findAllSubobjectsOf(G.index)
+  return HsListIterator(listIdx, function(idxDom, idxMorph)
+    local dom = newGrLang(Graph, idxDom)
+    return newMorphism(Morphism, idxMorph, dom, G)
+  end)
+end
+
+Graph.__index.quotients = docstring 'Iterate over all quotients of the graph.'
+.. function(G)
+  local listIdx = Graph.native.findAllQuotientsOf(G.index)
+  return HsListIterator(listIdx, function(idxCod, idxMorph)
+    local cod = newGrLang(Graph, idxCod)
+    return newMorphism(Morphism, idxMorph, G, cod)
+  end)
+end
+
+Graph.__index.disjoint_union = docstring [==[
+Produce the (injections of) the disjoint union for the given graphs.
+
+The call `G:disjoint_union(H)` produces `f, g`, where f is the injection
+of G into the disjoint union, and g the injection of H.
+]==]
+.. function(G, H)
+  local idxObj, idxInjG, idxInjH = Graph.native.calculateCoproduct(G.index, H.index)
+  local disjUnion = newGrLang(Graph, idxObj)
+  return newMorphism(Morphism, idxInjG, G, disjUnion), newMorphism(Morphism, idxInjH, H, disjUnion)
+end
+
+Graph.__index.overlappings_with = docstring [==[
+Iterate over the overlappings of the given graphs, that is, over quotients of their disjoint unions.
+
+The call `G:overlappings_with(H, kind)` returns an iterator for all overlappings of G and H
+with embeddings of the given kind. The optional kind parameter may be one of 'all', 'monic',
+'epic' or 'iso', defaulting to 'all'. 
+]==] .. function (G, H, kind)
+  local idx = Graph.native.findJointSurjections(G.index, kind, H.index, kind)
+  return HsListIterator(idx, function(idxCod, idxEmbG, idxEmbH)
+    local cod = newGrLang(Graph, idxCod)
+    return newMorphism(Morphism, idxEmbG, G, cod), newMorphism(Morphism, idxEmbH, H, cod)
+  end)
 end
 
 --[[ Morphism class ]]

@@ -22,10 +22,13 @@ import qualified Data.Text.Encoding         as Text
 import           Data.Text.Prettyprint.Doc  (Pretty (..))
 import           Foreign.Lua                (FromLuaStack, Lua, ToHaskellFunction)
 import qualified Foreign.Lua                as Lua
+import qualified Foreign.Lua.Util as Lua
+import qualified Data.ByteString as BS
 
 import           Abstract.Category
 import           Abstract.Category.Adhesive
 import           Abstract.Category.FindMorphism
+import Abstract.Category.Finitary
 import           Abstract.Category.Limit
 import           Abstract.Rewriting.DPO
 import           Base.Annotation            (Annotated (..))
@@ -330,34 +333,61 @@ initGrLang globalState = do
     [ ("parse", haskellFn1 globalState $ \string -> do
           graph <- GrLang.compileGraph =<< GrLang.parseGraph "<repl>" (string :: String)
           allocateGrLang (VGraph graph)
-      ),
-      ("identity", haskellFn1 globalState $ \idx -> do
+      )
+    , ("identity", haskellFn1 globalState $ \idx -> do
           VGraph graph <- lookupGrLangValue idx
           allocateGrLang (VMorph $ identity graph)
-      ),
-      ("findAllMorphisms", haskellFn2 globalState $ \idG idH -> do
+      )
+    , ("calculateCoproduct", haskellFn2 globalState $ \idG idH -> do
+          VGraph g <- lookupGrLangValue idG
+          VGraph h <- lookupGrLangValue idH
+          let (jG, jH) = calculateCoproduct g h
+          returnVals [VGraph (codomain jG), VMorph jG, VMorph jH]
+      )
+    , ("findAllMorphisms", haskellFn2 globalState $ \idG idH -> do
           VGraph g <- lookupGrLangValue idG
           VGraph h <- lookupGrLangValue idH
           withMemSpace iterLists .
             allocateMemSpace . map (\f -> [VMorph f]) $ findAllMorphisms g h
-      ),
-      ("findAllMonomorphisms", haskellFn2 globalState $ \idG idH -> do
+      )
+    , ("findAllMonomorphisms", haskellFn2 globalState $ \idG idH -> do
           VGraph g <- lookupGrLangValue idG
           VGraph h <- lookupGrLangValue idH
           withMemSpace iterLists .
             allocateMemSpace . map (\f -> [VMorph f]) $ findMonomorphisms g h
-      ),
-      ("findAllEpimorphisms", haskellFn2 globalState $ \idG idH -> do
+      )
+    , ("findAllEpimorphisms", haskellFn2 globalState $ \idG idH -> do
           VGraph g <- lookupGrLangValue idG
           VGraph h <- lookupGrLangValue idH
           withMemSpace iterLists .
             allocateMemSpace . map (\f -> [VMorph f]) $ findEpimorphisms g h
-      ),
-      ("findAllIsomorphisms", haskellFn2 globalState $ \idG idH -> do
+      )
+    , ("findAllIsomorphisms", haskellFn2 globalState $ \idG idH -> do
           VGraph g <- lookupGrLangValue idG
           VGraph h <- lookupGrLangValue idH
           withMemSpace iterLists .
             allocateMemSpace . map (\f -> [VMorph f]) $ findIsomorphisms g h
+      )
+    , ("findAllSubobjectsOf", haskellFn1 globalState $ \idx -> do
+          VGraph g <- lookupGrLangValue idx
+          withMemSpace iterLists .
+            allocateMemSpace . map (\f -> [VGraph (domain f), VMorph f]) $ 
+              findAllSubobjectsOf g
+      )
+    , ("findAllQuotientsOf", haskellFn1 globalState $ \idx -> do
+          VGraph g <- lookupGrLangValue idx
+          withMemSpace iterLists .
+            allocateMemSpace . map (\f -> [VGraph (codomain f), VMorph f]) $ 
+              findAllQuotientsOf g
+      )
+    , ("findJointSurjections", haskellFn4 globalState $ \idG kindStrG idH kindStrH -> do
+          VGraph g <- lookupGrLangValue idG
+          VGraph h <- lookupGrLangValue idH
+          clsG <- morphClassFromString kindStrG
+          clsH <- morphClassFromString kindStrH
+          withMemSpace iterLists .
+            allocateMemSpace . map (\(jg, jh) -> [VGraph (codomain jg), VMorph jg, VMorph jh]) $
+              findJointSurjections (clsG, g) (clsH, h)
       )
     ]
 
@@ -450,6 +480,15 @@ returnVals vals = do
   mapM_ (liftLua . Lua.push <=< allocateGrLang) vals
   return . fromIntegral $ length vals
 
+morphClassFromString :: Lua.OrNil BS.ByteString -> ExceptT GrLang.Error LuaGrLang (MorphismClass GrMorphism) 
+morphClassFromString strOrNil = case Lua.toMaybe strOrNil of
+  Nothing -> return anyMorphism
+  Just "all" -> return anyMorphism
+  Just "monic" -> return monic
+  Just "epic" -> return epic
+  Just "'iso" -> return iso
+  Just kind -> GrLang.throwError Nothing $ "Invalid kind of morphism '" <> pretty (show kind) <> "'"
+
 haskellFn0 :: ToHaskellFunction (Lua a) => GrLangState -> ExceptT GrLang.Error LuaGrLang a -> Lua ()
 haskellFn0 globalState f = pushFunction (runGrLang' globalState f)
 
@@ -467,6 +506,11 @@ haskellFn3 ::
   (FromLuaStack a, FromLuaStack b, FromLuaStack c, ToHaskellFunction (Lua d)) =>
   GrLangState -> (a -> b -> c -> ExceptT GrLang.Error LuaGrLang d) -> Lua ()
 haskellFn3 globalState f = pushFunction (\x y z -> runGrLang' globalState (f x y z))
+
+haskellFn4 ::
+  (FromLuaStack a, FromLuaStack b, FromLuaStack c, FromLuaStack d, ToHaskellFunction (Lua e)) =>
+  GrLangState -> (a -> b -> c -> d -> ExceptT GrLang.Error LuaGrLang e) -> Lua ()
+haskellFn4 globalState f = pushFunction (\w x y z -> runGrLang' globalState (f w x y z))
 
 createTable :: Foldable t => t (String, Lua ()) -> Lua ()
 createTable contents = do
