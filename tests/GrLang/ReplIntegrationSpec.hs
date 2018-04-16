@@ -13,8 +13,8 @@ testCase name = it name $ do
   (exitCode, stdOut, stdErr) <- readProcessWithExitCode
     "stack" ["exec", "verigraph-repl", "--", prefix ++ name ++ ".lua"] ""
   exitCode `shouldBe` ExitSuccess
-  expectedOut <- readFile (prefix ++ name ++ ".stdout")
   expectedErr <- readFile (prefix ++ name ++ ".stderr")
-  stdOut `shouldBe` expectedOut
   stdErr `shouldBe` expectedErr
+  expectedOut <- readFile (prefix ++ name ++ ".stdout")
+  stdOut `shouldBe` expectedOut
   where prefix = "tests/GrLang/ReplIntegrationSpec/"

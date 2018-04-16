@@ -138,11 +138,10 @@ function HsListIterator.__gc(list)
 end
 
 function HsListIterator.__call(list)
-  local itemIdx = HsListIterator.native.getNextItem(list.index)
-  if itemIdx == nil then
-    return
+  if HsListIterator.native.hasNextItem(list.index) then
+    return list.__itemFactory(HsListIterator.native.getNextItem(list.index))
   else
-    return list.__itemFactory(itemIdx)
+    return
   end 
 end
 

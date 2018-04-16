@@ -98,7 +98,7 @@ data GrLangState = GrLangState
   , importedModules :: IORef (Set FilePath)
   , visibleModules  :: IORef (Set FilePath)
   , values          :: MemSpace Value
-  , iterLists       :: MemSpace [Value]
+  , iterLists       :: MemSpace [[Value]]
   }
 
 type LuaGrLang = ReaderT GrLangState Lua
@@ -313,13 +313,16 @@ initGrLang globalState = do
     [ ("deallocate", haskellFn1 globalState $ \idx ->
           withMemSpace iterLists $ freeMemSpace idx
       )
+    , ("hasNextItem", haskellFn1 globalState $ \idx ->
+          not . null <$> withMemSpace iterLists (lookupMemSpace idx)
+      )
     , ("getNextItem", haskellFn1 globalState $ \listIdx -> do
           list <- withMemSpace iterLists $ lookupMemSpace listIdx
           case list of
             [] -> return (0 :: Lua.NumResults)
-            (x:xs) -> do
-              withMemSpace iterLists $ putMemSpace listIdx xs
-              returnVals [x]
+            (vals : rest) -> do
+              withMemSpace iterLists $ putMemSpace listIdx rest
+              returnVals vals
       )
     ]
 
@@ -335,26 +338,26 @@ initGrLang globalState = do
       ("findAllMorphisms", haskellFn2 globalState $ \idG idH -> do
           VGraph g <- lookupGrLangValue idG
           VGraph h <- lookupGrLangValue idH
-          withMemSpace iterLists $
-            allocateMemSpace (map VMorph $ findAllMorphisms g h)
+          withMemSpace iterLists .
+            allocateMemSpace . map (\f -> [VMorph f]) $ findAllMorphisms g h
       ),
       ("findAllMonomorphisms", haskellFn2 globalState $ \idG idH -> do
           VGraph g <- lookupGrLangValue idG
           VGraph h <- lookupGrLangValue idH
-          withMemSpace iterLists $
-            allocateMemSpace (map VMorph $ findMonomorphisms g h)
+          withMemSpace iterLists .
+            allocateMemSpace . map (\f -> [VMorph f]) $ findMonomorphisms g h
       ),
       ("findAllEpimorphisms", haskellFn2 globalState $ \idG idH -> do
           VGraph g <- lookupGrLangValue idG
           VGraph h <- lookupGrLangValue idH
-          withMemSpace iterLists $
-            allocateMemSpace (map VMorph $ findEpimorphisms g h)
+          withMemSpace iterLists .
+            allocateMemSpace . map (\f -> [VMorph f]) $ findEpimorphisms g h
       ),
       ("findAllIsomorphisms", haskellFn2 globalState $ \idG idH -> do
           VGraph g <- lookupGrLangValue idG
           VGraph h <- lookupGrLangValue idH
-          withMemSpace iterLists $
-            allocateMemSpace (map VMorph $ findIsomorphisms g h)
+          withMemSpace iterLists .
+            allocateMemSpace . map (\f -> [VMorph f]) $ findIsomorphisms g h
       )
     ]
 
