@@ -187,9 +187,11 @@ test-suite HSpecTests
   ghc-options:         -threaded -O
   type:                exitcode-stdio-1.0
   build-depends:       base, verigraph,
+                       call-stack,
                        containers,
                        combinat >= 0.2.8,
                        directory,
+                       deepseq,
                        filepath,
                        matrix >= 0.3.4,
                        mtl,
@@ -209,6 +211,7 @@ test-suite HSpecTests
                        Analysis.Interlevel.InterLevelCPSpec
                        Analysis.ParallelIndependentSpec
                        Category.TypedGraph.FinalPullbackComplementSpec
+                       Category.TypedGraph.CompleteSpec
                        Data.Graphs.GraphMorphismSpec
                        Data.GraphsSpec
                        Data.PartitionSpec
@@ -228,4 +231,5 @@ test-suite HSpecTests
                        Logic.Ctl.TestUtils
                        Rewriting.DPO.TypedGraphRule.NacManipulationSpec
                        Rewriting.DPO.TypedGraphRuleSpec
+                       Util.Test
                        XML.GPRReader.GXLReaderSpec

@@ -1,19 +1,19 @@
 module Category.TypedGraph.Limit () where
 
-import qualified Data.List.NonEmpty                 as NE
-import           Data.List ((\\))
-import           Data.Maybe                         (fromJust)
-import           Data.Set                           (Set)
-import qualified Data.Set                           as DS
+import           Data.List                    ((\\))
+import qualified Data.List.NonEmpty           as NE
+import           Data.Maybe                   (fromJust)
+import           Data.Set                     (Set)
+import qualified Data.Set                     as DS
 
 import           Abstract.Category
 import           Abstract.Category.Limit
 import           Category.TypedGraph.Category
-import qualified Data.Graphs                        as G
-import qualified Data.Graphs.Morphism               as GM
+import qualified Data.Graphs                  as G
+import qualified Data.Graphs.Morphism         as GM
 import           Data.Partition
-import           Data.TypedGraph                    as TG
-import           Data.TypedGraph.Morphism           as TG
+import           Data.TypedGraph              as TG
+import           Data.TypedGraph.Morphism     as TG
 
 instance Complete (TypedGraphMorphism a b) where
 
@@ -112,6 +112,14 @@ instance Complete (TypedGraphMorphism a b) where
           updateF' = createEdgeOnDomain newEdge src tgt (edgeTypeInB (edgeId b)) (edgeId b) f'
 
   calculateEqualizer = calculateEqualizer'
+  finalObject = finalGraph . typeGraph . codomain
+  morphismToFinalFrom graph =
+    TypedGraphMorphism graph (finalGraph . typeGraph $ graph) (toGraphMorphism graph)
+  isFinal _ graph = isIsomorphism (toGraphMorphism graph)
+
+-- | Given a type graph, create a final typed graph
+finalGraph :: G.Graph (Maybe n) (Maybe e) -> TypedGraph n e
+finalGraph  = fromGraphMorphism . identity
 
 calculateEqualizer' :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 calculateEqualizer' f g = makeInclusion typedX typedA

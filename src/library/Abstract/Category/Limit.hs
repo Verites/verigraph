@@ -1,11 +1,11 @@
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
 module Abstract.Category.Limit (Complete(..), Cocomplete(..)) where
 
-import Data.Proxy
+import           Data.Proxy
 
 import           Abstract.Category
-import           Data.List.NonEmpty (NonEmpty(..))
+import           Data.List.NonEmpty (NonEmpty (..))
 
 -- | Type class for morphisms whose category is Complete.
 --
@@ -33,6 +33,8 @@ class (Category morph) => Complete morph where
 
   -- | Given two objects @A@ and @B@ it returns the product @(AxB, f: AxB -> A, g: AxB -> B)@
   calculateProduct :: Obj morph -> Obj morph -> (morph,morph)
+  calculateProduct x y =
+    calculatePullback (morphismToFinalFrom y) (morphismToFinalFrom x)
 
   -- | Given a non-empty list of objects @Bi@ it returns the product @fi : PROD(Bi) -> Bi@
   calculateNProduct :: NonEmpty (Obj morph) -> [morph]
