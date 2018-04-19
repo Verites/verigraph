@@ -15,6 +15,7 @@ import           Data.IORef
 import           Data.Map                       (Map)
 import qualified Data.Map                       as Map
 import           Data.Monoid
+import           Data.Proxy
 import           Data.Set                       (Set)
 import qualified Data.Set                       as Set
 import           Data.Text                      (Text)
@@ -349,11 +350,21 @@ initGrLang globalState = do
           VGraph graph <- lookupGrLangValue idx
           allocateGrLang (VMorph $ identity graph)
       )
+    , ("isInitial", haskellFn1 globalState $ \idx -> do
+          VGraph graph <- lookupGrLangValue idx
+          return (isInitial (Proxy @GrMorphism) graph)
+      )
     , ("calculateCoproduct", haskellFn2 globalState $ \idG idH -> do
           VGraph g <- lookupGrLangValue idG
           VGraph h <- lookupGrLangValue idH
           let (jG, jH) = calculateCoproduct g h
           returnVals [VGraph (codomain jG), VMorph jG, VMorph jH]
+      )
+    , ("calculateProduct", haskellFn2 globalState $ \idG idH -> do
+          VGraph g <- lookupGrLangValue idG
+          VGraph h <- lookupGrLangValue idH
+          let (pG, pH) = calculateProduct g h
+          returnVals [VGraph (domain pG), VMorph pG, VMorph pH]
       )
     , ("findMorphisms", haskellFn3 globalState $ \kindStr idG idH -> do
           VGraph g <- lookupGrLangValue idG

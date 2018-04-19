@@ -154,29 +154,41 @@ Instances can be constructed as follows:
     ]]
 ]==],
   methods = { 
-    'identity',
-    'morphisms_to',
+    'is_empty', 'identity',
+    'disjoint_union', 'product',
     'subgraphs', 'quotients', 
-    'disjoint_union', 'overlappings_with' 
+    'morphisms_to', 'overlappings_with' 
   }
 } .. subclass_of_GrLang()
 
-Graph.__index.identity = docstring "Returns the identity morphism"
+Graph.__index.identity = docstring "Returns the identity morphism."
   .. memoizing('__identity', function(graph)
     local idx = Graph.native.identity(graph.index)
     return newMorphism(idx, graph, graph)
   end)
 
-Graph.__index.morphisms_to = docstring [==[
-Iterate over all morphisms between two graphs.
+Graph.__index.is_empty = docstring "Checks if the graph is empty."
+  .. memoizing('__empty', function(graph)
+    return Graph.native.isInitial(graph.index)
+  end)
 
-The call `G:morphisms_to(H, kind)` returns an iterator
-for all morphisms from G to H. The optional kind parameter
-may be one of 'all', 'monic', 'epic' or 'iso', defaulting
-to 'all'.
-]==] .. function(G, H, kind)
-  local listIdx = Graph.native.findMorphisms(kind, G.index, H.index)
-  return makeListIterator(listIdx, function(idx) return newMorphism(idx, G, H) end)
+Graph.__index.disjoint_union = docstring [==[
+The call `G:disjoint_union(H)` returns morphisms `j1, j2`, where j1 is
+the injection of G into the disjoint union, and g the injection of H.
+]==]
+.. function(G, H)
+  local idxSum, idxJ1, idxJ2 = Graph.native.calculateCoproduct(G.index, H.index)
+  local sum = newGrLang(Graph, idxSum)
+  return newMorphism(idxJ1, G, sum), newMorphism(idxJ2, H, sum)
+end
+
+Graph.__index.product = docstring [==[
+The call `G:product(H)` returns morphisms `p1, p2` where p1 is
+the projection of the product into G and p2 is the projection into H.  
+]==] .. function (G, H)
+  local idxProd, idxP1, idxP2 = Graph.native.calculateProduct(G.index, H.index)
+  local prod = newGrLang(Graph, idxProd)
+  return newMorphism(idxP1, prod, G), newMorphism(idxP2, prod, H)
 end
 
 Graph.__index.subgraphs = docstring 'Iterate over all subgraphs of the graph.'
@@ -197,16 +209,16 @@ Graph.__index.quotients = docstring 'Iterate over all quotients of the graph.'
   end)
 end
 
-Graph.__index.disjoint_union = docstring [==[
-Produce the (injections of) the disjoint union for the given graphs.
+Graph.__index.morphisms_to = docstring [==[
+Iterate over all morphisms between two graphs.
 
-The call `G:disjoint_union(H)` produces `f, g`, where f is the injection
-of G into the disjoint union, and g the injection of H.
-]==]
-.. function(G, H)
-  local idxObj, idxInjG, idxInjH = Graph.native.calculateCoproduct(G.index, H.index)
-  local disjUnion = newGrLang(Graph, idxObj)
-  return newMorphism(idxInjG, G, disjUnion), newMorphism(idxInjH, H, disjUnion)
+The call `G:morphisms_to(H, kind)` returns an iterator
+for all morphisms from G to H. The optional kind parameter
+may be one of 'all', 'monic', 'epic' or 'iso', defaulting
+to 'all'.
+]==] .. function(G, H, kind)
+  local listIdx = Graph.native.findMorphisms(kind, G.index, H.index)
+  return makeListIterator(listIdx, function(idx) return newMorphism(idx, G, H) end)
 end
 
 Graph.__index.overlappings_with = docstring [==[
