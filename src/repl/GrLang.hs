@@ -5,41 +5,41 @@
 module GrLang (initialize) where
 
 import           Control.Monad
-import           Control.Monad.Except       (ExceptT (..), runExceptT)
-import qualified Control.Monad.Except       as ExceptT
+import           Control.Monad.Except           (ExceptT (..), runExceptT)
+import qualified Control.Monad.Except           as ExceptT
 import           Control.Monad.Reader
-import           Control.Monad.Trans        (lift)
+import           Control.Monad.Trans            (lift)
 import           Data.Array.IO
+import qualified Data.ByteString                as BS
 import           Data.IORef
-import           Data.Map                   (Map)
-import qualified Data.Map                   as Map
+import           Data.Map                       (Map)
+import qualified Data.Map                       as Map
 import           Data.Monoid
-import           Data.Set                   (Set)
-import qualified Data.Set                   as Set
-import           Data.Text                  (Text)
-import qualified Data.Text                  as Text
-import qualified Data.Text.Encoding         as Text
-import           Data.Text.Prettyprint.Doc  (Pretty (..))
-import           Foreign.Lua                (FromLuaStack, Lua, ToHaskellFunction)
-import qualified Foreign.Lua                as Lua
-import qualified Foreign.Lua.Util as Lua
-import qualified Data.ByteString as BS
+import           Data.Set                       (Set)
+import qualified Data.Set                       as Set
+import           Data.Text                      (Text)
+import qualified Data.Text                      as Text
+import qualified Data.Text.Encoding             as Text
+import           Data.Text.Prettyprint.Doc      (Pretty (..))
+import           Foreign.Lua                    (FromLuaStack, Lua, ToHaskellFunction)
+import qualified Foreign.Lua                    as Lua
+import qualified Foreign.Lua.Util               as Lua
 
 import           Abstract.Category
 import           Abstract.Category.Adhesive
 import           Abstract.Category.FindMorphism
-import Abstract.Category.Finitary
+import           Abstract.Category.Finitary
 import           Abstract.Category.Limit
 import           Abstract.Rewriting.DPO
-import           Base.Annotation            (Annotated (..))
-import qualified Data.Graphs                as TypeGraph
-import           Data.TypedGraph            (EdgeId, Node (..), NodeId)
-import qualified GrLang.Compiler            as GrLang
-import           GrLang.Monad               (MonadGrLang)
-import qualified GrLang.Monad               as GrLang
-import qualified GrLang.Parser              as GrLang
+import           Base.Annotation                (Annotated (..))
+import qualified Data.Graphs                    as TypeGraph
+import           Data.TypedGraph                (EdgeId, Node (..), NodeId)
+import qualified GrLang.Compiler                as GrLang
+import           GrLang.Monad                   (MonadGrLang)
+import qualified GrLang.Monad                   as GrLang
+import qualified GrLang.Parser                  as GrLang
 import           GrLang.Value
-import qualified Image.Dot.TypedGraph       as Dot
+import qualified Image.Dot.TypedGraph           as Dot
 import           Util.Lua
 
 data MemSpace a = MemSpace
@@ -344,40 +344,23 @@ initGrLang globalState = do
           let (jG, jH) = calculateCoproduct g h
           returnVals [VGraph (codomain jG), VMorph jG, VMorph jH]
       )
-    , ("findAllMorphisms", haskellFn2 globalState $ \idG idH -> do
+    , ("findMorphisms", haskellFn3 globalState $ \kindStr idG idH -> do
           VGraph g <- lookupGrLangValue idG
           VGraph h <- lookupGrLangValue idH
+          cls <- morphClassFromString kindStr
           withMemSpace iterLists .
-            allocateMemSpace . map (\f -> [VMorph f]) $ findAllMorphisms g h
-      )
-    , ("findAllMonomorphisms", haskellFn2 globalState $ \idG idH -> do
-          VGraph g <- lookupGrLangValue idG
-          VGraph h <- lookupGrLangValue idH
-          withMemSpace iterLists .
-            allocateMemSpace . map (\f -> [VMorph f]) $ findMonomorphisms g h
-      )
-    , ("findAllEpimorphisms", haskellFn2 globalState $ \idG idH -> do
-          VGraph g <- lookupGrLangValue idG
-          VGraph h <- lookupGrLangValue idH
-          withMemSpace iterLists .
-            allocateMemSpace . map (\f -> [VMorph f]) $ findEpimorphisms g h
-      )
-    , ("findAllIsomorphisms", haskellFn2 globalState $ \idG idH -> do
-          VGraph g <- lookupGrLangValue idG
-          VGraph h <- lookupGrLangValue idH
-          withMemSpace iterLists .
-            allocateMemSpace . map (\f -> [VMorph f]) $ findIsomorphisms g h
+            allocateMemSpace . map (\f -> [VMorph f]) $ findMorphisms cls g h
       )
     , ("findAllSubobjectsOf", haskellFn1 globalState $ \idx -> do
           VGraph g <- lookupGrLangValue idx
           withMemSpace iterLists .
-            allocateMemSpace . map (\f -> [VGraph (domain f), VMorph f]) $ 
+            allocateMemSpace . map (\f -> [VGraph (domain f), VMorph f]) $
               findAllSubobjectsOf g
       )
     , ("findAllQuotientsOf", haskellFn1 globalState $ \idx -> do
           VGraph g <- lookupGrLangValue idx
           withMemSpace iterLists .
-            allocateMemSpace . map (\f -> [VGraph (codomain f), VMorph f]) $ 
+            allocateMemSpace . map (\f -> [VGraph (codomain f), VMorph f]) $
               findAllQuotientsOf g
       )
     , ("findJointSurjections", haskellFn4 globalState $ \idG kindStrG idH kindStrH -> do
@@ -480,7 +463,7 @@ returnVals vals = do
   mapM_ (liftLua . Lua.push <=< allocateGrLang) vals
   return . fromIntegral $ length vals
 
-morphClassFromString :: Lua.OrNil BS.ByteString -> ExceptT GrLang.Error LuaGrLang (MorphismClass GrMorphism) 
+morphClassFromString :: Lua.OrNil BS.ByteString -> ExceptT GrLang.Error LuaGrLang (MorphismClass GrMorphism)
 morphClassFromString strOrNil = case Lua.toMaybe strOrNil of
   Nothing -> return anyMorphism
   Just "all" -> return anyMorphism
