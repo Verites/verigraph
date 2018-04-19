@@ -6,6 +6,10 @@ module Util.Test
   , assertIsomorphic
   , shouldBeIsomorphicTo
   , shouldBeIsomorphicToList
+  , TypeGraph
+  , GrGraph
+  , GrMorphism
+  , GrRule
   , makeTypeGraph
   , parseGraph
   , parseMorphism
@@ -26,6 +30,7 @@ import           Abstract.Category.FindMorphism
 import           Abstract.Category.Finitary
 import           Base.Isomorphic
 import           GrLang.TestUtils
+import           GrLang.Value
 
 
 forAllMorphismsBetween :: (QuickCheck.Testable prop, FindMorphism a, Show a) =>
@@ -67,7 +72,7 @@ assertIsomorphic preface expected actual =
       actualMsg = show actual
 
 shouldBeIsomorphicTo :: (Iso a, Show a) => a -> a -> Expectation
-shouldBeIsomorphicTo = assertIsomorphic ""
+actual `shouldBeIsomorphicTo` expected = assertIsomorphic "" expected actual
 
 shouldBeIsomorphicToList :: (Iso a, Show a) => [a] -> [a] -> Expectation
 shouldBeIsomorphicToList actual expected =

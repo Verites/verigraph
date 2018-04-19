@@ -203,8 +203,7 @@ test-suite HSpecTests
                        HUnit >=1.3.1.2,
                        text
 
-  other-modules:       Abstract.Category.CocompleteSpec
-                       Abstract.Rewriting.DPO.ProcessSpec
+  other-modules:       Abstract.Rewriting.DPO.ProcessSpec
                        Analysis.CriticalPairsSpec
                        Analysis.CriticalSequenceSpec
                        Analysis.EssentialCriticalPairsSpec
@@ -212,6 +211,7 @@ test-suite HSpecTests
                        Analysis.ParallelIndependentSpec
                        Category.TypedGraph.FinalPullbackComplementSpec
                        Category.TypedGraph.CompleteSpec
+                       Category.TypedGraph.CocompleteSpec
                        Data.Graphs.GraphMorphismSpec
                        Data.GraphsSpec
                        Data.PartitionSpec

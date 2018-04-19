@@ -13,11 +13,11 @@ graph  {
   ?0 -> n1
 }
 graph  {
-  ?0 : ?1
+  ?1 : N
 }	morphism  : dom -> cod {
-  ?0 -> n1
+  ?1 -> n1
 }	morphism  : dom -> cod {
-  ?0 -> n1
+  ?1 -> n1
 }
 graph  {
   ?1 : N
@@ -34,12 +34,12 @@ graph  {
   ?0 -> n2
 }
 graph  {
-  ?0 ?2 : ?1
+  ?1 ?2 : N
 }	morphism  : dom -> cod {
   ?2 -> n1
-  ?0 -> n2
+  ?1 -> n2
 }	morphism  : dom -> cod {
-  ?0 -> n1
+  ?1 -> n1
   ?2 -> n2
 }
 
@@ -107,13 +107,13 @@ morphism  : dom -> cod {
 
 Disjoint Union
 graph  {
-  ?0 ?1 ?2 ?3 : ?1
+  n1_1 n2_1 n1 n2 : N
 }	morphism  : dom -> cod {
-  ?0 -> ?0
-  ?1 -> ?1
+  n1 -> n1_1
+  n2 -> n2_1
 }	morphism  : dom -> cod {
-  ?0 -> ?2
-  ?1 -> ?3
+  n1 -> n1
+  n2 -> n2
 }
 
 Overlappings
