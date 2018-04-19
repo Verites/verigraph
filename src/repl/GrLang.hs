@@ -45,7 +45,7 @@ import           Util.Lua
 data MemSpace a = MemSpace
   { cells         :: IOArray Int (Maybe a)
   , numFreeValues :: IORef Int
-  , nextFreeValue :: IORef (Maybe Int)
+  , nextFreeIndex :: IORef (Maybe Int)
   }
 
 emptyMemSpace :: Int -> IO (MemSpace a)
@@ -69,30 +69,41 @@ putMemSpace idx' val memSpace = do
 
 allocateMemSpace :: a -> MemSpace a -> ExceptT GrLang.Error LuaGrLang Lua.LuaInteger
 allocateMemSpace value memSpace = do
-  freeIdx <- liftIO $ readIORef (nextFreeValue memSpace)
-  case freeIdx of
-    Nothing -> GrLang.throwError Nothing "Out of GrLang memory"
-    Just idx -> liftIO $ do
-      writeArray (cells memSpace) idx (Just value)
-      freeVals <- readIORef (numFreeValues memSpace)
-      let freeVals' = freeVals - 1
-      writeIORef (numFreeValues memSpace) freeVals'
-      next <- if freeVals' < 1 then return Nothing else Just <$> findFreeValue (idx+1)
-      writeIORef (nextFreeValue memSpace) next
-      return (fromIntegral idx)
+  idx <- getFreeIndex memSpace
+  liftIO $ do
+    writeArray (cells memSpace) idx (Just value)
+    freeVals <- readIORef (numFreeValues memSpace)
+    let freeVals' = freeVals - 1
+    writeIORef (numFreeValues memSpace) freeVals'
+    writeIORef (nextFreeIndex memSpace) =<<
+      if freeVals' < 1
+        then return Nothing
+        else Just <$> findNextFreeIndex (idx+1)
+    return (fromIntegral idx)
   where
-    findFreeValue idx = do
+    getFreeIndex memSpace = do
+      freeIdx <- liftIO $ readIORef (nextFreeIndex memSpace)
+      case freeIdx of
+        Just idx -> return idx
+        Nothing -> do
+          liftLua $ Lua.gc Lua.GCCOLLECT 0
+          freeIdx <- liftIO $ readIORef (nextFreeIndex memSpace)
+          case freeIdx of
+            Just idx -> return idx
+            Nothing -> GrLang.throwError Nothing "Out of GrLang memory"
+
+    findNextFreeIndex idx = do
       val <- readArray (cells memSpace) idx
       case val of
         Nothing -> return idx
-        Just _ -> findFreeValue (idx+1)
+        Just _ -> findNextFreeIndex (idx+1)
 
 freeMemSpace :: Lua.LuaInteger -> MemSpace a -> ExceptT GrLang.Error LuaGrLang ()
 freeMemSpace idx' memSpace = liftIO $ do
   let idx = fromEnum idx'
   writeArray (cells memSpace) idx Nothing
   modifyIORef (numFreeValues memSpace) (+1)
-  modifyIORef (nextFreeValue memSpace) $ Just . maybe idx (min idx)
+  modifyIORef (nextFreeIndex memSpace) $ Just . maybe idx (min idx)
 
 data GrLangState = GrLangState
   { typeGraph       :: IORef TypeGraph
