@@ -497,7 +497,6 @@ initGrLang globalState = do
           VRule rule <- lookupGrLangValue idRule
           allocateGrLang (VMorph $ rightMorphism rule)
       )
-      -- TODO: implement missing methods for rules
     ]
   where
     setNative className entries = do

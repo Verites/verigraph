@@ -136,6 +136,7 @@ function makeListIterator(listIdx, itemFactory)
     end
   end
 
+
   local listIter = {index = listIdx}
   setmetatable(listIter, HsListIterator)
   return next, listIter
@@ -451,8 +452,7 @@ Instances can be constructed as follows:
     ]]
 ]==],
   methods = {
-    'lhs', 'rhs', 'interface', 'l', 'r',
-    'find_matches'
+    'lhs', 'rhs', 'interface', 'l', 'r'
   }
 } .. subclass_of_GrLang()
 
@@ -485,15 +485,6 @@ Rule.__index.r = docstring "Get the right morphism of the rule"
     local idx = Rule.native.getRightMorphism(rule.index)
     return newMorphism(idx, rule:interface(), rule:rhs())
   end)
-
-Rule.__index.find_matches = docstring[==[
-Find all applicable matches into the given graph.
-]==] .. function(rule, graph)
-  if type(graph) ~= 'table' or getmetatable(graph) ~= Graph then
-    error('Rule.find_matches must be called with a graph.')
-  end
-  return Rule.native.findMatches(rule.index, graph.index)
-end
 
 --[[ Requiring GrLang files ]]
 
