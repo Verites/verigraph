@@ -167,7 +167,7 @@ Instances can be constructed as follows:
 Graph.__index.identity = docstring "Returns the identity morphism"
   .. memoizing('__identity', function(graph)
     local idx = Graph.native.identity(graph.index)
-    return newMorphism(Morphism, idx, graph, graph)
+    return newMorphism(idx, graph, graph)
   end)
 
 Graph.__index.morphisms_to = docstring [==[
@@ -191,7 +191,7 @@ to 'all'.
     error('Invalid kind "' + kind + '" for morphism search.')
   end
   
-  return HsListIterator(listIdx, function(idx) return newMorphism(Morphism, idx, G, H) end)
+  return HsListIterator(listIdx, function(idx) return newMorphism(idx, G, H) end)
 end
 
 Graph.__index.subgraphs = docstring 'Iterate over all subgraphs of the graph.'
@@ -199,7 +199,7 @@ Graph.__index.subgraphs = docstring 'Iterate over all subgraphs of the graph.'
   local listIdx = Graph.native.findAllSubobjectsOf(G.index)
   return HsListIterator(listIdx, function(idxDom, idxMorph)
     local dom = newGrLang(Graph, idxDom)
-    return newMorphism(Morphism, idxMorph, dom, G)
+    return newMorphism(idxMorph, dom, G)
   end)
 end
 
@@ -208,7 +208,7 @@ Graph.__index.quotients = docstring 'Iterate over all quotients of the graph.'
   local listIdx = Graph.native.findAllQuotientsOf(G.index)
   return HsListIterator(listIdx, function(idxCod, idxMorph)
     local cod = newGrLang(Graph, idxCod)
-    return newMorphism(Morphism, idxMorph, G, cod)
+    return newMorphism(idxMorph, G, cod)
   end)
 end
 
@@ -221,7 +221,7 @@ of G into the disjoint union, and g the injection of H.
 .. function(G, H)
   local idxObj, idxInjG, idxInjH = Graph.native.calculateCoproduct(G.index, H.index)
   local disjUnion = newGrLang(Graph, idxObj)
-  return newMorphism(Morphism, idxInjG, G, disjUnion), newMorphism(Morphism, idxInjH, H, disjUnion)
+  return newMorphism(idxInjG, G, disjUnion), newMorphism(idxInjH, H, disjUnion)
 end
 
 Graph.__index.overlappings_with = docstring [==[
@@ -234,7 +234,7 @@ with embeddings of the given kind. The optional kind parameter may be one of 'al
   local idx = Graph.native.findJointSurjections(G.index, kind, H.index, kind)
   return HsListIterator(idx, function(idxCod, idxEmbG, idxEmbH)
     local cod = newGrLang(Graph, idxCod)
-    return newMorphism(Morphism, idxEmbG, G, cod), newMorphism(Morphism, idxEmbH, H, cod)
+    return newMorphism(idxEmbG, G, cod), newMorphism(idxEmbH, H, cod)
   end)
 end
 
@@ -265,12 +265,12 @@ when the domain of `f` is the same as the codomain of `g`.
   function (cls, domain, codomain)
     return function (str)
       local idx = cls.native.parse(domain.index, codomain.index, str)
-      return newMorphism(cls, idx, domain, codomain)
+      return newMorphism(idx, domain, codomain)
     end
   end)
 
-function newMorphism(cls, idx, domain, codomain)
-  local result = newGrLang(cls, idx)
+function newMorphism(idx, domain, codomain)
+  local result = newGrLang(Morphism, idx)
   result.__domain = domain
   result.__codomain = codomain
   return result
@@ -287,7 +287,7 @@ Morphism.__concat = function(m1, m2)
     error("Given morphisms are not composable.")
   else
     local idx = Morphism.native.compose(m1.index, m2.index)
-    return newMorphism(Morphism, idx, m2.__domain, m1.__codomain)
+    return newMorphism(idx, m2.__domain, m1.__codomain)
   end
 end
 
@@ -318,7 +318,7 @@ the call `f:pullback(g)` returns `h, k`.
     end
     local objIdx, ffIdx, ggIdx = Morphism.native.calculatePullback(f.index, g.index)
     local dom = newGrLang(Graph, objIdx)
-    return newMorphism(Morphism, ggIdx, dom, f:dom()), newMorphism(Morphism, ffIdx, dom, g:dom())
+    return newMorphism(ggIdx, dom, f:dom()), newMorphism(ffIdx, dom, g:dom())
   end
 
 Morphism.__index.initial_pushout = docstring [==[
@@ -333,9 +333,9 @@ and ff the remaining morphism of the pushout square.
       Morphism.native.calculateInitialPushout(f.index)
     local B, C = newGrLang(Graph, bObjIdx), newGrLang(Graph, cObjIdx)
     return
-      newMorphism(Morphism, bIdx, B, f:dom()),
-      newMorphism(Morphism, ffIdx, B, C),
-      newMorphism(Morphism, cIdx, C, f:cod())
+      newMorphism(bIdx, B, f:dom()),
+      newMorphism(ffIdx, B, C),
+      newMorphism(cIdx, C, f:cod())
   end
 
 Morphism.subobject_inter = docstring "Given two monomorphisms with same codomain, calculate their intersection."
@@ -348,7 +348,7 @@ Morphism.subobject_inter = docstring "Given two monomorphisms with same codomain
     end
     local objIdx, morphIdx = Morphism.native.subobjectIntersection(a.index, b.index)
     local C = newGrLang(Graph, objIdx)
-    return newMorphism(Morphism, morphIdx, C, a:cod())
+    return newMorphism(morphIdx, C, a:cod())
   end
 
 Morphism.subobject_union = docstring "Given two monomorphisms with same codomain, calculate their union."
@@ -361,7 +361,7 @@ Morphism.subobject_union = docstring "Given two monomorphisms with same codomain
     end
     local objIdx, morphIdx = Morphism.native.subobjectUnion(a.index, b.index)
     local C = newGrLang(Graph, objIdx)
-    return newMorphism(Morphism, morphIdx, C, a:cod())
+    return newMorphism(morphIdx, C, a:cod())
   end
 
 --[[ Rule class ]]
@@ -408,13 +408,13 @@ Rule.__index.interface = docstring "Get the interface graph of the rule"
 Rule.__index.l = docstring "Get the left morphism of the rule"
   .. memoizing('__l', function(rule)
     local idx = Rule.native.getLeftMorphism(rule.index)
-    return newMorphism(Morphism, idx, rule:interface(), rule:lhs())
+    return newMorphism(idx, rule:interface(), rule:lhs())
   end)
 
 Rule.__index.r = docstring "Get the right morphism of the rule"
   .. memoizing('__r', function(rule)
     local idx = Rule.native.getRightMorphism(rule.index)
-    return newMorphism(Morphism, idx, rule:interface(), rule:rhs())
+    return newMorphism(idx, rule:interface(), rule:rhs())
   end)
 
 Rule.__index.find_matches = docstring[==[
