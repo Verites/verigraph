@@ -123,26 +123,22 @@ end
 
 --[[ HsList class ]]
 
-HsListIterator = {__index = {}}
-
-setmetatable(HsListIterator, {
-  __call = function (cls, idx, itemFactory)
-    local instance = {index = idx, __itemFactory = itemFactory}
-    setmetatable(instance, cls)
-    return instance
-  end
-})
+HsListIterator = {}
 
 function HsListIterator.__gc(list)
   HsListIterator.native.deallocate(list.index)
 end
 
-function HsListIterator.__call(list)
-  if HsListIterator.native.hasNextItem(list.index) then
-    return list.__itemFactory(HsListIterator.native.getNextItem(list.index))
-  else
-    return
-  end 
+function makeListIterator(listIdx, itemFactory)
+  local function next(listIter)
+    if HsListIterator.native.hasNextItem(listIter.index) then
+      return itemFactory(HsListIterator.native.getNextItem(listIter.index))
+    end
+  end
+
+  local listIter = {index = listIdx}
+  setmetatable(listIter, HsListIterator)
+  return next, listIter
 end
 
 --[[ Graph class ]]
@@ -179,13 +175,13 @@ may be one of 'all', 'monic', 'epic' or 'iso', defaulting
 to 'all'.
 ]==] .. function(G, H, kind)
   local listIdx = Graph.native.findMorphisms(kind, G.index, H.index)
-  return HsListIterator(listIdx, function(idx) return newMorphism(idx, G, H) end)
+  return makeListIterator(listIdx, function(idx) return newMorphism(idx, G, H) end)
 end
 
 Graph.__index.subgraphs = docstring 'Iterate over all subgraphs of the graph.'
 .. function(G)
   local listIdx = Graph.native.findAllSubobjectsOf(G.index)
-  return HsListIterator(listIdx, function(idxDom, idxMorph)
+  return makeListIterator(listIdx, function(idxDom, idxMorph)
     local dom = newGrLang(Graph, idxDom)
     return newMorphism(idxMorph, dom, G)
   end)
@@ -194,7 +190,7 @@ end
 Graph.__index.quotients = docstring 'Iterate over all quotients of the graph.'
 .. function(G)
   local listIdx = Graph.native.findAllQuotientsOf(G.index)
-  return HsListIterator(listIdx, function(idxCod, idxMorph)
+  return makeListIterator(listIdx, function(idxCod, idxMorph)
     local cod = newGrLang(Graph, idxCod)
     return newMorphism(idxMorph, G, cod)
   end)
@@ -220,7 +216,7 @@ with embeddings of the given kind. The optional kind parameter may be one of 'al
 'epic' or 'iso', defaulting to 'all'. 
 ]==] .. function (G, H, kind)
   local idx = Graph.native.findJointSurjections(G.index, kind, H.index, kind)
-  return HsListIterator(idx, function(idxCod, idxEmbG, idxEmbH)
+  return makeListIterator(idx, function(idxCod, idxEmbG, idxEmbH)
     local cod = newGrLang(Graph, idxCod)
     return newMorphism(idxEmbG, G, cod), newMorphism(idxEmbH, H, cod)
   end)
