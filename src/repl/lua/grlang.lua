@@ -240,7 +240,11 @@ when the domain of `f` is the same as the codomain of `g`.
   methods = {
     'dom', 'cod', '..',
     'is_monic', 'is_epic', 'is_iso',
-    'pullback', 'initial_pushout'
+    'pullback', 'pushout', 
+    'equalize_with', 'coequalize_with',
+    'pushout_complement', 'has_pushout_complement', 
+    'initial_pushout',
+    'commutative_overlappings_with'
   },
   functions = {
     'subobject_inter', 'subobject_union'
@@ -291,7 +295,7 @@ Morphism.__index.is_iso =
   end)
 
 Morphism.__index.pullback = docstring [==[
-Given another morphism, computes their pullback.
+Given another morphism with same codomain, computes their pullback.
 
 Given X -f-> Z <-g- Y with pullback X <-h- W -k-> Y,
 the call `f:pullback(g)` returns `h, k`.
@@ -304,6 +308,70 @@ the call `f:pullback(g)` returns `h, k`.
     local dom = newGrLang(Graph, objIdx)
     return newMorphism(ggIdx, dom, f:dom()), newMorphism(ffIdx, dom, g:dom())
   end
+
+Morphism.__index.pushout = docstring [==[
+Given another morphism with same domain, computes their pushout.
+
+Given X <-f- W -g-> Y with pushout X -h-> Z <-k- Y,
+the call `f:pushout(g)` returns `h, k`.
+]==] .. function (f, g)
+  if f.__domain ~= g.__domain then
+    error('Given morphisms are not a cospan.')
+  end
+  local objIdx, ffIdx, ggIdx = Morphism.native.calculatePushout(f.index, g.index)
+  local cod = newGrLang(Graph, objIdx)
+  return newMorphism(ggIdx, f:cod(), cod), newMorphism(ffIdx, g:cod(), cod)
+end
+
+Morphism.__index.equalize_with = docstring [==[
+Given another parallel morphism, computes their equalizer.
+]==] .. function (f, g)
+  if f.__domain ~= g.__domain or f.__codomain ~= g.__codomain then
+    error('Given morphisms are not parallel.')
+  end
+  local objIdx, morphIdx = Morphism.native.calculateEqualizer(f.index, g.index)
+  local dom = newGrLang(Graph, objIdx)
+  return newMorphism(morphIdx, dom, f:dom())
+end
+
+Morphism.__index.coequalize_with = docstring [==[
+Given another morphism, computes their coequalizer.
+]==] .. function (f, g)
+  if f.__domain ~= g.__domain or f.__codomain ~= g.__codomain then
+    error('Given morphisms are not parallel.')
+  end
+  local objIdx, morphIdx = Morphism.native.calculateCoequalizer(f.index, g.index)
+  local cod = newGrLang(Graph, objIdx)
+  return newMorphism(morphIdx, f:cod(), cod)
+end
+
+Morphism.__index.pushout_complement = docstring [==[
+Given morphisms A -f-> B -g-> C with monic f, if there exists a pushout complement
+A -h-> D -k-> C then the call `f:pushout_complement(g)` returns `h, k`. Otherwise
+it returns nothing.
+]==] .. function(f,g)
+  if not f:has_pushout_complement(g) then
+    return
+  end
+
+  local objIdx, ggIdx, ffIdx = Morphism.native.calculatePushoutComplementAlongM(f.index, g.index)
+  local D = newGrLang(Graph, objIdx)
+  return newMorphism(ggIdx, f:dom(), D), newMorphism(ffIdx, D, g:cod())
+end
+
+Morphism.__index.has_pushout_complement = docstring [==[
+Given morphisms A -f-> B -g-> C with monic f, if there exists a pushout complement
+A -h-> D -k-> C then the call `f:has_pushout_complement(g)` returns true, otherwise
+it returns false.
+]==] .. function (f,g)
+  if not f:is_monic() then
+    error('First given morphism is not a mono, pushout complements only available for monos.')
+  end
+  if f.__codomain ~= g.__domain then
+    error('Given morphisms are not composable as required for pushout complements.')
+  end
+  return Morphism.native.hasPushoutComplementAlongM(f.index, g.index)
+end
 
 Morphism.__index.initial_pushout = docstring [==[
 Calculates the initial pushout of a morphism.
@@ -321,6 +389,23 @@ and ff the remaining morphism of the pushout square.
       newMorphism(ffIdx, B, C),
       newMorphism(cIdx, C, f:cod())
   end
+
+Morphism.__index.commutative_overlappings_with = docstring [==[
+Given morphisms X <-f- W -g-> Y, the call `f:commutative_overlappings_with(g, [kind])` iterates
+over all spans X -h-> Z <-k- Y making a commutative square, such that h and k are of the given
+kind.
+
+The optional kind argument may be one of 'all', 'monic', 'epic' or 'iso'. 
+]==] .. function (f, g, kind)
+  if f.__domain ~= g.__domain then
+    error('The given morphisms do not share a domain.')
+  end
+  local listIdx = Morphism.native.findJointSurjectionSquares(kind, f.index, kind, g.index)
+  return makeListIterator(listIdx, function(idxCod, idxFf, idxGg)
+    local cod = newGrLang(Graph, idxCod)
+    return newMorphism(idxGg, f:cod(), cod), newMorphism(idxFf, g:cod(), cod)
+  end)
+end
 
 Morphism.subobject_inter = docstring "Given two monomorphisms with same codomain, calculate their intersection."
   .. function (a, b)

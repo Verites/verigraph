@@ -391,46 +391,84 @@ initGrLang globalState = do
           VGraph cod <- lookupGrLangValue codIdx
           morphism <- GrLang.compileMorphism Nothing dom cod =<< GrLang.parseMorphism "<repl>" (string :: String)
           allocateGrLang (VMorph morphism)
-      ),
-      ("compose", haskellFn2 globalState $ \idF idG -> do
+      )
+    , ("compose", haskellFn2 globalState $ \idF idG -> do
           VMorph f <- lookupGrLangValue idF
           VMorph g <- lookupGrLangValue idG
           allocateGrLang (VMorph $ f <&> g)
-      ),
-      ("isMonic", haskellFn1 globalState $ \idx -> do
+      )
+    , ("isMonic", haskellFn1 globalState $ \idx -> do
           VMorph f <- lookupGrLangValue idx
           return (isMonic f)
-      ),
-      ("isEpic", haskellFn1 globalState $ \idx -> do
+      )
+    , ("isEpic", haskellFn1 globalState $ \idx -> do
           VMorph f <- lookupGrLangValue idx
           return (isEpic f)
-      ),
-      ("isIsomorphism", haskellFn1 globalState $ \idx -> do
+      )
+    , ("isIsomorphism", haskellFn1 globalState $ \idx -> do
           VMorph f <- lookupGrLangValue idx
           return (isIsomorphism f)
-      ),
-      ("calculatePullback", haskellFn2 globalState $ \idF idG -> do
+      )
+    , ("calculatePullback", haskellFn2 globalState $ \idF idG -> do
           VMorph f <- lookupGrLangValue idF
           VMorph g <- lookupGrLangValue idG
           let (f', g') = calculatePullback f g
           returnVals [VGraph (domain f'), VMorph f', VMorph g']
-      ),
-      ("calculateInitialPushout", haskellFn1 globalState $ \idx -> do
+      )
+    , ("calculatePushout", haskellFn2 globalState $ \idF idG -> do
+          VMorph f <- lookupGrLangValue idF
+          VMorph g <- lookupGrLangValue idG
+          let (f', g') = calculatePushout f g
+          returnVals [VGraph (codomain f'), VMorph f', VMorph g']
+      )
+    , ("calculateEqualizer", haskellFn2 globalState $ \idF idG -> do
+          VMorph f <- lookupGrLangValue idF
+          VMorph g <- lookupGrLangValue idG
+          let e = calculateEqualizer f g
+          returnVals [VGraph (domain e), VMorph e]
+      )
+    , ("calculateCoequalizer", haskellFn2 globalState $ \idF idG -> do
+          VMorph f <- lookupGrLangValue idF
+          VMorph g <- lookupGrLangValue idG
+          let e = calculateCoequalizer f g
+          returnVals [VGraph (codomain e), VMorph e]
+      )
+    , ("hasPushoutComplementAlongM", haskellFn2 globalState $ \idF idG -> do
+          VMorph f <- lookupGrLangValue idF
+          VMorph g <- lookupGrLangValue idG
+          return (hasPushoutComplementAlongM f g)
+      )
+    , ("calculatePushoutComplementAlongM", haskellFn2 globalState $ \idF idG -> do
+          VMorph f <- lookupGrLangValue idF
+          VMorph g <- lookupGrLangValue idG
+          let (g', f') = calculatePushoutComplementAlongM f g
+          returnVals [VGraph (codomain g'), VMorph g', VMorph f']
+      )
+    , ("calculateInitialPushout", haskellFn1 globalState $ \idx -> do
           VMorph f <- lookupGrLangValue idx
           let (b, f', c) = calculateMInitialPushout f
           returnVals [VGraph (domain b), VGraph (domain c), VMorph b, VMorph f', VMorph c]
-      ),
-      ("subobjectIntersection", haskellFn2 globalState $ \idA idB -> do
+      )
+    , ("subobjectIntersection", haskellFn2 globalState $ \idA idB -> do
           VMorph a <- lookupGrLangValue idA
           VMorph b <- lookupGrLangValue idB
           let c = subobjectIntersection a b
           returnVals [VGraph (domain c), VMorph c]
-      ),
-      ("subobjectUnion", haskellFn2 globalState $ \idA idB -> do
+      )
+    , ("subobjectUnion", haskellFn2 globalState $ \idA idB -> do
           VMorph a <- lookupGrLangValue idA
           VMorph b <- lookupGrLangValue idB
           let c = subobjectUnion a b
           returnVals [VGraph (domain c), VMorph c]
+      )
+    , ("findJointSurjectionSquares", haskellFn4 globalState $ \kindStrF idF kindStrG idG -> do
+        VMorph f <- lookupGrLangValue idF
+        VMorph g <- lookupGrLangValue idG
+        clsF <- morphClassFromString kindStrF
+        clsG <- morphClassFromString kindStrG
+        withMemSpace iterLists .
+          allocateMemSpace . map (\(f', g') -> [VGraph (codomain f'), VMorph f', VMorph g']) $
+            findJointSurjectionSquares (clsF, f) (clsG, g)
       )
     ]
 
