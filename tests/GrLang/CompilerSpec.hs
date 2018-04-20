@@ -4,6 +4,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 module GrLang.CompilerSpec where
 
+import           Control.Arrow                  ((&&&))
 import           Control.Monad
 import           Control.Monad.Except           (ExceptT)
 import           Control.Monad.Trans
@@ -37,6 +38,7 @@ import qualified GrLang.Monad                   as GrLang
 import           GrLang.TestUtils
 import           GrLang.Value
 import           Rewriting.DPO.TypedGraph
+import qualified Util.Map                       as Map
 
 loc :: a -> Located a
 loc = A Nothing
@@ -67,10 +69,37 @@ ioCompile path = do
 
 spec :: Spec
 spec = do
-  let vcsTypes = TypeGraph.fromNodesAndEdges
-        [ Node 1 . Just $ Metadata "Revision" Nothing, Node 2 . Just $ Metadata "Deps" Nothing ]
-        [ Edge 1 1 2 . Just $ Metadata "MDeps" Nothing
-        , Edge 2 2 1 . Just $ Metadata "Dep" Nothing ]
+  let vcsTypes = makeTypeGraph ["Revision", "Deps"] [("MDeps", "Revision", "Deps"), ("Dep", "Deps", "Revision")]
+
+  describe "normalizeTypeGraph" $ do
+    let tgraphs =
+          [ vcsTypes
+          , TypeGraph.fromNodesAndEdges
+              [ Node 0 . Just $ Metadata "N" Nothing, Node 1 . Just $ Metadata "N" Nothing ]
+              [ Edge 0 0 1 . Just $ Metadata "E" Nothing, Edge 1 0 1 . Just $ Metadata "E" Nothing ]
+          ]
+    let ensureNotRepeated :: Show a => Map (Maybe Text) [a] -> Expectation
+        ensureNotRepeated namesToIds
+          | Prelude.null repeatedNames = return ()
+          | otherwise = expectationFailure $ "Repeated names: " ++ show repeatedNames
+          where
+            repeatedNames = filter ((>1) . length . snd) namesToIds'
+            namesToIds' = [ (name, ids) | (Just name, ids) <- Map.toList namesToIds ]
+    it "produces output equivalent to input" .
+      forM_ tgraphs $ \tg -> normalizeTypeGraph tg `shouldBe` tg
+    it "produces output without repeated names" .
+      forM_ tgraphs $ \tg -> do
+        let tg' = normalizeTypeGraph tg
+        let nodeIdToName = map (nodeId &&& nodeExactName) (TypeGraph.nodes tg')
+        ensureNotRepeated (Map.inverse nodeIdToName)
+        let edgeIdToName = map (edgeId &&& edgeExactName) (TypeGraph.edges tg')
+        ensureNotRepeated (Map.inverse edgeIdToName)
+    it "doesn't change already normalized values" .
+      forM_ tgraphs $ \tg -> do
+        let tg' = normalizeTypeGraph tg
+        let tg'' = normalizeTypeGraph tg'
+        map nodeExactName (TypeGraph.nodes tg'') `shouldBe` map nodeExactName (TypeGraph.nodes tg')
+        map edgeExactName (TypeGraph.edges tg'') `shouldBe` map edgeExactName (TypeGraph.edges tg')
 
   it "compiles a type graph" $ do
     (compiledTGraph, _) <- compileSuccess "vcs-types.grl"
@@ -85,7 +114,7 @@ spec = do
               , ("Dep", "Deps", "Revision")
               , ("Foo", "Revision", "Revision") ]
         -- TODO: replace explicit test cases with pseudo-random generation
-        let testCases =
+        let testCases = map normalizeGraph
               [ fromNodesAndEdges tgraph
                 [ (Node 0 . Just $ Metadata "r1" Nothing, 1), (Node 1 . Just $ Metadata "r2" Nothing, 1)
                 , (Node 2 . Just $ Metadata "d1" Nothing, 2), (Node 3 . Just $ Metadata "d2" Nothing, 2)
@@ -102,6 +131,11 @@ spec = do
                 , (Node 1 . Just $ Metadata "n2" Nothing, 2) ]
                 [ (Edge 0 0 1 . Just $ Metadata "e1" Nothing, 1)
                 , (Edge 1 1 0 . Just $ Metadata "e2" Nothing, 2) ]
+              , fromNodesAndEdges tgraph
+                [ (Node 0 . Just $ Metadata "n" Nothing, 1)
+                , (Node 1 . Just $ Metadata "n" Nothing, 2) ]
+                [ (Edge 0 0 1 . Just $ Metadata "e" Nothing, 1)
+                , (Edge 1 0 1 . Just $ Metadata "e" Nothing, 1)]
               ]
         graph <- pick (elements testCases)
         testRoundTrip generateGraph compileGraph validate typeGraph tgraph graph

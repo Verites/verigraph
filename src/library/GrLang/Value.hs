@@ -4,8 +4,6 @@ module GrLang.Value
     Value(..)
   , updateTypeGraph
     -- * Graphs
-  , GrRule
-  , GrMorphism
   , GrGraph
   , GrNode
   , GrEdge
@@ -16,14 +14,23 @@ module GrLang.Value
   , edgeName
   , edgeExactName
   , edgeLocation
-    -- ** Types
+    -- * Rules, Morphisms
+  , GrRule
+  , GrMorphism
+    -- * Types
   , TypeGraph
   , NodeType
   , EdgeType
   , nodeTypeName
   , edgeTypeName
   , formatEdgeType
-    -- ** Conversion
+    -- * Metadata normalization
+  , normalizeTypeGraph
+  , normalizeGraph
+  , normalizeMorphism
+  , normalizeRule
+  , normalizeValue
+    -- * Conversion
   , generateTypes
   , generateGraph
   , generateMorphism
@@ -34,6 +41,8 @@ import           Data.Function             (on)
 import qualified Data.List                 as List
 import qualified Data.Map                  as Map
 import           Data.Maybe                (fromMaybe, isJust, mapMaybe)
+import           Data.Monoid               ((<>))
+import           Data.Set                  (Set)
 import qualified Data.Set                  as Set
 import           Data.Text                 (Text)
 import qualified Data.Text                 as Text
@@ -134,6 +143,91 @@ edgeTypeName e src tgt = formatEdgeType (edgeName e) (nodeTypeName src) (nodeTyp
 formatEdgeType :: Text -> Text -> Text -> Text
 formatEdgeType e src tgt = Text.concat [ e, ": ", src, " -> ", tgt ]
 
+-- | Ensure no names are repeated.
+normalizeTypeGraph :: TypeGraph -> TypeGraph
+normalizeTypeGraph tgraph =
+  let
+    (normalizedNodes, nodeNames) =
+      foldr normalizeNode ([], Set.empty) (TypeGraph.nodes tgraph)
+    (normalizedEdges, _) =
+      foldr normalizeEdge ([], nodeNames) (TypeGraph.edges tgraph)
+  in TypeGraph.Graph normalizedNodes normalizedEdges
+  where
+    normalizeNode (Node n info) (nodes, names) =
+      let (info', names') = normalizeInfo info names
+      in ((n, Node n info') : nodes, names')
+
+    normalizeEdge (Edge e src tgt info) (edges, names) =
+      let (info', names') = normalizeInfo info names
+      in ((e, Edge e src tgt info') : edges, names')
+
+    normalizeInfo Nothing names = (Nothing, names)
+    normalizeInfo (Just info) names =
+      let name = findFreeName names <$> mdName info
+      in ( Just $ info { mdName = name }, maybe id Set.insert name names )
+
+-- | Given a set of used names and a name suggestion, return a fresh name.
+--
+-- If the given suggestion is not used, return it.
+-- Otherwise, add some suffix to it such that the resulting name is fresh.
+findFreeName :: Set Text -> Text -> Text
+findFreeName usedNames basename
+  | basename `Set.member` usedNames = trySuffix (1 :: Int)
+  | otherwise = basename
+  where
+    trySuffix idx
+      | newName `Set.member` usedNames = trySuffix (idx+1)
+      | otherwise                      = newName
+      where newName = basename <> Text.pack ('_' : show idx)
+
+-- | Ensure no names are repeated.
+normalizeGraph :: GrGraph -> GrGraph
+normalizeGraph typedGraph =
+  let Graph.GraphMorphism graph tgraph nodeRel edgeRel = toGraphMorphism typedGraph
+      (graph', tgraph') = (normalizeTypeGraph graph, normalizeTypeGraph tgraph)
+  in fromGraphMorphism $ Graph.GraphMorphism graph' tgraph' nodeRel edgeRel
+
+-- | Ensure no names are repeated within each graph.
+normalizeMorphism :: GrMorphism -> GrMorphism
+normalizeMorphism (TypedGraphMorphism typedDom typedCod mapping) =
+  let Graph.GraphMorphism dom tgraph nodeTypDom edgeTypDom = toGraphMorphism typedDom
+      Graph.GraphMorphism cod _ nodeTypCod edgeTypCod = toGraphMorphism typedCod
+      [dom', cod', tgraph'] = map normalizeTypeGraph [dom, cod, tgraph]
+      typedDom' = fromGraphMorphism $ Graph.GraphMorphism dom' tgraph' nodeTypDom edgeTypDom
+      typedCod' = fromGraphMorphism $ Graph.GraphMorphism cod' tgraph' nodeTypCod edgeTypCod
+      Graph.GraphMorphism _ _ nodeRel edgeRel = mapping
+      mapping' = Graph.GraphMorphism dom' cod' nodeRel edgeRel
+  in TypedGraphMorphism typedDom' typedCod' mapping'
+
+-- | Ensure no names are repeated within each graph.
+
+
+-- | Ensure no names are repeated within each graph.
+normalizeRule :: GrRule -> GrRule
+normalizeRule (Production l r nacs) =
+  let TypedGraphMorphism typedInter typedLhs (Graph.GraphMorphism _ _ nodeRelL edgeRelL) = l
+      TypedGraphMorphism _ typedRhs (Graph.GraphMorphism _ _ nodeRelR edgeRelR) = r
+      Graph.GraphMorphism lhs tgraph nodeTypLhs edgeTypLhs = toGraphMorphism typedLhs
+      Graph.GraphMorphism inter _ nodeTypInter edgeTypInter = toGraphMorphism typedInter
+      Graph.GraphMorphism rhs _ nodeTypRhs edgeTypRhs = toGraphMorphism typedRhs
+      [lhs', inter', rhs', tgraph'] = map normalizeTypeGraph [lhs, inter, rhs, tgraph]
+      typedLhs' = fromGraphMorphism $ Graph.GraphMorphism lhs' tgraph' nodeTypLhs edgeTypLhs
+      typedInter' = fromGraphMorphism $ Graph.GraphMorphism inter' tgraph' nodeTypInter edgeTypInter
+      typedRhs' = fromGraphMorphism $ Graph.GraphMorphism rhs' tgraph' nodeTypRhs edgeTypRhs
+      l' = TypedGraphMorphism typedInter' typedLhs' (Graph.GraphMorphism inter' lhs' nodeRelL edgeRelL)
+      r' = TypedGraphMorphism typedInter' typedRhs' (Graph.GraphMorphism inter' rhs' nodeRelR edgeRelR)
+      normalizeNac (TypedGraphMorphism _ typedNac (Graph.GraphMorphism _ _ nodeRel edgeRel)) =
+        let Graph.GraphMorphism nac _ nodeTypNac edgeTypNac = toGraphMorphism typedNac
+            nac' = normalizeTypeGraph nac
+            typedNac' = fromGraphMorphism $ Graph.GraphMorphism nac' tgraph' nodeTypNac edgeTypNac
+        in TypedGraphMorphism typedLhs' typedNac' (Graph.GraphMorphism lhs' nac' nodeRel edgeRel)
+  in Production l' r' (map normalizeNac nacs)
+
+normalizeValue :: Value -> Value
+normalizeValue (VGraph g) = VGraph $ normalizeGraph g
+normalizeValue (VMorph m) = VMorph $ normalizeMorphism m
+normalizeValue (VRule r)  = VRule $ normalizeRule r
+
 minElemsPerDecl, maxElemsPerDecl :: Int
 (minElemsPerDecl, maxElemsPerDecl) = (3, 5)
 
@@ -143,11 +237,12 @@ minElemsPerDecl, maxElemsPerDecl :: Int
 generateTypes :: TypeGraph -> [TopLevelDeclaration]
 generateTypes tgraph = nodeTypes ++ edgeTypes
   where
+    tgraph' = normalizeTypeGraph tgraph
     nodeTypes =
-      [ DeclNodeType (A Nothing $ nodeName n) | n <- TypeGraph.nodes tgraph ]
+      [ DeclNodeType (A Nothing $ nodeName n) | n <- TypeGraph.nodes tgraph' ]
     edgeTypes =
       [ DeclEdgeType (A Nothing $ edgeName e) (A Nothing $ nodeName src) (A Nothing $ nodeName tgt)
-          | ((src, _), e, (tgt, _)) <- TypeGraph.edgesInContext tgraph ]
+          | ((src, _), e, (tgt, _)) <- TypeGraph.edgesInContext tgraph' ]
 
 -- | Generate declarations for the given graph.
 --

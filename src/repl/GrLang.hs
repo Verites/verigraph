@@ -243,7 +243,7 @@ initState maxValues maxLists = GrLangState
   <*> emptyMemSpace maxLists
 
 allocateGrLang :: Value -> ExceptT GrLang.Error LuaGrLang Lua.LuaInteger
-allocateGrLang = withMemSpace values . allocateMemSpace
+allocateGrLang = withMemSpace values . allocateMemSpace . normalizeValue
 
 freeGrLang :: Lua.LuaInteger -> ExceptT GrLang.Error LuaGrLang ()
 freeGrLang = withMemSpace values . freeMemSpace
