@@ -446,6 +446,54 @@ Morphism.subobject_union = docstring "Given two monomorphisms with same codomain
     return newMorphism(morphIdx, C, a:cod())
   end
 
+--[[ Cospan class ]]
+
+Cospan = docstring{[==[
+Class for cospans of GrLang morphisms, that is,
+pairs of morphisms with the same codomain.
+
+Instances can be constructed as follows:
+    Cospan(f,g)
+]==],
+  methods = {
+    'commuters'
+  }
+} .. { __index = {} }
+
+setmetatable(Cospan, {
+  __call = function(cls, f, g)
+    if f.__codomain ~= g.__codomain then
+      error("Given morphisms are not a cospan, that is, have different codomains.")
+    end
+    local cospan = {f, g}
+    setmetatable(cospan, Cospan)
+    return cospan
+  end
+})
+
+Cospan.__index.commuters = docstring [==[
+Called on a cospan X -f-> Z <-g- Y, the call `:commuters([kind])` iterates
+over morphisms X -> Y, of the given kind, that make the resulting triangle commute.
+
+The optional kind argument may be one of 'all', 'monic', 'epic' or 'iso',
+defaulting to 'all'.
+]==] .. function(cospan, kind)
+  local listIdx = Cospan.native.findCospanCommuters(kind, cospan[1].index, cospan[2].index)
+  return makeListIterator(listIdx, function(idx) return newMorphism(idx, cospan[1]:dom(), cospan[2]:cod()) end)
+end
+
+Cospan.__index.is_pushout_of = docstring [==[
+Checks if the cospan X -f-> Z <-g- Y is the pushout of the
+given span X <-h- W -k-> Y.
+]==] .. function(cospan, h, k)
+  if h.__domain ~= k.__domain then
+    error("The given morphisms are not a span.")
+  elseif h.__domain ~= cospan[1].__codomain or k.__domain ~= cospan[2].__codomain then
+    error("The given span and cospan don't share the necessary objects.")
+  end
+  return Cospan.native.isPushout(h.index, k.index, cospan[2].index, cospan[1].index) 
+end
+
 --[[ Rule class ]]
 
 Rule = docstring{[==[

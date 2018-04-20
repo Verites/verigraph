@@ -483,6 +483,16 @@ initGrLang globalState = do
       )
     ]
 
+  setNative "Cospan"
+    [ ("findCospanCommuters", haskellFn3 globalState $ \kindStr idF idG -> do
+        VMorph f <- lookupGrLangValue idF
+        VMorph g <- lookupGrLangValue idG
+        cls <- morphClassFromString kindStr
+        withMemSpace iterLists .
+          allocateMemSpace . map (\h -> [VMorph h]) $ findCospanCommuters cls f g
+      )
+    ]
+
   setNative "Rule"
     [ ("parse", haskellFn1 globalState $ \string -> do
           rule <- GrLang.compileRule =<< GrLang.parseRule "<repl>" (string :: String)
