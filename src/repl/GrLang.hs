@@ -45,6 +45,7 @@ import           Util.Lua
 
 data MemSpace a = MemSpace
   { cells         :: IOArray Int (Maybe a)
+  , maxFreeValues :: Int
   , numFreeValues :: IORef Int
   , nextFreeIndex :: IORef (Maybe Int)
   }
@@ -52,6 +53,7 @@ data MemSpace a = MemSpace
 emptyMemSpace :: Int -> IO (MemSpace a)
 emptyMemSpace capacity = MemSpace
   <$> newArray (0, capacity - 1) Nothing
+  <*> pure capacity
   <*> newIORef capacity
   <*> newIORef (Just 0)
 
@@ -62,6 +64,10 @@ lookupMemSpace idx' memSpace = do
   case result of
     Nothing -> GrLang.throwError Nothing "Value has unallocated index"
     Just val -> return val
+
+isEmptyMemSpace :: MemSpace a -> ExceptT GrLang.Error LuaGrLang Bool
+isEmptyMemSpace memSpace =
+  (maxFreeValues memSpace ==) <$> liftIO (readIORef $ numFreeValues memSpace)
 
 putMemSpace :: Lua.LuaInteger -> a -> MemSpace a -> ExceptT GrLang.Error LuaGrLang ()
 putMemSpace idx' val memSpace = do
@@ -217,6 +223,15 @@ indexKey = "index" :: String
 showEdgeType :: Text -> GrNode -> GrNode -> Text
 showEdgeType e src tgt = formatEdgeType e (nodeName src) (nodeName tgt)
 
+memSpacesAreEmpty :: ExceptT GrLang.Error LuaGrLang Bool
+memSpacesAreEmpty = do
+  areEmpty' <- (&&) <$> withMemSpace values isEmptyMemSpace <*> withMemSpace iterLists isEmptyMemSpace
+  if areEmpty'
+    then return True
+    else do
+      liftLua $ Lua.gc Lua.GCCOLLECT 0
+      (&&) <$> withMemSpace values isEmptyMemSpace <*> withMemSpace iterLists isEmptyMemSpace
+
 lookupGrLangValue :: Lua.LuaInteger -> ExceptT GrLang.Error LuaGrLang Value
 lookupGrLangValue = withMemSpace values . lookupMemSpace
 
@@ -303,6 +318,14 @@ initGrLang globalState = do
       )
     , ("addEdgeType", haskellFn3 globalState $ \name srcName tgtName ->
           GrLang.addEdgeType (A Nothing name) (A Nothing srcName) (A Nothing tgtName)
+      )
+    , ("resetTypes", haskellFn0 globalState $ do
+          areEmpty <- memSpacesAreEmpty
+          unless areEmpty . GrLang.throwError Nothing $
+            "Cannot reset types, some GrLang values still refer to the type graph."
+          put typeGraph TypeGraph.empty
+          put nodeTypes Map.empty
+          put edgeTypes Map.empty
       )
     , ("toString", haskellFn1 globalState $ \idx ->
           show . pretty <$> lookupGrLangValue idx

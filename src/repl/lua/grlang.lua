@@ -12,7 +12,8 @@ All instances of this class are wrappers of Haskell values.
     'add_edge_type',
     'node_types',
     'edge_types',
-    'print_types'
+    'print_types',
+    'reset_types'
   },
   methods = {
     'to_dot',
@@ -59,6 +60,15 @@ GrLang.add_edge_type = docstring[==[
 Given a name and the node types for source and target, register a new edge type.
 ]==] .. function (name, srcName, tgtName)
   return GrLang.native.addEdgeType(name, srcName, tgtName)
+end
+
+GrLang.reset_types = docstring[==[
+Clear the current type graph, as long as no references to GrLang values exists.
+
+If any GrLang value still exists, it would become malformed because it would refer
+to node and edge types that no longer exist. 
+]==] .. function ()
+  GrLang.native.resetTypes()
 end
 
 function GrLang.__tostring(value)

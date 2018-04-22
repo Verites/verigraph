@@ -1,0 +1,14 @@
+Types: 
+node type N
+edge type E: N -> N
+
+false	Cannot reset types, some GrLang values still refer to the type graph.
+Types: 
+
+Types: 
+node type N
+edge type E: N -> N
+
+false	Cannot reset types, some GrLang values still refer to the type graph.
+Types: 
+
