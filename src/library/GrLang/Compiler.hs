@@ -14,7 +14,7 @@ import           Control.Monad.State
 import           Data.Either                    (lefts, rights)
 import           Data.Map                       (Map)
 import qualified Data.Map                       as Map
-import           Data.Maybe                     (catMaybes, fromJust)
+import           Data.Maybe                     (catMaybes)
 import qualified Data.Set                       as Set
 import           Data.Text                      (Text)
 import qualified Data.Text                      as Text
@@ -199,12 +199,12 @@ compileMorphism loc domain codomain decls = do
   unless (Set.null missingNodes && Set.null missingEdges) $ do
     let missingMsg ids kind getName
           | Set.null ids = []
-          | otherwise = [PP.fillSep $ kind : map (pretty . getName) (Set.toList ids)]
+          | otherwise = [PP.fillSep $ kind : map (maybe "<missing name>" pretty . getName) (Set.toList ids)]
     throwError loc . PP.fillSep $
       PP.words "The morphism is not total: missing mappings for" ++
       PP.punctuate "; "
-        ( missingMsg missingNodes "nodes" (nodeName . fromJust . (`TGraph.lookupNode` domain))
-        ++ missingMsg missingEdges "edges" (edgeName . fromJust . (`TGraph.lookupEdge` domain)) )
+        ( missingMsg missingNodes "nodes" (fmap nodeName . (`TGraph.lookupNode` domain))
+        ++ missingMsg missingEdges "edges" (fmap edgeName . (`TGraph.lookupEdge` domain)) )
 
   return $ TGraph.fromGraphsAndLists domain codomain (Map.toList nodeMapping) (Map.toList edgeMapping)
 

@@ -83,7 +83,7 @@ module Data.Graphs (
 
 import           Data.Function             (on)
 import           Data.List
-import           Data.Maybe                (fromJust, fromMaybe)
+import           Data.Maybe                (fromMaybe)
 import           Data.Text.Prettyprint.Doc (Pretty (..), (<+>))
 import qualified Data.Text.Prettyprint.Doc as PP
 
@@ -257,14 +257,15 @@ nodeInContext graph node =
 
 edgeInContext :: Graph n e -> Edge e -> EdgeInContext n e
 edgeInContext graph edge =
-  let
-    nodes =
-      nodeMap graph
-  in
-    ( nodeInContext graph (fromJust $ lookup (sourceId edge) nodes)
-    , edge
-    , nodeInContext graph (fromJust $ lookup (targetId edge) nodes)
-    )
+  ( nodeInContext graph (getNode (sourceId edge))
+  , edge
+  , nodeInContext graph (getNode (targetId edge))
+  )
+  where
+    nodes = nodeMap graph
+    getNode id = case lookup id nodes of
+      Nothing -> error $ "edgeInContext: malformed graph, lookup of edge " ++ show id ++ " failed"
+      Just n  -> n
 
 -- | Get the graph that contains the node of the given context.
 contextGraph :: NodeContext n e -> Graph n e

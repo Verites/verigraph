@@ -1,14 +1,18 @@
 Types: 
-node type N
-edge type E: N -> N
 
-false	Cannot reset types, some GrLang values still refer to the type graph.
 Types: 
 
 Types: 
 node type N
 edge type E: N -> N
 
-false	Cannot reset types, some GrLang values still refer to the type graph.
+false	tests/GrLang/ReplIntegrationSpec/reset-types.lua:17: Cannot reset types, some GrLang values still refer to the type graph.
+Types: 
+
+Types: 
+node type N
+edge type E: N -> N
+
+false	tests/GrLang/ReplIntegrationSpec/reset-types.lua:29: Cannot reset types, some GrLang values still refer to the type graph.
 Types: 
 
