@@ -28,7 +28,8 @@ All instances of this class are wrappers of Haskell values.
     'node_types',
     'edge_types',
     'print_types',
-    'reset_types'
+    'reset_types',
+    'readGGX'
   },
   methods = {
     'to_dot',
@@ -63,6 +64,21 @@ Print the names of all registered node and edge types.
   for i,t in ipairs(GrLang.edge_types()) do
     print('edge type ' .. tostring(t))
   end
+end
+
+GrLang.readGGX = docstring[==[
+Read the given GGX file, returning a table of rules indexed by name, and a sorted list of rule names.
+]==] .. function(filename)
+  hscall(GrLang.native.resetTypes)
+  local ruleIndices = hscall(GrLang.native.readGGX, filename)
+  local rules = {}
+  local names = {}
+  for name, idx in pairs(ruleIndices) do
+    rules[name] = newGrLang(Rule, idx)
+    names[#names+1] = name
+  end
+  table.sort(names)
+  return rules, names
 end
 
 GrLang.add_node_type = docstring[==[

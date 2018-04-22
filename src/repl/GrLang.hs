@@ -4,6 +4,7 @@
 {-# LANGUAGE TypeApplications  #-}
 module GrLang (initialize) where
 
+import           Control.Arrow                  ((***))
 import           Control.Monad
 import           Control.Monad.Except           (ExceptT (..), runExceptT)
 import qualified Control.Monad.Except           as ExceptT
@@ -34,7 +35,8 @@ import           Abstract.Category.Limit
 import           Abstract.Rewriting.DPO
 import           Base.Annotation                (Annotated (..))
 import qualified Data.Graphs                    as TypeGraph
-import           Data.TypedGraph                (EdgeId, Node (..), NodeId)
+import           Data.TypedGraph                (Edge (..), EdgeId, Node (..), NodeId)
+import qualified Data.TypedGraph                as TGraph
 import qualified GrLang.Compiler                as GrLang
 import           GrLang.Monad                   (MonadGrLang)
 import qualified GrLang.Monad                   as GrLang
@@ -42,6 +44,7 @@ import qualified GrLang.Parser                  as GrLang
 import           GrLang.Value
 import qualified Image.Dot.TypedGraph           as Dot
 import           Util.Lua
+import           XML.GGXReader                  as GGX
 
 data MemSpace a = MemSpace
   { cells         :: IOArray Int (Maybe a)
@@ -272,6 +275,9 @@ runGrLang' globalState action = do
     Left errs -> luaError (show $ GrLang.prettyError errs)
     Right val -> Lua.toHaskellFunction (return @Lua val)
 
+morphConf :: MorphismsConfig GrMorphism
+morphConf = MorphismsConfig monic
+
 initialize :: Lua ()
 initialize = do
   globalState <- liftIO (initState 256 64)
@@ -344,6 +350,24 @@ initGrLang globalState = do
       )
     , ("compileFile", haskellFn1 globalState $ \path ->
           GrLang.compileFile path
+      )
+    , ("readGGX", haskellFn1 globalState $ \fileName -> do
+          (grammar, _, _) <- liftIO $ GGX.readGrammar fileName False morphConf
+          let makeValidIdentifier = Text.pack . GrLang.makeIdentifier . takeWhile (/='%')
+          names <- liftIO $ Map.fromList . map (id *** makeValidIdentifier) <$> GGX.readNames fileName
+
+          -- Construct a type graph with proper names and update the current type graph
+          let tgraph = withNamesFromGGX (fmap correctTypeName names) $ TGraph.typeGraph (start grammar)
+                where correctTypeName = Text.takeWhile (/='%')
+          put typeGraph tgraph
+          put nodeTypes $ Map.fromList [(nodeName n, nodeId n) | n <- TypeGraph.nodes tgraph ]
+          put edgeTypes $ Map.fromList [((edgeName e, sourceId e, targetId e), edgeId e) | e <- TypeGraph.edges tgraph ]
+
+          -- Return a table of productions indexed by name
+          prods <- forM (productions grammar) $ \(name, prod) -> do
+            idx <- allocateGrLang . updateTypeGraph tgraph $ VRule prod
+            return (name, idx)
+          return (Map.fromList prods)
       )
     ]
 
@@ -594,3 +618,10 @@ createTable contents = do
   forM_ contents $ \(key, pushVal) -> do
     pushVal
     Lua.setfield tableIdx key
+
+withNamesFromGGX :: Map String Text -> TypeGraph -> TypeGraph
+withNamesFromGGX names graph = TypeGraph.fromNodesAndEdges
+  [ Node n (makeInfo n) | Node n _ <- TypeGraph.nodes graph ]
+  [ Edge e s t (makeInfo e) | Edge e s t _ <- TypeGraph.edges graph ]
+  where makeInfo id = Just $ Metadata (Map.lookup ("I" ++ show id) names) Nothing
+

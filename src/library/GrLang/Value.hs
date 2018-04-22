@@ -74,7 +74,8 @@ instance Pretty Value where
   pretty (VRule rule)   = pretty . DeclRule (A Nothing "") $ generateRule rule
 
 -- | Update values when new node/edge types have been created. Only works if the
--- current type graph of the values is a subgraph of the new type graph.
+-- current type graph of the values is a subgraph of the new type graph, or if only the metadata
+-- has been changed.
 updateTypeGraph :: TypeGraph -> Value -> Value
 updateTypeGraph tgraph (VGraph g) =
   VGraph . updateTypedGraph tgraph $ g
@@ -89,7 +90,7 @@ updateTypedGraph tgraph = fromGraphMorphism . update . toGraphMorphism
 
 updateTypedMorphism :: TypeGraph -> GrMorphism -> GrMorphism
 updateTypedMorphism tgraph (TypedGraphMorphism dom cod morph) =
-  TypedGraphMorphism (updateTypedGraph tgraph dom)  (updateTypedGraph tgraph cod) morph
+  TypedGraphMorphism (updateTypedGraph tgraph dom) (updateTypedGraph tgraph cod) morph
 
 
 data Metadata = Metadata
