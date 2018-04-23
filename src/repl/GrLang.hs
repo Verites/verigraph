@@ -4,6 +4,7 @@
 {-# LANGUAGE TypeApplications  #-}
 module GrLang (initialize) where
 
+import           Control.Applicative
 import           Control.Arrow                  ((***))
 import           Control.Monad
 import           Control.Monad.Except           (ExceptT (..), runExceptT)
@@ -35,8 +36,10 @@ import           Abstract.Category.Limit
 import           Abstract.Rewriting.DPO
 import           Base.Annotation                (Annotated (..))
 import qualified Data.Graphs                    as TypeGraph
+import qualified Data.Graphs.Morphism           as Graph
 import           Data.TypedGraph                (Edge (..), EdgeId, Node (..), NodeId)
 import qualified Data.TypedGraph                as TGraph
+import qualified Data.TypedGraph.Morphism       as TGraph
 import qualified GrLang.Compiler                as GrLang
 import           GrLang.Monad                   (MonadGrLang)
 import qualified GrLang.Monad                   as GrLang
@@ -357,7 +360,7 @@ initGrLang globalState = do
           names <- liftIO $ Map.fromList . map (id *** makeValidIdentifier) <$> GGX.readNames fileName
 
           -- Construct a type graph with proper names and update the current type graph
-          let tgraph = withNamesFromGGX (fmap correctTypeName names) $ TGraph.typeGraph (start grammar)
+          let tgraph = useGgxNamesOnTypeGraph (fmap correctTypeName names) $ TGraph.typeGraph (start grammar)
                 where correctTypeName = Text.takeWhile (/='%')
           put typeGraph tgraph
           put nodeTypes $ Map.fromList [(nodeName n, nodeId n) | n <- TypeGraph.nodes tgraph ]
@@ -365,7 +368,7 @@ initGrLang globalState = do
 
           -- Return a table of productions indexed by name
           prods <- forM (productions grammar) $ \(name, prod) -> do
-            idx <- allocateGrLang . updateTypeGraph tgraph $ VRule prod
+            idx <- allocateGrLang . addNamesFromTypes . useGgxNames names . updateTypeGraph tgraph $ VRule prod
             return (name, idx)
           return (Map.fromList prods)
       )
@@ -619,9 +622,27 @@ createTable contents = do
     pushVal
     Lua.setfield tableIdx key
 
-withNamesFromGGX :: Map String Text -> TypeGraph -> TypeGraph
-withNamesFromGGX names graph = TypeGraph.fromNodesAndEdges
+useGgxNamesOnTypeGraph :: Map String Text -> TypeGraph -> TypeGraph
+useGgxNamesOnTypeGraph names graph = TypeGraph.fromNodesAndEdges
   [ Node n (makeInfo n) | Node n _ <- TypeGraph.nodes graph ]
   [ Edge e s t (makeInfo e) | Edge e s t _ <- TypeGraph.edges graph ]
   where makeInfo id = Just $ Metadata (Map.lookup ("I" ++ show id) names) Nothing
 
+useGgxNames :: Map String Text -> Value -> Value
+useGgxNames names (VGraph g) =
+  VGraph . useGgxNamesOnGraph names $ g
+useGgxNames names (VMorph f) =
+  VMorph . useGgxNamesOnMorphism names $ f
+useGgxNames names (VRule (Production l r ns)) =
+  VRule $ Production (useGgxNamesOnMorphism names l) (useGgxNamesOnMorphism names r) (map (useGgxNamesOnMorphism names) ns)
+
+useGgxNamesOnGraph :: Map String Text -> GrGraph -> GrGraph
+useGgxNamesOnGraph names graph =
+  TGraph.fromNodesAndEdges (TGraph.typeGraph graph)
+    [ (Node n (makeInfo n), nodeId ntype) | (Node n _, ntype, _) <- TGraph.nodesInContext graph ]
+    [ (Edge e s t (makeInfo e), edgeId etype) | (_, Edge e s t _, etype, _) <- TGraph.edgesInContext graph ]
+  where makeInfo elemId = Just $ Metadata (Map.lookup ("I" ++ show elemId) names) Nothing
+
+useGgxNamesOnMorphism :: Map String Text -> GrMorphism -> GrMorphism
+useGgxNamesOnMorphism names (TGraph.TypedGraphMorphism dom cod morph) =
+  TGraph.TypedGraphMorphism (useGgxNamesOnGraph names dom) (useGgxNamesOnGraph names cod) morph
