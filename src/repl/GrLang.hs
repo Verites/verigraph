@@ -4,7 +4,6 @@
 {-# LANGUAGE TypeApplications  #-}
 module GrLang (initialize) where
 
-import           Control.Applicative
 import           Control.Arrow                  ((***))
 import           Control.Monad
 import           Control.Monad.Except           (ExceptT (..), runExceptT)
@@ -36,7 +35,6 @@ import           Abstract.Category.Limit
 import           Abstract.Rewriting.DPO
 import           Base.Annotation                (Annotated (..))
 import qualified Data.Graphs                    as TypeGraph
-import qualified Data.Graphs.Morphism           as Graph
 import           Data.TypedGraph                (Edge (..), EdgeId, Node (..), NodeId)
 import qualified Data.TypedGraph                as TGraph
 import qualified Data.TypedGraph.Morphism       as TGraph
