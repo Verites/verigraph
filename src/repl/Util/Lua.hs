@@ -34,6 +34,13 @@ luaError msg = do
   Lua.push msg
   fromIntegral <$> Lua.lerror
 
+execLuaFile :: FilePath -> Lua ()
+execLuaFile path = do
+  hasRead <- checkStatus =<< Lua.loadfile path
+  when hasRead $ do
+    checkStatus =<< Lua.pcall 0 0 Nothing
+    return ()
+
 execLua :: String -> Lua ()
 execLua code = do
   hasRead <- checkStatus =<< Lua.loadstring code

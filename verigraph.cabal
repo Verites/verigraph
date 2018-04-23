@@ -10,6 +10,7 @@ maintainer:          rma@inf.ufrgs.br
 category:            Data
 build-type:          Simple
 -- extra-source-files:
+data-files:          src/repl/lua/*.lua
 cabal-version:       >=1.22
 
 library
@@ -176,7 +177,9 @@ executable verigraph-repl
                        optparse-applicative>=0.12 && < 0.15,
                        prettyprinter,
                        text
+  autogen-modules:     Paths_verigraph
   other-modules:       GrLang
+                       Paths_verigraph
                        Util.Lua
 
 

@@ -46,6 +46,7 @@ import           GrLang.Value
 import qualified Image.Dot.TypedGraph           as Dot
 import           Util.Lua
 import           XML.GGXReader                  as GGX
+import Paths_verigraph (getDataFileName)
 
 data MemSpace a = MemSpace
   { cells         :: IOArray Int (Maybe a)
@@ -283,11 +284,8 @@ initialize :: Lua ()
 initialize = do
   globalState <- liftIO (initState 256 64)
 
-  execLua
-    " package.path = package.path .. ';./src/repl/lua/?.lua' \
-    \ require 'help' \
-    \ require 'grlang' "
-
+  execLuaFile =<< liftIO (getDataFileName "src/repl/lua/help.lua")
+  execLuaFile =<< liftIO (getDataFileName "src/repl/lua/grlang.lua")
   initGrLang globalState
 
   return ()

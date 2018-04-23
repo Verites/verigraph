@@ -1,4 +1,3 @@
-require 'help'
 local docstring = help.docstring
 
 --[[ Calling haskell function with proper error handling ]]
