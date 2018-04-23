@@ -4,6 +4,7 @@ module Data.Partition
   , discretePartition
   , fromBlocks
   , partitionToSurjection
+  , pickRepresentatives
   , allPartitionsOf
   , allRefinementsOf
   , addToPartition
@@ -46,6 +47,14 @@ partitionToSurjection partition pickRepresentative =
         | equivalenceClass <- Set.toList partition
         , let representative = pickRepresentative equivalenceClass
         , element <- Set.toList equivalenceClass
+    ]
+
+-- | Given a partition, pick a representative for each equivalence class using the given function.
+pickRepresentatives :: Partition a -> (EquivalenceClass a -> b) -> [([a], b)]
+pickRepresentatives partition pickRepresentative =
+    [ (Set.toList equivalenceClass, representative)
+        | equivalenceClass <- Set.toList partition
+        , let representative = pickRepresentative equivalenceClass
     ]
 
 -- | Create all partitions of the given set with a naive algorithm.

@@ -1,0 +1,21 @@
+commuters
+morphism  : dom -> cod {
+  a -> e
+  b -> f
+  c -> h
+}
+morphism  : dom -> cod {
+  a -> e
+  b -> f
+  c -> i
+}
+morphism  : dom -> cod {
+  a -> e
+  b -> g
+  c -> h
+}
+morphism  : dom -> cod {
+  a -> e
+  b -> g
+  c -> i
+}

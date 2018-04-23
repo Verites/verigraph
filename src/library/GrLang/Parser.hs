@@ -1,7 +1,8 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-module GrLang.Parser (parseModule, parseGraph, parseMorphism, parseRule, reservedNames) where
+module GrLang.Parser (parseModule, parseGraph, parseMorphism, parseRule, reservedNames, makeIdentifier) where
 
+import qualified Data.Char                 as Char
 import           Data.Functor              (($>))
 import           Data.Functor.Identity
 import           Data.Text                 (Text)
@@ -159,6 +160,17 @@ filePath = P.stringLiteral lexer
 whiteSpace :: Stream s Identity Char => Parsec s u ()
 whiteSpace = P.whiteSpace lexer
 
+-- | Given any string, replace illegal characters to make it a valid identifier.
+makeIdentifier :: String -> String
+makeIdentifier "" = "_"
+makeIdentifier (c:cs) = prefix c ++ map escapeInvalid (c:cs)
+  where
+    prefix c
+      | Char.isLetter c || c == '_' = ""
+      | otherwise = "_"
+    escapeInvalid c
+      | Char.isAlphaNum c || c == '_' || c == '\'' = c
+      | otherwise = '_'
 
 langDef :: (Stream s Identity Char) => P.GenLanguageDef s u Identity
 langDef =

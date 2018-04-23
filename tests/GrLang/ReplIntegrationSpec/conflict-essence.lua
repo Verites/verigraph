@@ -47,7 +47,6 @@ print_span(disabling_essence(rule1, m1, m2))
 print_span(disabling_essence(rule2, m2, m1))
 print_span(conflict_essence(rule1, rule2, m1, m2))
 
-
 print()
 print('All morphisms')
 for f in rule1:lhs():morphisms_to(G) do
@@ -58,4 +57,33 @@ print()
 print('Monomorphisms')
 for f in rule1:lhs():morphisms_to(G, 'monic') do
   print(f)
+end
+
+print()
+print('Subgraphs')
+for f in rule1:lhs():subgraphs() do
+  print(f:dom(), f)
+end 
+
+print()
+print('Quotients')
+for f in rule1:lhs():quotients() do
+  print(f, f:cod())
+end 
+
+print()
+print('Disjoint Union')
+j1, j2 = rule1:lhs():disjoint_union(rule2:lhs())
+print(j1:cod(), j1, j2)
+
+print()
+print('Overlappings')
+for j1, j2 in rule1:lhs():overlappings_with(rule2:lhs()) do
+  print(j1:cod(), j1, j2)
+end
+
+print()
+print('Monic Overlappings')
+for j1, j2 in rule1:lhs():overlappings_with(rule2:lhs(), 'monic') do
+  print(j1:cod(), j1, j2)
 end

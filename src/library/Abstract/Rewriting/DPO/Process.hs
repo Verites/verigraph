@@ -30,8 +30,8 @@ instance (Eq morph, (Eq (Obj morph))) => Eq (Process morph) where
  Process p c /= Process p' c' = (p,c) /= (p',c')
 
 instance (Show morph, (Show (Obj morph))) => Show (Process morph) where
-  show (Process p c) = "Productions: /n" ++ show p ++
-                       "/nCoreObject: /n" ++ show c
+  show (Process p c) = "Productions: \n" ++ show p ++
+                       "\nCoreObject: \n" ++ show c
 
 data InteractionType = DeleteUse | ProduceForbid | ProduceUse | DeleteForbid deriving (Eq, Show, Ord)
 

@@ -86,9 +86,9 @@ processFromDerivations = calculateProcess [derivationSendMsg, derivationGetData]
 
 -- | Core Graph Result
 
-coreGraphDomain = build [1,2,3,4] [(1,2,1),(4,4,3),(45,2,3),(150,4,2)]
+coreGraphDomain = build [1,2,3,4] [(1,2,1),(2,4,3),(4,2,3),(8,4,2)]
 typedCoreGraph = buildGraphMorphism coreGraphDomain typeGraphRules
-                 [(1,1),(2,3),(3,4),(4,2)] [(1,1),(4,4),(45,5),(150,3)]
+                 [(1,1),(2,3),(3,4),(4,2)] [(1,1),(2,4),(4,5),(8,3)]
 
 
 -- | SendMsg Rule Result
@@ -103,7 +103,7 @@ kTypedSendMsgResult = buildGraphMorphism kSendMsgResult coreGraphDomain
 
 rSendMsgResult = build [31,33,34] [(35,33,34)]
 rTypedSendMsgResult = buildGraphMorphism rSendMsgResult coreGraphDomain
-                      [(31,1),(33,2),(34,3)] [(35,45)]
+                      [(31,1),(33,2),(34,3)] [(35,4)]
 
 kToLMappingSendMsgResult = buildGraphMorphism kSendMsgResult lSendMsgResult
                            [(21,11),(23,13),(24,14)] []
@@ -121,15 +121,15 @@ sendMsgResult = Production leftSendMsgResult rightSendMsgResult []
 
 lGetDataResult = build [42,43,44] [(44,42,44),(45,43,44)]
 lTypedGetDataResult = buildGraphMorphism lGetDataResult coreGraphDomain
-                      [(42,4),(43,2),(44,3)] [(44,4),(45,45)]
+                      [(42,4),(43,2),(44,3)] [(44,2),(45,4)]
 
 kGetDataResult = build [52,53,54] [(55,53,54)]
 kTypedGetDataResult = buildGraphMorphism kGetDataResult coreGraphDomain
-                      [(52,4),(53,2),(54,3)] [(55,45)]
+                      [(52,4),(53,2),(54,3)] [(55,4)]
 
 rGetDataResult = build [62,63,64] [(65,63,64),(63,62,63)]
 rTypedGetDataResult = buildGraphMorphism rGetDataResult coreGraphDomain
-                      [(62,4),(63,2),(64,3)] [(65,45),(63,150)]
+                      [(62,4),(63,2),(64,3)] [(65,4),(63,8)]
 
 kToLMappingGetDataResult = buildGraphMorphism kGetDataResult lGetDataResult
                            [(52,42),(53,43),(54,44)] [(55,45)]

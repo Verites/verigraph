@@ -1,16 +1,40 @@
-module Util.Test where
+{-# LANGUAGE FlexibleContexts #-}
+module Util.Test
+  ( forAllMorphismsBetween
+  , equalLists
+  , (-->)
+  , assertIsomorphic
+  , shouldBeIsomorphicTo
+  , shouldBeIsomorphicToList
+  , TypeGraph
+  , GrGraph
+  , GrMorphism
+  , GrRule
+  , makeTypeGraph
+  , parseGraph
+  , parseMorphism
+  , parseRule
+  ) where
 
+import           Control.DeepSeq
+import qualified Control.Exception              as E
 import           Control.Monad
-import qualified Data.List                          as List
+import           Data.CallStack
+import qualified Data.List                      as List
 import           Test.Hspec
-import           Test.QuickCheck                    as QuickCheck
+import           Test.HUnit.Lang                (FailureReason (..), HUnitFailure (..))
+import           Test.QuickCheck                as QuickCheck
 
-import           Abstract.Category.FinitaryCategory
+import           Abstract.Category
+import           Abstract.Category.FindMorphism
+import           Abstract.Category.Finitary
 import           Base.Isomorphic
+import           GrLang.TestUtils
+import           GrLang.Value
 
 
 forAllMorphismsBetween :: (QuickCheck.Testable prop, FindMorphism a, Show a) =>
-  MorphismType -> Obj a -> Obj a -> (a -> prop) -> Property
+  MorphismClass a -> Obj a -> Obj a -> (a -> prop) -> Property
 forAllMorphismsBetween restriction g1 g2 f =
   let
     morphisms = findMorphisms restriction g1 g2
@@ -35,11 +59,20 @@ True --> a = a
 infixr 0 -->
 
 
+assertIsomorphic :: (HasCallStack, Iso a, Show a) => String -> a -> a -> Expectation
+assertIsomorphic preface expected actual =
+  unless (expected ~= actual) $
+    prefaceMsg `deepseq` expectedMsg `deepseq` actualMsg `deepseq` E.throwIO
+      (HUnitFailure location $ ExpectedButGot prefaceMsg expectedMsg actualMsg)
+    where
+      prefaceMsg
+        | null preface = Nothing
+        | otherwise = Just preface
+      expectedMsg = show expected
+      actualMsg = show actual
+
 shouldBeIsomorphicTo :: (Iso a, Show a) => a -> a -> Expectation
-shouldBeIsomorphicTo expected actual =
-  unless (expected ~= actual)
-    (expectationFailure . List.intercalate "\n" $
-      ["expected: " ++ show expected, " but got: " ++ show actual])
+actual `shouldBeIsomorphicTo` expected = assertIsomorphic "" expected actual
 
 shouldBeIsomorphicToList :: (Iso a, Show a) => [a] -> [a] -> Expectation
 shouldBeIsomorphicToList actual expected =
@@ -63,3 +96,9 @@ shouldBeIsomorphicToList actual expected =
       (_, []) ->
         let (unexpected, unobtained) = findMismatch xs ys
         in (x : unexpected, unobtained)
+
+location :: HasCallStack => Maybe SrcLoc
+location = case reverse callStack of
+  (_, loc) : _ -> Just loc
+  [] -> Nothing
+

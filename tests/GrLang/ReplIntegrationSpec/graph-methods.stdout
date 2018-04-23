@@ -1,0 +1,352 @@
+is_empty	true	false
+identity	morphism  : dom -> cod {
+  a -> a
+  b -> b
+  c -> c
+  ?0 -> ?0
+}
+product	graph  {
+  ?0 ?1 ?2 ?3 ?4 : N
+  ?5 : N
+  ?0 - :E -> ?3
+  ?2 - :E -> ?5
+}	morphism  : dom -> cod {
+  ?4 ?2 ?0 -> a
+  ?5 ?3 ?1 -> b
+  ?1 ?0 -> f
+}	morphism  : dom -> cod {
+  ?1 ?0 -> c
+  ?3 ?2 -> d
+  ?5 ?4 -> e
+  ?0 -> g
+  ?1 -> h
+}
+disjoint_union	graph  {
+  a b c d e : N
+  a - f : E -> b
+  c - g : E -> d
+  d - h : E -> e
+}	morphism  : dom -> cod {
+  a -> a
+  b -> b
+  f -> f
+}	morphism  : dom -> cod {
+  c -> c
+  d -> d
+  e -> e
+  g -> g
+  h -> h
+}
+
+subgraphs
+graph  {
+  
+}	morphism  : dom -> cod {
+  
+}
+graph  {
+  a : N
+}	morphism  : dom -> cod {
+  a -> a
+}
+graph  {
+  b : N
+}	morphism  : dom -> cod {
+  b -> b
+}
+graph  {
+  a b : N
+}	morphism  : dom -> cod {
+  a -> a
+  b -> b
+}
+graph  {
+  a b : N
+  a - f : E -> b
+}	morphism  : dom -> cod {
+  a -> a
+  b -> b
+  f -> f
+}
+
+quotients
+graph  {
+  ?2 ?1 ?0 : N
+  ?0 - :E -> ?1
+  ?1 - :E -> ?2
+}	morphism  : dom -> cod {
+  c -> ?0
+  d -> ?1
+  e -> ?2
+  g -> ?0
+  h -> ?1
+}
+graph  {
+  ?2 ?0 : N
+  ?0 - :E -> ?2
+  ?2 - :E -> ?2
+}	morphism  : dom -> cod {
+  c -> ?0
+  e d -> ?2
+  g -> ?0
+  h -> ?1
+}
+graph  {
+  ?1 ?2 : N
+  ?1 - :E -> ?2
+  ?2 - :E -> ?1
+}	morphism  : dom -> cod {
+  d -> ?1
+  e c -> ?2
+  g -> ?0
+  h -> ?1
+}
+graph  {
+  ?2 ?1 : N
+  ?1 - :E -> ?1
+  ?1 - :E -> ?2
+}	morphism  : dom -> cod {
+  d c -> ?1
+  e -> ?2
+  g -> ?0
+  h -> ?1
+}
+graph  {
+  ?2 : N
+  ?2 - :E, :E -> ?2
+}	morphism  : dom -> cod {
+  e d c -> ?2
+  g -> ?0
+  h -> ?1
+}
+graph  {
+  ?2 : N
+  ?2 - :E -> ?2
+}	morphism  : dom -> cod {
+  e d c -> ?2
+  h g -> ?1
+}
+
+morphisms_to
+morphism  : dom -> cod {
+  a -> c
+  b -> d
+  f -> g
+}
+morphism  : dom -> cod {
+  a -> d
+  b -> e
+  f -> h
+}
+
+overlappings_with(all)
+graph  {
+  ?2 ?1 ?0 : N
+  ?0 - :E -> ?0
+  ?1 - :E -> ?1
+  ?2 - :E -> ?2
+}	morphism  : dom -> cod {
+  a -> ?0
+  ?0 -> ?0
+}	morphism  : dom -> cod {
+  b -> ?1
+  c -> ?2
+  ?1 -> ?1
+  ?0 -> ?2
+}
+graph  {
+  ?2 ?0 : N
+  ?0 - :E -> ?0
+  ?2 - :E, :E -> ?2
+}	morphism  : dom -> cod {
+  a -> ?0
+  ?0 -> ?0
+}	morphism  : dom -> cod {
+  c b -> ?2
+  ?1 -> ?1
+  ?0 -> ?2
+}
+graph  {
+  ?2 ?0 : N
+  ?0 - :E -> ?0
+  ?2 - :E -> ?2
+}	morphism  : dom -> cod {
+  a -> ?0
+  ?0 -> ?0
+}	morphism  : dom -> cod {
+  c b -> ?2
+  ?1 ?0 -> ?2
+}
+graph  {
+  ?1 ?2 : N
+  ?1 - :E -> ?1
+  ?2 - :E, :E -> ?2
+}	morphism  : dom -> cod {
+  a -> ?2
+  ?0 -> ?0
+}	morphism  : dom -> cod {
+  b -> ?1
+  c -> ?2
+  ?1 -> ?1
+  ?0 -> ?2
+}
+graph  {
+  ?1 ?2 : N
+  ?1 - :E -> ?1
+  ?2 - :E -> ?2
+}	morphism  : dom -> cod {
+  a -> ?2
+  ?0 -> ?1
+}	morphism  : dom -> cod {
+  b -> ?1
+  c -> ?2
+  ?1 -> ?1
+  ?0 -> ?2
+}
+graph  {
+  ?2 ?1 : N
+  ?1 - :E, :E -> ?1
+  ?2 - :E -> ?2
+}	morphism  : dom -> cod {
+  a -> ?1
+  ?0 -> ?0
+}	morphism  : dom -> cod {
+  b -> ?1
+  c -> ?2
+  ?1 -> ?1
+  ?0 -> ?2
+}
+graph  {
+  ?2 ?1 : N
+  ?1 - :E -> ?1
+  ?2 - :E -> ?2
+}	morphism  : dom -> cod {
+  a -> ?1
+  ?0 -> ?2
+}	morphism  : dom -> cod {
+  b -> ?1
+  c -> ?2
+  ?1 -> ?1
+  ?0 -> ?2
+}
+graph  {
+  ?2 : N
+  ?2 - :E, :E, :E -> ?2
+}	morphism  : dom -> cod {
+  a -> ?2
+  ?0 -> ?0
+}	morphism  : dom -> cod {
+  c b -> ?2
+  ?1 -> ?1
+  ?0 -> ?2
+}
+graph  {
+  ?2 : N
+  ?2 - :E, :E -> ?2
+}	morphism  : dom -> cod {
+  a -> ?2
+  ?0 -> ?0
+}	morphism  : dom -> cod {
+  c b -> ?2
+  ?1 ?0 -> ?2
+}
+graph  {
+  ?2 : N
+  ?2 - :E, :E -> ?2
+}	morphism  : dom -> cod {
+  a -> ?2
+  ?0 -> ?2
+}	morphism  : dom -> cod {
+  c b -> ?2
+  ?1 -> ?1
+  ?0 -> ?2
+}
+graph  {
+  ?2 : N
+  ?2 - :E, :E -> ?2
+}	morphism  : dom -> cod {
+  a -> ?2
+  ?0 -> ?1
+}	morphism  : dom -> cod {
+  c b -> ?2
+  ?1 -> ?1
+  ?0 -> ?2
+}
+graph  {
+  ?2 : N
+  ?2 - :E -> ?2
+}	morphism  : dom -> cod {
+  a -> ?2
+  ?0 -> ?2
+}	morphism  : dom -> cod {
+  c b -> ?2
+  ?1 ?0 -> ?2
+}
+
+overlappings_with(monic)
+graph  {
+  ?2 ?1 ?0 : N
+  ?0 - :E -> ?0
+  ?1 - :E -> ?1
+  ?2 - :E -> ?2
+}	morphism  : dom -> cod {
+  a -> ?0
+  ?0 -> ?0
+}	morphism  : dom -> cod {
+  b -> ?1
+  c -> ?2
+  ?1 -> ?1
+  ?0 -> ?2
+}
+graph  {
+  ?1 ?2 : N
+  ?1 - :E -> ?1
+  ?2 - :E, :E -> ?2
+}	morphism  : dom -> cod {
+  a -> ?2
+  ?0 -> ?0
+}	morphism  : dom -> cod {
+  b -> ?1
+  c -> ?2
+  ?1 -> ?1
+  ?0 -> ?2
+}
+graph  {
+  ?1 ?2 : N
+  ?1 - :E -> ?1
+  ?2 - :E -> ?2
+}	morphism  : dom -> cod {
+  a -> ?2
+  ?0 -> ?1
+}	morphism  : dom -> cod {
+  b -> ?1
+  c -> ?2
+  ?1 -> ?1
+  ?0 -> ?2
+}
+graph  {
+  ?2 ?1 : N
+  ?1 - :E, :E -> ?1
+  ?2 - :E -> ?2
+}	morphism  : dom -> cod {
+  a -> ?1
+  ?0 -> ?0
+}	morphism  : dom -> cod {
+  b -> ?1
+  c -> ?2
+  ?1 -> ?1
+  ?0 -> ?2
+}
+graph  {
+  ?2 ?1 : N
+  ?1 - :E -> ?1
+  ?2 - :E -> ?2
+}	morphism  : dom -> cod {
+  a -> ?1
+  ?0 -> ?2
+}	morphism  : dom -> cod {
+  b -> ?1
+  c -> ?2
+  ?1 -> ?1
+  ?0 -> ?2
+}

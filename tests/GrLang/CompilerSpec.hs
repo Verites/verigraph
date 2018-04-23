@@ -4,6 +4,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 module GrLang.CompilerSpec where
 
+import           Control.Arrow                  ((&&&))
 import           Control.Monad
 import           Control.Monad.Except           (ExceptT)
 import           Control.Monad.Trans
@@ -37,6 +38,7 @@ import qualified GrLang.Monad                   as GrLang
 import           GrLang.TestUtils
 import           GrLang.Value
 import           Rewriting.DPO.TypedGraph
+import qualified Util.Map                       as Map
 
 loc :: a -> Located a
 loc = A Nothing
@@ -46,6 +48,9 @@ instance IsString a => IsString (Located a) where
 
 instance IsString a => IsString (Maybe a) where
   fromString = Just . fromString
+
+instance IsString Metadata where
+  fromString s = Metadata (fromString s) Nothing
 
 compileSuccess :: FilePath -> IO (TypeGraph, Map Text (Located Value))
 compileSuccess = runSuccess . ioCompile
@@ -67,10 +72,37 @@ ioCompile path = do
 
 spec :: Spec
 spec = do
-  let vcsTypes = TypeGraph.fromNodesAndEdges
-        [ Node 1 . Just $ Metadata "Revision" Nothing, Node 2 . Just $ Metadata "Deps" Nothing ]
-        [ Edge 1 1 2 . Just $ Metadata "MDeps" Nothing
-        , Edge 2 2 1 . Just $ Metadata "Dep" Nothing ]
+  let vcsTypes = makeTypeGraph ["Revision", "Deps"] [("MDeps", "Revision", "Deps"), ("Dep", "Deps", "Revision")]
+
+  describe "normalizeTypeGraph" $ do
+    let tgraphs =
+          [ vcsTypes
+          , TypeGraph.fromNodesAndEdges
+              [ Node 0 "N", Node 1 "N" ]
+              [ Edge 0 0 1 "E", Edge 1 0 1 "E" ]
+          ]
+    let ensureNotRepeated :: Show a => Map (Maybe Text) [a] -> Expectation
+        ensureNotRepeated namesToIds
+          | Prelude.null repeatedNames = return ()
+          | otherwise = expectationFailure $ "Repeated names: " ++ show repeatedNames
+          where
+            repeatedNames = filter ((>1) . length . snd) namesToIds'
+            namesToIds' = [ (name, ids) | (Just name, ids) <- Map.toList namesToIds ]
+    it "produces output equivalent to input" .
+      forM_ tgraphs $ \tg -> normalizeTypeGraph tg `shouldBe` tg
+    it "produces output without repeated names" .
+      forM_ tgraphs $ \tg -> do
+        let tg' = normalizeTypeGraph tg
+        let nodeIdToName = map (nodeId &&& nodeExactName) (TypeGraph.nodes tg')
+        ensureNotRepeated (Map.inverse nodeIdToName)
+        let edgeIdToName = map (edgeId &&& edgeExactName) (TypeGraph.edges tg')
+        ensureNotRepeated (Map.inverse edgeIdToName)
+    it "doesn't change already normalized values" .
+      forM_ tgraphs $ \tg -> do
+        let tg' = normalizeTypeGraph tg
+        let tg'' = normalizeTypeGraph tg'
+        map nodeExactName (TypeGraph.nodes tg'') `shouldBe` map nodeExactName (TypeGraph.nodes tg')
+        map edgeExactName (TypeGraph.edges tg'') `shouldBe` map edgeExactName (TypeGraph.edges tg')
 
   it "compiles a type graph" $ do
     (compiledTGraph, _) <- compileSuccess "vcs-types.grl"
@@ -85,23 +117,28 @@ spec = do
               , ("Dep", "Deps", "Revision")
               , ("Foo", "Revision", "Revision") ]
         -- TODO: replace explicit test cases with pseudo-random generation
-        let testCases =
+        let testCases = map normalizeGraph
               [ fromNodesAndEdges tgraph
-                [ (Node 0 . Just $ Metadata "r1" Nothing, 1), (Node 1 . Just $ Metadata "r2" Nothing, 1)
-                , (Node 2 . Just $ Metadata "d1" Nothing, 2), (Node 3 . Just $ Metadata "d2" Nothing, 2)
-                , (Node 4 . Just $ Metadata "r3" Nothing, 1) ]
+                [ (Node 0 "r1", 1), (Node 1 "r2", 1)
+                , (Node 2 "d1", 2), (Node 3 "d2", 2)
+                , (Node 4 "r3", 1) ]
                 [ (Edge 0 0 2 . Just $ Metadata Nothing Nothing, 1)
                 , (Edge 1 1 3 . Just $ Metadata Nothing Nothing, 1)
-                , (Edge 2 2 1 . Just $ Metadata "d12" Nothing, 2)
+                , (Edge 2 2 1 "d12", 2)
                 , (Edge 3 3 4 . Just $ Metadata Nothing Nothing, 2)
-                , (Edge 4 0 0 . Just $ Metadata "f1" Nothing, 3)
-                , (Edge 5 0 0 . Just $ Metadata "f2" Nothing, 3)
-                , (Edge 6 0 0 . Just $ Metadata "f3" Nothing, 3) ]
+                , (Edge 4 0 0 "f1", 3)
+                , (Edge 5 0 0 "f2", 3)
+                , (Edge 6 0 0 "f3", 3) ]
               , fromNodesAndEdges tgraph
-                [ (Node 0 . Just $ Metadata "n1" Nothing, 1)
-                , (Node 1 . Just $ Metadata "n2" Nothing, 2) ]
-                [ (Edge 0 0 1 . Just $ Metadata "e1" Nothing, 1)
-                , (Edge 1 1 0 . Just $ Metadata "e2" Nothing, 2) ]
+                [ (Node 0 "n1", 1)
+                , (Node 1 "n2", 2) ]
+                [ (Edge 0 0 1 "e1", 1)
+                , (Edge 1 1 0 "e2", 2) ]
+              , fromNodesAndEdges tgraph
+                [ (Node 0 "n", 1)
+                , (Node 1 "n", 2) ]
+                [ (Edge 0 0 1 "e", 1)
+                , (Edge 1 0 1 "e", 1)]
               ]
         graph <- pick (elements testCases)
         testRoundTrip generateGraph compileGraph validate typeGraph tgraph graph
@@ -111,16 +148,16 @@ spec = do
       Map.keys values `shouldBe` ["g"]
       let VGraph g = Ann.drop (values Map.! "g")
       g `shouldBe` fromNodesAndEdges tgraph
-          [ (Node 0 . Just $ Metadata "r1" Nothing, 1), (Node 1 . Just $ Metadata "r2" Nothing, 1)
-          , (Node 2 . Just $ Metadata "d1" Nothing, 2), (Node 3 . Just $ Metadata "d2" Nothing, 2)
-          , (Node 4 . Just $ Metadata "r3" Nothing, 1) ]
+          [ (Node 0 "r1", 1), (Node 1 "r2", 1)
+          , (Node 2 "d1", 2), (Node 3 "d2", 2)
+          , (Node 4 "r3", 1) ]
           [ (Edge 0 0 2 . Just $ Metadata Nothing Nothing, 1)
           , (Edge 1 1 3 . Just $ Metadata Nothing Nothing, 1)
-          , (Edge 2 2 1 . Just $ Metadata "d12" Nothing, 2)
+          , (Edge 2 2 1 "d12", 2)
           , (Edge 3 3 4 . Just $ Metadata Nothing Nothing, 2)
-          , (Edge 4 0 0 . Just $ Metadata "f1" Nothing, 3)
-          , (Edge 5 0 0 . Just $ Metadata "f2" Nothing, 3)
-          , (Edge 6 0 0 . Just $ Metadata "f3" Nothing, 3)
+          , (Edge 4 0 0 "f1", 3)
+          , (Edge 5 0 0 "f2", 3)
+          , (Edge 6 0 0 "f3", 3)
           ]
 
     it "allows declaration of new types after graphs" $ do
@@ -135,30 +172,30 @@ spec = do
       Map.keys values `shouldBe` ["g"]
       let VGraph g = Ann.drop $ values Map.! "g"
       g `shouldBe` fromNodesAndEdges tgraph
-        [ (Node 0 . Just $ Metadata "n1" Nothing, 1)
-        , (Node 1 . Just $ Metadata "n2" Nothing, 1) ]
-        [ (Edge 0 0 1 . Just $ Metadata "e1" Nothing, 1)
-        , (Edge 1 0 1 . Just $ Metadata "e2" Nothing, 1) ]
+        [ (Node 0 "n1", 1)
+        , (Node 1 "n2", 1) ]
+        [ (Edge 0 0 1 "e1", 1)
+        , (Edge 1 0 1 "e2", 1) ]
 
     it "resolves imported modules relative to the current module's parent" $ do
       (tgraph, values) <- compileSuccess "case4/main.grl"
       Map.keys values `shouldBe` ["g"]
       let VGraph g = Ann.drop $ values Map.! "g"
       g `shouldBe` fromNodesAndEdges tgraph
-        [ (Node 0 . Just $ Metadata "n1" Nothing, 1)
-        , (Node 1 . Just $ Metadata "n2" Nothing, 1) ]
-        [ (Edge 0 0 1 . Just $ Metadata "e1" Nothing, 1)
-        , (Edge 1 0 1 . Just $ Metadata "e2" Nothing, 1) ]
+        [ (Node 0 "n1", 1)
+        , (Node 1 "n2", 1) ]
+        [ (Edge 0 0 1 "e1", 1)
+        , (Edge 1 0 1 "e2", 1) ]
 
     it "imports each module only once" $ do
       (tgraph, values) <- compileSuccess "case5/main.grl"
       Map.keys values `shouldBe` ["g"]
       let VGraph g = Ann.drop $ values Map.! "g"
       g `shouldBe` fromNodesAndEdges tgraph
-        [ (Node 0 . Just $ Metadata "n1" Nothing, 1)
-        , (Node 1 . Just $ Metadata "n2" Nothing, 1) ]
-        [ (Edge 0 0 1 . Just $ Metadata "e1" Nothing, 1)
-        , (Edge 1 0 1 . Just $ Metadata "e2" Nothing, 1) ]
+        [ (Node 0 "n1", 1)
+        , (Node 1 "n2", 1) ]
+        [ (Edge 0 0 1 "e1", 1)
+        , (Edge 1 0 1 "e2", 1) ]
 
     it "hides elements that weren't explicitly imported by the current module" $ do
       _ <- compileFailure "case6/main.grl"
@@ -272,12 +309,12 @@ spec = do
       assertValidRule r
       assertEqual "LHS"
         (fromNodesAndEdges tgraph
-          [ (Node 0 . Just $ Metadata "r1" Nothing, 1)
-          , (Node 1 . Just $ Metadata "r2" Nothing, 1)
-          , (Node 2 . Just $ Metadata "d1" Nothing, 2)
-          , (Node 3 . Just $ Metadata "d2" Nothing, 2) ]
-          [ (Edge 0 0 2 . Just $ Metadata "r1" Nothing, 1)
-          , (Edge 1 1 3 . Just $ Metadata "r2" Nothing, 1) ])
+          [ (Node 0 "r1", 1)
+          , (Node 1 "r2", 1)
+          , (Node 2 "d1", 2)
+          , (Node 3 "d2", 2) ]
+          [ (Edge 0 0 2 "r1", 1)
+          , (Edge 1 1 3 "r2", 1) ])
         (leftObject r)
       assertBool "lhs morphism is iso" (isIsomorphism $ leftMorphism r)
       assertBool "rhs morphism is iso" (isIsomorphism $ rightMorphism r)
@@ -290,18 +327,18 @@ spec = do
       assertValidRule r
       assertEqual "LHS"
         (fromNodesAndEdges tgraph
-          [ (Node 0 . Just $ Metadata "r1" Nothing, 1)
-          , (Node 1 . Just $ Metadata "r2" Nothing, 1)
-          , (Node 2 . Just $ Metadata "d1" Nothing, 2)
-          , (Node 3 . Just $ Metadata "d2" Nothing, 2) ]
-          [ (Edge 0 0 2 . Just $ Metadata "r1" Nothing, 1)
-          , (Edge 1 1 3 . Just $ Metadata "r2" Nothing, 1) ])
+          [ (Node 0 "r1", 1)
+          , (Node 1 "r2", 1)
+          , (Node 2 "d1", 2)
+          , (Node 3 "d2", 2) ]
+          [ (Edge 0 0 2 "r1", 1)
+          , (Edge 1 1 3 "r2", 1) ])
         (leftObject r)
       assertEqual "RHS"
         (fromNodesAndEdges tgraph
-          [ (Node 0 . Just $ Metadata "r1" Nothing, 1)
-          , (Node 1 . Just $ Metadata "r2" Nothing, 1)
-          , (Node 3 . Just $ Metadata "d2" Nothing, 2) ]
+          [ (Node 0 "r1", 1)
+          , (Node 1 "r2", 1)
+          , (Node 3 "d2", 2) ]
           [ ])
         (rightObject r)
       assertBool "lhs morphism is mono" (isMonic $ leftMorphism r)
@@ -316,16 +353,16 @@ spec = do
       assertValidRule r
       assertEqual "LHS"
         (fromNodesAndEdges tgraph
-          [ (Node 0 . Just $ Metadata "r1" Nothing, 1)
-          , (Node 1 . Just $ Metadata "d1" Nothing, 2) ]
+          [ (Node 0 "r1", 1)
+          , (Node 1 "d1", 2) ]
           [ (Edge 0 0 1 . Just $ Metadata Nothing Nothing, 1) ])
         (leftObject r)
       assertEqual "RHS"
         (fromNodesAndEdges tgraph
-          [ (Node 0 . Just $ Metadata "r1" Nothing, 1)
-          , (Node 1 . Just $ Metadata "d1" Nothing, 2)
-          , (Node 2 . Just $ Metadata "r2" Nothing, 1)
-          , (Node 3 . Just $ Metadata "d2" Nothing, 2) ]
+          [ (Node 0 "r1", 1)
+          , (Node 1 "d1", 2)
+          , (Node 2 "r2", 1)
+          , (Node 3 "d2", 2) ]
           [ (Edge 0 0 1 . Just $ Metadata Nothing Nothing, 1)
           , (Edge 1 2 3 . Just $ Metadata Nothing Nothing, 1)
           , (Edge 2 3 0 . Just $ Metadata Nothing Nothing, 2) ])
@@ -342,16 +379,16 @@ spec = do
       assertValidRule r
       assertEqual "LHS"
         (fromNodesAndEdges tgraph
-          [ (Node 0 . Just $ Metadata "r1" Nothing, 1)
-          , (Node 1 . Just $ Metadata "d1" Nothing, 2) ]
+          [ (Node 0 "r1", 1)
+          , (Node 1 "d1", 2) ]
           [ (Edge 0 0 1 . Just $ Metadata Nothing Nothing, 1) ])
         (leftObject r)
       assertEqual "RHS"
         (fromNodesAndEdges tgraph
-          [ (Node 0 . Just $ Metadata "r1" Nothing, 1)
-          , (Node 1 . Just $ Metadata "d1" Nothing, 2)
-          , (Node 3 . Just $ Metadata "r2" Nothing, 1)
-          , (Node 2 . Just $ Metadata "d2" Nothing, 2) ]
+          [ (Node 0 "r1", 1)
+          , (Node 1 "d1", 2)
+          , (Node 3 "r2", 1)
+          , (Node 2 "d2", 2) ]
           [ (Edge 0 0 1 . Just $ Metadata Nothing Nothing, 1)
           , (Edge 1 3 2 . Just $ Metadata Nothing Nothing, 1)
           , (Edge 2 2 0 . Just $ Metadata Nothing Nothing, 2) ])
@@ -371,32 +408,32 @@ spec = do
       assertValidRule r
       assertEqual "LHS"
         (fromNodesAndEdges tgraph
-          [ (Node 0 . Just $ Metadata "r1" Nothing, 1)
-          , (Node 1 . Just $ Metadata "r2" Nothing, 1)
-          , (Node 2 . Just $ Metadata "d1" Nothing, 2)
-          , (Node 3 . Just $ Metadata "d2" Nothing, 2) ]
+          [ (Node 0 "r1", 1)
+          , (Node 1 "r2", 1)
+          , (Node 2 "d1", 2)
+          , (Node 3 "d2", 2) ]
           [ (Edge 0 0 2 . Just $ Metadata Nothing Nothing, 1)
           , (Edge 1 1 3 . Just $ Metadata Nothing Nothing, 1) ])
         (leftObject r)
       assertEqual "interface"
         (fromNodesAndEdges tgraph
-          [ (Node 0 . Just $ Metadata "r1" Nothing, 1)
-          , (Node 1 . Just $ Metadata "r2" Nothing, 1)
-          , (Node 2 . Just $ Metadata "d1" Nothing, 2)
-          , (Node 3 . Just $ Metadata "d2" Nothing, 2)
-          , (Node 4 . Just $ Metadata "d1'" Nothing, 2)
-          , (Node 5 . Just $ Metadata "d2'" Nothing, 2)]
+          [ (Node 0 "r1", 1)
+          , (Node 1 "r2", 1)
+          , (Node 2 "d1", 2)
+          , (Node 3 "d2", 2)
+          , (Node 4 "d1'", 2)
+          , (Node 5 "d2'", 2)]
           [ (Edge 0 0 2 . Just $ Metadata Nothing Nothing, 1)
           , (Edge 1 1 3 . Just $ Metadata Nothing Nothing, 1) ])
         (interfaceObject r)
       assertEqual "RHS"
         (fromNodesAndEdges tgraph
-          [ (Node 0 . Just $ Metadata "r1" Nothing, 1)
-          , (Node 1 . Just $ Metadata "r2" Nothing, 1)
-          , (Node 2 . Just $ Metadata "d1" Nothing, 2)
-          , (Node 3 . Just $ Metadata "d2" Nothing, 2)
-          , (Node 6 . Just $ Metadata "d3" Nothing, 2)
-          , (Node 7 . Just $ Metadata "r3" Nothing, 1)]
+          [ (Node 0 "r1", 1)
+          , (Node 1 "r2", 1)
+          , (Node 2 "d1", 2)
+          , (Node 3 "d2", 2)
+          , (Node 6 "d3", 2)
+          , (Node 7 "r3", 1)]
           [ (Edge 0 0 2 . Just $ Metadata Nothing Nothing, 1)
           , (Edge 1 1 3 . Just $ Metadata Nothing Nothing, 1)
           , (Edge 2 7 6 . Just $ Metadata Nothing Nothing, 1)
@@ -420,12 +457,12 @@ spec = do
       assertValidRule r
       assertEqual "LHS"
         (fromNodesAndEdges tgraph
-          [ (Node 0 . Just $ Metadata "r1" Nothing, 1)
-          , (Node 1 . Just $ Metadata "r2" Nothing, 1)
-          , (Node 2 . Just $ Metadata "rRoot" Nothing, 1)
-          , (Node 3 . Just $ Metadata "d1" Nothing, 2)
-          , (Node 4 . Just $ Metadata "d2" Nothing, 2)
-          , (Node 5 . Just $ Metadata "dRoot" Nothing, 2) ]
+          [ (Node 0 "r1", 1)
+          , (Node 1 "r2", 1)
+          , (Node 2 "rRoot", 1)
+          , (Node 3 "d1", 2)
+          , (Node 4 "d2", 2)
+          , (Node 5 "dRoot", 2) ]
           [ (Edge 0 0 3 . Just $ Metadata Nothing Nothing, 1)
           , (Edge 1 1 4 . Just $ Metadata Nothing Nothing, 1)
           , (Edge 2 2 5 . Just $ Metadata Nothing Nothing, 1)
@@ -438,14 +475,14 @@ spec = do
       let [n1, n2] = nacs r
       assertEqual "NAC 1"
         (fromNodesAndEdges tgraph
-          [ (Node 0 . Just $ Metadata "r1" Nothing, 1)
-          , (Node 1 . Just $ Metadata "r2" Nothing, 1)
-          , (Node 2 . Just $ Metadata "rRoot" Nothing, 1)
-          , (Node 3 . Just $ Metadata "d1" Nothing, 2)
-          , (Node 4 . Just $ Metadata "d2" Nothing, 2)
-          , (Node 5 . Just $ Metadata "dRoot" Nothing, 2)
-          , (Node 6 . Just $ Metadata "rRoot'" Nothing, 1)
-          , (Node 7 . Just $ Metadata "dRoot'" Nothing, 2) ]
+          [ (Node 0 "r1", 1)
+          , (Node 1 "r2", 1)
+          , (Node 2 "rRoot", 1)
+          , (Node 3 "d1", 2)
+          , (Node 4 "d2", 2)
+          , (Node 5 "dRoot", 2)
+          , (Node 6 "rRoot'", 1)
+          , (Node 7 "dRoot'", 2) ]
           [ (Edge 0 0 3 . Just $ Metadata Nothing Nothing, 1)
           , (Edge 1 1 4 . Just $ Metadata Nothing Nothing, 1)
           , (Edge 2 2 5 . Just $ Metadata Nothing Nothing, 1)
@@ -458,13 +495,13 @@ spec = do
         (codomain n1)
       assertEqual "NAC 2"
         (fromNodesAndEdges tgraph
-          [ (Node 0 . Just $ Metadata "r1" Nothing, 1)
-          , (Node 1 . Just $ Metadata "r2" Nothing, 1)
-          , (Node 2 . Just $ Metadata "rRoot" Nothing, 1)
-          , (Node 3 . Just $ Metadata "d1" Nothing, 2)
-          , (Node 4 . Just $ Metadata "d2" Nothing, 2)
-          , (Node 5 . Just $ Metadata "dRoot" Nothing, 2)
-          , (Node 6 . Just $ Metadata "d3" Nothing, 2) ]
+          [ (Node 0 "r1", 1)
+          , (Node 1 "r2", 1)
+          , (Node 2 "rRoot", 1)
+          , (Node 3 "d1", 2)
+          , (Node 4 "d2", 2)
+          , (Node 5 "dRoot", 2)
+          , (Node 6 "d3", 2) ]
           [ (Edge 0 0 3 . Just $ Metadata Nothing Nothing, 1)
           , (Edge 1 1 4 . Just $ Metadata Nothing Nothing, 1)
           , (Edge 2 2 5 . Just $ Metadata Nothing Nothing, 1)

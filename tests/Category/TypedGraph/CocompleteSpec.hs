@@ -1,29 +1,73 @@
 -- | Test Suite for GraphProcess Module
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications  #-}
+module Category.TypedGraph.CocompleteSpec where
 
-module Abstract.Category.CocompleteSpec where
+import           Control.Monad
+import           Data.Proxy
+import           Test.Hspec
+import           Test.HUnit
 
 import           Abstract.Category
 import           Abstract.Category.Limit
-import           Category.TypedGraph                   ()
+import           Base.Valid
+import           Category.TypedGraph      ()
 import           Data.Graphs
 import           Data.Graphs.Morphism
-import           Data.List.NonEmpty                    (fromList)
+import           Data.List.NonEmpty       (fromList)
 import           Data.TypedGraph.Morphism
+import           Util.Test
 
-import           Test.Hspec
-
+tg :: TypeGraph
+tg = makeTypeGraph ["N"] [("E", "N", "N")]
 
 spec :: Spec
 spec = do
-  context "Tests of Coequalizer" $
+  context "isInitial" $ do
+    it "is true for initialObject" $
+      let someMorphism = identity @GrMorphism (parseGraph tg "")
+      in isInitial (Proxy @GrMorphism) (initialObject someMorphism) `shouldBe` True
+    it "is true for an empty graph" $
+      isInitial (Proxy @GrMorphism) (parseGraph tg "") `shouldBe` True
+    it "is false for other graphs" $
+      let graphs = map (parseGraph tg) ["n : N", "n1 n2: N", "n: N; n-:E-> n"]
+      in forM_ graphs $ \graph ->
+        isInitial (Proxy @GrMorphism) graph `shouldBe` False
+
+  context "morphismFromInitialTo" $ do
+    let graphs = map (parseGraph tg)
+          ["", "n : N", "n1 n2: N", "n: N; n-:E-> n"]
+    it "is valid" .
+      forM_ graphs $ \graph ->
+        validate (morphismFromInitialTo @GrMorphism graph) `shouldBe` IsValid
+    it "has correct domain" .
+      forM_ graphs $ \graph ->
+        domain (morphismFromInitialTo @GrMorphism graph) `shouldBe` initialObject (identity @GrMorphism graph)
+    it "has correct codomain" .
+      forM_ graphs $ \graph ->
+        codomain (morphismFromInitialTo @GrMorphism graph) `shouldBe` graph
+
+  context "calculateCoproduct" .
+    it "should produce a disjoint union" $ do
+      let g = parseGraph tg "a : N; a-f:E->a"
+      let h = parseGraph tg "b c : N; b-g:E->c"
+      let (j1, j2) = calculateCoproduct @GrMorphism g h
+
+      let gh = parseGraph tg "a b c : N; a-f:E->a; b-g:E->c"
+      assertIsomorphic "codomain j1" gh (codomain j1)
+      assertIsomorphic "j1" (parseMorphism g gh "a->a; f->f") j1
+      assertEqual "codomain j2" (codomain j1) (codomain j2)
+      assertIsomorphic "j2" (parseMorphism h gh "b->b; c->c; g->g") j2
+
+  context "calculateCoequalizer" $
     it "Produces the expected result"
       coequalizerTests
 
-  context "Tests of Pushout" $
+  context "calculatePushout" $
     it "Produces the expected result"
       pushoutTests
 
-  context "Tests of N-Coequalizer" $
+  context "calculateNCoequalizer" $
     it "Produces the expected result"
       nCoequalizerTests
 
@@ -52,7 +96,7 @@ coequalizerTests = do
 pushoutTests :: Expectation
 pushoutTests =
   testCaseThreePUSHOUT
-    `shouldBe`
+    `shouldBeIsomorphicTo`
     pushoutResultThree
 
 nCoequalizerTests :: Expectation

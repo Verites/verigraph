@@ -62,7 +62,7 @@ module Data.TypedGraph (
 
 
 import qualified Data.List            as List
-import           Data.Maybe           (fromJust, fromMaybe, isJust)
+import           Data.Maybe           (fromMaybe, isJust)
 
 import           Base.Cardinality
 import           Data.Graphs          (Edge (..), EdgeId, Graph, Node (..), NodeId)
@@ -103,12 +103,12 @@ instance Cardinality (GraphMorphism n e) where
   cardinality = cardinality . domainGraph
 
 nodeTypeOf :: Node (Maybe n) -> TypedGraph n e -> Node (Maybe n)
-nodeTypeOf node graph = fromJust $ do
+nodeTypeOf node graph = fromMaybe (error "nodeTypeOf: malformed graph") $ do
   typeId <- applyNodeId graph (nodeId node)
   Graph.lookupNode typeId (typeGraph graph)
 
 edgeTypeOf :: Edge (Maybe e) -> TypedGraph n e -> Edge (Maybe e)
-edgeTypeOf edge graph = fromJust $ do
+edgeTypeOf edge graph = fromMaybe (error "edgeTypeOf: malformed graph") $ do
   typeId <- applyEdgeId graph (edgeId edge)
   Graph.lookupEdge typeId (typeGraph graph)
 
@@ -144,14 +144,13 @@ nodeInContext graph node = (node, nodeTypeOf node graph, NodeCtx (nodeId node) g
 
 edgeInContext :: TypedGraph n e -> Edge (Maybe e) -> EdgeInContext n e
 edgeInContext graph edge =
-  ( nodeInContext graph (fromJust $ lookup (sourceId edge) nodes)
+  ( nodeInContext graph (getNode (sourceId edge))
   , edge, edgeTypeOf edge graph
-  , nodeInContext graph (fromJust $ lookup (targetId edge) nodes)
+  , nodeInContext graph (getNode (targetId edge))
   )
   where
+    getNode id = fromMaybe (error "edgeInContext: malformed graph") $ lookup id nodes
     nodes = Graph.nodeMap (toUntypedGraph graph)
-    fromJust Nothing  = error "edgeInContext: malformed graph"
-    fromJust (Just x) = x
 
 -- | Get the edges that are incident on the current node.
 -- /O(e*log(e))/, plus the cost of evaluating the nodes of the result (see 'EdgeInContext').

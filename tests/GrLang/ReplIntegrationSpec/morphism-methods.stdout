@@ -1,0 +1,131 @@
+dom	true
+cod	true
+is_monic,epic,iso	true	false	false
+pullback	graph  {
+  ?0 ?1 ?2 : N
+}	morphism  : dom -> cod {
+  ?0 -> a
+  ?2 ?1 -> b
+}	morphism  : dom -> cod {
+  ?0 -> e
+  ?1 -> f
+  ?2 -> g
+}
+pushout	graph  {
+  a b c g h : N
+  i : N
+}	morphism  : dom -> cod {
+  a -> a
+  b -> b
+  c -> c
+}	morphism  : dom -> cod {
+  e -> a
+  f -> b
+  g -> g
+  h -> h
+  i -> i
+}
+equalize_with	graph  {
+  a b : N
+}	morphism  : dom -> cod {
+  a -> a
+  b -> b
+}
+coequalize_with	graph  {
+  e f g i : N
+}	morphism  : dom -> cod {
+  e -> e
+  f -> f
+  h g -> g
+  i -> i
+}
+has_pushout_complement	true
+pushout_complement	graph  {
+  a b c : N
+}	morphism  : dom -> cod {
+  a -> e
+  b -> f
+  c -> h
+}	morphism  : dom -> cod {
+  e -> e
+  f -> f
+  h -> h
+}
+has_pushout_complement	false
+pushout_complement
+initial_pushout	graph  {
+  ?3 ?4 : N
+}	morphism  : dom -> cod {
+  ?3 -> h
+  ?4 -> i
+}	graph  {
+  h i : N
+}	morphism  : dom -> cod {
+  h -> h
+  i -> i
+}	morphism  : dom -> cod {
+  ?4 ?3 -> h
+}
+
+commutative_overlappings_with(all)
+graph  {
+  ?3 ?1 ?2 : N
+}	morphism  : dom -> cod {
+  b -> ?1
+  a -> ?2
+}	morphism  : dom -> cod {
+  c -> ?2
+  d -> ?3
+}
+graph  {
+  ?3 ?2 : N
+}	morphism  : dom -> cod {
+  a -> ?2
+  b -> ?3
+}	morphism  : dom -> cod {
+  c -> ?2
+  d -> ?3
+}
+graph  {
+  ?1 ?3 : N
+}	morphism  : dom -> cod {
+  b -> ?1
+  a -> ?3
+}	morphism  : dom -> cod {
+  d c -> ?3
+}
+graph  {
+  ?3 ?2 : N
+}	morphism  : dom -> cod {
+  b a -> ?2
+}	morphism  : dom -> cod {
+  c -> ?2
+  d -> ?3
+}
+graph  {
+  ?3 : N
+}	morphism  : dom -> cod {
+  b a -> ?3
+}	morphism  : dom -> cod {
+  d c -> ?3
+}
+
+commutative_overlappings_with(monic)
+graph  {
+  ?3 ?1 ?2 : N
+}	morphism  : dom -> cod {
+  b -> ?1
+  a -> ?2
+}	morphism  : dom -> cod {
+  c -> ?2
+  d -> ?3
+}
+graph  {
+  ?3 ?2 : N
+}	morphism  : dom -> cod {
+  a -> ?2
+  b -> ?3
+}	morphism  : dom -> cod {
+  c -> ?2
+  d -> ?3
+}

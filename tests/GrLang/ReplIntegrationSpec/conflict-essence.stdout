@@ -13,11 +13,11 @@ graph  {
   ?0 -> n1
 }
 graph  {
-  ?0 : ?1
+  ?1 : N
 }	morphism  : dom -> cod {
-  ?0 -> n1
+  ?1 -> n1
 }	morphism  : dom -> cod {
-  ?0 -> n1
+  ?1 -> n1
 }
 graph  {
   ?1 : N
@@ -34,12 +34,12 @@ graph  {
   ?0 -> n2
 }
 graph  {
-  ?0 ?2 : ?1
+  ?1 ?2 : N
 }	morphism  : dom -> cod {
   ?2 -> n1
-  ?0 -> n2
+  ?1 -> n2
 }	morphism  : dom -> cod {
-  ?0 -> n1
+  ?1 -> n1
   ?2 -> n2
 }
 
@@ -67,4 +67,243 @@ morphism  : dom -> cod {
 morphism  : dom -> cod {
   n2 -> n1
   n1 -> n2
+}
+
+Subgraphs
+graph  {
+  
+}	morphism  : dom -> cod {
+  
+}
+graph  {
+  n1 : N
+}	morphism  : dom -> cod {
+  n1 -> n1
+}
+graph  {
+  n2 : N
+}	morphism  : dom -> cod {
+  n2 -> n2
+}
+graph  {
+  n1 n2 : N
+}	morphism  : dom -> cod {
+  n1 -> n1
+  n2 -> n2
+}
+
+Quotients
+morphism  : dom -> cod {
+  n1 -> ?0
+  n2 -> ?1
+}	graph  {
+  ?1 ?0 : N
+}
+morphism  : dom -> cod {
+  n2 n1 -> ?1
+}	graph  {
+  ?1 : N
+}
+
+Disjoint Union
+graph  {
+  n1_1 n2_1 n1 n2 : N
+}	morphism  : dom -> cod {
+  n1 -> n1_1
+  n2 -> n2_1
+}	morphism  : dom -> cod {
+  n1 -> n1
+  n2 -> n2
+}
+
+Overlappings
+graph  {
+  ?3 ?2 ?1 ?0 : N
+}	morphism  : dom -> cod {
+  n1 -> ?0
+  n2 -> ?1
+}	morphism  : dom -> cod {
+  n1 -> ?2
+  n2 -> ?3
+}
+graph  {
+  ?3 ?1 ?0 : N
+}	morphism  : dom -> cod {
+  n1 -> ?0
+  n2 -> ?1
+}	morphism  : dom -> cod {
+  n2 n1 -> ?3
+}
+graph  {
+  ?2 ?3 ?0 : N
+}	morphism  : dom -> cod {
+  n1 -> ?0
+  n2 -> ?3
+}	morphism  : dom -> cod {
+  n1 -> ?2
+  n2 -> ?3
+}
+graph  {
+  ?2 ?1 ?3 : N
+}	morphism  : dom -> cod {
+  n2 -> ?1
+  n1 -> ?3
+}	morphism  : dom -> cod {
+  n1 -> ?2
+  n2 -> ?3
+}
+graph  {
+  ?3 ?2 ?0 : N
+}	morphism  : dom -> cod {
+  n1 -> ?0
+  n2 -> ?2
+}	morphism  : dom -> cod {
+  n1 -> ?2
+  n2 -> ?3
+}
+graph  {
+  ?3 ?0 : N
+}	morphism  : dom -> cod {
+  n1 -> ?0
+  n2 -> ?3
+}	morphism  : dom -> cod {
+  n2 n1 -> ?3
+}
+graph  {
+  ?2 ?3 : N
+}	morphism  : dom -> cod {
+  n2 -> ?2
+  n1 -> ?3
+}	morphism  : dom -> cod {
+  n1 -> ?2
+  n2 -> ?3
+}
+graph  {
+  ?3 ?1 ?2 : N
+}	morphism  : dom -> cod {
+  n2 -> ?1
+  n1 -> ?2
+}	morphism  : dom -> cod {
+  n1 -> ?2
+  n2 -> ?3
+}
+graph  {
+  ?3 ?2 : N
+}	morphism  : dom -> cod {
+  n1 -> ?2
+  n2 -> ?3
+}	morphism  : dom -> cod {
+  n1 -> ?2
+  n2 -> ?3
+}
+graph  {
+  ?1 ?3 : N
+}	morphism  : dom -> cod {
+  n2 -> ?1
+  n1 -> ?3
+}	morphism  : dom -> cod {
+  n2 n1 -> ?3
+}
+graph  {
+  ?3 ?2 ?1 : N
+}	morphism  : dom -> cod {
+  n2 n1 -> ?1
+}	morphism  : dom -> cod {
+  n1 -> ?2
+  n2 -> ?3
+}
+graph  {
+  ?3 ?1 : N
+}	morphism  : dom -> cod {
+  n2 n1 -> ?1
+}	morphism  : dom -> cod {
+  n2 n1 -> ?3
+}
+graph  {
+  ?2 ?3 : N
+}	morphism  : dom -> cod {
+  n2 n1 -> ?3
+}	morphism  : dom -> cod {
+  n1 -> ?2
+  n2 -> ?3
+}
+graph  {
+  ?3 ?2 : N
+}	morphism  : dom -> cod {
+  n2 n1 -> ?2
+}	morphism  : dom -> cod {
+  n1 -> ?2
+  n2 -> ?3
+}
+graph  {
+  ?3 : N
+}	morphism  : dom -> cod {
+  n2 n1 -> ?3
+}	morphism  : dom -> cod {
+  n2 n1 -> ?3
+}
+
+Monic Overlappings
+graph  {
+  ?3 ?2 ?1 ?0 : N
+}	morphism  : dom -> cod {
+  n1 -> ?0
+  n2 -> ?1
+}	morphism  : dom -> cod {
+  n1 -> ?2
+  n2 -> ?3
+}
+graph  {
+  ?2 ?3 ?0 : N
+}	morphism  : dom -> cod {
+  n1 -> ?0
+  n2 -> ?3
+}	morphism  : dom -> cod {
+  n1 -> ?2
+  n2 -> ?3
+}
+graph  {
+  ?2 ?1 ?3 : N
+}	morphism  : dom -> cod {
+  n2 -> ?1
+  n1 -> ?3
+}	morphism  : dom -> cod {
+  n1 -> ?2
+  n2 -> ?3
+}
+graph  {
+  ?3 ?2 ?0 : N
+}	morphism  : dom -> cod {
+  n1 -> ?0
+  n2 -> ?2
+}	morphism  : dom -> cod {
+  n1 -> ?2
+  n2 -> ?3
+}
+graph  {
+  ?2 ?3 : N
+}	morphism  : dom -> cod {
+  n2 -> ?2
+  n1 -> ?3
+}	morphism  : dom -> cod {
+  n1 -> ?2
+  n2 -> ?3
+}
+graph  {
+  ?3 ?1 ?2 : N
+}	morphism  : dom -> cod {
+  n2 -> ?1
+  n1 -> ?2
+}	morphism  : dom -> cod {
+  n1 -> ?2
+  n2 -> ?3
+}
+graph  {
+  ?3 ?2 : N
+}	morphism  : dom -> cod {
+  n1 -> ?2
+  n2 -> ?3
+}	morphism  : dom -> cod {
+  n1 -> ?2
+  n2 -> ?3
 }

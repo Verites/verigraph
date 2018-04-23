@@ -1,0 +1,187 @@
+Types:
+node type down
+node type elevator
+node type floor
+node type request
+node type up
+edge type call: request -> request
+edge type higher_than: floor -> floor
+edge type holds: floor -> request
+edge type next_up: floor -> floor
+edge type on: elevator -> floor
+edge type stop: request -> request
+
+Rules:
+
+add_floor	rule  {
+  match {
+    floor_1 floor : floor
+    floor_1 - next_up : next_up
+        -> floor
+  }
+  delete next_up
+  create {
+    floor : floor
+    floor_2 - next_up_1 : next_up
+        -> floor
+    floor - next_up : next_up
+        -> floor_1
+  }
+}
+call_request	rule  {
+  match floor : floor
+  forbid {
+    request : request
+    floor - holds : holds -> request
+    request - call : call -> request
+  }
+  create {
+    request : request
+    floor - holds : holds -> request
+    request - call : call -> request
+  }
+}
+initial_higher	rule  {
+  match {
+    floor_1 floor : floor
+    floor - next_up : next_up
+        -> floor_1
+  }
+  forbid {
+    floor_1 -
+        higher_than : higher_than
+        -> floor
+  }
+  create floor_1 -
+      higher_than : higher_than
+      -> floor
+}
+move_down	rule  {
+  match {
+    down : down
+    request : request
+    elevator : elevator
+    floor_2 floor_1 floor : floor
+    elevator - on : on -> floor_2
+    floor_2 -
+        higher_than : higher_than
+        -> floor
+    floor_1 - next_up : next_up
+        -> floor_2
+    floor - holds : holds -> request
+  }
+  forbid {
+    request : request
+    floor_2 - holds : holds
+        -> request
+  }
+  delete on
+  create elevator - on : on
+      -> floor_1
+}
+move_up	rule  {
+  match {
+    up : up
+    request : request
+    elevator : elevator
+    floor_2 floor_1 floor : floor
+    elevator - on : on -> floor_2
+    floor_2 - next_up : next_up
+        -> floor_1
+    floor -
+        higher_than : higher_than
+        -> floor_2
+    floor - holds : holds -> request
+  }
+  forbid {
+    request_1 : request
+    floor_2 - holds_1 : holds
+        -> request_1
+    request_1 - stop : stop
+        -> request_1
+  }
+  delete on
+  create {
+    floor : floor
+    elevator - on : on -> floor_2
+  }
+}
+process_stop_up	rule  {
+  match {
+    up : up
+    request : request
+    elevator : elevator
+    floor : floor
+    elevator - on : on -> floor
+    floor - holds : holds -> request
+    request - stop : stop -> request
+  }
+  forbid {
+    request : request
+    floor - holds : holds -> request
+    request - call : call -> request
+  }
+  delete request
+  with matched edges
+}
+set-direction_down	rule  {
+  match {
+    up : up
+    request : request
+    elevator : elevator
+    floor_1 floor : floor
+    elevator - on : on -> floor_1
+    floor_1 -
+        higher_than : higher_than
+        -> floor
+    floor - holds : holds -> request
+  }
+  forbid {
+    request : request
+    floor : floor
+    floor -
+        higher_than : higher_than
+        -> floor_2
+    floor - holds : holds -> request
+  }
+  forbid {
+    request : request
+    floor_1 - holds : holds
+        -> request
+    request - stop : stop -> request
+  }
+  delete up
+  create down : down
+}
+stop_request	rule  {
+  match floor : floor
+  forbid {
+    request : request
+    floor - holds : holds -> request
+    request - stop : stop -> request
+  }
+  create {
+    request : request
+    floor - holds : holds -> request
+    request - stop : stop -> request
+  }
+}
+transitive_higher	rule  {
+  match {
+    floor_2 floor_1 floor : floor
+    floor_2 -
+        higher_than_1 : higher_than
+        -> floor_1
+    floor_1 -
+        higher_than : higher_than
+        -> floor
+  }
+  forbid {
+    floor_2 -
+        higher_than : higher_than
+        -> floor
+  }
+  create floor_2 -
+      higher_than : higher_than
+      -> floor
+}
