@@ -37,9 +37,7 @@ All instances of this class are wrappers of Haskell values.
 } .. {__index = {}}
 
 local function newGrLang(class, idx)
-  local instance = { index = idx }
-  setmetatable(instance, class)
-  return instance
+  return setmetatable({ index = idx }, class)
 end
 
 GrLang.node_types = docstring[==[
@@ -134,20 +132,20 @@ end
 --[[ Creating subclasses ]]
 
 local function subclass_of_GrLang(factory)
-  local class = { __index = {}, __tostring = GrLang.__tostring, __eq = GrLang.__eq, __gc = GrLang.__gc }
-
-  -- Set up the inheritance of GrLang methods
-  setmetatable(class.__index, { __index = GrLang.__index })
+  local class = {
+    -- Set up inheritance of GrLang methods
+    __index = setmetatable({}, { __index = GrLang.__index }),
+    -- Set up special metaclass methods from GrLang
+    __tostring = GrLang.__tostring, __eq = GrLang.__eq, __gc = GrLang.__gc
+  }
 
   -- Set up the class constructor
-  setmetatable(class, {
+  return setmetatable(class, {
     __call = factory or function (cls, str)
       local idx = hscall(cls.native.parse, str)
       return newGrLang(cls, idx)
     end
   })
-
-  return class
 end
 
 -- Creates a method that saves its result to avoid recomputing it.
@@ -177,8 +175,7 @@ function makeListIterator(listIdx, itemFactory)
   end
 
 
-  local listIter = {index = listIdx}
-  setmetatable(listIter, HsListIterator)
+  local listIter = setmetatable({index = listIdx}, HsListIterator)
   return next, listIter
 end
 
@@ -505,9 +502,7 @@ setmetatable(Cospan, {
     if f.__codomain ~= g.__codomain then
       error("Given morphisms are not a cospan, that is, have different codomains.", 2)
     end
-    local cospan = {f, g}
-    setmetatable(cospan, Cospan)
-    return cospan
+    return setmetatable({f, g}, Cospan)
   end
 })
 
@@ -594,8 +589,7 @@ local function loader(modname, path)
 end
 
 -- Memoize the search path using a weak table, so no memory leak
-local search_path = {}
-setmetatable(search_path, {__mode = 'k'})
+local search_path = setmetatable({}, {__mode = 'k'})
 
 local function get_search_path()
   if not search_path[package.path] then
