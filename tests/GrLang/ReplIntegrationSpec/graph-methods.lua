@@ -25,6 +25,19 @@ X = Graph [[ a b c : N ; a-:E->b ]]
 print('is_empty', E:is_empty(), X:is_empty())
 print('identity', X:identity())
 
+print()
+print('nodes:')
+for i, n in ipairs(X:nodes()) do
+  print(n.graph == X, n.id, n.name, n.type)
+end
+
+print()
+print('edges:')
+for i, e in ipairs(X:edges()) do
+  print(e.graph == X, e.id, e.name, e.type, e.source.name, e.target.name)
+end
+print()
+
 X = Graph [[ a b : N; a-f:E-> b]]
 Y = Graph [[ c d e : N; c-g:E-> d; d -h:E-> e]]
 print('product', with_dom(X:product(Y)))

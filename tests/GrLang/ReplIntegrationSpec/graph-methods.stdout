@@ -5,6 +5,15 @@ identity	morphism  : dom -> cod {
   c -> c
   ?0 -> ?0
 }
+
+nodes:
+true	0	a	N
+true	1	b	N
+true	2	c	N
+
+edges:
+true	0	?0	E	a	b
+
 product	graph  {
   ?0 ?1 ?2 ?3 ?4 : N
   ?5 : N

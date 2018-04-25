@@ -179,6 +179,20 @@ function makeListIterator(listIdx, itemFactory)
   return next, listIter
 end
 
+--[[ Node and Edge classes ]]
+
+Node = docstring{[==[
+Represents a node of a particular graph.
+]==],
+  fields = {'graph', 'id', 'name', 'type'}
+}
+
+Edge = docstring{[==[
+Represents an edge of a particular graph.
+]==],
+  fields = {'graph', 'id', 'source', 'target', 'type'}
+}
+
 --[[ Graph class ]]
 
 Graph = docstring{[==[
@@ -192,9 +206,10 @@ Instances can be constructed as follows:
 ]==],
   methods = { 
     'is_empty', 'identity',
+    'nodes', 'edges',
     'disjoint_union', 'product',
     'subgraphs', 'quotients', 
-    'morphisms_to', 'overlappings_with' 
+    'morphisms_to', 'overlappings_with'
   }
 } .. subclass_of_GrLang()
 
@@ -208,6 +223,28 @@ Graph.__index.is_empty = docstring "Checks if the graph is empty."
   .. memoizing('__empty', function(graph)
     return hscall(Graph.native.isInitial, graph.index)
   end)
+
+Graph.__index.nodes = docstring "Obtains the list of nodes of the graph in undefined order."
+  .. function(graph)
+    local nodes = hscall(Graph.native.nodesInContext, graph.index)
+    for i, node in ipairs(nodes) do
+      node.graph = graph
+      setmetatable(node, Node)
+    end
+    return nodes
+  end
+
+Graph.__index.edges = docstring "Obtains the list of edges of the graph in undefined order."
+.. function(graph)
+  local edges = hscall(Graph.native.edgesInContext, graph.index)
+  for i, edge in ipairs(edges) do
+    edge.graph = graph
+    setmetatable(edge, Edge)
+    setmetatable(edge.source, Node)
+    setmetatable(edge.target, Node)
+  end
+  return edges
+end
 
 Graph.__index.disjoint_union = docstring [==[
 The call `G:disjoint_union(H)` returns morphisms `j1, j2`, where j1 is
