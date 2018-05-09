@@ -608,7 +608,7 @@ The optional kind argument may be one of 'all', 'monic', 'epic' or 'iso',
 defaulting to 'all'.
 ]==] .. function(cospan, kind)
   local listIdx = hscall(Cospan.native.findCospanCommuters, kind, cospan[1].index, cospan[2].index)
-  return makeListIterator(listIdx, function(idx) return newMorphism(idx, cospan[1]:dom(), cospan[2]:cod()) end)
+  return makeListIterator(listIdx, function(idx) return newMorphism(idx, cospan[1]:dom(), cospan[2]:dom()) end)
 end
 
 Cospan.__index.is_pushout_of = docstring [==[

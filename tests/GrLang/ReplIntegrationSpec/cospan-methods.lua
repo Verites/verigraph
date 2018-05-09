@@ -14,8 +14,16 @@ print()
 print('to_dot')
 print(c:to_dot())
 
+function assert(val)
+  if not val then
+    error("Assertion failed!", 2)
+  end
+end
+
 print()
 print('commuters')
 for h in Cospan(f,g):commuters() do
   print(h)
+  assert(h:dom() == f:dom())
+  assert(h:cod() == g:dom())
 end
