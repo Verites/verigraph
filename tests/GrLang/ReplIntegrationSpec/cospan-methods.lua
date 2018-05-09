@@ -5,7 +5,16 @@ X = Graph [[ a b c : N ]]
 Y = Graph [[ e f g h i : N ]]
 Z = Graph [[ae bfg chi: N]]
 f, g = Morphism(X,Z)[[a->ae; b->bfg; c->chi]], Morphism(Y,Z)[[e->ae; f g ->bfg; h->chi; i->chi]]
+c = Cospan(f,g)
 
+print('cospan')
+print(c)
+
+print()
+print('to_dot')
+print(c:to_dot())
+
+print()
 print('commuters')
 for h in Cospan(f,g):commuters() do
   print(h)

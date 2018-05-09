@@ -120,12 +120,18 @@ end
 
 GrLang.__index.view = docstring[==[
 Draw the given graph using xdot.
-]==] .. function (graph)
+
+Receives an optional argument defining the layout algorithm,
+which may be 'dot', 'neat', 'twopi', 'circo' or 'fdp' (default is 'dot').
+]==] .. function (graph, filter)
   local file_name = '/tmp/verigraph-dot' .. os.date()
   local file = io.open(file_name, 'w')
   file:write(graph:to_dot(''))
   file:close()
-  os.execute('xdot \"' .. file_name .. '\"')
+  
+  command = 'xdot \"' .. file_name .. '\"'
+    .. ' -f' .. (filter or 'dot')
+  os.execute(command)
 end
 
 
@@ -520,6 +526,43 @@ Morphism.subobject_union = docstring "Given two monomorphisms with same codomain
     return newMorphism(morphIdx, C, a:cod())
   end
 
+--[[ Span class ]]
+
+Span = docstring{[==[
+Class for spans of GrLang morphisms, that is,
+pairs of morphisms with the same domain.
+
+Instances can be constructed as follows:
+    x = Span(f,g)
+
+Then accesing the morphisms can be done by indexing:
+    x[1]  --> f
+    x[2]  --> g
+]==],
+  methods = {
+    'to_dot'
+  }
+} .. subclass_of_GrLang(
+  function (cls, f, g)
+    if f.__domain ~= g.__domain then
+      error("Given morphisms are not a span, that is, have different domains.", 2)
+    end
+    return setmetatable({f, g}, cls)
+  end)
+
+function Span.__tostring(span)
+  return tostring(span[1].__domain) .. 
+    ' ' .. tostring(span[1]) .. ' ' .. tostring(span[1].__codomain) .. 
+    ' ' .. tostring(span[2]) .. ' ' .. tostring(span[2].__codomain)
+end
+
+Span.__index.to_dot = docstring[==[
+Write the value in the dot format for graph drawing.
+Optionally receives a name for the given value.
+]==] .. function (span, name)
+  return hscall(Span.native.toDot, span[1].index, span[2].index, name or '')
+end
+
 --[[ Cospan class ]]
 
 Cospan = docstring{[==[
@@ -527,21 +570,35 @@ Class for cospans of GrLang morphisms, that is,
 pairs of morphisms with the same codomain.
 
 Instances can be constructed as follows:
-    Cospan(f,g)
+    x = Cospan(f,g)
+
+Then accesing the morphisms can be done by indexing:
+    x[1]  --> f
+    x[2]  --> g
 ]==],
   methods = {
     'commuters'
   }
-} .. { __index = {} }
-
-setmetatable(Cospan, {
-  __call = function(cls, f, g)
+} .. subclass_of_GrLang(
+  function (cls, f, g)
     if f.__codomain ~= g.__codomain then
       error("Given morphisms are not a cospan, that is, have different codomains.", 2)
     end
-    return setmetatable({f, g}, Cospan)
-  end
-})
+    return setmetatable({f, g}, cls)
+  end)
+
+function Cospan.__tostring(cospan)
+  return tostring(cospan[1].__domain) .. 
+    ' ' .. tostring(cospan[1]) .. ' ' .. tostring(cospan[1].__codomain) .. 
+    ' ' .. tostring(cospan[2]) .. ' ' .. tostring(cospan[2].__domain)
+end
+
+Cospan.__index.to_dot = docstring[==[
+Write the value in the dot format for graph drawing.
+Optionally receives a name for the given value.
+]==] .. function (cospan, name)
+  return hscall(Cospan.native.toDot, cospan[1].index, cospan[2].index, name or '')
+end
 
 Cospan.__index.commuters = docstring [==[
 Called on a cospan X -f-> Z <-g- Y, the call `:commuters([kind])` iterates

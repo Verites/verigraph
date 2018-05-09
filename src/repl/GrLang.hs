@@ -309,6 +309,7 @@ initGrLang globalState = do
   initHsListIterator globalState
   initGraph globalState
   initMorphism globalState
+  initSpan globalState
   initCospan globalState
   initRule globalState
   setNative "GrLang"
@@ -350,8 +351,12 @@ initGrLang globalState = do
           freeGrLang idx
       )
     , ("toDot", haskellFn2 globalState $ \idx name -> do
-          VGraph graph <- lookupGrLangValue idx
-          return . show $ Dot.typedGraph grLangNamingContext (pretty $ Text.decodeUtf8 name) graph
+          val <- lookupGrLangValue idx
+          let name' = pretty (Text.decodeUtf8 name)
+          return . show $ case val of
+            VGraph graph -> Dot.typedGraph grLangNamingContext name' graph
+            VMorph morph -> Dot.typedGraphMorphism grLangNamingContext name' morph
+            VRule rule -> Dot.graphRule grLangNamingContext name' rule
       )
     , ("compileFile", haskellFn1 globalState $ \path ->
           GrLang.compileFile path
@@ -565,6 +570,16 @@ initMorphism globalState =
       )
     ]
 
+initSpan :: GrLangState -> Lua ()
+initSpan globalState =
+  setNative "Span"
+    [ ("toDot", haskellFn3 globalState $ \idF idG name -> do
+        VMorph f <- lookupGrLangValue idF
+        VMorph g <- lookupGrLangValue idG
+        return . show $ Dot.typedGraphSpan grLangNamingContext (pretty $ Text.decodeUtf8 name) f g
+      )
+    ]
+
 initCospan :: GrLangState -> Lua ()
 initCospan globalState =
   setNative "Cospan"
@@ -574,6 +589,11 @@ initCospan globalState =
         cls <- morphClassFromString kindStr
         withMemSpace iterLists .
           allocateMemSpace . map (\h -> [VMorph h]) $ findCospanCommuters cls f g
+      )
+    , ("toDot", haskellFn3 globalState $ \idF idG name -> do
+        VMorph f <- lookupGrLangValue idF
+        VMorph g <- lookupGrLangValue idG
+        return . show $ Dot.typedGraphCospan grLangNamingContext (pretty $ Text.decodeUtf8 name) f g
       )
     ]
 

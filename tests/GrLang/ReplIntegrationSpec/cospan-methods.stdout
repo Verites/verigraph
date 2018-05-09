@@ -1,3 +1,53 @@
+cospan
+graph  {
+  a b c : N
+} morphism  : dom -> cod {
+  a -> ae
+  b -> bfg
+  c -> chi
+} graph  {
+  ae bfg chi : N
+} morphism  : dom -> cod {
+  e -> ae
+  g f -> bfg
+  i h -> chi
+} graph  {
+  e f g h i : N
+}
+
+to_dot
+digraph  {
+  subgraph cluster_DomL_ {
+    graph [label=DomL_];
+    node [shape=box];
+    DomL_0 [label="a:N"];
+    DomL_1 [label="b:N"];
+    DomL_2 [label="c:N"]
+  };
+  subgraph cluster_DodR_ {
+    graph [label=DodR_];
+    node [shape=box];
+    DodR_0 [label="a:N"];
+    DodR_1 [label="b:N"];
+    DodR_2 [label="c:N"]
+  };
+  subgraph cluster_Cod_ {
+    graph [label=Cod_];
+    node [shape=box];
+    Cod_0 [label="ae:N"];
+    Cod_1 [label="bfg:N"];
+    Cod_2 [label="chi:N"]
+  };
+  DomL_0 -> Cod_0 [style=dotted];
+  DomL_1 -> Cod_1 [style=dotted];
+  DomL_2 -> Cod_2 [style=dotted];
+  DodR_0 -> Cod_0 [style=dotted];
+  DodR_1 -> Cod_1 [style=dotted];
+  DodR_2 -> Cod_1 [style=dotted];
+  DodR_3 -> Cod_2 [style=dotted];
+  DodR_4 -> Cod_2 [style=dotted]
+}
+
 commuters
 morphism  : dom -> cod {
   a -> e
