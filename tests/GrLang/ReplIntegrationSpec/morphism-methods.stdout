@@ -1,6 +1,29 @@
 dom	true
 cod	true
 is_monic,epic,iso	true	false	false
+dot
+digraph  {
+  subgraph cluster_dom {
+    graph [label=dom];
+    node [shape=box];
+    dom0 [label="a:N"];
+    dom1 [label="b:N"];
+    dom2 [label="c:N"]
+  };
+  subgraph cluster_cod {
+    graph [label=cod];
+    node [shape=box];
+    cod0 [label="e:N"];
+    cod1 [label="f:N"];
+    cod2 [label="g:N"];
+    cod3 [label="h:N"];
+    cod4 [label="i:N"]
+  };
+  dom0 -> cod0 [style=dotted];
+  dom1 -> cod1 [style=dotted];
+  dom2 -> cod2 [style=dotted]
+}
+
 pullback	graph  {
   ?0 ?1 ?2 : N
 }	morphism  : dom -> cod {

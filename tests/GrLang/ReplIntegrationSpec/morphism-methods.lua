@@ -27,6 +27,10 @@ print('dom', f:dom() == X)
 print('cod', f:cod() == Y)
 print('is_monic,epic,iso', f:is_monic(), f:is_epic(), f:is_iso())
 
+print('dot')
+print(f:to_dot())
+print()
+
 Z = Graph [[ae bfg c h i: N]]
 f, g = Morphism(X,Z)[[a->ae; b->bfg; c->c]], Morphism(Y,Z)[[e->ae; f g ->bfg; h->h; i->i]]
 print('pullback', with_dom(f:pullback(g)))

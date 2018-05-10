@@ -12,6 +12,7 @@ import           Control.Monad.Reader
 import           Control.Monad.Trans            (lift)
 import           Data.Array.IO
 import qualified Data.ByteString                as BS
+import           Data.Foldable                  (toList)
 import           Data.IORef
 import           Data.Map                       (Map)
 import qualified Data.Map                       as Map
@@ -44,9 +45,9 @@ import qualified GrLang.Monad                   as GrLang
 import qualified GrLang.Parser                  as GrLang
 import           GrLang.Value
 import qualified Image.Dot.TypedGraph           as Dot
+import           Paths_verigraph                (getDataFileName)
 import           Util.Lua
 import           XML.GGXReader                  as GGX
-import Paths_verigraph (getDataFileName)
 
 data MemSpace a = MemSpace
   { cells         :: IOArray Int (Maybe a)
@@ -69,6 +70,12 @@ lookupMemSpace idx' memSpace = do
   case result of
     Nothing -> GrLang.throwError Nothing "Value has unallocated index"
     Just val -> return val
+
+memSpaceStats :: MonadIO m => MemSpace a -> m String
+memSpaceStats memSpace = do
+  let total = maxFreeValues memSpace
+  free <- liftIO $ readIORef (numFreeValues memSpace)
+  return $ show (total - free) ++ '/' : show total
 
 isEmptyMemSpace :: MemSpace a -> ExceptT GrLang.Error LuaGrLang Bool
 isEmptyMemSpace memSpace =
@@ -212,7 +219,7 @@ instance MonadGrLang (ReaderT GrLangState Lua) where
   putValue (A _ name) val = do
     memIdx <- allocateGrLang val
     liftLua $ do
-      createTable [(indexKey, Lua.pushinteger memIdx)]
+      pushTable [(indexKey, Lua.pushinteger memIdx)]
       tblIdx <- Lua.gettop
       Lua.getglobal (metatableFor val)
       Lua.setmetatable tblIdx
@@ -282,7 +289,7 @@ morphConf = MorphismsConfig monic
 
 initialize :: Lua ()
 initialize = do
-  globalState <- liftIO (initState 256 64)
+  globalState <- liftIO (initState 1024 256)
 
   execLuaFile =<< liftIO (getDataFileName "src/repl/lua/help.lua")
   execLuaFile =<< liftIO (getDataFileName "src/repl/lua/grlang.lua")
@@ -305,8 +312,20 @@ grLangNamingContext = Dot.Ctx
 
 initGrLang :: GrLangState -> Lua ()
 initGrLang globalState = do
+  initHsListIterator globalState
+  initGraph globalState
+  initMorphism globalState
+  initSpan globalState
+  initCospan globalState
+  initRule globalState
   setNative "GrLang"
-    [ ("getNodeTypes", haskellFn0 globalState $ do
+    [ ("memstats", haskellFn0 globalState $ do
+        liftIO $ putStr "Used GrLang slots: "
+        liftIO . putStrLn =<< withMemSpace values memSpaceStats
+        liftIO $ putStr "Used iterator slots: "
+        liftIO . putStrLn =<< withMemSpace iterLists memSpaceStats
+      )
+    , ("getNodeTypes", haskellFn0 globalState $ do
           types <- get nodeTypes
           return . map Text.unpack $ Map.keys types
       )
@@ -344,8 +363,12 @@ initGrLang globalState = do
           freeGrLang idx
       )
     , ("toDot", haskellFn2 globalState $ \idx name -> do
-          VGraph graph <- lookupGrLangValue idx
-          return . show $ Dot.typedGraph grLangNamingContext (pretty $ Text.decodeUtf8 name) graph
+          val <- lookupGrLangValue idx
+          let name' = pretty (Text.decodeUtf8 name)
+          return . show $ case val of
+            VGraph graph -> Dot.typedGraph grLangNamingContext name' graph
+            VMorph morph -> Dot.typedGraphMorphism grLangNamingContext name' morph
+            VRule rule -> Dot.graphRule grLangNamingContext name' rule
       )
     , ("compileFile", haskellFn1 globalState $ \path ->
           GrLang.compileFile path
@@ -370,6 +393,8 @@ initGrLang globalState = do
       )
     ]
 
+initHsListIterator :: GrLangState -> Lua ()
+initHsListIterator globalState =
   setNative "HsListIterator"
     [ ("deallocate", haskellFn1 globalState $ \idx ->
           withMemSpace iterLists $ freeMemSpace idx
@@ -387,6 +412,8 @@ initGrLang globalState = do
       )
     ]
 
+initGraph :: GrLangState -> Lua ()
+initGraph globalState =
   setNative "Graph"
     [ ("parse", haskellFn1 globalState $ \string -> do
           graph <- GrLang.compileGraph =<< GrLang.parseGraph "<repl>" (string :: String)
@@ -395,6 +422,16 @@ initGrLang globalState = do
     , ("identity", haskellFn1 globalState $ \idx -> do
           VGraph graph <- lookupGrLangValue idx
           allocateGrLang (VMorph $ identity graph)
+      )
+    , ("nodesInContext", haskellFn1 globalState $ \idx -> do
+          VGraph graph <- lookupGrLangValue idx
+          liftLua . pushList $ map pushNode (TGraph.nodesInContext graph)
+          return (1 :: Lua.NumResults)
+      )
+    , ("edgesInContext", haskellFn1 globalState $ \idx -> do
+          VGraph graph <- lookupGrLangValue idx
+          liftLua . pushList $ map pushEdge (TGraph.edgesInContext graph)
+          return (1 :: Lua.NumResults)
       )
     , ("isInitial", haskellFn1 globalState $ \idx -> do
           VGraph graph <- lookupGrLangValue idx
@@ -441,7 +478,23 @@ initGrLang globalState = do
               findJointSurjections (clsG, g) (clsH, h)
       )
     ]
+  where
+    pushNode (node, ntype, _) = pushTable
+      [ ("id", Lua.pushinteger . fromIntegral . fromEnum $ nodeId node)
+      , ("name", Lua.pushstring . Text.encodeUtf8 $ nodeName node)
+      , ("type", Lua.pushstring . Text.encodeUtf8 $ nodeName ntype)
+      ]
 
+    pushEdge (src, edge, etype, tgt) = pushTable
+      [ ("id", Lua.pushinteger . fromIntegral . fromEnum $ edgeId edge)
+      , ("name", Lua.pushstring . Text.encodeUtf8 $ edgeName edge)
+      , ("type", Lua.pushstring . Text.encodeUtf8 $ edgeName etype)
+      , ("source", pushNode src)
+      , ("target", pushNode tgt)
+      ]
+
+initMorphism :: GrLangState -> Lua ()
+initMorphism globalState =
   setNative "Morphism"
     [ ("parse", haskellFn3 globalState $ \domIdx codIdx string -> do
           VGraph dom <- lookupGrLangValue domIdx
@@ -529,6 +582,18 @@ initGrLang globalState = do
       )
     ]
 
+initSpan :: GrLangState -> Lua ()
+initSpan globalState =
+  setNative "Span"
+    [ ("toDot", haskellFn3 globalState $ \idF idG name -> do
+        VMorph f <- lookupGrLangValue idF
+        VMorph g <- lookupGrLangValue idG
+        return . show $ Dot.typedGraphSpan grLangNamingContext (pretty $ Text.decodeUtf8 name) f g
+      )
+    ]
+
+initCospan :: GrLangState -> Lua ()
+initCospan globalState =
   setNative "Cospan"
     [ ("findCospanCommuters", haskellFn3 globalState $ \kindStr idF idG -> do
         VMorph f <- lookupGrLangValue idF
@@ -537,8 +602,15 @@ initGrLang globalState = do
         withMemSpace iterLists .
           allocateMemSpace . map (\h -> [VMorph h]) $ findCospanCommuters cls f g
       )
+    , ("toDot", haskellFn3 globalState $ \idF idG name -> do
+        VMorph f <- lookupGrLangValue idF
+        VMorph g <- lookupGrLangValue idG
+        return . show $ Dot.typedGraphCospan grLangNamingContext (pretty $ Text.decodeUtf8 name) f g
+      )
     ]
 
+initRule :: GrLangState -> Lua ()
+initRule globalState =
   setNative "Rule"
     [ ("parse", haskellFn1 globalState $ \string -> do
           rule <- GrLang.compileRule =<< GrLang.parseRule "<repl>" (string :: String)
@@ -565,13 +637,14 @@ initGrLang globalState = do
           allocateGrLang (VMorph $ rightMorphism rule)
       )
     ]
-  where
-    setNative className entries = do
-      Lua.getglobal className
-      tableIdx <- Lua.gettop
-      createTable entries
-      Lua.setfield tableIdx "native"
-      Lua.pop 1
+
+setNative :: Foldable t => String -> t (String, Lua ()) -> Lua ()
+setNative className entries = do
+  Lua.getglobal className
+  tableIdx <- Lua.gettop
+  pushTable entries
+  Lua.setfield tableIdx "native"
+  Lua.pop 1
 
 returnVals :: [Value] -> ExceptT GrLang.Error LuaGrLang Lua.NumResults
 returnVals vals = do
@@ -610,13 +683,23 @@ haskellFn4 ::
   GrLangState -> (a -> b -> c -> d -> ExceptT GrLang.Error LuaGrLang e) -> Lua ()
 haskellFn4 globalState f = pushFunction (\w x y z -> runGrLang' globalState (f w x y z))
 
-createTable :: Foldable t => t (String, Lua ()) -> Lua ()
-createTable contents = do
+-- | Given pairs @(key, makeVal)@, where makeVal adds a single value to the top of the stack,
+-- create a Lua table containing the constructed values indexed by their keys.
+pushTable :: Foldable t => t (String, Lua ()) -> Lua ()
+pushTable contents = do
   Lua.createtable 0 (length contents)
   tableIdx <- Lua.gettop
-  forM_ contents $ \(key, pushVal) -> do
-    pushVal
-    Lua.setfield tableIdx key
+  forM_ contents $ \(key, pushVal) ->
+    pushVal >> Lua.setfield tableIdx key
+
+-- | Given a list of actions, each of which adds a single value to the top of the stack,
+-- create a Lua table containing the constructed values indexed in order.
+pushList :: Foldable t => t (Lua ()) -> Lua ()
+pushList contents = do
+  Lua.createtable (length contents) 0
+  tableIdx <- Lua.gettop
+  forM_ (zip [1..] $ toList contents) $ \(idx, pushVal) ->
+    Lua.pushinteger idx >> pushVal >> Lua.settable tableIdx
 
 useGgxNamesOnTypeGraph :: Map String Text -> TypeGraph -> TypeGraph
 useGgxNamesOnTypeGraph names graph = TypeGraph.fromNodesAndEdges

@@ -11,6 +11,8 @@ module Image.Dot.TypedGraph
   , makeNamingContext
   , typedGraph
   , typedGraphMorphism
+  , typedGraphSpan
+  , typedGraphCospan
   , graphRule
   , sndOrderRule
   ) where
@@ -62,18 +64,15 @@ typedGraphBody context idPrefix graph =
   nodeAttrs : map prettyNode (nodes graph) ++ map prettyEdge (edges graph)
   where
     nodeAttrs = "node" <+> Dot.attrList [("shape", "box")]
-    prettyNode (Node n _, _) = Dot.node name attrs
+    prettyNode (Node n _, _) = Dot.node (idPrefix <> pretty n) attrs
       where
         node = lookupNodeInContext n graph
-        Just name = getNodeName context idPrefix <$> node
         attrs = case getNodeLabel context idPrefix =<< node of
           Nothing -> []
           Just label -> [("label", PP.dquotes label)]
     prettyEdge (Edge e src tgt _, _) =
-      Dot.dirEdge srcName tgtName attrs
+      Dot.dirEdge (idPrefix <> pretty src) (idPrefix <> pretty tgt) attrs
       where
-        Just srcName = getNodeName context idPrefix <$> lookupNodeInContext src graph
-        Just tgtName = getNodeName context idPrefix <$> lookupNodeInContext tgt graph
         attrs = case getEdgeLabel context idPrefix =<< lookupEdgeInContext e graph of
           Nothing -> []
           Just label -> [("label", PP.dquotes label)]
@@ -84,13 +83,39 @@ typedGraphMorphism context name morphism = Dot.digraph name (typedGraphMorphismB
 
 typedGraphMorphismBody :: NamingContext n e ann -> TypedGraphMorphism n e -> [Doc ann]
 typedGraphMorphismBody context morphism =
-  Dot.subgraph "dom" (typedGraphBody context "dom" (domain morphism))
-  : Dot.subgraph "cod" (typedGraphBody context "cod" (codomain morphism))
+  labeledCluster "dom" (typedGraphBody context "dom" (domain morphism))
+  : labeledCluster "cod" (typedGraphBody context "cod" (codomain morphism))
   : map (prettyNodeMapping [("style", "dotted")] "dom" "cod") (nodeMapping morphism)
 
 prettyNodeMapping :: (Pretty a) => [(Doc ann, Doc ann)] -> Doc ann -> Doc ann -> (a, a) -> Doc ann
 prettyNodeMapping attrs idSrc idTgt (src, tgt) =
   Dot.dirEdge (idSrc <> pretty src) (idTgt <> pretty tgt) attrs
+
+-- | Create a dotfile representation of the given span
+typedGraphSpan :: NamingContext n e ann -> Doc ann -> TypedGraphMorphism n e -> TypedGraphMorphism n e -> Doc ann
+typedGraphSpan context name left right =
+  Dot.digraph name $
+    [ labeledCluster domName (typedGraphBody context domName (domain left))
+    , labeledCluster codNameL (typedGraphBody context codNameL (codomain left))
+    , labeledCluster codNameR (typedGraphBody context codNameR (codomain right))
+    ]
+    ++ map (prettyNodeMapping [("style", "dotted")] domName codNameL) (nodeMapping left)
+    ++ map (prettyNodeMapping [("style", "dotted")] domName codNameR) (nodeMapping right)
+  where
+    (domName, codNameL, codNameR) = ("Dom_" <> name, "CodL_" <> name, "CodR_" <> name)
+
+-- | Create a dotfile representation of the given cospan
+typedGraphCospan :: NamingContext n e ann -> Doc ann -> TypedGraphMorphism n e -> TypedGraphMorphism n e -> Doc ann
+typedGraphCospan context name left right =
+  Dot.digraph name $
+    [ labeledCluster domNameL (typedGraphBody context domNameL (domain left))
+    , labeledCluster domNameR (typedGraphBody context domNameR (domain left))
+    , labeledCluster codName (typedGraphBody context codName (codomain right))
+    ]
+    ++ map (prettyNodeMapping [("style", "dotted")] domNameL codName) (nodeMapping left)
+    ++ map (prettyNodeMapping [("style", "dotted")] domNameR codName) (nodeMapping right)
+  where
+    (domNameL, domNameR, codName) = ("DomL_" <> name, "DodR_" <> name, "Cod_" <> name)
 
 -- | Create a dotfile representation of the given graph rule
 graphRule :: NamingContext n e ann -> Doc ann -> TypedGraphRule n e -> Doc ann
@@ -98,9 +123,9 @@ graphRule context ruleName rule = Dot.digraph ruleName (graphRuleBody context ru
 
 graphRuleBody :: NamingContext n e ann -> Doc ann -> TypedGraphRule n e -> [Doc ann]
 graphRuleBody context ruleName rule =
-  Dot.subgraph leftName (typedGraphBody context leftName (leftObject rule))
-  :  Dot.subgraph interfaceName (typedGraphBody context interfaceName (interfaceObject rule))
-  :  Dot.subgraph rightName (typedGraphBody context rightName (rightObject rule))
+  labeledCluster leftName (typedGraphBody context leftName (leftObject rule))
+  :  labeledCluster interfaceName (typedGraphBody context interfaceName (interfaceObject rule))
+  :  labeledCluster rightName (typedGraphBody context rightName (rightObject rule))
   :  map (prettyNodeMapping [("style", "dotted")] interfaceName leftName)
       (nodeMapping $ leftMorphism rule)
   ++ map (prettyNodeMapping [("style", "dotted"), ("dir", "back")] interfaceName rightName)
@@ -133,3 +158,7 @@ sndOrderRuleBody context ruleName rule =
     (leftName, interfaceName, rightName) = ("L_" <> ruleName, "K_" <> ruleName, "R_" <> ruleName)
     prettyNodeMapping attrs idSrc idTgt (src, tgt) =
       Dot.dirEdge (idSrc <> pretty src) (idTgt <> pretty tgt) attrs
+
+labeledCluster :: Doc ann -> [Doc ann] -> Doc ann
+labeledCluster name body = Dot.cluster name $ "graph" <+> Dot.attrList [("label", name)] : body
+

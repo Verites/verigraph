@@ -11,7 +11,7 @@
 
 -}
 module Image.Dot.Prettyprint
-  (graph, digraph, node, undirEdge, dirEdge, attrList, subgraph, anonSubgraph) where
+  (graph, digraph, node, undirEdge, dirEdge, attrList, subgraph, cluster, anonSubgraph) where
 
 import           Data.Text.Prettyprint.Doc
 
@@ -26,6 +26,10 @@ digraph = genericGraph "digraph"
 -- | Pretty prints a subgraph with the given name and list of statements.
 subgraph :: Doc ann -> [Doc ann] -> Doc ann
 subgraph = genericGraph "subgraph"
+
+-- | Pretty prints a cluster with the given name and list of statements.
+cluster :: Doc ann -> [Doc ann] -> Doc ann
+cluster = subgraph . ("cluster_"<>)
 
 -- | Pretty prints an anonymous subgraph with the given list of statements.
 anonSubgraph :: [Doc ann] -> Doc ann

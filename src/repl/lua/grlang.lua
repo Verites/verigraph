@@ -2,17 +2,18 @@ local docstring = help.docstring
 
 --[[ Calling haskell function with proper error handling ]]
 
-local function hswrap(no_error, ...)
+local function hswrap(n, no_error, ...)
   if no_error then
     return ...
   else
     local error_obj = ...
-    error(error_obj, 4)
+    error(error_obj, n+1)
   end
 end
 
 local function hscall(fn, ...)
-  return hswrap(pcall(fn, ...))
+  return hswrap(3, pcall(fn, ...))
+  -- 3 stack levels above: appication -> GrLang API -> hscall
 end
 
 --[[ GrLang class ]]
@@ -28,7 +29,8 @@ All instances of this class are wrappers of Haskell values.
     'edge_types',
     'print_types',
     'reset_types',
-    'readGGX'
+    'readGGX',
+    'mem_stats'
   },
   methods = {
     'to_dot',
@@ -37,9 +39,11 @@ All instances of this class are wrappers of Haskell values.
 } .. {__index = {}}
 
 local function newGrLang(class, idx)
-  local instance = { index = idx }
-  setmetatable(instance, class)
-  return instance
+  return setmetatable({ index = idx }, class)
+end
+
+GrLang.mem_stats = function()
+  hscall(GrLang.native.memstats)
 end
 
 GrLang.node_types = docstring[==[
@@ -110,7 +114,7 @@ function GrLang.__eq(value1, value2)
 end
 
 function GrLang.__gc(value)
-  return hscall(GrLang.native.deallocate, value.index)
+  return hswrap(1,pcall(GrLang.native.deallocate, value.index))
 end
 
 GrLang.__index.to_dot = docstring[==[
@@ -122,32 +126,38 @@ end
 
 GrLang.__index.view = docstring[==[
 Draw the given graph using xdot.
-]==] .. function (graph)
+
+Receives an optional argument defining the layout algorithm,
+which may be 'dot', 'neat', 'twopi', 'circo' or 'fdp' (default is 'dot').
+]==] .. function (graph, filter)
   local file_name = '/tmp/verigraph-dot' .. os.date()
   local file = io.open(file_name, 'w')
   file:write(graph:to_dot(''))
   file:close()
-  os.execute('xdot \"' .. file_name .. '\"')
+  
+  command = 'xdot \"' .. file_name .. '\"'
+    .. ' -f' .. (filter or 'dot')
+  os.execute(command)
 end
 
 
 --[[ Creating subclasses ]]
 
 local function subclass_of_GrLang(factory)
-  local class = { __index = {}, __tostring = GrLang.__tostring, __eq = GrLang.__eq, __gc = GrLang.__gc }
-
-  -- Set up the inheritance of GrLang methods
-  setmetatable(class.__index, { __index = GrLang.__index })
+  local class = {
+    -- Set up inheritance of GrLang methods
+    __index = setmetatable({}, { __index = GrLang.__index }),
+    -- Set up special metaclass methods from GrLang
+    __tostring = GrLang.__tostring, __eq = GrLang.__eq, __gc = GrLang.__gc
+  }
 
   -- Set up the class constructor
-  setmetatable(class, {
+  return setmetatable(class, {
     __call = factory or function (cls, str)
       local idx = hscall(cls.native.parse, str)
       return newGrLang(cls, idx)
     end
   })
-
-  return class
 end
 
 -- Creates a method that saves its result to avoid recomputing it.
@@ -166,7 +176,7 @@ end
 HsListIterator = {}
 
 function HsListIterator.__gc(list)
-  hscall(HsListIterator.native.deallocate, list.index)
+  return hswrap(1, pcall(HsListIterator.native.deallocate, list.index))
 end
 
 function makeListIterator(listIdx, itemFactory)
@@ -177,10 +187,23 @@ function makeListIterator(listIdx, itemFactory)
   end
 
 
-  local listIter = {index = listIdx}
-  setmetatable(listIter, HsListIterator)
+  local listIter = setmetatable({index = listIdx}, HsListIterator)
   return next, listIter
 end
+
+--[[ Node and Edge classes ]]
+
+Node = docstring{[==[
+Represents a node of a particular graph.
+]==],
+  fields = {'graph', 'id', 'name', 'type'}
+}
+
+Edge = docstring{[==[
+Represents an edge of a particular graph.
+]==],
+  fields = {'graph', 'id', 'source', 'target', 'type'}
+}
 
 --[[ Graph class ]]
 
@@ -195,9 +218,10 @@ Instances can be constructed as follows:
 ]==],
   methods = { 
     'is_empty', 'identity',
+    'nodes', 'edges',
     'disjoint_union', 'product',
     'subgraphs', 'quotients', 
-    'morphisms_to', 'overlappings_with' 
+    'morphisms_to', 'overlappings_with'
   }
 } .. subclass_of_GrLang()
 
@@ -211,6 +235,28 @@ Graph.__index.is_empty = docstring "Checks if the graph is empty."
   .. memoizing('__empty', function(graph)
     return hscall(Graph.native.isInitial, graph.index)
   end)
+
+Graph.__index.nodes = docstring "Obtains the list of nodes of the graph in undefined order."
+  .. function(graph)
+    local nodes = hscall(Graph.native.nodesInContext, graph.index)
+    for i, node in ipairs(nodes) do
+      node.graph = graph
+      setmetatable(node, Node)
+    end
+    return nodes
+  end
+
+Graph.__index.edges = docstring "Obtains the list of edges of the graph in undefined order."
+.. function(graph)
+  local edges = hscall(Graph.native.edgesInContext, graph.index)
+  for i, edge in ipairs(edges) do
+    edge.graph = graph
+    setmetatable(edge, Edge)
+    setmetatable(edge.source, Node)
+    setmetatable(edge.target, Node)
+  end
+  return edges
+end
 
 Graph.__index.disjoint_union = docstring [==[
 The call `G:disjoint_union(H)` returns morphisms `j1, j2`, where j1 is
@@ -486,6 +532,45 @@ Morphism.subobject_union = docstring "Given two monomorphisms with same codomain
     return newMorphism(morphIdx, C, a:cod())
   end
 
+--[[ Span class ]]
+
+Span = docstring{[==[
+Class for spans of GrLang morphisms, that is,
+pairs of morphisms with the same domain.
+
+Instances can be constructed as follows:
+    x = Span(f,g)
+
+Then accesing the morphisms can be done by indexing:
+    x[1]  --> f
+    x[2]  --> g
+]==],
+  methods = {
+    'to_dot'
+  }
+} .. subclass_of_GrLang(
+  function (cls, f, g)
+    if f.__domain ~= g.__domain then
+      error("Given morphisms are not a span, that is, have different domains.", 2)
+    end
+    return setmetatable({f, g}, cls)
+  end)
+
+function Span.__tostring(span)
+  return tostring(span[1].__domain) .. 
+    ' ' .. tostring(span[1]) .. ' ' .. tostring(span[1].__codomain) .. 
+    ' ' .. tostring(span[2]) .. ' ' .. tostring(span[2].__codomain)
+end
+
+function Span.__gc() end
+
+Span.__index.to_dot = docstring[==[
+Write the value in the dot format for graph drawing.
+Optionally receives a name for the given value.
+]==] .. function (span, name)
+  return hscall(Span.native.toDot, span[1].index, span[2].index, name or '')
+end
+
 --[[ Cospan class ]]
 
 Cospan = docstring{[==[
@@ -493,23 +578,37 @@ Class for cospans of GrLang morphisms, that is,
 pairs of morphisms with the same codomain.
 
 Instances can be constructed as follows:
-    Cospan(f,g)
+    x = Cospan(f,g)
+
+Then accesing the morphisms can be done by indexing:
+    x[1]  --> f
+    x[2]  --> g
 ]==],
   methods = {
     'commuters'
   }
-} .. { __index = {} }
-
-setmetatable(Cospan, {
-  __call = function(cls, f, g)
+} .. subclass_of_GrLang(
+  function (cls, f, g)
     if f.__codomain ~= g.__codomain then
       error("Given morphisms are not a cospan, that is, have different codomains.", 2)
     end
-    local cospan = {f, g}
-    setmetatable(cospan, Cospan)
-    return cospan
-  end
-})
+    return setmetatable({f, g}, cls)
+  end)
+
+function Cospan.__tostring(cospan)
+  return tostring(cospan[1].__domain) .. 
+    ' ' .. tostring(cospan[1]) .. ' ' .. tostring(cospan[1].__codomain) .. 
+    ' ' .. tostring(cospan[2]) .. ' ' .. tostring(cospan[2].__domain)
+end
+
+function Cospan.__gc() end
+
+Cospan.__index.to_dot = docstring[==[
+Write the value in the dot format for graph drawing.
+Optionally receives a name for the given value.
+]==] .. function (cospan, name)
+  return hscall(Cospan.native.toDot, cospan[1].index, cospan[2].index, name or '')
+end
 
 Cospan.__index.commuters = docstring [==[
 Called on a cospan X -f-> Z <-g- Y, the call `:commuters([kind])` iterates
@@ -519,7 +618,7 @@ The optional kind argument may be one of 'all', 'monic', 'epic' or 'iso',
 defaulting to 'all'.
 ]==] .. function(cospan, kind)
   local listIdx = hscall(Cospan.native.findCospanCommuters, kind, cospan[1].index, cospan[2].index)
-  return makeListIterator(listIdx, function(idx) return newMorphism(idx, cospan[1]:dom(), cospan[2]:cod()) end)
+  return makeListIterator(listIdx, function(idx) return newMorphism(idx, cospan[1]:dom(), cospan[2]:dom()) end)
 end
 
 Cospan.__index.is_pushout_of = docstring [==[
@@ -594,8 +693,7 @@ local function loader(modname, path)
 end
 
 -- Memoize the search path using a weak table, so no memory leak
-local search_path = {}
-setmetatable(search_path, {__mode = 'k'})
+local search_path = setmetatable({}, {__mode = 'k'})
 
 local function get_search_path()
   if not search_path[package.path] then

@@ -1,0 +1,44 @@
+span
+graph  {
+  ad ae be : N
+} morphism  : dom -> cod {
+  ae ad -> a
+  be -> b
+} graph  {
+  a b c : N
+} morphism  : dom -> cod {
+  ad -> d
+  be ae -> e
+} graph  {
+  d e : N
+}
+
+dot
+digraph  {
+  subgraph cluster_Dom_ {
+    graph [label=Dom_];
+    node [shape=box];
+    Dom_0 [label="ad:N"];
+    Dom_1 [label="ae:N"];
+    Dom_2 [label="be:N"]
+  };
+  subgraph cluster_CodL_ {
+    graph [label=CodL_];
+    node [shape=box];
+    CodL_0 [label="a:N"];
+    CodL_1 [label="b:N"];
+    CodL_2 [label="c:N"]
+  };
+  subgraph cluster_CodR_ {
+    graph [label=CodR_];
+    node [shape=box];
+    CodR_0 [label="d:N"];
+    CodR_1 [label="e:N"]
+  };
+  Dom_0 -> CodL_0 [style=dotted];
+  Dom_1 -> CodL_0 [style=dotted];
+  Dom_2 -> CodL_1 [style=dotted];
+  Dom_0 -> CodR_0 [style=dotted];
+  Dom_1 -> CodR_1 [style=dotted];
+  Dom_2 -> CodR_1 [style=dotted]
+}
