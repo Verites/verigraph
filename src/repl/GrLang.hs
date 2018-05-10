@@ -71,6 +71,12 @@ lookupMemSpace idx' memSpace = do
     Nothing -> GrLang.throwError Nothing "Value has unallocated index"
     Just val -> return val
 
+memSpaceStats :: MonadIO m => MemSpace a -> m String
+memSpaceStats memSpace = do
+  let total = maxFreeValues memSpace
+  free <- liftIO $ readIORef (numFreeValues memSpace)
+  return $ show (total - free) ++ '/' : show total
+
 isEmptyMemSpace :: MemSpace a -> ExceptT GrLang.Error LuaGrLang Bool
 isEmptyMemSpace memSpace =
   (maxFreeValues memSpace ==) <$> liftIO (readIORef $ numFreeValues memSpace)
@@ -283,7 +289,7 @@ morphConf = MorphismsConfig monic
 
 initialize :: Lua ()
 initialize = do
-  globalState <- liftIO (initState 256 64)
+  globalState <- liftIO (initState 1024 256)
 
   execLuaFile =<< liftIO (getDataFileName "src/repl/lua/help.lua")
   execLuaFile =<< liftIO (getDataFileName "src/repl/lua/grlang.lua")
@@ -313,7 +319,13 @@ initGrLang globalState = do
   initCospan globalState
   initRule globalState
   setNative "GrLang"
-    [ ("getNodeTypes", haskellFn0 globalState $ do
+    [ ("memstats", haskellFn0 globalState $ do
+        liftIO $ putStr "Used GrLang slots: "
+        liftIO . putStrLn =<< withMemSpace values memSpaceStats
+        liftIO $ putStr "Used iterator slots: "
+        liftIO . putStrLn =<< withMemSpace iterLists memSpaceStats
+      )
+    , ("getNodeTypes", haskellFn0 globalState $ do
           types <- get nodeTypes
           return . map Text.unpack $ Map.keys types
       )

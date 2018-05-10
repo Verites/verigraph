@@ -2,17 +2,18 @@ local docstring = help.docstring
 
 --[[ Calling haskell function with proper error handling ]]
 
-local function hswrap(no_error, ...)
+local function hswrap(n, no_error, ...)
   if no_error then
     return ...
   else
     local error_obj = ...
-    error(error_obj, 4)
+    error(error_obj, n+1)
   end
 end
 
 local function hscall(fn, ...)
-  return hswrap(pcall(fn, ...))
+  return hswrap(3, pcall(fn, ...))
+  -- 3 stack levels above: appication -> GrLang API -> hscall
 end
 
 --[[ GrLang class ]]
@@ -28,7 +29,8 @@ All instances of this class are wrappers of Haskell values.
     'edge_types',
     'print_types',
     'reset_types',
-    'readGGX'
+    'readGGX',
+    'mem_stats'
   },
   methods = {
     'to_dot',
@@ -38,6 +40,10 @@ All instances of this class are wrappers of Haskell values.
 
 local function newGrLang(class, idx)
   return setmetatable({ index = idx }, class)
+end
+
+GrLang.mem_stats = function()
+  hscall(GrLang.native.memstats)
 end
 
 GrLang.node_types = docstring[==[
@@ -108,7 +114,7 @@ function GrLang.__eq(value1, value2)
 end
 
 function GrLang.__gc(value)
-  return hscall(GrLang.native.deallocate, value.index)
+  return hswrap(1,pcall(GrLang.native.deallocate, value.index))
 end
 
 GrLang.__index.to_dot = docstring[==[
@@ -170,7 +176,7 @@ end
 HsListIterator = {}
 
 function HsListIterator.__gc(list)
-  hscall(HsListIterator.native.deallocate, list.index)
+  return hswrap(1, pcall(HsListIterator.native.deallocate, list.index))
 end
 
 function makeListIterator(listIdx, itemFactory)
