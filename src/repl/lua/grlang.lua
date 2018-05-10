@@ -556,6 +556,8 @@ function Span.__tostring(span)
     ' ' .. tostring(span[2]) .. ' ' .. tostring(span[2].__codomain)
 end
 
+function Span.__gc() end
+
 Span.__index.to_dot = docstring[==[
 Write the value in the dot format for graph drawing.
 Optionally receives a name for the given value.
@@ -592,6 +594,8 @@ function Cospan.__tostring(cospan)
     ' ' .. tostring(cospan[1]) .. ' ' .. tostring(cospan[1].__codomain) .. 
     ' ' .. tostring(cospan[2]) .. ' ' .. tostring(cospan[2].__domain)
 end
+
+function Cospan.__gc() end
 
 Cospan.__index.to_dot = docstring[==[
 Write the value in the dot format for graph drawing.
