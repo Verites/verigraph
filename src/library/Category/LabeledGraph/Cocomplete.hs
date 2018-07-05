@@ -2,24 +2,21 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Category.LabeledGraph.Cocomplete () where
 
-import           Data.List.NonEmpty                     (NonEmpty (..))
-import qualified Data.List.NonEmpty                     as NonEmpty
-import qualified Data.Map                               as Map
-import           Data.Maybe                             (catMaybes, listToMaybe,
-                                                         mapMaybe)
-import           Data.Set                               (Set)
-import qualified Data.Set                               as Set
+import           Data.List.NonEmpty             (NonEmpty (..))
+import qualified Data.List.NonEmpty             as NonEmpty
+import qualified Data.Map                       as Map
+import           Data.Maybe                     (catMaybes, listToMaybe, mapMaybe)
+import           Data.Set                       (Set)
+import qualified Data.Set                       as Set
 
-import           Abstract.Category.Cocomplete
-import           Abstract.Category.FinitaryCategory
-import           Category.LabeledGraph.FinitaryCategory ()
-import           Data.EnumMap                           (EnumMap)
-import qualified Data.EnumMap                           as EnumMap
-import           Data.LabeledGraph                      hiding (edgeMap, empty,
-                                                         nodeMap)
-import qualified Data.LabeledGraph                      as Graph
-import           Data.LabeledGraph.Morphism             hiding (edgeMap,
-                                                         nodeMap, variableMap)
+import           Abstract.Category
+import           Abstract.Category.Limit
+import           Category.LabeledGraph.Category ()
+import           Data.EnumMap                   (EnumMap)
+import qualified Data.EnumMap                   as EnumMap
+import           Data.LabeledGraph              hiding (edgeMap, empty, nodeMap)
+import qualified Data.LabeledGraph              as Graph
+import           Data.LabeledGraph.Morphism     hiding (edgeMap, nodeMap, variableMap)
 import           Data.Partition
 import           Data.Variable
 

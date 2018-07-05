@@ -2,14 +2,14 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 module Category.LabeledGraph (LabeledGraph, LabeledMorphism) where
 
-import qualified Data.List                                 as List
+import qualified Data.List                          as List
 
-import           Abstract.Category.FinitaryCategory
+import           Abstract.Category.FindMorphism
+import           Abstract.Category.Finitary         ()
 import           Base.Isomorphic
-import           Category.LabeledGraph.Cocomplete          ()
-import           Category.LabeledGraph.FindMorphism        ()
-import           Category.LabeledGraph.FinitaryCategory    ()
-import           Category.LabeledGraph.JointlyEpimorphisms ()
+import           Category.LabeledGraph.Category     ()
+import           Category.LabeledGraph.Cocomplete   ()
+import           Category.LabeledGraph.FindMorphism ()
 import           Data.LabeledGraph
 import           Data.LabeledGraph.Morphism
 

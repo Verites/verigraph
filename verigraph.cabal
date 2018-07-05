@@ -103,9 +103,13 @@ library
                        Category.TypedGraph.Adhesive
                        Category.TypedGraph.Category
                        Category.TypedGraph.CommutingSquares
+                       Category.TypedGraph.FindMorphism
+                       Category.TypedGraph.Finitary
+                       Category.TypedGraph.Limit
                        Category.LabeledGraph.Cocomplete
                        Category.LabeledGraph.FindMorphism
-                       Category.LabeledGraph.FinitaryCategory
+                       Category.LabeledGraph.Category
+                       Category.LabeledGraph.Finitary
                        Category.TypedGraphRule.Adhesive
                        Category.TypedGraphRule.Category
                        Category.TypedGraphRule.FindMorphism

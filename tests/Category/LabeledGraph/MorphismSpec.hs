@@ -2,17 +2,17 @@
 {-# LANGUAGE TypeApplications  #-}
 module Category.LabeledGraph.MorphismSpec where
 
-import qualified Data.Map                           as Map
+import qualified Data.Map                     as Map
 import           Test.Hspec
 import           Test.Hspec.QuickCheck
 
-import           Abstract.Category.FinitaryCategory
+import           Abstract.Category
 import           Base.Valid
 import           Category.LabeledGraph
-import qualified Data.EnumMap                       as EnumMap
-import           Data.LabeledGraph                  as Graph
-import           Data.LabeledGraph.Morphism         as Morphism
-import           Data.LabeledGraph.QuickCheck       ()
+import qualified Data.EnumMap                 as EnumMap
+import           Data.LabeledGraph            as Graph
+import           Data.LabeledGraph.Morphism   as Morphism
+import           Data.LabeledGraph.QuickCheck ()
 import           Data.Variable
 import           Util.Test
 
@@ -87,13 +87,13 @@ spec = do
   describe "compose" $ withSmallerGraphs $ do
 
     prop "is always valid" $ \g1 g2 g3 ->
-      forAllMorphismsBetween GenericMorphism g1 g2 $ \f1 ->
-      forAllMorphismsBetween GenericMorphism g2 g3 $ \f2 ->
+      forAllMorphismsBetween anyMorphism g1 g2 $ \f1 ->
+      forAllMorphismsBetween anyMorphism g2 g3 $ \f2 ->
         isValid (compose f2 f1 :: LabeledMorphism)
 
     prop "maps elements correctly" $ \g1 g2 g3 ->
-      forAllMorphismsBetween GenericMorphism g1 g2 $ \f1 ->
-      forAllMorphismsBetween GenericMorphism g2 g3 $ \f2 ->
+      forAllMorphismsBetween anyMorphism g1 g2 $ \f1 ->
+      forAllMorphismsBetween anyMorphism g2 g3 $ \f2 ->
       let
         mapsCorrectly elements applyTo =
           (`all` elements g1) $ \e ->
@@ -113,19 +113,19 @@ spec = do
 
     it "is false when nodes are collapsed" $
       let m = fromGraphsAndLists g1 g2 [(0, 0), (1, 0)] [(0, 0), (1, 1)] []
-      in isMonomorphism m `shouldBe` False
+      in isMonic m `shouldBe` False
 
     it "is false when edges are collapsed" $
       let m = fromGraphsAndLists g1 g3 [(0, 0), (1, 1)] [(0, 0), (1, 0)] []
-      in isMonomorphism m `shouldBe` False
+      in isMonic m `shouldBe` False
 
     it "is false when variables are collapsed" $
       let m = fromGraphsAndLists g1 g1 [(0, 0), (1, 1)] [(0, 0), (1, 1)] [(3, 5), (4, 5)]
-      in isMonomorphism m `shouldBe` False
+      in isMonic m `shouldBe` False
 
     it "is true for a monomorphism" $
       let m = fromGraphsAndLists g2 g1 [(0, 0)] [(0, 0), (1, 1)] []
-      in isMonomorphism m `shouldBe` True
+      in isMonic m `shouldBe` True
 
 
   describe "isEpimorphism" $ do
@@ -137,26 +137,26 @@ spec = do
 
     it "is false when some node isn't reached" $
       let m = fromGraphsAndLists g2 g1 [(0, 0)] [(0, 0), (1, 1)] [] :: LabeledMorphism
-      in isEpimorphism m `shouldBe` False
+      in isEpic m `shouldBe` False
 
     it "is false when some edge isn't reached" $
       let m = fromGraphsAndLists g3 g1 [(0, 0), (1, 1)] [(0, 0)] [] :: LabeledMorphism
-      in isEpimorphism m `shouldBe` False
+      in isEpic m `shouldBe` False
 
     it "is false when some variable isn't reached" $
       let m = fromGraphsAndLists g1 g4 [(0, 0), (1, 1)] [(0, 0), (1, 1)] [] :: LabeledMorphism
-      in isEpimorphism m `shouldBe` False
+      in isEpic m `shouldBe` False
 
     it "is true for an epimorphism" $
       let m = fromGraphsAndLists g4 g2 [(0, 0), (1, 0)] [(0, 0), (1, 1)] [] :: LabeledMorphism
-      in isEpimorphism m `shouldBe` True
+      in isEpic m `shouldBe` True
 
 
   describe "isIsomorphism" $ withSmallerGraphs $ do
 
     prop "is true iff isMonomorphism && isEpimorphism" $ \domain codomain ->
-      forAllMorphismsBetween GenericMorphism domain codomain $ \m ->
-        isIsomorphism (m :: LabeledMorphism) == (isMonomorphism m && isEpimorphism m)
+      forAllMorphismsBetween anyMorphism domain codomain $ \m ->
+        isIsomorphism (m :: LabeledMorphism) == (isMonic m && isEpic m)
 
 
   describe "fromGraphsAndLists" $ do

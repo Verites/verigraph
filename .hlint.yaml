@@ -8,7 +8,7 @@
 
 # Specify additional command line arguments
 #
-- arguments: [--color, -XTypeFamilies, -XMultiParamTypeClasses, -XFlexibleContexts, -XFlexibleInstances, -XKindSignatures]
+- arguments: [--color=auto, -XTypeFamilies, -XMultiParamTypeClasses, -XFlexibleContexts, -XFlexibleInstances, -XKindSignatures]
 
 
 # Control which extensions/flags/modules/functions can be used

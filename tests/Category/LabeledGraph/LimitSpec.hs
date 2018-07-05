@@ -1,23 +1,24 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Category.LabeledGraph.CocompleteSpec where
+module Category.LabeledGraph.LimitSpec where
 
 import           Data.Foldable
-import           Data.List.NonEmpty                 (NonEmpty (..))
+import           Data.List.NonEmpty             (NonEmpty (..))
 import           Test.Hspec
 import           Test.Hspec.QuickCheck
 
-import           Abstract.Category.Cocomplete
-import           Abstract.Category.FinitaryCategory
+import           Abstract.Category
+import           Abstract.Category.FindMorphism
+import           Abstract.Category.Limit
 import           Base.Isomorphic
 import           Base.Valid
 import           Category.LabeledGraph
-import           Data.EnumMap                       (EnumMap)
-import qualified Data.EnumMap                       as EnumMap
-import           Data.EnumSet                       (EnumSet)
-import qualified Data.EnumSet                       as EnumSet
-import           Data.LabeledGraph                  as Graph
-import           Data.LabeledGraph.Morphism         as Morphism
-import           Data.LabeledGraph.QuickCheck       ()
+import           Data.EnumMap                   (EnumMap)
+import qualified Data.EnumMap                   as EnumMap
+import           Data.EnumSet                   (EnumSet)
+import qualified Data.EnumSet                   as EnumSet
+import           Data.LabeledGraph              as Graph
+import           Data.LabeledGraph.Morphism     as Morphism
+import           Data.LabeledGraph.QuickCheck   ()
 import           Data.Variable
 import           Test.QuickCheck
 import           Util.Test
@@ -51,7 +52,7 @@ spec = do
 
     prop "has monic embeddings" $ \g1 g2 ->
       let (inj1, inj2) = calculateCoproduct g1 g2
-      in isMonomorphism inj1 && isMonomorphism (inj2 :: LabeledMorphism)
+      in isMonic inj1 && isMonic (inj2 :: LabeledMorphism)
 
     prop "has embeddings with same codomain" $ \g1 g2 ->
       let (inj1, inj2) = calculateCoproduct g1 g2
@@ -124,23 +125,23 @@ spec = do
       calculateCoequalizer f g `shouldBeIsomorphicTo` expectedCoeq
 
     prop "is valid" $ \g1 g2 ->
-      forAllMorphismsBetween GenericMorphism g1 g2 $ \f ->
-      forAllMorphismsBetween GenericMorphism g1 g2 $ \g ->
+      forAllMorphismsBetween anyMorphism g1 g2 $ \f ->
+      forAllMorphismsBetween anyMorphism g1 g2 $ \g ->
         isValid (calculateCoequalizer f g :: LabeledMorphism)
 
     prop "has the correct domain" $ \g1 g2 ->
-      forAllMorphismsBetween GenericMorphism g1 g2 $ \f ->
-      forAllMorphismsBetween GenericMorphism g1 g2 $ \g ->
+      forAllMorphismsBetween anyMorphism g1 g2 $ \f ->
+      forAllMorphismsBetween anyMorphism g1 g2 $ \g ->
         domain (calculateCoequalizer f g :: LabeledMorphism) == g2
 
     prop "is surjective" $ \g1 g2 ->
-      forAllMorphismsBetween GenericMorphism g1 g2 $ \f ->
-      forAllMorphismsBetween GenericMorphism g1 g2 $ \g ->
+      forAllMorphismsBetween anyMorphism g1 g2 $ \f ->
+      forAllMorphismsBetween anyMorphism g1 g2 $ \g ->
         isSurjective (calculateCoequalizer f g :: LabeledMorphism)
 
     prop "coequalizes the morphisms" $ \g1 g2 ->
-      forAllMorphismsBetween GenericMorphism g1 g2 $ \f ->
-      forAllMorphismsBetween GenericMorphism g1 g2 $ \g ->
+      forAllMorphismsBetween anyMorphism g1 g2 $ \f ->
+      forAllMorphismsBetween anyMorphism g1 g2 $ \g ->
       let coeq = calculateCoequalizer f g :: LabeledMorphism
       in coeq <&> f == coeq <&> g
 
@@ -148,12 +149,12 @@ spec = do
 
   describe "calculateNCoequalizer" $ modifyMaxSuccess (const 100) $ modifyMaxSize (const 25) $ do
     prop "is the same as calculateCoequalizer when given two morphisms" $ \a b ->
-      forAllMorphismsBetween GenericMorphism a b $ \f ->
-      forAllMorphismsBetween GenericMorphism a b $ \g ->
+      forAllMorphismsBetween anyMorphism a b $ \f ->
+      forAllMorphismsBetween anyMorphism a b $ \g ->
         calculateNCoequalizer (f :| [g]) ~= calculateCoequalizer f (g :: LabeledMorphism)
 
     prop "is the same as folding calculateCoequalizer" $ \a b ->
-      forAllMorphismsBetween GenericMorphism a b $ \f ->
+      forAllMorphismsBetween anyMorphism a b $ \f ->
       forAll (sublistOf $ findAllMorphisms a b) $ \fs ->
       let
         (expected, _) = foldl' binaryCoequalizer (identity (codomain f), f :: LabeledMorphism) fs

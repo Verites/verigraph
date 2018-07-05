@@ -11,22 +11,21 @@ import           Control.Applicative
 import           Control.Monad
 import           Control.Monad.List
 import           Control.Monad.Reader
-import           Data.Maybe                             (mapMaybe)
+import           Data.Maybe                     (mapMaybe)
 
-import           Abstract.Category.FinitaryCategory
-import           Category.LabeledGraph.FinitaryCategory ()
-import           Data.EnumMap                           (EnumMap)
-import qualified Data.EnumMap                           as EnumMap
-import           Data.EnumSet                           (EnumSet)
-import qualified Data.EnumSet                           as EnumSet
-import           Data.LabeledGraph                      hiding (edgeMap, empty,
-                                                         nodeMap)
-import qualified Data.LabeledGraph                      as Graph
-import           Data.LabeledGraph.Morphism             hiding (edgeMap,
-                                                         nodeMap, variableMap)
-import           Data.LabeledGraph.Morphism             as Morphism
+import           Abstract.Category
+import           Abstract.Category.FindMorphism
+import           Category.LabeledGraph.Category
+import           Data.EnumMap                   (EnumMap)
+import qualified Data.EnumMap                   as EnumMap
+import           Data.EnumSet                   (EnumSet)
+import qualified Data.EnumSet                   as EnumSet
+import           Data.LabeledGraph              hiding (edgeMap, empty, nodeMap)
+import qualified Data.LabeledGraph              as Graph
+import           Data.LabeledGraph.Morphism     hiding (edgeMap, nodeMap, variableMap)
+import           Data.LabeledGraph.Morphism     as Morphism
 import           Data.Variable
-import           Util.EnumMap                           as EnumMap
+import           Util.EnumMap                   as EnumMap
 
 
 -- | Function that allows building multiple morphisms between two objects.
@@ -66,11 +65,11 @@ data ComponentConfig id element = CConfig
 instance FindMorphism LabeledMorphism where
 
   findMorphisms restriction domain codomain =
-    runMorphismBuilder (makeConfig restriction) domain codomain
+    runMorphismBuilder (makeConfig $ toMorphismType restriction) domain codomain
       mapAllElementsFreely
 
-  findCospanCommuter restriction left right =
-    runMorphismBuilder (makeConfig restriction) (domain left) (domain right) $
+  findCospanCommuters restriction left right =
+    runMorphismBuilder (makeConfig $ toMorphismType restriction) (domain left) (domain right) $
       mapAllFromCospan lookupEdgeId Morphism.edgeMap
         >=> mapAllFromCospan lookupNodeId Morphism.nodeMap
         >=> mapAllFromCospan lookupVarId Morphism.variableMap
@@ -88,39 +87,13 @@ instance FindMorphism LabeledMorphism where
                 Just elemsRight -> mapMaybe (`EnumMap.lookup` availableCodElements state) elemsRight
         in mapAll pickCodomainElem
 
-
-  partialInjectiveMatches nac match =
-    runMorphismBuilder (makeConfig Monomorphism) (codomain nac) (codomain match) $
-      addMappingsFromSpan >=> mapAllElementsFreely
-    where
-      addMappingsFromSpan :: MorphismBuilder
-      addMappingsFromSpan state = do
-        state1 <- foldM induceMapping state (inducedPairs applyToEdgeId Graph.edgeIds)
-        state2 <- foldM induceMapping state1 (inducedPairs applyToNodeId Graph.nodeIds)
-        foldM (induceMapping @VarId @Variable) state2 (inducedPairs applyToVarId freeVariableIdsOf)
-      induceMapping :: (Eq id, Component id element) => BuilderState -> (element, element) -> ReaderT BuilderConfig [] BuilderState
-      induceMapping state (domainElem, codomainElem) =
-        case EnumMap.lookup (idOf domainElem) (mapping $ getComponent state) of
-          Nothing -> addMapping domainElem codomainElem state
-          Just previousMapping -> do
-            guard (previousMapping == idOf codomainElem)
-            return state
-      inducedPairs applyTo getElems =
-        [ (x, y)
-            | z <- getElems (domain nac)
-            , Just x <- [applyTo z nac]
-            , Just y <- [applyTo z match] ]
-      applyToVarId v f = lookupVarId v f >>= (`EnumMap.lookup` codomainVarMap)
-      codomainVarMap = freeVariableMap (codomain match)
-
-
 -- | Create a configuration that will produce morphisms of the given type.
 makeConfig :: MorphismType -> BuilderConfig
 makeConfig restriction = Config config config config
   where
     config :: Component id element => ComponentConfig id element
     config = case restriction of
-      GenericMorphism -> CConfig
+      AnyMorphism -> CConfig
         { updateAfterMapping = \_ _ -> id
         , validateFinalState = \_ _ _ -> True
         }

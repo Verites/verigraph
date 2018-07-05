@@ -1,29 +1,26 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Category.LabeledGraph.JointlyEpimorphisms where
+module Category.LabeledGraph.Finitary where
 
-import           Control.Applicative
-import           Control.Monad
-import           Data.Function                          (on)
-import qualified Data.List                              as List
-import           Data.Map                               (Map)
-import qualified Data.Map                               as Map
-import           Data.Maybe                             (isNothing, mapMaybe)
-import qualified Data.Set                               as Set
+import           Data.Function                    (on)
+import qualified Data.List                        as List
+import           Data.Map                         (Map)
+import qualified Data.Map                         as Map
+import qualified Data.Set                         as Set
 
-import           Abstract.Category.JointlyEpimorphisms
-import           Category.LabeledGraph.FinitaryCategory ()
-import           Data.EnumMap                           (EnumMap)
-import qualified Data.EnumMap                           as EnumMap
-import           Data.LabeledGraph
+import           Abstract.Category.Finitary
+import           Category.LabeledGraph.Category   ()
+import           Category.LabeledGraph.Cocomplete ()
+import           Data.EnumMap                     (EnumMap)
+import qualified Data.EnumMap                     as EnumMap
 import           Data.LabeledGraph.Morphism
 import           Data.Partition
-import           Data.Variable
-import qualified Util.Map                               as Map
+
+instance MFinitary LabeledMorphism
+instance E'PairCofinitary LabeledMorphism
+instance ECofinitary LabeledMorphism
 
 
-instance JointlyEpimorphisms LabeledMorphism where
-
-  createAllQuotients g = do
+{-  createAllQuotients g = do
     variablesPartition <- allPartitionsOf (freeVariableIdsOf g)
     let varMap = partitionToSurjection variablesPartition $ \identifiedIds ->
           let
@@ -67,8 +64,8 @@ instance JointlyEpimorphisms LabeledMorphism where
       sourceTarget (Edge _ src tgt _) = (src, tgt)
       lookupVarOnG v = EnumMap.lookup v gVarMap
       gVarMap = freeVariableMap g
-
-  createMonicJointlyEpimorphicPairs gL gR = do
+-}
+{-  createMonicJointlyEpimorphicPairs gL gR = do
     varIdentifications <- pickIdentifications (freeVariablesOf gL) (freeVariablesOf gR) $ \_ _ -> True
     let (varMapL, varMapR, _) = identificationsToMaps varIdentifications varId
           (\(Variable _ hints) v -> Variable v hints)
@@ -102,6 +99,7 @@ instance JointlyEpimorphisms LabeledMorphism where
       renameSourceTarget nodeMap (Edge e src tgt ()) =
         Edge e (nodeId $ nodeMap EnumMap.! src) (nodeId $ nodeMap EnumMap.! tgt) ()
 
+-}
 
 type Identifications a = ([a], [(a, a)], [a])
 

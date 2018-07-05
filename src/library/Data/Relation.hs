@@ -10,6 +10,7 @@ module Data.Relation
     , empty
     , fromPairs
     , fromLists
+    , fromList
     , fromMapAndCodomain
     -- * Transformation
     , compose
@@ -64,6 +65,7 @@ fromLists dom cod pairs =
     domain = sort . nub $ dom ++ map fst pairs
     codomain = sort . nub $ cod ++ map snd pairs
   in Relation domain codomain mapping
+
 
 toList :: Relation a -> [(a, a)]
 toList r = [ (x, y) | (x, ys) <- Map.toList (mapping r), y <- ys ]
