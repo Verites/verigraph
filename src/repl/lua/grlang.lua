@@ -547,6 +547,10 @@ Then accesing the morphisms can be done by indexing:
 ]==],
   methods = {
     'to_dot'
+  },
+  functions = {
+    'subobject_union',
+    'subobject_intersection'
   }
 } .. subclass_of_GrLang(
   function (cls, f, g)
@@ -569,6 +573,39 @@ Write the value in the dot format for graph drawing.
 Optionally receives a name for the given value.
 ]==] .. function (span, name)
   return hscall(Span.native.toDot, span[1].index, span[2].index, name or '')
+end
+
+Span.subobject_intersection = docstring[==[
+Compute the intersection of two spans of monomorphisms that represent subobjects for the same pair of objects.
+]==] .. function (a, b)
+  if not a[1]:is_monic() or not a[2]:is_monic() or not b[1]:is_monic() or not b[2]:is_monic() then
+    error("The given morphisms are not all monic.", 2)
+  end
+  if a[1].__codomain ~= b[1].__codomain or a[2].__codomain ~= b[2].__codomain then
+    error("The given spans are not subobjects of the same pair of objects.", 2)
+  end
+  local objIdx, u1Idx, u2Idx = hscall(Span.native.pairSubobjectIntersection, a[1].index, a[2].index, b[1].index, b[2].index)
+  local I = newGrLang(Graph, objIdx)
+  return Span(newMorphism(u1Idx, I, a[1]:cod()), newMorphism(u2Idx, I, a[2]:cod()))
+end
+
+Span.subobject_union = docstring[==[
+Compute the union of two spans of monomorphisms that represent subobjects for the same pair of objects.
+If there is no union, return nil.
+]==] .. function (a, b)
+  if not a[1]:is_monic() or not a[2]:is_monic() or not b[1]:is_monic() or not b[2]:is_monic() then
+    error("The given morphisms are not all monic.", 2)
+  end
+  if a[1].__codomain ~= b[1].__codomain or a[2].__codomain ~= b[2].__codomain then
+    error("The given spans are not subobjects of the same pair of objects.", 2)
+  end
+  local objIdx, u1Idx, u2Idx = hscall(Span.native.pairSubobjectUnion, a[1].index, a[2].index, b[1].index, b[2].index)
+  if objIdx then
+    local U = newGrLang(Graph, objIdx)
+    return Span(newMorphism(u1Idx, U, a[1]:cod()), newMorphism(u2Idx, U, a[2]:cod()))
+  else 
+    return nil
+  end
 end
 
 --[[ Cospan class ]]

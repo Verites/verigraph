@@ -590,6 +590,23 @@ initSpan globalState =
         VMorph g <- lookupGrLangValue idG
         return . show $ Dot.typedGraphSpan grLangNamingContext (pretty $ Text.decodeUtf8 name) f g
       )
+    , ("pairSubobjectIntersection", haskellFn4 globalState $ \idX1 idX2 idY1 idY2 -> do
+        VMorph x1 <- lookupGrLangValue idX1
+        VMorph x2 <- lookupGrLangValue idX2
+        VMorph y1 <- lookupGrLangValue idY1
+        VMorph y2 <- lookupGrLangValue idY2
+        let (i1, i2) = pairSubobjectIntersection (x1, x2) (y1, y2)
+        returnVals [VGraph (domain i1), VMorph i1, VMorph i2]
+      )
+    , ("pairSubobjectUnion", haskellFn4 globalState $ \idX1 idX2 idY1 idY2 -> do
+        VMorph x1 <- lookupGrLangValue idX1
+        VMorph x2 <- lookupGrLangValue idX2
+        VMorph y1 <- lookupGrLangValue idY1
+        VMorph y2 <- lookupGrLangValue idY2
+        case pairSubobjectUnion (x1, x2) (y1, y2) of
+          Nothing -> returnVals []
+          Just (u1, u2) -> returnVals [VGraph (domain u1), VMorph u1, VMorph u2]
+      )
     ]
 
 initCospan :: GrLangState -> Lua ()

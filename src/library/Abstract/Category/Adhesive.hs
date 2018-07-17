@@ -7,6 +7,10 @@ module Abstract.Category.Adhesive
     MAdhesive(..)
   , subobjectIntersection
   , subobjectUnion
+    -- ** Generalized subobjects
+    -- $generalized-subobjects
+  , pairSubobjectIntersection
+  , pairSubobjectUnion
     -- * Related Constructions
   , MInitialPushout(..)
   , FinalPullbackComplement(..)
@@ -116,7 +120,49 @@ subobjectUnion a b =
   in case filter (\h -> h <&> b' == b) candidates of
     [] -> error "subobjectUnion: no union found"
     [h] -> h
-    _ -> error "subobjectUnion: multiple unions foind"
+    _ -> error "subobjectUnion: multiple unions found"
+
+-- $generalized-subobjects
+-- We can generalize the notion of subobject, defining subobjects for a
+-- pair of objects instead of a single one. The theory behind this is
+-- further developed in a Master's thesis by Guilherme Azzi (2018).
+--
+-- Given a pair of objects \((L_1, L_2)\), a \(\mathcal{M}\)-pair-subobject
+-- is a pair of \(\mathcal{M}\)-morphisms \(L_1 \rightarrow G \leftarrow L_2\),
+-- and \(\mathbf{Sub}(L_1,L_2)\) is a partially ordered set of
+-- \(\mathcal{M}\)-pair-subobjects.
+--
+-- Unlike regular \(\mathcal{M}\)-subobjects, the poset of
+-- \(\mathcal{M}\)-pair-subobjects is not a lattice. But it has
+-- all intersections, and unions work as a partial function.
+
+-- | Given two \(\mathcal{M}\)-pair-subobjects, calculate their intersection
+-- (by taking a pullback followed by an equalizer).
+pairSubobjectIntersection :: (Complete morph, MAdhesive morph) => Span morph -> Span morph -> Span morph
+pairSubobjectIntersection (x1, x2) (y1, y2) =
+  let 
+    (iy', ix') = calculatePullbackAlongM x1 y1
+    e = calculateEqualizer (x2 <&> ix') (y2 <&> iy')
+    ix = ix' <&> e
+    (i1, i2) = (x1 <&> ix, x2 <&> ix)
+  in (i1, i2)
+
+-- | Given two \(\mathcal{M}\)-pair-subobjects, calculate their union, if it exists
+-- (by taking a pushout over their intersection).
+pairSubobjectUnion :: (Complete morph, FindMorphism morph, MAdhesive morph) => Span morph -> Span morph -> Maybe (Span morph)
+pairSubobjectUnion (x1, x2) (y1, y2) =
+  let
+    (iy', ix') = calculatePullbackAlongM x1 y1
+    e = calculateEqualizer (x2 <&> ix') (y2 <&> iy')
+    (ix, iy) = (ix' <&> e, iy' <&> e)
+    (yu, xu) = calculatePushoutAlongM ix iy
+    (u1Candidates, u2Candidates) = (findSpanCommuters monic xu x1, findSpanCommuters monic xu x2)
+    isCandidateAcceptable y u = isInclusion u && u <&> yu == y
+  in case (filter (isCandidateAcceptable y1) u1Candidates, filter (isCandidateAcceptable y2) u2Candidates) of
+    ([u1], [u2]) -> Just (u1, u2)
+    ([], _) -> Nothing
+    (_, []) -> Nothing
+    _ -> error "pairSubobjectUnion: multiple unions found"
 
 class MFinitary morph => MInitialPushout morph where
   -- | Calculate the \(\mathcal{M}\)-initial pushout of the given morphism.

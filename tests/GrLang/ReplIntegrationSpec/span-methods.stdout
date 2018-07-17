@@ -42,3 +42,43 @@ digraph  {
   Dom_1 -> CodR_1 [style=dotted];
   Dom_2 -> CodR_1 [style=dotted]
 }
+
+subobject_intersection
+graph  {
+  
+} morphism  : dom -> cod {
+  
+} graph  {
+  a b : N
+} morphism  : dom -> cod {
+  
+} graph  {
+  c d : N
+}
+graph  {
+  ?0 : N
+} morphism  : dom -> cod {
+  ?0 -> a
+} graph  {
+  a b : N
+} morphism  : dom -> cod {
+  ?0 -> c
+} graph  {
+  c d : N
+}
+
+subobject_union
+graph  {
+  ac bd : N
+} morphism  : dom -> cod {
+  ac -> a
+  bd -> b
+} graph  {
+  a b : N
+} morphism  : dom -> cod {
+  ac -> c
+  bd -> d
+} graph  {
+  c d : N
+}
+nil
