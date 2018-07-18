@@ -220,10 +220,14 @@ Instances can be constructed as follows:
     'is_empty', 'identity',
     'nodes', 'edges',
     'disjoint_union', 'product',
-    'subgraphs', 'quotients', 
+    'subgraphs', 'quotients',
     'morphisms_to', 'overlappings_with'
   }
 } .. subclass_of_GrLang()
+
+Graph.__len = function(graph)
+  return hscall(Graph.native.size, graph.index)
+end
 
 Graph.__index.identity = docstring "Returns the identity morphism."
   .. memoizing('__identity', function(graph)

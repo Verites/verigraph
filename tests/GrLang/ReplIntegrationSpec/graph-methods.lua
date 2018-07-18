@@ -20,10 +20,11 @@ function with_cod(...)
 end
 
 E = Graph [[]]
-X = Graph [[ a b c : N ; a-:E->b ]] 
+X = Graph [[ a b c : N ; a-:E->b ]]
 
 print('is_empty', E:is_empty(), X:is_empty())
 print('identity', X:identity())
+print('size', #E, #X)
 
 print()
 print('nodes:')

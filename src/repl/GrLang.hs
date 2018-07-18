@@ -430,6 +430,10 @@ initGraph globalState =
           VGraph graph <- lookupGrLangValue idx
           allocateGrLang (VMorph $ identity graph)
       )
+    , ("size", haskellFn1 globalState $ \idx -> do
+          VGraph graph <- lookupGrLangValue idx
+          return (fromIntegral $ length (TGraph.nodes graph) + length (TGraph.edges graph) :: Lua.LuaInteger)
+      )
     , ("nodesInContext", haskellFn1 globalState $ \idx -> do
           VGraph graph <- lookupGrLangValue idx
           liftLua . pushList $ map pushNode (TGraph.nodesInContext graph)

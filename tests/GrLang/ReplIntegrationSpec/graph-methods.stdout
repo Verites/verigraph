@@ -5,6 +5,7 @@ identity	morphism  : dom -> cod {
   c -> c
   ?0 -> ?0
 }
+size	0	4
 
 nodes:
 true	0	a	N
