@@ -36,7 +36,11 @@ options = Options
 fullOptions :: ParserInfo Options
 fullOptions = info (options <**> helper)
   ( fullDesc
-  <> progDesc "Lua interpreter with bindings to Verigraph." )
+  <> progDesc "Lua interpreter with bindings to Verigraph. \
+    \ \
+    \ You can set the amount of memory available for GrLang values \
+    \ and iterables with the environment variables MAX_GRLANG_VALS \
+    \ and MAX_GRLANG_ITERS. " )
 
 main :: IO ()
 main = runLua $ do

@@ -16,6 +16,7 @@ import           Data.Foldable                  (toList)
 import           Data.IORef
 import           Data.Map                       (Map)
 import qualified Data.Map                       as Map
+import           Data.Maybe                     (fromMaybe)
 import           Data.Monoid
 import           Data.Proxy
 import           Data.Set                       (Set)
@@ -27,6 +28,8 @@ import           Data.Text.Prettyprint.Doc      (Pretty (..))
 import           Foreign.Lua                    (FromLuaStack, Lua, ToHaskellFunction)
 import qualified Foreign.Lua                    as Lua
 import qualified Foreign.Lua.Util               as Lua
+import           System.Environment             (lookupEnv)
+import           Text.Read                      (readMaybe)
 
 import           Abstract.Category
 import           Abstract.Category.Adhesive
@@ -289,7 +292,11 @@ morphConf = MorphismsConfig monic
 
 initialize :: Lua ()
 initialize = do
-  globalState <- liftIO (initState 1024 256)
+  let withDefault x text = fromMaybe x (readMaybe =<< text)
+  maxGrLangValues <- withDefault 2048  <$> liftIO (lookupEnv "MAX_GRLANG_VALS")
+  maxGrLangIters <- withDefault 256 <$> liftIO (lookupEnv "MAX_GRLANG_ITERS")
+
+  globalState <- liftIO (initState maxGrLangValues maxGrLangIters)
 
   execLuaFile =<< liftIO (getDataFileName "src/repl/lua/help.lua")
   execLuaFile =<< liftIO (getDataFileName "src/repl/lua/grlang.lua")
