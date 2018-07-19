@@ -127,6 +127,13 @@ freeMemSpace idx' memSpace = liftIO $ do
   modifyIORef (numFreeValues memSpace) (+1)
   modifyIORef (nextFreeIndex memSpace) $ Just . maybe idx (min idx)
 
+freeAllMemSpace ::  MemSpace a -> ExceptT GrLang.Error LuaGrLang ()
+freeAllMemSpace memSpace = liftIO $ do
+  (min, max) <- getBounds (cells memSpace)
+  forM_ [min..max] $ \i -> writeArray (cells memSpace) i Nothing
+  writeIORef (numFreeValues memSpace) (maxFreeValues memSpace)
+  writeIORef (nextFreeIndex memSpace) (Just 0)
+
 data GrLangState = GrLangState
   { typeGraph       :: IORef TypeGraph
   , nodeTypes       :: IORef (Map Text NodeId)
@@ -357,6 +364,10 @@ initGrLang globalState = do
           put typeGraph TypeGraph.empty
           put nodeTypes Map.empty
           put edgeTypes Map.empty
+      )
+    , ("unsafeFlushMem", haskellFn0 globalState $ do
+          withMemSpace values freeAllMemSpace
+          withMemSpace iterLists freeAllMemSpace
       )
     , ("toString", haskellFn1 globalState $ \idx ->
           show . pretty <$> lookupGrLangValue idx

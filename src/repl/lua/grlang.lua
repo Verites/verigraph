@@ -30,7 +30,8 @@ All instances of this class are wrappers of Haskell values.
     'print_types',
     'reset_types',
     'readGGX',
-    'mem_stats'
+    'mem_stats',
+    'unsafe_flush_mem'
   },
   methods = {
     'to_dot',
@@ -100,9 +101,15 @@ GrLang.reset_types = docstring[==[
 Clear the current type graph, as long as no references to GrLang values exists.
 
 If any GrLang value still exists, it would become malformed because it would refer
-to node and edge types that no longer exist. 
+to node and edge types that no longer exist.
 ]==] .. function ()
   hscall(GrLang.native.resetTypes)
+end
+
+GrLang.unsafe_flush_mem = docstring[==[
+Remove all GrLang values and iterators from memory.
+]==] .. function ()
+  hscall(GrLang.native.unsafeFlushMem)
 end
 
 function GrLang.__tostring(value)
