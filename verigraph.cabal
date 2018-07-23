@@ -182,6 +182,24 @@ executable verigraph-repl
                        Paths_verigraph
                        Util.Lua
 
+executable verigraph-experiments
+  default-language:    Haskell2010
+  hs-source-dirs:      src/experiments/
+  main-is:             Main.hs
+  ghc-options:         -Wall -fno-warn-name-shadowing -fno-warn-unused-do-bind
+  build-depends:       base, verigraph,
+                       array >=0.5 && <1.0,
+                       bytestring >=0.10 && <1.0,
+                       containers,
+                       deepseq,
+                       directory,
+                       filepath,
+                       haskeline >=0.7 && <1.0,
+                       hslua >=0.9.4 && <1.0,
+                       mtl,
+                       optparse-applicative>=0.12 && < 0.15,
+                       prettyprinter,
+                       text
 
 test-suite HSpecTests
   default-language:    Haskell2010
