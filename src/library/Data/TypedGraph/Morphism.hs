@@ -1,10 +1,12 @@
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE TypeFamilies  #-}
 module Data.TypedGraph.Morphism where
   -- TODO: write export list explicitly
 
 import           Data.Function        (on)
 import           Data.List            (nubBy)
 import           Data.Maybe           (fromMaybe, isJust)
+import           GHC.Generics         (Generic)
 
 import           Base.Valid
 import qualified Data.Graphs          as Untyped
@@ -18,7 +20,7 @@ data TypedGraphMorphism a b = TypedGraphMorphism {
     domainGraph   :: TypedGraph a b
   , codomainGraph :: TypedGraph a b
   , mapping       :: GraphMorphism (Maybe a) (Maybe b)
-} deriving (Eq, Show)
+} deriving (Eq, Show, Generic)
 
 compose :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 compose t2 t1 = TypedGraphMorphism (domainGraph t1) (codomainGraph t2) $ GM.compose (mapping t2) (mapping t1)

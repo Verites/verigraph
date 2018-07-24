@@ -1,5 +1,5 @@
-{-# LANGUAGE TypeFamilies #-}
-
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE TypeFamilies  #-}
 module Data.Graphs.Morphism (
     -- * Types
       GraphMorphism(..)
@@ -43,6 +43,7 @@ module Data.Graphs.Morphism (
 import           Control.Arrow
 import           Data.Function (on)
 import qualified Data.List     as List
+import           GHC.Generics  (Generic)
 
 import           Base.Valid
 import           Data.Graphs   as G
@@ -54,7 +55,7 @@ data GraphMorphism a b = GraphMorphism {
   , codomainGraph :: Graph a b
   , nodeRelation  :: R.Relation G.NodeId
   , edgeRelation  :: R.Relation G.EdgeId
-}
+} deriving Generic
 
 compose :: GraphMorphism a b -> GraphMorphism a b -> GraphMorphism a b
 compose m2 m1 = GraphMorphism (domainGraph m1)

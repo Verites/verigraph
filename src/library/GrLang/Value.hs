@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 module GrLang.Value
   (
@@ -55,6 +56,7 @@ import qualified Data.Set                  as Set
 import           Data.Text                 (Text)
 import qualified Data.Text                 as Text
 import           Data.Text.Prettyprint.Doc (Pretty (..))
+import           GHC.Generics              (Generic)
 
 import           Abstract.Category
 import           Base.Annotation           (Annotated (..))
@@ -151,7 +153,7 @@ addNamesFromTypesToRule (Production l r nacs) =
 data Metadata = Metadata
   { mdName     :: Maybe Text
   , mdLocation :: Maybe Location }
-  deriving Show
+  deriving (Generic, Show)
 
 type GrRule = Production GrMorphism
 type GrMorphism = TypedGraphMorphism Metadata Metadata

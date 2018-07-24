@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-|
@@ -86,6 +87,7 @@ import           Data.List
 import           Data.Maybe                (fromMaybe)
 import           Data.Text.Prettyprint.Doc (Pretty (..), (<+>))
 import qualified Data.Text.Prettyprint.Doc as PP
+import           GHC.Generics              (Generic)
 
 import           Base.Cardinality
 import           Base.Valid
@@ -95,13 +97,13 @@ import           Util.List
 -- | Type of node identifiers, which are essentially integers.
 newtype NodeId =
   NodeId Int
-  deriving (Eq, Ord, Num, Real, Integral, Pretty)
+  deriving (Eq, Ord, Num, Real, Integral, Pretty, Generic)
 
 
 -- | Type of edge identifiers, which are essentially integers.
 newtype EdgeId
   = EdgeId Int
-  deriving (Eq, Ord, Num, Real, Integral, Pretty)
+  deriving (Eq, Ord, Num, Real, Integral, Pretty, Generic)
 
 
 instance Show NodeId where
@@ -124,7 +126,7 @@ data Node n =
   Node
     { nodeId   :: NodeId
     , nodeInfo :: n
-    } deriving (Show)
+    } deriving (Show, Generic)
 
 
 -- | Edges from within a graph.
@@ -134,7 +136,7 @@ data Edge e =
     , sourceId :: NodeId
     , targetId :: NodeId
     , edgeInfo :: e
-    } deriving (Show)
+    } deriving (Show, Generic)
 
 
 -- | A directed graph, allowing parallel edges. Both nodes and edges have optional payloads
@@ -149,7 +151,7 @@ data Graph n e =
   Graph
     { nodeMap :: [(NodeId, Node n)]
     , edgeMap :: [(EdgeId, Edge e)]
-    }
+    } deriving Generic
 
 
 -- | Verify equality of two lists ignoring order /O(m*n)/

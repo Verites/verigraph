@@ -1,7 +1,7 @@
+{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies          #-}
-
 module Data.Relation
     (
     -- * Types
@@ -37,8 +37,9 @@ module Data.Relation
     ) where
 
 
-import           Data.List as L
-import qualified Data.Map  as Map
+import           Data.List    as L
+import qualified Data.Map     as Map
+import           GHC.Generics (Generic)
 
 -- | Datatype for endorelations on a
 data Relation a =
@@ -46,7 +47,7 @@ data Relation a =
        domain   :: [a],
        codomain :: [a],
        mapping  :: Map.Map a [a]
-   } deriving (Ord,Show,Read)
+   } deriving (Ord,Show,Read,Generic)
 
 instance (Eq a, Ord a) => Eq (Relation a) where
     r1 == r2 = sort(domain r1) == sort(domain r2) &&
