@@ -64,8 +64,8 @@ main = do
 
   grammars <- List.sortOn fst <$> loadGrammars grammarDir
 
-  runExpM grammars outputDir disablingExp runExperiment
   runExpM grammars outputDir conflictExp runExperiment
+  runExpM grammars outputDir disablingExp runExperiment
 
 
 loadGrammars :: FilePath -> IO [(String, Grammar GrMorphism)]
@@ -262,7 +262,7 @@ disablingExp = Exp
       lift $ incrResult "upper_applicable" 1
 
       let (p2, p1) = calculatePullback m1' m2'
-      let (q12, _) = calculatePullback (leftMorphism rule1) p1
+      let (q12, _) = calculatePullback l1' p1
       let (_, _, c) = calculateMInitialPushout q12
       guard . not $ isInitial (Proxy @GrMorphism) (domain c)
       guard (isIsomorphism c)
@@ -270,7 +270,7 @@ disablingExp = Exp
       let (e1, e2) = (cl1 <&> p1 <&> c, p2 <&> c)
 
       let allLowerMatches = findJointSurjectionSquares (monic, e1) (monic, e2)
-          isApplicable (m1, m2) = satisfiesGluingConditions morphConf rule1 m1 && satisfiesGluingConditions morphConf rule2 m2
+          isApplicable (m2, m1) = satisfiesGluingConditions morphConf rule1 m1 && satisfiesGluingConditions morphConf rule2 m2
 
       case break isApplicable allLowerMatches of
         (nonApplicable, []) -> do
@@ -278,6 +278,7 @@ disablingExp = Exp
           mzero
         (nonApplicable, _:_) -> do
           lift . incrResult "lower_overlappings" . fromIntegral $ length nonApplicable + 1
+          lift $ incrResult "disabling_essences" 1
           return (e1, e2)
   }
 
