@@ -200,6 +200,7 @@ executable verigraph-experiments
                        optparse-applicative>=0.12 && < 0.15,
                        prettyprinter,
                        text
+  other-modules:       Dag
 
 test-suite HSpecTests
   default-language:    Haskell2010

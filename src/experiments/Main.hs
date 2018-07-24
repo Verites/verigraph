@@ -1,12 +1,14 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Main (main) where
 
 
 import           Control.Monad
 import           Control.Monad.List
 import           Control.Monad.Reader
-import           Data.Maybe                 (fromMaybe)
+import           Data.Maybe                 (fromMaybe, isJust)
 -- import Control.Monad.IO.Class
 import           Control.DeepSeq
 import           Data.IORef
@@ -23,16 +25,36 @@ import           System.FilePath            as FilePath
 import           System.IO
 import           Text.Printf
 import           Text.Read                  (readMaybe)
+import qualified Data.List.NonEmpty as NonEmpty
 
 
 import           Abstract.Category
 import           Abstract.Category.Adhesive
 import           Abstract.Category.Finitary
+import           Abstract.Category.FindMorphism
 import           Abstract.Category.Limit
 import           Abstract.Rewriting.DPO
 import           GrLang.Value
 import           Util.Monad
+import Base.Location (Position, Location)
+import Data.Relation (Relation)
+import Data.Graphs (Graph, Node, NodeId, Edge, EdgeId)
+import           Data.Graphs.Morphism (GraphMorphism)
+import Data.TypedGraph.Morphism (TypedGraphMorphism)
 import           XML.GGXReader              as GGX
+import qualified Dag
+
+instance NFData NodeId
+instance NFData EdgeId
+instance NFData a => NFData (Relation a)
+instance (NFData n) => NFData (Node n)
+instance (NFData e) => NFData (Edge e)
+instance (NFData n, NFData e) => NFData (Graph n e)
+instance (NFData n, NFData e) => NFData (GraphMorphism n e)
+instance (NFData n, NFData e) => NFData (TypedGraphMorphism n e)
+instance NFData Metadata
+instance NFData Location
+instance NFData Position
 
 
 main :: IO ()
@@ -153,20 +175,52 @@ runExperiment = do
             liftIO . (`writeIORef` Map.empty) =<< asks currResults
 
             check <- asks (checkRules . experiment)
-            let eval x = force (show x) `seq` x
-            essences <- recordingTime "timeEnum" . runListT $ check rule1 rule2
+            let evalSpan x = force x `seq` x
+            essences <- recordingTime "time_enum" . fmap evalSpan . runListT $ check rule1 rule2
+            recordingTime "time_filter" $ checkIrred essences
 
             results <- liftIO . readIORef =<< asks currResults
             cols <- asks (outColumns . experiment)
             writeLine outFile . List.intercalate "," $
               grammarName : name1 : name2 : map (show . (\col -> Map.findWithDefault 0 col results)) cols
 
+checkIrred :: [Span GrMorphism] -> ExpM ()
+checkIrred essences = do 
+  poset <- liftIO $ Dag.empty (length essences)
+  mapM_ (\x -> liftIO $ Dag.insertPoset cmp x poset) essences
 
+  cover <- liftIO $ Dag.lowerCover poset
+  mapM_ checkIrred =<< liftIO (Dag.elemsWithAdj cover)
+  where
+    cmp a b = case findEssenceMorphism monic a b of
+      Just f
+        | isIsomorphism f -> Just EQ
+        | otherwise -> Just LT
+      Nothing -> case findEssenceMorphism monic b a of
+        Just f -> Just GT
+        Nothing -> Nothing
+
+    checkIrred (x, ys)
+      | length ys <= 1 = incrResult "irred_essences" 1
+      | x `equalsUnionOf` ys = return ()
+      | otherwise = incrResult "irred_essences" 1 >> incrResult "irred_large_cover" 1
+
+    equalsUnionOf x ys = case unions ys of
+      Nothing -> False
+      Just u -> isJust $ findEssenceMorphism iso x u
+
+    unions (x:xs) = foldr (\x y -> pairSubobjectUnion x =<< y) (Just x) xs
+
+findEssenceMorphism cls (a1, a2) (b1, b2) =
+  case filter (\h -> b2 <&> h == a2) $ findCospanCommuters cls a1 b1 of
+    [] -> Nothing
+    [h] -> Just h
+    _ -> error "findEssenceMorphism: found multiple morphisms, which should be impossible"
 
 conflictExp :: Experiment
 conflictExp = Exp
   { expName = "conflict-stats"
-  , outColumns = words "overlappings applicable critical_pairs conflict_essences irred_essences irred_lower_cover time_enum time_filter"
+  , outColumns = words "overlappings applicable critical_pairs conflict_essences irred_essences irred_large_cover time_enum time_filter"
   , pairsForGrammar = \grammar -> let n = length (productions grammar) in n * (n+1) `div` 2
   , shouldCheckRules = (<=)
   , checkRules = \rule1 rule2 -> do
