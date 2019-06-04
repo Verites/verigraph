@@ -21,14 +21,31 @@ In depth "how to" tutorials are available for each stable version at [Releases](
 
 ### Installing via Stack
 
+First you must assure that `stack` is in **version 1.6.0 or later**. 
+You can check the `stack` version with the command:
+
+```bash
+   $ stack --version
+```
+If the stack version is older, you can upgrade it by running:
+
+```bash
+  $ stack upgrade
+  $ echo "export PATH=~/.local/bin:${PATH}" >> ~/.bashrc
+  $ source ~/.bashrc
+```
+
+You may remove the previous installed stack package.
 Once you have cloned this repository, install `verigraph` by running:
 
 ```bash
   $ stack setup # Will download and configure ghc if it is not installed yet
   $ stack install
-  $ echo "export PATH=${PATH}:~/.local/bin" >> ~/.bashrc
-  $ source ~/.bashrc
 ```
+
+If there is an error saying `/usr/bin/ld: cannot find -ltinfo`, it means you don't have `libtinfo.so` in your `/usr/lib` directory
+(see https://github.com/judah/haskeline/issues/57).
+You may install the lib package to fix this (In ubuntu the package `libtinfo-dev` installs this lib), and then run `stack install` again
 
 If there is an error saying `recompile with -fPIC`, it can be fixed by the following command
 (see https://github.com/commercialhaskell/stack/issues/2712).
