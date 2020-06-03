@@ -18,7 +18,7 @@ data TypedGraphMorphism a b = TypedGraphMorphism {
     domainGraph   :: TypedGraph a b
   , codomainGraph :: TypedGraph a b
   , mapping       :: GraphMorphism (Maybe a) (Maybe b)
-} deriving (Eq, Show)
+} deriving (Eq, Show, Read)
 
 compose :: TypedGraphMorphism a b -> TypedGraphMorphism a b -> TypedGraphMorphism a b
 compose t2 t1 = TypedGraphMorphism (domainGraph t1) (codomainGraph t2) $ GM.compose (mapping t2) (mapping t1)

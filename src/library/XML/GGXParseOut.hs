@@ -68,8 +68,8 @@ getTgmMappings prefix tgm = nodesMorph ++ edgesMorph
   where
     nodeMap = applyNodeIdUnsafe tgm
     edgeMap = applyEdgeIdUnsafe tgm
-    nodesMorph = map (\n -> ("N" ++ show (nodeMap n), prefix, "N" ++ show n)) (nodeIds $ domain tgm)
-    edgesMorph = map (\e -> ("E" ++ show (edgeMap e), prefix, "E" ++ show e)) (edgeIds $ domain tgm)
+    nodesMorph = map (\n -> ("N" ++ show (fromEnum $ nodeMap n), prefix, "N" ++ (show $ fromEnum n))) (nodeIds $ domain tgm)
+    edgesMorph = map (\e -> ("E" ++ show (fromEnum $ edgeMap e), prefix, "E" ++ (show $ fromEnum e))) (edgeIds $ domain tgm)
 
 getLHS :: [Mapping] -> [Mapping] -> GR.TypedGraphRule a b -> ParsedTypedGraph
 getLHS objNameN objNameE rule = serializeGraph objNameN objNameE $ GR.leftMorphism rule
@@ -98,10 +98,10 @@ getMappings rule = nodesMorph ++ edgesMorph
     lr = GR.rightMorphism rule <&> invL
     nodeMap = applyNodeIdUnsafe lr
     nodes = filter (isJust . applyNodeId lr) (nodeIds $ domain lr)
-    nodesMorph = map (\n -> ("N" ++ show (nodeMap n), no, "N" ++ show n)) nodes
+    nodesMorph = map (\n -> ("N" ++ show (fromEnum $ nodeMap n), no, "N" ++ (show $ fromEnum n))) nodes
     edgeMap = applyEdgeIdUnsafe lr
     edges = filter (isJust . applyEdgeId lr) (edgeIds $ domain lr)
-    edgesMorph = map (\e -> ("E" ++ show (edgeMap e), no, "E" ++ show e)) edges
+    edgesMorph = map (\e -> ("E" ++ show (fromEnum $ edgeMap e), no, "E" ++ (show $ fromEnum e))) edges
 
 parseNacName :: String -> (t -> Maybe Int) -> t -> String
 parseNacName ruleName f x = case f x of
@@ -119,13 +119,13 @@ serializeGraph objNameNodes objNameEdges morphism = ("", nodes, edges)
     edges = map (serializeEdge (map (\(x,_,y) -> (x,y)) objNameEdges) graph) (G.edges $ FC.domain graph)
 
 serializeNode :: [(String,String)] -> TypedGraph a b -> G.NodeId -> ParsedTypedNode
-serializeNode objName graph n = ("N" ++ show n,
-                         lookup (show n) objName,
-                         "N" ++ show (extractNodeType graph n))
+serializeNode objName graph n = ("N" ++ show (fromEnum n),
+                         lookup (show $ fromEnum n) objName,
+                         "N" ++ show (fromEnum $ extractNodeType graph n))
 
 serializeEdge :: [(String,String)] -> TypedGraph a b -> G.Edge (Maybe b) -> ParsedTypedEdge
-serializeEdge objName graph e = ("E" ++ show (G.edgeId e),
-                         lookup (show (G.edgeId e)) objName,
-                         "E" ++ show (extractEdgeType graph (G.edgeId e)),
-                         "N" ++ show (G.sourceId e),
-                         "N" ++ show (G.targetId e))
+serializeEdge objName graph e = ("E" ++ show (fromEnum $ G.edgeId e),
+                         lookup (show (fromEnum $ G.edgeId e)) objName,
+                         "E" ++ show (fromEnum $ extractEdgeType graph (G.edgeId e)),
+                         "N" ++ show (fromEnum $ G.sourceId e),
+                         "N" ++ show (fromEnum $ G.targetId e))

@@ -5,6 +5,7 @@ module Data.TypedGraph (
   , EdgeId(..)
   , Node(..)
   , Edge(..)
+  , showTypedGraph
 
   -- * Contexts and Graph Traversal
   , NodeContext
@@ -72,6 +73,9 @@ import qualified Data.Relation        as Relation
 
 -- | A typed graph is a morphism whose codomain is the type graph.
 type TypedGraph n e = GraphMorphism (Maybe n) (Maybe e)
+
+showTypedGraph :: TypedGraph n e -> String
+showTypedGraph = showGraphMorphism
 
 -- | Reinterpret a typed graph as a graph morphism.
 toGraphMorphism :: TypedGraph n e -> GraphMorphism (Maybe n) (Maybe e)

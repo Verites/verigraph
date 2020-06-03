@@ -4,6 +4,7 @@ module Data.Graphs.Morphism (
     -- * Types
       GraphMorphism(..)
     , compose
+    , showGraphMorphism
     -- * Construction
     , Data.Graphs.Morphism.empty
     , buildGraphMorphism
@@ -54,7 +55,7 @@ data GraphMorphism a b = GraphMorphism {
   , codomainGraph :: Graph a b
   , nodeRelation  :: R.Relation G.NodeId
   , edgeRelation  :: R.Relation G.EdgeId
-}
+} deriving (Show, Read)
 
 compose :: GraphMorphism a b -> GraphMorphism a b -> GraphMorphism a b
 compose m2 m1 = GraphMorphism (domainGraph m1)
@@ -68,17 +69,17 @@ instance Eq (GraphMorphism a b) where
                nodeRelation m1 == nodeRelation m2 &&
                edgeRelation m1 == edgeRelation m2
 
-instance Show (GraphMorphism a b) where
-    show m = concat $
-        "\nNode mappings: \n" : (map showNode . List.sort) (G.nodeIds $ domainGraph m)
-        ++ "\nEdge mappings: \n" : (map showEdge . List.sortBy (compare `on` edgeId)) (G.edges $ domainGraph m)
-      where
-        showNode n =
-          show n ++ " --> " ++ show (applyNodeId m n) ++ "\n"
+showGraphMorphism :: GraphMorphism a b -> String
+showGraphMorphism m = concat $
+    "\nNode mappings: \n" : (map showNode . List.sort) (G.nodeIds $ domainGraph m)
+    ++ "\nEdge mappings: \n" : (map showEdge . List.sortBy (compare `on` edgeId)) (G.edges $ domainGraph m)
+  where
+    showNode n =
+      show n ++ " --> " ++ show (applyNodeId m n) ++ "\n"
 
-        showEdge (Edge e srcId tgtId _) =
-          show e ++ " --> " ++ show (applyEdgeId m e)
-          ++ " (from: " ++ show srcId ++ " to:" ++ show tgtId ++ ")\n"
+    showEdge (Edge e srcId tgtId _) =
+      show e ++ " --> " ++ show (applyEdgeId m e)
+      ++ " (from: " ++ show srcId ++ " to:" ++ show tgtId ++ ")\n"
 
 -- | Return the nodes ids of the codomain which are not in the image of the given morphism.
 orphanNodeIds :: GraphMorphism a b -> [G.NodeId]

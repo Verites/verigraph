@@ -95,20 +95,13 @@ import           Util.List
 -- | Type of node identifiers, which are essentially integers.
 newtype NodeId =
   NodeId Int
-  deriving (Eq, Ord, Num, Real, Integral, Pretty)
+  deriving (Eq, Ord, Num, Real, Integral, Pretty, Show, Read)
 
 
 -- | Type of edge identifiers, which are essentially integers.
 newtype EdgeId
   = EdgeId Int
-  deriving (Eq, Ord, Num, Real, Integral, Pretty)
-
-
-instance Show NodeId where
-    show (NodeId i) = show i
-
-instance Show EdgeId where
-    show (EdgeId i) = show i
+  deriving (Eq, Ord, Num, Real, Integral, Pretty, Show, Read)
 
 instance Enum NodeId where
   toEnum = NodeId
@@ -124,7 +117,7 @@ data Node n =
   Node
     { nodeId   :: NodeId
     , nodeInfo :: n
-    } deriving (Show)
+    } deriving (Show, Read)
 
 
 -- | Edges from within a graph.
@@ -134,7 +127,7 @@ data Edge e =
     , sourceId :: NodeId
     , targetId :: NodeId
     , edgeInfo :: e
-    } deriving (Show)
+    } deriving (Show, Read)
 
 
 -- | A directed graph, allowing parallel edges. Both nodes and edges have optional payloads
@@ -149,8 +142,7 @@ data Graph n e =
   Graph
     { nodeMap :: [(NodeId, Node n)]
     , edgeMap :: [(EdgeId, Edge e)]
-    }
-
+    } deriving (Show, Read)
 
 -- | Verify equality of two lists ignoring order /O(m*n)/
 eq :: (Eq t) => [t] -> [t] -> Bool
@@ -168,18 +160,6 @@ instance Eq (Graph n e) where
       in
        eq (map simplifyNode nodeMap1) (map simplifyNode nodeMap2) &&
        eq (map simplifyEdge edgeMap1) (map simplifyEdge edgeMap2)
-
-
-instance Show (Graph n e) where
-    show (Graph nodes edges) = concat $
-        "Nodes:\n" : map showNode (sortBy (compare `on` fst) nodes)
-        ++ "Edges:\n" : map showEdge (sortBy (compare `on` fst) edges)
-      where
-        showNode (n, _) =
-          "\t" ++ show n ++ "\n"
-
-        showEdge (e, Edge _ src tgt _) =
-          "\t" ++ show e ++ " (" ++ show src ++ "->" ++ show tgt ++ ")\n"
 
 instance (Pretty n, Pretty e) => Pretty (Graph n e) where
   pretty (Graph nodes edges) = PP.hsep

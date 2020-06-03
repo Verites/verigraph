@@ -109,13 +109,13 @@ mainFunction opts sq gg2 ggName names = do
     then putStrLn "[OK] Initial graph is valid"
     else putStrLn $ "[FAIL] Initial graph is not valid: \n"
                   ++ fromJust (errorMessages $ validate $ initialGraph completeOgg)
-                  ++ "\n" ++ show (initialGraph completeOgg)
+                  ++ "\n" ++ TG.showTypedGraph (initialGraph completeOgg)
 
   if isValid (finalGraph completeOgg)
     then putStrLn "[OK] Final graph is valid"
     else putStrLn $ "[FAIL] Final graph is not valid: \n"
                   ++ fromJust (errorMessages $ validate $ finalGraph completeOgg)
-                  ++ "\n" ++ show (finalGraph completeOgg)
+                  ++ "\n" ++ TG.showTypedGraph (finalGraph completeOgg)
 
   if isJust rulesOrdering
     then putStrLn "[OK] Concrete occurrence relation is a total order"

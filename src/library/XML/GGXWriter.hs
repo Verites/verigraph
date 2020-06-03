@@ -152,14 +152,14 @@ writeTypes graph names = mkelem "Types" []
   $ writeNodeTypes names nodeTypeList ++ writeEdgeTypes names edgeTypeList
   ++ [writeTypeGraph graph]
     where
-      nodeTypeList = map (\n -> ("N" ++ show n, show n)) (G.nodeIds graph)
-      edgeTypeList = map (\e -> ("E" ++ show e, show e)) (G.edgeIds graph)
+      nodeTypeList = map (\n -> ("N" ++ show (fromEnum n), show (fromEnum n))) (G.nodeIds graph)
+      edgeTypeList = map (\e -> ("E" ++ show (fromEnum e), show (fromEnum e))) (G.edgeIds graph)
 
 writeTypeGraph :: ArrowXml a => G.Graph b c -> a XmlTree XmlTree
 writeTypeGraph graph = writeGraph "TypeGraph" "TG" "TypeGraph" nodeList edgeList
   where
-    nodeList = map (\n -> ("n" ++ show n, Nothing, "N" ++ show n)) (G.nodeIds graph)
-    edgeList = map (\e -> ("e" ++ show (G.edgeId e), Nothing, "E" ++ show (G.edgeId e), "n" ++ show (G.sourceId e), "n" ++ show (G.targetId e))) (G.edges graph)
+    nodeList = map (\n -> ("n" ++ show (fromEnum n), Nothing, "N" ++ show (fromEnum n))) (G.nodeIds graph)
+    edgeList = map (\e -> ("e" ++ show (fromEnum . G.edgeId $ e), Nothing, "E" ++ show (fromEnum . G.edgeId $ e), "n" ++ show (fromEnum . G.sourceId $ e), "n" ++ show (fromEnum . G.targetId $ e))) (G.edges graph)
 
 writeNodeTypes :: ArrowXml a => [(String,String)] -> [(String,String)] -> [a XmlTree XmlTree]
 writeNodeTypes names = map (writeNodeType names)

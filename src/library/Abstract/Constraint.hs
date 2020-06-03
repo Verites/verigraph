@@ -16,7 +16,7 @@ data AtomicConstraint morph = AtomicConstraint {
         name     :: String,
         morphism :: morph,
         positive :: Bool
-      } deriving (Show)
+      } deriving (Show,Read)
 
 instance Valid morph => Valid (AtomicConstraint morph) where
   validate = validate . morphism
@@ -50,7 +50,7 @@ data Constraint morph =
   | And (Constraint morph) (Constraint morph)
   | Or  (Constraint morph) (Constraint morph)
   | Not (Constraint morph)
-  deriving (Show)
+  deriving (Show, Read)
 
 instance Valid morph => Valid (Constraint morph) where
     validate cons = case cons of
