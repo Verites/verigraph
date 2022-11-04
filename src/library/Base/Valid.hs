@@ -44,6 +44,8 @@ data ValidationResult
   deriving (Eq, Show)
 
 
+instance Semigroup ValidationResult
+
 instance Monoid ValidationResult where
 
   mempty = IsValid

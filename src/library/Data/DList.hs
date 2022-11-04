@@ -29,6 +29,8 @@ import           Prelude hiding (null)
 -- difference lists, allowing /O(1)/ checks if the list is empty.
 newtype DList a = DList { unDList :: Maybe ([a] -> [a]) }
 
+instance Semigroup (DList a)
+
 instance Monoid (DList a) where
   mempty = empty
 

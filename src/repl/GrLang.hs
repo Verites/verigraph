@@ -344,11 +344,13 @@ initGrLang globalState = do
           freeGrLang idx
       )
     , ("toDot", haskellFn2 globalState $ \idx name -> do
-          VGraph graph <- lookupGrLangValue idx
-          return . show $ Dot.typedGraph grLangNamingContext (pretty $ Text.decodeUtf8 name) graph
+          graph <- lookupGrLangValue idx
+          case graph of
+            VGraph graph -> return . show $ Dot.typedGraph grLangNamingContext (pretty $ Text.decodeUtf8 name) graph
+            _ -> error "Pattern match failed"
       )
     , ("compileFile", haskellFn1 globalState $ \path ->
-          GrLang.compileFile path
+        GrLang.compileFile path
       )
     , ("readGGX", haskellFn1 globalState $ \fileName -> do
           (grammar, _, _) <- liftIO $ GGX.readGrammar fileName False morphConf

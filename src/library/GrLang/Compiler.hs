@@ -171,7 +171,7 @@ createEdge edgeType src tgt loc Nothing = do
   return newId
 
 
-compileMorphism' :: MonadGrLang m => Maybe Location -> Located Text -> Located Text -> [MorphismDeclaration] -> ExceptT Error m GrMorphism
+compileMorphism' :: (MonadGrLang m) => Maybe Location -> Located Text -> Located Text -> [MorphismDeclaration] -> ExceptT Error m GrMorphism
 compileMorphism' loc domName codName decls = do
   [domain, codomain] <- mapMCollectErrors getGraph [(domName, "domain"), (codName, "codomain")]
   compileMorphism loc domain codomain decls
