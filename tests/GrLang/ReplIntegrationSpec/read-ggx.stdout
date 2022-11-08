@@ -16,16 +16,13 @@ Rules:
 add_floor	rule  {
   match {
     floor_1 floor : floor
-    floor_1 - next_up : next_up
-        -> floor
+    floor_1 - next_up : next_up -> floor
   }
   delete next_up
   create {
     floor : floor
-    floor_2 - next_up_1 : next_up
-        -> floor
-    floor - next_up : next_up
-        -> floor_1
+    floor_2 - next_up_1 : next_up -> floor
+    floor - next_up : next_up -> floor_1
   }
 }
 call_request	rule  {
@@ -44,17 +41,12 @@ call_request	rule  {
 initial_higher	rule  {
   match {
     floor_1 floor : floor
-    floor - next_up : next_up
-        -> floor_1
+    floor - next_up : next_up -> floor_1
   }
   forbid {
-    floor_1 -
-        higher_than : higher_than
-        -> floor
+    floor_1 - higher_than : higher_than -> floor
   }
-  create floor_1 -
-      higher_than : higher_than
-      -> floor
+  create floor_1 - higher_than : higher_than -> floor
 }
 move_down	rule  {
   match {
@@ -63,21 +55,16 @@ move_down	rule  {
     elevator : elevator
     floor_2 floor_1 floor : floor
     elevator - on : on -> floor_2
-    floor_2 -
-        higher_than : higher_than
-        -> floor
-    floor_1 - next_up : next_up
-        -> floor_2
+    floor_2 - higher_than : higher_than -> floor
+    floor_1 - next_up : next_up -> floor_2
     floor - holds : holds -> request
   }
   forbid {
     request : request
-    floor_2 - holds : holds
-        -> request
+    floor_2 - holds : holds -> request
   }
   delete on
-  create elevator - on : on
-      -> floor_1
+  create elevator - on : on -> floor_1
 }
 move_up	rule  {
   match {
@@ -86,19 +73,14 @@ move_up	rule  {
     elevator : elevator
     floor_2 floor_1 floor : floor
     elevator - on : on -> floor_2
-    floor_2 - next_up : next_up
-        -> floor_1
-    floor -
-        higher_than : higher_than
-        -> floor_2
+    floor_2 - next_up : next_up -> floor_1
+    floor - higher_than : higher_than -> floor_2
     floor - holds : holds -> request
   }
   forbid {
     request_1 : request
-    floor_2 - holds_1 : holds
-        -> request_1
-    request_1 - stop : stop
-        -> request_1
+    floor_2 - holds_1 : holds -> request_1
+    request_1 - stop : stop -> request_1
   }
   delete on
   create {
@@ -121,8 +103,7 @@ process_stop_up	rule  {
     floor - holds : holds -> request
     request - call : call -> request
   }
-  delete request
-  with matched edges
+  delete request with matched edges
 }
 set-direction_down	rule  {
   match {
@@ -131,23 +112,18 @@ set-direction_down	rule  {
     elevator : elevator
     floor_1 floor : floor
     elevator - on : on -> floor_1
-    floor_1 -
-        higher_than : higher_than
-        -> floor
+    floor_1 - higher_than : higher_than -> floor
     floor - holds : holds -> request
   }
   forbid {
     request : request
     floor : floor
-    floor -
-        higher_than : higher_than
-        -> floor_2
+    floor - higher_than : higher_than -> floor_2
     floor - holds : holds -> request
   }
   forbid {
     request : request
-    floor_1 - holds : holds
-        -> request
+    floor_1 - holds : holds -> request
     request - stop : stop -> request
   }
   delete up
@@ -169,19 +145,11 @@ stop_request	rule  {
 transitive_higher	rule  {
   match {
     floor_2 floor_1 floor : floor
-    floor_2 -
-        higher_than_1 : higher_than
-        -> floor_1
-    floor_1 -
-        higher_than : higher_than
-        -> floor
+    floor_2 - higher_than_1 : higher_than -> floor_1
+    floor_1 - higher_than : higher_than -> floor
   }
   forbid {
-    floor_2 -
-        higher_than : higher_than
-        -> floor
+    floor_2 - higher_than : higher_than -> floor
   }
-  create floor_2 -
-      higher_than : higher_than
-      -> floor
+  create floor_2 - higher_than : higher_than -> floor
 }
