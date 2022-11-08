@@ -180,8 +180,9 @@ instance MonadGrLang (ReaderT GrLangState Lua) where
   addNodeType (A loc name) = do
     existingType <- lift $ lookupNodeType name
     GrLang.addNew loc "Node type" name (nodeLocation <$> existingType) $ do
-      newId:_ <- TypeGraph.newNodes <$> get typeGraph
-      let metadata = Metadata (Just name) loc
+      newNodes <- TypeGraph.newNodes <$> get typeGraph
+      let newId:_ = newNodes
+          metadata = Metadata (Just name) loc
       modify typeGraph $ TypeGraph.insertNodeWithPayload newId (Just metadata)
       modify nodeTypes $ Map.insert name newId
 
@@ -190,8 +191,9 @@ instance MonadGrLang (ReaderT GrLangState Lua) where
     tgtType <- GrLang.getNodeType tgtName
     existingType <- lift $ lookupEdgeType name srcType tgtType
     GrLang.addNew loc "Edge type" (showEdgeType name srcType tgtType) (edgeLocation <$> existingType) $ do
-      newId:_ <- TypeGraph.newEdges <$> get typeGraph
-      let metadata = Metadata (Just name) loc
+      newEdges <- TypeGraph.newEdges <$> get typeGraph
+      let newId:_ = newEdges
+          metadata = Metadata (Just name) loc
           (Node srcId _, Node tgtId _) = (srcType, tgtType)
       modify typeGraph $ TypeGraph.insertEdgeWithPayload newId srcId tgtId (Just metadata)
       modify edgeTypes $ Map.insert (name, srcId, tgtId) newId
@@ -395,47 +397,59 @@ initGrLang globalState = do
           allocateGrLang (VGraph graph)
       )
     , ("identity", haskellFn1 globalState $ \idx -> do
-          VGraph graph <- lookupGrLangValue idx
+          value <- lookupGrLangValue idx
+          let VGraph graph = value
           allocateGrLang (VMorph $ identity graph)
       )
     , ("isInitial", haskellFn1 globalState $ \idx -> do
-          VGraph graph <- lookupGrLangValue idx
+          value <- lookupGrLangValue idx
+          let VGraph graph = value
           return (isInitial (Proxy @GrMorphism) graph)
       )
     , ("calculateCoproduct", haskellFn2 globalState $ \idG idH -> do
-          VGraph g <- lookupGrLangValue idG
-          VGraph h <- lookupGrLangValue idH
-          let (jG, jH) = calculateCoproduct g h
+          valueG <- lookupGrLangValue idG
+          valueH <- lookupGrLangValue idH
+          let VGraph g = valueG
+              VGraph h = valueH
+              (jG, jH) = calculateCoproduct g h
           returnVals [VGraph (codomain jG), VMorph jG, VMorph jH]
       )
     , ("calculateProduct", haskellFn2 globalState $ \idG idH -> do
-          VGraph g <- lookupGrLangValue idG
-          VGraph h <- lookupGrLangValue idH
-          let (pG, pH) = calculateProduct g h
+          valueG <- lookupGrLangValue idG
+          valueH <- lookupGrLangValue idH
+          let VGraph g = valueG
+              VGraph h = valueH
+              (pG, pH) = calculateProduct g h
           returnVals [VGraph (domain pG), VMorph pG, VMorph pH]
       )
     , ("findMorphisms", haskellFn3 globalState $ \kindStr idG idH -> do
-          VGraph g <- lookupGrLangValue idG
-          VGraph h <- lookupGrLangValue idH
+          valueG <- lookupGrLangValue idG
+          valueH <- lookupGrLangValue idH
+          let VGraph g = valueG
+              VGraph h = valueH
           cls <- morphClassFromString kindStr
           withMemSpace iterLists .
             allocateMemSpace . map (\f -> [VMorph f]) $ findMorphisms cls g h
       )
     , ("findAllSubobjectsOf", haskellFn1 globalState $ \idx -> do
-          VGraph g <- lookupGrLangValue idx
+          value <- lookupGrLangValue idx
+          let VGraph g = value
           withMemSpace iterLists .
             allocateMemSpace . map (\f -> [VGraph (domain f), VMorph f]) $
               findAllSubobjectsOf g
       )
     , ("findAllQuotientsOf", haskellFn1 globalState $ \idx -> do
-          VGraph g <- lookupGrLangValue idx
+          value <- lookupGrLangValue idx
+          let VGraph g = value
           withMemSpace iterLists .
             allocateMemSpace . map (\f -> [VGraph (codomain f), VMorph f]) $
               findAllQuotientsOf g
       )
     , ("findJointSurjections", haskellFn4 globalState $ \idG kindStrG idH kindStrH -> do
-          VGraph g <- lookupGrLangValue idG
-          VGraph h <- lookupGrLangValue idH
+          valueG <- lookupGrLangValue idG
+          valueH <- lookupGrLangValue idH
+          let VGraph g = valueG
+              VGraph h = valueH
           clsG <- morphClassFromString kindStrG
           clsH <- morphClassFromString kindStrH
           withMemSpace iterLists .
@@ -446,83 +460,109 @@ initGrLang globalState = do
 
   setNative "Morphism"
     [ ("parse", haskellFn3 globalState $ \domIdx codIdx string -> do
-          VGraph dom <- lookupGrLangValue domIdx
-          VGraph cod <- lookupGrLangValue codIdx
+          valueDom <- lookupGrLangValue domIdx
+          valueCod <- lookupGrLangValue codIdx
+          let VGraph dom = valueDom
+              VGraph cod = valueCod
           morphism <- GrLang.compileMorphism Nothing dom cod =<< GrLang.parseMorphism "<repl>" (string :: String)
           allocateGrLang (VMorph morphism)
       )
     , ("compose", haskellFn2 globalState $ \idF idG -> do
-          VMorph f <- lookupGrLangValue idF
-          VMorph g <- lookupGrLangValue idG
+          valueF <- lookupGrLangValue idF
+          valueG <- lookupGrLangValue idG
+          let VMorph f = valueF
+              VMorph g = valueG
           allocateGrLang (VMorph $ f <&> g)
       )
     , ("isMonic", haskellFn1 globalState $ \idx -> do
-          VMorph f <- lookupGrLangValue idx
+          value <- lookupGrLangValue idx
+          let VMorph f = value
           return (isMonic f)
       )
     , ("isEpic", haskellFn1 globalState $ \idx -> do
-          VMorph f <- lookupGrLangValue idx
+          value <- lookupGrLangValue idx
+          let VMorph f = value
           return (isEpic f)
       )
     , ("isIsomorphism", haskellFn1 globalState $ \idx -> do
-          VMorph f <- lookupGrLangValue idx
+          value <- lookupGrLangValue idx
+          let VMorph f = value
           return (isIsomorphism f)
       )
     , ("calculatePullback", haskellFn2 globalState $ \idF idG -> do
-          VMorph f <- lookupGrLangValue idF
-          VMorph g <- lookupGrLangValue idG
-          let (f', g') = calculatePullback f g
+          valueF <- lookupGrLangValue idF
+          valueG <- lookupGrLangValue idG
+          let VMorph f = valueF
+              VMorph g = valueG
+              (f', g') = calculatePullback f g
           returnVals [VGraph (domain f'), VMorph f', VMorph g']
       )
     , ("calculatePushout", haskellFn2 globalState $ \idF idG -> do
-          VMorph f <- lookupGrLangValue idF
-          VMorph g <- lookupGrLangValue idG
-          let (f', g') = calculatePushout f g
+          valueF <- lookupGrLangValue idF
+          valueG <- lookupGrLangValue idG
+          let VMorph f = valueF
+              VMorph g = valueG
+              (f', g') = calculatePushout f g
           returnVals [VGraph (codomain f'), VMorph f', VMorph g']
       )
     , ("calculateEqualizer", haskellFn2 globalState $ \idF idG -> do
-          VMorph f <- lookupGrLangValue idF
-          VMorph g <- lookupGrLangValue idG
-          let e = calculateEqualizer f g
+          valueF <- lookupGrLangValue idF
+          valueG <- lookupGrLangValue idG
+          let VMorph f = valueF
+              VMorph g = valueG
+              e = calculateEqualizer f g
           returnVals [VGraph (domain e), VMorph e]
       )
     , ("calculateCoequalizer", haskellFn2 globalState $ \idF idG -> do
-          VMorph f <- lookupGrLangValue idF
-          VMorph g <- lookupGrLangValue idG
-          let e = calculateCoequalizer f g
+          valueF <- lookupGrLangValue idF
+          valueG <- lookupGrLangValue idG
+          let VMorph f = valueF
+              VMorph g = valueG
+              e = calculateCoequalizer f g
           returnVals [VGraph (codomain e), VMorph e]
       )
     , ("hasPushoutComplementAlongM", haskellFn2 globalState $ \idF idG -> do
-          VMorph f <- lookupGrLangValue idF
-          VMorph g <- lookupGrLangValue idG
+          valueF <- lookupGrLangValue idF
+          valueG <- lookupGrLangValue idG
+          let VMorph f = valueF
+              VMorph g = valueG
           return (hasPushoutComplementAlongM f g)
       )
     , ("calculatePushoutComplementAlongM", haskellFn2 globalState $ \idF idG -> do
-          VMorph f <- lookupGrLangValue idF
-          VMorph g <- lookupGrLangValue idG
-          let (g', f') = calculatePushoutComplementAlongM f g
+          valueF <- lookupGrLangValue idF
+          valueG <- lookupGrLangValue idG
+          let VMorph f = valueF
+              VMorph g = valueG
+              (g', f') = calculatePushoutComplementAlongM f g
           returnVals [VGraph (codomain g'), VMorph g', VMorph f']
       )
     , ("calculateInitialPushout", haskellFn1 globalState $ \idx -> do
-          VMorph f <- lookupGrLangValue idx
-          let (b, f', c) = calculateMInitialPushout f
+          valueF <- lookupGrLangValue idx
+          let VMorph f = valueF
+              (b, f', c) = calculateMInitialPushout f
           returnVals [VGraph (domain b), VGraph (domain c), VMorph b, VMorph f', VMorph c]
       )
     , ("subobjectIntersection", haskellFn2 globalState $ \idA idB -> do
-          VMorph a <- lookupGrLangValue idA
-          VMorph b <- lookupGrLangValue idB
-          let c = subobjectIntersection a b
+          valueA <- lookupGrLangValue idA
+          valueB <- lookupGrLangValue idB
+          let VMorph a = valueA
+              VMorph b = valueB
+              c = subobjectIntersection a b
           returnVals [VGraph (domain c), VMorph c]
       )
     , ("subobjectUnion", haskellFn2 globalState $ \idA idB -> do
-          VMorph a <- lookupGrLangValue idA
-          VMorph b <- lookupGrLangValue idB
-          let c = subobjectUnion a b
+          valueA <- lookupGrLangValue idA
+          valueB <- lookupGrLangValue idB
+          let VMorph a = valueA
+              VMorph b = valueB
+              c = subobjectUnion a b
           returnVals [VGraph (domain c), VMorph c]
       )
     , ("findJointSurjectionSquares", haskellFn4 globalState $ \kindStrF idF kindStrG idG -> do
-        VMorph f <- lookupGrLangValue idF
-        VMorph g <- lookupGrLangValue idG
+        valueF <- lookupGrLangValue idF
+        valueG <- lookupGrLangValue idG
+        let VMorph f = valueF
+            VMorph g = valueG
         clsF <- morphClassFromString kindStrF
         clsG <- morphClassFromString kindStrG
         withMemSpace iterLists .
@@ -533,8 +573,10 @@ initGrLang globalState = do
 
   setNative "Cospan"
     [ ("findCospanCommuters", haskellFn3 globalState $ \kindStr idF idG -> do
-        VMorph f <- lookupGrLangValue idF
-        VMorph g <- lookupGrLangValue idG
+        valueF <- lookupGrLangValue idF
+        valueG <- lookupGrLangValue idG
+        let VMorph f = valueF
+            VMorph g = valueG
         cls <- morphClassFromString kindStr
         withMemSpace iterLists .
           allocateMemSpace . map (\h -> [VMorph h]) $ findCospanCommuters cls f g
@@ -547,23 +589,28 @@ initGrLang globalState = do
           allocateGrLang (VRule rule)
       )
     , ("getLeftObject", haskellFn1 globalState $ \idRule -> do
-          VRule rule <- lookupGrLangValue idRule
+          ruleValue <- lookupGrLangValue idRule
+          let VRule rule = ruleValue
           allocateGrLang (VGraph $ leftObject rule)
       )
     , ("getRightObject", haskellFn1 globalState $ \idRule -> do
-          VRule rule <- lookupGrLangValue idRule
+          ruleValue <- lookupGrLangValue idRule
+          let VRule rule = ruleValue
           allocateGrLang (VGraph $ rightObject rule)
       )
     , ("getInterface", haskellFn1 globalState $ \idRule -> do
-          VRule rule <- lookupGrLangValue idRule
+          ruleValue <- lookupGrLangValue idRule
+          let VRule rule = ruleValue
           allocateGrLang (VGraph $ interfaceObject rule)
       )
     , ("getLeftMorphism", haskellFn1 globalState $ \idRule -> do
-          VRule rule <- lookupGrLangValue idRule
+          ruleValue <- lookupGrLangValue idRule
+          let VRule rule = ruleValue
           allocateGrLang (VMorph $ leftMorphism rule)
       )
     , ("getRightMorphism", haskellFn1 globalState $ \idRule -> do
-          VRule rule <- lookupGrLangValue idRule
+          ruleValue <- lookupGrLangValue idRule
+          let VRule rule = ruleValue
           allocateGrLang (VMorph $ rightMorphism rule)
       )
     ]
