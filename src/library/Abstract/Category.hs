@@ -12,6 +12,7 @@ module Abstract.Category
   , Cospan
   ) where
 
+import Data.Kind (Type)
 
 {- | Type class for representing categories in Verigraph.
 
@@ -20,7 +21,7 @@ there is an associated type of objects @Obj morph@.
 -}
 class (Eq morph) => Category morph where
   -- | Data type that represents objects of the category
-  type Obj morph :: *
+  type Obj morph :: Type
 
   -- | Morphism composition operator.
   --
@@ -36,7 +37,7 @@ class (Eq morph) => Category morph where
   codomain :: morph -> Obj morph
 
   -- | Data type defining the different classes of morphism for this category.
-  data MorphismClass morph :: *
+  data MorphismClass morph :: Type
   -- | Class containing all morphisms of the category.
   anyMorphism :: MorphismClass morph
   -- | Class containing all monomorphisms of the category.
