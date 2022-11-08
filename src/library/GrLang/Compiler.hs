@@ -39,14 +39,14 @@ import           Rewriting.DPO.TypedGraph       (Production (..))
 import qualified Util.Map                       as Map
 import           Util.Monad
 
-compileFile :: (MonadIO m, MonadGrLang m, MonadFail m) => FilePath -> ExceptT Error m ()
+compileFile :: (MonadIO m, MonadGrLang m) => FilePath -> ExceptT Error m ()
 compileFile path = importIfNeeded_ path $
   loadModule (A Nothing path) >>= compile
 
-compile :: (MonadIO m, MonadGrLang m, MonadFail m) => [TopLevelDeclaration] -> ExceptT Error m ()
+compile :: (MonadIO m, MonadGrLang m) => [TopLevelDeclaration] -> ExceptT Error m ()
 compile = mapMCollectErrors_ compileDecl
 
-compileDecl :: (MonadIO m, MonadGrLang m, MonadFail m) => TopLevelDeclaration -> ExceptT Error m ()
+compileDecl :: (MonadIO m, MonadGrLang m) => TopLevelDeclaration -> ExceptT Error m ()
 compileDecl (DeclNodeType n) = addNodeType n
 compileDecl (DeclEdgeType e s t) = addEdgeType e s t
 compileDecl (DeclGraph name graphDecls) =
@@ -171,7 +171,7 @@ createEdge edgeType src tgt loc Nothing = do
   return newId
 
 
-compileMorphism' :: (MonadGrLang m, MonadFail m) => Maybe Location -> Located Text -> Located Text -> [MorphismDeclaration] -> ExceptT Error m GrMorphism
+compileMorphism' :: (MonadGrLang m) => Maybe Location -> Located Text -> Located Text -> [MorphismDeclaration] -> ExceptT Error m GrMorphism
 compileMorphism' loc domName codName decls = do
   [domain, codomain] <- mapMCollectErrors getGraph [(domName, "domain"), (codName, "codomain")]
   compileMorphism loc domain codomain decls
@@ -183,7 +183,7 @@ compileMorphism' loc domName codName decls = do
         (VMorph _) -> throwError loc . PP.fillSep . PP.words $ "Cannot use a morphism as " <> descr <> "."
         (VRule _) -> throwError loc . PP.fillSep . PP.words $ "Cannot use a rule as " <> descr <> "."
 
-compileMorphism :: (MonadGrLang m, MonadFail m) => Maybe Location -> GrGraph -> GrGraph -> [MorphismDeclaration] -> ExceptT Error m GrMorphism
+compileMorphism :: MonadGrLang m => Maybe Location -> GrGraph -> GrGraph -> [MorphismDeclaration] -> ExceptT Error m GrMorphism
 compileMorphism loc domain codomain decls = do
   let domElems = namedElementsOf domain
       codElems = namedElementsOf codomain
@@ -244,7 +244,7 @@ maybeLeft = either Just (const Nothing)
 maybeRight :: Either a b -> Maybe b
 maybeRight = either (const Nothing) Just
 
-compileRule :: (MonadGrLang m, MonadFail m) => [RuleDeclaration] -> ExceptT Error m GrRule
+compileRule :: MonadGrLang m => [RuleDeclaration] -> ExceptT Error m GrRule
 compileRule decls = do
   -- Compile the LHS graph from match declarations
   lhsState <- evalGraphT emptyGraphState $ mapMCollectErrors_ compileMatch decls >> get
@@ -346,7 +346,7 @@ compileCreate _                  = return ()
 --
 -- NOTE: when nodes are joined, any incident edges will become invalid, so they have to be corrected
 -- after calling this function.
-compileJoin :: (MonadGrLang m, MonadFail m) => RuleDeclaration -> GraphT m (Either [(NodeId, NodeId)] [(EdgeId, EdgeId)])
+compileJoin :: MonadGrLang m => RuleDeclaration -> GraphT m (Either [(NodeId, NodeId)] [(EdgeId, EdgeId)])
 compileJoin (DeclJoin joined newName) = do
   elems <- getJoinableElems joined
   case elems of
