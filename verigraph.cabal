@@ -191,7 +191,7 @@ test-suite HSpecTests
   build-depends:       base, verigraph,
                        call-stack,
                        containers,
-                       combinat >= 0.2.8,
+                       combinat >= 0.2.10,
                        directory,
                        deepseq,
                        filepath,

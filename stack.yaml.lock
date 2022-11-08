@@ -18,6 +18,13 @@ packages:
       size: 5517
   original:
     hackage: hslua-0.9.4
+- completed:
+    hackage: compact-word-vectors-0.2.0.2@sha256:49cf00f224000f149306e7043c228fa33e3dba87f10589e8326388c3278ba594,2709
+    pantry-tree:
+      sha256: 5713337589ee024f627123b448f8bf6ddf33e457c72daabc84a12f4ce7d8ddb0
+      size: 744
+  original:
+    hackage: compact-word-vectors-0.2.0.2
 snapshots:
 - completed:
     sha256: e5f56f619132209b826084cacd6374d7f0344cc88a9d1d305878190e4204ae1f
