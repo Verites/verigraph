@@ -9,7 +9,6 @@ import           Control.Monad
 import           Control.Monad.Except           (ExceptT (..), runExceptT)
 import qualified Control.Monad.Except           as ExceptT
 import           Control.Monad.Reader
-import           Control.Monad.Trans            (lift)
 import           Data.Array.IO
 import qualified Data.ByteString                as BS
 import           Data.IORef

@@ -8,7 +8,6 @@ import           Abstract.Category
 import           Abstract.Category.Finitary
 import           Category.TypedGraph.Category                    
 import           Category.Graph                     ()
-import           Data.Graphs                        (Node(..), Edge(..))
 import qualified Data.Graphs                        as Graph
 import qualified Data.Graphs.Morphism               as Untyped
 import           Data.TypedGraph

@@ -298,7 +298,7 @@ removeNodeAndIncidentEdges :: NodeId -> TypedGraph n e -> TypedGraph n e
 removeNodeAndIncidentEdges nodeId g@(GraphMorphism dom cod nodeMap edgeMap) =
   case lookupNodeInContext nodeId g of
     Nothing -> g
-    Just (_,_,nodeCtx) ->
+    Just _ ->
       let
         dom' = Graph.removeNodeAndIncidentEdges nodeId dom
         notRemoved e = isJust (Graph.lookupEdge e dom')
@@ -308,5 +308,5 @@ removeNodeAndIncidentEdges nodeId g@(GraphMorphism dom cod nodeMap edgeMap) =
 
 -- | Remove the given edge from the graph. /O(e)/.
 removeEdge :: EdgeId -> TypedGraph n e -> TypedGraph n e
-removeEdge e g@(GraphMorphism dom cod nodeMap edgeMap) =
+removeEdge e (GraphMorphism dom cod nodeMap edgeMap) =
   GraphMorphism (Graph.removeEdge e dom) cod nodeMap (Relation.removeFromDomain e edgeMap)
