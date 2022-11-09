@@ -7,7 +7,6 @@ module Processes
 
 import           Control.Monad
 import           Data.Maybe                                               (fromJust, isJust)
-import           Data.Monoid                                              ((<>))
 import           Data.Set                                                 (toList)
 import           GlobalOptions
 import           Options.Applicative

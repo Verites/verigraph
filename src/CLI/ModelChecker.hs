@@ -3,10 +3,9 @@ module Main (main) where
 import           Control.Monad
 import qualified Data.IntMap                           as IntMap
 import qualified Data.List                             as List
-import           Data.Monoid                           ((<>))
-import           Data.Text.Prettyprint.Doc             (Pretty (..))
-import qualified Data.Text.Prettyprint.Doc             as PP
-import           Data.Text.Prettyprint.Doc.Render.Text (renderIO)
+import           Prettyprinter                         (Pretty (..))
+import qualified Prettyprinter                         as PP
+import           Prettyprinter.Render.Text             (renderIO)
 import           Options.Applicative
 import           System.Exit
 import           System.IO

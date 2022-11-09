@@ -84,8 +84,8 @@ module Data.Graphs (
 import           Data.Function             (on)
 import           Data.List
 import           Data.Maybe                (fromMaybe)
-import           Data.Text.Prettyprint.Doc (Pretty (..), (<+>))
-import qualified Data.Text.Prettyprint.Doc as PP
+import           Prettyprinter             (Pretty (..), (<+>))
+import qualified Prettyprinter             as PP
 
 import           Base.Cardinality
 import           Base.Valid

@@ -5,7 +5,6 @@ import           Control.Monad
 import           Control.Monad.Trans
 import qualified Data.ByteString          as ByteString
 import qualified Data.ByteString          as BS
-import           Data.Monoid              ((<>))
 import           Foreign.Lua              (Lua, runLua)
 import qualified Foreign.Lua              as Lua
 import           Options.Applicative

@@ -9,8 +9,8 @@ module GrLang.AST
   ) where
 
 import           Data.Text                 (Text)
-import           Data.Text.Prettyprint.Doc (Doc, Pretty (..), (<+>), (<>))
-import qualified Data.Text.Prettyprint.Doc as PP
+import           Prettyprinter             (Doc, Pretty (..), (<+>))
+import qualified Prettyprinter             as PP
 
 import           Base.Annotation           (Annotated (..), Located)
 import qualified Base.Annotation           as Ann

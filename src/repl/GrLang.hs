@@ -15,14 +15,13 @@ import qualified Data.ByteString                as BS
 import           Data.IORef
 import           Data.Map                       (Map)
 import qualified Data.Map                       as Map
-import           Data.Monoid
 import           Data.Proxy
 import           Data.Set                       (Set)
 import qualified Data.Set                       as Set
 import           Data.Text                      (Text)
 import qualified Data.Text                      as Text
 import qualified Data.Text.Encoding             as Text
-import           Data.Text.Prettyprint.Doc      (Pretty (..))
+import           Prettyprinter                  (Pretty (..))
 import           Foreign.Lua                    (FromLuaStack, Lua, ToHaskellFunction)
 import qualified Foreign.Lua                    as Lua
 import qualified Foreign.Lua.Util               as Lua

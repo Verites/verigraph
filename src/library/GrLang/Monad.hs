@@ -33,13 +33,12 @@ import qualified Data.DList                     as DList
 import           Data.Functor.Identity
 import           Data.Map                       (Map)
 import qualified Data.Map                       as Map
-import           Data.Monoid
 import           Data.Set                       (Set)
 import qualified Data.Set                       as Set
 import           Data.Text                      (Text)
-import           Data.Text.Prettyprint.Doc      (Doc, Pretty (..), (<+>))
-import qualified Data.Text.Prettyprint.Doc      as PP
-import qualified Data.Text.Prettyprint.Doc.Util as PP
+import           Prettyprinter                  (Doc, Pretty (..), (<+>))
+import qualified Prettyprinter                  as PP
+import qualified Prettyprinter.Util             as PP
 
 import           Base.Annotation                (Annotated (..), Located, locatedDoc, locationOf)
 import qualified Base.Annotation                as Ann

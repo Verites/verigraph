@@ -6,8 +6,7 @@ module Base.Location
   , Position(..)
   ) where
 
-import           Data.Monoid
-import           Data.Text.Prettyprint.Doc (Pretty (..))
+import           Prettyprinter (Pretty (..))
 
 
 -- | Position within a text file.

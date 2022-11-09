@@ -34,7 +34,7 @@ module Logic.Model
   ) where
 
 import           Data.Maybe
-
+import           Data.Kind (Type)
 
 -- | A Kripke structure is composed of a list of states and a list of
 -- transitions between such states. States are labeled with the atomic
@@ -132,7 +132,7 @@ precedes ts s1 s2 =
 -- | Type class for elements that have a numeric identifier and a list of associated values.
 class Element e where
   -- | Type of associated values.
-  type Payload e :: *
+  type Payload e :: Type
 
   -- | Obtain the numeric identifier of an element.
   elementId :: e -> Int

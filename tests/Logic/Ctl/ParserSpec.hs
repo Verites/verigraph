@@ -4,7 +4,7 @@ module Logic.Ctl.ParserSpec where
 import           Test.Hspec
 import qualified Test.HUnit              as HUnit
 import           Test.QuickCheck
-import           Data.Text.Prettyprint.Doc (Pretty(..))
+import           Prettyprinter           (Pretty(..))
 
 import           Logic.Ctl
 import           Logic.Ctl.TestUtils     ()

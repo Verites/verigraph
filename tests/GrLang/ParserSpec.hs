@@ -7,7 +7,7 @@ import           Control.Monad.Except      (runExceptT)
 import           Data.Functor.Identity
 import           Data.String               (IsString (..))
 import           Data.Text                 ()
-import           Data.Text.Prettyprint.Doc (Pretty (..), vsep)
+import           Prettyprinter             (Pretty (..), vsep)
 import           Test.Hspec
 import           Test.Hspec.QuickCheck     (modifyMaxSize, modifyMaxSuccess)
 import           Test.QuickCheck

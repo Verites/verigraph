@@ -9,7 +9,7 @@ module GrLang.Compiler
   , compileRule
   ) where
 
-import           Control.Monad.Except           (ExceptT (..), mapExceptT)
+import           Control.Monad.Except           (mapExceptT)
 import           Control.Monad.State
 import           Data.Either                    (lefts, rights)
 import           Data.Map                       (Map)
@@ -19,9 +19,9 @@ import qualified Data.Set                       as Set
 import           Data.Text                      (Text)
 import qualified Data.Text                      as Text
 import           Data.Text.Lazy.IO              as Text
-import           Data.Text.Prettyprint.Doc      (Pretty (..), (<>))
-import qualified Data.Text.Prettyprint.Doc      as PP
-import qualified Data.Text.Prettyprint.Doc.Util as PP
+import           Prettyprinter                  (Pretty (..))
+import qualified Prettyprinter                  as PP
+import qualified Prettyprinter.Util             as PP
 import           System.FilePath                (takeDirectory, (</>))
 import           System.IO.Error                (ioeGetErrorString, tryIOError)
 

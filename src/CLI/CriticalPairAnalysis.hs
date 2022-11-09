@@ -7,8 +7,6 @@ module CriticalPairAnalysis
 import           Control.Monad                         (when)
 import           Data.Matrix                           (Matrix)
 import qualified Data.Matrix                           as Matrix
-import           Data.Maybe                            (maybe)
-import           Data.Monoid                           ((<>))
 import qualified Data.Set                              as Set
 import           GHC.Conc                              (numCapabilities)
 import           Options.Applicative

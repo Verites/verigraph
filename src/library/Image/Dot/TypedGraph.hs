@@ -15,8 +15,8 @@ module Image.Dot.TypedGraph
   , sndOrderRule
   ) where
 
-import           Data.Text.Prettyprint.Doc    (Doc, Pretty (..), (<+>), (<>))
-import qualified Data.Text.Prettyprint.Doc    as PP
+import           Prettyprinter                (Doc, Pretty (..), (<+>))
+import qualified Prettyprinter                as PP
 
 import           Abstract.Category
 import           Category.TypedGraphRule
