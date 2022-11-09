@@ -5,7 +5,7 @@ module ApplySndOrderRules
   ) where
 
 import           Control.Monad                           (when)
-import           Prettyprinter                          (Pretty (..))
+import           Prettyprinter                           (Pretty (..))
 import           Options.Applicative
 import           System.IO                               (hPrint, stderr)
 
