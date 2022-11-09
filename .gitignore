@@ -3,6 +3,7 @@ doc/
 org/
 tmp/
 .stack-work/
+dist-newstyle/
 *.hp
 *.prof
 *.xsl
@@ -29,7 +30,7 @@ images/.directory
 
 
 # Editor/IDE stuff
-TAGS
-*#
 .vscode/
 .idea/
+.fleet/
+verigraph.code-workspace

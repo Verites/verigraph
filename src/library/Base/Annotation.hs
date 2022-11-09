@@ -26,8 +26,8 @@ module Base.Annotation
 
 import           Prelude                   hiding (drop)
 
-import           Data.Text.Prettyprint.Doc (Doc, Pretty (..), (<+>))
-import qualified Data.Text.Prettyprint.Doc as PP
+import           Prettyprinter             (Doc, Pretty (..), (<+>))
+import qualified Prettyprinter             as PP
 
 import           Base.Location
 

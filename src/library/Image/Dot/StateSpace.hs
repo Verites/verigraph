@@ -10,8 +10,8 @@ module Image.Dot.StateSpace (stateSpace) where
 
 import qualified Data.IntMap                       as IntMap
 import qualified Data.Set                          as Set
-import           Data.Text.Prettyprint.Doc         (Doc, Pretty (..))
-import qualified Data.Text.Prettyprint.Doc         as PP
+import           Prettyprinter                     (Doc, Pretty (..))
+import qualified Prettyprinter                     as PP
 
 import           Abstract.Rewriting.DPO.StateSpace
 import qualified Image.Dot.Prettyprint             as Dot

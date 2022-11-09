@@ -14,7 +14,7 @@ fileName2 = "tests/grammars/secondOrderMatchTest.ggx"
 
 dpoConf :: Category morph => MorphismsConfig morph
 dpoConf = MorphismsConfig monic
-testCase findEssentialCP rules expected = expected `shouldBe` show (pairwise (findEssentialCP dpoConf) rules)
+testCase findEssentialCP rules expected = show (pairwise (findEssentialCP dpoConf) rules) `shouldBe` expected
 
 spec :: Spec
 spec = context "Essential Critical Pairs Test" ecpaTest
@@ -35,23 +35,27 @@ ecpaTest = do
 
 testSndOrderConflicts rules =
   testCase findAllEssentialDeleteUse rules $
-    "( 0 0 0 0 0 )\n"++
-    "( 0 0 0 0 0 )\n"++
-    "( 0 0 2 0 0 )\n"++
-    "( 0 0 0 1 0 )\n"++
-    "( 0 0 0 0 1 )\n"
+    "┌           ┐\n\
+    \│ 0 0 0 0 0 │\n\
+    \│ 0 0 0 0 0 │\n\
+    \│ 0 0 2 0 0 │\n\
+    \│ 0 0 0 1 0 │\n\
+    \│ 0 0 0 0 1 │\n\
+    \└           ┘"
 
 testElevatorConflicts rules =
   testCase findAllEssentialDeleteUse rules $
-    "( 1 1 0 0 1 0 1 0 0 )\n"++
-    "( 0 0 0 0 0 0 0 0 0 )\n"++
-    "( 0 0 0 0 0 0 0 0 0 )\n"++
-    "( 0 0 0 0 0 0 0 0 0 )\n"++
-    "( 0 0 0 0 1 1 1 0 0 )\n"++
-    "( 0 0 0 0 0 1 1 0 1 )\n"++
-    "( 0 0 0 0 1 0 1 0 0 )\n"++
-    "( 0 0 0 0 0 0 0 0 0 )\n"++
-    "( 0 0 0 0 1 1 1 0 1 )\n"
+    "┌                   ┐\n\
+    \│ 1 1 0 0 1 0 1 0 0 │\n\
+    \│ 0 0 0 0 0 0 0 0 0 │\n\
+    \│ 0 0 0 0 0 0 0 0 0 │\n\
+    \│ 0 0 0 0 0 0 0 0 0 │\n\
+    \│ 0 0 0 0 1 1 1 0 0 │\n\
+    \│ 0 0 0 0 0 1 1 0 1 │\n\
+    \│ 0 0 0 0 1 0 1 0 0 │\n\
+    \│ 0 0 0 0 0 0 0 0 0 │\n\
+    \│ 0 0 0 0 1 1 1 0 1 │\n\
+    \└                   ┘"
 
 pairwise :: (a -> a -> [b]) -> [a] -> Matrix Int
 pairwise f items =

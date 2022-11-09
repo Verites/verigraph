@@ -5,7 +5,6 @@ module ConcurrentRules
   ) where
 
 import           Control.Monad
-import           Data.Monoid              ((<>))
 import           Options.Applicative
 
 import           Abstract.Constraint

@@ -13,7 +13,7 @@
 module Image.Dot.Prettyprint
   (graph, digraph, node, undirEdge, dirEdge, attrList, subgraph, anonSubgraph) where
 
-import           Data.Text.Prettyprint.Doc
+import           Prettyprinter
 
 -- | Pretty prints a (undirected) graph with the given name and list of statements.
 graph :: Doc ann -> [Doc ann] -> Doc ann

@@ -13,7 +13,7 @@ import           Data.Map                       (Map)
 import qualified Data.Map                       as Map
 import           Data.String
 import           Data.Text                      (Text)
-import           Data.Text.Prettyprint.Doc      (Pretty (..))
+import           Prettyprinter                  (Pretty (..))
 import           System.FilePath
 import           Test.Hspec
 import           Test.HUnit

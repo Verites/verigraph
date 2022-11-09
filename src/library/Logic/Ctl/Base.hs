@@ -5,7 +5,7 @@ module Logic.Ctl.Base
   , StateQuantified(..)
   ) where
 
-import           Data.Text.Prettyprint.Doc
+import           Prettyprinter
 
 
 -- | CTL expressions

@@ -5,7 +5,6 @@ module GlobalOptions
   , morphismsConf
   ) where
 
-import           Data.Monoid            ((<>))
 import           Options.Applicative
 
 import           Abstract.Category

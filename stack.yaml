@@ -3,9 +3,10 @@ extra-package-dbs: []
 packages:
 - '.'
 extra-deps:
-- combinat-0.2.8.2
+- combinat-0.2.10.0
 - hslua-0.9.4
-resolver: lts-10.5
+- compact-word-vectors-0.2.0.2
+resolver: lts-19.31
 
 ghc-options:
   '$everything': -threaded

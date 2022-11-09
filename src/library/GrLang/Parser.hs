@@ -7,8 +7,8 @@ import           Data.Functor              (($>))
 import           Data.Functor.Identity
 import           Data.Text                 (Text)
 import qualified Data.Text                 as Text
-import           Data.Text.Prettyprint.Doc (Pretty (..))
-import qualified Data.Text.Prettyprint.Doc as PP
+import           Prettyprinter             (Pretty (..))
+import qualified Prettyprinter             as PP
 import           Text.Parsec
 import           Text.Parsec.Error
 import qualified Text.Parsec.Token         as P

@@ -1,6 +1,5 @@
 module Main (main) where
 
-import           Data.Monoid          ((<>))
 import           GlobalOptions
 import           Options.Applicative
 

@@ -26,12 +26,11 @@ import           Abstract.Category
 import           Abstract.Rewriting.DPO             as DPO
 import           Category.TypedGraph.Category       (toMorphismType, MorphismType(..))
 import           Category.TypedGraph                
-import           Category.TypedGraph.Adhesive       (isDeleted)
-import  Data.Graphs                        (Graph)
-import qualified Data.Graphs                        as G
-import qualified Data.Graphs.Morphism               as GM
-import           Data.TypedGraph                    as GM
-import           Data.TypedGraph.Morphism           as TGM
+import           Category.TypedGraph.Adhesive            (isDeleted)
+import           Data.Graphs                             (Graph)
+import qualified Data.Graphs                             as G
+import           Data.TypedGraph                         as GM
+import           Data.TypedGraph.Morphism                as TGM
 import           Data.TypedGraph.Partition               (generateGraphPartitions)
 import           Data.TypedGraph.Partition.ToVerigraph   (mountTypedGraphMorphisms)
 import           Data.TypedGraph.Partition.FromVerigraph (createSatisfyingNacsDisjointUnion)
